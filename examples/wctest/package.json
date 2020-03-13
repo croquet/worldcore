@@ -1,0 +1,20 @@
+{
+  "name": "@croquet/wctest",
+  "version": "0.0.1",
+  "description": "Worldcore Testbed",
+  "main": "test.js",
+  "scripts": {
+    "start": "parcel test.html"
+  },
+  "browserslist": [
+    "> 5%"
+  ],
+  "author": "Croquet Studios",
+  "license": "ISC",
+  "dependencies": {
+    "@croquet/teatime": "file:../teatime"
+  },
+  "devDependencies": {
+    "parcel": "^1.12.4"
+  }
+}
