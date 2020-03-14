@@ -1,10 +1,12 @@
 // Core Engine
 
 export * from "./src/Actor";
+export * from "./src/Mixins";
 export * from "./src/ModelRoot";
 export * from "./src/NamedView";
 export * from "./src/Pawn";
 export * from "./src/ViewRoot";
+
 
 // Actor Pawn Mixins
 // export * from "./src/mixins/AvatarMixin";

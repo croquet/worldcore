@@ -11,10 +11,8 @@ export class ViewRoot extends NamedView {
         super("ViewRoot");
         console.log("Starting view ...");
         this.model = model;
-
-        this.views = new Set();
-
-        this.pawnManager = this.addView(new PawnManager());
+        this.managers = new Set();
+        this.pawnManager = this.addManager(new PawnManager());
     }
 
     detach() { // Croquet needs this because it calls detach to clean up view root.
@@ -22,20 +20,36 @@ export class ViewRoot extends NamedView {
     }
 
     destroy() {
-        console.log("Destroying view ... !");
-        this.views.forEach(v => v.destroy());
+        this.managers.forEach(m => m.destroy());
         ClearNamedViews();
         super.destroy();
         super.detach();
     }
 
-    addView(v) {
-        this.views.add(v);
-        return v;
+    addManager(m) {
+        this.managers.add(m);
+        return m;
     }
 
     update(time) {
-        if (this.pawnManager) this.pawnManager.update(time);
+        viewTime0 = viewTime1;
+        viewTime1 = time;
+        viewDelta = viewTime1 - viewTime0;
+        this.managers.forEach(m => { if (m.update) m.update(time); });
     }
 
+}
+
+// Functions that allow pawns and managers to get current view time and delta since last update
+
+let viewTime0 = 0;
+let viewTime1 = 0;
+let viewDelta = 0;
+
+export function GetViewTime() {
+    return viewTime1;
+}
+
+export function GetViewDelta() {
+    return viewDelta;
 }

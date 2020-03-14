@@ -3,42 +3,71 @@
 // Croquet Studios, 2020
 
 import { startSession } from "@croquet/teatime";
-import { ModelRoot, ViewRoot, Actor } from "../worldcore";
-import { GetNamedView } from "../worldcore/src/NamedView";
+import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, AM_Spatial, PM_Spatial } from "../worldcore";
+
+//------------------------------------------------------------------------------------------
+// Mixins
+//------------------------------------------------------------------------------------------
+
+export const PM_RenderUnity = superclass => class extends superclass {
+
+    constructor(type, ...args) {
+        super(...args);
+        console.log(type);
+        console.log("Connect to Unity render manager!");
+    }
+
+    destroy() {
+        super.destroy();
+    }
+
+    refresh() {
+        super.refresh();
+        console.log("Send pawn render info to Unity!");
+    }
+
+};
+
+//------------------------------------------------------------------------------------------
+// Managers
+//------------------------------------------------------------------------------------------
+
+class UnityRenderManager extends NamedView {
+    constructor() {
+        super('UnityRenderManager');
+        this.nextID = 0;
+    }
+
+    update(time) {
+        console.log("render update");
+    }
+
+    add(pawn) {
+        const id = this.nextID++;
+        return id;
+    }
+
+    delete(pawn) {
+
+    }
+}
 
 //------------------------------------------------------------------------------------------
 // Actor & Pawn
 //------------------------------------------------------------------------------------------
 
-// class TestActor extends mix(Actor).with(AM_Avatar) {
-//     init() { super.init('TestPawn'); }
-// }
-// TestActor.register("TestActor");
+class TestActor extends mix(Actor).with(AM_Spatial) {
+    init() { super.init('TestPawn'); }
+}
+TestActor.register("TestActor");
 
-// class TestPawn extends mix(Pawn).with(PM_Avatar, PM_Visible) {
-//     constructor(actor) {
-//         super(actor);
-
-//         this.cube = UnitCube();
-//         this.cube.load();
-//         this.cube.clear();
-
-//         this.material = new Material();
-//         this.material.pass = 'opaque';
-//         //this.material.pass = 'instanced';
-//         this.material.texture.loadFromURL(graph);
-
-//         this.setDrawCall(new DrawCall(this.cube, this.material));
-//         // this.setDrawCall(new InstancedDrawCall(this.cube, this.material));
-//     }
-
-//     destroy() {
-//         super.destroy();
-//         this.cube.destroy();
-//         this.material.destroy();
-//     }
-// }
-// TestPawn.register('TestPawn');
+class TestPawn extends mix(Pawn).with(PM_Spatial, PM_RenderUnity) {
+    constructor(...args) {
+        super("Unity Type!!!", ...args);
+        console.log("Spawing pawn!");
+    }
+}
+TestPawn.register('TestPawn');
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -53,15 +82,15 @@ class MyModelRoot extends ModelRoot {
     }
 
     createActor() {
-        console.log("create actor!");
         if (this.actor0) return;
-        this.actor0 = Actor.create();
-        this.actor1 = Actor.create();
+        this.actor0 = TestActor.create();
+        this.actor1 = TestActor.create();
+        this.actor0.addChild(this.actor1);
     }
 
     destroyActor() {
         if (this.actor0) this.actor0.destroy();
-        if (this.actor1) this.actor0.destroy();
+        if (this.actor1) this.actor1.destroy();
         this.actor0 = null;
         this.actor1 = null;
     }
@@ -76,6 +105,8 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
+        this.unityRenderManager = this.addManager(new UnityRenderManager());
+
         this.publish('test', 'zero');
         console.log(GetNamedView("PawnManager"));
     }
