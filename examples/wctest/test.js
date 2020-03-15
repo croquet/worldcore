@@ -3,7 +3,7 @@
 // Croquet Studios, 2020
 
 import { startSession } from "@croquet/teatime";
-import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, AM_Spatial, PM_Spatial } from "../worldcore";
+import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, WebInputManager, AM_Smoothed, PM_Smoothed } from "../worldcore";
 
 //------------------------------------------------------------------------------------------
 // Mixins
@@ -11,19 +11,31 @@ import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, AM_Spat
 
 export const PM_RenderUnity = superclass => class extends superclass {
 
-    constructor(type, ...args) {
+    constructor(unityType, ...args) {
         super(...args);
-        console.log(type);
-        console.log("Connect to Unity render manager!");
+        this.unityType = unityType;
+        this.createUnityObject();
     }
 
     destroy() {
         super.destroy();
+        this.deleteUnityObject();
+    }
+
+    createUnityObject() {
+        const unity = GetNamedView('UnityRenderManager');
+        if (unity) this.unityHandle = unity.create(this.unityType, this.global);
+    }
+
+    deleteUnityObject() {
+        const unity = GetNamedView('UnityRenderManager');
+        if (unity) unity.delete(this.unityHandle);
     }
 
     refresh() {
         super.refresh();
-        console.log("Send pawn render info to Unity!");
+        const unity = GetNamedView('UnityRenderManager');
+        if (unity) unity.refresh(this.unityHandle, this.global);
     }
 
 };
@@ -32,23 +44,45 @@ export const PM_RenderUnity = superclass => class extends superclass {
 // Managers
 //------------------------------------------------------------------------------------------
 
+// The manager may not exist yet when the pawns are recreated. How to recreate all the unity objects?
+// Loop through the pawn manager looking for PM_UnityRender objects
+
 class UnityRenderManager extends NamedView {
     constructor() {
         super('UnityRenderManager');
-        this.nextID = 0;
+        this.nextHandle = 1;
+        console.log("Start up Unity renderer!");
+        this.rebuild();
+
     }
 
-    update(time) {
-        console.log("render update");
+    destroy() {
+        super.destroy();
+        console.log("Shut down Unity renderer!");
     }
 
-    add(pawn) {
-        const id = this.nextID++;
-        return id;
+    rebuild() {
+        const pawnManager = GetNamedView('PawnManager');
+        pawnManager.pawns.forEach(pawn => {
+            if (pawn.createUnityObject) pawn.createUnityObject();
+        });
     }
 
-    delete(pawn) {
+    // update(time) {
+    // }
 
+    create(type, matrix) {
+        const handle = this.nextHandle++;
+        console.log("Creating Unity render object of type " + type + " with handle " + handle + " and matrix " + matrix);
+        return handle;
+    }
+
+    delete(handle) {
+        console.log("Deleting Unity render object " + handle);
+    }
+
+    refresh(handle, matrix) {
+        console.log("Refreshing Unity render object " + handle);
     }
 }
 
@@ -56,15 +90,14 @@ class UnityRenderManager extends NamedView {
 // Actor & Pawn
 //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Spatial) {
+class TestActor extends mix(Actor).with(AM_Smoothed) {
     init() { super.init('TestPawn'); }
 }
 TestActor.register("TestActor");
 
-class TestPawn extends mix(Pawn).with(PM_Spatial, PM_RenderUnity) {
+class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_RenderUnity) {
     constructor(...args) {
-        super("Unity Type!!!", ...args);
-        console.log("Spawing pawn!");
+        super("Alpha", ...args);
     }
 }
 TestPawn.register('TestPawn');
@@ -77,15 +110,20 @@ class MyModelRoot extends ModelRoot {
     init() {
         super.init();
         console.log("starting root!");
-        this.subscribe('test', 'zero', ()=>this.createActor());
-        this.subscribe('test', 'one', ()=>this.destroyActor());
+        this.subscribe('input', 'dDown', this.createActor);
+        this.subscribe('input', 'eDown', this.moveActor);
     }
 
     createActor() {
         if (this.actor0) return;
         this.actor0 = TestActor.create();
         this.actor1 = TestActor.create();
-        this.actor0.addChild(this.actor1);
+        //this.actor0.addChild(this.actor1);
+    }
+
+    moveActor() {
+        if (!this.actor0) return;
+        this.actor0.moveTo([1,0,0]);
     }
 
     destroyActor() {
@@ -105,10 +143,10 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
+
+        this.webInputManager = this.addManager(new WebInputManager());
         this.unityRenderManager = this.addManager(new UnityRenderManager());
 
-        this.publish('test', 'zero');
-        console.log(GetNamedView("PawnManager"));
     }
 
 }

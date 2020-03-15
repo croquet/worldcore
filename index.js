@@ -6,6 +6,7 @@ export * from "./src/ModelRoot";
 export * from "./src/NamedView";
 export * from "./src/Pawn";
 export * from "./src/ViewRoot";
+export * from "./src/WebInput";
 
 
 // Actor Pawn Mixins
