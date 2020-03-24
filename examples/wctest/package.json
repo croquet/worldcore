@@ -2,7 +2,7 @@
   "name": "@croquet/wctest",
   "version": "0.0.1",
   "description": "Worldcore Testbed",
-  "main": "test.js",
+  "main": "test-ael.js",
   "scripts": {
     "start": "parcel test.html"
   },
