@@ -188,6 +188,7 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
     }
 
     globalChanged() {
+        this.lastGlobalChange = this.now(); // ael - capture the island time corresponding to the change
         this.$global = null;
         this.say("spatial_globalChanged");
         if (this.children) this.children.forEach(child => child.globalChanged());
@@ -375,84 +376,6 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     }
 };
 
-export const PM_SmoothedOnDemand = superclass => class extends PM_Spatial(superclass) {
-    constructor(...args) {
-        super(...args);
-
-        this._scale = this.actor.scale;
-        this._rotation = this.actor.rotation;
-        this._location = this.actor.location;
-
-        this.tug = 0.05;
-
-        this.scaleEpsilon = 0.0001;
-        this.rotationEpsilon = 0.000001;
-        this.locationEpsilon = 0.0001;
-
-        this.listenOnce("spatial_setScale", v => this._scale = v);
-        this.listenOnce("spatial_setRotation", q => this._rotation = q);
-        this.listenOnce("spatial_setLocation", v => this._location = v);
-
-        this.listenOnce("smoothed_moveTo", () => this.isMoving = true);
-        this.listenOnce("smoothed_rotateTo", () => this.isRotating = true);
-        this.listenOnce("smoothed_scaleTo", () => this.isScaling = true);
-    }
-
-    localChanged() {
-        this._local = null;
-        this.globalChanged();
-    }
-
-    globalChanged() {
-        this._global = null;
-        this.needRefresh = true;
-        if (this.children) this.children.forEach(child => child.globalChanged());
-    }
-
-    get scale() { return this._scale; }
-    get location() { return this._location; }
-    get rotation() { return this._rotation; }
-
-    get local() {
-        if (!this._local) this._local = m4_scalingRotationTranslation(this._scale, this._rotation, this._location);
-        return this._local;
-    }
-
-    get global() {
-        if (this._global) return this._global;
-        if (this.parent) {
-            this._global = m4_multiply(this.local, this.parent.global);
-        } else {
-            this._global = this.local;
-        }
-        return this._global;
-    }
-
-    refreshIfNeeded() {
-        const now = Date.now();
-        const delta = this.lastT ? now - this.lastT : 1000; // arbitrary first step
-        this.lastT = now;
-
-        let tug = this.tug;
-        if (delta) tug = Math.min(1, tug * delta / 15);
-        const changed = (this.isMoving || this.isRotating || this.isScaling);
-        if (this.isScaling) {
-            this._scale = v3_lerp(this._scale, this.actor.scale, tug);
-            this.isScaling = !v3_equals(this._scale, this.actor.scale, this.scaleEpsilon);
-        }
-        if (this.isRotating) {
-            this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-            this.isRotating = !q_equals(this._rotation, this.actor.rotation, this.rotationEpsilon);
-        }
-        if (this.isMoving) {
-            this._location = v3_lerp(this._location, this.actor.location, tug);
-            this.isMoving = !v3_equals(this._location, this.actor.location, this.locationEpsilon);
-        }
-        if (changed) this.localChanged();
-        if (this.needRefresh) this.refresh(); // either a local change we just made, or something set up elsewhere
-        this.needRefresh = false;
-    }
-};
 
 //------------------------------------------------------------------------------------------
 //-- Avatar --------------------------------------------------------------------------------
