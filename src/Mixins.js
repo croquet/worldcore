@@ -188,6 +188,7 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
     }
 
     globalChanged() {
+// if (this.lastGlobalChange && this.now() - this.lastGlobalChange > 30) console.log("global changed:", this.now() - this.lastGlobalChange > 30)
         this.lastGlobalChange = this.now(); // ael - capture the island time corresponding to the change
         this.$global = null;
         this.say("spatial_globalChanged");
@@ -236,8 +237,11 @@ export const PM_Spatial = superclass => class extends PM_Tree(superclass) {
 
 constructor(...args) {
     super(...args);
+    // ##################### ael
     this.listenOnce("spatial_localChanged", () => this.localChanged());
     this.listenOnce("spatial_globalChanged", () => this.globalChanged());
+    // this.listen("spatial_localChanged", () => this.localChanged());
+    // this.listen("spatial_globalChanged", () => this.globalChanged());
 }
 
 // LocalChanged and globalChanged can be patched by children that inherit from PM_Spatial.
@@ -254,6 +258,8 @@ get location() { return this.actor.location; }
 get rotation() { return this.actor.rotation; }
 get local() { return this.actor.local; }
 get global() { return this.actor.global; }
+get globalInt() { return this.actor.global.map(v => Math.round(v*1000)); }
+get globalIntString() { return this.actor.global.map(v => String(Math.round(v * 1000))).join(","); }
 
 };
 
