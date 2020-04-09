@@ -237,11 +237,8 @@ export const PM_Spatial = superclass => class extends PM_Tree(superclass) {
 
 constructor(...args) {
     super(...args);
-    // ##################### ael
     this.listenOnce("spatial_localChanged", () => this.localChanged());
     this.listenOnce("spatial_globalChanged", () => this.globalChanged());
-    // this.listen("spatial_localChanged", () => this.localChanged());
-    // this.listen("spatial_globalChanged", () => this.globalChanged());
 }
 
 // LocalChanged and globalChanged can be patched by children that inherit from PM_Spatial.
