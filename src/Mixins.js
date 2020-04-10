@@ -255,8 +255,8 @@ get location() { return this.actor.location; }
 get rotation() { return this.actor.rotation; }
 get local() { return this.actor.local; }
 get global() { return this.actor.global; }
-get globalInt() { return this.actor.global.map(v => Math.round(v*1000)); }
-get globalIntString() { return this.actor.global.map(v => String(Math.round(v * 1000))).join(","); }
+get globalInt() { return this.global.map(v => Math.round(v*1000)); }
+get globalIntString() { return this.globalInt.map(String).join(","); }
 
 };
 
