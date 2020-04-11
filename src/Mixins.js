@@ -188,8 +188,6 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
     }
 
     globalChanged() {
-// if (this.lastGlobalChange && this.now() - this.lastGlobalChange > 30) console.log("global changed:", this.now() - this.lastGlobalChange > 30)
-        this.lastGlobalChange = this.now(); // ael - capture the island time corresponding to the change
         this.$global = null;
         this.say("spatial_globalChanged");
         if (this.children) this.children.forEach(child => child.globalChanged());
