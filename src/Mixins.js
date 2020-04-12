@@ -457,7 +457,7 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
     }
 
     rotateTo(q) {
-        this._location = q;
+        this._rotation = q;
         this.say("avatar_rotateTo", q);
     }
 
