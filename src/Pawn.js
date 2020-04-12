@@ -125,7 +125,6 @@ Pawn.register('Pawn');
 export const PM_Dynamic = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        this.isDynamic = true; // ael - so we know, for example, that update() is automatically being called
         GetNamedView("PawnManager").addDynamic(this);
     }
 

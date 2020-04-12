@@ -12,6 +12,10 @@ export class ViewRoot extends NamedView {
         console.log("Starting view ...");
         this.model = model;
         this.managers = new Set();
+        this.createManagers(); // ael - allow subclasses to get in first
+    }
+
+    createManagers() {
         this.pawnManager = this.addManager(new PawnManager());
     }
 
