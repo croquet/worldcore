@@ -3,7 +3,7 @@ import { GetNamedView } from "./NamedView";
 import { PM_Dynamic } from "./Pawn";
 import { GetViewDelta } from "./ViewRoot";
 import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale } from  "./Vector";
+    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_grounded } from  "./Vector";
 
 
 // Mixin
@@ -455,7 +455,7 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
     }
 
     rotateTo(q) {
-        this._location = q;
+        this._rotation = q;
         this.say("avatar_rotateTo", q);
     }
 
@@ -477,5 +477,139 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
         super.update(time);
     }
 
+
+};
+
+
+//------------------------------------------------------------------------------------------
+//-- MouseLook --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// MouseLook actors maintain a primary view-side scale/rotation/location that you can drive directly
+// from player inputs so the mouselook avatar responds quickly to player input. On every frame this
+// transform is averaged with the official model-side values.
+//
+// If you're using player-controlled avatars, you'll probably want to set:
+//      * Session tps to >60 with no cheat beats
+//      * AM_MouseLook tick frequecy to <16
+//
+// This will create the smoothest/fastest response.
+// 
+
+//-- Actor ---------------------------------------------------------------------------------
+
+export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) {
+
+    init(...args) {
+        super.init(...args);
+        this.tickFrequency = 15;
+        this.speed = 0;
+        this.strafeSpeed = 0;
+        this.spin = q_identity();
+        this.grounded = true;
+        this.listen("mouseLook_moveTo", this.onMoveTo);
+        this.listen("mouseLook_rotateTo", this.onRotateTo);
+        this.listen("mouseLook_setSpeed", this.onSetSpeed);
+        this.listen("mouseLook_setStrafeSpeed", this.onSetStrafeSpeed)
+        this.listen("mouseLook_setSpin", this.onSetSpin);
+        this.future(0).tick(0);
+    }
+
+    onMoveTo(v) {
+        this.moveTo(v);
+    }
+
+    onRotateTo(q) {
+        this.rotateTo(q);
+    }
+
+    onSetSpeed(s) {
+        this.speed = s;
+        this.isMoving = s!=0 || this.strafeSpeed!=0;
+    }
+
+    onSetStrafeSpeed(ss) {
+        this.strafeSpeed = ss;
+        this.isMoving = ss!=0 || this.speed!=0;
+    }
+    onSetSpin(q) {
+        this.spin = q;
+        this.isRotating = !q_isZero(this.spin);
+    }
+
+    tick(delta) {
+        if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
+        if (this.isMoving) {
+            var m4 = m4_rotationQ(this.rotation);
+            if(this.grounded) m4 = m4_grounded(m4);
+            var loc = [this.location[0], this.location[1], this.location[2]];
+            if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed) );
+            if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed) );
+            this.moveTo(loc);
+        }
+        this.future(this.tickFrequency).tick(this.tickFrequency);
+    }
+
+};
+RegisterMixin(AM_MouseLook);
+
+//-- Pawn ----------------------------------------------------------------------------------
+
+// Tug is set even lower so that heatbeat stutters on the actor side will not affect pawn
+// motion. However this means the pawn will take longer to "settle" into its final position.
+//
+// It's possible to have different tug values depending on whether the avatar is controlled
+// locally or not.
+
+export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) {
+    constructor(...args) {
+        super(...args);
+        this.tug = 0.05;    // Bias the tug even more toward the pawn's immediate position.
+        this.speed = 0;
+        this.strafeSpeed = 0;
+        this.spin = q_identity();
+        this.grounded = true;
+    }
+
+    moveTo(v) {
+        this._location = v;
+        this.say("mouseLook_moveTo", v);
+    }
+
+    rotateTo(q) {
+        this._rotation = q;
+        this.say("mouseLook_rotateTo", q);
+    }
+
+    setSpeed(s) {
+        this.speed = s;
+        this.isMoving = this.isMoving || s!=0;
+        this.say("mouseLook_setSpeed", s);
+    }
+
+    setStrafeSpeed(ss) {
+        this.strafeSpeed = ss;
+        this.isMoving = this.isMoving || ss!=0;
+        this.say("mouseLook_setStrafeSpeed", ss);
+    }
+
+    setSpin(q) {
+        this.spin = q;
+        this.isRotating = this.isRotating || !q_isZero(this.spin);
+        this.say("mouseLook_setSpin", this.spin);
+    }
+
+    update(time) {
+        if (this.isRotating) {
+            this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
+        }
+        if (this.isMoving) {
+            var m4 = m4_rotationQ(this._rotation);
+            if(this.grounded) m4 = m4_grounded(m4);
+            if(this.speed)this._location = v3_add(this._location, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed) );
+            if(this.strafeSpeed)this._location = v3_add(this._location, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed) );
+        }
+        super.update(time);
+    }
 
 };
