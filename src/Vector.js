@@ -904,6 +904,22 @@ export function m4_toNormal3(m) {
     ];
 }
 
+// generate ground plane matrix - no rotation out of the x/z plane
+export function m4_grounded(m){
+    const g = [0,1,0] // the up vector
+    var x = [m[0], m[1], m[2]];
+    var z = v3_cross(x, g);
+    z[1] = 0;
+    z = v3_normalize(z);
+    x = v3_cross(g, z);
+    x[1] = 0;
+    x = v3_normalize(x)
+    return [x[0], x[1], x[2], 0,
+            0, 1, 0, 0,
+            z[0], z[1], z[2],0,
+            0, 0, 0, 1];
+    
+}
 //--------------------------------------------------------------------------------
 //-- Quaternions -----------------------------------------------------------------
 //--------------------------------------------------------------------------------
