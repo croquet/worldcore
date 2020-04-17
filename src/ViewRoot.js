@@ -17,13 +17,13 @@ export class ViewRoot extends NamedView {
 
     detach() { // Croquet needs this because it calls detach to clean up view root.
         this.destroy();
+        super.detach();
     }
 
     destroy() {
         this.managers.forEach(m => m.destroy());
         ClearNamedViews();
         super.destroy();
-        super.detach();
     }
 
     addManager(m) {
