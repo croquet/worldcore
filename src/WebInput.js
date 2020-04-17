@@ -51,7 +51,7 @@ export class WebInputManager extends NamedView {
             this.addListener(document, 'mousedown', e => this.onMouseDown(e));
             this.addListener(document, 'mouseup', e => this.onMouseUp(e));
             this.addListener(document, 'mousemove', e => this.onMouseMove(e));
-            // this.addListener(document, 'pointerlockchange', e => this.onPointerLock(e));
+            this.addListener(document, 'pointerlockchange', e => this.onPointerLock(e));
             this.addListener(document, 'wheel', e => this.onWheel(e));
         }
 
@@ -141,31 +141,32 @@ export class WebInputManager extends NamedView {
     // }
 
     requestPointerLock() {
-        if (this.inPointerLock) return;
+        if (this.inPointerLock) return false; // already in pointer lock
         document.documentElement.requestPointerLock();
+        return true; // requested pointer lock
     }
 
-    // get inPointerLock() {
-    //     return document.pointerLockElement;
-    // }
+    get inPointerLock() {
+        return document.pointerLockElement;
+    }
 
     onClick(event) {
         //this.requestPointerLock();
     }
 
-    // onPointerLock(event) {
-    //     if (this.inPointerLock) {
+    onPointerLock(event) {
+        if (this.inPointerLock) {
     //         this.addListener(document, 'mousedown', e => this.onMouseDown(e));
     //         this.addListener(document, 'mouseup', e => this.onMouseUp(e));
     //         this.addListener(document, 'mousemove', e => this.onMouseMove(e));
-    //         this.publish("input", "pointerLockStart");
-    //     } else {
+            this.publish("input", "pointerLockStart");
+        } else {
     //         this.removeListener('mousedown');
     //         this.removeListener('mouseup');
     //         this.removeListener('mousemove');
-    //         this.publish("input", "pointerLockEnd");
-    //     }
-    // }
+            this.publish("input", "pointerLockEnd");
+        }
+    }
 
     onResize(event) {
         // Delay actual resize event to address iOS posting of resize before page layout finishes.
@@ -178,6 +179,7 @@ export class WebInputManager extends NamedView {
         this.publish("input", "resize");
     }
 
+    // publish both keyDown + arg and "xDown" where "x" is the key
     onKeyDown(event) {
         event.stopPropagation();
         event.preventDefault();
@@ -185,15 +187,18 @@ export class WebInputManager extends NamedView {
         if (KeyDown(key)) return;
         keys.add(key);
         this.publish("input", key + "Down");
+        this.publish("input", "keyDown", key);
         this.onChordDown(key);
     }
 
+    // publish both keyUp + arg and "xUp" where "x" is the key
     onKeyUp(event) {
         event.stopPropagation();
         event.preventDefault();
         const key = event.key;
         if (!KeyDown(key)) return;
         this.publish("input", key + "Up");
+        this.publish("input", "keyUp", key);
         this.onChordUp(key);
         keys.delete(key);
     }
@@ -227,12 +232,15 @@ export class WebInputManager extends NamedView {
         this.publish("input", "wheel", y);
     }
 
+    // publish absolute position x,y, delta x,y
     onMouseMove(event) {
         event.stopPropagation();
         event.preventDefault();
-        const x = event.movementX;
-        const y = event.movementY;
-        this.publish("input", "mouseXY", [x, y]);
+        const pX = event.clientX;
+        const pY = event.clientY;
+        const dX = event.movementX;
+        const dY = event.movementY;
+        this.publish("input", "mouseXY", [pX, pY, dX, dY]);
     }
 
     onTouchStart(event) {

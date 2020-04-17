@@ -100,7 +100,7 @@ export class Pawn extends View {
 
     destroy() {
         GetNamedView("PawnManager").delete(this);
-        super.detach();
+        super.detach(); // Calling parent clean-up.
     }
 
     say(event, data) {
