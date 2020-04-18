@@ -435,7 +435,7 @@ RegisterMixin(AM_Avatar);
 
 //-- Pawn ----------------------------------------------------------------------------------
 
-// Tug is set even lower so that heatbeat stutters on the actor side will not affect pawn
+// Tug is set even lower so that heartbeat stutters on the actor side will not affect pawn
 // motion. However this means the pawn will take longer to "settle" into its final position.
 //
 // It's possible to have different tug values depending on whether the avatar is controlled
@@ -506,12 +506,13 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
         this.speed = 0;
         this.strafeSpeed = 0;
         this.spin = q_identity();
-        this.grounded = true;
+        this.grounded = true; // this forces user onto x/z plane for motion
         this.listen("mouseLook_moveTo", this.onMoveTo);
         this.listen("mouseLook_rotateTo", this.onRotateTo);
         this.listen("mouseLook_setSpeed", this.onSetSpeed);
         this.listen("mouseLook_setStrafeSpeed", this.onSetStrafeSpeed)
         this.listen("mouseLook_setSpin", this.onSetSpin);
+        this.lastLocation = null;
         this.future(0).tick(0);
     }
 
@@ -537,20 +538,30 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
         this.isRotating = !q_isZero(this.spin);
     }
 
+    setGrounded(bool){ this.grounded = bool; }
+
     tick(delta) {
         if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
         if (this.isMoving) {
             let m4 = m4_rotationQ(this.rotation);
+            this.lastLocation = this.location;
             if(this.grounded) m4 = m4_grounded(m4);
             let loc = [this.location[0], this.location[1], this.location[2]];
             if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed) );
             if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed) );
-            this.moveTo(loc);
+            this.moveTo(this.verify(loc, this.lastLocation));
         }
         this.future(this.mouseLook_tickStep).tick(this.mouseLook_tickStep);
     }
 
+    // Enables the subclass to ensure that this change is valid
+    // Example - collision with a wall will change the result
+    verify(loc, lastLoc){
+        return loc; 
+    }
+
 };
+
 RegisterMixin(AM_MouseLook);
 
 //-- Pawn ----------------------------------------------------------------------------------
@@ -569,6 +580,7 @@ export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) 
         this.strafeSpeed = 0;
         this.spin = q_identity();
         this.grounded = true;
+        this.lastLocation = null;
     }
 
     moveTo(v) {
@@ -604,12 +616,20 @@ export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) 
             this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
         }
         if (this.isMoving) {
+            this._lastLocation = this._location;
             let m4 = m4_rotationQ(this._rotation);
             if (this.grounded) m4 = m4_grounded(m4);
             if (this.speed) this._location = v3_add(this._location, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed) );
             if (this.strafeSpeed) this._location = v3_add(this._location, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed) );
+            this._location = this.verify(this._location, this._lastLocation);
         }
         super.update(time);
     }
 
+    // Enables the subclass to ensure that this change is valid
+    // Example - collision with a wall will change the result
+    verify(loc, lastLoc) {
+        return loc;
+    }
+    
 };
