@@ -3,7 +3,7 @@ import { GetNamedView } from "./NamedView";
 import { PM_Dynamic } from "./Pawn";
 import { GetViewDelta } from "./ViewRoot";
 import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_grounded } from  "./Vector";
+    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_fastGrounded } from  "./Vector";
 
 
 // Mixin
@@ -512,7 +512,10 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
         this.listen("mouseLook_setSpeed", this.onSetSpeed);
         this.listen("mouseLook_setStrafeSpeed", this.onSetStrafeSpeed)
         this.listen("mouseLook_setSpin", this.onSetSpin);
-        this.lastLocation = null;
+        this.listen("mouseLook_showState", this.onShowState);
+        this.tickCounter = 0;
+        this.movingCounter = 0;
+        this.checkSum = 0;
         this.future(0).tick(0);
     }
 
@@ -538,18 +541,27 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
         this.isRotating = !q_isZero(this.spin);
     }
 
+    //replicated show state message to ensure teatime is working properly
+    onShowState(){ 
+        console.log("---------Player State----------")
+        console.log("location: ", this.location);
+        console.log("rotation: ", this.rotation);
+        console.log("checkSum: ", this.checkSum);
+    }
+
     setGrounded(bool){ this.grounded = bool; }
 
     tick(delta) {
         if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
         if (this.isMoving) {
             let m4 = m4_rotationQ(this.rotation);
-            this.lastLocation = this.location;
-            if(this.grounded) m4 = m4_grounded(m4);
-            let loc = [this.location[0], this.location[1], this.location[2]];
-            if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed) );
-            if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed) );
-            this.moveTo(this.verify(loc, this.lastLocation));
+            if(this.grounded) m4 = m4_fastGrounded(m4);
+            let lastLoc = this.location;
+            let loc = this.location;
+
+            if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], delta*this.speed) );
+            if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], delta*this.strafeSpeed) );
+            this.moveTo(this.verify(loc, lastLoc));
         }
         this.future(this.mouseLook_tickStep).tick(this.mouseLook_tickStep);
     }
@@ -580,7 +592,6 @@ export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) 
         this.strafeSpeed = 0;
         this.spin = q_identity();
         this.grounded = true;
-        this.lastLocation = null;
     }
 
     moveTo(v) {
@@ -611,17 +622,21 @@ export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) 
         this.say("mouseLook_setSpin", this.spin);
     }
 
+    showState() {
+        this.say("mouseLook_showState");
+    }
+
     update(time) {
         if (this.isRotating) {
             this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
         }
         if (this.isMoving) {
-            this._lastLocation = this._location;
+            let lastLoc = this._location;
             let m4 = m4_rotationQ(this._rotation);
-            if (this.grounded) m4 = m4_grounded(m4);
+            if (this.grounded) m4 = m4_fastGrounded(m4);
             if (this.speed) this._location = v3_add(this._location, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed) );
             if (this.strafeSpeed) this._location = v3_add(this._location, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed) );
-            this._location = this.verify(this._location, this._lastLocation);
+            this._location = this.verify(this._location, lastLoc);
         }
         super.update(time);
     }
