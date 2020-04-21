@@ -100,7 +100,7 @@ export class Pawn extends View {
 
     destroy() {
         GetNamedView("PawnManager").delete(this);
-        super.detach(); // Calling parent clean-up.
+        this.detach(); // Calling View clean-up.
     }
 
     say(event, data) {
@@ -134,7 +134,6 @@ export const PM_Dynamic = superclass => class extends superclass {
     }
 
     update(time) {
-        if (this.last) this.delta = time - this.last;
-        this.last = time;
     }
-}
+
+};

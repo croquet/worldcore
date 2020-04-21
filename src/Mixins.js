@@ -3,7 +3,7 @@ import { GetNamedView } from "./NamedView";
 import { PM_Dynamic } from "./Pawn";
 import { GetViewDelta } from "./ViewRoot";
 import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_grounded } from  "./Vector";
+    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_fastGrounded } from  "./Vector";
 
 
 // Mixin
@@ -398,7 +398,7 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
 
     init(...args) {
         super.init(...args);
-        this.tickFrequency = 15;
+        this.avatar_tickStep = 15;
         this.velocity = v3_zero();
         this.spin = q_identity();
         this.listen("avatar_moveTo", this.onMoveTo);
@@ -429,7 +429,7 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
     tick(delta) {
         if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
         if (this.isMoving) this.moveTo(v3_add(this.location, v3_scale(this.velocity, delta)));
-        this.future(this.tickFrequency).tick(this.tickFrequency);
+        this.future(this.avatar_tickStep).tick(this.avatar_tickStep);
     }
 
 };
@@ -437,7 +437,7 @@ RegisterMixin(AM_Avatar);
 
 //-- Pawn ----------------------------------------------------------------------------------
 
-// Tug is set even lower so that heatbeat stutters on the actor side will not affect pawn
+// Tug is set even lower so that heartbeat stutters on the actor side will not affect pawn
 // motion. However this means the pawn will take longer to "settle" into its final position.
 //
 // It's possible to have different tug values depending on whether the avatar is controlled
@@ -496,7 +496,7 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 //      * AM_MouseLook tick frequecy to <16
 //
 // This will create the smoothest/fastest response.
-// 
+//
 
 //-- Actor ---------------------------------------------------------------------------------
 
@@ -504,16 +504,20 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
 
     init(...args) {
         super.init(...args);
-        this.tickFrequency = 15;
+        this.mouseLook_tickStep = 15;
         this.speed = 0;
         this.strafeSpeed = 0;
         this.spin = q_identity();
-        this.grounded = true;
+        this.grounded = true; // this forces user onto x/z plane for motion
         this.listen("mouseLook_moveTo", this.onMoveTo);
         this.listen("mouseLook_rotateTo", this.onRotateTo);
         this.listen("mouseLook_setSpeed", this.onSetSpeed);
         this.listen("mouseLook_setStrafeSpeed", this.onSetStrafeSpeed)
         this.listen("mouseLook_setSpin", this.onSetSpin);
+        this.listen("mouseLook_showState", this.onShowState);
+        this.tickCounter = 0;
+        this.movingCounter = 0;
+        this.checkSum = 0;
         this.future(0).tick(0);
     }
 
@@ -527,32 +531,51 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
 
     onSetSpeed(s) {
         this.speed = s;
-        this.isMoving = s!=0 || this.strafeSpeed!=0;
+        this.isMoving = s !== 0 || this.strafeSpeed !==0;
     }
 
     onSetStrafeSpeed(ss) {
         this.strafeSpeed = ss;
-        this.isMoving = ss!=0 || this.speed!=0;
+        this.isMoving = ss !== 0 || this.speed !== 0;
     }
     onSetSpin(q) {
         this.spin = q;
         this.isRotating = !q_isZero(this.spin);
     }
 
+    //replicated show state message to ensure teatime is working properly
+    onShowState(){ 
+        console.log("---------Player State----------")
+        console.log("location: ", this.location);
+        console.log("rotation: ", this.rotation);
+        console.log("checkSum: ", this.checkSum);
+    }
+
+    setGrounded(bool){ this.grounded = bool; }
+
     tick(delta) {
         if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
         if (this.isMoving) {
-            var m4 = m4_rotationQ(this.rotation);
-            if(this.grounded) m4 = m4_grounded(m4);
-            var loc = [this.location[0], this.location[1], this.location[2]];
-            if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed) );
-            if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed) );
-            this.moveTo(loc);
+            let m4 = m4_rotationQ(this.rotation);
+            if(this.grounded) m4 = m4_fastGrounded(m4);
+            let lastLoc = this.location;
+            let loc = this.location;
+
+            if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], delta*this.speed) );
+            if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], delta*this.strafeSpeed) );
+            this.moveTo(this.verify(loc, lastLoc));
         }
-        this.future(this.tickFrequency).tick(this.tickFrequency);
+        this.future(this.mouseLook_tickStep).tick(this.mouseLook_tickStep);
+    }
+
+    // Enables the subclass to ensure that this change is valid
+    // Example - collision with a wall will change the result
+    verify(loc, lastLoc){
+        return loc; 
     }
 
 };
+
 RegisterMixin(AM_MouseLook);
 
 //-- Pawn ----------------------------------------------------------------------------------
@@ -601,17 +624,29 @@ export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) 
         this.say("mouseLook_setSpin", this.spin);
     }
 
+    showState() {
+        this.say("mouseLook_showState");
+    }
+
     update(time) {
         if (this.isRotating) {
             this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
         }
         if (this.isMoving) {
-            var m4 = m4_rotationQ(this._rotation);
-            if(this.grounded) m4 = m4_grounded(m4);
-            if(this.speed)this._location = v3_add(this._location, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed) );
-            if(this.strafeSpeed)this._location = v3_add(this._location, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed) );
+            let lastLoc = this._location;
+            let m4 = m4_rotationQ(this._rotation);
+            if (this.grounded) m4 = m4_fastGrounded(m4);
+            if (this.speed) this._location = v3_add(this._location, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed) );
+            if (this.strafeSpeed) this._location = v3_add(this._location, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed) );
+            this._location = this.verify(this._location, lastLoc);
         }
         super.update(time);
     }
 
+    // Enables the subclass to ensure that this change is valid
+    // Example - collision with a wall will change the result
+    verify(loc, lastLoc) {
+        return loc;
+    }
+    
 };
