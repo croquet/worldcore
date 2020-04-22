@@ -551,7 +551,8 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
 
     //replicated show state message to ensure teatime is working properly
     onShowState(){ 
-        console.log("---------Player State----------")
+        console.log("--AM_MouseLook State--");
+        console.log("AM_MouseLook: ", this);
         console.log("location: ", this.location);
         console.log("rotation: ", this.rotation);
         console.log("checkSum: ", this.checkSum);
@@ -637,6 +638,10 @@ export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) 
     }
 
     showState() {
+        console.log("--PM_MouseLook State--");
+        console.log("PM_MouseLook: ", this);
+        console.log("location: ", this._location);
+        console.log("rotation: ", this._rotation);
         this.say("mouseLook_showState");
     }
 
