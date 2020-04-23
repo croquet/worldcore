@@ -147,7 +147,6 @@ export const PM_Tree = superclass => class extends superclass {
     onAddChild(id) {
         const child = GetNamedView("PawnManager").get(id);
         if (!child) return;
-        if (child.parent) child.parent.removeChild(child);
         if (!this.children) this.children = new Set();
         this.children.add(child);
         child.parent = this;
@@ -544,7 +543,7 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
     }
 
     //replicated show state message to ensure teatime is working properly
-    onShowState(){ 
+    onShowState(){
         console.log("---------Player State----------")
         console.log("location: ", this.location);
         console.log("rotation: ", this.rotation);
@@ -571,7 +570,7 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
     // Enables the subclass to ensure that this change is valid
     // Example - collision with a wall will change the result
     verify(loc, lastLoc){
-        return loc; 
+        return loc;
     }
 
 };
@@ -648,5 +647,5 @@ export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) 
     verify(loc, lastLoc) {
         return loc;
     }
-    
+
 };
