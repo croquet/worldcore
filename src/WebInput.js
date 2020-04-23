@@ -142,12 +142,13 @@ export class WebInputManager extends NamedView {
 
     requestPointerLock() {
         if (this.inPointerLock) return false; // already in pointer lock
+        document.requestPointerLock = document.requestPointerLock || document.mozRequestPointerLock;
         document.documentElement.requestPointerLock();
         return true; // requested pointer lock
     }
 
     get inPointerLock() {
-        return document.pointerLockElement;
+        return document.pointerLockElement || document.mozPointerLockElement;
     }
 
     onClick(event) {

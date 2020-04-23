@@ -920,6 +920,16 @@ export function m4_grounded(m){
             0, 0, 0, 1];
     
 }
+
+// this is faster if we can assume that x and z projections in y-plane are perpendicular
+export function m4_fastGrounded(m){
+    var x = v3_normalize([m[0], 0, m[2]]);
+    var z = v3_normalize([m[8], 0, m[10]]);
+    return [x[0], x[1], x[2], 0,
+            0, 1, 0, 0,
+            z[0], z[1], z[2], 0,
+            0, 0, 0, 1];
+}
 //--------------------------------------------------------------------------------
 //-- Quaternions -----------------------------------------------------------------
 //--------------------------------------------------------------------------------
