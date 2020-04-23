@@ -92,6 +92,7 @@ class MixinFactory  {
     }
 
     with(...mixins) {
+        addClassHash(mixins);
         return mixins.reduce((c, mixin) => mixin(c), this.superclass);
     }
 }

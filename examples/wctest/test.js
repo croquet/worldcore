@@ -3,7 +3,7 @@
 // Croquet Studios, 2020
 
 import { startSession } from "@croquet/teatime";
-import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, WebInputManager, AM_Smoothed, PM_Smoothed } from "../worldcore";
+import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, WebInputManager, AM_Smoothed, PM_Smoothed, AM_Spatial } from "../worldcore";
 
 //------------------------------------------------------------------------------------------
 // Mixins
@@ -110,6 +110,7 @@ class MyModelRoot extends ModelRoot {
     init() {
         super.init();
         console.log("starting root!");
+        console.log(this.sessionId);
         this.subscribe('input', 'dDown', this.createActor);
         this.subscribe('input', 'eDown', this.moveActor);
     }
