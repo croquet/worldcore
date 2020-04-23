@@ -19,7 +19,7 @@ export class NamedView extends View {
     }
 
     destroy() {
-        super.detach();
+        // super.detach();
         namedViews.delete(this.name);
     }
 }
