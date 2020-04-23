@@ -18,7 +18,7 @@ export class NamedView extends View {
         namedViews.set(name, this);
     }
 
-    destroy() {
+    detach() {
         super.detach();
         namedViews.delete(this.name);
     }

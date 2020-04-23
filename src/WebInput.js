@@ -63,7 +63,7 @@ export class WebInputManager extends NamedView {
     }
 
     destroy() {
-        super.detach();
+        this.detach(); // de-register as a view
         // if (this.inPointerLock) {
         //     //document.exitFullscreen();
         //     document.exitPointerLock();

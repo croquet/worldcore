@@ -22,7 +22,7 @@ export class PawnManager extends NamedView {
     destroy() {
         const doomed = new Map(this.pawns);
         doomed.forEach(pawn => pawn.destroy());
-        super.destroy();
+        this.detach(); // de-register as a view
     }
 
     rebuild() {

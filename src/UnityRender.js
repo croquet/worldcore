@@ -199,7 +199,7 @@ class UnityRenderManager extends NamedView {
         this.unsubscribe(this.bootstrapView.model.id, 'msgForUnity');
         this.bootstrapView = null;
         this.nextHandle = 1;
-        super.destroy(); // this will remove the urm's entry from the NamedView list, if it was there
+        this.detach(); // de-register as a view
     }
 
     // @@@ when would we ever want this?
@@ -423,7 +423,7 @@ class UnityRenderManager extends NamedView {
     }
 
     create(handle, config) {
-        // console.log("Creating Unity render object " + handle);
+        console.log("Creating Unity render object " + handle);
         this.sendToUnity('create_object', { handle, ...config });
     }
 

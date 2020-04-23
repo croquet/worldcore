@@ -19,15 +19,10 @@ export class ViewRoot extends NamedView {
         this.pawnManager = this.addManager(new PawnManager());
     }
 
-    detach() { // Croquet needs this because it calls detach to clean up view root.
-        this.destroy();
-        super.detach();
-    }
-
-    destroy() {
+    detach() {
         this.managers.forEach(m => m.destroy());
         ClearNamedViews();
-        super.destroy();
+        super.detach();
     }
 
     addManager(m) {
