@@ -55,7 +55,6 @@ export class Actor extends Model {
     }
 
     say(event, data) {
-        this.lastEventTime = this.now();
         this.publish(this.id, event, data);
     }
 
