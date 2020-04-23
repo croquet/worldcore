@@ -92,6 +92,7 @@ class MixinFactory  {
     }
 
     with(...mixins) {
+        addClassHash(mixins);
         return mixins.reduce((c, mixin) => mixin(c), this.superclass);
     }
 }
@@ -506,14 +507,17 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
         this.mouseLook_tickStep = 15;
         this.speed = 0;
         this.strafeSpeed = 0;
+        this.multiplySpeed = 1;
         this.spin = q_identity();
         this.grounded = true; // this forces user onto x/z plane for motion
         this.listen("mouseLook_moveTo", this.onMoveTo);
         this.listen("mouseLook_rotateTo", this.onRotateTo);
         this.listen("mouseLook_setSpeed", this.onSetSpeed);
-        this.listen("mouseLook_setStrafeSpeed", this.onSetStrafeSpeed)
+        this.listen("mouseLook_setStrafeSpeed", this.onSetStrafeSpeed);
+        this.listen("mouseLook_setMultiplySpeed", this.onSetMultiplySpeed);
         this.listen("mouseLook_setSpin", this.onSetSpin);
         this.listen("mouseLook_showState", this.onShowState);
+
         this.tickCounter = 0;
         this.movingCounter = 0;
         this.checkSum = 0;
@@ -537,6 +541,11 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
         this.strafeSpeed = ss;
         this.isMoving = ss !== 0 || this.speed !== 0;
     }
+
+    onSetMultiplySpeed(ms) {
+        this.multiplySpeed = ms;
+    }
+
     onSetSpin(q) {
         this.spin = q;
         this.isRotating = !q_isZero(this.spin);
@@ -544,7 +553,8 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
 
     //replicated show state message to ensure teatime is working properly
     onShowState(){
-        console.log("---------Player State----------")
+        console.log("--AM_MouseLook State--");
+        console.log("AM_MouseLook: ", this);
         console.log("location: ", this.location);
         console.log("rotation: ", this.rotation);
         console.log("checkSum: ", this.checkSum);
@@ -560,8 +570,8 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
             let lastLoc = this.location;
             let loc = this.location;
 
-            if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], delta*this.speed) );
-            if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], delta*this.strafeSpeed) );
+            if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], delta*this.speed*this.multiplySpeed) );
+            if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], delta*this.strafeSpeed*this.multiplySpeed) );
             this.moveTo(this.verify(loc, lastLoc));
         }
         this.future(this.mouseLook_tickStep).tick(this.mouseLook_tickStep);
@@ -591,6 +601,7 @@ export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) 
         this.tug = 0.05;    // Bias the tug even more toward the pawn's immediate position.
         this.speed = 0;
         this.strafeSpeed = 0;
+        this.multiplySpeed = 1;
         this.spin = q_identity();
         this.grounded = true;
     }
@@ -617,6 +628,11 @@ export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) 
         this.say("mouseLook_setStrafeSpeed", ss);
     }
 
+    setMultiplySpeed(ms) {
+        this.multiplySpeed = ms;
+        this.say("mouseLook_setMultiplySpeed", ms);
+    }
+
     setSpin(q) {
         this.spin = q;
         this.isRotating = this.isRotating || !q_isZero(this.spin);
@@ -624,6 +640,10 @@ export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) 
     }
 
     showState() {
+        console.log("--PM_MouseLook State--");
+        console.log("PM_MouseLook: ", this);
+        console.log("location: ", this._location);
+        console.log("rotation: ", this._rotation);
         this.say("mouseLook_showState");
     }
 
@@ -635,8 +655,8 @@ export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) 
             let lastLoc = this._location;
             let m4 = m4_rotationQ(this._rotation);
             if (this.grounded) m4 = m4_fastGrounded(m4);
-            if (this.speed) this._location = v3_add(this._location, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed) );
-            if (this.strafeSpeed) this._location = v3_add(this._location, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed) );
+            if (this.speed) this._location = v3_add(this._location, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed*this.multiplySpeed) );
+            if (this.strafeSpeed) this._location = v3_add(this._location, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed*this.multiplySpeed) );
             this._location = this.verify(this._location, lastLoc);
         }
         super.update(time);
