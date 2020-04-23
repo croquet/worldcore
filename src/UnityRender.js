@@ -173,14 +173,18 @@ class UnityRenderManager extends NamedView {
 
     addSubscriptions() {
         // even though the URM sticks around during destruction and rebuilding of
-        // the main views, its subscriptions will only work if made in the context
-        // of the new view domain.
+        // the main views, its subscriptions will be discarded and must be rebuilt.
         this.subscribe(this.id, 'unity_pawn_created', this.triggerCreateUnityObject);
         this.subscribe(this.viewId, { event: "synced", handling: "immediate" }, this.handleSyncState);
         this.handleSyncState(this.realm.isSynced());
 
         // @@ not sure if this will ever be needed
         this.subscribe(this.bootstrapView.model.id, 'msgForUnity', this.forwardMessageToUnity);
+    }
+
+    reattach() {
+        super.reattach();
+        this.addSubscriptions();
     }
 
     destroy() {
@@ -423,7 +427,7 @@ class UnityRenderManager extends NamedView {
     }
 
     create(handle, config) {
-        console.log("Creating Unity render object " + handle);
+        // console.log("Creating Unity render object " + handle);
         this.sendToUnity('create_object', { handle, ...config });
     }
 
@@ -476,7 +480,7 @@ export class UnityViewStarter extends View {
         if (!urm) urm = theUnityRenderManager = new UnityRenderManager(this);
         else {
             urm.bootstrapView = this;
-            urm.addSubscriptions();
+            urm.reattach();
         }
         if (!urm.dataChannelReady) urm.sendOnUnitySideChannel('URM_ready', { viewId: this.viewId });
     }

@@ -15,7 +15,16 @@ export class NamedView extends View {
         super();
         this.name = name;
         if (!name) console.error("All named views must have public names!");
-        namedViews.set(name, this);
+        else this.registerName();
+    }
+
+    registerName() {
+        namedViews.set(this.name, this);
+    }
+
+    reattach() {
+        super.reattach();
+        this.registerName();
     }
 
     detach() {
