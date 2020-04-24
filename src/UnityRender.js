@@ -33,6 +33,8 @@ export const PM_RenderUnity = superclass => class extends superclass {
         this.deleteUnityObject();
     }
 
+    sendToUnity(selector, data) { this.unityRenderManager.sendToUnity(selector, data); }
+
     createUnityObject() {
         // NB: this is only sent once the data channel to Unity has been set up.
         if (this.isDefunct) {
@@ -80,7 +82,6 @@ export const PM_UnitySpatial = superclass => class extends mix(superclass).with(
         this.listenOnce('spatial_setLocation', v => this.sendUnityUpdate({ setP: intString(v) }));
         this.listenOnce('spatial_setRotation', q => this.sendUnityUpdate({ setR: intString(q) }));
         this.listenOnce('spatial_setScale', v => this.sendUnityUpdate({ setS: intString(v) }));
-        this.listen('attach_camera', this.attachCamera);
     }
 
     addDefaultUnityConfig(config) {
@@ -103,10 +104,6 @@ export const PM_UnitySpatial = superclass => class extends mix(superclass).with(
 
     sendUnityUpdate(eventArgs) {
         this.unityRenderManager.sendUpdate(this.unityHandle, eventArgs, this.actor.lastEventTime);
-    }
-
-    attachCamera() {
-        this.unityRenderManager.attachCamera(this.unityHandle);
     }
 };
 
@@ -178,8 +175,7 @@ class UnityRenderManager extends NamedView {
         this.subscribe(this.viewId, { event: "synced", handling: "immediate" }, this.handleSyncState);
         this.handleSyncState(this.realm.isSynced());
 
-        // @@ not sure if this will ever be needed
-        this.subscribe(this.bootstrapView.model.id, 'msgForUnity', this.forwardMessageToUnity);
+        this.subscribe('unity', 'messageForUnity', this.forwardMessageToUnity);
     }
 
     reattach() {
@@ -200,13 +196,12 @@ class UnityRenderManager extends NamedView {
             });
         }
         this.flushUnityQueue(); // in any case, ensure any deletion messages are sent
-        this.unsubscribe(this.bootstrapView.model.id, 'msgForUnity');
+        this.unsubscribe('unity', 'messageForUnity');
         this.bootstrapView = null;
         this.nextHandle = 1;
         this.detach(); // de-register as a view
     }
 
-    // @@@ when would we ever want this?
     forwardMessageToUnity(msg) {
         this.sendToUnity(msg.selector, msg.data);
     }
@@ -383,17 +378,12 @@ class UnityRenderManager extends NamedView {
             }
         } else {
             // messages from unity that are not obviously for consumption
-            // by an individual actor/pawn are passed to the (single, global)
-            // UnitySessionModel, so that every client will handle them identically.
+            // by an individual actor/pawn are published under the 'unity' scope.
+            // a Unity app should subscribe to this in a model - typically the
+            // main session model - so that the event will in fact be reflected.
             // we tag the event with the viewId of the originating client.
             data.userViewId = this.bootstrapView.viewId;
-            switch (selector) {
-                case 'test_trigger':
-                    this.publish(this.bootstrapView.model.id, 'reflectedUnityEvent', msg);
-                    break;
-                default:
-                    console.log(`unknown selector: ${selector}`);
-            }
+            this.publish('unity', 'reflectedUnityEvent', msg);
         }
     }
 
@@ -439,10 +429,6 @@ class UnityRenderManager extends NamedView {
 
     addChild(handle, childHandle) {
         this.sendToUnity('add_child', { h: handle, childH: childHandle });
-    }
-
-    attachCamera(handle) {
-        this.sendToUnity('attach_camera', { h: handle });
     }
 
     sendUpdate(handle, eventArgs) {
