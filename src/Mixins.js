@@ -426,10 +426,17 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
 
     tick(delta) {
         if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
-        if (this.isMoving) this.moveTo(v3_add(this.location, v3_scale(this.velocity, delta)));
+        if (this.isMoving){
+            let lastLoc = this.location;
+            this.moveTo(this.verify(v3_add(this.location, v3_scale(this.velocity, delta)), lastLoc));
+        }
         this.future(this.avatar_tickStep).tick(this.avatar_tickStep);
     }
-
+    // Enables the subclass to ensure that this change is valid
+    // Example - collision with a wall will change the result
+    verify(loc, lastLoc){
+        return loc;
+    }
 };
 RegisterMixin(AM_Avatar);
 
@@ -473,11 +480,18 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
     update(time) {
         if (this.isRotating) this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
-        if (this.isMoving) this._location = v3_add(this._location, v3_scale(this.velocity, GetViewDelta()));
+        if (this.isMoving){ 
+            let lastLoc = this._location; 
+            this._location = this.verify(v3_add(this._location, v3_scale(this.velocity, GetViewDelta())), lastLoc);
+        }
         super.update(time);
     }
 
-
+    // Enables the subclass to ensure that this change is valid
+    // Example - collision with a wall will change the result
+    verify(loc, lastLoc){
+        return loc;
+    }
 };
 
 
