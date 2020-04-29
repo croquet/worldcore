@@ -1,4 +1,4 @@
-import { Model } from "@croquet/teatime";
+import { Model } from "@croquet/croquet";
 import { ActorManager} from "./Actor";
 
 //------------------------------------------------------------------------------------------

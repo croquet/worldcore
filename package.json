@@ -10,8 +10,7 @@
   "author": "Brian Upton",
   "license": "ISC",
   "dependencies": {
-    "@croquet/teatime": "file:../teatime",
-    "@croquet/util": "file:../util"
+    "@croquet/croquet": "^0.3.3"
   },
   "devDependencies": {
     "eslint": "^5.14.1",

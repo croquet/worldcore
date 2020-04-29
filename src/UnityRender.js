@@ -1,7 +1,7 @@
 // Worldcore bridge to Unity
 //
 // Croquet Studios, 2020
-import { View } from "@croquet/teatime";
+import { View } from "@croquet/croquet";
 import { ViewRoot } from "./ViewRoot";
 import { NamedView, GetNamedView } from "./NamedView";
 import { mix, PM_Spatial } from "./Mixins";

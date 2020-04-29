@@ -1,4 +1,4 @@
-import { View } from "@croquet/teatime";
+import { View } from "@croquet/croquet";
 
 const namedViews = new Map();
 

@@ -1,5 +1,5 @@
 /* eslint-disable new-cap */
-import { View } from "@croquet/teatime";
+import { View } from "@croquet/croquet";
 import { NamedView, GetNamedView } from "./NamedView";
 
 //------------------------------------------------------------------------------------------

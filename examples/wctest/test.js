@@ -2,7 +2,7 @@
 //
 // Croquet Studios, 2020
 
-import { startSession } from "@croquet/teatime";
+import { startSession } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, WebInputManager, AM_Smoothed, PM_Smoothed, AM_Spatial } from "../worldcore";
 
 //------------------------------------------------------------------------------------------
