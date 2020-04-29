@@ -153,4 +153,4 @@ class MyViewRoot extends ViewRoot {
 }
 
 
-startSession("game", MyModelRoot, MyViewRoot, {tps: "10"});
+Session.join("game", MyModelRoot, MyViewRoot, {tps: "10"});
