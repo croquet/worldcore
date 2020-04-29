@@ -2,7 +2,7 @@
 //
 // Croquet Studios, 2020
 
-import { startSession } from "@croquet/teatime";
+import { Session } from "@croquet/teatime";
 import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, WebInputManager, AM_Smoothed, PM_Smoothed, AM_Spatial } from "../worldcore";
 
 //------------------------------------------------------------------------------------------
@@ -153,4 +153,4 @@ class MyViewRoot extends ViewRoot {
 }
 
 
-startSession("game", MyModelRoot, MyViewRoot, {tps: "10"});
+Session.join("game", MyModelRoot, MyViewRoot, {tps: "10"});
