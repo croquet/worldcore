@@ -120,7 +120,7 @@ export const PM_UnitySmoothed = superclass => class extends PM_UnitySpatial(supe
 export const PM_UnityAvatar = superclass => class extends PM_UnitySmoothed(superclass) {
     addDefaultUnityConfig(config) {
         super.addDefaultUnityConfig(config);
-        if (this.actor.isUserAvatar) {
+        if (config.type === 'userAvatar') {
             const userRecord = this.unityRenderManager.localUserRecord;
             if (userRecord && userRecord.avatar === this.actor) config.viewId = this.viewId;
         }
