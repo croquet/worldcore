@@ -22,9 +22,13 @@ export class NamedView extends View {
         namedViews.set(this.name, this);
     }
 
-    reattach() {
-        super.reattach();
-        this.registerName();
+    // reattach() {
+    //     super.reattach();
+    //     this.registerName();
+    // }
+
+    destroy() {
+        this.detach();
     }
 
     detach() {

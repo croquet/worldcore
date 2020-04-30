@@ -1,4 +1,5 @@
 // import { addClassHash } from "@croquet/util";
+import { Constants } from "@croquet/croquet";
 import { GetNamedView } from "./NamedView";
 import { PM_Dynamic } from "./Pawn";
 import { GetViewDelta } from "./ViewRoot";
@@ -83,9 +84,11 @@ import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_multipl
 //-- Mixin ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+Constants.WC_MIXIN_REGISTRY = [];
+Constants.WC_MIXIN_USAGE = [];
+
 export const mix = superclass => new MixinFactory(superclass);
-//export const RegisterMixin = mixin => addClassHash(mixin);
-export const RegisterMixin = mixin => console.log(mixin);
+export const RegisterMixin = mixin => Constants.WC_MIXIN_REGISTRY.push(mixin);
 
 class MixinFactory  {
     constructor(superclass) {
@@ -93,7 +96,7 @@ class MixinFactory  {
     }
 
     with(...mixins) {
-        //addClassHash(mixins);
+        Constants.WC_MIXIN_USAGE.push(mixins);
         return mixins.reduce((c, mixin) => mixin(c), this.superclass);
     }
 }

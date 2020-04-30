@@ -2,8 +2,8 @@
 //
 // Croquet Studios, 2020
 
-import { Session } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, WebInputManager, AM_Smoothed, PM_Smoothed, AM_Spatial } from "../worldcore";
+import { Constants, Session } from "@croquet/croquet";
+import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, WebInputManager, AM_Smoothed, PM_Smoothed, AM_Spatial, PM_Avatar } from "../worldcore";
 
 //------------------------------------------------------------------------------------------
 // Mixins
@@ -95,7 +95,7 @@ class TestActor extends mix(Actor).with(AM_Smoothed) {
 }
 TestActor.register("TestActor");
 
-class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_RenderUnity) {
+class TestPawn extends mix(Pawn).with(PM_Avatar, PM_RenderUnity) {
     constructor(...args) {
         super("Alpha", ...args);
     }
@@ -106,6 +106,7 @@ TestPawn.register('TestPawn');
 // MyModelRoot
 //------------------------------------------------------------------------------------------
 
+
 class MyModelRoot extends ModelRoot {
     init() {
         super.init();
@@ -113,6 +114,7 @@ class MyModelRoot extends ModelRoot {
         console.log(this.sessionId);
         this.subscribe('input', 'dDown', this.createActor);
         this.subscribe('input', 'eDown', this.moveActor);
+
     }
 
     createActor() {
