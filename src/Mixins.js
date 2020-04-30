@@ -434,7 +434,7 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
             let lastLoc = this.location;
             this.moveTo(this.verify(v3_add(this.location, v3_scale(this.velocity, delta)), lastLoc));
         }
-        this.future(this.avatar_tickStep).tick(this.avatar_tickStep);
+        if(!this.doomed)this.future(this.avatar_tickStep).tick(this.avatar_tickStep);
     }
     // Enables the subclass to ensure that this change is valid
     // Example - collision with a wall will change the result
@@ -590,7 +590,7 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
             if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], delta*this.strafeSpeed*this.multiplySpeed) );
             this.moveTo(this.verify(loc, lastLoc));
         }
-        this.future(this.mouseLook_tickStep).tick(this.mouseLook_tickStep);
+        if(!this.doomed)this.future(this.mouseLook_tickStep).tick(this.mouseLook_tickStep);
     }
 
     // Enables the subclass to ensure that this change is valid
