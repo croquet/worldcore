@@ -152,7 +152,10 @@ export class WebInputManager extends NamedView {
     }
 
     onClick(event) {
-        //this.requestPointerLock();
+        event.stopPropagation();
+        event.preventDefault();
+        window.focus();
+        this.publish("input", "mouseClick");
     }
 
     onPointerLock(event) {
