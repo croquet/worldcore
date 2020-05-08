@@ -6,7 +6,6 @@ import { GetViewDelta } from "./ViewRoot";
 import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_multiply, v3_lerp, v3_equals,
     q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_fastGrounded } from  "./Vector";
 
-
 // Mixin
 //
 // This contains support for mixins that can be added to Views and Models. You need to
