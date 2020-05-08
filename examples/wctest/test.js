@@ -47,44 +47,44 @@ export const PM_RenderUnity = superclass => class extends superclass {
 // The manager may not exist yet when the pawns are recreated. How to recreate all the unity objects?
 // Loop through the pawn manager looking for PM_UnityRender objects
 
-class UnityRenderManager extends NamedView {
-    constructor() {
-        super('UnityRenderManager');
-        this.nextHandle = 1;
-        console.log("Start up Unity renderer!");
-        this.rebuild();
+// class UnityRenderManager extends NamedView {
+//     constructor() {
+//         super('UnityRenderManager');
+//         this.nextHandle = 1;
+//         console.log("Start up Unity renderer!");
+//         this.rebuild();
 
-    }
+//     }
 
-    destroy() {
-        super.destroy();
-        console.log("Shut down Unity renderer!");
-    }
+//     destroy() {
+//         super.destroy();
+//         console.log("Shut down Unity renderer!");
+//     }
 
-    rebuild() {
-        const pawnManager = GetNamedView('PawnManager');
-        pawnManager.pawns.forEach(pawn => {
-            if (pawn.createUnityObject) pawn.createUnityObject();
-        });
-    }
+//     rebuild() {
+//         const pawnManager = GetNamedView('PawnManager');
+//         pawnManager.pawns.forEach(pawn => {
+//             if (pawn.createUnityObject) pawn.createUnityObject();
+//         });
+//     }
 
-    // update(time) {
-    // }
+//     // update(time) {
+//     // }
 
-    create(type, matrix) {
-        const handle = this.nextHandle++;
-        console.log("Creating Unity render object of type " + type + " with handle " + handle + " and matrix " + matrix);
-        return handle;
-    }
+//     create(type, matrix) {
+//         const handle = this.nextHandle++;
+//         console.log("Creating Unity render object of type " + type + " with handle " + handle + " and matrix " + matrix);
+//         return handle;
+//     }
 
-    delete(handle) {
-        console.log("Deleting Unity render object " + handle);
-    }
+//     delete(handle) {
+//         console.log("Deleting Unity render object " + handle);
+//     }
 
-    refresh(handle, matrix) {
-        console.log("Refreshing Unity render object " + handle);
-    }
-}
+//     refresh(handle, matrix) {
+//         console.log("Refreshing Unity render object " + handle);
+//     }
+// }
 
 //------------------------------------------------------------------------------------------
 // Actor & Pawn
@@ -148,8 +148,10 @@ class MyViewRoot extends ViewRoot {
         super(model);
 
         this.webInputManager = this.addManager(new WebInputManager());
-        this.unityRenderManager = this.addManager(new UnityRenderManager());
-
+        // this.unityRenderManager = this.addManager(new UnityRenderManager());
+        this.subscribe("input", "mouseXY", data=>console.log(data));
+        this.subscribe("input", "click", () => this.webInputManager.enterPointerLock());
+        this.subscribe("input", "dDown", () => console.log("ddddd"));
     }
 
 }

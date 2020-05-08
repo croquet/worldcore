@@ -63,11 +63,9 @@ export class WebInputManager extends NamedView {
     }
 
     destroy() {
-        this.detach(); // de-register as a view
-        // if (this.inPointerLock) {
-        //     //document.exitFullscreen();
-        //     document.exitPointerLock();
-        // }
+        super.destroy();
+        if (this.inPointerLock) document.exitPointerLock();
+        if (this.inFullscreen) document.exitFullscreen();
         this.removeAllListeners();
     }
 
@@ -125,48 +123,51 @@ export class WebInputManager extends NamedView {
         if (this.inPointerLock) this.publish("input", entry.name + "Up");
     }
 
-    // get isFullscreen() {
-    //     return document.fullscreenElement;
-    // }
+    get isFullscreen() {
+        return document.fullscreenElement;
+    }
 
-    // enterFullscreen() {
-    //     if (this.isFullscreen) return;
-    //     if (!document.documentElement.requestFullscreen) return;
-    //     document.documentElement.requestFullscreen();
-    // }
+    get canFullscreen() {
+        return document.documentElement.requestFullscreen;
+    }
 
-    // exitFullscreen() {
-    //     if (!this.isFullscreen) return;
-    //     document.exitFullscreen();
-    // }
+    enterFullscreen() {
+        if (this.isFullscreen) return;
+        if (!this.canFullscreen) return;
+        document.documentElement.requestFullscreen();
+    }
 
-    requestPointerLock() {
-        if (this.inPointerLock) return false; // already in pointer lock
-        document.requestPointerLock = document.requestPointerLock || document.mozRequestPointerLock;
-        document.documentElement.requestPointerLock();
-        return true; // requested pointer lock
+    exitFullscreen() {
+        if (!this.isFullscreen) return;
+        document.exitFullscreen();
     }
 
     get inPointerLock() {
         return document.pointerLockElement || document.mozPointerLockElement;
     }
 
+    get canPointerLock() {
+        return document.documentElement.requestPointerLock || document.documentElement.mozRequestPointerLock;
+    }
+
+    enterPointerLock() {
+        if (this.inPointerLock) return;
+        if (!this.canPointerLock) return;
+        document.documentElement.requestPointerLock = this.canPointerLock;
+        document.documentElement.requestPointerLock();
+    }
+
+    exitPointerLock() {
+        if (!this.inPointerLock) return;
+        document.exitPointerLock();
+    }
+
     onClick(event) {
-        //this.requestPointerLock();
+        this.publish("input", "click");
     }
 
     onPointerLock(event) {
-        if (this.inPointerLock) {
-    //         this.addListener(document, 'mousedown', e => this.onMouseDown(e));
-    //         this.addListener(document, 'mouseup', e => this.onMouseUp(e));
-    //         this.addListener(document, 'mousemove', e => this.onMouseMove(e));
-            this.publish("input", "pointerLockStart");
-        } else {
-    //         this.removeListener('mousedown');
-    //         this.removeListener('mouseup');
-    //         this.removeListener('mousemove');
-            this.publish("input", "pointerLockEnd");
-        }
+        this.publish("input", "pointerLock", this.inPointerLock);
     }
 
     onResize(event) {
@@ -233,7 +234,6 @@ export class WebInputManager extends NamedView {
         this.publish("input", "wheel", y);
     }
 
-    // publish absolute position x,y, delta x,y
     onMouseMove(event) {
         event.stopPropagation();
         event.preventDefault();
@@ -241,7 +241,8 @@ export class WebInputManager extends NamedView {
         const pY = event.clientY;
         const dX = event.movementX;
         const dY = event.movementY;
-        this.publish("input", "mouseXY", [pX, pY, dX, dY]);
+        this.publish("input", "mouseXY", [pX, pY]);
+        this.publish("input", "mouseDelta", [dX, dY]);
     }
 
     onTouchStart(event) {
