@@ -163,10 +163,11 @@ export class WebInputManager extends NamedView {
     }
 
     onClick(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        // event.stopPropagation();
+        // event.preventDefault();
         window.focus();
-        this.publish("input", "mouseClick");
+        this.publish("input", "click");
+        // this.publish("input", "mouseClick");    // This should be removed because touches can also trigger onClick.
     }
 
     onPointerLock(event) {
@@ -186,8 +187,8 @@ export class WebInputManager extends NamedView {
 
     // publish both keyDown + arg and "xDown" where "x" is the key
     onKeyDown(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        // event.stopPropagation();
+        // event.preventDefault();
         const key = event.key;
         if (KeyDown(key)) return;
         keys.add(key);
@@ -198,8 +199,8 @@ export class WebInputManager extends NamedView {
 
     // publish both keyUp + arg and "xUp" where "x" is the key
     onKeyUp(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        // event.stopPropagation();
+        // event.preventDefault();
         const key = event.key;
         if (!KeyDown(key)) return;
         this.publish("input", key + "Up");
@@ -209,37 +210,41 @@ export class WebInputManager extends NamedView {
     }
 
     onMouseDown(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        // event.stopPropagation();
+        // event.preventDefault();
         let key = "mouse" + event.button;
         if (KeyDown('Control') && key === 'mouse0') key = 'mouse2';
         if (KeyDown(key)) return;
+        const pX = event.clientX;
+        const pY = event.clientY;
         keys.add(key);
-        this.publish("input", key + "Down");
+        this.publish("input", key + "Down", [pX, pY]);
         this.onChordDown(key);
     }
 
     onMouseUp(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        // event.stopPropagation();
+        // event.preventDefault();
         let key = "mouse" + event.button;
         if (KeyDown('Control') && key === 'mouse0') key = 'mouse2';
         if (!KeyDown(key)) return;
-        this.publish("input", key + "Up");
+        const pX = event.clientX;
+        const pY = event.clientY;
+        this.publish("input", key + "Up", [pX, pY]);
         this.onChordUp(key);
         keys.delete(key);
     }
 
     onWheel(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        // event.stopPropagation();
+        // event.preventDefault();
         const y = event.deltaY;
         this.publish("input", "wheel", y);
     }
 
     onMouseMove(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        // event.stopPropagation();
+        // event.preventDefault();
         const pX = event.clientX;
         const pY = event.clientY;
         const dX = event.movementX;
@@ -249,8 +254,8 @@ export class WebInputManager extends NamedView {
     }
 
     onTouchStart(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        // event.stopPropagation();
+        // event.preventDefault();
         for (const touch of event.changedTouches) {
             const id = touch.identifier;
             const x = touch.clientX;
@@ -271,8 +276,8 @@ export class WebInputManager extends NamedView {
     }
 
     onTouchEnd(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        // event.stopPropagation();
+        // event.preventDefault();
         for (const touch of event.changedTouches) {
             const id = touch.identifier;
             const start = this.getTouch(id);
@@ -310,8 +315,8 @@ export class WebInputManager extends NamedView {
     }
 
     onTouchMove(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        // event.stopPropagation();
+        // event.preventDefault();
         for (const touch of event.changedTouches) {     // Update the current position of all touches
             const id = touch.identifier;
             const t = this.getTouch(id);
@@ -351,8 +356,8 @@ export class WebInputManager extends NamedView {
     }
 
     onTouchCancel(event) {
-        event.stopPropagation();
-        event.preventDefault();
+        // event.stopPropagation();
+        // event.preventDefault();
         this.touches = [];
     }
 

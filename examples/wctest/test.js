@@ -3,7 +3,8 @@
 // Croquet Studios, 2020
 
 import { Constants, Session } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, WebInputManager, AM_Smoothed, PM_Smoothed, AM_Spatial, PM_Avatar } from "../worldcore";
+import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, WebInputManager, AM_Smoothed, PM_Smoothed, AM_Spatial, PM_Avatar,
+    UIManager, ButtonWidget, SliderWidget } from "../worldcore";
 
 //------------------------------------------------------------------------------------------
 // Mixins
@@ -147,11 +148,27 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
 
-        this.webInputManager = this.addManager(new WebInputManager());
+        this.webInput = this.addManager(new WebInputManager());
+        this.ui = this.addManager(new UIManager());
+
+        const startButton = new ButtonWidget(this.ui.root);
+        startButton.label.setText(`Test`);
+        startButton.setAnchor([1,0]);
+        startButton.setPivot([1,0]);
+        startButton.onClick = ()=> console.log("hello");
+
+        const testSlider = new SliderWidget(this.ui.root);
+        testSlider.setSize([20, 100]);
+
+
         // this.unityRenderManager = this.addManager(new UnityRenderManager());
-        this.subscribe("input", "mouseXY", data=>console.log(data));
-        this.subscribe("input", "click", () => this.webInputManager.enterPointerLock());
-        this.subscribe("input", "dDown", () => console.log("ddddd"));
+        //this.subscribe("input", "mouseXY", data=>console.log(data));
+        // this.subscribe("input", "mouse0Down", data=>console.log(data));
+        // this.subscribe("input", "mouse0Up", data=>console.log(data));
+        //this.subscribe("input", "click", () => this.webInput.enterPointerLock());
+        // this.subscribe("input", "keyDown", k => console.log(k));
+        // this.subscribe("input", "iDown", () => console.log("iiiiii"));
+        // this.subscribe("input", "fDown", () => console.log("ffffff"));
     }
 
 }
