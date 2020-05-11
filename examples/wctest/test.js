@@ -153,12 +153,12 @@ class MyViewRoot extends ViewRoot {
 
         const startButton = new ButtonWidget(this.ui.root);
         startButton.label.setText(`Test`);
-        startButton.setAnchor([1,0]);
-        startButton.setPivot([1,0]);
+        // startButton.setAnchor([1,0]);
+        // startButton.setPivot([1,0]);
         startButton.onClick = ()=> console.log("hello");
 
-        const testSlider = new SliderWidget(this.ui.root);
-        testSlider.setSize([20, 100]);
+        // const testSlider = new SliderWidget(this.ui.root);
+        // testSlider.setSize([20, 100]);
 
 
         // this.unityRenderManager = this.addManager(new UnityRenderManager());

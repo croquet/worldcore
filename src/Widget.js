@@ -74,6 +74,7 @@ export class UIManager extends NamedView {
 
         mouseXY(xy) {
             if (this.root) this.root.mouse(xy);
+            this.publish("ui", "mouseXY", xy);
         }
 
         mouse0Down(xy) {
@@ -524,8 +525,10 @@ export class TextWidget extends Widget {
         super(parent);
         this.text = "Text";
         this.font = "sans-serif";
+        this.style = "normal";
         this.point = 24;
         this.lineHeight = 30;
+        this.maxLength = 0;
         this.alignX = "center";
         this.alignY = "middle";
         this.color = [0, 0, 0];
@@ -551,6 +554,11 @@ export class TextWidget extends Widget {
         this.markParentChanged();
     }
 
+    setStyle(style) {
+        this.style = style;
+        this.markParentChanged();
+    }
+
     setAlignX(align) {
         this.alignX = align;
         this.markParentChanged();
@@ -563,6 +571,11 @@ export class TextWidget extends Widget {
 
     setLineHeight(lineHeight) {
         this.lineHeight = lineHeight;
+        this.markParentChanged();
+    }
+
+    setMaxLength(maxLength) {
+        this.maxLength = maxLength;
         this.markParentChanged();
     }
 
@@ -598,17 +611,43 @@ export class TextWidget extends Widget {
         return offset;
     }
 
+    breakLines(text) {
+        if (!this.maxLength) return text;
+        const words = text.split(' ');
+        if (words.length < 2) return text;
+
+        let out = words[0];
+        let current = words[0].length;
+        for (let i = 1; i < words.length; i++) {
+            current += words[i].length + 1;
+            let space = ' ';
+            if (current > this.maxLength) {
+                current = words[i].length;
+                space = '\n';
+            }
+            out += space + words[i];
+        }
+        return out;
+    }
+
     draw() {
-        const lines = this.text.split('\n');
+        const lines = this.breakLines(this.text).split('\n');
         const xy = v2_add(this.global, this.alignnmentOffset);
 
         cc.textAlign = this.alignX;
         cc.textBaseline = this.alignY;
-        cc.font = this.point + "px " + this.font;
+        cc.font = this.style + " " + this.point + "px " + this.font;
         cc.fillStyle = Widget.color(...this.color);
 
+        let yOffset = 0;
+        if (this.alignY === 'middle') {
+            yOffset = this.lineHeight * (lines.length - 1) / 2;
+        } else if (this.alignY === 'bottom') {
+            yOffset = this.lineHeight * (lines.length - 1);
+        }
+
         for (let i = 0; i<lines.length; i++) {
-            cc.fillText(lines[i], xy[0], xy[1] + (i * this.lineHeight));
+            cc.fillText(lines[i], xy[0], xy[1] + (i * this.lineHeight) - yOffset);
         }
     }
 }

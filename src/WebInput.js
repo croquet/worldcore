@@ -202,7 +202,7 @@ export class WebInputManager extends NamedView {
         // event.stopPropagation();
         // event.preventDefault();
         const key = event.key;
-        if (!KeyDown(key)) return;
+        //if (!KeyDown(key)) return;
         this.publish("input", key + "Up");
         this.publish("input", "keyUp", key);
         this.onChordUp(key);
@@ -255,7 +255,7 @@ export class WebInputManager extends NamedView {
 
     onTouchStart(event) {
         // event.stopPropagation();
-        // event.preventDefault();
+        event.preventDefault();
         for (const touch of event.changedTouches) {
             const id = touch.identifier;
             const x = touch.clientX;
@@ -277,7 +277,7 @@ export class WebInputManager extends NamedView {
 
     onTouchEnd(event) {
         // event.stopPropagation();
-        // event.preventDefault();
+        event.preventDefault();
         for (const touch of event.changedTouches) {
             const id = touch.identifier;
             const start = this.getTouch(id);
@@ -316,7 +316,7 @@ export class WebInputManager extends NamedView {
 
     onTouchMove(event) {
         // event.stopPropagation();
-        // event.preventDefault();
+        event.preventDefault();
         for (const touch of event.changedTouches) {     // Update the current position of all touches
             const id = touch.identifier;
             const t = this.getTouch(id);
@@ -357,7 +357,7 @@ export class WebInputManager extends NamedView {
 
     onTouchCancel(event) {
         // event.stopPropagation();
-        // event.preventDefault();
+        event.preventDefault();
         this.touches = [];
     }
 
