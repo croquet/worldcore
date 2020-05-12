@@ -99,6 +99,7 @@ export class UIManager extends NamedView {
 
         touchXY(xy) {
             if (this.root) this.root.touch(xy);
+            this.publish("ui", "touchXY", xy);
         }
 
         touchDown(xy) {
