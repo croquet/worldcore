@@ -236,8 +236,8 @@ export class WebInputManager extends NamedView {
     }
 
     onWheel(event) {
-        // event.stopPropagation();
-        // event.preventDefault();
+        event.stopPropagation();
+        event.preventDefault();
         const y = event.deltaY;
         this.publish("input", "wheel", y);
     }
