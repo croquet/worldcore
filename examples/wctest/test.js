@@ -4,7 +4,7 @@
 
 import { Constants, Session } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, WebInputManager, AM_Smoothed, PM_Smoothed, AM_Spatial, PM_Avatar,
-    UIManager, ButtonWidget, SliderWidget } from "../worldcore";
+    UIManager, ButtonWidget, SliderWidget, ToggleWidget, TextFieldWidget } from "../worldcore";
 
 //------------------------------------------------------------------------------------------
 // Mixins
@@ -148,17 +148,57 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
 
+        this.input = document.createElement("input");
+        this.input.setAttribute("type", "text");
+        this.input.style.position = "absolute";
+        this.input.style.left = '200px';
+        this.input.style.top = '200px';
+        document.body.appendChild(this.input);
+
         this.webInput = this.addManager(new WebInputManager());
         this.ui = this.addManager(new UIManager());
 
-        const startButton = new ButtonWidget(this.ui.root);
-        startButton.label.setText(`Test`);
-        // startButton.setAnchor([1,0]);
-        // startButton.setPivot([1,0]);
-        startButton.onClick = ()=> console.log("hello");
+        const textField = new TextFieldWidget(this.ui.root);
+        textField.setSize([300,45]);
+        textField.setLocal([20,20]);
+        textField.focus();
+
+        const showButton = new ButtonWidget(this.ui.root);
+        showButton.label.setText(`Show`);
+        showButton.setSize([200, 50]);
+        showButton.setLocal([20, 120]);
+        showButton.onClick = () => {
+            this.input.style.visibility = 'visible'; // unhide the input
+        };
+
+        const focusButton = new ButtonWidget(this.ui.root);
+        focusButton.label.setText(`Focus`);
+        focusButton.setSize([200, 50]);
+        focusButton.setLocal([20, 180]);
+        focusButton.onClick = () => {
+            this.input.style.visibility = 'visible';
+            this.input.focus(); // focus on it so keyboard pops
+            this.input.style.visibility = 'hidden';
+        };
+
+        const hideButton = new ButtonWidget(this.ui.root);
+        hideButton.label.setText(`Hide`);
+        hideButton.setSize([200, 50]);
+        hideButton.setLocal([20, 240]);
+        hideButton.onClick = () => {
+            this.input.style.visibility = 'hidden'; // hide it again
+        };
+
 
         // const testSlider = new SliderWidget(this.ui.root);
         // testSlider.setSize([20, 100]);
+        // testSlider.setLocal([20, 200]);
+        //testSlider.disable();
+
+
+        // this.input.style.visibility = 'visible'; // unhide the input
+        // this.input.focus(); // focus on it so keyboard pops
+        // this.input.style.visibility = 'hidden'; // hide it again
 
 
         // this.unityRenderManager = this.addManager(new UnityRenderManager());

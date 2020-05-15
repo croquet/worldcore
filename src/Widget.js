@@ -3,6 +3,7 @@ import { v2_sub, v2_multiply, v2_add } from "./Vector";
 import { LoadFont, LoadImage} from "./ViewAssetCache";
 import { NamedView, GetNamedView } from "./NamedView";
 
+let ui;
 let cc;
 
 //------------------------------------------------------------------------------------------
@@ -22,9 +23,12 @@ export class UIManager extends NamedView {
         constructor() {
             super('UIManager');
 
+            ui = this; // Global pointer for widgets to use.
+
             this.canvas = document.createElement("canvas");
             this.canvas.id = "UICanvas";
             this.canvas.style.cssText = "position: absolute; left: 0; top: 0; z-index: 1";
+            // this.setLetterSpacing(0);
             document.body.insertBefore(this.canvas, null);
             cc = this.canvas.getContext('2d');
 
@@ -40,10 +44,12 @@ export class UIManager extends NamedView {
             this.subscribe("input", {event: "touchXY", handling: "immediate"}, this.touchXY);
             this.subscribe("input", {event: "touchDown", handling: "immediate"}, this.touchDown);
             this.subscribe("input", {event: "touchUp", handling: "immediate"}, this.touchUp);
+            this.subscribe("input", {event: "keyDown", handling: "immediate"}, this.keyDown);
         }
 
         destroy() {
-            super.detach();
+            this.detach();
+            console.log("destroying UI manager");
             if (this.root) this.root.destroy();
             this.canvas.remove();
         }
@@ -64,6 +70,10 @@ export class UIManager extends NamedView {
         setRoot(root) {
             this.root = root;
             if (this.root) this.root.setSize(this.size);
+        }
+
+        setKeyboardFocus(widget) {
+            this.keyboardFocus = widget;
         }
 
         update() {
@@ -111,6 +121,19 @@ export class UIManager extends NamedView {
             this.publish("ui", "touchUp", xy);
         }
 
+        keyDown(key) {
+            if (!this.keyboardFocus) return;
+            if (key.length === 1) this.keyboardFocus.insert(key);
+            if (key === 'Backspace') this.keyboardFocus.backspace();
+            if (key === 'Delete') this.keyboardFocus.delete();
+            if (key === 'ArrowLeft') this.keyboardFocus.cursorLeft();
+            if (key === 'ArrowRight') this.keyboardFocus.cursorRight();
+        }
+
+        // setLetterSpacing(n) {
+        //     this.canvas.style.cssText = "letter-spacing: " + n + "px";
+        // }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -133,15 +156,17 @@ export class Widget extends View {
         this.localOpacity = 1;              // Default value
         this.inheritOpacity = true;         // Affected by parent's opacity
         this.consumeEvents = false;         // Intercepts touch or mouse down events.
+        // this.noClip = false;
         this.isChanged = true;
         this.isVisible = true;
         if (parent) parent.addChild(this);
     }
 
     destroy() {
-        super.detach();
+        this.keyboardFocus = null;
+        this.children.forEach(child => child.destroy());
         if (this.parent) this.parent.removeChild(this);
-        this.children.forEach(child => child.destroy);
+        this.detach();
     }
 
     addChild(child) {
@@ -198,19 +223,24 @@ export class Widget extends View {
         this.markChanged();
     }
 
+    setVisible(visible) {
+        this.isVisible = visible;
+        this.markParentChanged();
+    }
+
     show() {
         this.isVisible = true;
-        this.markAllChanged();
+        this.markParentChanged();
     }
 
     hide() {
         this.isVisible = false;
-        this.markAllChanged();
+        this.markParentChanged();
     }
 
     toggleVisibility() {
         this.isVisible = !this.isVisible;
-        this.markAllChanged();
+        this.markParentChanged();
     }
 
     setConsumeEvents(consume) {
@@ -225,10 +255,15 @@ export class Widget extends View {
         this.children.forEach(child => child.markChanged());
     }
 
+    markParentChanged() {
+        if (this.parent) this.parent.markChanged();
+        this.markChanged();
+    }
+
     // Tell the UI to redraw the whole screen
     // This is used for show/hide widget events
     markAllChanged() {
-        const ui = GetNamedView('UI');
+        // const ui = GetNamedView('UIManager');
         if (ui && ui.root) ui.root.markChanged();
     }
 
@@ -275,9 +310,26 @@ export class Widget extends View {
 
 
     update() {
+        // cc.save();
+        // this.clip();
         if (this.isChanged) this.drawWithOpacity();
         this.isChanged = false;
         if (this.isVisible) this.children.forEach(child => child.update());
+        // cc.restore();
+    }
+
+    // Sets the clip area to the current widget's bounds
+    // Generally you should preface this with cc.save and follow up with cc.restore.
+
+    clip() {
+        cc.rect(this.global[0], this.global[1], this.size[0], this.size[1]);
+        cc.clip();
+    }
+
+    updateNoOpacity() {
+        if (this.isChanged) this.draw();
+        this.isChanged = false;
+        if (this.isVisible) this.children.forEach(child => child.updateNoOpacity());
     }
 
     mouse(xy) {
@@ -364,6 +416,27 @@ export class BoxWidget extends Widget {
         const size = this.size;
         cc.fillStyle = Widget.color(...this.color);
         cc.fillRect(xy[0], xy[1], size[0], size[1]);
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- GelWidget -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Normal translucent widgets completely erase what's behind them as part of their update,
+// but gels leave it there on update. All children of the gel widget are drawn using its opacity.
+
+export class GelWidget extends Widget {
+    constructor(parent) {
+        super(parent);
+        this.setAutoSize([1,1]);
+    }
+
+    update() {
+        cc.globalCompositeOperation = 'source-over';
+        cc.globalAlpha = this.opacity;
+        this.updateNoOpacity();
     }
 
 }
@@ -529,6 +602,7 @@ export class TextWidget extends Widget {
         this.point = 24;
         this.lineHeight = 30;
         this.maxLength = 0;
+        // this.spacing = 0;
         this.alignX = "center";
         this.alignY = "middle";
         this.color = [0, 0, 0];
@@ -578,6 +652,11 @@ export class TextWidget extends Widget {
         this.maxLength = maxLength;
         this.markParentChanged();
     }
+
+    // setSpacing(spacing) {
+    //     this.spacing = spacing;
+    //     this.markParentChanged();
+    // }
 
     setColor(color) {
         this.color = color;
@@ -631,6 +710,7 @@ export class TextWidget extends Widget {
     }
 
     draw() {
+        // ui.setLetterSpacing(this.spacing);
         const lines = this.breakLines(this.text).split('\n');
         const xy = v2_add(this.global, this.alignnmentOffset);
 
@@ -639,6 +719,7 @@ export class TextWidget extends Widget {
         cc.font = this.style + " " + this.point + "px " + this.font;
         cc.fillStyle = Widget.color(...this.color);
 
+
         let yOffset = 0;
         if (this.alignY === 'middle') {
             yOffset = this.lineHeight * (lines.length - 1) / 2;
@@ -646,10 +727,89 @@ export class TextWidget extends Widget {
             yOffset = this.lineHeight * (lines.length - 1);
         }
 
+        // cc.save();
+        // cc.rect(this.global[0], this.global[1], this.size[0], this.size[1]);
+        // cc.clip();
         for (let i = 0; i<lines.length; i++) {
             cc.fillText(lines[i], xy[0], xy[1] + (i * this.lineHeight) - yOffset);
         }
+        // cc.restore();
     }
+
+    findInsert(x) {
+        const c = [...this.text];
+        let sum = 0;
+        for (let i = 0; i < c.length; i++) {
+            const w = cc.measureText(c[i]).width;
+            if (x < sum + w/2) return i;
+            sum += w;
+        }
+        return c.length;
+    }
+
+    findLetterOffset(n) {
+        const c = [...this.text];
+        let offset = 0;
+        n = Math.min(n, c.length);
+        for (let i = 0; i < n; i++) {
+            offset += cc.measureText(c[i]).width;
+        }
+        return Math.max(0, Math.floor(offset));
+    }
+}
+
+//------------------------------------------------------------------------------------------
+//-- ControlWidget -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Base class for all widgets that can be interacted with.
+//
+// Control widgets have enabled/disabled states. The disabled state is implemented with a gel
+// widget containing an autosized colored box. If the widget has an irregular shape (like a
+// button that uses a 9 slice widget) you'll need to provide a different gel that matches the
+// control shape.
+//
+// Each control types should handle updating its own disabledGel overlay and testing for
+// isEnabled to block interactions.
+
+export class ControlWidget extends Widget {
+    constructor(parent) {
+        super(parent);
+
+        this.setDisableGel(new GelWidget());
+        this.disabledGel.setOpacity(0.6);
+
+        const gel = new BoxWidget(this.disabledGel);
+        gel.setAutoSize([1,1]);
+        gel.setColor([0.8,0.8,0.8]);
+
+        this.isEnabled = true;
+    }
+
+    setEnabled(enabled) {
+        this.isEnabled = enabled;
+        this.markChanged();
+    }
+
+    toggleEnabled() {
+        this.setEnabled(!this.isEnabled);
+    }
+
+    enable() {
+        this.setEnabled(true);
+    }
+
+    disable() {
+        this.setEnabled(false);
+    }
+
+    setDisableGel(widget) {
+        if (this.disabledGel) this.destroyChild(this.disabledGel);
+        this.disabledGel = widget;
+        this.disabledGel.setAutoSize([1,1]);
+        this.addChild(widget);
+    }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -660,7 +820,7 @@ export class TextWidget extends Widget {
 //
 // The Normal/Hovered/Pressed  Box widgets can be replaced by NineSlice widgets for prettier buttons.
 
-export class ButtonWidget extends Widget {
+export class ButtonWidget extends ControlWidget {
 
     constructor(parent) {
         super(parent);
@@ -711,15 +871,16 @@ export class ButtonWidget extends Widget {
 
     update() {
         let background = this.normal;
-        if (this.isHovered) background = this.hovered;
-        if (this.isPressed) background = this.pressed;
+        if (this.isHovered && this.isEnabled) background = this.hovered;
+        if (this.isPressed && this.isEnabled) background = this.pressed;
         if (!this.isVisible) return;
         if (background) background.update();
         if (this.label) this.label.update();
+        if (!this.isEnabled) this.disabledGel.update();
     }
 
     mouse(xy) {
-        if (!this.isVisible) return;
+        if (!this.isVisible || !this.isEnabled) return;
         const hover = this.inRect(xy);
         if (this.isHovered === hover) return;
         this.isHovered = hover;
@@ -728,14 +889,14 @@ export class ButtonWidget extends Widget {
     }
 
     touch(xy) {
-        if (!this.isVisible) return;
+        if (!this.isVisible || !this.isEnabled) return;
         if (!this.isPressed || this.inRect(xy)) return;
         this.isPressed = false;
         this.markChanged();
     }
 
     press(xy) {
-        if (!this.isVisible) return false;
+        if (!this.isVisible || !this.isEnabled) return false;
         if (!this.inRect(xy)) return false;
         this.isPressed = true;
         this.markChanged();
@@ -763,7 +924,7 @@ export class ButtonWidget extends Widget {
 
 // Draws a button that can be toggled between an on and off state.
 
-export class ToggleWidget extends Widget {
+export class ToggleWidget extends ControlWidget {
 
     constructor(parent) {
         super(parent);
@@ -877,10 +1038,11 @@ export class ToggleWidget extends Widget {
         if (!this.isVisible) return;
         if (background) background.update();
         if (label) label.update();
+        if (!this.isEnabled) this.disabledGel.update();
     }
 
     mouse(xy) {
-        if (!this.isVisible) return;
+        if (!this.isVisible || !this.isEnabled) return;
         const hover = this.inRect(xy);
         if (this.isHovered === hover) return;
         this.isHovered = hover;
@@ -889,14 +1051,14 @@ export class ToggleWidget extends Widget {
     }
 
     touch(xy) {
-        if (!this.isVisible) return;
+        if (!this.isVisible || !this.isEnabled) return;
         if (!this.isPressed || this.inRect(xy)) return;
         this.isPressed = false;
         this.markChanged();
     }
 
     press(xy) {
-        if (!this.isVisible) return false;
+        if (!this.isVisible || !this.isEnabled) return false;
         if (!this.inRect(xy)) return false;
         this.isPressed = true;
         this.markChanged();
@@ -966,7 +1128,7 @@ export class ToggleSet  {
 }
 
 //------------------------------------------------------------------------------------------
-//-- SliderWidget -----------------------------------------------------------------------------
+//-- SliderWidget --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 // Managages a slider.
@@ -974,7 +1136,7 @@ export class ToggleSet  {
 // The Bar and Knob can be replaced by Image/NineSlice widgets for a prettier look.
 // The Knob will always be square and match the short dimension of the bar.
 
-export class SliderWidget extends Widget {
+export class SliderWidget extends ControlWidget {
 
     constructor(parent) {
         super(parent);
@@ -1057,10 +1219,11 @@ export class SliderWidget extends Widget {
         if (!this.isVisible) return;
         if (this.bar) this.bar.update();
         if (this.knob) this.knob.update();
+        if (!this.isEnabled) this.disabledGel.update();
     }
 
     moveKnob(xy) {
-        if (!this.isPressed) return;
+        if (!this.isPressed || !this.isEnabled) return;
         const old = this.percent;
         const local = v2_sub(xy, this.global);
         if (this.isHorizontal) {
@@ -1073,7 +1236,7 @@ export class SliderWidget extends Widget {
     }
 
     press(xy) {
-        if (!this.isVisible) return false;
+        if (!this.isVisible || !this.isEnabled) return false;
         if (!this.inRect(xy)) return false;
         this.isPressed = true;
         this.moveKnob(xy);
@@ -1097,4 +1260,174 @@ export class SliderWidget extends Widget {
     onChange(percent) {
     }
 
+}
+
+//------------------------------------------------------------------------------------------
+//-- TextFieldWidget -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class TextFieldWidget extends ControlWidget {
+    constructor(parent) {
+        super(parent);
+
+        this.insertLeft = 0;
+        this.insertRight = 0;
+
+        this.setFrame(new BoxWidget());
+        this.setBackground(new BoxWidget());
+        this.setText(new TextWidget());
+        this.text.setText("Mississippi WWWW IIII");
+
+        this.setCursor(new BoxWidget());
+        this.cursor.setColor([0,0,0]);
+
+        this.setHighlight(new GelWidget());
+        this.highlight.setOpacity(0.4);
+        const gel = new BoxWidget(this.highlight);
+        gel.setAutoSize([1,1]);
+        gel.setColor([0.0,0.2,0.9]);
+        this.highlight.hide();
+
+        this.refreshCursor();
+
+    }
+
+    destroy() {
+        super.destroy();
+        this.blur();
+    }
+
+    setFrame(widget) {
+        if (this.frame) this.destroyChild(this.frame);
+        this.frame = widget;
+        this.frame.setAutoSize([1,1]);
+        this.frame.setColor([0,0,0]);
+        this.addChild(widget);
+    }
+
+    setBackground(widget) {
+        if (this.background) this.frame.destroyChild(this.background);
+        this.background = widget;
+        this.background.setAutoSize([1,1]);
+        this.background.setBorder([1,1,1,1]);
+        this.background.setColor([1,1,1]);
+        this.addChild(widget);
+    }
+
+    setText(widget) {
+        if (this.text) this.background.destroyChild(this.text);
+        this.text = widget;
+        // this.text.noClip = true;
+        this.text.setAutoSize([1,1]);
+        this.text.setBorder([5,5,5,5]);
+        this.text.setLocal([0, 0]);
+        this.text.setAlignX('left');
+        this.background.addChild(widget);
+    }
+
+    setCursor(widget) {
+        if (this.cursor) this.background.destroyChild(this.cursor);
+        this.cursor = widget;
+        this.cursor.setAutoSize([0,1]);
+        this.cursor.setBorder([0,5,0,5]);
+        this.cursor.setSize([1,1]);
+        this.background.addChild(widget);
+        this.future(530).cursorBlink();
+    }
+
+    cursorBlink() {
+        this.cursor.toggleVisibility();
+        this.background.markChanged();
+        this.future(530).cursorBlink();
+    }
+
+    setHighlight(widget) {
+        if (this.highlight) this.destroyChild(this.highlight);
+        this.highlight = widget;
+        this.highlight.setAutoSize([0,1]);
+        this.highlight.setSize([3,1]);
+        this.text.addChild(widget);
+    }
+
+    // mouse(xy) {
+    //     if (!this.text.inRect(xy)) return;
+    //     const x = xy[0] - this.text.global[0];
+    //     const insert = this.text.findInsert(x);
+    //     const offset = this.text.findLetterOffset(insert);
+    //     console.log(x + " " + insert);
+    // }
+
+    press(xy) {
+        if (!this.isVisible || !this.isEnabled) return false;
+        if (!this.inRect(xy)) return false;
+        const x = xy[0] - this.text.global[0];
+        const insert = this.text.findInsert(x);
+        this.insertLeft = insert;
+        this.refreshCursor();
+        return true;
+    }
+
+    insert(s) {
+        const t = this.text.text.slice(0, this.insertLeft) + s + this.text.text.slice(this.insertLeft);
+        this.text.setText(t);
+        this.insertLeft += s.length;
+        this.refreshCursor();
+    }
+
+    delete() {
+        const cut = Math.min(this.text.text.length, this.insertLeft + 1);
+        const t = this.text.text.slice(0, this.insertLeft) + this.text.text.slice(cut);
+        this.text.setText(t);
+        this.refreshCursor();
+    }
+
+    backspace() {
+        const cut = Math.max(0, this.insertLeft - 1);
+        const t = this.text.text.slice(0, cut) + this.text.text.slice(this.insertLeft);
+        this.insertLeft = cut;
+        this.text.setText(t);
+        this.refreshCursor();
+    }
+
+    cursorLeft() {
+        this.insertLeft = Math.max(0, this.insertLeft - 1);
+        this.refreshCursor();
+    }
+
+    cursorRight() {
+        this.insertLeft = Math.min(this.text.text.length, this.insertLeft + 1);
+        this.refreshCursor();
+    }
+
+    focus() {
+        if (ui) ui.setKeyboardFocus(this);
+    }
+
+    blur() {
+        if (ui && ui.keyboardFocus === this) ui.setKeyboardFocus(null);
+    }
+
+    update() {
+        if (!this.isVisible) return;
+        if (this.frame) this.frame.update();
+        cc.save();
+        this.background.clip();
+        if (this.background) this.background.update();
+        if (this.text) this.text.update();
+        if (this.cursor) this.cursor.update();
+        cc.restore();
+        if (!this.isEnabled) this.disabledGel.update();
+    }
+
+    refreshCursor() {
+        let offset = this.text.findLetterOffset(this.insertLeft);
+        if (offset > this.background.size[0]) {
+            const slide = offset-this.background.size[0];
+            offset = this.background.size[0];
+            this.text.setLocal([-slide,0]);
+        }
+        this.cursor.setLocal([offset+5, 0]);
+        this.cursor.show();
+        this.background.markChanged();
+    }
 }

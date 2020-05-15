@@ -36,6 +36,7 @@ export class WebInputManager extends NamedView {
         this.touches = [];
         this.chords = new Map();
 
+
         this.addListener(document, 'contextmenu', e => e.preventDefault());
         this.addListener(window, 'resize', e => this.onResize(e));
 
@@ -255,7 +256,7 @@ export class WebInputManager extends NamedView {
 
     onTouchStart(event) {
         // event.stopPropagation();
-        event.preventDefault();
+        event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
         for (const touch of event.changedTouches) {
             const id = touch.identifier;
             const x = touch.clientX;
@@ -277,7 +278,7 @@ export class WebInputManager extends NamedView {
 
     onTouchEnd(event) {
         // event.stopPropagation();
-        event.preventDefault();
+        event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
         for (const touch of event.changedTouches) {
             const id = touch.identifier;
             const start = this.getTouch(id);
@@ -316,7 +317,7 @@ export class WebInputManager extends NamedView {
 
     onTouchMove(event) {
         // event.stopPropagation();
-        event.preventDefault();
+        event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
         for (const touch of event.changedTouches) {     // Update the current position of all touches
             const id = touch.identifier;
             const t = this.getTouch(id);
@@ -357,7 +358,7 @@ export class WebInputManager extends NamedView {
 
     onTouchCancel(event) {
         // event.stopPropagation();
-        event.preventDefault();
+        event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
         this.touches = [];
     }
 
