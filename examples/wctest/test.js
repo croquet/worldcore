@@ -161,7 +161,9 @@ class MyViewRoot extends ViewRoot {
         const textField = new TextFieldWidget(this.ui.root);
         textField.setSize([300,45]);
         textField.setLocal([20,20]);
+        textField.text.setText("Mississippi WWWW IIII");
         textField.focus();
+        textField.selectAll();
 
         const showButton = new ButtonWidget(this.ui.root);
         showButton.label.setText(`Show`);
@@ -187,6 +189,14 @@ class MyViewRoot extends ViewRoot {
         hideButton.setLocal([20, 240]);
         hideButton.onClick = () => {
             this.input.style.visibility = 'hidden'; // hide it again
+        };
+
+        const testButton = new ButtonWidget(this.ui.root);
+        testButton.label.setText(`Test`);
+        testButton.setSize([200, 50]);
+        testButton.setLocal([20, 300]);
+        testButton.onClick = () => {
+            textField.blur();
         };
 
 

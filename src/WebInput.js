@@ -188,14 +188,46 @@ export class WebInputManager extends NamedView {
 
     // publish both keyDown + arg and "xDown" where "x" is the key
     onKeyDown(event) {
-        // event.stopPropagation();
-        // event.preventDefault();
+        if (event.ctrlKey) {
+            this.onControlKey(event);
+            return;
+        }
         const key = event.key;
-        if (KeyDown(key)) return;
         keys.add(key);
-        this.publish("input", key + "Down");
-        this.publish("input", "keyDown", key);
+        if (event.repeat) {
+            this.publish("input", key + "Repeat");
+            this.publish("input", "keyRepeat", key); // This can generate a lot of events! Don't subscribe in model.
+        } else {
+            this.publish("input", key + "Down");
+            this.publish("input", "keyDown", key);
+        }
         this.onChordDown(key);
+    }
+
+    onControlKey(e) {
+        switch (e.key) {
+            case 'z':
+                e.preventDefault();
+                this.publish("input", "undo");
+                break;
+            case 'y':
+                e.preventDefault();
+                this.publish("input", "redo");
+                break;
+            case 'x':
+                e.preventDefault();
+                this.publish("input", "cut");
+                break;
+            case 'c':
+                e.preventDefault();
+                this.publish("input", "copy");
+                break;
+            case 'v':
+                e.preventDefault();
+                navigator.clipboard.readText().then(clip => this.publish("input", "pasteText", clip));
+                break;
+            default:
+        }
     }
 
     // publish both keyUp + arg and "xUp" where "x" is the key
@@ -203,7 +235,7 @@ export class WebInputManager extends NamedView {
         // event.stopPropagation();
         // event.preventDefault();
         const key = event.key;
-        //if (!KeyDown(key)) return;
+        if (!KeyDown(key)) return;
         this.publish("input", key + "Up");
         this.publish("input", "keyUp", key);
         this.onChordUp(key);

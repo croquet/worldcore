@@ -2,6 +2,7 @@ import { View } from "@croquet/croquet";
 import { v2_sub, v2_multiply, v2_add } from "./Vector";
 import { LoadFont, LoadImage} from "./ViewAssetCache";
 import { NamedView, GetNamedView } from "./NamedView";
+import { KeyDown } from "./WebInput";
 
 let ui;
 let cc;
@@ -45,6 +46,11 @@ export class UIManager extends NamedView {
             this.subscribe("input", {event: "touchDown", handling: "immediate"}, this.touchDown);
             this.subscribe("input", {event: "touchUp", handling: "immediate"}, this.touchUp);
             this.subscribe("input", {event: "keyDown", handling: "immediate"}, this.keyDown);
+            this.subscribe("input", {event: "keyRepeat", handling: "immediate"}, this.keyDown);
+
+            this.subscribe("input", {event: "pasteText", handling: "immediate"}, this.pasteText);
+            this.subscribe("input", {event: "cut", handling: "immediate"}, this.cutText);
+            this.subscribe("input", {event: "copy", handling: "immediate"}, this.copyText);
         }
 
         destroy() {
@@ -131,9 +137,20 @@ export class UIManager extends NamedView {
             if (key === 'ArrowRight') this.keyboardFocus.cursorRight();
         }
 
-        // setLetterSpacing(n) {
-        //     this.canvas.style.cssText = "letter-spacing: " + n + "px";
-        // }
+        pasteText(text) {
+            if (!this.keyboardFocus) return;
+            this.keyboardFocus.insert(text);
+        }
+
+        cutText(text) {
+            if (!this.keyboardFocus) return;
+            console.log("cut");
+        }
+
+        copyText(text) {
+            if (!this.keyboardFocus) return;
+            console.log("copy");
+        }
 
 }
 
@@ -157,7 +174,7 @@ export class Widget extends View {
         this.localOpacity = 1;              // Default value
         this.inheritOpacity = true;         // Affected by parent's opacity
         this.consumeEvents = false;         // Intercepts touch or mouse down events.
-        // this.noClip = false;
+        this.clip = false;
         this.isChanged = true;
         this.isVisible = true;
         if (parent) parent.addChild(this);
@@ -224,24 +241,28 @@ export class Widget extends View {
         this.markChanged();
     }
 
+    setClip(clip) {
+        this.clip = clip;
+        this.markChanged();
+    }
+
     setVisible(visible) {
+        if (this.isVisible === visible) return;
         this.isVisible = visible;
-        this.markParentChanged();
+        if (!this.isVisible) this.markAllChanged();
+        this.markAllChanged();
     }
 
     show() {
-        this.isVisible = true;
-        this.markParentChanged();
+        this.setVisible(true);
     }
 
     hide() {
-        this.isVisible = false;
-        this.markParentChanged();
+        this.setVisible(false);
     }
 
     toggleVisibility() {
-        this.isVisible = !this.isVisible;
-        this.markParentChanged();
+        this.setVisible(!this.isVisible);
     }
 
     setConsumeEvents(consume) {
@@ -311,20 +332,15 @@ export class Widget extends View {
 
 
     update() {
-        // cc.save();
-        // this.clip();
+        cc.save();
+        if (this.clip) {
+            cc.rect(this.global[0], this.global[1], this.size[0], this.size[1]);
+            cc.clip();
+        }
         if (this.isChanged) this.drawWithOpacity();
         this.isChanged = false;
         if (this.isVisible) this.children.forEach(child => child.update());
-        // cc.restore();
-    }
-
-    // Sets the clip area to the current widget's bounds
-    // Generally you should preface this with cc.save and follow up with cc.restore.
-
-    clip() {
-        cc.rect(this.global[0], this.global[1], this.size[0], this.size[1]);
-        cc.clip();
+        cc.restore();
     }
 
     updateNoOpacity() {
@@ -654,11 +670,6 @@ export class TextWidget extends Widget {
         this.markParentChanged();
     }
 
-    // setSpacing(spacing) {
-    //     this.spacing = spacing;
-    //     this.markParentChanged();
-    // }
-
     setColor(color) {
         this.color = color;
         this.markParentChanged();
@@ -728,16 +739,18 @@ export class TextWidget extends Widget {
             yOffset = this.lineHeight * (lines.length - 1);
         }
 
-        // cc.save();
-        // cc.rect(this.global[0], this.global[1], this.size[0], this.size[1]);
-        // cc.clip();
         for (let i = 0; i<lines.length; i++) {
             cc.fillText(lines[i], xy[0], xy[1] + (i * this.lineHeight) - yOffset);
         }
-        // cc.restore();
+    }
+
+    width() {
+        cc.font = this.style + " " + this.point + "px " + this.font;
+        return cc.measureText(this.text).width;
     }
 
     findInsert(x) {
+        cc.font = this.style + " " + this.point + "px " + this.font;
         const c = [...this.text];
         let sum = 0;
         for (let i = 0; i < c.length; i++) {
@@ -749,6 +762,7 @@ export class TextWidget extends Widget {
     }
 
     findLetterOffset(n) {
+        cc.font = this.style + " " + this.point + "px " + this.font;
         const c = [...this.text];
         let offset = 0;
         n = Math.min(n, c.length);
@@ -757,6 +771,7 @@ export class TextWidget extends Widget {
         }
         return Math.max(0, Math.floor(offset));
     }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -1271,26 +1286,46 @@ export class TextFieldWidget extends ControlWidget {
     constructor(parent) {
         super(parent);
 
-        this.insertLeft = 0;
-        this.insertRight = 0;
+        this.insertLeft = 2;
+        this.insertRight = 3;
+        this.textLeft = 0;
+        this.isFocused = false;
 
-        this.setFrame(new BoxWidget());
-        this.setBackground(new BoxWidget());
-        this.setText(new TextWidget());
-        this.text.setText("Mississippi WWWW IIII");
+        this.background = new BoxWidget(this);
+        this.background.setAutoSize([1,1]);
+        this.background.setColor([1,1,1]);
 
-        this.setCursor(new BoxWidget());
-        this.cursor.setColor([0,0,0]);
+        this.clip = new Widget(this.background);
+        this.clip.setBorder([5,5,5,5]);
+        this.clip.setAutoSize([1,1]);
+        this.clip.setClip(true);
 
-        this.setHighlight(new GelWidget());
-        this.highlight.setOpacity(0.4);
-        const gel = new BoxWidget(this.highlight);
-        gel.setAutoSize([1,1]);
-        gel.setColor([0.0,0.2,0.9]);
-        this.highlight.hide();
+        this.text = new TextWidget(this.clip);
+        this.text.setAutoSize([0,1]);
+        this.text.setLocal([this.textLeft, 0]);
+        this.text.setAlignX('left');
+        this.text.setSize([this.text.width(),0]);
 
-        this.refreshCursor();
+        this.cursor = new BoxWidget(this.text);
+        this.cursor.setAutoSize([0,1]);
+        this.cursor.setSize([1,1]);
 
+        this.gel = new GelWidget(this.text);
+        this.gel.setAutoSize([0,1]);
+        this.gel.setSize([1,1]);
+        this.gel.setOpacity(0.2);
+
+        this.highlight = new BoxWidget(this.gel);
+        this.highlight.setAutoSize([1,1]);
+        this.highlight.setColor([1,0,0]);
+
+        this.refresh();
+        // this.future(530).cursorBlink();
+
+    }
+
+    get isHighlit() {
+        return (this.insertLeft !== this.insertRight);
     }
 
     destroy() {
@@ -1298,137 +1333,198 @@ export class TextFieldWidget extends ControlWidget {
         this.blur();
     }
 
-    setFrame(widget) {
-        if (this.frame) this.destroyChild(this.frame);
-        this.frame = widget;
-        this.frame.setAutoSize([1,1]);
-        this.frame.setColor([0,0,0]);
-        this.addChild(widget);
-    }
-
-    setBackground(widget) {
-        if (this.background) this.frame.destroyChild(this.background);
-        this.background = widget;
-        this.background.setAutoSize([1,1]);
-        this.background.setBorder([1,1,1,1]);
-        this.background.setColor([1,1,1]);
-        this.addChild(widget);
-    }
-
-    setText(widget) {
-        if (this.text) this.background.destroyChild(this.text);
-        this.text = widget;
-        // this.text.noClip = true;
-        this.text.setAutoSize([1,1]);
-        this.text.setBorder([5,5,5,5]);
-        this.text.setLocal([0, 0]);
-        this.text.setAlignX('left');
-        this.background.addChild(widget);
-    }
-
-    setCursor(widget) {
-        if (this.cursor) this.background.destroyChild(this.cursor);
-        this.cursor = widget;
-        this.cursor.setAutoSize([0,1]);
-        this.cursor.setBorder([0,5,0,5]);
-        this.cursor.setSize([1,1]);
-        this.background.addChild(widget);
-        this.future(530).cursorBlink();
-    }
-
     cursorBlink() {
-        this.cursor.toggleVisibility();
-        this.background.markChanged();
+        if (!this.isFocused) return;
+        if (!this.isHighlit) {
+            this.cursor.toggleVisibility();
+            this.background.markChanged();
+        }
         this.future(530).cursorBlink();
     }
 
-    setHighlight(widget) {
-        if (this.highlight) this.destroyChild(this.highlight);
-        this.highlight = widget;
-        this.highlight.setAutoSize([0,1]);
-        this.highlight.setSize([3,1]);
-        this.text.addChild(widget);
-    }
+    mouse(xy) {
+        if (!this.isPressed) return;
 
-    // mouse(xy) {
-    //     if (!this.text.inRect(xy)) return;
-    //     const x = xy[0] - this.text.global[0];
-    //     const insert = this.text.findInsert(x);
-    //     const offset = this.text.findLetterOffset(insert);
-    //     console.log(x + " " + insert);
-    // }
+        if (xy[0] < this.clip.global[0]) {
+            // console.log("Left!");
+            return;
+        }
+
+        if (xy[0] > this.clip.global[0] + this.clip.size[0]) {
+            // console.log("Right!");
+            return;
+        }
+
+        const x = xy[0] - this.text.global[0];
+        const insert = this.text.findInsert(x);
+        if (this.dragStart < insert) {
+            this.insertLeft = this.dragStart;
+            this.insertRight = insert;
+        } else if (this.dragStart > insert) {
+            this.insertLeft = insert;
+            this.insertRight = this.dragStart;
+        } else {
+            this.insertLeft = this.dragStart;
+            this.insertRight = this.dragStart;
+        }
+        this.refresh();
+    }
 
     press(xy) {
         if (!this.isVisible || !this.isEnabled) return false;
         if (!this.inRect(xy)) return false;
+        if (!this.isFocused) this.focus();
+        this.isPressed = true;
         const x = xy[0] - this.text.global[0];
         const insert = this.text.findInsert(x);
         this.insertLeft = insert;
-        this.refreshCursor();
+        this.insertRight = insert;
+        this.dragStart = insert;
+        this.refresh();
         return true;
     }
 
+    release(xy) {
+        this.isPressed = false;
+    }
+
+    selectAll() {
+        this.insertLeft = 0;
+        this.insertRight = this.text.text.length;
+        this.refresh();
+    }
+
     insert(s) {
+        if (this.isHighlit)  this.deleteRange();
+        s = this.filter(s);
         const t = this.text.text.slice(0, this.insertLeft) + s + this.text.text.slice(this.insertLeft);
         this.text.setText(t);
         this.insertLeft += s.length;
-        this.refreshCursor();
+        this.insertRight = this.insertLeft;
+        this.refresh();
+    }
+
+    filter(s) {
+        return s.replace(/\n/g, ' '); // Filter out carriage returns
     }
 
     delete() {
-        const cut = Math.min(this.text.text.length, this.insertLeft + 1);
-        const t = this.text.text.slice(0, this.insertLeft) + this.text.text.slice(cut);
-        this.text.setText(t);
-        this.refreshCursor();
+        if (this.isHighlit) {
+            this.deleteRange();
+        } else {
+            this.deleteOne();
+        }
+        this.insertRight = this.insertLeft;
+        this.refresh();
     }
 
     backspace() {
+        if (this.isHighlit) {
+            this.deleteRange();
+        } else {
+            this.backspaceOne();
+        }
+        this.insertRight = this.insertLeft;
+        this.refresh();
+    }
+
+    deleteRange() {
+        const cut = Math.min(this.text.text.length, this.insertRight);
+        const t = this.text.text.slice(0, this.insertLeft) + this.text.text.slice(cut);
+        this.text.setText(t);
+    }
+
+
+    deleteOne() {
+        const cut = Math.min(this.text.text.length, this.insertRight + 1);
+        const t = this.text.text.slice(0, this.insertLeft) + this.text.text.slice(cut);
+        this.text.setText(t);
+    }
+
+    backspaceOne() {
         const cut = Math.max(0, this.insertLeft - 1);
-        const t = this.text.text.slice(0, cut) + this.text.text.slice(this.insertLeft);
+        const t = this.text.text.slice(0, cut) + this.text.text.slice(this.insertRight);
         this.insertLeft = cut;
         this.text.setText(t);
-        this.refreshCursor();
     }
 
     cursorLeft() {
         this.insertLeft = Math.max(0, this.insertLeft - 1);
-        this.refreshCursor();
+        this.refresh();
     }
 
     cursorRight() {
         this.insertLeft = Math.min(this.text.text.length, this.insertLeft + 1);
-        this.refreshCursor();
+        this.refresh();
     }
 
     focus() {
+        if (this.isFocused) return;
         if (ui) ui.setKeyboardFocus(this);
+        this.isFocused = true;
+        this.insertLeft = this.text.text.length;
+        this.insertRight = this.text.text.length;
+        this.refresh();
+        this.future(530).cursorBlink();
     }
 
     blur() {
         if (ui && ui.keyboardFocus === this) ui.setKeyboardFocus(null);
+        this.cursor.hide();
+        this.gel.hide();
+        this.isFocused = false;
     }
 
     update() {
         if (!this.isVisible) return;
-        if (this.frame) this.frame.update();
-        cc.save();
-        this.background.clip();
-        if (this.background) this.background.update();
-        if (this.text) this.text.update();
-        if (this.cursor) this.cursor.update();
-        cc.restore();
-        if (!this.isEnabled) this.disabledGel.update();
+        this.background.update();
+
+        // if (!this.isEnabled) this.disabledGel.update();
+    }
+
+    refresh() {
+        if (this.isHighlit) {
+            this.refreshHighlight();
+        } else {
+            this.refreshCursor();
+        }
+        this.background.markChanged();
+    }
+
+    refreshHighlight() {
+        const leftOffset = this.text.findLetterOffset(this.insertLeft);
+        const rightOffset = this.text.findLetterOffset(this.insertRight);
+
+        this.gel.setLocal([leftOffset, 0]);
+        this.gel.setSize([rightOffset - leftOffset, 0]);
+
+        this.cursor.hide();
+        this.gel.show();
     }
 
     refreshCursor() {
-        let offset = this.text.findLetterOffset(this.insertLeft);
-        if (offset > this.background.size[0]) {
-            const slide = offset-this.background.size[0];
-            offset = this.background.size[0];
-            this.text.setLocal([-slide,0]);
+        const clipRight = this.clip.size[0];
+        const textWidth = this.text.width();
+        const textRight = this.textLeft + textWidth;
+
+        if (textWidth < clipRight) {
+            this.textLeft = 0;
+        } else if (textRight < clipRight) {
+            this.textLeft = clipRight-textWidth;
         }
-        this.cursor.setLocal([offset+5, 0]);
+
+        const offset = this.text.findLetterOffset(this.insertLeft);
+        const globalOffset = this.textLeft + offset;
+
+        if (globalOffset < 0) {
+            this.textLeft = -offset;
+        } else if (globalOffset > clipRight) {
+            this.textLeft = clipRight-1-offset;
+        }
+
+        this.text.setLocal([this.textLeft, 0]);
+        this.cursor.setLocal([offset, 0]);
+        this.gel.hide();
         this.cursor.show();
-        this.background.markChanged();
     }
 }
