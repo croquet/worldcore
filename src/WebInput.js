@@ -1,6 +1,11 @@
 import { v2_sub, v2_add, v2_scale, v2_magnitude, TAU } from "./Vector";
 import { NamedView } from "./NamedView";
 
+// Need to add doubletap
+
+const DOUBLE_DURATION = 300; // milliseconds
+const TRIPLE_DURATION = 600; // milliseconds
+
 const TAP_DURATION = 300;   // milliseconds
 const TAP_DISTANCE = 10;     // pixels
 
@@ -36,6 +41,8 @@ export class WebInputManager extends NamedView {
         this.touches = [];
         this.chords = new Map();
 
+        this.lastClick = 0;
+        this.penultimateClick = 0;
 
         this.addListener(document, 'contextmenu', e => e.preventDefault());
         this.addListener(window, 'resize', e => this.onResize(e));
@@ -224,7 +231,7 @@ export class WebInputManager extends NamedView {
                 break;
             case 'v':
                 e.preventDefault();
-                navigator.clipboard.readText().then(clip => this.publish("input", "pasteText", clip));
+                this.publish("input", "paste");
                 break;
             default:
         }
@@ -253,6 +260,15 @@ export class WebInputManager extends NamedView {
         keys.add(key);
         this.publish("input", key + "Down", [pX, pY]);
         this.onChordDown(key);
+        if (event.timeStamp - this.lastClick < DOUBLE_DURATION) {
+            if (event.timeStamp - this.penultimateClick < TRIPLE_DURATION) {
+                this.publish("input", key + "Triple", [pX, pY]);
+            } else {
+                this.publish("input", key + "Double", [pX, pY]);
+            }
+        }
+        this.penultimateClick = this.lastClick;
+        this.lastClick = event.timeStamp;
     }
 
     onMouseUp(event) {

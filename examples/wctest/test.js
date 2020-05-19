@@ -159,17 +159,18 @@ class MyViewRoot extends ViewRoot {
         this.ui = this.addManager(new UIManager());
 
         const textField = new TextFieldWidget(this.ui.root);
-        textField.setSize([300,45]);
+        textField.setSize([600,45]);
         textField.setLocal([20,20]);
-        textField.text.setText("Mississippi WWWW IIII");
-        textField.focus();
-        textField.selectAll();
+        textField.text.setText("This is a text field. Type in it!");
+        // textField.disable();
+
 
         const showButton = new ButtonWidget(this.ui.root);
         showButton.label.setText(`Show`);
         showButton.setSize([200, 50]);
         showButton.setLocal([20, 120]);
         showButton.onClick = () => {
+            console.log("Show!");
             this.input.style.visibility = 'visible'; // unhide the input
         };
 
@@ -178,6 +179,7 @@ class MyViewRoot extends ViewRoot {
         focusButton.setSize([200, 50]);
         focusButton.setLocal([20, 180]);
         focusButton.onClick = () => {
+            console.log("Focus!");
             this.input.style.visibility = 'visible';
             this.input.focus(); // focus on it so keyboard pops
             this.input.style.visibility = 'hidden';
@@ -188,6 +190,7 @@ class MyViewRoot extends ViewRoot {
         hideButton.setSize([200, 50]);
         hideButton.setLocal([20, 240]);
         hideButton.onClick = () => {
+            console.log("Hide!");
             this.input.style.visibility = 'hidden'; // hide it again
         };
 
@@ -196,13 +199,20 @@ class MyViewRoot extends ViewRoot {
         testButton.setSize([200, 50]);
         testButton.setLocal([20, 300]);
         testButton.onClick = () => {
-            textField.blur();
+            console.log("Test!");
         };
 
+        const toggle0 = new ToggleWidget(this.ui.root);
+        toggle0.setSize([200, 50]);
+        toggle0.setLocal([20, 360]);
+        // testButton.onClick = () => {
+        //     textField.blur();
+        // };
 
-        // const testSlider = new SliderWidget(this.ui.root);
-        // testSlider.setSize([20, 100]);
-        // testSlider.setLocal([20, 200]);
+
+        const testSlider = new SliderWidget(this.ui.root);
+        testSlider.setSize([20, 200]);
+        testSlider.setLocal([400,100]);
         //testSlider.disable();
 
 

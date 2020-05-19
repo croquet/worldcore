@@ -5,6 +5,7 @@ import { NamedView, GetNamedView } from "./NamedView";
 import { KeyDown } from "./WebInput";
 
 let ui;
+let focus;
 let cc;
 
 //------------------------------------------------------------------------------------------
@@ -29,7 +30,6 @@ export class UIManager extends NamedView {
             this.canvas = document.createElement("canvas");
             this.canvas.id = "UICanvas";
             this.canvas.style.cssText = "position: absolute; left: 0; top: 0; z-index: 1";
-            // this.setLetterSpacing(0);
             document.body.insertBefore(this.canvas, null);
             cc = this.canvas.getContext('2d');
 
@@ -38,19 +38,20 @@ export class UIManager extends NamedView {
 
             this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
             this.subscribe("input", {event: "mouseXY", handling: "immediate"}, this.mouseXY);
-            this.subscribe("input", {event: "mouse0Down", handling: "immediate"}, this.mouse0Down);
-            this.subscribe("input", {event: "mouse0Up", handling: "immediate"}, this.mouse0Up);
-            // this.subscribe("input", "cursor2Down", data => this.cursor2Down(data));
-            // this.subscribe("input", "cursor2Up", data => this.cursor2Up(data));
+            this.subscribe("input", {event: "mouse0Down", handling: "immediate"}, this.mouseDown);
+            this.subscribe("input", {event: "mouse0Up", handling: "immediate"}, this.mouseUp);
+
+            this.subscribe("input", {event: "mouse0Double", handling: "immediate"}, this.mouseDouble);
+            this.subscribe("input", {event: "mouse0Triple", handling: "immediate"}, this.mouseTriple);
             this.subscribe("input", {event: "touchXY", handling: "immediate"}, this.touchXY);
             this.subscribe("input", {event: "touchDown", handling: "immediate"}, this.touchDown);
             this.subscribe("input", {event: "touchUp", handling: "immediate"}, this.touchUp);
             this.subscribe("input", {event: "keyDown", handling: "immediate"}, this.keyDown);
             this.subscribe("input", {event: "keyRepeat", handling: "immediate"}, this.keyDown);
 
-            this.subscribe("input", {event: "pasteText", handling: "immediate"}, this.pasteText);
-            this.subscribe("input", {event: "cut", handling: "immediate"}, this.cutText);
-            this.subscribe("input", {event: "copy", handling: "immediate"}, this.copyText);
+            this.subscribe("input", {event: "paste", handling: "immediate"}, this.paste);
+            this.subscribe("input", {event: "cut", handling: "immediate"}, this.cut);
+            this.subscribe("input", {event: "copy", handling: "immediate"}, this.copy);
         }
 
         destroy() {
@@ -78,10 +79,6 @@ export class UIManager extends NamedView {
             if (this.root) this.root.setSize(this.size);
         }
 
-        setKeyboardFocus(widget) {
-            this.keyboardFocus = widget;
-        }
-
         update() {
             cc.setTransform(1, 0, 0, 1, 0, 0);
             cc.scale(this.ratio, this.ratio);
@@ -89,32 +86,34 @@ export class UIManager extends NamedView {
         }
 
         mouseXY(xy) {
-            if (this.root) this.root.mouse(xy);
+            if (focus) focus.drag(xy);
+            this.setCursor('default');
+            if (this.root) this.root.hover(xy);
             this.publish("ui", "mouseXY", xy);
         }
 
-        mouse0Down(xy) {
+        mouseDown(xy) {
             if (!this.root) return;
             if (!this.root.press(xy)) this.publish("ui", "mouse0Down", xy);
         }
 
-        mouse0Up(xy) {
-            if (this.root) this.root.release(xy);
+        mouseDouble(xy) {
+            if (!focus || !focus.doubleClick) return;
+            focus.doubleClick(xy);
+        }
+
+        mouseTriple(xy) {
+            if (!focus || !focus.tripleClick) return;
+            focus.tripleClick(xy);
+        }
+
+        mouseUp(xy) {
+            if (focus) focus.release(xy);
             this.publish("ui", "mouse0Up", xy);
         }
 
-        // cursor2Down(xy) {
-        //     if (!this.root) return;
-        //     if (!this.root.press(xy)) this.publish("ui", "cursor2Down", xy);
-        // }
-
-        // cursor2Up(xy) {
-        //     if (this.root) this.root.release(xy);
-        //     this.publish("ui", "cursor2Up", xy);
-        // }
-
         touchXY(xy) {
-            if (this.root) this.root.touch(xy);
+            if (focus) focus.drag(xy);
             this.publish("ui", "touchXY", xy);
         }
 
@@ -124,32 +123,39 @@ export class UIManager extends NamedView {
         }
 
         touchUp(xy) {
-            if (this.root) this.root.release(xy);
+            if (focus) focus.release(xy);
             this.publish("ui", "touchUp", xy);
         }
 
+        // This should be migrated down into the widget!
+
         keyDown(key) {
-            if (!this.keyboardFocus) return;
-            if (key.length === 1) this.keyboardFocus.insert(key);
-            if (key === 'Backspace') this.keyboardFocus.backspace();
-            if (key === 'Delete') this.keyboardFocus.delete();
-            if (key === 'ArrowLeft') this.keyboardFocus.cursorLeft();
-            if (key === 'ArrowRight') this.keyboardFocus.cursorRight();
+            if (!focus) return;
+            if (key.length === 1 && focus.insert) focus.insert(key);
+            if (key === 'Enter' && focus.onEnter) focus.onEnter();
+            if (key === 'Backspace' && focus.backspace) focus.backspace();
+            if (key === 'Delete' && focus.delete) focus.delete();
+            if (key === 'ArrowLeft' && focus.cursorLeft) focus.cursorLeft();
+            if (key === 'ArrowRight' && focus.cursorRight) focus.cursorRight();
         }
 
-        pasteText(text) {
-            if (!this.keyboardFocus) return;
-            this.keyboardFocus.insert(text);
+        paste() {
+            if (!focus || !focus.paste) return;
+            focus.paste();
         }
 
-        cutText(text) {
-            if (!this.keyboardFocus) return;
-            console.log("cut");
+        cut() {
+            if (!focus || !focus.cut) return;
+            focus.cut();
         }
 
-        copyText(text) {
-            if (!this.keyboardFocus) return;
-            console.log("copy");
+        copy() {
+            if (!focus || !focus.copy) return;
+            focus.copy();
+        }
+
+        setCursor(c) {
+            this.canvas.style.cursor = c;
         }
 
 }
@@ -283,9 +289,8 @@ export class Widget extends View {
     }
 
     // Tell the UI to redraw the whole screen
-    // This is used for show/hide widget events
+    // This is used for hiding widget events
     markAllChanged() {
-        // const ui = GetNamedView('UIManager');
         if (ui && ui.root) ui.root.markChanged();
     }
 
@@ -349,12 +354,12 @@ export class Widget extends View {
         if (this.isVisible) this.children.forEach(child => child.updateNoOpacity());
     }
 
-    mouse(xy) {
-        this.children.forEach(child => child.mouse(xy));
+    hover(xy) {
+        if (!this.isVisible || !this.inRect(xy)) return;
+        this.children.forEach(child => child.hover(xy));
     }
 
-    touch(xy) {
-        this.children.forEach(child => child.touch(xy));
+    drag(xy) {
     }
 
     press(xy) {
@@ -804,6 +809,7 @@ export class ControlWidget extends Widget {
 
     setEnabled(enabled) {
         this.isEnabled = enabled;
+        if (!enabled) this.blur();
         this.markChanged();
     }
 
@@ -825,6 +831,31 @@ export class ControlWidget extends Widget {
         this.disabledGel.setAutoSize([1,1]);
         this.addChild(widget);
     }
+
+    get isFocused() {
+        return this === focus;
+    }
+
+    clearFocus() {
+        if (focus) focus.blur();
+    }
+
+    focus() {
+        if (this.isFocused) return;
+        this.clearFocus();
+        focus = this;
+        this.onFocus();
+    }
+
+    onFocus() {}
+
+    blur() {
+        if (!this.isFocused) return;
+        focus = null;
+        this.onBlur();
+    }
+
+    onBlur() {}
 
 }
 
@@ -895,12 +926,19 @@ export class ButtonWidget extends ControlWidget {
         if (!this.isEnabled) this.disabledGel.update();
     }
 
-    mouse(xy) {
+    hover(xy) {
+        const state = this.isVisible && this.isEnabled && this.inRect(xy);
+        if (this.isHovered !== state) {
+            this.isHovered = state;
+            this.markChanged();
+        }
+    }
+
+    drag(xy) {
         if (!this.isVisible || !this.isEnabled) return;
-        const hover = this.inRect(xy);
-        if (this.isHovered === hover) return;
-        this.isHovered = hover;
-        if (this.isPressed) this.isPressed = this.isHovered;
+        const inside = this.inRect(xy);
+        if (this.isPressed === inside) return;
+        this.isPressed = inside;
         this.markChanged();
     }
 
@@ -914,16 +952,18 @@ export class ButtonWidget extends ControlWidget {
     press(xy) {
         if (!this.isVisible || !this.isEnabled) return false;
         if (!this.inRect(xy)) return false;
+        this.focus();
         this.isPressed = true;
         this.markChanged();
         return true;
     }
 
     release(xy) {
+        this.blur();
         if (!this.isPressed) return;
-        if (!this.inRect(xy)) return;
         this.isPressed = false;
         this.markChanged();
+        // if (!this.inRect(xy)) return;
         this.onClick();
     }
 
@@ -1057,12 +1097,20 @@ export class ToggleWidget extends ControlWidget {
         if (!this.isEnabled) this.disabledGel.update();
     }
 
-    mouse(xy) {
+    hover(xy) {
+        const state = this.isVisible && this.isEnabled && this.inRect(xy);
+        if (this.isHovered !== state) {
+            this.isHovered = state;
+            this.markChanged();
+        }
+    }
+
+    drag(xy) {
         if (!this.isVisible || !this.isEnabled) return;
-        const hover = this.inRect(xy);
-        if (this.isHovered === hover) return;
-        this.isHovered = hover;
-        if (this.isPressed) this.isPressed = this.isHovered;
+        const inside = this.inRect(xy);
+        if (this.isHovered === inside) return;
+        this.isHovered = inside;
+        this.isPressed = inside;
         this.markChanged();
     }
 
@@ -1077,11 +1125,13 @@ export class ToggleWidget extends ControlWidget {
         if (!this.isVisible || !this.isEnabled) return false;
         if (!this.inRect(xy)) return false;
         this.isPressed = true;
+        this.focus();
         this.markChanged();
         return true;
     }
 
     release(xy) {
+        this.blur();
         if (!this.isPressed) return;
         if (!this.inRect(xy)) return;
         this.isPressed = false;
@@ -1255,17 +1305,21 @@ export class SliderWidget extends ControlWidget {
         if (!this.isVisible || !this.isEnabled) return false;
         if (!this.inRect(xy)) return false;
         this.isPressed = true;
+        this.focus();
         this.moveKnob(xy);
         return true;
     }
 
     release(xy) {
+        this.blur();
         this.moveKnob(xy);
         this.isPressed = false;
     }
 
-    mouse(xy) {
+    drag(xy) {
+        if (!this.isVisible || !this.isEnabled) return;
         this.moveKnob(xy);
+        this.markChanged();
     }
 
     touch(xy) {
@@ -1286,10 +1340,9 @@ export class TextFieldWidget extends ControlWidget {
     constructor(parent) {
         super(parent);
 
-        this.insertLeft = 2;
-        this.insertRight = 3;
+        this.insertLeft = 0;
+        this.insertRight = 0;
         this.textLeft = 0;
-        this.isFocused = false;
 
         this.background = new BoxWidget(this);
         this.background.setAutoSize([1,1]);
@@ -1309,18 +1362,17 @@ export class TextFieldWidget extends ControlWidget {
         this.cursor = new BoxWidget(this.text);
         this.cursor.setAutoSize([0,1]);
         this.cursor.setSize([1,1]);
+        this.cursor.hide();
 
         this.gel = new GelWidget(this.text);
         this.gel.setAutoSize([0,1]);
         this.gel.setSize([1,1]);
         this.gel.setOpacity(0.2);
+        this.gel.hide();
 
         this.highlight = new BoxWidget(this.gel);
         this.highlight.setAutoSize([1,1]);
         this.highlight.setColor([1,0,0]);
-
-        this.refresh();
-        // this.future(530).cursorBlink();
 
     }
 
@@ -1342,7 +1394,12 @@ export class TextFieldWidget extends ControlWidget {
         this.future(530).cursorBlink();
     }
 
-    mouse(xy) {
+    hover(xy) {
+        if (!this.isVisible || !this.inRect(xy)) return;
+        ui.setCursor("text");
+    }
+
+    drag(xy) {
         if (!this.isPressed) return;
 
         if (xy[0] < this.clip.global[0]) {
@@ -1373,7 +1430,7 @@ export class TextFieldWidget extends ControlWidget {
     press(xy) {
         if (!this.isVisible || !this.isEnabled) return false;
         if (!this.inRect(xy)) return false;
-        if (!this.isFocused) this.focus();
+        this.focus();
         this.isPressed = true;
         const x = xy[0] - this.text.global[0];
         const insert = this.text.findInsert(x);
@@ -1388,6 +1445,29 @@ export class TextFieldWidget extends ControlWidget {
         this.isPressed = false;
     }
 
+    doubleClick(xy) {
+        if (!this.inRect(xy)) return;
+        const x = xy[0] - this.text.global[0];
+        const t = this.text.text;
+        const insert = Math.min(t.length-1, this.text.findInsert(x));
+        if (t[insert] === ' ') {
+            this.insertLeft = insert;
+            this.insertRight = insert+1;
+            this.refresh();
+        } else {
+            this.insertLeft = insert;
+            this.insertRight = insert;
+            while (this.insertLeft > 0 && t[this.insertLeft-1] !== ' ') this.insertLeft--;
+            while (this.insertRight < t.length && t[this.insertRight] !== ' ') this.insertRight++;
+        }
+        this.refresh();
+    }
+
+    tripleClick(xy) {
+        if (!this.inRect(xy)) return;
+        this.selectAll();
+    }
+
     selectAll() {
         this.insertLeft = 0;
         this.insertRight = this.text.text.length;
@@ -1395,7 +1475,8 @@ export class TextFieldWidget extends ControlWidget {
     }
 
     insert(s) {
-        if (this.isHighlit)  this.deleteRange();
+        console.log(s);
+        if (this.isHighlit) this.deleteRange();
         s = this.filter(s);
         const t = this.text.text.slice(0, this.insertLeft) + s + this.text.text.slice(this.insertLeft);
         this.text.setText(t);
@@ -1450,36 +1531,49 @@ export class TextFieldWidget extends ControlWidget {
 
     cursorLeft() {
         this.insertLeft = Math.max(0, this.insertLeft - 1);
+        this.insertRight = this.insertLeft;
         this.refresh();
     }
 
     cursorRight() {
         this.insertLeft = Math.min(this.text.text.length, this.insertLeft + 1);
+        this.insertRight = this.insertLeft;
         this.refresh();
     }
 
-    focus() {
-        if (this.isFocused) return;
-        if (ui) ui.setKeyboardFocus(this);
-        this.isFocused = true;
+    cut() {
+        if (!this.isHighlit) return;
+        const t = this.text.text.slice(this.insertLeft, this.insertRight);
+        this.delete();
+        navigator.clipboard.writeText(t); // This is a promise, but we don't care if it finishes.
+    }
+
+    copy() {
+        if (!this.isHighlit) return;
+        const t = this.text.text.slice(this.insertLeft, this.insertRight);
+        navigator.clipboard.writeText(t); // This is a promise, but we don't care if it finishes.
+    }
+
+    paste() {
+        navigator.clipboard.readText().then(text => this.insert(text));
+    }
+
+    onFocus() {
         this.insertLeft = this.text.text.length;
         this.insertRight = this.text.text.length;
         this.refresh();
         this.future(530).cursorBlink();
     }
 
-    blur() {
-        if (ui && ui.keyboardFocus === this) ui.setKeyboardFocus(null);
+    onBlur() {
         this.cursor.hide();
         this.gel.hide();
-        this.isFocused = false;
     }
 
     update() {
         if (!this.isVisible) return;
         this.background.update();
-
-        // if (!this.isEnabled) this.disabledGel.update();
+        if (!this.isEnabled) this.disabledGel.update();
     }
 
     refresh() {
@@ -1526,5 +1620,9 @@ export class TextFieldWidget extends ControlWidget {
         this.cursor.setLocal([offset, 0]);
         this.gel.hide();
         this.cursor.show();
+    }
+
+    onEnter() {
+        console.log("Enter!");
     }
 }
