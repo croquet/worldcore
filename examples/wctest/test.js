@@ -4,7 +4,7 @@
 
 import { Constants, Session } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, WebInputManager, AM_Smoothed, PM_Smoothed, AM_Spatial, PM_Avatar,
-    UIManager, ButtonWidget, SliderWidget, ToggleWidget, TextFieldWidget } from "../worldcore";
+    UIManager, ButtonWidget, SliderWidget, ToggleWidget, TextFieldWidget, BoxWidget, TextWidget } from "../worldcore";
 
 //------------------------------------------------------------------------------------------
 // Mixins
@@ -148,51 +148,53 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
 
-        this.input = document.createElement("input");
-        this.input.setAttribute("type", "text");
-        this.input.style.position = "absolute";
-        this.input.style.left = '200px';
-        this.input.style.top = '200px';
-        document.body.appendChild(this.input);
-
         this.webInput = this.addManager(new WebInputManager());
         this.ui = this.addManager(new UIManager());
 
+        const textBackground = new BoxWidget(this.ui.root);
+        textBackground.setSize([300,200]);
+        textBackground.setLocal([400,100]);
+
+        const textBox = new TextWidget(textBackground);
+        textBox.setAutoSize([1,1]);
+        textBox.setBorder([5,5,5,5]);
+        textBox.setColor([1,1,1]);
+        textBox.setAlignX('left');
+        textBox.setAlignY('top');
+        textBox.setClip(true);
+        textBox.setText("This is a very long\npiece of text that needs to wrap!");
+
         const textField = new TextFieldWidget(this.ui.root);
         textField.setSize([600,45]);
-        textField.setLocal([20,20]);
+        textField.setLocal([20,40]);
         textField.text.setText("This is a text field. Type in it!");
         // textField.disable();
 
 
-        const showButton = new ButtonWidget(this.ui.root);
-        showButton.label.setText(`Show`);
-        showButton.setSize([200, 50]);
-        showButton.setLocal([20, 120]);
-        showButton.onClick = () => {
-            console.log("Show!");
-            this.input.style.visibility = 'visible'; // unhide the input
-        };
+        // const showButton = new ButtonWidget(this.ui.root);
+        // showButton.label.setText(`Show`);
+        // showButton.setSize([200, 50]);
+        // showButton.setLocal([20, 120]);
+        // showButton.onClick = () => {
+        //     console.log("Show!");
+        //     this.input.style.visibility = 'visible'; // unhide the input
+        // };
 
         const focusButton = new ButtonWidget(this.ui.root);
         focusButton.label.setText(`Focus`);
         focusButton.setSize([200, 50]);
         focusButton.setLocal([20, 180]);
-        focusButton.onClick = () => {
-            console.log("Focus!");
-            this.input.style.visibility = 'visible';
-            this.input.focus(); // focus on it so keyboard pops
-            this.input.style.visibility = 'hidden';
-        };
+        // focusButton.onClick = () => {
+        //     this.ui.requestVirtualKeyboard();
+        // };
 
         const hideButton = new ButtonWidget(this.ui.root);
-        hideButton.label.setText(`Hide`);
+        hideButton.label.setText(`Blur`);
         hideButton.setSize([200, 50]);
         hideButton.setLocal([20, 240]);
-        hideButton.onClick = () => {
-            console.log("Hide!");
-            this.input.style.visibility = 'hidden'; // hide it again
-        };
+        // hideButton.onClick = () => {
+        //     this.ui.dismissVirtualKeyboard();
+        // };
 
         const testButton = new ButtonWidget(this.ui.root);
         testButton.label.setText(`Test`);
@@ -211,9 +213,10 @@ class MyViewRoot extends ViewRoot {
 
 
         const testSlider = new SliderWidget(this.ui.root);
+        console.log("Setting test slider parameters");
         testSlider.setSize([20, 200]);
-        testSlider.setLocal([400,100]);
-        //testSlider.disable();
+        testSlider.setLocal([400,400]);
+        // testSlider.disable();
 
 
         // this.input.style.visibility = 'visible'; // unhide the input

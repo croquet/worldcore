@@ -171,11 +171,8 @@ export class WebInputManager extends NamedView {
     }
 
     onClick(event) {
-        // event.stopPropagation();
-        // event.preventDefault();
         window.focus();
         this.publish("input", "click");
-        // this.publish("input", "mouseClick");    // This should be removed because touches can also trigger onClick.
     }
 
     onPointerLock(event) {
@@ -193,9 +190,10 @@ export class WebInputManager extends NamedView {
         this.publish("input", "resize");
     }
 
-    // publish both keyDown + arg and "xDown" where "x" is the key
+    // publishes  both keyDown + arg and "xDown" where "x" is the key
+
     onKeyDown(event) {
-        if (event.ctrlKey) {
+        if (event.ctrlKey || event.metaKey) {
             this.onControlKey(event);
             return;
         }
@@ -203,7 +201,7 @@ export class WebInputManager extends NamedView {
         keys.add(key);
         if (event.repeat) {
             this.publish("input", key + "Repeat");
-            this.publish("input", "keyRepeat", key); // This can generate a lot of events! Don't subscribe in model.
+            this.publish("input", "keyRepeat", key); // This can generate a lot of events! Don't subscribe to in model.
         } else {
             this.publish("input", key + "Down");
             this.publish("input", "keyDown", key);
@@ -216,22 +214,27 @@ export class WebInputManager extends NamedView {
             case 'z':
                 e.preventDefault();
                 this.publish("input", "undo");
+                this.publish("input", "keyDown", "Undo");
                 break;
             case 'y':
                 e.preventDefault();
                 this.publish("input", "redo");
+                this.publish("input", "keyDown", "Redo");
                 break;
             case 'x':
                 e.preventDefault();
                 this.publish("input", "cut");
+                this.publish("input", "keyDown", "Cut");
                 break;
             case 'c':
                 e.preventDefault();
                 this.publish("input", "copy");
+                this.publish("input", "keyDown", "Copy");
                 break;
             case 'v':
                 e.preventDefault();
                 this.publish("input", "paste");
+                this.publish("input", "keyDown", "Paste");
                 break;
             default:
         }
@@ -239,8 +242,6 @@ export class WebInputManager extends NamedView {
 
     // publish both keyUp + arg and "xUp" where "x" is the key
     onKeyUp(event) {
-        // event.stopPropagation();
-        // event.preventDefault();
         const key = event.key;
         if (!KeyDown(key)) return;
         this.publish("input", key + "Up");
@@ -250,8 +251,7 @@ export class WebInputManager extends NamedView {
     }
 
     onMouseDown(event) {
-        // event.stopPropagation();
-        // event.preventDefault();
+        event.preventDefault(); // Required to prevent focus changes that break text input widget focus hack.
         let key = "mouse" + event.button;
         if (KeyDown('Control') && key === 'mouse0') key = 'mouse2';
         if (KeyDown(key)) return;
@@ -272,8 +272,7 @@ export class WebInputManager extends NamedView {
     }
 
     onMouseUp(event) {
-        // event.stopPropagation();
-        // event.preventDefault();
+        event.preventDefault();
         let key = "mouse" + event.button;
         if (KeyDown('Control') && key === 'mouse0') key = 'mouse2';
         if (!KeyDown(key)) return;
@@ -285,15 +284,12 @@ export class WebInputManager extends NamedView {
     }
 
     onWheel(event) {
-        event.stopPropagation();
         event.preventDefault();
         const y = event.deltaY;
         this.publish("input", "wheel", y);
     }
 
     onMouseMove(event) {
-        // event.stopPropagation();
-        // event.preventDefault();
         const pX = event.clientX;
         const pY = event.clientY;
         const dX = event.movementX;
@@ -303,7 +299,6 @@ export class WebInputManager extends NamedView {
     }
 
     onTouchStart(event) {
-        // event.stopPropagation();
         event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
         for (const touch of event.changedTouches) {
             const id = touch.identifier;
@@ -325,7 +320,6 @@ export class WebInputManager extends NamedView {
     }
 
     onTouchEnd(event) {
-        // event.stopPropagation();
         event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
         for (const touch of event.changedTouches) {
             const id = touch.identifier;
@@ -364,7 +358,6 @@ export class WebInputManager extends NamedView {
     }
 
     onTouchMove(event) {
-        // event.stopPropagation();
         event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
         for (const touch of event.changedTouches) {     // Update the current position of all touches
             const id = touch.identifier;
@@ -405,7 +398,6 @@ export class WebInputManager extends NamedView {
     }
 
     onTouchCancel(event) {
-        // event.stopPropagation();
         event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
         this.touches = [];
     }
