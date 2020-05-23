@@ -347,6 +347,7 @@ export class Widget extends View {
 
 
     update() {
+        if (!this.isVisible) return;
         cc.save();
         if (this.clip) {
             cc.rect(this.global[0], this.global[1], this.size[0], this.size[1]);
@@ -373,7 +374,7 @@ export class Widget extends View {
     }
 
     hover(xy) { // Propagates down the widget tree.
-        if (!this.isVisible || !this.inRect(xy)) return;
+        if (!this.isVisible) return;
         this.children.forEach(child => child.hover(xy));
     }
 
