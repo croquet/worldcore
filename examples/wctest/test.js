@@ -152,22 +152,25 @@ class MyViewRoot extends ViewRoot {
         this.ui = this.addManager(new UIManager());
 
         const textBackground = new BoxWidget(this.ui.root);
-        textBackground.setSize([300,200]);
-        textBackground.setLocal([400,100]);
+        textBackground.setPivot([1,0]);
+        textBackground.setAnchor([1,0]);
+        textBackground.setSize([300,300]);
+        textBackground.setLocal([-20,20]);
 
         const textBox = new TextWidget(textBackground);
         textBox.setAutoSize([1,1]);
         textBox.setBorder([5,5,5,5]);
         textBox.setColor([1,1,1]);
-        textBox.setAlignX('left');
-        textBox.setAlignY('top');
+        textBox.setAlignX('right');
+        textBox.setAlignY('bottom');
         textBox.setClip(true);
-        textBox.setText("This is a very long\npiece of text that needs to wrap!");
+        textBox.setWrap(true);
+        textBox.setText("This is a very long piece of text that needs to wrap!\n\nBut what happens if it's too long to fit in the box? Will it clip?");
 
-        const textField = new TextFieldWidget(this.ui.root);
-        textField.setSize([600,45]);
-        textField.setLocal([20,40]);
-        textField.text.setText("This is a text field. Type in it!");
+        this.textField = new TextFieldWidget(this.ui.root);
+        this.textField.setSize([600,45]);
+        this.textField.setLocal([20,20]);
+        this.textField.text.setText("This is a text field. Type in it!");
         // textField.disable();
 
 
@@ -181,41 +184,42 @@ class MyViewRoot extends ViewRoot {
         // };
 
         const focusButton = new ButtonWidget(this.ui.root);
-        focusButton.label.setText(`Focus`);
+        focusButton.label.setText(`Enable`);
         focusButton.setSize([200, 50]);
         focusButton.setLocal([20, 180]);
-        // focusButton.onClick = () => {
-        //     this.ui.requestVirtualKeyboard();
-        // };
+        focusButton.onClick = () => {
+            this.textField.enable();
+        };
 
         const hideButton = new ButtonWidget(this.ui.root);
-        hideButton.label.setText(`Blur`);
+        hideButton.label.setText(`Disable`);
         hideButton.setSize([200, 50]);
         hideButton.setLocal([20, 240]);
-        // hideButton.onClick = () => {
-        //     this.ui.dismissVirtualKeyboard();
-        // };
+        hideButton.onClick = () => {
+            this.textField.disable();
+        };
 
-        const testButton = new ButtonWidget(this.ui.root);
-        testButton.label.setText(`Test`);
-        testButton.setSize([200, 50]);
-        testButton.setLocal([20, 300]);
-        testButton.onClick = () => {
+        this.testButton = new ButtonWidget(this.ui.root);
+        this.testButton.label.setText(`Test`);
+        this.testButton.setSize([200, 50]);
+        this.testButton.setLocal([20, 300]);
+        this.testButton.onClick = () => {
             console.log("Test!");
         };
 
-        const toggle0 = new ToggleWidget(this.ui.root);
-        toggle0.setSize([200, 50]);
-        toggle0.setLocal([20, 360]);
+        this.toggle0 = new ToggleWidget(this.ui.root);
+        this.toggle0.setSize([200, 50]);
+        this.toggle0.setLocal([0, 0]);
+        this.toggle0.setPivot([0.5,0.5]);
+        this.toggle0.setAnchor([0.5,0.5]);
         // testButton.onClick = () => {
         //     textField.blur();
         // };
 
 
-        const testSlider = new SliderWidget(this.ui.root);
-        console.log("Setting test slider parameters");
-        testSlider.setSize([20, 200]);
-        testSlider.setLocal([400,400]);
+        this.testSlider = new SliderWidget(this.ui.root);
+        this.testSlider.setSize([20, 200]);
+        this.testSlider.setLocal([400,400]);
         // testSlider.disable();
 
 

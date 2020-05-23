@@ -1,5 +1,5 @@
 import { View } from "@croquet/croquet";
-import { v2_sub, v2_multiply, v2_add } from "./Vector";
+import { v2_sub, v2_multiply, v2_add, v2_scale } from "./Vector";
 import { LoadFont, LoadImage} from "./ViewAssetCache";
 import { NamedView, GetNamedView } from "./NamedView";
 import { KeyDown } from "./WebInput";
@@ -190,7 +190,7 @@ export class Widget extends View {
         this.border = [0,0,0,0];            // Left/Top/Right/Bottom inset of content from widget edge
         this.localOpacity = 1;              // Default value
         this.inheritOpacity = true;         // Affected by parent's opacity
-        this.changeParent = false;          // Changing this widget triggers a refresh of its parent
+        this.bubbleChanges = false;         // Changing this widget triggers a refresh of its parent
         this.clip = false;                  // Draw operations will be clipped to widget bounds
         this.isChanged = true;
         this.isVisible = true;
@@ -257,36 +257,34 @@ export class Widget extends View {
         this.markChanged();
     }
 
+    setBubbleChanges(bubble) {
+        this.bubbleChanges = bubble;
+        this.markChanged();
+    }
+
     setClip(clip) {
         this.clip = clip;
         this.markChanged();
     }
 
-    setVisibility(visible, local) {
+    setVisibility(visible) {
         if (this.isVisible === visible) return;
         this.isVisible = visible;
-        if (!this.isVisible) {
-            if (!this.changeParent) {
-            //     this.markParentChanged();
-            // } else {
-                this.markAllChanged();
-            }
-        }
+        if (!this.isVisible && !this.bubbleChanges) this.markAllChanged();
         this.markChanged();
     }
 
-    show(local) {
-        this.setVisibility(true, local);
+    show() {
+        this.setVisibility(true);
     }
 
-    hide(local) {
-        this.setVisibility(false, local);
+    hide() {
+        this.setVisibility(false);
     }
 
-    toggleVisibility(local) {
-        this.setVisibility(!this.isVisible, local);
+    toggleVisibility() {
+        this.setVisibility(!this.isVisible);
     }
-
 
     markChanged() {
         ui.markChanged();
@@ -295,14 +293,10 @@ export class Widget extends View {
         this._opacity = 0;
         if (this.isChanged) return;
         this.isChanged = true;
-        if (this.changeParent && this.parent) this.parent.markChanged();
+        if (this.bubbleChanges && this.parent) this.parent.markChanged();
         this.children.forEach(child => child.markChanged());
     }
 
-    // markParentChanged() {
-    //     if (this.parent) this.parent.markChanged();
-    //     // this.markChanged();
-    // }
 
     // Tell the UI to redraw the whole screen
     // This is used for hide events
@@ -474,7 +468,7 @@ export class GelWidget extends Widget {
     constructor(parent) {
         super(parent);
         this.setAutoSize([1,1]);
-        this.changeParent = true;
+        this.bubbleChanges = true;
     }
 
     update() {
@@ -638,7 +632,6 @@ export class NineSliceWidget extends ImageWidget {
 //
 // Needs:
 //
-// * Word wrap
 // * Selection methods for multiline text
 // * Maybe single and multiline text get split into different widgets?
 
@@ -646,29 +639,17 @@ export class TextWidget extends Widget {
 
     constructor(parent) {
         super(parent);
-        this.changeParent = true;
+        this.bubbleChanges = true;
         this.text = "Text";
         this.font = "sans-serif";
         this.style = "normal";
         this.point = 24;
         this.lineHeight = 30;
-        this.maxLength = 0;
         this.alignX = "center";
         this.alignY = "middle";
         this.color = [0, 0, 0];
+        this.wrap = false;
     }
-
-    // Redrawing text requires the background to be cleared, so we mark the parent changed.
-    // markParentChanged() {
-    //     if (this.parent) this.parent.markChanged();
-    // }
-
-    // markChanged() {
-    //     // console.log("mark text changed");
-    //     // if (this.isChanged) return;
-    //     super.markChanged();
-    //     this.markParentChanged();
-    // }
 
     setText(text) {
         this.text = text;
@@ -677,122 +658,105 @@ export class TextWidget extends Widget {
     }
 
     setFontByURL(url) {
-        // this.font = LoadFont(url, () => this.markParentChanged());
         this.font = LoadFont(url, () => this.markChanged());
         this.markChanged();
-        // this.markParentChanged();
     }
 
     setPoint(point) {
         this.point = point;
         this.markChanged();
-        // this.markParentChanged();
     }
 
     setStyle(style) {
         this.style = style;
         this.markChanged();
-        // this.markParentChanged();
     }
 
     setAlignX(align) {
         this.alignX = align;
         this.markChanged();
-        // this.markParentChanged();
     }
 
     setAlignY(align) {
         this.alignY = align;
         this.markChanged();
-        // this.markParentChanged();
     }
 
     setLineHeight(lineHeight) {
         this.lineHeight = lineHeight;
         this.markChanged();
-        // this.markParentChanged();
-    }
-
-    setMaxLength(maxLength) {
-        this.maxLength = maxLength;
-        this.markChanged();
-        // this.markParentChanged();
     }
 
     setColor(color) {
         this.color = color;
         this.markChanged();
-        // this.markParentChanged();
     }
 
-    get alignnmentOffset() {
-        const offset = [0,0];
-        const size = this.size;
-        switch (this.alignX) {
-            case "center":
-                offset[0] += size[0] / 2;
-                break;
-            case "right":
-                offset[0] += size[0];
-                break;
-            default:
-        }
-        let newlineCount = 0;
-        const newlines = this.text.match(/\n/g);
-        if (newlines) newlineCount = newlines.length;
-        switch (this.alignY) {
-            case "middle":
-                offset[1] += (size[1] - newlineCount * this.lineHeight) / 2;
-                break;
-            case "bottom":
-                offset[1] += size[1] - newlineCount * this.lineHeight;
-                break;
-            default:
-        }
-        return offset;
+    setWrap(wrap) {
+        this.wrap = wrap;
+        this.markChanged();
     }
 
-    breakLines(text) {
-        if (!this.maxLength) return text;
-        const words = text.split(' ');
-        if (words.length < 2) return text;
+    // Breaks lines by word wrap or new line.
 
-        let out = words[0];
-        let current = words[0].length;
-        for (let i = 1; i < words.length; i++) {
-            current += words[i].length + 1;
-            let space = ' ';
-            if (current > this.maxLength) {
-                current = words[i].length;
-                space = '\n';
+    get lines() {
+        if (!this.wrap) return this.text.split('\n');
+        const spaceWidth = cc.measureText(' ').width;
+        const sizeX = this.size[0];
+        const words = this.text.split(' ');
+        const out = [];
+        let sum = sizeX+1;
+        words.forEach( word => {
+            const wordWidth = cc.measureText(word).width;
+            if (word.includes('\n')) {
+                const split = word.split('\n');
+                split.forEach((s,i) => {
+                    const sWidth = cc.measureText(s).width;
+                    if (i > 0 || sum + spaceWidth + sWidth > sizeX) {
+                        sum = sWidth;
+                        out.push(s);
+                    } else {
+                        sum += spaceWidth + sWidth;
+                        out[out.length-1] += ' ' + s;
+                    }
+                });
+            } else if (sum + spaceWidth + wordWidth > sizeX) {
+                sum = wordWidth;
+                out.push(word);
+            } else {
+                sum += spaceWidth + wordWidth;
+                out[out.length-1] += ' ' + word;
             }
-            out += space + words[i];
-        }
+        });
+        console.log(out);
         return out;
     }
 
     draw() {
-        // const words = this.text.split(' ');
-        // console.log(words);
-        const lines = this.breakLines(this.text).split('\n');
-        const xy = v2_add(this.global, this.alignnmentOffset);
+        const lines = this.lines;
+
+        let xy = [0,0];
+        let yOffset = 0;
+        if (this.alignX === "center") {
+            xy[0] = this.size[0] / 2;
+        } else if (this.alignX === "right") {
+            xy[0] = this.size[0];
+        }
+        if (this.alignY === "middle") {
+            xy[1] = this.size[1] / 2;
+            yOffset = this.lineHeight * (lines.length-1) / 2;
+        } else if (this.alignY === "bottom") {
+            xy[1] = this.size[1];
+            yOffset = this.lineHeight * (lines.length-1);
+        }
+        xy = v2_add(this.global, xy);
 
         cc.textAlign = this.alignX;
         cc.textBaseline = this.alignY;
         cc.font = this.style + " " + this.point + "px " + this.font;
         cc.fillStyle = Widget.color(...this.color);
 
-
-        let yOffset = 0;
-        if (this.alignY === 'middle') {
-            yOffset = this.lineHeight * (lines.length - 1) / 2;
-        } else if (this.alignY === 'bottom') {
-            yOffset = this.lineHeight * (lines.length - 1);
-        }
-
-        for (let i = 0; i<lines.length; i++) {
-            cc.fillText(lines[i], xy[0], xy[1] + (i * this.lineHeight) - yOffset);
-        }
+        lines.forEach((line,i) => cc.fillText(line, xy[0], xy[1] + (i * this.lineHeight) - yOffset));
     }
 
     width() { // Returns the full width of the text in pixels given the current font.
@@ -963,17 +927,6 @@ export class ButtonWidget extends ControlWidget {
         this.label.setAutoSize([1,1]);
         this.addChild(widget);
     }
-
-    // update() {
-    //     this.isChanged = false;
-    //     let background = this.normal;
-    //     if (this.isHovered && this.isEnabled) background = this.hovered;
-    //     if (this.isPressed && this.isEnabled) background = this.pressed;
-    //     if (!this.isVisible) return;
-    //     if (background) background.update();
-    //     if (this.label) this.label.update();
-    //     if (!this.isEnabled) this.disabledGel.update();
-    // }
 
     updateChildren() {
         let background = this.normal;
@@ -1154,26 +1107,6 @@ export class ToggleWidget extends ControlWidget {
         if (!this.isEnabled) this.disabledGel.update();
     }
 
-    // update() {
-    //     let background;
-    //     let label;
-    //     if (this.isOn) {
-    //         background = this.normalOn;
-    //         if (this.isHovered) background = this.hoveredOn;
-    //         if (this.isPressed) background = this.pressedOn;
-    //         label = this.labelOn;
-    //     } else {
-    //         background = this.normalOff;
-    //         if (this.isHovered) background = this.hoveredOff;
-    //         if (this.isPressed) background = this.pressedOff;
-    //         label = this.labelOff;
-    //     }
-    //     if (!this.isVisible) return;
-    //     if (background) background.update();
-    //     if (label) label.update();
-    //     if (!this.isEnabled) this.disabledGel.update();
-    // }
-
     hover(xy) {
         const state = this.isVisible && this.isEnabled && this.inRect(xy);
         if (this.isHovered !== state) {
@@ -1298,11 +1231,8 @@ export class SliderWidget extends ControlWidget {
     }
 
     setSize(size) {
-        // console.log("Slider set size: " + size);
         super.setSize(size);
-        // console.log(this.size);
         this.setKnobSize();
-        // this.markChanged();
     }
 
     setBar(widget) {
@@ -1328,10 +1258,6 @@ export class SliderWidget extends ControlWidget {
         } else {
             this.knob.setSize([this.size[0], this.size[0]]);
         }
-        // console.log(this);
-        // console.log(this.size);
-        // console.log(this.knob.size);
-        // if (!this.isVisible) return;
         this.refreshKnob();
     }
 
@@ -1368,16 +1294,7 @@ export class SliderWidget extends ControlWidget {
         return this.size[0] > this.size[1];
     }
 
-    // update() {
-    //     if (!this.isVisible) return;
-    //     if (this.bar) this.bar.update();
-    //     if (this.knob) this.knob.update();
-    //     if (!this.isEnabled) this.disabledGel.update();
-    // }
-
     updateChildren() {
-        // console.log("update scroll children");
-        // if (!this.isVisible) return;
         if (this.bar) this.bar.update();
         if (this.knob) this.knob.update();
         if (!this.isEnabled) this.disabledGel.update();
@@ -1448,7 +1365,7 @@ export class TextFieldWidget extends ControlWidget {
         this.clip = new Widget(this.background);
         this.clip.setBorder([5,5,5,5]);
         this.clip.setAutoSize([1,1]);
-        this.clip.changeParent = true;
+        this.clip.setBubbleChanges(true);
         this.clip.setClip(true);
 
         this.text = new TextWidget(this.clip);
@@ -1460,7 +1377,7 @@ export class TextFieldWidget extends ControlWidget {
         this.cursor = new BoxWidget(this.text);
         this.cursor.setAutoSize([0,1]);
         this.cursor.setSize([1,1]);
-        this.cursor.changeParent = true;
+        this.cursor.setBubbleChanges(true);
         this.cursor.hide(true);
 
         this.gel = new GelWidget(this.text);
@@ -1703,18 +1620,11 @@ export class TextFieldWidget extends ControlWidget {
     }
 
     onBlur() {
-        // console.log("blur!");
         ui.dismissVirtualKeyboard();
         this.cursor.hide(true);
         this.gel.hide(true);
         this.markChanged();
     }
-
-    // update() {
-    //     // if (!this.isVisible) return;
-    //     this.background.update();
-    //     if (!this.isEnabled) this.disabledGel.update();
-    // }
 
     updateChildren() {
         this.background.update();
