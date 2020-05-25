@@ -8,6 +8,10 @@ let ui;
 let focus;  // The control widget that currently has focus.
 let cc;
 
+// Create a hover that works like focus so hover events don't have to be sent to every widget in the widget tree.
+// Only one control can be hovered at a time. The current hovered checks to see if its still hovered, while global
+// hover uses inRect to filter trying to find a new hover.
+
 //------------------------------------------------------------------------------------------
 //-- UI ------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -729,7 +733,6 @@ export class TextWidget extends Widget {
                 out[out.length-1] += ' ' + word;
             }
         });
-        console.log(out);
         return out;
     }
 
