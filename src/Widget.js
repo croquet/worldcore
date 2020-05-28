@@ -90,14 +90,17 @@ export class UIManager extends NamedView {
         setRoot(root) {
             this.root = root;
             if (this.root) this.root.setSize(this.size);
+            if (focus) focus.blur();
+            this.root.onStart();
+            this.markChanged();
         }
 
         update() {
             if (!this.isChanged) return;
             cc.setTransform(1, 0, 0, 1, 0, 0);
             cc.scale(this.ratio, this.ratio);
-            if (this.root) this.root.update();
             this.isChanged = false;
+            if (this.root) this.root.update();
         }
 
         markChanged() {
@@ -427,11 +430,143 @@ export class Widget extends View {
 // The root of the widget tree. Clears the screen on redraw.
 
 export class RootWidget extends Widget {
+    constructor() {
+        super();
+        this.setSize(ui.size);
+    }
+
+    onStart() {}
 
     draw() {
         const xy = this.global;
         const size = this.size;
         cc.clearRect(xy[0], xy[1], size[0], size[1]);
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- LinearLayoutWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class LinearLayoutWidget extends Widget {
+    constructor(parent) {
+        super(parent);
+        if (this.constructor === LinearLayoutWidget) throw new Error("Attempted to instantiate abstract base class!");
+        this.margin = 0;
+        this.slots = [];
+    }
+
+    updateChildren() {
+        this.resizeSlots();
+        this.slots.forEach(slot => slot.update());
+    }
+
+    resizeSlots() {}
+
+    get slotCount() {
+        return this.slots.size;
+    }
+
+    slot(n) {
+        return this.slots[n];
+    }
+
+    addSlot(n) {
+        if (n === undefined) n = this.slots.length;
+        const s = this.createSlot();
+        this.slots.splice(n,0,s);
+        this.markChanged();
+        return s;
+    }
+
+    createSlot() {}
+
+    deleteSlot(n) {
+        this.slots[n].destroy();
+        this.slots.splice(n,1);
+        this.markChanged();
+    }
+
+    setMargin(margin) {
+        this.margin = margin;
+        this.markChanged();
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- HorizontalLayoutWidget ----------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class HorizontalLayoutWidget extends LinearLayoutWidget {
+
+    createSlot() {
+        const s = new Widget(this);
+        s.setAutoSize([0,1]);
+        s.setBubbleChanges(true);
+        s.setWidth = function(w) { this.width = w; this.markChanged(); };
+        return s;
+    }
+
+    resizeSlots() {
+        let widthSum = Math.max(0, (this.slots.length - 1) * this.margin);
+        let autoCount = 0;
+        this.slots.forEach(slot => {
+            if (slot.width) {
+                widthSum += slot.width;
+            } else {
+                autoCount++;
+            }
+        });
+
+        const autoWidth = Math.max(0, (this.size[0] - widthSum) / autoCount);
+        let offset = 0;
+        this.slots.forEach(slot => {
+            let width = autoWidth;
+            if (slot.width) width = slot.width;
+            slot.setSize([width, 0]);
+            slot.setLocal([offset, 0]);
+            offset += width + this.margin;
+        });
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- VerticalLayoutWidget ------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class VerticalLayoutWidget extends LinearLayoutWidget {
+
+    createSlot() {
+        const s = new Widget(this);
+        s.setAutoSize([1,0]);
+        s.setBubbleChanges(true);
+        s.setHeight = function(h) { this.height = h; this.markChanged(); };
+        return s;
+    }
+
+    resizeSlots() {
+        let heightSum = Math.max(0, (this.slots.length - 1) * this.margin);
+        let autoCount = 0;
+        this.slots.forEach(slot => {
+            if (slot.height) {
+                heightSum += slot.height;
+            } else {
+                autoCount++;
+            }
+        });
+
+        const autoHeight = Math.max(0, (this.size[1] - heightSum) / autoCount);
+        let offset = 0;
+        this.slots.forEach(slot => {
+            let height = autoHeight;
+            if (slot.height) height = slot.height;
+            slot.setSize([0, height]);
+            slot.setLocal([0, offset]);
+            offset += height + this.margin;
+        });
     }
 
 }
@@ -1349,6 +1484,13 @@ export class SliderWidget extends ControlWidget {
 }
 
 //------------------------------------------------------------------------------------------
+//-- ScrollBox -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class ScrollBoxWidget extends Widget {
+}
+
+//------------------------------------------------------------------------------------------
 //-- TextFieldWidget -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -1376,7 +1518,7 @@ export class TextFieldWidget extends ControlWidget {
         this.text.setAutoSize([0,1]);
         this.text.setLocal([this.textLeft, 0]);
         this.text.setAlignX('left');
-        this.text.setSize([this.text.width(),0]);
+        // this.text.setSize([this.text.width(),0]);
 
         this.cursor = new BoxWidget(this.text);
         this.cursor.setAutoSize([0,1]);
@@ -1403,6 +1545,16 @@ export class TextFieldWidget extends ControlWidget {
     destroy() {
         super.destroy();
         this.blur();
+    }
+
+    setText(text) {
+        this.text.text = text;
+        this.textLeft = 0;
+        // this.insertLeft = text.length;
+        // this.insertRight = text.length;
+        this.insertLeft = 0;
+        this.insertRight = 0;
+        this.refresh();
     }
 
     cursorBlink() {
@@ -1616,14 +1768,12 @@ export class TextFieldWidget extends ControlWidget {
 
     onFocus() {
         ui.requestVirtualKeyboard(this.global);
-        this.insertLeft = this.text.text.length;
-        this.insertRight = this.text.text.length;
         this.refresh();
-        this.markChanged();
         this.future(530).cursorBlink();
     }
 
     onBlur() {
+        console.log("onBlur!");
         ui.dismissVirtualKeyboard();
         this.cursor.hide(true);
         this.gel.hide(true);
