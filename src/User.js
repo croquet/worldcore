@@ -22,23 +22,28 @@ export class UserListBase extends Model {
     join(id) {
         const user = this.createUser(id);
         this.users.set(id, user);
-        this.changed();
-        console.log("Current users: " + this.size);
+        this.subscribe(id, "changed", this.changed);
+        this.listChanged();
     }
 
     exit(id) {
         this.users.get(id).destroy();
         this.users.delete(id);
-        this.changed();
-        console.log("Current users: " + this.size);
+        this.unsubscribe(id, "changed");
+        this.listChanged();
     }
 
-    get size() {
+    get count() {
         return this.users.size;
     }
 
     createUser(id) {
         return UserBase.create(id);
+    }
+
+    listChanged() {
+        this.publish("userList", "listChanged");
+        this.publish("userList", "changed");
     }
 
     changed() {

@@ -4,7 +4,7 @@
 
 import { Constants, Session } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, Actor, Pawn, NamedView, GetNamedView, mix, WebInputManager, AM_Smoothed, PM_Smoothed, AM_Spatial, PM_Avatar,
-    UIManager, ButtonWidget, SliderWidget, ToggleWidget, TextFieldWidget, BoxWidget, TextWidget, UserListBase, UserBase, ThisUserBase } from "../worldcore";
+    UIManager, ButtonWidget, SliderWidget, ToggleWidget, TextFieldWidget, BoxWidget, TextWidget, UserListBase, UserBase, ThisUserBase, ScrollBoxWidget } from "../worldcore";
 
 
 //------------------------------------------------------------------------------------------
@@ -86,21 +86,21 @@ class MyViewRoot extends ViewRoot {
         this.ui = this.addManager(new UIManager());
         this.thisUser = this.addManager(new ThisUser());
 
-        const textBackground = new BoxWidget(this.ui.root);
-        textBackground.setPivot([1,0]);
-        textBackground.setAnchor([1,0]);
-        textBackground.setSize([300,300]);
-        textBackground.setLocal([-20,20]);
+        // const textBackground = new BoxWidget(this.ui.root);
+        // textBackground.setPivot([1,0]);
+        // textBackground.setAnchor([1,0]);
+        // textBackground.setSize([300,300]);
+        // textBackground.setLocal([-20,20]);
 
-        const textBox = new NameWidget(textBackground);
-        textBox.setAutoSize([1,1]);
-        textBox.setBorder([5,5,5,5]);
-        textBox.setColor([1,1,1]);
-        textBox.setAlignX('right');
-        textBox.setAlignY('bottom');
-        textBox.setClip(true);
-        textBox.setWrap(true);
-        textBox.setText("This is a very long piece of text that needs to wrap!\n\nBut what happens if it's too long to fit in the box? Will it clip?");
+        // const textBox = new NameWidget(textBackground);
+        // textBox.setAutoSize([1,1]);
+        // textBox.setBorder([5,5,5,5]);
+        // textBox.setColor([1,1,1]);
+        // textBox.setAlignX('right');
+        // textBox.setAlignY('bottom');
+        // textBox.setClip(true);
+        // textBox.setWrap(true);
+        // textBox.setText("This is a very long piece of text that needs to wrap!\n\nBut what happens if it's too long to fit in the box? Will it clip?");
 
         this.textField = new TextFieldWidget(this.ui.root);
         this.textField.setSize([600,45]);
@@ -143,19 +143,19 @@ class MyViewRoot extends ViewRoot {
             this.thisUser.setName("The Babadook");
         };
 
-        this.toggle0 = new ToggleWidget(this.ui.root);
-        this.toggle0.setSize([200, 50]);
-        this.toggle0.setLocal([0, 0]);
-        this.toggle0.setPivot([0.5,0.5]);
-        this.toggle0.setAnchor([0.5,0.5]);
+        // this.toggle0 = new ToggleWidget(this.ui.root);
+        // this.toggle0.setSize([200, 50]);
+        // this.toggle0.setLocal([0, 0]);
+        // this.toggle0.setPivot([0.5,0.5]);
+        // this.toggle0.setAnchor([0.5,0.5]);
         // testButton.onClick = () => {
         //     textField.blur();
         // };
 
 
-        this.testSlider = new SliderWidget(this.ui.root);
-        this.testSlider.setSize([20, 200]);
-        this.testSlider.setLocal([400,400]);
+        this.scrollBox = new ScrollBoxWidget(this.ui.root);
+        this.scrollBox.setSize([200, 200]);
+        this.scrollBox.setLocal([400,400]);
         // testSlider.disable();
 
 

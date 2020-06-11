@@ -362,9 +362,9 @@ export class Widget extends View {
         }
         if (this.isChanged) {
             this.drawWithOpacity();
-            this.isChanged = false;
         }
         this.updateChildren();
+        this.isChanged = false;
         cc.restore();
     }
 
@@ -458,8 +458,9 @@ export class LinearLayoutWidget extends Widget {
     }
 
     updateChildren() {
-        this.resizeSlots();
+        if (this.isChanged) this.resizeSlots();
         this.slots.forEach(slot => slot.update());
+        if (this.isChanged) this.resizeSlots();
     }
 
     resizeSlots() {}
@@ -485,6 +486,12 @@ export class LinearLayoutWidget extends Widget {
     deleteSlot(n) {
         this.slots[n].destroy();
         this.slots.splice(n,1);
+        this.markChanged();
+    }
+
+    deleteAll(n) {
+        this.slots.forEach(slot => slot.destroy());
+        this.slots = [];
         this.markChanged();
     }
 
@@ -520,7 +527,8 @@ export class HorizontalLayoutWidget extends LinearLayoutWidget {
             }
         });
 
-        const autoWidth = Math.max(0, (this.size[0] - widthSum) / autoCount);
+        let autoWidth = 0;
+        if (autoCount > 0) autoWidth = Math.max(0, (this.size[0] - widthSum) / autoCount);
         let offset = 0;
         this.slots.forEach(slot => {
             let width = autoWidth;
@@ -558,7 +566,8 @@ export class VerticalLayoutWidget extends LinearLayoutWidget {
             }
         });
 
-        const autoHeight = Math.max(0, (this.size[1] - heightSum) / autoCount);
+        let autoHeight = 0;
+        if (autoCount > 0) autoHeight = Math.max(0, (this.size[1] - heightSum) / autoCount);
         let offset = 0;
         this.slots.forEach(slot => {
             let height = autoHeight;
@@ -567,6 +576,10 @@ export class VerticalLayoutWidget extends LinearLayoutWidget {
             slot.setLocal([0, offset]);
             offset += height + this.margin;
         });
+
+        // const width = this.size[0];
+
+        // this.setSize([width,offset]);
     }
 
 }
@@ -794,7 +807,6 @@ export class TextWidget extends Widget {
     setText(text) {
         this.text = text;
         this.markChanged();
-        // this.markParentChanged();
     }
 
     setFontByURL(url) {
@@ -803,6 +815,7 @@ export class TextWidget extends Widget {
     }
 
     setPoint(point) {
+        this.setLineHeight(point);
         this.point = point;
         this.markChanged();
     }
@@ -872,6 +885,12 @@ export class TextWidget extends Widget {
     }
 
     draw() {
+
+        cc.textAlign = this.alignX;
+        cc.textBaseline = this.alignY;
+        cc.font = this.style + " " + this.point + "px " + this.font;
+        cc.fillStyle = Widget.color(...this.color);
+
         const lines = this.lines;
 
         let xy = [0,0];
@@ -889,11 +908,6 @@ export class TextWidget extends Widget {
             yOffset = this.lineHeight * (lines.length-1);
         }
         xy = v2_add(this.global, xy);
-
-        cc.textAlign = this.alignX;
-        cc.textBaseline = this.alignY;
-        cc.font = this.style + " " + this.point + "px " + this.font;
-        cc.fillStyle = Widget.color(...this.color);
 
         lines.forEach((line,i) => cc.fillText(line, xy[0], xy[1] + (i * this.lineHeight) - yOffset));
     }
@@ -1333,9 +1347,13 @@ export class ToggleSet  {
         toggle.set = null;
     }
 
+    setAllOff(allOff) {
+        this.allOff = allOff;
+    }
+
     pick(on) {
-        if (on.isOn) return; // Can't turn off a toggle in a set directly
-        on.changeState(true);
+        if (!this.allOff && on.isOn) return; // Can't turn off a toggle in a set directly
+        on.changeState(!on.isOn);
         this.toggles.forEach(toggle => { if (toggle !== on) toggle.changeState(false); });
     }
 
@@ -1488,6 +1506,21 @@ export class SliderWidget extends ControlWidget {
 //------------------------------------------------------------------------------------------
 
 export class ScrollBoxWidget extends Widget {
+    constructor(parent) {
+        super(parent);
+
+        this.clip = new Widget(this);
+        this.clip.setClip(true);
+
+        this.contents = new BoxWidget(this.clip);
+        this.contents.setSize([20,20]);
+
+        this.slider = new SliderWidget(this);
+        this.slider.setAnchor([1,0]);
+        this.slider.setPivot([1,0]);
+        this.slider.setAutoSize([0,1]);
+        this.slider.setSize([20,0]);
+    }
 }
 
 //------------------------------------------------------------------------------------------
@@ -1773,7 +1806,6 @@ export class TextFieldWidget extends ControlWidget {
     }
 
     onBlur() {
-        console.log("onBlur!");
         ui.dismissVirtualKeyboard();
         this.cursor.hide(true);
         this.gel.hide(true);
