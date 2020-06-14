@@ -2,16 +2,14 @@ import { Model } from "@croquet/croquet";
 import { NamedView } from "./NamedView";
 
 //------------------------------------------------------------------------------------------
-//-- UserListBase --------------------------------------------------------------------------
+//-- UserList --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Maintains a list of users connected to the session. You should create your own derived
-// UserList class from this and overload the createUser method to create your User.
+// Maintains a list of users connected to the session.
 
-export class UserListBase extends Model {
+export class UserList extends Model {
 
     init() {
-        if (this.constructor === UserListBase) throw new Error("Attempted to instantiate the abstract base class UserListBase insteand of a derived UserList class.");
         super.init();
         this.beWellKnownAs('UserList');
         this.users = new Map();
@@ -19,26 +17,22 @@ export class UserListBase extends Model {
         this.subscribe(this.sessionId, "view-exit", this.exit);
     }
 
-    join(id) {
-        const user = this.createUser(id);
-        this.users.set(id, user);
-        this.subscribe(id, "changed", this.changed);
+    join(viewId) {
+        const user = UserList.userType.create(viewId);
+        this.users.set(viewId, user);
+        this.subscribe(viewId, "changed", this.changed);
         this.listChanged();
     }
 
-    exit(id) {
-        this.users.get(id).destroy();
-        this.users.delete(id);
-        this.unsubscribe(id, "changed");
+    exit(viewId) {
+        this.users.get(viewId).destroy();
+        this.users.delete(viewId);
+        this.unsubscribe(viewId, "changed");
         this.listChanged();
     }
 
     get count() {
         return this.users.size;
-    }
-
-    createUser(id) {
-        return UserBase.create(id);
     }
 
     listChanged() {
@@ -51,21 +45,25 @@ export class UserListBase extends Model {
     }
 
 }
-UserListBase.register("UserListBase");
+UserList.register("UserList");
 
 //------------------------------------------------------------------------------------------
-//-- UserBase ------------------------------------------------------------------------------
+//-- User ----------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Maintains information for one user in the current session. You should create your own derived
-// User class from this, and extend it to listen for set messages coming from ThisUser. Call changed
-// to let ThisUser know a state variable has changed.
+// Maintains information for one user in the current session.  Call changed to let ThisUser
+// know a state variable has changed. You should create your own derived User class with
+// subscriptions to the setter messages coming from ThisUser.
 
-export class UserBase extends Model {
-    init(id) {
-        if (this.constructor === UserBase) throw new Error("Attempted to instantiate the abstract base class UserBase insteand of a derived User class. Does your UserList class not have the right createUser method?");
+export class User extends Model {
+    static register(...args) {
+        super.register(...args);
+        UserList.userType = this;
+    }
+
+    init(viewID) {
         super.init();
-        this.userID = id;
+        this.viewId = viewID;
         this.say("joined", this);
     }
 
@@ -75,35 +73,37 @@ export class UserBase extends Model {
     }
 
     say(event, data) {
-        this.publish(this.userID, event, data);
+        this.publish(this.viewId, event, data);
     }
 
     listen(event, callback) {
-        this.subscribe(this.userID, event, callback);
+        this.subscribe(this.viewId, event, callback);
     }
 
     changed(state) {
         this.say("changed", state);
     }
 }
-UserBase.register("UserBase");
+User.register("UserBase");
 
 //------------------------------------------------------------------------------------------
-//-- ThisUserBase --------------------------------------------------------------------------
+//-- LocalUser ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 // View-side interface to the entry in the user list associated with the local session instance.
 // You should create your own derived ThisUser class from this, and extend it with setter methods
 // to broadcast state changes to the associated User.
 
-export class ThisUserBase extends NamedView {
+export class LocalUser extends NamedView {
     constructor() {
-        super("ThisUser");
-        if (this.constructor === UserBase) throw new Error("Attempted to instantiate the abstract base class ThisUserBase insteand of a derived ThisUser class.");
-        this.verifications = new Map();
+        super("LocalUser");
         const userList = this.wellKnownModel("UserList");
-        userList.users.forEach((value, key) => { if (key === this.viewId) this.join(value); });
-        if (!this.user) this.subscribe(this.viewId, "joined", this.join);
+        const mine = userList.users.get(this.viewId);
+        if (mine) {
+            this.join(mine);
+        } else {
+            this.subscribe(this.viewId, "joined", this.join);
+        }
     }
 
     join(user) {
@@ -124,5 +124,3 @@ export class ThisUserBase extends NamedView {
     }
 
 }
-
-
