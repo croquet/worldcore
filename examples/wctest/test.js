@@ -3,7 +3,7 @@
 // Croquet Studios, 2020
 
 import { Session } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, WebInputManager, UIManager2, BoxWidget2, Widget2, TextWidget2, ButtonWidget2 } from "../worldcore";
+import { ModelRoot, ViewRoot, WebInputManager, UIManager2, BoxWidget2, Widget2, TextWidget2, ButtonWidget2, IFramePane } from "../worldcore";
 
 
 //------------------------------------------------------------------------------------------
@@ -29,16 +29,20 @@ class MyViewRoot extends ViewRoot {
 
         this.webInput = this.addManager(new WebInputManager());
         this.ui = this.addManager(new UIManager2());
-        this.ui.setScale(1);
+        // this.ui.setScale(2);
 
-        this.widget0 = new BoxWidget2(this.ui.root, {anchor: [0.3,0.2], pivot: [0,0], autoSize: [0,0], size:[200,100], color:[0,0,0], local:[0,0]});
+        this.widget0 = new BoxWidget2(this.ui.xxx, {anchor: [1,1], pivot: [1,1], autoSize: [0,0], size:[200,100], color:[0,0,0], local:[-20,-20]});
 
 
         this.widget1 = new BoxWidget2(this.widget0, {anchor: [0,0], pivot: [0,0], autoSize: [1,1], border:[5,5,5,5], local:[0,0], color:[1,0,0]});
 
-        this.widget2 = new TextWidget2(this.widget1, {autoSize: [1,1], text: "This is long; split it!"});
+        this.widget2 = new TextWidget2(this.widget1, {autoSize: [1,1], text: "This is long, split it!"});
 
-        this.widget3 = new ButtonWidget2(this.ui.root, {anchor: [1,1], pivot: [1,1], size: [200,100], local:[-20,-20]});
+        this.widget3 = new ButtonWidget2(this.ui.xxx, {anchor: [0.5,0], pivot: [0.5,0], size: [200,100], local:[0,0]});
+
+        this.widget4 = new BoxWidget2(this.ui.xxx, {anchor: [0.5,0.5], pivot: [0.5,0.5], size: [400,300], border:[5,5,5,5], local:[0,0], color:[0,0,0]});
+
+        this.iframe = new IFramePane(this.widget4, {anchor: [0.5,0.5], pivot: [0.5,0.5], autoSize: [1,1], border:[10,10,10,10],local:[0,0]});
 
 
         // this.iframe0 = document.createElement("iframe");
