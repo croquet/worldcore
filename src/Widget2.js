@@ -2,12 +2,13 @@ import { View } from "@croquet/croquet";
 import { v2_sub, v2_multiply, v2_add, v2_scale } from "./Vector";
 import { LoadFont, LoadImage} from "./ViewAssetCache";
 import { NamedView } from "./NamedView";
+import { Widget } from "./Widget";
 
 let ui;             // The UI manager
 let hover;          // The control widget that currently is hovered.
 let focus;          // The control widget that currently has focus.
 // let cc;             // The canvas context
-let opacity = 1;    // The global opacity
+// let opacity = 1;    // The global opacity
 
 //------------------------------------------------------------------------------------------
 //-- UIManager -----------------------------------------------------------------------------
@@ -39,12 +40,13 @@ export class UIManager2 extends NamedView {
 
 
         this.scale = 1;
-        // this.root = new RootWidget2();
-        this.panes = new Set();
+
+        // this.panes = new Set();
         this.size = [100,100];
         this.global = [0,0];
-        this.xxx = new CanvasPane(this, {autoSize: [1,1]});
         this.resize();
+        this.setRoot(new CanvasWidget(this, {autoSize: [1,1]}));
+        // this.root = new CanvasWidget(this, {autoSize: [1,1]});
 
         this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
         this.subscribe("input", {event: "mouseXY", handling: "immediate"}, this.mouseXY);
@@ -66,28 +68,31 @@ export class UIManager2 extends NamedView {
         super.destroy();
         if (hover) hover.unhover();
         if (focus) focus.blur();
-        // if (this.root) this.root.destroy();
-        // this.canvas.remove();
-        this.panes.forEach(pane => pane.destroy());
+        if (this.root) this.root.destroy();
         ui = null;
     }
 
-    addChild(pane) {
-        if (pane.parent === this) return;
-        this.panes.add(pane);
-        pane.parent = this;
+    // Note that setting the root does not destroy the old root!
+    setRoot(root) {
+        if (this.root === root) return;
+        if (this.root) this.root.setParent(null);
+        this.root = root;
+        this.root.setParent(this);
+        if (hover) hover.unhover();
+        if (focus) focus.blur();
+        if (this.root) this.root.markChanged();
     }
 
-    removeChild(pane) {
-        this.panes.delete(pane);
-        this.markChanged();
+    addChild(root) {
+        this.setRoot(root);
     }
 
-    destroyChild(pane) {
-        this.removeChild(pane);
-        pane.destroy();
+    removeChild(child) {
+        if (this.root === child) this.root = null;
     }
 
+    get isVisible() { return true; }
+    // get origin() { return this.global; }
 
     resize() {
         if (hover) hover.unhover();
@@ -104,16 +109,9 @@ export class UIManager2 extends NamedView {
         // this.canvas.width = width * this.ratio;
         // this.canvas.height = height * this.ratio;
         this.size = [width * this.ratio, height * this.ratio];
-        this.panes.forEach(pane => pane.markChanged());
-        // if (this.root) this.root.set({size: this.size});
-    }
-
-    setRoot(root) {
-        this.root = root;
-        if (this.root) this.root.set({size: this.size});
-        if (focus) focus.blur();
-        // this.root.onStart();
+        // this.panes.forEach(pane => pane.markChanged());
         if (this.root) this.root.markChanged();
+        // if (this.root) this.root.set({size: this.size});
     }
 
     setScale(scale) {
@@ -121,15 +119,15 @@ export class UIManager2 extends NamedView {
         this.resize();
     }
 
-    setOpacity(o) {
-        opacity = o;
-        if (this.root) this.root.markChanged();
-    }
+    // setOpacity(o) {
+    //     opacity = o;
+    //     if (this.root) this.root.markChanged();
+    // }
 
     update() {
-        // if (!this.isChanged) return;
+        if (!this.isChanged) return;
         this.isChanged = false;
-        this.panes.forEach(pane => pane.update());
+        if (this.root) this.root.update();
     }
 
     markChanged() {
@@ -141,7 +139,7 @@ export class UIManager2 extends NamedView {
         let consumed = false;
         if (!consumed && focus) consumed = focus.drag(xy);
         if (!consumed && hover) consumed = hover.cursor(xy);
-        if (!consumed && this.xxx) consumed = this.xxx.cursor(xy);
+        if (!consumed && this.root) consumed = this.root.cursor(xy);
         // this.setCursor('default');
         this.publish("ui", "mouseXY", xy);
     }
@@ -166,8 +164,8 @@ export class UIManager2 extends NamedView {
 
     touchDown(xy) {
         xy = v2_scale(xy, this.ratio);
-        if (!this.xxx) return;
-        if (!this.xxx.press(xy)) this.publish("ui", "touchDown", xy);
+        if (!this.root) return;
+        if (!this.root.press(xy)) this.publish("ui", "touchDown", xy);
     }
 
     touchUp(xy) {
@@ -217,15 +215,16 @@ export class UIManager2 extends NamedView {
 }
 
 //------------------------------------------------------------------------------------------
-//-- UIElement ----------------------------------------------------------------------------------
+//-- Widget --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class UIElement extends View {
+export class Widget2 extends View {
     constructor(parent, options) {
         super();
-        console.log(parent);
         this.set(options);
         if (parent) parent.addChild(this);
+
+        this.subscribe(this.id, { event: "visible", handling: "immediate" }, visible => {if (!visible) this.markCanvasChanged();} );
     }
 
     destroy() {
@@ -239,14 +238,14 @@ export class UIElement extends View {
         if (!this.children) this.children = new Set();
         if (child.parent) child.parent.removeChild(child);
         this.children.add(child);
-        child.parent = this;
-        child.cc = this.cc;
+        child.setParent(this);
+        child.setCanvasWidget(this.canvasWidget);
         this.markChanged();
     }
 
     removeChild(child) {
         if (this.children) this.children.delete(child);
-        child.parent = null;
+        child.setParent(null);
         this.markChanged();
     }
 
@@ -255,12 +254,32 @@ export class UIElement extends View {
         child.destroy();
     }
 
+    setParent(p) {  // This should only be called by addChild & removeChild
+        this.parent = p;
+    }
+
+    setCanvasWidget(canvasWidget) {
+        if (canvasWidget === this.canvasWidget) return;
+        this.canvasWidget = canvasWidget;
+        if (this.children) this.children.forEach(child => child.setCanvasWidget(this.canvasWidget));
+    }
+
+    get cc() {return this.canvasWidget.context;}
+
     markChanged() {
+        ui.markChanged();
         if (this.isChanged) return;
         this.isChanged = true;
         this.$size = undefined;
         this.$global = undefined;
+        this.$origin = undefined;
+        if (this.bubbleChanges && this.parent) this.parent.markChanged();
         if (this.children) this.children.forEach(child => child.markChanged());
+    }
+
+    // Mark the whole canvas changed (used for hiding widgets)
+    markCanvasChanged() {
+        if (this.canvasWidget) this.canvasWidget.markChanged();
     }
 
     set(options) {
@@ -277,13 +296,18 @@ export class UIElement extends View {
         if (changed) this.markChanged();
     }
 
+    show() { this.set({visible: true}); }
+    hide() { this.set({visible: false}); }
+    toggleVisible() { this.set({visible: !this.visible}); }
+
     get anchor() { return this._anchor || [0,0];}
     get pivot() { return this._pivot || [0,0];}
     get local() { return this._local || [0,0];}
     get border() { return this._border || [0,0,0,0];}
     get autoSize() { return this._autoSize || [0,0];}
-    get isClipped() { return this._clip; }// Default to false
+    get isClipped() { return this._clip; }  // Default to false
     get isVisible() { return this._visible === undefined || this._visible;} // Default to true
+    get bubbleChanges() { return this._bubbleChanges; } // Default to false
 
     // Returns the size of the drawable area
     get size() {
@@ -320,14 +344,19 @@ export class UIElement extends View {
         return this.$global;
     }
 
+    // Returns the upper left corner relative to the drawing canvas
+    get origin() {
+        if (this.$origin) return this.$origin;
+        this.$origin = v2_sub(this.global, this.canvasWidget.global);
+        return this.$origin;
+    }
+
     //Returns true if the global point is inside the element
     inside(xy) {
         const x = xy[0];
         const y = xy[1];
-        const global = this.global;
-        const size = this.size;
-        if (x < global[0] || x > (global[0] + size[0])) return false;
-        if (y < global[1] || y > (global[1] + size[1])) return false;
+        if (x < this.global[0] || x > (this.global[0] + this.size[0])) return false;
+        if (y < this.global[1] || y > (this.global[1] + this.size[1])) return false;
         return true;
     }
 
@@ -359,6 +388,11 @@ export class UIElement extends View {
         this.isChanged = false;
     }
 
+    // Some elements may need more control over the order they update their children
+    updateChildren() {
+        this.children.forEach(child => child.update());
+    }
+
     clip() {
         this.cc.rect(this.global[0], this.global[1], this.size[0], this.size[1]);
         this.cc.clip();
@@ -372,97 +406,181 @@ export class UIElement extends View {
 
     draw() {}
 
-    // Some elements may need more control over the order they update their children
-    updateChildren() {
-        this.children.forEach(child => child.update());
+}
+
+//------------------------------------------------------------------------------------------
+//-- ElementWidget -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Manages an independent DOM element as a widget.
+
+export class ElementWidget extends Widget2 {
+
+    destroy() {
+        super.destroy();
+        this.element.remove();
     }
 
-}
+    setParent(p) {
+        super.setParent(p);
+        this.subscribeToAncestors();
+    }
 
-//------------------------------------------------------------------------------------------
-//-- Pane ----------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
+    // We listen to see if any ancestor goes invisible so we can make the element vanish too.
 
-export class Pane extends UIElement {
+    subscribeToAncestors() {
+        this.unsubscribeAll();
+        let p = this.parent;
+        while (p) {
+            this.subscribe(p.id, "visible", this.draw);
+            p = p.parent;
+        }
+    }
 
-}
-
-//------------------------------------------------------------------------------------------
-//-- CanvasPane ----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-export class CanvasPane extends Pane {
-    constructor(...args) {
-        super(...args);
-        this.canvas = document.createElement("canvas");
-        this.canvas.id = "UICanvas";
-        this.canvas.style.cssText = "position: absolute; left: 0; top: 0; height: 200; width 100; z-index: 1; background-color: coral;";
-        document.body.insertBefore(this.canvas, null);
-        this.cc = this.canvas.getContext('2d');
-
+    get ancestorsAreVisible() {
+        let v = this.isVisible;
+        let p = this.parent;
+        while (p) {
+            v = v && p.isVisible;
+            p = p.parent;
+        }
+        return v;
     }
 
     draw() {
-        console.log("draw canvas pane");
-        const width = this.size[0];
-        const height = this.size[1];
-        this.canvas.width = width;
-        this.canvas.height = height;
-        this.canvas.style.top = this.global[1] + "px";
-        this.canvas.style.left = this.global[0] + "px";
-        this.canvas.style.width = width + "px";
-        this.canvas.style.height = height + "px";
+        const ratio = ui.ratio;
+        if (this.ancestorsAreVisible) {
+            this.element.style.display = 'inline';
+        } else {
+            this.element.style.display = 'none';
+        }
+        this.cc.scale(ratio, ratio);
+        const left = Math.floor(this.global[0] / ratio);
+        const top = Math.floor(this.global[1] / ratio);
+        const width = Math.floor(this.size[0]+1);
+        const height = Math.floor(this.size[1]+1);
+        this.element.width = width;
+        this.element.height = height;
+        this.element.style.top = top + "px";
+        this.element.style.left = left + "px";
+        this.element.style.width = width / ratio + "px";
+        this.element.style.height = height / ratio + "px";
         this.clear();
     }
+}
 
+
+
+//------------------------------------------------------------------------------------------
+//-- CanvasWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class CanvasWidget extends ElementWidget {
+    constructor(...args) {
+        super(...args);
+        this.element = document.createElement("canvas");
+        this.element.style.cssText = "position: absolute; left: 0; top: 0; height: 100; width 100; z-index: 1;";
+        document.body.insertBefore(this.element, null);
+        this.context = this.element.getContext('2d');
+        this.canvasWidget = this;
+
+        this.setElementOpacity();
+        this.setElementBackground();
+
+        this.subscribe(this.id, {event: "opacity"}, this.setElementOpacity );
+        this.subscribe(this.id, {event: "color"}, this.setElementBackground );
+    }
+
+    get opacity() { return this._opacity || 1;}
+    get color() { return this._color; }
+
+    setElementOpacity() {
+        this.element.style.opacity = "" + this.opacity;
+    }
+
+    setElementBackground() {
+        if (this.color) {
+            console.log(canvasColor(...this.color));
+            this.element.style.background = canvasColor(...this.color);
+        } else {
+            this.element.style.background = 'transparent';
+        }
+
+    }
+
+    setCanvasWidget() {
+        this.canvasWidget = this;
+        if (this.children) this.children.forEach(child => child.setCanvasWidget(this.canvasWidget));
+    }
 
 }
 
 //------------------------------------------------------------------------------------------
-//-- IFramePane ----------------------------------------------------------------------------
+//-- IFrameWidget ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class IFramePane extends Pane {
+export class IFrameWidget extends ElementWidget {
     constructor(...args) {
         super(...args);
-        // this.canvas = document.createElement("canvas");
-        // this.canvas.id = "UICanvas";
-        // this.canvas.style.cssText = "position: absolute; left: 0; top: 0; height: 200; width 100; z-index: 10; background-color: coral;";
-        // document.body.insertBefore(this.canvas, null);
-        // this.cc = this.canvas.getContext('2d');
+        this.element = document.createElement("iframe");
+        this.element.setAttribute("src", "https://croquet.io/quub/#GUEST/1cry0ylrjmy");
+        this.element.style.cssText = "position: absolute; left: 0; top: 0; width: 200px; height: 200px; border: 0; z-index: 10";
+        document.body.insertBefore(this.element, null);
 
-        this.iframe = document.createElement("iframe");
-        this.iframe.setAttribute("src", "https://croquet.io/quub/#8biyw3olzm");
-        this.iframe.style.cssText = "position: absolute; left: 0; top: 0; width: 400px; height: 200px; z-index: 3";
-        // // this.iframe0.style.width = "400px";
-        // // this.iframe0.style.height = "400px";
-        // // this.iframe0.style.zIndex = 0;
-        document.body.insertBefore(this.iframe, null);
-
+        this.setElementOpacity();
+        this.subscribe(this.id, {event: "opacity"}, this.setElementOpacity );
     }
 
+    setElementOpacity() {
+        this.element.style.opacity = "" + this.opacity;
+    }
+
+
     update() {
-        if (!this.isVisible) return;
-        // this.cc.save();
-        // if (this.isClipped) this.clip();
         if (this.isChanged) this.draw();
-        // if (this.children) this.updateChildren();
-        // this.cc.restore();
         this.isChanged = false;
     }
 
     draw() {
-        console.log("draw iframe pane");
-        const width = this.size[0];
-        const height = this.size[1];
-        this.iframe.width = width;
-        this.iframe.height = height;
-        this.iframe.style.top = this.global[1] + "px";
-        this.iframe.style.left = this.global[0] + "px";
-        this.iframe.style.width = width + "px";
-        this.iframe.style.height = height + "px";
-        // this.clear();
+        const ratio = ui.ratio;
+        if (this.ancestorsAreVisible) {
+            this.element.style.display = 'inline';
+        } else {
+            this.element.style.display = 'none';
+        }
+        const left = Math.floor(this.global[0] / ratio);
+        const top = Math.floor(this.global[1] / ratio);
+        const width = Math.floor(this.size[0]+1);
+        const height = Math.floor(this.size[1]+1);
+        this.element.width = width;
+        this.element.height = height;
+        this.element.style.top = top + "px";
+        this.element.style.left = left + "px";
+        this.element.style.width = width / ratio + "px";
+        this.element.style.height = height / ratio + "px";
+        this.clear();
     }
+
+    // draw() {
+    //     const ratio = ui.ratio;
+    //     if (this.ancestorsAreVisible) {
+    //         this.iframe.style.display = 'inline';
+    //     } else {
+    //         this.iframe.style.display = 'none';
+    //     }
+    //     const left = this.global[0] / ratio;
+    //     const top = this.global[1] / ratio;
+    //     const width = this.size[0];
+    //     const height = this.size[1];
+    //     // this.iframe.width = width * ratio;
+    //     // this.iframe.height = height * ratio;
+    //     this.iframe.width = width;
+    //     this.iframe.height = height;
+    //     this.iframe.style.top = top + "px";
+    //     this.iframe.style.left = left + "px";
+    //     this.iframe.style.width = width / ratio + "px";
+    //     this.iframe.style.height = height / ratio + "px";
+    // }
 
 
 }
@@ -474,7 +592,7 @@ export class IFramePane extends Pane {
 
 // Base class for all widgets.
 
-export class Widget2 extends UIElement {
+// export class Widget2 extends UIElement {
 
     // constructor(parent, options) {
     //     super();
@@ -694,7 +812,7 @@ export class Widget2 extends UIElement {
     // }
 
 
-}
+// }
 
 //------------------------------------------------------------------------------------------
 //-- RootWidget ----------------------------------------------------------------------------
@@ -719,8 +837,7 @@ export class BoxWidget2 extends Widget2 {
     get color() { return this._color || [0.5,0.5,0.5];}
 
     draw() {
-        console.log("draw box widget");
-        const xy = this.global;
+        const xy = this.origin;
         const size = this.size;
         this.cc.fillStyle = canvasColor(...this.color);
         this.cc.fillRect(xy[0], xy[1], size[0], size[1]);
@@ -815,7 +932,7 @@ export class TextWidget2 extends Widget2 {
             xy[1] = this.size[1];
             yOffset = lineHeight * (lines.length-1);
         }
-        xy = v2_add(this.global, xy);
+        xy = v2_add(this.origin, xy);
 
         lines.forEach((line,i) => this.cc.fillText(line, xy[0], xy[1] + (i * lineHeight) - yOffset));
     }
@@ -1031,5 +1148,5 @@ export class ButtonWidget2 extends ControlWidget2 {
 //------------------------------------------------------------------------------------------
 
 function canvasColor(r, g, b) {
-    return 'rgba(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) + ', ' + 1 +')';
+    return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
 }
