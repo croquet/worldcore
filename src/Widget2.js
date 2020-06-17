@@ -2,13 +2,10 @@ import { View } from "@croquet/croquet";
 import { v2_sub, v2_multiply, v2_add, v2_scale } from "./Vector";
 import { LoadFont, LoadImage} from "./ViewAssetCache";
 import { NamedView } from "./NamedView";
-import { Widget } from "./Widget";
 
 let ui;             // The UI manager
 let hover;          // The control widget that currently is hovered.
 let focus;          // The control widget that currently has focus.
-// let cc;             // The canvas context
-// let opacity = 1;    // The global opacity
 
 //------------------------------------------------------------------------------------------
 //-- UIManager -----------------------------------------------------------------------------
@@ -29,24 +26,12 @@ export class UIManager2 extends NamedView {
 
         ui = this; // Global pointer for widgets to use.
 
-        // this.canvas = document.createElement("canvas");
-        // this.canvas.id = "UICanvas";
-        // this.canvas.style.cssText = "position: absolute; left: 0; top: 0; z-index: 1; height: 500; width: 700; background-color: coral; ";
-        // document.body.insertBefore(this.canvas, null);
-        // cc = this.canvas.getContext('2d');
-
-        // this.xxx = new CanvasPane();
-        // this.xxx.set({size: [50,50], local: [20,20]});
-
-
         this.scale = 1;
-
-        // this.panes = new Set();
         this.size = [100,100];
         this.global = [0,0];
+
         this.resize();
         this.setRoot(new CanvasWidget(this, {autoSize: [1,1]}));
-        // this.root = new CanvasWidget(this, {autoSize: [1,1]});
 
         this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
         this.subscribe("input", {event: "mouseXY", handling: "immediate"}, this.mouseXY);
@@ -98,31 +83,17 @@ export class UIManager2 extends NamedView {
         if (hover) hover.unhover();
         if (focus) focus.blur();
         this.ratio = window.devicePixelRatio * this.scale;
-        // this.root.cc.scale(this.ratio, this.ratio);
         console.log("UI Pixel Ratio: " + this.ratio);
         const width = window.innerWidth;
         const height = window.innerHeight;
-        // const width = 700;
-        // const height = 700;
-        // this.canvas.style.width = width + "px";
-        // this.canvas.style.height = height + "px";
-        // this.canvas.width = width * this.ratio;
-        // this.canvas.height = height * this.ratio;
         this.size = [width * this.ratio, height * this.ratio];
-        // this.panes.forEach(pane => pane.markChanged());
         if (this.root) this.root.markChanged();
-        // if (this.root) this.root.set({size: this.size});
     }
 
     setScale(scale) {
         this.scale = scale;
         this.resize();
     }
-
-    // setOpacity(o) {
-    //     opacity = o;
-    //     if (this.root) this.root.markChanged();
-    // }
 
     update() {
         if (!this.isChanged) return;
@@ -218,11 +189,15 @@ export class UIManager2 extends NamedView {
 //-- Widget --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// The base widget class.
+
 export class Widget2 extends View {
     constructor(parent, options) {
         super();
         this.set(options);
         if (parent) parent.addChild(this);
+
+        this.buildChildren();
 
         this.subscribe(this.id, { event: "visible", handling: "immediate" }, visible => {if (!visible) this.markCanvasChanged();} );
     }
@@ -307,6 +282,8 @@ export class Widget2 extends View {
     get autoSize() { return this._autoSize || [0,0];}
     get isClipped() { return this._clip; }  // Default to false
     get isVisible() { return this._visible === undefined || this._visible;} // Default to true
+    get color() { return this._color || [0,0,0];}
+    get opacity() { return this._opacity || 1;}     // Children don't inherit opacity
     get bubbleChanges() { return this._bubbleChanges; } // Default to false
 
     // Returns the size of the drawable area
@@ -381,6 +358,7 @@ export class Widget2 extends View {
     update() {
         if (!this.isVisible) return;
         this.cc.save();
+        this.cc.globalAlpha = this.opacity;
         if (this.isClipped) this.clip();
         if (this.isChanged) this.draw();
         if (this.children) this.updateChildren();
@@ -389,6 +367,7 @@ export class Widget2 extends View {
     }
 
     // Some elements may need more control over the order they update their children
+    buildChildren() {}
     updateChildren() {
         this.children.forEach(child => child.update());
     }
@@ -421,6 +400,9 @@ export class ElementWidget extends Widget2 {
         this.element.remove();
     }
 
+    get color() { return this._color; } // Null = transparent
+    get zIndex() { if (this._zIndex === undefined) { return 0; } return this._zIndex; }
+
     setParent(p) {
         super.setParent(p);
         this.subscribeToAncestors();
@@ -448,28 +430,32 @@ export class ElementWidget extends Widget2 {
     }
 
     draw() {
+        this.element.style.zIndex = "" + this.zIndex;
+        this.element.style.opacity = "" + this.opacity;
+        if (this.color) {
+            this.element.style.background = canvasColor(...this.color);
+        } else {
+            this.element.style.background = 'transparent';
+        }
+
         const ratio = ui.ratio;
         if (this.ancestorsAreVisible) {
             this.element.style.display = 'inline';
         } else {
             this.element.style.display = 'none';
         }
-        this.cc.scale(ratio, ratio);
-        const left = Math.floor(this.global[0] / ratio);
-        const top = Math.floor(this.global[1] / ratio);
-        const width = Math.floor(this.size[0]+1);
-        const height = Math.floor(this.size[1]+1);
+        const left = this.global[0] / ratio;
+        const top = this.global[1] / ratio;
+        const width = this.size[0];
+        const height = this.size[1];
         this.element.width = width;
         this.element.height = height;
         this.element.style.top = top + "px";
         this.element.style.left = left + "px";
         this.element.style.width = width / ratio + "px";
         this.element.style.height = height / ratio + "px";
-        this.clear();
     }
 }
-
-
 
 //------------------------------------------------------------------------------------------
 //-- CanvasWidget --------------------------------------------------------------------------
@@ -479,33 +465,11 @@ export class CanvasWidget extends ElementWidget {
     constructor(...args) {
         super(...args);
         this.element = document.createElement("canvas");
-        this.element.style.cssText = "position: absolute; left: 0; top: 0; height: 100; width 100; z-index: 1;";
+        this.element.style.cssText = "position: absolute; left: 0; top: 0; border: 0;";
         document.body.insertBefore(this.element, null);
+
         this.context = this.element.getContext('2d');
         this.canvasWidget = this;
-
-        this.setElementOpacity();
-        this.setElementBackground();
-
-        this.subscribe(this.id, {event: "opacity"}, this.setElementOpacity );
-        this.subscribe(this.id, {event: "color"}, this.setElementBackground );
-    }
-
-    get opacity() { return this._opacity || 1;}
-    get color() { return this._color; }
-
-    setElementOpacity() {
-        this.element.style.opacity = "" + this.opacity;
-    }
-
-    setElementBackground() {
-        if (this.color) {
-            console.log(canvasColor(...this.color));
-            this.element.style.background = canvasColor(...this.color);
-        } else {
-            this.element.style.background = 'transparent';
-        }
-
     }
 
     setCanvasWidget() {
@@ -513,6 +477,11 @@ export class CanvasWidget extends ElementWidget {
         if (this.children) this.children.forEach(child => child.setCanvasWidget(this.canvasWidget));
     }
 
+    draw() {
+        super.draw();
+        this.cc.scale(ui.ratio, ui.ratio);
+        this.clear();
+    }
 }
 
 //------------------------------------------------------------------------------------------
@@ -523,18 +492,11 @@ export class IFrameWidget extends ElementWidget {
     constructor(...args) {
         super(...args);
         this.element = document.createElement("iframe");
-        this.element.setAttribute("src", "https://croquet.io/quub/#GUEST/1cry0ylrjmy");
-        this.element.style.cssText = "position: absolute; left: 0; top: 0; width: 200px; height: 200px; border: 0; z-index: 10";
+        this.element.style.cssText = "position: absolute; left: 0; top: 0; border: 0;";
         document.body.insertBefore(this.element, null);
-
-        this.setElementOpacity();
-        this.subscribe(this.id, {event: "opacity"}, this.setElementOpacity );
     }
 
-    setElementOpacity() {
-        this.element.style.opacity = "" + this.opacity;
-    }
-
+    get source() { return this._source || ""; }
 
     update() {
         if (this.isChanged) this.draw();
@@ -542,289 +504,136 @@ export class IFrameWidget extends ElementWidget {
     }
 
     draw() {
-        const ratio = ui.ratio;
-        if (this.ancestorsAreVisible) {
-            this.element.style.display = 'inline';
-        } else {
-            this.element.style.display = 'none';
-        }
-        const left = Math.floor(this.global[0] / ratio);
-        const top = Math.floor(this.global[1] / ratio);
-        const width = Math.floor(this.size[0]+1);
-        const height = Math.floor(this.size[1]+1);
-        this.element.width = width;
-        this.element.height = height;
-        this.element.style.top = top + "px";
-        this.element.style.left = left + "px";
-        this.element.style.width = width / ratio + "px";
-        this.element.style.height = height / ratio + "px";
-        this.clear();
+        super.draw();
+        this.element.src = this.source;
     }
-
-    // draw() {
-    //     const ratio = ui.ratio;
-    //     if (this.ancestorsAreVisible) {
-    //         this.iframe.style.display = 'inline';
-    //     } else {
-    //         this.iframe.style.display = 'none';
-    //     }
-    //     const left = this.global[0] / ratio;
-    //     const top = this.global[1] / ratio;
-    //     const width = this.size[0];
-    //     const height = this.size[1];
-    //     // this.iframe.width = width * ratio;
-    //     // this.iframe.height = height * ratio;
-    //     this.iframe.width = width;
-    //     this.iframe.height = height;
-    //     this.iframe.style.top = top + "px";
-    //     this.iframe.style.left = left + "px";
-    //     this.iframe.style.width = width / ratio + "px";
-    //     this.iframe.style.height = height / ratio + "px";
-    // }
-
 
 }
 
-
 //------------------------------------------------------------------------------------------
-//-- Widget --------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// Base class for all widgets.
-
-// export class Widget2 extends UIElement {
-
-    // constructor(parent, options) {
-    //     super();
-    //     this.set(options);
-    //     if (parent) parent.addChild(this);
-
-    //     this.subscribe(this.id, { event: "invisible", handling: "immediate" }, this.invisibleChanged );
-    // }
-
-    // invisibleChanged(state) { // When a widget is hidden, redraw the whole screen.
-    //     if (state) this.markAllChanged();
-    // }
-
-    // destroy() {
-    //     if (this.children) this.children.forEach(child => child.destroy());
-    //     if (this.parent) this.parent.removeChild(this);
-    //     this.detach();
-    // }
-
-    // addChild(child) {
-    //     if (child.parent === this) return;
-    //     if (!this.children) this.children = new Set();
-    //     if (child.parent) child.parent.removeChild(child);
-    //     this.children.add(child);
-    //     child.parent = this;
-    //     this.markChanged();
-    // }
-
-    // removeChild(child) {
-    //     if (this.children) this.children.delete(child);
-    //     child.parent = null;
-    //     this.markChanged();
-    // }
-
-    // destroyChild(child) {
-    //     this.removeChild(child);
-    //     child.destroy();
-    // }
-
-    // set(options) {
-    //     let changed = false;
-    //     for (const option in options) {
-    //         const n = "_" + option;
-    //         if (this[n] !== option) {
-    //             const v = options[option];
-    //             this[n] = v;
-    //             changed = true;
-    //             this.publish(this.id, option, v);
-    //         }
-    //     }
-    //     if (changed) this.markChanged();
-    // }
-
-    // show() { this.set({invisible: false}); }
-    // hide() { this.set({invisible: true}); }
-    // toggleInvisible() { this.set({invisible: !this.invisible}); }
-
-    // get anchor() { return this._anchor || [0,0];}
-    // get pivot() { return this._pivot || [0,0];}
-    // get local() { return this._local || [0,0];}
-    // get border() { return this._border || [0,0,0,0];}
-    // get autoSize() { return this._autoSize || [0,0];}
-    // get clip() { return this._clip; }
-    // get invisible() { return this._invisible; }
-    // get opacity() { return this._opacity || 1;}
-    // get bubbleChanges() { return this._bubbleChanges; }
-
-    // Returns the size of the drawable area
-    // get size() {
-    //     if (this.$size) return this.$size;
-    //     const size = this._size || [100,100];
-    //     this.$size = [...size];
-    //     if (this.parent) {
-    //         const parentSize = this.parent.size;
-    //         if (this.autoSize[0]) this.$size[0] = parentSize[0] * this.autoSize[0];
-    //         if (this.autoSize[1]) this.$size[1] = parentSize[1] * this.autoSize[1];
-    //     }
-    //     const border = this.border;
-    //     this.$size[0] -= (border[0] + border[2]);
-    //     this.$size[1] -= (border[1] + border[3]);
-    //     return this.$size;
-    // }
-
-    // // Returns the upper left corner in global coordinates
-    // get global() {
-    //     if (this.$global) return this.$global;
-    //     if (this.parent) {
-    //         const border = this.border;
-    //         const size = [...this.size];
-    //         size[0] += (border[0] + border[2]);
-    //         size[1] += (border[1] + border[3]);
-    //         const anchor = v2_multiply(this.parent.size, this.anchor);
-    //         const pivot = v2_multiply(size, this.pivot);
-    //         const offset = v2_sub(anchor, pivot);
-    //         const ulBorder = [border[0], border[1]];
-    //         this.$global = v2_add(this.parent.global, v2_add(ulBorder, v2_add(this.local, offset)));
-    //     } else {
-    //         this.$global = this.local;
-    //     }
-    //     return this.$global;
-    // }
-
-    // Returns true if the global point is inside the widget
-    // inside(xy) {
-    //     const x = xy[0];
-    //     const y = xy[1];
-    //     const global = this.global;
-    //     const size = this.size;
-    //     if (x < global[0] || x > (global[0] + size[0])) return false;
-    //     if (y < global[1] || y > (global[1] + size[1])) return false;
-    //     return true;
-    // }
-
-    // markChanged() {
-    //     ui.markChanged();
-    //     if (this.isChanged) return;
-    //     this.$size = undefined;
-    //     this.$global = undefined;
-    //     this.isChanged = true;
-    //     if (this.bubbleChanges && this.parent) this.parent.markChanged();
-    //     if (this.children) this.children.forEach(child => child.markChanged());
-    // }
-
-    // Tell the UI to redraw the whole screen
-    // This is used for hide events
-    // markAllChanged() {
-    //     if (ui && ui.root) ui.root.markChanged();
-    // }
-
-    // update() {
-    //     if (this.invisible) return;
-    //     cc.save();
-    //     const oldOpacity = opacity;
-    //     opacity *= this.opacity;
-    //     if (this.clip) {
-    //         cc.rect(this.global[0], this.global[1], this.size[0], this.size[1]);
-    //         cc.clip();
-    //     }
-    //     if (this.isChanged) {
-    //         if (opacity < 1) { // Erase behind the draw area.
-    //             cc.globalCompositeOperation = 'destination-out';
-    //             cc.globalAlpha = 1;
-    //             this.draw();
-    //             cc.globalCompositeOperation = 'source-over';
-    //             cc.globalAlpha = opacity;
-    //         }
-    //         this.draw();
-    //     }
-    //     if (this.children) this.updateChildren();
-    //     this.isChanged = false;
-    //     opacity = oldOpacity;
-    //     cc.restore();
-    // }
-
-    // Some widgets may need more control over the order they update their children
-    // updateChildren() {
-    //     this.children.forEach(child => child.update());
-    // }
-
-    // cursor(xy) { // Propagates down the widget tree. Returns true if a child handles it.
-    //     if (this.invisible || !this.inside(xy)) return false;
-    //     let consumed = false;
-    //     if (this.children) this.children.forEach(child => consumed = child.cursor(xy) || consumed);
-    //     return consumed;
-    // }
-
-    // press(xy) { // Propagates down the widget tree. Returns true if a child handles it.
-    //     if (this.invisible || !this.inside(xy)) return false;
-    //     let consumed = false;
-    //     if (this.children) this.children.forEach(child => consumed = child.press(xy) || consumed);
-    //     return consumed;
-    // }
-
-    // clear() {
-    //     const xy = this.global;
-    //     const size = this.size;
-    //     cc.clearRect(xy[0], xy[1], size[0], size[1]);
-    // }
-
-    // draw() {}
-
-    // updateNoOpacity() {
-    //     if (this.isChanged) {
-    //         this.draw();
-    //         this.isChanged = false;
-    //     }
-    //     if (this.isVisible) this.children.forEach(child => child.updateNoOpacity());
-    // }
-
-    // hover(xy) { // Propagates down the widget tree.
-    //     if (!this.isVisible) return;
-    //     this.children.forEach(child => child.hover(xy));
-    // }
-
-    // drag(xy) {} // Only sent to the current focus.
-
-    // press(xy) { // Propagates down the widget tree. Returns true if a child handles it.
-    //     if (!this.isVisible || !this.inRect(xy)) return false;
-    //     let consumed = false;
-    //     this.children.forEach(child => consumed = child.press(xy) || consumed);
-    //     return consumed;
-    // }
-
-    // release(xy) {} // Only sent to the current focus.
-
-    // drawWithOpacity() {
-    //     if (!this.isVisible) return;
-    //     if (this.opacity < 1) {
-    //         cc.globalCompositeOperation = 'destination-out';
-    //         cc.globalAlpha = 1;
-    //         this.draw();
-    //     }
-    //     cc.globalCompositeOperation = 'source-over';
-    //     cc.globalAlpha = this.opacity;
-    //     cc.lineWidth = 1;
-    //     this.draw();
-    // }
-
-
-// }
-
-//------------------------------------------------------------------------------------------
-//-- RootWidget ----------------------------------------------------------------------------
+//-- LayoutWidget --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// The root of the widget tree. Clears the screen on redraw.
+export class LayoutWidget2 extends Widget2 {
+    constructor(...args) {
+        super(...args);
+        this.slots = [];
+        this.markChanged();
+    }
 
-// export class RootWidget2 extends Widget2 {
+    updateChildren() {
+        if (this.isChanged) this.resizeSlots();
+        this.slots.forEach(slot => slot.update());
+    }
 
-//     draw() { this.clear(); }
+    resizeSlots() {}
 
-// }
+    get slotCount() { return this.slots.size; }
+    get margin() { return this._margin || 0; }
+
+    slot(n) {
+        return this.slots[n];
+    }
+
+    addSlot(w,n) {
+        n = n || this.slots.length;
+        this.addChild(w);
+        w.set({bubbleChanges: true});
+        this.slots.splice(n,0,w);
+        this.markChanged();
+    }
+
+    removeSlot(n) {
+        if (this.slots[n]) this.removeChild(this.slots[n]);
+        this.slots.splice(n,1);
+        this.markChanged();
+    }
+
+    destroySlot(n) {
+        if (this.slots[n]) this.slots[n].destroy();
+        this.slots.splice(n,1);
+        this.markChanged();
+    }
+
+    destroyAllSlots() {
+        this.slots.forEach(slot => slot.destroy());
+        this.slots = [];
+        this.markChanged();
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- HorizontalWidget ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class HorizontalWidget2 extends LayoutWidget2 {
+
+    addSlot(w,n) {
+        super.addSlot(w,n);
+        w.set({autoSize: [0,1]});
+        Object.defineProperty(w, 'width', { get: () => { return w._width || 0; }});
+    }
+
+    resizeSlots() {
+        let widthSum = Math.max(0, (this.slots.length - 1) * this.margin);
+        let autoCount = 0;
+        this.slots.forEach(slot => {
+            if (slot.width) {
+                widthSum += slot.width;
+            } else {
+                autoCount++;
+            }
+        });
+
+        let autoWidth = 0;
+        if (autoCount > 0) autoWidth = Math.max(0, (this.size[0] - widthSum) / autoCount);
+        let offset = 0;
+        this.slots.forEach(slot => {
+            let width = autoWidth;
+            if (slot.width) width = slot.width;
+            slot.set({size: [width, 0], local:[offset,0]});
+            offset += width + this.margin;
+        });
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- VerticalWidget ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class VerticalWidget2 extends LayoutWidget2 {
+
+    addSlot(w,n) {
+        super.addSlot(w,n);
+        w.set({autoSize: [1,0]});
+        Object.defineProperty(w, 'height', { get: () => { return w._height || 0; }});
+    }
+
+    resizeSlots() {
+        let heightSum = Math.max(0, (this.slots.length - 1) * this.margin);
+        let autoCount = 0;
+        this.slots.forEach(slot => {
+            if (slot.height) {
+                heightSum += slot.height;
+            } else {
+                autoCount++;
+            }
+        });
+
+        let autoHeight = 0;
+        if (autoCount > 0) autoHeight = Math.max(0, (this.size[1] - heightSum) / autoCount);
+        let offset = 0;
+        this.slots.forEach(slot => {
+            let height = autoHeight;
+            if (slot.height) height = slot.height;
+            slot.set({size: [0, height], local:[0, offset]});
+            offset += height + this.margin;
+        });
+    }
+
+}
 
 //------------------------------------------------------------------------------------------
 //-- BoxWidget -----------------------------------------------------------------------------
@@ -834,13 +643,145 @@ export class IFrameWidget extends ElementWidget {
 
 export class BoxWidget2 extends Widget2 {
 
-    get color() { return this._color || [0.5,0.5,0.5];}
-
     draw() {
         const xy = this.origin;
         const size = this.size;
         this.cc.fillStyle = canvasColor(...this.color);
         this.cc.fillRect(xy[0], xy[1], size[0], size[1]);
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- ImageWidget ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Displays an image.
+
+export class ImageWidget2 extends Widget2 {
+    constructor(...args) {
+        super(...args);
+        if (this.url) this.loadFromURL(this.url);
+        this.subscribe(this.id, { event: "url", handling: "immediate" }, this.loadFromURL);
+    }
+
+    get image() { return this._image; }     // A canvas
+    get url() { return this._url; }
+
+    loadFromURL(url) {
+        this._image = LoadImage(url, image => {
+            this._image = image;
+            this.markChanged();
+        });
+        this.markChanged();
+    }
+
+    draw() {
+        if (!this.image) return;
+        const xy = this.origin;
+        const size = this.size;
+        this.cc.drawImage(this.image, xy[0], xy[1], size[0], size[1]);
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- NineSliceWidget -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Displays a nine-slice image that scales to preserve the proportions of its edges.
+
+export class NineSliceWidget2 extends ImageWidget2 {
+
+    get inset() { return this._inset || [32, 32, 32, 32];}  // Offset in pixels from edge of image to make slices
+    get insetScale() { return this._insetScale || 1;}        // Scaling factor to translate inset to screen pixels
+
+    draw() {
+        console.log("adsasdf");
+        if (!this.image) return;
+        const height = this.image.height;
+        const width = this.image.width;
+        const xy = this.origin;
+        const x = xy[0];
+        const y = xy[1];
+        const size = this.size;
+        const xSize = size[0];
+        const ySize = size[1];
+        const left = this.inset[0];
+        const top = this.inset[1];
+        const right = this.inset[2];
+        const bottom = this.inset[3];
+        const scale = this.insetScale;
+
+        // Left Column
+        this.cc.drawImage(
+            this.image,
+            0, 0,
+            left, top,
+            x, y,
+            left * scale, top * scale
+        );
+        this.cc.drawImage(
+            this.image,
+            0, top,
+            left, height - top - bottom,
+            x, y + top * scale,
+            left * scale, ySize - (top + bottom) * scale
+        );
+        this.cc.drawImage(
+            this.image,
+            0, height - bottom,
+            left, bottom,
+            x, y + ySize- bottom * scale,
+            left * scale, bottom * scale
+        );
+
+        //Middle Column
+        this.cc.drawImage(
+            this.image,
+            left, 0,
+            width - left - right, top,
+            x + left * scale, y,
+            xSize - (left + right) * scale, top * scale
+        );
+        this.cc.drawImage(
+            this.image,
+            left, top,
+            width - left - right, height - top - bottom,
+            x + left * scale, y + top * scale,
+            xSize - (left + right) * scale, ySize - (top + bottom) * scale
+        );
+        this.cc.drawImage(
+            this.image,
+            left, height - bottom,
+            width - left - right, bottom,
+            x + left * scale, y + ySize - bottom * scale,
+            xSize - (left + right) * scale, bottom * scale
+        );
+
+        // Right Column
+        this.cc.drawImage(
+            this.image,
+            width-right, 0,
+            right, top,
+            x + xSize - right * scale, y,
+            right * scale, top * scale
+        );
+        this.cc.drawImage(
+            this.image,
+            width-right, top,
+            right, height - top - bottom,
+            x + xSize - right * scale, y + top * scale,
+            right * scale, ySize - (top + bottom) * scale
+        );
+        this.cc.drawImage(
+            this.image,
+            width-right, height - bottom,
+            right, bottom,
+            x + xSize - right * scale, y + ySize - bottom * scale,
+            right * scale, bottom * scale
+        );
+
     }
 
 }
@@ -863,7 +804,7 @@ export class TextWidget2 extends Widget2 {
 
     setText(t) {this.set({text: t});}
 
-    get bubbleChanges() { return this._bubbleChanges === undefined || this._bubbleChanges;} // Default to true
+    get bubbleChanges() { return this._bubbleChanges === undefined || this._bubbleChanges;} // Override to default to true
     get text() { return this._text || "Text";}
     get font() { return this._font || "sans-serif";}
     get style() { return this._style || "normal";}
@@ -872,7 +813,6 @@ export class TextWidget2 extends Widget2 {
     get alignX() { return this._alignX || "center";}
     get alignY() { return this._alignY || "middle";}
     get wrap() { return this._wrap === undefined || this._wrap;} // Default to true
-    get color() { return this._color || [0,0,0];}
 
     // Breaks lines by word wrap or new line.
 
@@ -975,26 +915,20 @@ export class TextWidget2 extends Widget2 {
 
 // Only control widgets can have focus. The current focus receives key, drag and release events.
 
-// Control widgets have enabled/disabled states. The disabled state is implemented with a gel
-// widget containing an autosized colored box. If the widget has an irregular shape (like a
-// button that uses a 9 slice widget) you'll need to provide a different gel that matches the
+// Control widgets have enabled/disabled states. The disabled state is implemented with a translucent overlay.
+// If the widget has an irregular shape, you'll need to provide an overlaythat matches the
 // control shape.
 
-// Each control types should handle updating its own disabledGel overlay and testing for
-// isEnabled to block interactions.
-
 export class ControlWidget2 extends Widget2 {
-    // constructor(parent) {
-    //     super(parent);
-
-    //     this.setDisableGel(new GelWidget());
-    //     this.disabledGel.setOpacity(0.6);
-
-    //     const gel = new BoxWidget(this.disabledGel);
-    //     gel.setAutoSize([1,1]);
-    //     gel.setColor([0.8,0.8,0.8]);
-
+    // constructor(...args) {
+    //     super(...args);
+    //     this.setDim(new BoxWidget2(this, {autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.6}));
     // }
+
+    buildChildren() {
+        super.buildChildren();
+        this.setDim(new BoxWidget2(this, {autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.6}));
+    }
 
     enable() { this.set({ disabled: false }); }
     disable() { this.set({ disabled: true }); }
@@ -1003,6 +937,12 @@ export class ControlWidget2 extends Widget2 {
     get isDisabled() { return this._disabled;}
     get isHovered() { return this === hover; }
     get isFocused() { return this === focus; }
+
+    setDim(w) {
+        if (this.dim && this.dhim !== w) this.destroyChild(this.dim);
+        this.dim = w;
+        this.addChild(w);
+    }
 
     hover() {
         if (this.isDisabled || this.isHovered) return;
@@ -1052,14 +992,6 @@ export class ControlWidget2 extends Widget2 {
     press(xy) { return false; }
     release(xy) {}
 
-    // setDisableGel(widget) {
-    //     if (this.disabledGel) this.destroyChild(this.disabledGel);
-    //     this.disabledGel = widget;
-    //     this.disabledGel.setAutoSize([1,1]);
-    //     this.addChild(widget);
-    // }
-
-
 }
 
 //------------------------------------------------------------------------------------------
@@ -1072,14 +1004,22 @@ export class ControlWidget2 extends Widget2 {
 
 export class ButtonWidget2 extends ControlWidget2 {
 
-    constructor(...args) {
-        super(...args);
+    // constructor(...args) {
+    //     super(...args);
 
+    //     this.setNormal(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.5]}));
+    //     this.setHilite(new BoxWidget2(this, {autoSize: [1,1], color: [0.65,0.9,0.65]}));
+    //     this.setPressed(new BoxWidget2(this, {autoSize: [1,1], color: [0.9,0.35,0.35]}));
+    //     this.setLabel(new TextWidget2(this, {autoSize: [1,1]}));
+
+    // }
+
+    buildChildren() {
+        super.buildChildren();
         this.setNormal(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.5]}));
         this.setHilite(new BoxWidget2(this, {autoSize: [1,1], color: [0.65,0.9,0.65]}));
         this.setPressed(new BoxWidget2(this, {autoSize: [1,1], color: [0.9,0.35,0.35]}));
         this.setLabel(new TextWidget2(this, {autoSize: [1,1]}));
-
     }
 
     setNormal(w) {
@@ -1112,7 +1052,7 @@ export class ButtonWidget2 extends ControlWidget2 {
         if (this.isPressed) background = this.pressed;
         if (background) background.update();
         if (this.label) this.label.update();
-        // if (!this.isEnabled) this.disabledGel.update();
+        if (this.isDisabled) this.dim.update();
     }
 
     drag(xy) {
@@ -1139,6 +1079,197 @@ export class ButtonWidget2 extends ControlWidget2 {
 
     onClick() {
         console.log("click!");
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- ToggleWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Draws a button that can be toggled between an on and off state.
+
+export class ToggleWidget2 extends ControlWidget2 {
+
+    constructor(parent) {
+        super(parent);
+
+        // this.setNormalOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.7]}));
+        // this.setNormalOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.5, 0.5, 0.5]}));
+        // this.setHiliteOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.8]}));
+        // this.setHiliteOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.6]}));
+        // this.setPressedOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.6]}));
+        // this.setPressedOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.4]}));
+        // this.setLabelOn(new TextWidget2(this, {autoSize: [1,1], text: "On"}));
+        // this.setLabelOff(new TextWidget2(this, {autoSize: [1,1], text: "Off"}));
+
+        this.changeSet();
+
+        this.subscribe(this.id, { event: "state", handling: "immediate" }, this.changeState);
+        this.subscribe(this.id, { event: "toggleSet", handling: "immediate" }, this.changeSet);
+
+    }
+
+    buildChildren() {
+        super.buildChildren();
+        this.setNormalOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.7]}));
+        this.setNormalOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.5, 0.5, 0.5]}));
+        this.setHiliteOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.8]}));
+        this.setHiliteOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.6]}));
+        this.setPressedOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.6]}));
+        this.setPressedOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.4]}));
+        this.setLabelOn(new TextWidget2(this, {autoSize: [1,1], text: "On"}));
+        this.setLabelOff(new TextWidget2(this, {autoSize: [1,1], text: "Off"}));
+    }
+
+    get isOn() { return this._state; }
+    get toggleSet() { return this._toggleSet; }
+
+    setNormalOn(w) {
+        if (this.normalOn && this.normalOn !== w) this.destroyChild(this.normalOn);
+        this.normalOn = w;
+        this.addChild(w);
+    }
+
+    setNormalOff(w) {
+        if (this.normalOff && this.normalOff !== w) this.destroyChild(this.normalOff);
+        this.normalOff = w;
+        this.addChild(w);
+    }
+
+    setHiliteOn(w) {
+        if (this.hiliteOn && this.hiliteOn !== w) this.destroyChild(this.hiliteOn);
+        this.hiliteOn = w;
+        this.addChild(w);
+    }
+
+    setHiliteOff(w) {
+        if (this.hiliteOff && this.hiliteOff !== w) this.destroyChild(this.hiliteOff);
+        this.hiliteOff = w;
+        this.addChild(w);
+    }
+
+    setPressedOn(w) {
+        if (this.pressedOn && this.presedOn !== w) this.destroyChild(this.pressedOn);
+        this.pressedOn = w;
+        this.addChild(w);
+    }
+
+    setPressedOff(w) {
+        if (this.pressedOff && this.presedOff !== w) this.destroyChild(this.pressedOff);
+        this.pressedOff = w;
+        this.addChild(w);
+    }
+
+    setLabelOn(w) {
+        if (this.labelOn && this.labelOn !== w) this.destroyChild(this.labelOn);
+        this.labelOn = w;
+        this.addChild(w);
+    }
+
+    setLabelOff(w) {
+        if (this.labelOff && this.labelOff !== w) this.destroyChild(this.labelOff);
+        this.labelOff = w;
+        this.addChild(w);
+    }
+
+    updateChildren() {
+        let background;
+        let label;
+        if (this.isOn) {
+            background = this.normalOn;
+            if (this.isHovered) background = this.hiliteOn;
+            if (this.isPressed) background = this.pressedOn;
+            label = this.labelOn;
+        } else {
+            background = this.normalOff;
+            if (this.isHovered) background = this.hiliteOff;
+            if (this.isPressed) background = this.pressedOff;
+            label = this.labelOff;
+        }
+        if (background) background.update();
+        if (label) label.update();
+        if (this.isDisabled) this.dim.update();
+    }
+
+    drag(xy) {
+        const inside = this.inside(xy);
+        if (this.isPressed === inside) return;
+        this.isPressed = inside;
+        this.markChanged();
+    }
+
+    press(xy) {
+        if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
+        this.isPressed = true;
+        this.focus();
+        return true;
+    }
+
+    release(xy) {
+        this.isPressed = false;
+        this.blur();
+        if (!this.inside(xy)) return;
+        if (this.toggleSet) {
+            this.toggleSet.pick(this);
+        } else {
+            this.set({state: !this.isOn});
+        }
+    }
+
+    changeSet() {
+        if (this.toggleSet) this.toggleSet.add(this);
+    }
+
+    changeState(state) {
+        if (state) {
+            this.onToggleOn();
+        } else {
+            this.onToggleOff();
+        }
+    }
+
+    onToggleOn() {
+        console.log("toggle on");
+    }
+
+    onToggleOff() {
+        console.log("toggle off");
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- ToggleSet -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Helper class that manages a linked set of toggle widgets.
+
+// Clean this up! Make sure toggles don't fire on start or when the state doesn't change! Remove from set on toggle set change.
+// Does a set event need to contain the old state?
+
+export class ToggleSet2  {
+    constructor() {
+        this.toggles = new Set();
+    }
+
+    add(toggle) {
+        if (this.toggles.has(toggle)) return;
+        this.toggles.add(toggle);
+    }
+
+    remove(toggle) {
+        this.toggles.remove(toggle);
+    }
+
+    // setAllOff(allOff) {
+    //     this.allOff = allOff;
+    // }
+
+    pick(on) {
+        // if (!this.allOff && on.isOn) return; // Can't turn off a toggle in a set directly
+        on.set({state: true});
+        this.toggles.forEach(toggle => { if (toggle !== on) toggle.set({state: false}); });
     }
 
 }
