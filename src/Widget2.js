@@ -19,6 +19,8 @@ let focus;          // The control widget that currently has focus.
 //
 // Takes the device's pixel ratio into account. This can be over-ridden using SetScale.
 
+// Move scale onto canvas!
+
 export class UIManager2 extends NamedView {
 
     constructor() {
@@ -26,12 +28,12 @@ export class UIManager2 extends NamedView {
 
         ui = this; // Global pointer for widgets to use.
 
-        this.scale = 1;
+        // this.scale = 1;
         this.size = [100,100];
         this.global = [0,0];
 
         this.resize();
-        this.setRoot(new CanvasWidget(this, {autoSize: [1,1]}));
+        this.setRoot(new CanvasWidget(this, {autoSize: [1,1], color: [1,0.5, 0.3]}));
 
         this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
         this.subscribe("input", {event: "mouseXY", handling: "immediate"}, this.mouseXY);
@@ -82,18 +84,20 @@ export class UIManager2 extends NamedView {
     resize() {
         if (hover) hover.unhover();
         if (focus) focus.blur();
-        this.ratio = window.devicePixelRatio * this.scale;
+        // this.ratio = window.devicePixelRatio * this.scale;
+        this.ratio = window.devicePixelRatio;
         console.log("UI Pixel Ratio: " + this.ratio);
         const width = window.innerWidth;
         const height = window.innerHeight;
-        this.size = [width * this.ratio, height * this.ratio];
+        // this.size = [width * this.ratio, height * this.ratio];
+        this.size = [width, height];
         if (this.root) this.root.markChanged();
     }
 
-    setScale(scale) {
-        this.scale = scale;
-        this.resize();
-    }
+    // setScale(scale) {
+    //     this.scale = scale;
+    //     this.resize();
+    // }
 
     update() {
         if (!this.isChanged) return;
@@ -106,7 +110,7 @@ export class UIManager2 extends NamedView {
     }
 
     mouseXY(xy) {
-        xy = v2_scale(xy, this.ratio);
+        // xy = v2_scale(xy, this.ratio);
         let consumed = false;
         if (!consumed && focus) consumed = focus.drag(xy);
         if (!consumed && hover) consumed = hover.cursor(xy);
@@ -116,31 +120,31 @@ export class UIManager2 extends NamedView {
     }
 
     mouseDown(xy) {
-        xy = v2_scale(xy, this.ratio);
+        // xy = v2_scale(xy, this.ratio);
         if (!hover) return;
         if (!hover.press(xy)) this.publish("ui", "mouse0Down", xy);
     }
 
     mouseUp(xy) {
-        xy = v2_scale(xy, this.ratio);
+        // xy = v2_scale(xy, this.ratio);
         if (focus) focus.release(xy);
         this.publish("ui", "mouse0Up", xy);
     }
 
     touchXY(xy) {
-        xy = v2_scale(xy, this.ratio);
+        // xy = v2_scale(xy, this.ratio);
         if (focus) focus.drag(xy);
         this.publish("ui", "touchXY", xy);
     }
 
     touchDown(xy) {
-        xy = v2_scale(xy, this.ratio);
+        // xy = v2_scale(xy, this.ratio);
         if (!this.root) return;
         if (!this.root.press(xy)) this.publish("ui", "touchDown", xy);
     }
 
     touchUp(xy) {
-        xy = v2_scale(xy, this.ratio);
+        // xy = v2_scale(xy, this.ratio);
         if (focus) focus.release(xy);
         this.publish("ui", "touchUp", xy);
     }
@@ -261,8 +265,8 @@ export class Widget2 extends View {
         let changed = false;
         for (const option in options) {
             const n = "_" + option;
-            if (this[n] !== option) {
-                const v = options[option];
+            const v = options[option];
+            if (this[n] !== v) {
                 this[n] = v;
                 changed = true;
                 this.publish(this.id, option, v);
@@ -275,6 +279,7 @@ export class Widget2 extends View {
     hide() { this.set({visible: false}); }
     toggleVisible() { this.set({visible: !this.visible}); }
 
+    get scale() { return this._scale || 1;}
     get anchor() { return this._anchor || [0,0];}
     get pivot() { return this._pivot || [0,0];}
     get local() { return this._local || [0,0];}
@@ -290,6 +295,7 @@ export class Widget2 extends View {
     get size() {
         if (this.$size) return this.$size;
         const size = this._size || [100,100];
+        // this.$size = v2_scale(size, 0.5);
         this.$size = [...size];
         if (this.parent) {
             const parentSize = this.parent.size;
@@ -358,6 +364,7 @@ export class Widget2 extends View {
     update() {
         if (!this.isVisible) return;
         this.cc.save();
+        // this.cc.scale(this.scale, this.scale);
         this.cc.globalAlpha = this.opacity;
         if (this.isClipped) this.clip();
         if (this.isChanged) this.draw();
@@ -444,16 +451,16 @@ export class ElementWidget extends Widget2 {
         } else {
             this.element.style.display = 'none';
         }
-        const left = this.global[0] / ratio;
-        const top = this.global[1] / ratio;
+        const left = this.global[0];
+        const top = this.global[1];
         const width = this.size[0];
         const height = this.size[1];
-        this.element.width = width;
-        this.element.height = height;
+        this.element.width = width * ratio;
+        this.element.height = height * ratio;
         this.element.style.top = top + "px";
         this.element.style.left = left + "px";
-        this.element.style.width = width / ratio + "px";
-        this.element.style.height = height / ratio + "px";
+        this.element.style.width = width + "px";
+        this.element.style.height = height + "px";
     }
 }
 
@@ -697,7 +704,6 @@ export class NineSliceWidget2 extends ImageWidget2 {
     get insetScale() { return this._insetScale || 1;}        // Scaling factor to translate inset to screen pixels
 
     draw() {
-        console.log("adsasdf");
         if (!this.image) return;
         const height = this.image.height;
         const width = this.image.width;
@@ -849,11 +855,11 @@ export class TextWidget2 extends Widget2 {
     }
 
     draw() {
-        const lineHeight = this.point + this.lineSpacing;
+        const lineHeight = (this.point + this.lineSpacing) * this.scale;
 
         this.cc.textAlign = this.alignX;
         this.cc.textBaseline = this.alignY;
-        this.cc.font = this.style + " " + this.point + "px " + this.font;
+        this.cc.font = this.style + " " + this.point * this.scale + "px " + this.font;
         this.cc.fillStyle = canvasColor(...this.color);
 
         const lines = this.lines;
@@ -1091,23 +1097,21 @@ export class ButtonWidget2 extends ControlWidget2 {
 
 export class ToggleWidget2 extends ControlWidget2 {
 
-    constructor(parent) {
-        super(parent);
+    constructor(...args) {
+        super(...args);
 
-        // this.setNormalOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.7]}));
-        // this.setNormalOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.5, 0.5, 0.5]}));
-        // this.setHiliteOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.8]}));
-        // this.setHiliteOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.6]}));
-        // this.setPressedOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.6]}));
-        // this.setPressedOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.4]}));
-        // this.setLabelOn(new TextWidget2(this, {autoSize: [1,1], text: "On"}));
-        // this.setLabelOff(new TextWidget2(this, {autoSize: [1,1], text: "Off"}));
+        if (!this._state) this._state = false; // Prevent toggle change events when an undefined state is set to false.
 
-        this.changeSet();
+        this.setChanged();
 
-        this.subscribe(this.id, { event: "state", handling: "immediate" }, this.changeState);
-        this.subscribe(this.id, { event: "toggleSet", handling: "immediate" }, this.changeSet);
+        this.subscribe(this.id, { event: "state", handling: "immediate" }, this.stateChanged);
+        this.subscribe(this.id, { event: "toggleSet", handling: "immediate" }, this.setChanged);
 
+    }
+
+    destroy() {
+        super.destroy();
+        if (this.toggleSet) this.toggleSet.remove(this);
     }
 
     buildChildren() {
@@ -1217,11 +1221,13 @@ export class ToggleWidget2 extends ControlWidget2 {
         }
     }
 
-    changeSet() {
+    setChanged() {
+        if (this.oldSet) this.oldSet.remove(this);
         if (this.toggleSet) this.toggleSet.add(this);
+        this.oldSet = this.toggleSet;
     }
 
-    changeState(state) {
+    stateChanged(state) {
         if (state) {
             this.onToggleOn();
         } else {
@@ -1243,14 +1249,13 @@ export class ToggleWidget2 extends ControlWidget2 {
 //-- ToggleSet -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Helper class that manages a linked set of toggle widgets.
-
-// Clean this up! Make sure toggles don't fire on start or when the state doesn't change! Remove from set on toggle set change.
-// Does a set event need to contain the old state?
+// Helper class that manages a linked set of toggle widgets. You can pass a list of toggles
+// into the constructor.
 
 export class ToggleSet2  {
-    constructor() {
+    constructor(...args) {
         this.toggles = new Set();
+        args.forEach(arg => arg.set({toggleSet: this}));
     }
 
     add(toggle) {
@@ -1259,20 +1264,175 @@ export class ToggleSet2  {
     }
 
     remove(toggle) {
-        this.toggles.remove(toggle);
+        this.toggles.delete(toggle);
     }
 
-    // setAllOff(allOff) {
-    //     this.allOff = allOff;
-    // }
-
     pick(on) {
-        // if (!this.allOff && on.isOn) return; // Can't turn off a toggle in a set directly
         on.set({state: true});
         this.toggles.forEach(toggle => { if (toggle !== on) toggle.set({state: false}); });
     }
 
 }
+
+//------------------------------------------------------------------------------------------
+//-- SliderWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Managages a slider.
+//
+// The Bar and Knob can be replaced by Image/NineSlice widgets for a prettier look.
+// The Knob will always be square and match the short dimension of the bar.
+
+// export class SliderWidget2 extends ControlWidget2 {
+
+//     constructor(...args) {
+//         super(...args);
+
+//         this.setBar(new BoxWidget());
+//         this.bar.setColor([0.5, 0.5, 0.5]);
+
+//         this.setKnob(new BoxWidget());
+//         this.knob.setColor([0.8, 0.8, 0.8]);
+//         this.knob.setBorder([2,2,2,2]);
+
+//         this.percent = 0;   // The current value of the slider.
+//         this.steps = 0;     // The number of descrete steps the slider has. (0=continuous)
+
+//         this.setPercent(1);
+
+//     }
+
+//     buildChildren() {
+//         super.buildChildren();
+//         this.setNormalOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.7]}));
+//         this.setNormalOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.5, 0.5, 0.5]}));
+//         this.setHiliteOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.8]}));
+//         this.setHiliteOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.6]}));
+//         this.setPressedOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.6]}));
+//         this.setPressedOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.4]}));
+//         this.setLabelOn(new TextWidget2(this, {autoSize: [1,1], text: "On"}));
+//         this.setLabelOff(new TextWidget2(this, {autoSize: [1,1], text: "Off"}));
+//     }
+
+//     setNormal(w) {
+//         if (this.normal && this.normal !== w) this.destroyChild(this.normal);
+//         this.normal = w;
+//         this.addChild(w);
+//     }
+
+//     setBar(widget) {
+//         if (this.bar) this.destroyChild(this.bar);
+//         this.bar = widget;
+//         this.bar.setAutoSize([1,1]);
+//         this.addChild(widget);
+//         this.markChanged();
+//     }
+
+//     setKnob(widget) {
+//         if (this.knob) this.destroyChild(this.knob);
+//         this.knob = widget;
+//         this.setKnobSize();
+//         this.addChild(widget);
+//         this.markChanged();
+//     }
+
+//     setSize(size) {
+//         super.setSize(size);
+//         this.setKnobSize();
+//     }
+
+//     setKnobSize() {
+//         // console.log("Setting knob size!");
+//         if (this.isHorizontal) {
+//             this.knob.setSize([this.size[1], this.size[1]]);
+//         } else {
+//             this.knob.setSize([this.size[0], this.size[0]]);
+//         }
+//         this.refreshKnob();
+//     }
+
+//     setSteps(steps) {
+//         this.steps = steps;
+//         this.setPercent(this.percent);
+//         this.markChanged();
+//     }
+
+//     setPercent(percent) {
+//         if (this.steps) {
+//             this.percent = Math.round(percent * (this.steps-1)) / (this.steps-1);
+//         } else {
+//             this.percent = percent;
+//         }
+//         if (!this.isVisible) return;
+//         this.refreshKnob();
+//         this.markChanged();
+//     }
+
+//     refreshKnob() {
+//         if (!this.knob) return;
+//         const xy = this.knob.local;
+//         if (this.isHorizontal) {
+//             xy[0] = (this.size[0] - (this.knob.size[0] + this.knob.border[0] + this.knob.border[2])) * this.percent;
+//         } else {
+//             xy[1] = (this.size[1] - (this.knob.size[1] + this.knob.border[1] + this.knob.border[3])) * this.percent;
+//         }
+//         this.knob.setLocal(xy);
+//         this.markChanged();
+//     }
+
+//     get isHorizontal() {
+//         return this.size[0] > this.size[1];
+//     }
+
+//     updateChildren() {
+//         if (this.bar) this.bar.update();
+//         if (this.knob) this.knob.update();
+//         if (!this.isEnabled) this.disabledGel.update();
+//     }
+
+//     moveKnob(xy) {
+//         if (!this.isPressed || !this.isEnabled) return;
+//         const old = this.percent;
+//         const local = v2_sub(xy, this.global);
+//         if (this.isHorizontal) {
+//             this.setPercent(Math.max(0,Math.min(1,local[0] / this.size[0])));
+//         } else {
+//             this.setPercent(Math.max(0,Math.min(1,local[1] / this.size[1])));
+//         }
+//         if (this.percent === old) return;
+//         this.onChange(this.percent);
+//     }
+
+//     press(xy) {
+//         if (!this.isVisible || !this.isEnabled) return false;
+//         if (!this.inRect(xy)) return false;
+//         this.isPressed = true;
+//         this.focus();
+//         this.moveKnob(xy);
+//         return true;
+//     }
+
+//     release(xy) {
+//         this.blur();
+//         this.moveKnob(xy);
+//         this.isPressed = false;
+//     }
+
+//     drag(xy) {
+//         if (!this.isVisible || !this.isEnabled) return;
+//         this.moveKnob(xy);
+//         this.markChanged();
+//     }
+
+//     touch(xy) {
+//         this.moveKnob(xy);
+//     }
+
+//     // Called when the user changes the slider.
+//     onChange(percent) {
+//     }
+
+// }
 
 //------------------------------------------------------------------------------------------
 //-- Helper Functions ----------------------------------------------------------------------
