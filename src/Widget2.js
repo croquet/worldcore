@@ -1,5 +1,5 @@
 import { View } from "@croquet/croquet";
-import { v2_sub, v2_multiply, v2_add, v2_scale } from "./Vector";
+import { v2_sub, v2_multiply, v2_add, v2_scale, v4_scale } from "./Vector";
 import { LoadFont, LoadImage} from "./ViewAssetCache";
 import { NamedView } from "./NamedView";
 
@@ -28,7 +28,7 @@ export class UIManager2 extends NamedView {
 
         ui = this; // Global pointer for widgets to use.
 
-        // this.scale = 1;
+        this.scale = 1;
         this.size = [100,100];
         this.global = [0,0];
 
@@ -94,10 +94,10 @@ export class UIManager2 extends NamedView {
         if (this.root) this.root.markChanged();
     }
 
-    // setScale(scale) {
-    //     this.scale = scale;
-    //     this.resize();
-    // }
+    setScale(scale) {
+        this.scale = scale;
+        if (this.root) this.root.markChanged();
+    }
 
     update() {
         if (!this.isChanged) return;
@@ -249,6 +249,8 @@ export class Widget2 extends View {
         ui.markChanged();
         if (this.isChanged) return;
         this.isChanged = true;
+        this.$scale = undefined;
+        // this.$border = undefined;
         this.$size = undefined;
         this.$global = undefined;
         this.$origin = undefined;
@@ -279,11 +281,9 @@ export class Widget2 extends View {
     hide() { this.set({visible: false}); }
     toggleVisible() { this.set({visible: !this.visible}); }
 
-    get scale() { return this._scale || 1;}
     get anchor() { return this._anchor || [0,0];}
     get pivot() { return this._pivot || [0,0];}
     get local() { return this._local || [0,0];}
-    get border() { return this._border || [0,0,0,0];}
     get autoSize() { return this._autoSize || [0,0];}
     get isClipped() { return this._clip; }  // Default to false
     get isVisible() { return this._visible === undefined || this._visible;} // Default to true
@@ -291,12 +291,25 @@ export class Widget2 extends View {
     get opacity() { return this._opacity || 1;}     // Children don't inherit opacity
     get bubbleChanges() { return this._bubbleChanges; } // Default to false
 
+    get scale() {
+        if (this.$scale) return this.$scale;
+        this.$scale = this._scale || 1;
+        if (this.parent) this.$scale *= this.parent.scale;
+        return this.$scale;
+    }
+
+    get border() {
+        // const border = this._border || [0,0,0,0];
+        return v4_scale((this._border || [0,0,0,0]), this.scale);
+    }
+
     // Returns the size of the drawable area
     get size() {
         if (this.$size) return this.$size;
         const size = this._size || [100,100];
-        // this.$size = v2_scale(size, 0.5);
-        this.$size = [...size];
+        this.$size = v2_scale(size, this.scale);
+        // this.$size = size;
+        // this.$size = [...size];
         if (this.parent) {
             const parentSize = this.parent.size;
             if (this.autoSize[0]) this.$size[0] = parentSize[0] * this.autoSize[0];
@@ -311,6 +324,8 @@ export class Widget2 extends View {
     // Returns the upper left corner in global coordinates
     get global() {
         if (this.$global) return this.$global;
+        const local = v2_scale(this.local, this.scale);
+        // const local = this.local;
         if (this.parent) {
             const border = this.border;
             const size = [...this.size];
@@ -320,9 +335,9 @@ export class Widget2 extends View {
             const pivot = v2_multiply(size, this.pivot);
             const offset = v2_sub(anchor, pivot);
             const ulBorder = [border[0], border[1]];
-            this.$global = v2_add(this.parent.global, v2_add(ulBorder, v2_add(this.local, offset)));
+            this.$global = v2_add(this.parent.global, v2_add(ulBorder, v2_add(local, offset)));
         } else {
-            this.$global = this.local;
+            this.$global = local;
         }
         return this.$global;
     }
@@ -594,12 +609,12 @@ export class HorizontalWidget2 extends LayoutWidget2 {
         });
 
         let autoWidth = 0;
-        if (autoCount > 0) autoWidth = Math.max(0, (this.size[0] - widthSum) / autoCount);
+        if (autoCount > 0) autoWidth = Math.max(0, (this.size[0] / this.scale - widthSum) / autoCount);
         let offset = 0;
         this.slots.forEach(slot => {
             let width = autoWidth;
             if (slot.width) width = slot.width;
-            slot.set({size: [width, 0], local:[offset,0]});
+            slot.set({size:[width, 0], local:[offset,0]});
             offset += width + this.margin;
         });
     }
@@ -630,7 +645,7 @@ export class VerticalWidget2 extends LayoutWidget2 {
         });
 
         let autoHeight = 0;
-        if (autoCount > 0) autoHeight = Math.max(0, (this.size[1] - heightSum) / autoCount);
+        if (autoCount > 0) autoHeight = Math.max(0, (this.size[1] / this.scale - heightSum) / autoCount);
         let offset = 0;
         this.slots.forEach(slot => {
             let height = autoHeight;
@@ -700,8 +715,8 @@ export class ImageWidget2 extends Widget2 {
 
 export class NineSliceWidget2 extends ImageWidget2 {
 
-    get inset() { return this._inset || [32, 32, 32, 32];}  // Offset in pixels from edge of image to make slices
-    get insetScale() { return this._insetScale || 1;}        // Scaling factor to translate inset to screen pixels
+    get inset() { return this._inset || [32, 32, 32, 32];}              // Offset in pixels from edge of image to make slices
+    get insetScale() { return (this._insetScale || 1) * this.scale;}    // Scaling factor to translate inset to screen pixels
 
     draw() {
         if (!this.image) return;
@@ -717,7 +732,7 @@ export class NineSliceWidget2 extends ImageWidget2 {
         const top = this.inset[1];
         const right = this.inset[2];
         const bottom = this.inset[3];
-        const scale = this.insetScale;
+        const insetScale = this.insetScale;
 
         // Left Column
         this.cc.drawImage(
@@ -725,21 +740,21 @@ export class NineSliceWidget2 extends ImageWidget2 {
             0, 0,
             left, top,
             x, y,
-            left * scale, top * scale
+            left * insetScale, top * insetScale
         );
         this.cc.drawImage(
             this.image,
             0, top,
             left, height - top - bottom,
-            x, y + top * scale,
-            left * scale, ySize - (top + bottom) * scale
+            x, y + top * insetScale,
+            left * insetScale, ySize - (top + bottom) * insetScale
         );
         this.cc.drawImage(
             this.image,
             0, height - bottom,
             left, bottom,
-            x, y + ySize- bottom * scale,
-            left * scale, bottom * scale
+            x, y + ySize- bottom * insetScale,
+            left * insetScale, bottom * insetScale
         );
 
         //Middle Column
@@ -747,22 +762,22 @@ export class NineSliceWidget2 extends ImageWidget2 {
             this.image,
             left, 0,
             width - left - right, top,
-            x + left * scale, y,
-            xSize - (left + right) * scale, top * scale
+            x + left * insetScale, y,
+            xSize - (left + right) * insetScale, top * insetScale
         );
         this.cc.drawImage(
             this.image,
             left, top,
             width - left - right, height - top - bottom,
-            x + left * scale, y + top * scale,
-            xSize - (left + right) * scale, ySize - (top + bottom) * scale
+            x + left * insetScale, y + top * insetScale,
+            xSize - (left + right) * insetScale, ySize - (top + bottom) * insetScale
         );
         this.cc.drawImage(
             this.image,
             left, height - bottom,
             width - left - right, bottom,
-            x + left * scale, y + ySize - bottom * scale,
-            xSize - (left + right) * scale, bottom * scale
+            x + left * insetScale, y + ySize - bottom * insetScale,
+            xSize - (left + right) * insetScale, bottom * insetScale
         );
 
         // Right Column
@@ -770,22 +785,22 @@ export class NineSliceWidget2 extends ImageWidget2 {
             this.image,
             width-right, 0,
             right, top,
-            x + xSize - right * scale, y,
-            right * scale, top * scale
+            x + xSize - right * insetScale, y,
+            right * insetScale, top * insetScale
         );
         this.cc.drawImage(
             this.image,
             width-right, top,
             right, height - top - bottom,
-            x + xSize - right * scale, y + top * scale,
-            right * scale, ySize - (top + bottom) * scale
+            x + xSize - right * insetScale, y + top * insetScale,
+            right * insetScale, ySize - (top + bottom) * insetScale
         );
         this.cc.drawImage(
             this.image,
             width-right, height - bottom,
             right, bottom,
-            x + xSize - right * scale, y + ySize - bottom * scale,
-            right * scale, bottom * scale
+            x + xSize - right * insetScale, y + ySize - bottom * insetScale,
+            right * insetScale, bottom * insetScale
         );
 
     }
@@ -813,9 +828,9 @@ export class TextWidget2 extends Widget2 {
     get bubbleChanges() { return this._bubbleChanges === undefined || this._bubbleChanges;} // Override to default to true
     get text() { return this._text || "Text";}
     get font() { return this._font || "sans-serif";}
+    get point() { return (this._point || 24) * this.scale;}
+    get lineSpacing() { return (this._lineSpacing || 0) * this.scale;}
     get style() { return this._style || "normal";}
-    get point() { return this._point || 24;}
-    get lineSpacing() { return this._lineSpacing || 0;}
     get alignX() { return this._alignX || "center";}
     get alignY() { return this._alignY || "middle";}
     get wrap() { return this._wrap === undefined || this._wrap;} // Default to true
@@ -855,11 +870,11 @@ export class TextWidget2 extends Widget2 {
     }
 
     draw() {
-        const lineHeight = (this.point + this.lineSpacing) * this.scale;
+        const lineHeight = (this.point + this.lineSpacing);
 
         this.cc.textAlign = this.alignX;
         this.cc.textBaseline = this.alignY;
-        this.cc.font = this.style + " " + this.point * this.scale + "px " + this.font;
+        this.cc.font = this.style + " " + this.point + "px " + this.font;
         this.cc.fillStyle = canvasColor(...this.color);
 
         const lines = this.lines;
@@ -1032,24 +1047,28 @@ export class ButtonWidget2 extends ControlWidget2 {
         if (this.normal && this.normal !== w) this.destroyChild(this.normal);
         this.normal = w;
         this.addChild(w);
+        // w.markChanged();
     }
 
     setHilite(w) {
         if (this.hilite && this.hilite !== w) this.destroyChild(this.hilite);
         this.hilite = w;
         this.addChild(w);
+        // w.markChanged();
     }
 
     setPressed(w) {
         if (this.pressed && this.presed !== w) this.destroyChild(this.pressed);
         this.pressed = w;
         this.addChild(w);
+        // w.markChanged();
     }
 
     setLabel(w) {
         if (this.label && this.label !== w) this.destroyChild(this.label);
         this.label = w;
         this.addChild(w);
+        // w.markChanged();
     }
 
     updateChildren() {
