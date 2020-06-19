@@ -4,7 +4,7 @@
 
 import { Session } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager2, BoxWidget2, Widget2, TextWidget2, ButtonWidget2, IFrameWidget,
-    CanvasWidget, HorizontalWidget2, VerticalWidget2, ImageWidget2, NineSliceWidget2, ToggleWidget2, ToggleSet2 } from "../worldcore";
+    CanvasWidget, HorizontalWidget2, VerticalWidget2, ImageWidget2, NineSliceWidget2, ToggleWidget2, ToggleSet2, SliderWidget2 } from "../worldcore";
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
 
@@ -41,7 +41,7 @@ class MyViewRoot extends ViewRoot {
         this.widget1 = new BoxWidget2(this.widget0, {anchor: [0,0], pivot: [0,0], autoSize: [1,1], border:[5,5,5,5], local:[0,0], color:[1,0,0]});
 
         this.widget2 = new TextWidget2(this.widget1, {autoSize: [1,1], text: "This is long, split it!"});
-        // this.widget2.set({scale:1.5, clip: true});
+        this.widget2.set({scale:1.5, clip: true});
 
 
         this.widget3 = new ToggleWidget2(this.ui.root, {anchor: [0,0], pivot: [0,0], size: [200,100], local:[-20,20]});
@@ -69,8 +69,11 @@ class MyViewRoot extends ViewRoot {
 
         this.canvas = new CanvasWidget(this.widget4, {anchor: [0.5,0.5], pivot: [0.5,0.5], autoSize: [1,1], border:[10,10,10,10], local:[0,0], color: [0.55,0,0]});
         this.canvas2 = new CanvasWidget(this.canvas, {anchor: [0.5,0.5], pivot: [0.5,0.5], autoSize: [1,1], border:[10,10,10,10], local:[0,0], color: [0.65,0.65,0.65]});
-        // this.canvas2.set({color: [1,0,1]});
         this.widget5 = new ButtonWidget2(this.canvas2, {anchor: [0,0], pivot: [0,0], size: [200,100], local:[5,5], disabled: false, scale:1});
+
+        this.slider = new SliderWidget2(this.ui.root, {anchor: [0,1], pivot: [0,1], size: [30,300], local:[20,-20]});
+        this.slider.set({scale: 0.9});
+        this.slider.onChange = p => {this.canvas2.set({opacity: p});};
 
 
         this.subscribe("input", "1Down", this.test1);

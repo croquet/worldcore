@@ -33,7 +33,8 @@ export class UIManager2 extends NamedView {
         this.global = [0,0];
 
         this.resize();
-        this.setRoot(new CanvasWidget(this, {autoSize: [1,1], color: [1,0.5, 0.3]}));
+        // this.setRoot(new CanvasWidget(this, {autoSize: [1,1], color: [1,0.5, 0.3]}));
+        this.setRoot(new CanvasWidget(this, {autoSize: [1,1]}));
 
         this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
         this.subscribe("input", {event: "mouseXY", handling: "immediate"}, this.mouseXY);
@@ -110,7 +111,6 @@ export class UIManager2 extends NamedView {
     }
 
     mouseXY(xy) {
-        // xy = v2_scale(xy, this.ratio);
         let consumed = false;
         if (!consumed && focus) consumed = focus.drag(xy);
         if (!consumed && hover) consumed = hover.cursor(xy);
@@ -120,31 +120,26 @@ export class UIManager2 extends NamedView {
     }
 
     mouseDown(xy) {
-        // xy = v2_scale(xy, this.ratio);
         if (!hover) return;
         if (!hover.press(xy)) this.publish("ui", "mouse0Down", xy);
     }
 
     mouseUp(xy) {
-        // xy = v2_scale(xy, this.ratio);
         if (focus) focus.release(xy);
         this.publish("ui", "mouse0Up", xy);
     }
 
     touchXY(xy) {
-        // xy = v2_scale(xy, this.ratio);
         if (focus) focus.drag(xy);
         this.publish("ui", "touchXY", xy);
     }
 
     touchDown(xy) {
-        // xy = v2_scale(xy, this.ratio);
         if (!this.root) return;
         if (!this.root.press(xy)) this.publish("ui", "touchDown", xy);
     }
 
     touchUp(xy) {
-        // xy = v2_scale(xy, this.ratio);
         if (focus) focus.release(xy);
         this.publish("ui", "touchUp", xy);
     }
@@ -204,6 +199,7 @@ export class Widget2 extends View {
         this.buildChildren();
 
         this.subscribe(this.id, { event: "visible", handling: "immediate" }, visible => {if (!visible) this.markCanvasChanged();} );
+        this.subscribe(this.id, { event: "scale", handling: "immediate" }, () => { this.markCanvasChanged();} );
     }
 
     destroy() {
@@ -247,13 +243,12 @@ export class Widget2 extends View {
 
     markChanged() {
         ui.markChanged();
-        if (this.isChanged) return;
-        this.isChanged = true;
         this.$scale = undefined;
-        // this.$border = undefined;
         this.$size = undefined;
         this.$global = undefined;
         this.$origin = undefined;
+        if (this.isChanged) return;
+        this.isChanged = true;
         if (this.bubbleChanges && this.parent) this.parent.markChanged();
         if (this.children) this.children.forEach(child => child.markChanged());
     }
@@ -268,7 +263,7 @@ export class Widget2 extends View {
         for (const option in options) {
             const n = "_" + option;
             const v = options[option];
-            if (this[n] !== v) {
+            if (!deepEquals(this[n], v)) {
                 this[n] = v;
                 changed = true;
                 this.publish(this.id, option, v);
@@ -288,8 +283,12 @@ export class Widget2 extends View {
     get isClipped() { return this._clip; }  // Default to false
     get isVisible() { return this._visible === undefined || this._visible;} // Default to true
     get color() { return this._color || [0,0,0];}
-    get opacity() { return this._opacity || 1;}     // Children don't inherit opacity
     get bubbleChanges() { return this._bubbleChanges; } // Default to false
+
+    get opacity() { // Children don't inherit opacity, but the opacity of a canvas applies to everything drawn on it.
+        if (this._opacity === undefined) return 1;
+        return (this._opacity);
+    }
 
     get scale() {
         if (this.$scale) return this.$scale;
@@ -298,10 +297,7 @@ export class Widget2 extends View {
         return this.$scale;
     }
 
-    get border() {
-        // const border = this._border || [0,0,0,0];
-        return v4_scale((this._border || [0,0,0,0]), this.scale);
-    }
+    get border() { return v4_scale((this._border || [0,0,0,0]), this.scale); }
 
     // Returns the size of the drawable area
     get size() {
@@ -454,6 +450,7 @@ export class ElementWidget extends Widget2 {
     draw() {
         this.element.style.zIndex = "" + this.zIndex;
         this.element.style.opacity = "" + this.opacity;
+        console.log(this.opacity);
         if (this.color) {
             this.element.style.background = canvasColor(...this.color);
         } else {
@@ -941,10 +938,6 @@ export class TextWidget2 extends Widget2 {
 // control shape.
 
 export class ControlWidget2 extends Widget2 {
-    // constructor(...args) {
-    //     super(...args);
-    //     this.setDim(new BoxWidget2(this, {autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.6}));
-    // }
 
     buildChildren() {
         super.buildChildren();
@@ -1025,16 +1018,6 @@ export class ControlWidget2 extends Widget2 {
 
 export class ButtonWidget2 extends ControlWidget2 {
 
-    // constructor(...args) {
-    //     super(...args);
-
-    //     this.setNormal(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.5]}));
-    //     this.setHilite(new BoxWidget2(this, {autoSize: [1,1], color: [0.65,0.9,0.65]}));
-    //     this.setPressed(new BoxWidget2(this, {autoSize: [1,1], color: [0.9,0.35,0.35]}));
-    //     this.setLabel(new TextWidget2(this, {autoSize: [1,1]}));
-
-    // }
-
     buildChildren() {
         super.buildChildren();
         this.setNormal(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.5]}));
@@ -1102,9 +1085,7 @@ export class ButtonWidget2 extends ControlWidget2 {
 
     // Called when the user presses and releases the button.
 
-    onClick() {
-        console.log("click!");
-    }
+    onClick() {}
 
 }
 
@@ -1121,11 +1102,10 @@ export class ToggleWidget2 extends ControlWidget2 {
 
         if (!this._state) this._state = false; // Prevent toggle change events when an undefined state is set to false.
 
+        // Handle state changes triggered by another widget in the set.
         this.setChanged();
-
         this.subscribe(this.id, { event: "state", handling: "immediate" }, this.stateChanged);
         this.subscribe(this.id, { event: "toggleSet", handling: "immediate" }, this.setChanged);
-
     }
 
     destroy() {
@@ -1254,13 +1234,10 @@ export class ToggleWidget2 extends ControlWidget2 {
         }
     }
 
-    onToggleOn() {
-        console.log("toggle on");
-    }
+    // Called when the toggle changes state either directly or indirectly.
 
-    onToggleOff() {
-        console.log("toggle off");
-    }
+    onToggleOn() {}
+    onToggleOff() {}
 
 }
 
@@ -1302,160 +1279,114 @@ export class ToggleSet2  {
 // The Bar and Knob can be replaced by Image/NineSlice widgets for a prettier look.
 // The Knob will always be square and match the short dimension of the bar.
 
-// export class SliderWidget2 extends ControlWidget2 {
+export class SliderWidget2 extends ControlWidget2 {
 
-//     constructor(...args) {
-//         super(...args);
+    get isHorizontal() { return this.size[0] > this.size[1]; }
+    get step() { return this._step || 0; }        // The number of descrete steps the slider has. (0=continuous)
 
-//         this.setBar(new BoxWidget());
-//         this.bar.setColor([0.5, 0.5, 0.5]);
+    get percent() {
+        const p = this._percent || 0;
+        if (!this.step) return p;
+        return Math.round(p * (this.step-1)) / (this.step-1);
+    }
 
-//         this.setKnob(new BoxWidget());
-//         this.knob.setColor([0.8, 0.8, 0.8]);
-//         this.knob.setBorder([2,2,2,2]);
+    buildChildren() {
+        super.buildChildren();
+        this.setBar(new BoxWidget2(this, {autoSize:[1,1], size:[10,10], color: [0.5,0.5,0.5]}));
+        this.setKnob(new BoxWidget2(this, {color: [0.8,0.8,0.8], border:[2,2,2,2]}));
+        // this.refreshKnob();
+    }
 
-//         this.percent = 0;   // The current value of the slider.
-//         this.steps = 0;     // The number of descrete steps the slider has. (0=continuous)
+    setBar(w) {
+        if (this.bar && this.bar !== w) this.destroyChild(this.bar);
+        this.bar = w;
+        this.addChild(w);
+    }
 
-//         this.setPercent(1);
+    setKnob(w) {
+        if (this.knob && this.knob !== w) this.destroyChild(this.knob);
+        this.knob = w;
+        this.setKnobSize();
+        this.addChild(w);
+    }
 
-//     }
+    setKnobSize() {
+        if (this.isHorizontal) {
+            this.knob.set({autoSize:[0,1], size:[this.size[1]/this.scale, this.size[1]/this.scale]});
+        } else {
+            this.knob.set({autoSize:[1,0], size:[this.size[0]/this.scale, this.size[0]/this.scale]});
+        }
+        this.refreshKnob();
+    }
 
-//     buildChildren() {
-//         super.buildChildren();
-//         this.setNormalOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.7]}));
-//         this.setNormalOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.5, 0.5, 0.5]}));
-//         this.setHiliteOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.8]}));
-//         this.setHiliteOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.6]}));
-//         this.setPressedOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.6]}));
-//         this.setPressedOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.4]}));
-//         this.setLabelOn(new TextWidget2(this, {autoSize: [1,1], text: "On"}));
-//         this.setLabelOff(new TextWidget2(this, {autoSize: [1,1], text: "Off"}));
-//     }
+    updateChildren() {
+        this.refreshKnob();
+        if (this.bar) this.bar.update();
+        if (this.knob) this.knob.update();
+        if (this.isDisabled) this.dim.update();
+    }
 
-//     setNormal(w) {
-//         if (this.normal && this.normal !== w) this.destroyChild(this.normal);
-//         this.normal = w;
-//         this.addChild(w);
-//     }
+    refreshKnob() {
+        const xy = this.knob.local;
+        if (this.isHorizontal) {
+            xy[0] = (this.size[0] - (this.knob.size[0] + this.knob.border[0] + this.knob.border[2])) * this.percent / this.scale;
+        } else {
+            xy[1] = (this.size[1] - (this.knob.size[1] + this.knob.border[1] + this.knob.border[3])) * this.percent / this.scale;
+        }
+        this.knob.set({local:xy});
+    }
 
-//     setBar(widget) {
-//         if (this.bar) this.destroyChild(this.bar);
-//         this.bar = widget;
-//         this.bar.setAutoSize([1,1]);
-//         this.addChild(widget);
-//         this.markChanged();
-//     }
+    press(xy) {
+        if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
+        this.isPressed = true;
+        this.focus();
+        this.moveKnob(xy);
+        return true;
+    }
 
-//     setKnob(widget) {
-//         if (this.knob) this.destroyChild(this.knob);
-//         this.knob = widget;
-//         this.setKnobSize();
-//         this.addChild(widget);
-//         this.markChanged();
-//     }
+    release(xy) {
+        this.isPressed = false;
+        this.blur();
+        this.moveKnob(xy);
+    }
 
-//     setSize(size) {
-//         super.setSize(size);
-//         this.setKnobSize();
-//     }
+    drag(xy) {
+        this.moveKnob(xy);
+    }
 
-//     setKnobSize() {
-//         // console.log("Setting knob size!");
-//         if (this.isHorizontal) {
-//             this.knob.setSize([this.size[1], this.size[1]]);
-//         } else {
-//             this.knob.setSize([this.size[0], this.size[0]]);
-//         }
-//         this.refreshKnob();
-//     }
+    moveKnob(xy) {
+        const local = v2_sub(xy, this.global);
+        let p;
+        if (this.isHorizontal) {
+            p = Math.max(0,Math.min(1,local[0] / this.size[0]));
+        } else {
+            p = Math.max(0,Math.min(1,local[1] / this.size[1]));
+        }
+        this.set({percent: p});
+        this.onChange(this.percent);
+    }
 
-//     setSteps(steps) {
-//         this.steps = steps;
-//         this.setPercent(this.percent);
-//         this.markChanged();
-//     }
+    onChange(percent) {
+    }
 
-//     setPercent(percent) {
-//         if (this.steps) {
-//             this.percent = Math.round(percent * (this.steps-1)) / (this.steps-1);
-//         } else {
-//             this.percent = percent;
-//         }
-//         if (!this.isVisible) return;
-//         this.refreshKnob();
-//         this.markChanged();
-//     }
-
-//     refreshKnob() {
-//         if (!this.knob) return;
-//         const xy = this.knob.local;
-//         if (this.isHorizontal) {
-//             xy[0] = (this.size[0] - (this.knob.size[0] + this.knob.border[0] + this.knob.border[2])) * this.percent;
-//         } else {
-//             xy[1] = (this.size[1] - (this.knob.size[1] + this.knob.border[1] + this.knob.border[3])) * this.percent;
-//         }
-//         this.knob.setLocal(xy);
-//         this.markChanged();
-//     }
-
-//     get isHorizontal() {
-//         return this.size[0] > this.size[1];
-//     }
-
-//     updateChildren() {
-//         if (this.bar) this.bar.update();
-//         if (this.knob) this.knob.update();
-//         if (!this.isEnabled) this.disabledGel.update();
-//     }
-
-//     moveKnob(xy) {
-//         if (!this.isPressed || !this.isEnabled) return;
-//         const old = this.percent;
-//         const local = v2_sub(xy, this.global);
-//         if (this.isHorizontal) {
-//             this.setPercent(Math.max(0,Math.min(1,local[0] / this.size[0])));
-//         } else {
-//             this.setPercent(Math.max(0,Math.min(1,local[1] / this.size[1])));
-//         }
-//         if (this.percent === old) return;
-//         this.onChange(this.percent);
-//     }
-
-//     press(xy) {
-//         if (!this.isVisible || !this.isEnabled) return false;
-//         if (!this.inRect(xy)) return false;
-//         this.isPressed = true;
-//         this.focus();
-//         this.moveKnob(xy);
-//         return true;
-//     }
-
-//     release(xy) {
-//         this.blur();
-//         this.moveKnob(xy);
-//         this.isPressed = false;
-//     }
-
-//     drag(xy) {
-//         if (!this.isVisible || !this.isEnabled) return;
-//         this.moveKnob(xy);
-//         this.markChanged();
-//     }
-
-//     touch(xy) {
-//         this.moveKnob(xy);
-//     }
-
-//     // Called when the user changes the slider.
-//     onChange(percent) {
-//     }
-
-// }
+}
 
 //------------------------------------------------------------------------------------------
 //-- Helper Functions ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Widget attributes can be either values or arrays ... this compares arbitrary things.
+
+function deepEquals(a, b) {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    const al = a.length;
+    const bl = b.length;
+    if (!al || !bl) return false;
+    if (al !== bl) return false;
+    for (let i = 0; i < al; i++) if (a[i] !== b[i]) return false;
+    return true;
+}
 
 function canvasColor(r, g, b) {
     return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
