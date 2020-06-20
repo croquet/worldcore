@@ -48,8 +48,8 @@ export class UIManager2 extends NamedView {
         this.subscribe("input", {event: "touchDown", handling: "immediate"}, this.touchDown);
         this.subscribe("input", {event: "touchUp", handling: "immediate"}, this.touchUp);
 
-        // this.subscribe("input", {event: "keyDown", handling: "immediate"}, this.keyDown);
-        // this.subscribe("input", {event: "keyRepeat", handling: "immediate"}, this.keyDown);
+        this.subscribe("input", {event: "keyDown", handling: "immediate"}, this.keyDown);
+        this.subscribe("input", {event: "keyRepeat", handling: "immediate"}, this.keyDown);
     }
 
     destroy() {
@@ -120,6 +120,7 @@ export class UIManager2 extends NamedView {
     }
 
     mouseDown(xy) {
+        if (focus) focus.press(xy);
         if (!hover) return;
         if (!hover.press(xy)) this.publish("ui", "mouse0Down", xy);
     }
@@ -155,9 +156,9 @@ export class UIManager2 extends NamedView {
     // }
 
 
-    // keyDown(key) {
-    //     if (focus && focus.keyInput) focus.keyInput(key);
-    // }
+    keyDown(key) {
+        if (focus && focus.keyInput) focus.keyInput(key);
+    }
 
     // setCursor(c) {
     //     this.canvas.style.cursor = c;
@@ -450,7 +451,6 @@ export class ElementWidget extends Widget2 {
     draw() {
         this.element.style.zIndex = "" + this.zIndex;
         this.element.style.opacity = "" + this.opacity;
-        console.log(this.opacity);
         if (this.color) {
             this.element.style.background = canvasColor(...this.color);
         } else {
@@ -823,7 +823,7 @@ export class TextWidget2 extends Widget2 {
     setText(t) {this.set({text: t});}
 
     get bubbleChanges() { return this._bubbleChanges === undefined || this._bubbleChanges;} // Override to default to true
-    get text() { return this._text || "Text";}
+    get text() { if (this._text !== undefined) return this._text; return "Text";}
     get font() { return this._font || "sans-serif";}
     get point() { return (this._point || 24) * this.scale;}
     get lineSpacing() { return (this._lineSpacing || 0) * this.scale;}
@@ -900,7 +900,7 @@ export class TextWidget2 extends Widget2 {
         return this.cc.measureText(this.text).width;
     }
 
-    findInsert(x) { // Given a point in local coordinates, finds the insert point in the text string.
+    findSelect(x) { // Given a point in local coordinates, finds the selection point in the text string.
         this.cc.font = this.style + " " + this.point + "px " + this.font;
         const c = [...this.text];
         let sum = 0;
@@ -941,7 +941,7 @@ export class ControlWidget2 extends Widget2 {
 
     buildChildren() {
         super.buildChildren();
-        this.setDim(new BoxWidget2(this, {autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.6}));
+        this.setDim(new BoxWidget2(this, {autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.6, bubbleChanges: true}));
     }
 
     enable() { this.set({ disabled: false }); }
@@ -1020,9 +1020,9 @@ export class ButtonWidget2 extends ControlWidget2 {
 
     buildChildren() {
         super.buildChildren();
-        this.setNormal(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.5]}));
-        this.setHilite(new BoxWidget2(this, {autoSize: [1,1], color: [0.65,0.9,0.65]}));
-        this.setPressed(new BoxWidget2(this, {autoSize: [1,1], color: [0.9,0.35,0.35]}));
+        this.setNormal(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.5], bubbleChanges: true}));
+        this.setHilite(new BoxWidget2(this, {autoSize: [1,1], color: [0.65,0.9,0.65], bubbleChanges: true}));
+        this.setPressed(new BoxWidget2(this, {autoSize: [1,1], color: [0.9,0.35,0.35], bubbleChanges: true}));
         this.setLabel(new TextWidget2(this, {autoSize: [1,1]}));
     }
 
@@ -1115,14 +1115,14 @@ export class ToggleWidget2 extends ControlWidget2 {
 
     buildChildren() {
         super.buildChildren();
-        this.setNormalOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.7]}));
-        this.setNormalOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.5, 0.5, 0.5]}));
-        this.setHiliteOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.8]}));
-        this.setHiliteOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.6]}));
-        this.setPressedOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.6]}));
-        this.setPressedOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.4]}));
-        this.setLabelOn(new TextWidget2(this, {autoSize: [1,1], text: "On"}));
-        this.setLabelOff(new TextWidget2(this, {autoSize: [1,1], text: "Off"}));
+        this.setNormalOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.7], bubbleChanges: true}));
+        this.setNormalOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.5, 0.5, 0.5], bubbleChanges: true}));
+        this.setHiliteOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.8], bubbleChanges: true}));
+        this.setHiliteOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.6], bubbleChanges: true}));
+        this.setPressedOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.6], bubbleChanges: true}));
+        this.setPressedOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.4], bubbleChanges: true}));
+        this.setLabelOn(new TextWidget2(this, {autoSize: [1,1], text: "On", bubbleChanges: true}));
+        this.setLabelOff(new TextWidget2(this, {autoSize: [1,1], text: "Off", bubbleChanges: true}));
     }
 
     get isOn() { return this._state; }
@@ -1292,9 +1292,8 @@ export class SliderWidget2 extends ControlWidget2 {
 
     buildChildren() {
         super.buildChildren();
-        this.setBar(new BoxWidget2(this, {autoSize:[1,1], size:[10,10], color: [0.5,0.5,0.5]}));
-        this.setKnob(new BoxWidget2(this, {color: [0.8,0.8,0.8], border:[2,2,2,2]}));
-        // this.refreshKnob();
+        this.setBar(new BoxWidget2(this, {autoSize:[1,1], color: [0.5,0.5,0.5], bubbleChanges: true}));
+        this.setKnob(new BoxWidget2(this, {color: [0.8,0.8,0.8], border:[2,2,2,2], bubbleChanges: true}));
     }
 
     setBar(w) {
@@ -1372,6 +1371,253 @@ export class SliderWidget2 extends ControlWidget2 {
 }
 
 //------------------------------------------------------------------------------------------
+//-- TextFieldWidget -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// A single line of text that can be typed into.
+
+export class TextFieldWidget2 extends ControlWidget2 {
+
+    get leftSelect() { return this._leftSelect || 0; }
+    get rightSelect() { return this._rightSelect || 0; }
+
+    get leftOffset() { return this.text.findLetterOffset(this.leftSelect) / this.scale;}
+    get rightOffset() { return this.text.findLetterOffset(this.rightSelect) / this.scale;}
+    get hiliteSize() { return (this.rightOffset - this.leftOffset); }
+    get multipleSelected() { return this.leftSelect !== this.rightSelect; }
+
+    buildChildren() {
+        super.buildChildren();
+        this.background = new BoxWidget2(this, {autoSize:[1,1], color: [1,1,1], bubbleChanges: true});
+        this.clip = new Widget2(this.background, {autoSize:[1,1], border: [5,5,5,5], clip: true, bubbleChanges: true});
+        this.text = new TextWidget2(this.clip, {autoSize:[0,1], local:[0,0], alignX:'left', wrap: false, text:""});
+        this.entry = new BoxWidget2(this.text, {autoSize:[0,1], local:[this.leftOffset,0], size:[1,1], bubbleChanges: true, visible: this.isFocused && !this.multipleSelected});
+        this.hilite = new BoxWidget2(this.text, {autoSize:[0,1], local:[this.leftOffset, 0], size:[this.hiliteSize,1], color: [1,0,0], opacity:0.2,
+            bubbleChanges: true , visible: this.isFocused && this.multipleSelected});
+
+        // Suppress redrawing the whole canvas when the entry cursor or the hilite is hidden.
+        this.entry.markCanvasChanged = () => {};
+        this.hilite.markCanvasChanged = () => {};
+    }
+
+    updateChildren() {
+        this.background.update();
+        if (this.isDisabled) this.dim.update();
+    }
+
+    onFocus() {
+        this.blink();
+    }
+
+    onBlur() {
+        this.refresh();
+    }
+
+    blink() {
+        if (!this.isFocused) return;
+        this.entryBlink = !this.entryBlink;
+        this.entry.set({local:[this.leftOffset,0], visible: this.entryBlink && !this.multipleSelected} );
+        this.future(530).blink();
+    }
+
+    press(xy) {
+        if (this.invisible || this.isDisabled || !this.inside(xy)) {
+            this.blur();
+            return false;
+        }
+        this.focus();
+        this.isPressed = true;
+        const local = v2_sub(xy, this.text.global);
+        const select = this.text.findSelect(local[0]);
+        this.selectStart = select;
+        this.set({leftSelect: select, rightSelect: select});
+        this.refresh();
+        return true;
+    }
+
+    release(xy) {
+        this.isPressed = false;
+    }
+
+    // Still need to support dragging past the end of the widget. These is where it should go.
+    drag(xy) {
+        if (!this.isPressed) return;
+        const local = v2_sub(xy, this.text.global);
+        const select = this.text.findSelect(local[0]);
+        if (this.selectStart < select) {
+            this.set({leftSelect: this.selectStart, rightSelect: select});
+        } else if (this.selectStart > select) {
+            this.set({leftSelect: select, rightSelect: this.selectStart});
+        } else {
+            this.set({leftSelect: select, rightSelect: select});
+        }
+        this.refresh();
+    }
+
+    keyInput(input) {
+        switch (input) {
+            case 'Enter':
+                this.enter();
+                break;
+            case 'Backspace':
+                this.backspace();
+                break;
+            case 'Delete':
+                this.delete();
+                break;
+            case 'ArrowLeft':
+                this.cursorLeft();
+                break;
+            case 'ArrowRight':
+                this.cursorRight();
+                break;
+            case 'Cut':
+                this.cut();
+                break;
+            case 'Copy':
+                this.copy();
+                break;
+            case 'Paste':
+                this.paste();
+                break;
+            default:
+               if (input.length === 1) this.insert(input);
+        }
+    }
+
+    insert(s) {
+        if (this.multipleSelected) this.deleteRange();
+        s = this.filter(s);
+        const t = this.text.text.slice(0, this.leftSelect) + s + this.text.text.slice(this.leftSelect);
+        const select = this.leftSelect + s.length;
+        this.set({leftSelect: select, rightSelect: select});
+        this.text.set({text: t});
+
+        this.text.setText(t);
+        this.insertLeft += s.length;
+        this.insertRight = this.insertLeft;
+        this.refresh();
+    }
+
+    filter(s) {
+        return s.replace(/\n/g, ' '); // Filter out carriage returns
+    }
+
+    delete() {
+        if (this.multipleSelected) {
+            this.deleteRange();
+        } else {
+            this.deleteOne();
+        }
+        this.refresh();
+    }
+
+    backspace() {
+        if (this.multipleSelected) {
+            this.deleteRange();
+        } else {
+            this.backspaceOne();
+        }
+        this.refresh();
+    }
+
+    deleteRange() {
+        const cut = Math.min(this.text.text.length, this.rightSelect);
+        const t = this.text.text.slice(0, this.leftSelect) + this.text.text.slice(cut);
+        this.set({rightSelect: this.leftSelect});
+        this.text.set({text: t});
+    }
+
+
+    deleteOne() {
+        const cut = Math.min(this.text.text.length, this.rightSelect + 1);
+        const t = this.text.text.slice(0, this.leftSelect) + this.text.text.slice(cut);
+        this.text.set({text: t});
+    }
+
+    backspaceOne() {
+        const cut = Math.max(0, this.leftSelect - 1);
+        const t = this.text.text.slice(0, cut) + this.text.text.slice(this.rightSelect);
+        this.set({leftSelect: cut, rightSelect: cut});
+        this.text.set({text: t});
+    }
+
+    cursorLeft() {
+        const c = Math.max(0, this.leftSelect - 1);
+        this.set({leftSelect: c, rightSelect: c});
+        this.refresh();
+    }
+
+    cursorRight() {
+        const c = Math.min(this.text.text.length, this.leftSelect + 1);
+        this.set({leftSelect: c, rightSelect: c});
+        this.refresh();
+    }
+
+    cut() {
+        if (!this.multipleSelected) return;
+        const t = this.text.text.slice(this.leftSelect, this.rightSelect);
+        this.deleteRange();
+        navigator.clipboard.writeText(t); // This is a promise, but we don't care if it finishes.
+    }
+
+    copy() {
+        if (!this.multipleSelected) return;
+        const t = this.text.text.slice(this.leftSelect, this.rightSelect);
+        navigator.clipboard.writeText(t); // This is a promise, but we don't care if it finishes.
+    }
+
+    paste() {
+        navigator.clipboard.readText().then(text => this.insert(text));
+    }
+
+    // Update the position of the cursor and the highlight.
+
+    // There is a bug in how this handles multi-select drag when the widget is scaled!
+    refresh() {
+        this.entry.set({local:[this.leftOffset,0], visible: this.isFocused && !this.multipleSelected} );
+        this.hilite.set({local:[this.leftOffset, 0], size:[this.hiliteSize,1], visible: this.isFocused && this.multipleSelected});
+
+        if (!this.multipleSelected) { // Make sure the cursor is always visible.
+
+            let textLeft = this.text.local[0];
+            const textWidth = this.text.width();
+            const textRight = textLeft + textWidth;
+            const clipRight = this.clip.size[0];
+
+            if (textWidth < clipRight) {
+                textLeft = 0;
+            } else if (textRight < clipRight) {
+                textLeft = clipRight-textWidth;
+            }
+
+            const selectOffset = this.text.findLetterOffset(this.leftSelect);
+            const globalOffset = textLeft + selectOffset;
+
+            if (globalOffset < 0) {
+                textLeft = -selectOffset;
+            } else if (globalOffset > clipRight) {
+                textLeft = clipRight - 1 - selectOffset;
+            }
+
+            textLeft /= this.scale;
+            this.text.set({local:[textLeft, 0]});
+        }
+    }
+
+    enter() {
+        this.blur();
+        this.onEnter();
+        this.refresh();
+    }
+
+    onEnter() {
+        console.log(this.text.text);
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
 //-- Helper Functions ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -1390,4 +1636,16 @@ function deepEquals(a, b) {
 
 function canvasColor(r, g, b) {
     return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
+}
+
+function isLetter(c) { // Returns true if the character is an alphabetic letter.
+    return c.toLowerCase() !== c.toUpperCase();
+}
+
+function isDigit(c) { // Returns true if the character is a digit.
+    return c.match(/[0-9]/i);
+}
+
+function isLetterOrDigit(c) {
+    return isLetter(c) || isDigit(c);
 }

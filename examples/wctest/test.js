@@ -4,7 +4,7 @@
 
 import { Session } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager2, BoxWidget2, Widget2, TextWidget2, ButtonWidget2, IFrameWidget,
-    CanvasWidget, HorizontalWidget2, VerticalWidget2, ImageWidget2, NineSliceWidget2, ToggleWidget2, ToggleSet2, SliderWidget2 } from "../worldcore";
+    CanvasWidget, HorizontalWidget2, VerticalWidget2, ImageWidget2, NineSliceWidget2, ToggleWidget2, ToggleSet2, SliderWidget2, TextFieldWidget2 } from "../worldcore";
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
 
@@ -75,6 +75,8 @@ class MyViewRoot extends ViewRoot {
         this.slider.set({scale: 0.9});
         this.slider.onChange = p => {this.canvas2.set({opacity: p});};
 
+        this.entry = new TextFieldWidget2(this.ui.root, {size:[300,50], local:[20, 100], scale: 1.0});
+        this.entry.text.set({text:"12345678901234567890"});
 
         this.subscribe("input", "1Down", this.test1);
         this.subscribe("input", "2Down", this.test2);
