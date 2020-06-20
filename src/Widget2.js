@@ -19,12 +19,10 @@ let focus;          // The control widget that currently has focus.
 //
 // Takes the device's pixel ratio into account. This can be over-ridden using SetScale.
 
-// Move scale onto canvas!
-
-export class UIManager2 extends NamedView {
+export class UIManager extends NamedView {
 
     constructor() {
-        super('UIManager2');
+        super('UIManager');
 
         ui = this; // Global pointer for widgets to use.
 
@@ -33,7 +31,7 @@ export class UIManager2 extends NamedView {
         this.global = [0,0];
 
         this.resize();
-        // this.setRoot(new CanvasWidget(this, {autoSize: [1,1], color: [1,0.5, 0.3]}));
+
         this.setRoot(new CanvasWidget(this, {autoSize: [1,1]}));
 
         this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
@@ -41,8 +39,8 @@ export class UIManager2 extends NamedView {
         this.subscribe("input", {event: "mouse0Down", handling: "immediate"}, this.mouseDown);
         this.subscribe("input", {event: "mouse0Up", handling: "immediate"}, this.mouseUp);
 
-        // this.subscribe("input", {event: "mouse0Double", handling: "immediate"}, this.mouseDouble);
-        // this.subscribe("input", {event: "mouse0Triple", handling: "immediate"}, this.mouseTriple);
+        this.subscribe("input", {event: "mouse0Double", handling: "immediate"}, this.mouseDouble);
+        this.subscribe("input", {event: "mouse0Triple", handling: "immediate"}, this.mouseTriple);
 
         this.subscribe("input", {event: "touchXY", handling: "immediate"}, this.touchXY);
         this.subscribe("input", {event: "touchDown", handling: "immediate"}, this.touchDown);
@@ -111,11 +109,11 @@ export class UIManager2 extends NamedView {
     }
 
     mouseXY(xy) {
+        this.root.setCursor('default');
         let consumed = false;
         if (!consumed && focus) consumed = focus.drag(xy);
         if (!consumed && hover) consumed = hover.cursor(xy);
         if (!consumed && this.root) consumed = this.root.cursor(xy);
-        // this.setCursor('default');
         this.publish("ui", "mouseXY", xy);
     }
 
@@ -145,24 +143,21 @@ export class UIManager2 extends NamedView {
         this.publish("ui", "touchUp", xy);
     }
 
-    // mouseDouble(xy) {
-    //     if (!focus || !focus.doubleClick) return;
-    //     focus.doubleClick(xy);
-    // }
+    mouseDouble(xy) {
+        if (!focus || !focus.doubleClick) return;
+        focus.doubleClick(xy);
+    }
 
-    // mouseTriple(xy) {
-    //     if (!focus || !focus.tripleClick) return;
-    //     focus.tripleClick(xy);
-    // }
+    mouseTriple(xy) {
+        if (!focus || !focus.tripleClick) return;
+        focus.tripleClick(xy);
+    }
 
 
     keyDown(key) {
         if (focus && focus.keyInput) focus.keyInput(key);
     }
 
-    // setCursor(c) {
-    //     this.canvas.style.cursor = c;
-    // }
 
     // This is a hack to trigger the virtual keyboard on mobile. There is an invisible text entry element that
     // gets drawn underneath the real text entry widget. Giving this fake text field focus pops up the
@@ -191,7 +186,7 @@ export class UIManager2 extends NamedView {
 
 // The base widget class.
 
-export class Widget2 extends View {
+export class Widget extends View {
     constructor(parent, options) {
         super();
         this.set(options);
@@ -241,6 +236,10 @@ export class Widget2 extends View {
     }
 
     get cc() {return this.canvasWidget.context;}
+
+    setCursor(c) {
+        this.canvasWidget.element.style.cursor = c;
+    }
 
     markChanged() {
         ui.markChanged();
@@ -412,7 +411,7 @@ export class Widget2 extends View {
 
 // Manages an independent DOM element as a widget.
 
-export class ElementWidget extends Widget2 {
+export class ElementWidget extends Widget {
 
     destroy() {
         super.destroy();
@@ -533,7 +532,7 @@ export class IFrameWidget extends ElementWidget {
 //-- LayoutWidget --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class LayoutWidget2 extends Widget2 {
+export class LayoutWidget extends Widget {
     constructor(...args) {
         super(...args);
         this.slots = [];
@@ -586,7 +585,7 @@ export class LayoutWidget2 extends Widget2 {
 //-- HorizontalWidget ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class HorizontalWidget2 extends LayoutWidget2 {
+export class HorizontalWidget extends LayoutWidget {
 
     addSlot(w,n) {
         super.addSlot(w,n);
@@ -622,7 +621,7 @@ export class HorizontalWidget2 extends LayoutWidget2 {
 //-- VerticalWidget ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class VerticalWidget2 extends LayoutWidget2 {
+export class VerticalWidget extends LayoutWidget {
 
     addSlot(w,n) {
         super.addSlot(w,n);
@@ -660,7 +659,7 @@ export class VerticalWidget2 extends LayoutWidget2 {
 
 // Draws an area filled with a solid color.
 
-export class BoxWidget2 extends Widget2 {
+export class BoxWidget extends Widget {
 
     draw() {
         const xy = this.origin;
@@ -677,7 +676,7 @@ export class BoxWidget2 extends Widget2 {
 
 // Displays an image.
 
-export class ImageWidget2 extends Widget2 {
+export class ImageWidget extends Widget {
     constructor(...args) {
         super(...args);
         if (this.url) this.loadFromURL(this.url);
@@ -710,7 +709,7 @@ export class ImageWidget2 extends Widget2 {
 
 // Displays a nine-slice image that scales to preserve the proportions of its edges.
 
-export class NineSliceWidget2 extends ImageWidget2 {
+export class NineSliceWidget extends ImageWidget {
 
     get inset() { return this._inset || [32, 32, 32, 32];}              // Offset in pixels from edge of image to make slices
     get insetScale() { return (this._insetScale || 1) * this.scale;}    // Scaling factor to translate inset to screen pixels
@@ -818,7 +817,7 @@ export class NineSliceWidget2 extends ImageWidget2 {
 // * Selection methods for multiline text
 // * Maybe single and multiline text get split into different widgets?
 
-export class TextWidget2 extends Widget2 {
+export class TextWidget extends Widget {
 
     setText(t) {this.set({text: t});}
 
@@ -937,11 +936,11 @@ export class TextWidget2 extends Widget2 {
 // If the widget has an irregular shape, you'll need to provide an overlaythat matches the
 // control shape.
 
-export class ControlWidget2 extends Widget2 {
+export class ControlWidget extends Widget {
 
     buildChildren() {
         super.buildChildren();
-        this.setDim(new BoxWidget2(this, {autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.6, bubbleChanges: true}));
+        this.setDim(new BoxWidget(this, {autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.6, bubbleChanges: true}));
     }
 
     enable() { this.set({ disabled: false }); }
@@ -1016,14 +1015,14 @@ export class ControlWidget2 extends Widget2 {
 //
 // The Normal/Hovered/Pressed Box widgets can be replaced by NineSlice widgets for prettier buttons.
 
-export class ButtonWidget2 extends ControlWidget2 {
+export class ButtonWidget extends ControlWidget {
 
     buildChildren() {
         super.buildChildren();
-        this.setNormal(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.5], bubbleChanges: true}));
-        this.setHilite(new BoxWidget2(this, {autoSize: [1,1], color: [0.65,0.9,0.65], bubbleChanges: true}));
-        this.setPressed(new BoxWidget2(this, {autoSize: [1,1], color: [0.9,0.35,0.35], bubbleChanges: true}));
-        this.setLabel(new TextWidget2(this, {autoSize: [1,1]}));
+        this.setNormal(new BoxWidget(this, {autoSize: [1,1], color: [0.5,0.5,0.5], bubbleChanges: true}));
+        this.setHilite(new BoxWidget(this, {autoSize: [1,1], color: [0.65,0.9,0.65], bubbleChanges: true}));
+        this.setPressed(new BoxWidget(this, {autoSize: [1,1], color: [0.9,0.35,0.35], bubbleChanges: true}));
+        this.setLabel(new TextWidget(this, {autoSize: [1,1]}));
     }
 
     setNormal(w) {
@@ -1095,7 +1094,7 @@ export class ButtonWidget2 extends ControlWidget2 {
 
 // Draws a button that can be toggled between an on and off state.
 
-export class ToggleWidget2 extends ControlWidget2 {
+export class ToggleWidget extends ControlWidget {
 
     constructor(...args) {
         super(...args);
@@ -1115,14 +1114,14 @@ export class ToggleWidget2 extends ControlWidget2 {
 
     buildChildren() {
         super.buildChildren();
-        this.setNormalOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.5,0.5,0.7], bubbleChanges: true}));
-        this.setNormalOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.5, 0.5, 0.5], bubbleChanges: true}));
-        this.setHiliteOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.8], bubbleChanges: true}));
-        this.setHiliteOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.6, 0.6, 0.6], bubbleChanges: true}));
-        this.setPressedOn(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.6], bubbleChanges: true}));
-        this.setPressedOff(new BoxWidget2(this, {autoSize: [1,1], color: [0.4, 0.4, 0.4], bubbleChanges: true}));
-        this.setLabelOn(new TextWidget2(this, {autoSize: [1,1], text: "On", bubbleChanges: true}));
-        this.setLabelOff(new TextWidget2(this, {autoSize: [1,1], text: "Off", bubbleChanges: true}));
+        this.setNormalOn(new BoxWidget(this, {autoSize: [1,1], color: [0.5,0.5,0.7], bubbleChanges: true}));
+        this.setNormalOff(new BoxWidget(this, {autoSize: [1,1], color: [0.5, 0.5, 0.5], bubbleChanges: true}));
+        this.setHiliteOn(new BoxWidget(this, {autoSize: [1,1], color: [0.6, 0.6, 0.8], bubbleChanges: true}));
+        this.setHiliteOff(new BoxWidget(this, {autoSize: [1,1], color: [0.6, 0.6, 0.6], bubbleChanges: true}));
+        this.setPressedOn(new BoxWidget(this, {autoSize: [1,1], color: [0.4, 0.4, 0.6], bubbleChanges: true}));
+        this.setPressedOff(new BoxWidget(this, {autoSize: [1,1], color: [0.4, 0.4, 0.4], bubbleChanges: true}));
+        this.setLabelOn(new TextWidget(this, {autoSize: [1,1], text: "On", bubbleChanges: true}));
+        this.setLabelOff(new TextWidget(this, {autoSize: [1,1], text: "Off", bubbleChanges: true}));
     }
 
     get isOn() { return this._state; }
@@ -1248,7 +1247,7 @@ export class ToggleWidget2 extends ControlWidget2 {
 // Helper class that manages a linked set of toggle widgets. You can pass a list of toggles
 // into the constructor.
 
-export class ToggleSet2  {
+export class ToggleSet  {
     constructor(...args) {
         this.toggles = new Set();
         args.forEach(arg => arg.set({toggleSet: this}));
@@ -1279,7 +1278,7 @@ export class ToggleSet2  {
 // The Bar and Knob can be replaced by Image/NineSlice widgets for a prettier look.
 // The Knob will always be square and match the short dimension of the bar.
 
-export class SliderWidget2 extends ControlWidget2 {
+export class SliderWidget extends ControlWidget {
 
     get isHorizontal() { return this.size[0] > this.size[1]; }
     get step() { return this._step || 0; }        // The number of descrete steps the slider has. (0=continuous)
@@ -1292,8 +1291,8 @@ export class SliderWidget2 extends ControlWidget2 {
 
     buildChildren() {
         super.buildChildren();
-        this.setBar(new BoxWidget2(this, {autoSize:[1,1], color: [0.5,0.5,0.5], bubbleChanges: true}));
-        this.setKnob(new BoxWidget2(this, {color: [0.8,0.8,0.8], border:[2,2,2,2], bubbleChanges: true}));
+        this.setBar(new BoxWidget(this, {autoSize:[1,1], color: [0.5,0.5,0.5], bubbleChanges: true}));
+        this.setKnob(new BoxWidget(this, {color: [0.8,0.8,0.8], border:[2,2,2,2], bubbleChanges: true}));
     }
 
     setBar(w) {
@@ -1376,7 +1375,7 @@ export class SliderWidget2 extends ControlWidget2 {
 
 // A single line of text that can be typed into.
 
-export class TextFieldWidget2 extends ControlWidget2 {
+export class TextFieldWidget extends ControlWidget {
 
     get leftSelect() { return this._leftSelect || 0; }
     get rightSelect() { return this._rightSelect || 0; }
@@ -1388,11 +1387,11 @@ export class TextFieldWidget2 extends ControlWidget2 {
 
     buildChildren() {
         super.buildChildren();
-        this.background = new BoxWidget2(this, {autoSize:[1,1], color: [1,1,1], bubbleChanges: true});
-        this.clip = new Widget2(this.background, {autoSize:[1,1], border: [5,5,5,5], clip: true, bubbleChanges: true});
-        this.text = new TextWidget2(this.clip, {autoSize:[0,1], local:[0,0], alignX:'left', wrap: false, text:""});
-        this.entry = new BoxWidget2(this.text, {autoSize:[0,1], local:[this.leftOffset,0], size:[1,1], bubbleChanges: true, visible: this.isFocused && !this.multipleSelected});
-        this.hilite = new BoxWidget2(this.text, {autoSize:[0,1], local:[this.leftOffset, 0], size:[this.hiliteSize,1], color: [1,0,0], opacity:0.2,
+        this.background = new BoxWidget(this, {autoSize:[1,1], color: [1,1,1], bubbleChanges: true});
+        this.clip = new Widget(this.background, {autoSize:[1,1], border: [5,5,5,5], clip: true, bubbleChanges: true});
+        this.text = new TextWidget(this.clip, {autoSize:[0,1], local:[0,0], alignX:'left', wrap: false, text:""});
+        this.entry = new BoxWidget(this.text, {autoSize:[0,1], local:[this.leftOffset,0], size:[1,1], bubbleChanges: true, visible: this.isFocused && !this.multipleSelected});
+        this.hilite = new BoxWidget(this.text, {autoSize:[0,1], local:[this.leftOffset, 0], size:[this.hiliteSize,1], color: [1,0,0], opacity:0.2,
             bubbleChanges: true , visible: this.isFocused && this.multipleSelected});
 
         // Suppress redrawing the whole canvas when the entry cursor or the hilite is hidden.
@@ -1418,6 +1417,12 @@ export class TextFieldWidget2 extends ControlWidget2 {
         this.entryBlink = !this.entryBlink;
         this.entry.set({local:[this.leftOffset,0], visible: this.entryBlink && !this.multipleSelected} );
         this.future(530).blink();
+    }
+
+    cursor(xy) {
+        if (!this.isVisible || !this.inside(xy)) return;
+        super.cursor(xy);
+        this.setCursor("text");
     }
 
     press(xy) {
@@ -1571,6 +1576,39 @@ export class TextFieldWidget2 extends ControlWidget2 {
         navigator.clipboard.readText().then(text => this.insert(text));
     }
 
+    doubleClick(xy) {
+        if (!this.inside(xy)) return;
+
+        const local = v2_sub(xy, this.text.global);
+        const select = this.text.findSelect(local[0]);
+        const t = this.text.text;
+
+        let left = select;
+        let right = select;
+        if (t.length > 0) {
+            const c = t[select];
+            if (isLetterOrDigit(c)) {
+                while (left > 0 && isLetterOrDigit(t[left-1])) left--;
+                while (right < t.length && isLetterOrDigit(t[right])) right++;
+            } else if (c === ' ') {
+                while (left > 0 && t[left-1] === ' ') left--;
+                while (right < t.length && t[right] === ' ') right++;
+            } else if (right < t.length) right++;
+        }
+        this.set({leftSelect: left, rightSelect: right});
+        this.refresh();
+    }
+
+    tripleClick(xy) {
+        if (!this.inside(xy)) return;
+        this.selectAll();
+    }
+
+    selectAll() {
+        this.set({leftSelect: 0, rightSelect: this.text.text.length});
+        this.refresh();
+    }
+
     // Update the position of the cursor and the highlight.
 
     // There is a bug in how this handles multi-select drag when the widget is scaled!
@@ -1580,7 +1618,7 @@ export class TextFieldWidget2 extends ControlWidget2 {
 
         if (!this.multipleSelected) { // Make sure the cursor is always visible.
 
-            let textLeft = this.text.local[0];
+            let textLeft = this.text.local[0] * this.scale;
             const textWidth = this.text.width();
             const textRight = textLeft + textWidth;
             const clipRight = this.clip.size[0];
@@ -1612,7 +1650,6 @@ export class TextFieldWidget2 extends ControlWidget2 {
     }
 
     onEnter() {
-        console.log(this.text.text);
     }
 
 }
