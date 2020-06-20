@@ -118,9 +118,9 @@ export class UIManager extends NamedView {
     }
 
     mouseDown(xy) {
-        if (focus) focus.press(xy);
-        if (!hover) return;
-        if (!hover.press(xy)) this.publish("ui", "mouse0Down", xy);
+        if (focus && focus.press(xy)) return;
+        if (hover && hover.press(xy)) return;
+        this.publish("ui", "mouse0Down", xy);
     }
 
     mouseUp(xy) {
@@ -134,8 +134,8 @@ export class UIManager extends NamedView {
     }
 
     touchDown(xy) {
-        if (!this.root) return;
-        if (!this.root.press(xy)) this.publish("ui", "touchDown", xy);
+        if (this.root && this.root.press(xy)) return;
+        this.publish("ui", "touchDown", xy);
     }
 
     touchUp(xy) {
@@ -974,7 +974,7 @@ export class ControlWidget extends Widget {
 
     focus() {
         if (this.isDisabled || this.isFocused) return;
-        if (focus) hover.blur();
+        if (focus) focus.blur();
         focus = this;
         this.onFocus();
         this.markChanged();

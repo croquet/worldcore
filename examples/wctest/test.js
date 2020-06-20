@@ -82,6 +82,8 @@ class MyViewRoot extends ViewRoot {
 
         this.subscribe("input", "1Down", this.test1);
         this.subscribe("input", "2Down", this.test2);
+        this.subscribe("ui", "mouse0Down", this.test3);
+        this.subscribe("ui", "touchDown", this.test3);
 
     }
 
@@ -93,6 +95,10 @@ class MyViewRoot extends ViewRoot {
     test2() {
         console.log("test2");
         this.widget4.show();
+    }
+
+    test3() {
+        console.log("test3");
     }
 
 }
