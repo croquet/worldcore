@@ -7,7 +7,6 @@ import { ModelRoot, ViewRoot, WebInputManager, UIManager, BoxWidget, Widget, Tex
     CanvasWidget, HorizontalWidget, VerticalWidget, ImageWidget, NineSliceWidget, ToggleWidget, ToggleSet, SliderWidget, TextFieldWidget } from "../worldcore";
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
-import dress from "./assets/dress.svg";
 import ttt from "./assets/test.svg";
 
 //------------------------------------------------------------------------------------------

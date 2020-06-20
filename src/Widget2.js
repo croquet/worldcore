@@ -1255,10 +1255,12 @@ export class ToggleSet  {
 
     add(toggle) {
         if (this.toggles.has(toggle)) return;
+        if (toggle.toggleSet !== this) toggle.set({toggleSet: this});
         this.toggles.add(toggle);
     }
 
     remove(toggle) {
+        if (toggle.toggleSet === this) toggle.set({toggleSet: undefined});
         this.toggles.delete(toggle);
     }
 
