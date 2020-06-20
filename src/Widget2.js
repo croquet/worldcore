@@ -114,7 +114,7 @@ export class UIManager extends NamedView {
         if (!consumed && focus) consumed = focus.drag(xy);
         if (!consumed && hover) consumed = hover.cursor(xy);
         if (!consumed && this.root) consumed = this.root.cursor(xy);
-        this.publish("ui", "mouseXY", xy);
+        if (!consumed) this.publish("ui", "mouseXY", xy);
     }
 
     mouseDown(xy) {
@@ -129,8 +129,9 @@ export class UIManager extends NamedView {
     }
 
     touchXY(xy) {
-        if (focus) focus.drag(xy);
-        this.publish("ui", "touchXY", xy);
+        let consumed = false;
+        if (focus) consumed = focus.drag(xy);
+        if (!consumed) this.publish("ui", "touchXY", xy);
     }
 
     touchDown(xy) {
