@@ -999,7 +999,7 @@ export class ControlWidget extends Widget {
         } else {
             this.unhover();
         }
-        return true;
+        return false;
     }
 
     drag(xy) { return false; }
@@ -1424,8 +1424,9 @@ export class TextFieldWidget extends ControlWidget {
 
     cursor(xy) {
         if (!this.isVisible || !this.inside(xy)) return;
-        super.cursor(xy);
+        let rval = super.cursor(xy);
         this.setCursor("text");
+        return rval;
     }
 
     press(xy) {
