@@ -52,7 +52,7 @@ export class UIManager extends NamedView {
 
     destroy() {
         super.destroy();
-        if (hover) hover.unhover();
+        // if (hover) hover.unhover();
         if (focus) focus.blur();
         if (this.root) this.root.destroy();
         ui = null;
@@ -64,7 +64,7 @@ export class UIManager extends NamedView {
         if (this.root) this.root.setParent(null);
         this.root = root;
         this.root.setParent(this);
-        if (hover) hover.unhover();
+        // if (hover) hover.unhover();
         if (focus) focus.blur();
         if (this.root) this.root.markChanged();
     }
@@ -78,17 +78,14 @@ export class UIManager extends NamedView {
     }
 
     get isVisible() { return true; }
-    // get origin() { return this.global; }
 
     resize() {
-        if (hover) hover.unhover();
+        // if (hover) hover.unhover();
         if (focus) focus.blur();
-        // this.ratio = window.devicePixelRatio * this.scale;
         this.ratio = window.devicePixelRatio;
         console.log("UI Pixel Ratio: " + this.ratio);
         const width = window.innerWidth;
         const height = window.innerHeight;
-        // this.size = [width * this.ratio, height * this.ratio];
         this.size = [width, height];
         if (this.root) this.root.markChanged();
     }
@@ -109,29 +106,43 @@ export class UIManager extends NamedView {
     }
 
     mouseXY(xy) {
+        const oldHover = hover;
         this.root.setCursor('default');
-        let consumed = false;
-        if (!consumed && focus) consumed = focus.drag(xy);
-        if (!consumed && hover) consumed = hover.cursor(xy);
-        if (!consumed && this.root) consumed = this.root.cursor(xy);
-        if (!consumed) this.publish("ui", "mouseXY", xy);
+        if (this.inMouseDown) {
+            if (focus) focus.drag(xy);
+        } else {
+            if (hover) hover.mouseMove(xy);
+            if (this.root) this.root.mouseMove(xy);
+        }
+        if (oldHover !== hover) {
+            if (oldHover) {
+                oldHover.onUnhover();
+                oldHover.markChanged();
+            }
+            if (hover) {
+                hover.onHover();
+                hover.markChanged();
+            }
+        }
+        this.publish("ui", "mouseXY", xy);
     }
 
     mouseDown(xy) {
+        this.inMouseDown = true;
         if (focus && focus.press(xy)) return;
         if (hover && hover.press(xy)) return;
         this.publish("ui", "mouse0Down", xy);
     }
 
     mouseUp(xy) {
+        this.inMouseDown = false;
         if (focus) focus.release(xy);
         this.publish("ui", "mouse0Up", xy);
     }
 
     touchXY(xy) {
-        let consumed = false;
-        if (focus) consumed = focus.drag(xy);
-        if (!consumed) this.publish("ui", "touchXY", xy);
+        if (focus) focus.drag(xy);
+        this.publish("ui", "touchXY", xy);
     }
 
     touchDown(xy) {
@@ -355,11 +366,16 @@ export class Widget extends View {
         return true;
     }
 
-    cursor(xy) { // Propagates down the widget tree. Returns true if a child handles it.
-        if (!this.isVisible || !this.inside(xy)) return false;
-        let consumed = false;
-        if (this.children) this.children.forEach(child => consumed = child.cursor(xy) || consumed);
-        return consumed;
+    // mouseMove(xy) { // Propagates down the widget tree. Returns true if a child handles it.
+    //     if (!this.isVisible || !this.inside(xy)) return false;
+    //     let consumed = false;
+    //     if (this.children) this.children.forEach(child => consumed = child.mouseMove(xy) || consumed);
+    //     return consumed;
+    // }
+
+    mouseMove(xy) { // Propagates down the widget tree.
+        if (!this.isVisible || !this.inside(xy)) return;
+        if (this.children) this.children.forEach(child => child.mouseMove(xy));
     }
 
     press(xy) { // Propagates down the widget tree. Returns true if a child handles it.
@@ -953,25 +969,25 @@ export class ControlWidget extends Widget {
     get isFocused() { return this === focus; }
 
     setDim(w) {
-        if (this.dim && this.dhim !== w) this.destroyChild(this.dim);
+        if (this.dim && this.dim !== w) this.destroyChild(this.dim);
         this.dim = w;
         this.addChild(w);
     }
 
-    hover() {
-        if (this.isDisabled || this.isHovered) return;
-        if (hover) hover.unhover();
-        hover = this;
-        this.markChanged();
-        this.onHover();
-     }
+    // hover() {
+    //     if (this.isDisabled || this.isHovered) return;
+    //     if (hover) hover.unhover();
+    //     hover = this;
+    //     this.markChanged();
+    //     this.onHover();
+    //  }
 
-    unhover() {
-        if (!this.isHovered) return;
-        hover = null;
-        this.markChanged();
-        this.onUnhover();
-    }
+    // unhover() {
+    //     if (!this.isHovered) return;
+    //     hover = null;
+    //     this.markChanged();
+    //     this.onUnhover();
+    // }
 
     focus() {
         if (this.isDisabled || this.isFocused) return;
@@ -988,23 +1004,53 @@ export class ControlWidget extends Widget {
         this.markChanged();
     }
 
-    onHover() {}
-    onUnhover() {}
+
     onFocus() {}
     onBlur() {}
 
-    cursor(xy) {
-        if (!this.invisible && !this.isDisabled && this.inside(xy)) {
-            this.hover();
-        } else {
-            this.unhover();
+    // mouseMove(xy) {
+    //     if (!this.invisible && !this.isDisabled && this.inside(xy)) {
+    //         if (!super.mouseMove(xy)) this.hover();
+    //         return true;
+
+    //     } else {
+    //         this.unhover();
+    //         return false;
+    //     }
+    //     return true;
+    // }
+
+    mouseMove(xy) {
+        if (!this.isVisible || this.isDisabled || !this.inside(xy)) { // Unhover
+            if (this.isHovered) {
+                hover = null;
+                // this.onUnhover();
+                // this.markChanged();
+            }
+            return;
         }
-        return false;
+
+        // console.log(hover);
+        // if (!hover && !this.isHovered) {
+        //     hover = this;
+        //     // this.onHover();
+        //     this.markChanged();
+        // }
+
+        hover = this;
+        // this.markChanged();
+        super.mouseMove(xy);
+
     }
 
-    drag(xy) { return false; }
-    press(xy) { return false; }
-    release(xy) {}
+    onHover() {}
+    onUnhover() {}
+
+    //drag(xy) { return false; }
+
+    // drag(xy) {}
+    // // press(xy) { return false; }
+    // release(xy) {}
 
 }
 
@@ -1422,11 +1468,17 @@ export class TextFieldWidget extends ControlWidget {
         this.future(530).blink();
     }
 
-    cursor(xy) {
+    // mouseMove(xy) {
+    //     if (!this.isVisible || !this.inside(xy)) return false;
+    //     const consumed = super.mouseMove(xy);
+    //     this.setCursor("text");
+    //     return consumed;
+    // }
+
+    mouseMove(xy) {
         if (!this.isVisible || !this.inside(xy)) return;
-        let rval = super.cursor(xy);
         this.setCursor("text");
-        return rval;
+        super.mouseMove(xy);
     }
 
     press(xy) {
