@@ -296,6 +296,7 @@ export class Widget extends View {
     get isVisible() { return this._visible === undefined || this._visible;} // Default to true
     get color() { return this._color || [0,0,0];}
     get bubbleChanges() { return this._bubbleChanges; } // Default to false
+    get rawSize() { return this._size || [100,100];}
 
     get opacity() { // Children don't inherit opacity, but the opacity of a canvas applies to everything drawn on it.
         if (this._opacity === undefined) return 1;
