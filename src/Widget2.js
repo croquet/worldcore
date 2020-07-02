@@ -27,12 +27,11 @@ export class UIManager extends NamedView {
         ui = this; // Global pointer for widgets to use.
 
         this.scale = 1;
-        this.size = [100,100];
+        this.size = [200,100];
         this.global = [0,0];
 
         this.resize();
-
-        this.setRoot(new CanvasWidget(this, {autoSize: [1,1]}));
+        this.root = new CanvasWidget(this, {autoSize: [1,1]});
 
         this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
         this.subscribe("input", {event: "mouseXY", handling: "immediate"}, this.mouseXY);
@@ -52,25 +51,13 @@ export class UIManager extends NamedView {
 
     destroy() {
         super.destroy();
-        // if (hover) hover.unhover();
         if (focus) focus.blur();
         if (this.root) this.root.destroy();
         ui = null;
     }
 
-    // Note that setting the root does not destroy the old root!
-    setRoot(root) {
-        if (this.root === root) return;
-        if (this.root) this.root.setParent(null);
-        this.root = root;
-        this.root.setParent(this);
-        // if (hover) hover.unhover();
-        if (focus) focus.blur();
-        if (this.root) this.root.markChanged();
-    }
-
     addChild(root) {
-        this.setRoot(root);
+        root.setParent(this);
     }
 
     removeChild(child) {
@@ -80,7 +67,6 @@ export class UIManager extends NamedView {
     get isVisible() { return true; }
 
     resize() {
-        // if (hover) hover.unhover();
         if (focus) focus.blur();
         this.ratio = window.devicePixelRatio;
         console.log("UI Pixel Ratio: " + this.ratio);
@@ -92,13 +78,13 @@ export class UIManager extends NamedView {
 
     setScale(scale) {
         this.scale = scale;
-        if (this.root) this.root.markChanged();
+        this.root.markChanged();
     }
 
     update() {
         if (!this.isChanged) return;
         this.isChanged = false;
-        if (this.root) this.root.update();
+        this.root.update();
     }
 
     markChanged() {
@@ -206,7 +192,7 @@ export class Widget extends View {
 
         this.buildChildren();
 
-        this.subscribe(this.id, { event: "visible", handling: "immediate" }, visible => {if (!visible) this.markCanvasChanged();} );
+        this.subscribe(this.id, { event: "visible", handling: "immediate" }, visible => {if (!visible) this.markCanvasChanged(); this.visiblityChanged();} );
         this.subscribe(this.id, { event: "scale", handling: "immediate" }, () => { this.markCanvasChanged();} );
     }
 
@@ -239,6 +225,7 @@ export class Widget extends View {
 
     setParent(p) {  // This should only be called by addChild & removeChild
         this.parent = p;
+        // this.markChanged();
     }
 
     setCanvasWidget(canvasWidget) {
@@ -287,6 +274,10 @@ export class Widget extends View {
     show() { this.set({visible: true}); }
     hide() { this.set({visible: false}); }
     toggleVisible() { this.set({visible: !this.visible}); }
+
+    visiblityChanged() {
+        if (this.children) this.children.forEach(child => child.visiblityChanged());
+    }
 
     get anchor() { return this._anchor || [0,0];}
     get pivot() { return this._pivot || [0,0];}
@@ -367,13 +358,6 @@ export class Widget extends View {
         return true;
     }
 
-    // mouseMove(xy) { // Propagates down the widget tree. Returns true if a child handles it.
-    //     if (!this.isVisible || !this.inside(xy)) return false;
-    //     let consumed = false;
-    //     if (this.children) this.children.forEach(child => consumed = child.mouseMove(xy) || consumed);
-    //     return consumed;
-    // }
-
     mouseMove(xy) { // Propagates down the widget tree.
         if (!this.isVisible || !this.inside(xy)) return;
         if (this.children) this.children.forEach(child => child.mouseMove(xy));
@@ -439,20 +423,9 @@ export class ElementWidget extends Widget {
     get color() { return this._color; } // Null = transparent
     get zIndex() { if (this._zIndex === undefined) { return 0; } return this._zIndex; }
 
-    setParent(p) {
-        super.setParent(p);
-        this.subscribeToAncestors();
-    }
-
-    // We listen to see if any ancestor goes invisible so we can make the element vanish too.
-
-    subscribeToAncestors() {
-        this.unsubscribeAll();
-        let p = this.parent;
-        while (p) {
-            this.subscribe(p.id, "visible", this.draw);
-            p = p.parent;
-        }
+    visiblityChanged() {
+        this.draw();
+        super.visiblityChanged();
     }
 
     get ancestorsAreVisible() {
@@ -975,21 +948,6 @@ export class ControlWidget extends Widget {
         this.addChild(w);
     }
 
-    // hover() {
-    //     if (this.isDisabled || this.isHovered) return;
-    //     if (hover) hover.unhover();
-    //     hover = this;
-    //     this.markChanged();
-    //     this.onHover();
-    //  }
-
-    // unhover() {
-    //     if (!this.isHovered) return;
-    //     hover = null;
-    //     this.markChanged();
-    //     this.onUnhover();
-    // }
-
     focus() {
         if (this.isDisabled || this.isFocused) return;
         if (focus) focus.blur();
@@ -1005,53 +963,21 @@ export class ControlWidget extends Widget {
         this.markChanged();
     }
 
-
     onFocus() {}
     onBlur() {}
 
-    // mouseMove(xy) {
-    //     if (!this.invisible && !this.isDisabled && this.inside(xy)) {
-    //         if (!super.mouseMove(xy)) this.hover();
-    //         return true;
-
-    //     } else {
-    //         this.unhover();
-    //         return false;
-    //     }
-    //     return true;
-    // }
-
     mouseMove(xy) {
         if (!this.isVisible || this.isDisabled || !this.inside(xy)) { // Unhover
-            if (this.isHovered) {
-                hover = null;
-                // this.onUnhover();
-                // this.markChanged();
-            }
+            if (this.isHovered) hover = null;
             return;
         }
-
-        // console.log(hover);
-        // if (!hover && !this.isHovered) {
-        //     hover = this;
-        //     // this.onHover();
-        //     this.markChanged();
-        // }
-
         hover = this;
-        // this.markChanged();
         super.mouseMove(xy);
 
     }
 
     onHover() {}
     onUnhover() {}
-
-    //drag(xy) { return false; }
-
-    // drag(xy) {}
-    // // press(xy) { return false; }
-    // release(xy) {}
 
 }
 
@@ -1077,28 +1003,24 @@ export class ButtonWidget extends ControlWidget {
         if (this.normal && this.normal !== w) this.destroyChild(this.normal);
         this.normal = w;
         this.addChild(w);
-        // w.markChanged();
     }
 
     setHilite(w) {
         if (this.hilite && this.hilite !== w) this.destroyChild(this.hilite);
         this.hilite = w;
         this.addChild(w);
-        // w.markChanged();
     }
 
     setPressed(w) {
         if (this.pressed && this.presed !== w) this.destroyChild(this.pressed);
         this.pressed = w;
         this.addChild(w);
-        // w.markChanged();
     }
 
     setLabel(w) {
         if (this.label && this.label !== w) this.destroyChild(this.label);
         this.label = w;
         this.addChild(w);
-        // w.markChanged();
     }
 
     updateChildren() {
@@ -1429,11 +1351,11 @@ export class TextFieldWidget extends ControlWidget {
 
     get leftSelect() { return this._leftSelect || 0; }
     get rightSelect() { return this._rightSelect || 0; }
+    get hiliteSize() { return (this.rightOffset - this.leftOffset); }
+    get multipleSelected() { return this.leftSelect !== this.rightSelect; }
 
     get leftOffset() { return this.text.findLetterOffset(this.leftSelect) / this.scale;}
     get rightOffset() { return this.text.findLetterOffset(this.rightSelect) / this.scale;}
-    get hiliteSize() { return (this.rightOffset - this.leftOffset); }
-    get multipleSelected() { return this.leftSelect !== this.rightSelect; }
 
     buildChildren() {
         super.buildChildren();
@@ -1450,6 +1372,7 @@ export class TextFieldWidget extends ControlWidget {
     }
 
     updateChildren() {
+        this.refresh();
         this.background.update();
         if (this.isDisabled) this.dim.update();
     }
@@ -1468,13 +1391,6 @@ export class TextFieldWidget extends ControlWidget {
         this.entry.set({local:[this.leftOffset,0], visible: this.entryBlink && !this.multipleSelected} );
         this.future(530).blink();
     }
-
-    // mouseMove(xy) {
-    //     if (!this.isVisible || !this.inside(xy)) return false;
-    //     const consumed = super.mouseMove(xy);
-    //     this.setCursor("text");
-    //     return consumed;
-    // }
 
     mouseMove(xy) {
         if (!this.isVisible || !this.inside(xy)) return;
@@ -1668,7 +1584,6 @@ export class TextFieldWidget extends ControlWidget {
 
     // Update the position of the cursor and the highlight.
 
-    // There is a bug in how this handles multi-select drag when the widget is scaled!
     refresh() {
         this.entry.set({local:[this.leftOffset,0], visible: this.isFocused && !this.multipleSelected} );
         this.hilite.set({local:[this.leftOffset, 0], size:[this.hiliteSize,1], visible: this.isFocused && this.multipleSelected});
@@ -1686,7 +1601,7 @@ export class TextFieldWidget extends ControlWidget {
                 textLeft = clipRight-textWidth;
             }
 
-            const selectOffset = this.text.findLetterOffset(this.leftSelect);
+            const selectOffset = this.leftOffset;
             const globalOffset = textLeft + selectOffset;
 
             if (globalOffset < 0) {
@@ -1697,6 +1612,7 @@ export class TextFieldWidget extends ControlWidget {
 
             textLeft /= this.scale;
             this.text.set({local:[textLeft, 0]});
+
         }
     }
 

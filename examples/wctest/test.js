@@ -204,7 +204,7 @@ class MyViewRoot extends ViewRoot {
 
         this.webInput = this.addManager(new WebInputManager());
         this.ui = this.addManager(new UIManager());
-        this.ui.setScale(1);
+        this.ui.setScale(0.5);
 
         // this.horizontal = new HorizontalWidget(this.ui.root, {size: [500,100], margin: 10, autoSize:[1,0]});
         // this.vertical = new VerticalWidget(this.ui.root, {size: [200,500], margin: 10, autoSize:[0,1]});
@@ -219,6 +219,10 @@ class MyViewRoot extends ViewRoot {
 
         this.widget3 = new ButtonWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], size: [200,100], local:[-20,20]});
         this.widget3a = new ButtonWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], size: [200,100], local:[-20,-20]});
+
+        // this.widget3.onClick = () => this.widget4.hide();
+        this.widget3a.onClick = () => this.widget4.show();
+
         this.widget3a.onClick = () => { this.publish("test", "spawn"); };
         // this.toggleSet = new ToggleSet(this.widget3, this.widget3a);
 
