@@ -167,7 +167,7 @@ export class PaneWidget extends CanvasWidget {
         super.buildChildren();
         this.control = new PaneControlWidget(this, {autoSize:[1,1]});
         this.contents = new IFrameWidget(this, {autoSize: [1,1], border:[10,50,10,10], zIndex: this.zIndex + 1});
-        this.guard = new CanvasWidget(this, {autoSize:[1,1], border:[10,50,10,10], zIndex: this.zIndex + 2, visible:false});
+        this.guard = new CanvasWidget(this, {autoSize:[1,1], border:[10,50,10,10], zIndex: this.zIndex + 2, visible:true}); // Guard needs to be refreshed once to position it.
         this.contents.set({source: "https://croquet.io/quub/#GUEST/1cry0ylrjmy"});
     }
 
@@ -209,38 +209,38 @@ class MyViewRoot extends ViewRoot {
         // this.horizontal = new HorizontalWidget(this.ui.root, {size: [500,100], margin: 10, autoSize:[1,0]});
         // this.vertical = new VerticalWidget(this.ui.root, {size: [200,500], margin: 10, autoSize:[0,1]});
 
-        this.widget0 = new BoxWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], autoSize: [0,0], size:[200,100], color:[0,0,0], local:[20,20]});
+        // this.widget0 = new BoxWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], autoSize: [0,0], size:[200,100], color:[0,0,0], local:[20,20]});
 
-        this.widget1 = new BoxWidget(this.widget0, {anchor: [0,0], pivot: [0,0], autoSize: [1,1], border:[5,5,5,5], local:[0,0], color:[1,0,0]});
+        // this.widget1 = new BoxWidget(this.widget0, {anchor: [0,0], pivot: [0,0], autoSize: [1,1], border:[5,5,5,5], local:[0,0], color:[1,0,0]});
 
-        this.widget2 = new TextWidget(this.widget1, {autoSize: [1,1], text: "This is long, split it!"});
-        this.widget2.set({scale:1.5, clip: true});
+        // this.widget2 = new TextWidget(this.widget1, {autoSize: [1,1], text: "This is long, split it!"});
+        // this.widget2.set({scale:1.5, clip: true});
 
 
-        this.widget3 = new ButtonWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], size: [200,100], local:[-20,20]});
-        this.widget3a = new ButtonWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], size: [200,100], local:[-20,-20]});
+        // this.widget3 = new ButtonWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], size: [200,100], local:[-20,20]});
+        // this.widget3a = new ButtonWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], size: [200,100], local:[-20,-20]});
 
-        // this.widget3.onClick = () => this.widget4.hide();
-        this.widget3a.onClick = () => this.widget4.show();
+        // // this.widget3.onClick = () => this.widget4.hide();
+        // this.widget3a.onClick = () => this.widget4.show();
 
-        this.widget3a.onClick = () => { this.publish("test", "spawn"); };
+        // this.widget3a.onClick = () => { this.publish("test", "spawn"); };
         // this.toggleSet = new ToggleSet(this.widget3, this.widget3a);
 
-        this.frame = new BoxWidget(this.ui.root, {anchor: [1,1], pivot: [1,1], size:[200,500], local:[-20,-20], color:[1,0,0], scale:1});
-        this.imageWidget = new NineSliceWidget(this.frame, {autoSize: [1,1], border:[5,5,5,5], size:[100,100], local:[0,0], url: diana, inset:[64,64,64,64], insetScale:1});
+        // this.frame = new BoxWidget(this.ui.root, {anchor: [1,1], pivot: [1,1], size:[200,500], local:[-20,-20], color:[1,0,0], scale:1});
+        // this.imageWidget = new NineSliceWidget(this.frame, {autoSize: [1,1], border:[5,5,5,5], size:[100,100], local:[0,0], url: diana, inset:[64,64,64,64], insetScale:1});
         // this.imageWidget = new ImageWidget(this.frame, {autoSize: [1,1], border:[5,5,5,5], size:[100,100], local:[0,0], url: ttt});
         // this.imageWidget.loadFromURL(diana);
 
 
-        this.horizontal = new HorizontalWidget(this.ui.root, {size: [500,100], margin: 10, autoSize:[1,0]});
-        this.horizontal.set({scale:0.5});
-        this.horizontal.addSlot(this.widget0);
-        this.horizontal.addSlot(this.widget3);
-        this.horizontal.addSlot(this.widget3a);
-        this.widget3.set({width: 200});
-        this.widget3a.set({width: 200});
+        // this.horizontal = new HorizontalWidget(this.ui.root, {size: [500,100], margin: 10, autoSize:[1,0]});
+        // this.horizontal.set({scale:0.5});
+        // this.horizontal.addSlot(this.widget0);
+        // this.horizontal.addSlot(this.widget3);
+        // this.horizontal.addSlot(this.widget3a);
+        // this.widget3.set({width: 200});
+        // this.widget3a.set({width: 200});
 
-        this.pane = new PaneWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], size: [400,400], local:[400,400], scale:1});
+        // this.pane = new PaneWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], size: [400,400], local:[400,400], scale:1});
 
         // this.widget4 = new BoxWidget(this.ui.root, {anchor: [0.5,0.5], pivot: [0.5,0.5], size: [400,400], border:[5,5,5,5], local:[0,0], color:[0,0,0], scale:0.5});
         // this.widget4.set({scale:0.9});

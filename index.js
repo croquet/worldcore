@@ -13,6 +13,5 @@ export * from "./src/ViewAssetCache";
 
 export * from "./src/User";
 export * from "./src/WebInput";
-// export * from "./src/Widget";
-export * from "./src/Widget2";
+export * from "./src/Widget";
 export * from "./src/UnityRender";
