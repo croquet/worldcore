@@ -1457,34 +1457,75 @@ export class TextFieldWidget extends ControlWidget {
     }
 
     keyInput(input) {
-        switch (input) {
-            case 'Enter':
-                this.enter();
-                break;
-            case 'Backspace':
-                this.backspace();
-                break;
-            case 'Delete':
-                this.delete();
-                break;
-            case 'ArrowLeft':
-                this.cursorLeft();
-                break;
-            case 'ArrowRight':
-                this.cursorRight();
-                break;
-            case 'Cut':
-                this.cut();
-                break;
-            case 'Copy':
-                this.copy();
-                break;
-            case 'Paste':
-                this.paste();
-                break;
-            default:
-               if (input.length === 1) this.insert(input);
+        const key = input.key;
+        // console.log(key);
+        const ctrl = input.ctrl || input.meta;
+        console.log(ctrl);
+        if (ctrl) {
+            // console.log(key);
+            switch (key) {
+                case 'x':
+                    this.cut();
+                    break;
+                case 'c':
+                    this.copy();
+                    break;
+                case 'v':
+                    this.paste();
+                    break;
+                    default:
+            }
+        } else {
+            switch (key) {
+                case 'Enter':
+                    this.enter();
+                    break;
+                case 'Backspace':
+                    this.backspace();
+                    break;
+                case 'Delete':
+                    this.delete();
+                    break;
+                case 'ArrowLeft':
+                    this.cursorLeft();
+                    break;
+                case 'ArrowRight':
+                    this.cursorRight();
+                    break;
+                default:
+                    if (key.length === 1) this.insert(key);
+            }
         }
+
+
+        // switch (input) {
+        //     case 'Enter':
+        //         this.enter();
+        //         break;
+        //     case 'Backspace':
+        //         this.backspace();
+        //         break;
+        //     case 'Delete':
+        //         this.delete();
+        //         break;
+        //     case 'ArrowLeft':
+        //         this.cursorLeft();
+        //         break;
+        //     case 'ArrowRight':
+        //         this.cursorRight();
+        //         break;
+        //     case 'Cut':
+        //         this.cut();
+        //         break;
+        //     case 'Copy':
+        //         this.copy();
+        //         break;
+        //     case 'Paste':
+        //         this.paste();
+        //         break;
+        //     default:
+        //        if (input.length === 1) this.insert(input);
+        // }
     }
 
     insert(s) {

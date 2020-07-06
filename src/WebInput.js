@@ -193,52 +193,54 @@ export class WebInputManager extends NamedView {
     // publishes  both keyDown + arg and "xDown" where "x" is the key
 
     onKeyDown(event) {
-        if (event.ctrlKey || event.metaKey) {
-            this.onControlKey(event);
-            return;
-        }
+        // console.log(event);
+        // // if (event.ctrlKey || event.metaKey) {
+        // //     this.onControlKey(event);
+        // //     return;
+        // // }
         const key = event.key;
         keys.add(key);
         if (event.repeat) {
-            this.publish("input", key + "Repeat");
-            this.publish("input", "keyRepeat", key); // This can generate a lot of events! Don't subscribe to in model.
+            this.publish("input", key + "Repeat", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
+            this.publish("input", "keyRepeat", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
+            // This can generate a lot of events! Don't subscribe to in model.
         } else {
-            this.publish("input", key + "Down");
-            this.publish("input", "keyDown", key);
+            this.publish("input", key + "Down", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
+            this.publish("input", "keyDown", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
         }
         this.onChordDown(key);
     }
 
-    onControlKey(e) {
-        switch (e.key) {
-            case 'z':
-                e.preventDefault();
-                this.publish("input", "undo");
-                this.publish("input", "keyDown", "Undo");
-                break;
-            case 'y':
-                e.preventDefault();
-                this.publish("input", "redo");
-                this.publish("input", "keyDown", "Redo");
-                break;
-            case 'x':
-                e.preventDefault();
-                this.publish("input", "cut");
-                this.publish("input", "keyDown", "Cut");
-                break;
-            case 'c':
-                e.preventDefault();
-                this.publish("input", "copy");
-                this.publish("input", "keyDown", "Copy");
-                break;
-            case 'v':
-                e.preventDefault();
-                this.publish("input", "paste");
-                this.publish("input", "keyDown", "Paste");
-                break;
-            default:
-        }
-    }
+    // onControlKey(e) {
+    //     switch (e.key) {
+    //         case 'z':
+    //             e.preventDefault();
+    //             this.publish("input", "undo");
+    //             this.publish("input", "keyDown", "Undo");
+    //             break;
+    //         case 'y':
+    //             e.preventDefault();
+    //             this.publish("input", "redo");
+    //             this.publish("input", "keyDown", "Redo");
+    //             break;
+    //         case 'x':
+    //             e.preventDefault();
+    //             this.publish("input", "cut");
+    //             this.publish("input", "keyDown", "Cut");
+    //             break;
+    //         case 'c':
+    //             e.preventDefault();
+    //             this.publish("input", "copy");
+    //             this.publish("input", "keyDown", "Copy");
+    //             break;
+    //         case 'v':
+    //             e.preventDefault();
+    //             this.publish("input", "paste");
+    //             this.publish("input", "keyDown", "Paste");
+    //             break;
+    //         default:
+    //     }
+    // }
 
     // publish both keyUp + arg and "xUp" where "x" is the key
     onKeyUp(event) {
