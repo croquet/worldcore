@@ -200,6 +200,7 @@ export class WebInputManager extends NamedView {
         // // }
         const key = event.key;
         keys.add(key);
+        // console.log(keys);
         if (event.repeat) {
             this.publish("input", key + "Repeat", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
             this.publish("input", "keyRepeat", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
@@ -246,8 +247,8 @@ export class WebInputManager extends NamedView {
     onKeyUp(event) {
         const key = event.key;
         if (!KeyDown(key)) return;
-        this.publish("input", key + "Up");
-        this.publish("input", "keyUp", key);
+        this.publish("input", key + "Up", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
+        this.publish("input", "keyUp", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
         this.onChordUp(key);
         keys.delete(key);
     }

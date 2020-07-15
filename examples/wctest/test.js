@@ -3,22 +3,15 @@
 // Croquet Studios, 2020
 
 import { Session } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, WebInputManager, UIManager, BoxWidget, Widget, TextWidget, ButtonWidget, IFrameWidget,
-    CanvasWidget, HorizontalWidget, VerticalWidget, ImageWidget, NineSliceWidget, ToggleWidget, ToggleSet, SliderWidget, TextFieldWidget, ControlWidget, v2_add, v2_sub } from "../worldcore";
+import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, BoxWidget, Widget, TextWidget, ButtonWidget, IFrameWidget,
+    CanvasWidget, HorizontalWidget, VerticalWidget, ImageWidget, NineSliceWidget, ToggleWidget, ToggleSet, SliderWidget, TextFieldWidget, ControlWidget, v2_add, v2_sub, q_axisAngle, toRad, m4_rotationZ, m4_getRotation, m4_translation, m4_multiply, Actor, Pawn, mix, AM_Spatial, PM_Spatial, PM_AudioSource, AM_AudioSource } from "../worldcore";
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
 import ttt from "./assets/test.svg";
+import photon from "./assets/Photon.mp3";
+import { AudioManagerView } from "../MazeWarz/src/AudioManagerView";
 
-//------------------------------------------------------------------------------------------
-// MyModelRoot
-//------------------------------------------------------------------------------------------
 
-class MyModelRoot extends ModelRoot {
-    init() {
-        super.init();
-    }
-}
-MyModelRoot.register("MyModelRoot");
 
 //------------------------------------------------------------------------------------------
 //-- PaneWidget ----------------------------------------------------------------------------
@@ -193,6 +186,51 @@ export class PaneWidget extends CanvasWidget {
 }
 
 //------------------------------------------------------------------------------------------
+// MyActor
+//------------------------------------------------------------------------------------------
+
+class MyActor extends mix(Actor).with(AM_Spatial, AM_AudioSource) {
+    init() {
+        console.log("Add actor");
+        super.init("MyPawn");
+        this.setLocation([10,0,0]);
+
+        this.subscribe("test", "test1", this.test1);
+    }
+
+    test1() {
+        console.log("Actor test 1");
+        this.playSound(photon);
+    }
+}
+MyActor.register('MyActor');
+
+//------------------------------------------------------------------------------------------
+// MyPawn
+//------------------------------------------------------------------------------------------
+
+class MyPawn extends mix(Pawn).with(PM_Spatial, PM_AudioSource) {
+    constructor(...args) {
+        console.log("Add pawn");
+        super(...args);
+    }
+
+}
+MyPawn.register('MyPawn');
+
+//------------------------------------------------------------------------------------------
+// MyModelRoot
+//------------------------------------------------------------------------------------------
+
+class MyModelRoot extends ModelRoot {
+    init() {
+        super.init();
+        this.actor = MyActor.create();
+    }
+}
+MyModelRoot.register("MyModelRoot");
+
+//------------------------------------------------------------------------------------------
 // MyViewRoot
 //------------------------------------------------------------------------------------------
 
@@ -204,7 +242,11 @@ class MyViewRoot extends ViewRoot {
 
         this.webInput = this.addManager(new WebInputManager());
         this.ui = this.addManager(new UIManager());
-        this.ui.setScale(0.5);
+        this.ui.setScale(1);
+        this.audio = this.addManager(new AudioManager());
+
+
+
 
         // this.horizontal = new HorizontalWidget(this.ui.root, {size: [500,100], margin: 10, autoSize:[1,0]});
         // this.vertical = new VerticalWidget(this.ui.root, {size: [200,500], margin: 10, autoSize:[0,1]});
@@ -256,27 +298,24 @@ class MyViewRoot extends ViewRoot {
         this.slider.set({scale: 0.9});
         // this.slider.onChange = p => {this.canvas2.set({opacity: p});};
 
-        this.entry = new TextFieldWidget(this.ui.root, {size:[300,50], local:[20, 100], scale: 1.3});
-        this.entry.text.set({text:"1234567890123456789023456789012345678902345678901234567890"});
-
         this.subscribe("input", "1Down", this.test1);
         this.subscribe("input", "2Down", this.test2);
         this.subscribe("ui", "mouse0Down", this.test3);
         this.subscribe("ui", "touchDown", this.test3);
-        this.subscribe("test", "spawn", this.spawnPane);
+        // this.subscribe("test", "spawn", this.spawnPane);
 
         layer = 10;
 
     }
 
-    spawnPane() {
-        layer += 10;
-        new PaneWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], size: [400,400], local:[400,400], scale:1, zIndex: layer});
-    }
+    // spawnPane() {
+    //     layer += 10;
+    //     new PaneWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], size: [400,400], local:[400,400], scale:1, zIndex: layer});
+    // }
 
     test1() {
         console.log("test1");
-        this.widget4.hide();
+        this.publish("test", "test1");
     }
 
     test2() {
@@ -286,6 +325,8 @@ class MyViewRoot extends ViewRoot {
 
     test3() {
         console.log("test3");
+        // this.audioElement.load();
+        // this.audioElement.play();
     }
 
 }

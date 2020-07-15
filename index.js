@@ -15,3 +15,4 @@ export * from "./src/User";
 export * from "./src/WebInput";
 export * from "./src/Widget";
 export * from "./src/UnityRender";
+export * from "./src/Audio";

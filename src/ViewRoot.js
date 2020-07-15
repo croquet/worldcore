@@ -34,7 +34,7 @@ export class ViewRoot extends NamedView {
         viewTime0 = viewTime1;
         viewTime1 = time;
         viewDelta = viewTime1 - viewTime0;
-        this.managers.forEach(m => { if (m.update) m.update(time); });
+        this.managers.forEach(m => { if (m.update) m.update(time, viewDelta); });
     }
 
 }

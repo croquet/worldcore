@@ -680,6 +680,42 @@ export function m4_rotationQ(q) {
     ];
 }
 
+// Extracts the rotation component and returns it as a quaternion
+
+export function m4_getRotation(m) {
+    const trace = m[0] + m[5] + m[10];
+    let s = 0;
+    const q = [0,0,0,0];
+
+    if (trace > 0) {
+      s = Math.sqrt(trace + 1.0) * 2;
+      q[3] = 0.25 * s;
+      q[0] = (m[6] - m[9]) / s;
+      q[1] = (m[8] - m[2]) / s;
+      q[2] = (m[1] - m[4]) / s;
+    } else if ((m[0] > m[5]) && (m[0] > m[10])) {
+      s = Math.sqrt(1.0 + m[0] - m[5] - m[10]) * 2;
+      q[3] = (m[6] - m[9]) / s;
+      q[0] = 0.25 * s;
+      q[1] = (m[1] + m[4]) / s;
+      q[2] = (m[8] + m[2]) / s;
+    } else if (m[5] > m[10]) {
+      s = Math.sqrt(1.0 + m[5] - m[0] - m[10]) * 2;
+      q[3] = (m[8] - m[2]) / s;
+      q[0] = (m[1] + m[4]) / s;
+      q[1] = 0.25 * s;
+      q[2] = (m[6] + m[9]) / s;
+    } else {
+      s = Math.sqrt(1.0 + m[10] - m[0] - m[5]) * 2;
+      q[3] = (m[1] - m[4]) / s;
+      q[0] = (m[8] + m[2]) / s;
+      q[1] = (m[6] + m[9]) / s;
+      q[2] = 0.25 * s;
+    }
+
+    return q;
+  }
+
 // Applied in that order. Scale can be either a 3-vector or a scaler. Rotation is a quaternion.
 export function m4_scalingRotationTranslation(s, q, v) {
 
@@ -905,7 +941,7 @@ export function m4_toNormal3(m) {
 }
 
 // generate ground plane matrix - no rotation out of the x/z plane
-export function m4_grounded(m){
+export function m4_grounded(m) {
     const g = [0,1,0] // the up vector
     var x = [m[0], m[1], m[2]];
     var z = v3_cross(x, g);
@@ -918,11 +954,11 @@ export function m4_grounded(m){
             0, 1, 0, 0,
             z[0], z[1], z[2],0,
             0, 0, 0, 1];
-    
+
 }
 
 // this is faster if we can assume that x and z projections in y-plane are perpendicular
-export function m4_fastGrounded(m){
+export function m4_fastGrounded(m) {
     var x = v3_normalize([m[0], 0, m[2]]);
     var z = v3_normalize([m[8], 0, m[10]]);
     return [x[0], x[1], x[2], 0,
