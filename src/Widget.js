@@ -430,7 +430,7 @@ export class ElementWidget extends Widget {
     }
 
     get color() { return this._color; } // Null = transparent
-    get zIndex() { if (this._zIndex === undefined) { return 0; } return this._zIndex; }
+    get zIndex() { if (this._zIndex === undefined) { return 1; } return this._zIndex; }
 
     visiblityChanged() {
         this.draw();

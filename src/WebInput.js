@@ -200,7 +200,7 @@ export class WebInputManager extends NamedView {
         // // }
         const key = event.key;
         keys.add(key);
-        // console.log(keys);
+        // console.log(key);
         if (event.repeat) {
             this.publish("input", key + "Repeat", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
             this.publish("input", "keyRepeat", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});

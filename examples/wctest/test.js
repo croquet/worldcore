@@ -4,13 +4,14 @@
 
 import { Session } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, BoxWidget, Widget, TextWidget, ButtonWidget, IFrameWidget,
-    CanvasWidget, HorizontalWidget, VerticalWidget, ImageWidget, NineSliceWidget, ToggleWidget, ToggleSet, SliderWidget, TextFieldWidget, ControlWidget, v2_add, v2_sub, q_axisAngle, toRad, m4_rotationZ, m4_getRotation, m4_translation, m4_multiply, Actor, Pawn, mix, AM_Spatial, PM_Spatial, PM_AudioSource, AM_AudioSource } from "../worldcore";
+    CanvasWidget, HorizontalWidget, VerticalWidget, ImageWidget, NineSliceWidget, ToggleWidget, ToggleSet, SliderWidget, TextFieldWidget, ControlWidget, v2_add, v2_sub, q_axisAngle, toRad, m4_rotationZ, m4_getRotation, m4_translation, m4_multiply, Actor, Pawn, mix, AM_Spatial, PM_Spatial, AM_Smoothed, PM_Smoothed,
+    PM_AudioSource, AM_AudioSource, AM_Avatar, PM_Avatar, GetNamedView,
+    RenderManager, PM_Visible, UnitCube, Material, DrawCall, PawnManager, q_multiply  } from "../worldcore";
+//import * as worldcore from "../worldcore";
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
 import ttt from "./assets/test.svg";
 import photon from "./assets/Photon.mp3";
-import { AudioManagerView } from "../MazeWarz/src/AudioManagerView";
-
 
 
 //------------------------------------------------------------------------------------------
@@ -189,17 +190,13 @@ export class PaneWidget extends CanvasWidget {
 // MyActor
 //------------------------------------------------------------------------------------------
 
-class MyActor extends mix(Actor).with(AM_Spatial, AM_AudioSource) {
+class MyActor extends mix(Actor).with(AM_Avatar, AM_AudioSource) {
     init() {
-        console.log("Add actor");
         super.init("MyPawn");
-        this.setLocation([10,0,0]);
-
-        this.subscribe("test", "test1", this.test1);
+        this.subscribe("test", "test2", this.test2);
     }
 
-    test1() {
-        console.log("Actor test 1");
+    test2() {
         this.playSound(photon);
     }
 }
@@ -209,10 +206,19 @@ MyActor.register('MyActor');
 // MyPawn
 //------------------------------------------------------------------------------------------
 
-class MyPawn extends mix(Pawn).with(PM_Spatial, PM_AudioSource) {
+class MyPawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_AudioSource) {
     constructor(...args) {
-        console.log("Add pawn");
         super(...args);
+
+        this.cube = UnitCube();
+        this.cube.load();
+        this.cube.clear();
+
+        this.material = new Material();
+        this.material.pass = 'opaque';
+        this.material.texture.loadFromURL(diana);
+
+        this.setDrawCall(new DrawCall(this.cube, this.material));
     }
 
 }
@@ -225,7 +231,28 @@ MyPawn.register('MyPawn');
 class MyModelRoot extends ModelRoot {
     init() {
         super.init();
-        this.actor = MyActor.create();
+        console.log("ddddddffddd");
+
+        this.subscribe("test", "test1", this.test1);
+
+        this.future(0).tick(0);
+    }
+
+    test1() {
+        if (this.actor0) return;
+        console.log("Create!");
+        this.actor0 = MyActor.create();
+        this.actor0.setLocation([-2,0,-5]);
+    }
+
+    tick(delta) {
+        const q0 = q_axisAngle([0,0,1], 0.0007 * delta);
+        const q1 = q_axisAngle([0,1,0], -0.0011 * delta);
+        const q2 = q_axisAngle([1,0,0], 0.0017 * delta);
+        const q3 = q_axisAngle([0,1,0], -0.0029 * delta);
+        if (this.actor0) this.actor0.rotateTo(q_multiply(this.actor0.rotation, q_multiply(q0, q1)));
+        if (this.actor1) this.actor1.rotateTo(q_multiply(this.actor1.rotation, q_multiply(q2, q3)));
+        this.future(20).tick(20);
     }
 }
 MyModelRoot.register("MyModelRoot");
@@ -239,14 +266,6 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         console.log("Running view constructor!");
         super(model);
-
-        this.webInput = this.addManager(new WebInputManager());
-        this.ui = this.addManager(new UIManager());
-        this.ui.setScale(1);
-        this.audio = this.addManager(new AudioManager());
-
-
-
 
         // this.horizontal = new HorizontalWidget(this.ui.root, {size: [500,100], margin: 10, autoSize:[1,0]});
         // this.vertical = new VerticalWidget(this.ui.root, {size: [200,500], margin: 10, autoSize:[0,1]});
@@ -299,19 +318,46 @@ class MyViewRoot extends ViewRoot {
         // this.slider.onChange = p => {this.canvas2.set({opacity: p});};
 
         this.subscribe("input", "1Down", this.test1);
-        this.subscribe("input", "2Down", this.test2);
+        this.subscribe("input", " Down", this.test2);
         this.subscribe("ui", "mouse0Down", this.test3);
         this.subscribe("ui", "touchDown", this.test3);
         // this.subscribe("test", "spawn", this.spawnPane);
 
         layer = 10;
 
+        this.subscribe("input", "dDown", () => this.goRight(1));
+        this.subscribe("input", "dUp", () => this.goRight(0));
+        this.subscribe("input", "aDown", () => this.goLeft(-1));
+        this.subscribe("input", "aUp", () => this.goLeft(0));
+
+        this.right = 0;
+        this.left = 0;
+        this.up = 0;
+        this.down = 0;
+        this.spin = 0;
+        this.anti = 0;
     }
 
-    // spawnPane() {
-    //     layer += 10;
-    //     new PaneWidget(this.ui.root, {anchor: [0,0], pivot: [0,0], size: [400,400], local:[400,400], scale:1, zIndex: layer});
-    // }
+    createManagers() {
+        this.webInput = this.addManager(new WebInputManager());
+        this.render = this.addManager(new RenderManager());
+        this.ui = this.addManager(new UIManager());
+
+        this.audio = this.addManager(new AudioManager());
+        this.pawnManager = this.addManager(new PawnManager());
+
+        // Initial settings for managers should go in constructor.
+
+        this.ui.setScale(1);
+
+        this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
+        this.render.lights.setAmbientColor([0.7, 0.7, 0.7]);
+        this.render.lights.setDirectionalColor([0.2, 0.2, 0.2]);
+        this.render.lights.setDirectionalAim([0.2,0.1,-1]);
+        this.render.camera.setLocation(m4_translation([0,0,0])); // Unify camera with listener.
+        this.render.camera.setProjection(toRad(60), 1.0, 10000.0);
+
+    }
 
     test1() {
         console.log("test1");
@@ -320,7 +366,7 @@ class MyViewRoot extends ViewRoot {
 
     test2() {
         console.log("test2");
-        this.widget4.show();
+        this.publish("test", "test2");
     }
 
     test3() {
@@ -329,7 +375,23 @@ class MyViewRoot extends ViewRoot {
         // this.audioElement.play();
     }
 
+    goRight(x) {
+        const a0 = this.model.actor0;
+        if (!a0) return;
+        this.right = x;
+        const p0 = GetNamedView("PawnManager").get(a0.id);
+        p0.setVelocity([0.005 * (this.right + this.left), 0.005 * (this.up + this.down), 0]);
+    }
+
+    goLeft(x) {
+        const a0 = this.model.actor0;
+        if (!a0) return;
+        this.left = x;
+        const p0 = GetNamedView("PawnManager").get(a0.id);
+        p0.setVelocity([0.005 * (this.right + this.left), 0.005 * (this.up + this.down), 0]);
+    }
+
 }
 
 
-Session.join("game", MyModelRoot, MyViewRoot, {tps: "10"});
+Session.join("game", MyModelRoot, MyViewRoot, {tps: "50"});

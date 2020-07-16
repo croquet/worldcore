@@ -33,16 +33,6 @@ export class AudioManager extends NamedView {
         this.unsubscribe("input", "mouse0Down");
         this.unsubscribe("input", "touchDown");
 
-        // this.setListenerLocation(0,0,0);
-
-        // this.ddd = this.addSpatialSound(photon);
-        // this.removeSound(this.ddd);
-
-        // this.ddd = this.addSpatialSound(photon);
-        // this.ddd.setVolume(10);
-        // this.ddd.setLocation(-10,10,0);
-        // this.ddd.play();
-
     }
 
     destroy() {
@@ -60,7 +50,7 @@ export class AudioManager extends NamedView {
         let sound;
         if (this.spatialPool.length) {
             sound = this.spatialPool.pop();
-            sound.setSound(url);
+            sound.setURL(url);
         } else {
             sound = new SpatialSound(url);
         }
@@ -70,7 +60,7 @@ export class AudioManager extends NamedView {
     }
 
     removeSound(sound) {
-        sound.setSound(undefined);
+        sound.setURL(undefined);
         if (sound instanceof SpatialSound) {
             this.spatialPool.push(sound);
         }
@@ -109,6 +99,7 @@ class SpatialSound {
     }
 
     play() {
+        if (audioContext.state !== "running") return;
         this.audioElement.load();
         this.audioElement.play();
     }
@@ -167,6 +158,7 @@ export const PM_AudioSource = superclass => class extends superclass {
     destroy() {
         super.destroy();
         const audio = GetNamedView("AudioManager");
+        if (!audio) return;
         this.sounds.forEach(sound => {
             audio.removeSound(sound);
         });
@@ -199,7 +191,6 @@ export const PM_AudioSource = superclass => class extends superclass {
     }
 
     playSound(url) {
-        console.log("mixin play");
         this.addSound(url);
         const sound = this.sounds.get(url);
         sound.play();
