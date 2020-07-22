@@ -32,7 +32,6 @@ export class AudioManager extends NamedView {
 
         this.unsubscribe("input", "mouse0Down");
         this.unsubscribe("input", "touchDown");
-
     }
 
     destroy() {

@@ -40,9 +40,13 @@ ActorManager.register("ActorManager");
 //------------------------------------------------------------------------------------------
 
 export class Actor extends Model {
-    init(pawnType = 'Pawn') {
+
+    init(pawnType = 'Pawn', options) {
         super.init();
         this.pawnType = pawnType;
+        if (options) {
+            this.userId = options.userId;   // The viewId of the user that owns this actor.
+        }
         this.wellKnownModel('ActorManager').add(this);
         this.publish("actor", "createActor", this);
     }
@@ -62,9 +66,6 @@ export class Actor extends Model {
         this.subscribe(this.id, event, callback);
     }
 
-    setUser(viewId) {
-        this.userId = viewId;
-    }
 
 }
 Actor.register("Actor");

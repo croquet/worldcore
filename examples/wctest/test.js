@@ -7,7 +7,6 @@ import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, BoxWidge
     CanvasWidget, HorizontalWidget, VerticalWidget, ImageWidget, NineSliceWidget, ToggleWidget, ToggleSet, SliderWidget, TextFieldWidget, ControlWidget, v2_add, v2_sub, q_axisAngle, toRad, m4_rotationZ, m4_getRotation, m4_translation, m4_multiply, Actor, Pawn, mix, AM_Spatial, PM_Spatial, AM_Smoothed, PM_Smoothed,
     PM_AudioSource, AM_AudioSource, AM_Avatar, PM_Avatar, GetNamedView, UserList, ActorManager, User, PM_Camera,
     RenderManager, PM_Visible, UnitCube, Material, DrawCall, PawnManager, q_multiply, LocalUser, PM_AudioListener, q_isZero  } from "../worldcore";
-//import * as worldcore from "../worldcore";
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
 import ttt from "./assets/test.svg";
@@ -37,9 +36,7 @@ MyUser.register("MyUser");
 //------------------------------------------------------------------------------------------
 
 class ViewpointActor extends mix(Actor).with(AM_Avatar) {
-    init() {
-        super.init("ViewpointPawn");
-    }
+    init() { super.init("ViewpointPawn"); }
 
 }
 ViewpointActor.register('ViewpointActor');
@@ -51,16 +48,12 @@ ViewpointActor.register('ViewpointActor');
 class ViewpointPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_Camera) {
     constructor(...args) {
         super(...args);
-        // console.log("Viewpoint pawn created!");
-        // console.log("This is mine: " + this.isMine());
-        // console.log(this.global);
         const thisUser = GetNamedView('LocalUser');
         thisUser.pawn = this;
     }
 
     destroy() {
         super.destroy();
-        console.log("Viewpoint pawn destroyed!");
     }
 
 }
@@ -111,8 +104,6 @@ MyPawn.register('MyPawn');
 class MyModelRoot extends ModelRoot {
     init() {
         super.init();
-        console.log("ss");
-
         this.subscribe("test", "test1", this.test1);
 
         this.future(0).tick(0);
@@ -125,7 +116,6 @@ class MyModelRoot extends ModelRoot {
 
     test1() {
         if (this.actor0) return;
-        console.log("Create!");
         this.actor0 = MyActor.create();
         this.actor0.setLocation([0,0,-7]);
     }
@@ -149,10 +139,7 @@ MyModelRoot.register("MyModelRoot");
 
 class MyViewRoot extends ViewRoot {
     constructor(model) {
-        console.log("Running view constructor!");
         super(model);
-
-        console.log(this.localUser);
 
         this.ui.setScale(1);
 
@@ -162,8 +149,6 @@ class MyViewRoot extends ViewRoot {
         this.render.lights.setDirectionalAim([0.2,0.1,-1]);
         // this.render.camera.setLocation(m4_translation([0,0,0]));
         // this.render.camera.setProjection(toRad(60), 1.0, 10000.0);
-
-        console.log(this.viewId);
 
         // this.horizontal = new HorizontalWidget(this.ui.root, {size: [500,100], margin: 10, autoSize:[1,0]});
         // this.vertical = new VerticalWidget(this.ui.root, {size: [200,500], margin: 10, autoSize:[0,1]});
@@ -262,8 +247,6 @@ class MyViewRoot extends ViewRoot {
 
     test3() {
         console.log("test3");
-        // this.audioElement.load();
-        // this.audioElement.play();
     }
 
     goRight(x) {

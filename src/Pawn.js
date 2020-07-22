@@ -69,8 +69,8 @@ export class PawnManager extends NamedView {
         this.dynamic.delete(pawn);
     }
 
-    update(time) {
-        this.dynamic.forEach(pawn => pawn.update(time));
+    update(time, delta) {
+        this.dynamic.forEach(pawn => pawn.update(time, delta));
     }
 }
 
@@ -115,8 +115,10 @@ export class Pawn extends View {
         this.subscribe(this.actor.id, {event, handling: "oncePerFrame"}, callback);
     }
 
+    // If the actor is owned by a particular view, returns it viewId.
     get userId() { return this.actor.userId;}
 
+    // Returns true if the actor is owned by my view.
     isMine() {
         return this.userId === this.viewId;
     }
@@ -127,6 +129,8 @@ Pawn.register('Pawn');
 //------------------------------------------------------------------------------------------
 //-- PM_Dynamic ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Dynamic pawns get their update called every frame
 
 export const PM_Dynamic = superclass => class extends superclass {
     constructor(...args) {
@@ -139,7 +143,7 @@ export const PM_Dynamic = superclass => class extends superclass {
         super.destroy();
     }
 
-    update(time) {
+    update(time, delta) {
     }
 
 };
