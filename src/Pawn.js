@@ -115,6 +115,12 @@ export class Pawn extends View {
         this.subscribe(this.actor.id, {event, handling: "oncePerFrame"}, callback);
     }
 
+    get userId() { return this.actor.userId;}
+
+    isMine() {
+        return this.userId === this.viewId;
+    }
+
 }
 Pawn.register('Pawn');
 

@@ -64,10 +64,12 @@ export class User extends Model {
     init(viewID) {
         super.init();
         this.viewId = viewID;
+        this.onJoin();
         this.say("joined", this);
     }
 
     destroy() {
+        this.onExit();
         this.say("exited");
         super.destroy();
     }
@@ -83,8 +85,11 @@ export class User extends Model {
     changed(state) {
         this.say("changed", state);
     }
+
+    onJoin() {}
+    onExit() {}
 }
-User.register("UserBase");
+User.register("User");
 
 //------------------------------------------------------------------------------------------
 //-- LocalUser ------------------------------------------------------------------------------

@@ -62,5 +62,9 @@ export class Actor extends Model {
         this.subscribe(this.id, event, callback);
     }
 
+    setUser(viewId) {
+        this.userId = viewId;
+    }
+
 }
 Actor.register("Actor");

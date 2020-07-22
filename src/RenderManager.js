@@ -1,6 +1,7 @@
 import { MainDisplay, Scene, Camera, Lights, GeometryBuffer, Framebuffer, SharedStencilFramebuffer, GetGLVersion, SetGLCamera, SetGLPipeline, StartStencilCapture, EndStencil, StartStencilApply } from "./Render";
 import { BasicShader, DecalShader, TranslucentShader, InstancedShader, GeometryShader, InstancedGeometryShader, TranslucentGeometryShader, PassthruShader, BlendShader, AOShader, InstancedDecalShader } from "./Shaders";
 import { NamedView, GetNamedView } from "./NamedView";
+import {toRad } from "./Vector";
 
 
 //------------------------------------------------------------------------------------------
@@ -33,6 +34,23 @@ export const PM_Visible = superclass => class extends superclass {
         this.draw = draw;
         this.draw.transform.set(this.global);
         if (this.draw) scene.addDrawCall(this.draw);
+    }
+
+};
+
+export const PM_Camera = superclass => class extends superclass {
+    constructor(...args) {
+        super(...args);
+        const render = GetNamedView("RenderManager");
+        render.camera.setLocation(this.global);
+        render.camera.setProjection(toRad(60), 1.0, 10000.0);
+    }
+
+    refresh() {
+        super.refresh();
+        const render = GetNamedView("RenderManager");
+        render.camera.setLocation(this.global);
+        render.camera.setProjection(toRad(60), 1.0, 10000.0);
     }
 
 };

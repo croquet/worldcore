@@ -483,8 +483,8 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
     update(time) {
         if (this.isRotating) this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
-        if (this.isMoving){
-            let lastLoc = this._location;
+        if (this.isMoving) {
+            const lastLoc = this._location;
             this._location = this.verify(v3_add(this._location, v3_scale(this.velocity, GetViewDelta())), lastLoc);
         }
         super.update(time);

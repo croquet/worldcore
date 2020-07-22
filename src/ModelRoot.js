@@ -10,6 +10,10 @@ export class ModelRoot extends Model {
         super.init();
         console.log("Starting model ...");
         this.managers = new Set();
+        this.createManagers();
+    }
+
+    createManagers() {
         this.actorManager = this.addManager(ActorManager.create());
     }
 

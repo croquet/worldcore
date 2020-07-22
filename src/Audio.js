@@ -1,5 +1,5 @@
 import { NamedView, GetNamedView} from "./NamedView";
-import { m4_identity, m4_translation, m4_getTranslation, m4_getRotation} from "./Vector";
+import { m4_identity, m4_translation, m4_getTranslation, m4_getRotation, m4_rotationQ, v3_transform} from "./Vector";
 import { RegisterMixin } from "./Mixins";
 import photon from "../assets/Photon.mp3";
 
@@ -42,8 +42,14 @@ export class AudioManager extends NamedView {
         audioResonance = null;
     }
 
-    setListenerLocation(v) {
-        audioResonance.setListenerPosition(...v);
+    setListenerPosition(m) {
+        const location = m4_getTranslation(m);
+        const rotation = m4_getRotation(m);
+        const rotationMatrix = m4_rotationQ(rotation);
+        const up = v3_transform([0, 1, 0], rotationMatrix);
+        const forward = v3_transform([0, 0, 1], rotationMatrix);
+        audioResonance.setListenerPosition(...location);
+        audioResonance.setListenerOrientation(...forward, ...up);
     }
 
     addSpatialSound(url) {
@@ -113,7 +119,8 @@ class SpatialSound {
 export const PM_AudioListener = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        GetNamedView("AudioManager");
+        const audio = GetNamedView("AudioManager");
+        audio.setListenerPosition(this.global);
     }
 
     destroy() {
@@ -124,9 +131,7 @@ export const PM_AudioListener = superclass => class extends superclass {
     refresh() {
         super.refresh();
         const audio = GetNamedView("AudioManager");
-        const location = m4_getTranslation(this.global);
-        const rotation = m4_getRotation(this.global);
-        audio.setListenerLocation(...location);
+        audio.setListenerPosition(this.global);
     }
 
 };
