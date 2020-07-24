@@ -119,7 +119,7 @@ export class Pawn extends View {
     get userId() { return this.actor.userId;}
 
     // Returns true if the actor is owned by my view.
-    isMine() {
+    get isMine() {
         return this.userId === this.viewId;
     }
 

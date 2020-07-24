@@ -4,7 +4,7 @@ import { GetNamedView } from "./NamedView";
 import { PM_Dynamic } from "./Pawn";
 import { GetViewDelta } from "./ViewRoot";
 import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_fastGrounded } from  "./Vector";
+    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_fastGrounded, v3_transform } from  "./Vector";
 
 // Mixin
 //
@@ -178,6 +178,7 @@ export const PM_Tree = superclass => class extends superclass {
 
 export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
     init(...args) {
+        // super.init(...args);
         this.scale = v3_unit();
         this.rotation = q_identity();
         this.location = v3_zero();
@@ -429,17 +430,21 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
 
     tick(delta) {
         if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
-        if (this.isMoving){
-            let lastLoc = this.location;
-            this.moveTo(this.verify(v3_add(this.location, v3_scale(this.velocity, delta)), lastLoc));
+        if (this.isMoving) {
+            // let lastLoc = this.location;
+            // this.moveTo(this.verify(v3_add(this.location, v3_scale(this.velocity, delta)), lastLoc));
+
+            const relative = v3_scale(this.velocity, delta); ///???
+            const move = v3_transform(relative, m4_rotationQ(this.rotation));
+            this.moveTo(v3_add(this.location, move));
         }
-        if(!this.doomed)this.future(this.avatar_tickStep).tick(this.avatar_tickStep);
+        if (!this.doomed) this.future(this.avatar_tickStep).tick(this.avatar_tickStep);
     }
     // Enables the subclass to ensure that this change is valid
     // Example - collision with a wall will change the result
-    verify(loc, lastLoc){
-        return loc;
-    }
+    // verify(loc, lastLoc){
+    //     return loc;
+    // }
 };
 RegisterMixin(AM_Avatar);
 
@@ -483,18 +488,23 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
     update(time) {
         if (this.isRotating) this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
-        if (this.isMoving) {
-            const lastLoc = this._location;
-            this._location = this.verify(v3_add(this._location, v3_scale(this.velocity, GetViewDelta())), lastLoc);
+        // if (this.isMoving) {
+        //     const lastLoc = this._location;
+        //     this._location = this.verify(v3_add(this._location, v3_scale(this.velocity, GetViewDelta())), lastLoc);
+        // }
+        if (this.isMoving)  {
+            const relative = v3_scale(this.velocity, GetViewDelta());
+            const move = v3_transform(relative, m4_rotationQ(this.rotation));
+            this._location = v3_add(this._location, move);
         }
         super.update(time);
     }
 
     // Enables the subclass to ensure that this change is valid
     // Example - collision with a wall will change the result
-    verify(loc, lastLoc){
-        return loc;
-    }
+    // verify(loc, lastLoc){
+    //     return loc;
+    // }
 };
 
 

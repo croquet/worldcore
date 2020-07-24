@@ -21,8 +21,18 @@ export class AudioManager extends NamedView {
         this.spatialPool = [];
         this.staticPool = [];
 
+        this.subscribe("input", "focus", this.focus);
+        this.subscribe("input", "blur", this.blur);
         this.subscribe("input", "mouse0Down", this.start);
         this.subscribe("input", "touchDown", this.start);
+    }
+
+    focus() {
+        audioContext.resume();
+    }
+
+    blur() {
+        audioContext.suspend();
     }
 
     start() {
@@ -45,7 +55,7 @@ export class AudioManager extends NamedView {
         const location = m4_getTranslation(m);
         const rotation = m4_getRotation(m);
         const rotationMatrix = m4_rotationQ(rotation);
-        const up = v3_transform([0, 1, 0], rotationMatrix);
+        const up = v3_transform([0, -1, 0], rotationMatrix);
         const forward = v3_transform([0, 0, 1], rotationMatrix);
         audioResonance.setListenerPosition(...location);
         audioResonance.setListenerOrientation(...forward, ...up);
@@ -119,7 +129,8 @@ export const PM_AudioListener = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
         const audio = GetNamedView("AudioManager");
-        audio.setListenerPosition(this.global);
+        if (this.isMine) this.refreshAudioPosition();
+        // this.subscribe("input", "focus", this.refreshAudio);
     }
 
     destroy() {
@@ -127,10 +138,14 @@ export const PM_AudioListener = superclass => class extends superclass {
         super.destroy();
     }
 
-    refresh() {
-        super.refresh();
+    refreshAudioPosition() {
         const audio = GetNamedView("AudioManager");
         audio.setListenerPosition(this.global);
+    }
+
+    refresh() {
+        super.refresh();
+        if (this.isMine) this.refreshAudioPosition();
     }
 
 };
@@ -142,9 +157,12 @@ export const PM_AudioListener = superclass => class extends superclass {
 //-- Actor ---------------------------------------------------------------------------------
 
 export const AM_AudioSource = superclass => class extends superclass {
+    init(...args) {
+        super.init(...args);
+    }
 
     playSound(url) {
-        this.say("audio_playSound", url);
+        this.say("playSound", url);
     }
 
 };
@@ -156,7 +174,7 @@ export const PM_AudioSource = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
         this.sounds = new Map();
-        this.listen("audio_playSound", this.playSound);
+        this.listen("playSound", this.playSound);
     }
 
     destroy() {

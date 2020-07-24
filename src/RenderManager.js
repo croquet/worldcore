@@ -1,7 +1,7 @@
 import { MainDisplay, Scene, Camera, Lights, GeometryBuffer, Framebuffer, SharedStencilFramebuffer, GetGLVersion, SetGLCamera, SetGLPipeline, StartStencilCapture, EndStencil, StartStencilApply } from "./Render";
 import { BasicShader, DecalShader, TranslucentShader, InstancedShader, GeometryShader, InstancedGeometryShader, TranslucentGeometryShader, PassthruShader, BlendShader, AOShader, InstancedDecalShader } from "./Shaders";
 import { NamedView, GetNamedView } from "./NamedView";
-import {toRad } from "./Vector";
+import {toRad, m4_identity, m4_multiply } from "./Vector";
 
 
 //------------------------------------------------------------------------------------------
@@ -25,15 +25,18 @@ export const PM_Visible = superclass => class extends superclass {
 
     refresh() {
         super.refresh();
-        this.draw.transform.set(this.global);
+        if (this.draw) this.draw.transform.set(this.global);
     }
 
     setDrawCall(draw) {
         const scene = GetNamedView('RenderManager').scene;
         if (this.draw) scene.removeDrawCall(this.draw);
         this.draw = draw;
-        this.draw.transform.set(this.global);
-        if (this.draw) scene.addDrawCall(this.draw);
+        if (this.draw) {
+            this.draw.transform.set(this.global);
+            scene.addDrawCall(this.draw);
+        }
+
     }
 
 };
@@ -41,17 +44,29 @@ export const PM_Visible = superclass => class extends superclass {
 export const PM_Camera = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        const render = GetNamedView("RenderManager");
-        render.camera.setLocation(this.global);
-        render.camera.setProjection(toRad(60), 1.0, 10000.0);
+        if (this.isMine) {
+            this.setOffset(m4_identity());
+            const render = GetNamedView("RenderManager");
+            const m = m4_multiply(this.global, this.offset);
+            render.camera.setLocation(m);
+            render.camera.setProjection(toRad(60), 1.0, 10000.0);
+        }
     }
 
     refresh() {
         super.refresh();
+        if (!this.isMine) return;
         const render = GetNamedView("RenderManager");
-        render.camera.setLocation(this.global);
+        const m = m4_multiply(this.global, this.offset);
+        render.camera.setLocation(m);
         render.camera.setProjection(toRad(60), 1.0, 10000.0);
     }
+
+    setOffset(m) {
+        this.offset = m;
+        this.needRefresh = true;
+    }
+
 
 };
 

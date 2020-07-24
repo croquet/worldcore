@@ -46,6 +46,8 @@ export class WebInputManager extends NamedView {
 
         this.addListener(document, 'contextmenu', e => e.preventDefault());
         this.addListener(window, 'resize', e => this.onResize(e));
+        this.addListener(window, 'focus', e => this.onFocus(e));
+        this.addListener(window, 'blur', e => this.onBlur(e));
 
         if ('ontouchstart' in document.documentElement) {
             this.addListener(document,'touchstart', e => this.onTouchStart(e));
@@ -188,6 +190,14 @@ export class WebInputManager extends NamedView {
 
     futureResize() {
         this.publish("input", "resize");
+    }
+
+    onFocus(event) {
+        this.publish("input", "focus");
+    }
+
+    onBlur(event) {
+        this.publish("input", "blur");
     }
 
     // publishes  both keyDown + arg and "xDown" where "x" is the key

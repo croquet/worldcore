@@ -1052,18 +1052,22 @@ export class ButtonWidget extends ControlWidget {
         if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
         this.isPressed = true;
         this.focus();
+        this.onPress();
         return true;
     }
 
     release(xy) {
         this.isPressed = false;
         this.blur();
+        this.onRelease();
         if (this.inside(xy)) this.onClick();
     }
 
     // Called when the user presses and releases the button.
 
     onClick() {}
+    onPress() {}
+    onRelease() {}
 
 }
 
