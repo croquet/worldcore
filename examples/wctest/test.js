@@ -16,20 +16,20 @@ import photon from "./assets/Photon.mp3";
 // User
 //------------------------------------------------------------------------------------------
 
-class MyUser extends User {
+// class MyUser extends User {
 
-    onJoin() {
-        this.viewpoint = ViewpointActor.create();
-        this.viewpoint.setUser(this.viewId);
-        this.viewpoint.setLocation([0,0,0]);
-        this.viewpoint.setRotation(q_axisAngle([0,1,0], toRad(15)));
-    }
+//     onJoin() {
+//         this.viewpoint = ViewpointActor.create();
+//         this.viewpoint.setUser(this.viewId);
+//         this.viewpoint.setLocation([0,0,0]);
+//         this.viewpoint.setRotation(q_axisAngle([0,1,0], toRad(15)));
+//     }
 
-    onExit() {
-        this.viewpoint.destroy();
-    }
-}
-MyUser.register("MyUser");
+//     onExit() {
+//         this.viewpoint.destroy();
+//     }
+// }
+// MyUser.register("MyUser");
 
 //------------------------------------------------------------------------------------------
 // ViewpointActor
@@ -147,8 +147,8 @@ class MyViewRoot extends ViewRoot {
         this.render.lights.setAmbientColor([0.7, 0.7, 0.7]);
         this.render.lights.setDirectionalColor([0.2, 0.2, 0.2]);
         this.render.lights.setDirectionalAim([0.2,0.1,-1]);
-        // this.render.camera.setLocation(m4_translation([0,0,0]));
-        // this.render.camera.setProjection(toRad(60), 1.0, 10000.0);
+        this.render.camera.setLocation(m4_translation([0,0,0]));
+        this.render.camera.setProjection(toRad(60), 1.0, 10000.0);
 
         // this.horizontal = new HorizontalWidget(this.ui.root, {size: [500,100], margin: 10, autoSize:[1,0]});
         // this.vertical = new VerticalWidget(this.ui.root, {size: [200,500], margin: 10, autoSize:[0,1]});
