@@ -46,6 +46,7 @@ export class Actor extends Model {
         this.pawnType = pawnType;
         if (options) {
             this.userId = options.userId;   // The viewId of the user that owns this actor.
+
         }
         this.wellKnownModel('ActorManager').add(this);
         this.publish("actor", "createActor", this);
