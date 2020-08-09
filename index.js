@@ -17,5 +17,5 @@ export * from "./src/WebInput";
 export * from "./src/Widget";
 export * from "./src/Render";
 export * from "./src/RenderManager";
-export * from "./src/ThreeRender";
+export * from "./src/ThreeRenderManager";
 export * from "./src/Audio";
