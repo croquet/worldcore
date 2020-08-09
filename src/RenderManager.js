@@ -44,8 +44,8 @@ export const PM_Visible = superclass => class extends superclass {
 export const PM_Camera = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        if (this.isMine) {
-            this.setOffset(m4_identity());
+        if (this.isMyPlayerPawn) {
+            this.setCameraOffset(m4_identity());
             const render = GetNamedView("RenderManager");
             const m = m4_multiply(this.global, this.offset);
             render.camera.setLocation(m);
@@ -55,14 +55,14 @@ export const PM_Camera = superclass => class extends superclass {
 
     refresh() {
         super.refresh();
-        if (!this.isMine) return;
+        if (!this.isMyPlayerPawn) return;
         const render = GetNamedView("RenderManager");
         const m = m4_multiply(this.global, this.offset);
         render.camera.setLocation(m);
         render.camera.setProjection(toRad(60), 1.0, 10000.0);
     }
 
-    setOffset(m) {
+    setCameraOffset(m) {
         this.offset = m;
         this.needRefresh = true;
     }

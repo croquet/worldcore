@@ -26,11 +26,14 @@ export class PlayerManager extends Model {
         if (!PlayerManager.playerType) return;
         const player = PlayerManager.playerType.create({playerId: viewId});
         this.players.set(viewId, player);
+        this.subscribe(player.id, "playerChanged", this.playerChanged);
         this.listChanged();
     }
 
     exit(viewId) {
-        this.players.get(viewId).destroy();
+        const player = this.players.get(viewId);
+        this.unsubscribe(player.id, "playerChanged");
+        player.destroy();
         this.players.delete(viewId);
         this.listChanged();
     }
@@ -40,7 +43,11 @@ export class PlayerManager extends Model {
     }
 
     listChanged() {
-        this.publish("playerManager", "playersChanged");
+        this.publish("playerManager", "listChanged");
+    }
+
+    playerChanged() {
+        this.publish("playerManager", "playerChanged");
     }
 
 }
@@ -69,13 +76,29 @@ export const AM_Player = superclass => class extends superclass {
         super.init(pawnType, options);
     }
 
+    playerChanged() {
+        this.say("playerChanged");
+    }
+
 };
 RegisterMixin(AM_Player);
 
 //-- Pawn ----------------------------------------------------------------------------------
 
+// It's ok for there to be multiple pawns to be declared as player pawns. This way you can have a player
+// pawn with multiple sub-pawns that all can check if they belong to the local player.
+
 export const PM_Player = superclass => class extends superclass {
 
-    get isMyPlayerPawn() { return (this.actor.playerId === this.viewId); }
+    // Returns true if the pawn or any parent is owned by the local player.
+
+    get isMyPlayerPawn() {
+        let p = this;
+        do {
+            if (p.actor.playerId === p.viewId) return true;
+            p = p.parent;
+        } while (p);
+        return false;
+    }
 
 };

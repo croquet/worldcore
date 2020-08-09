@@ -12,7 +12,7 @@ export * from "./src/ViewAssetCache";
 
 // Optional modules
 
-export * from "./src/User";
+// export * from "./src/User";
 export * from "./src/WebInput";
 export * from "./src/Widget";
 export * from "./src/Render";
