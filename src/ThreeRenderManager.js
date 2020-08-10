@@ -42,6 +42,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
         this.pawn3D = object3D;
         this.pawn3D.matrixAutoUpdate = false;
         this.pawn3D.matrix.fromArray(this.global); 
+        this.pawn3D.matrixWorldNeedsUpdate = true;
         render.scene.add(this.pawn3D);
     }
 
