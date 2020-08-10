@@ -15,23 +15,34 @@ export const PM_ThreeVisible = superclass => class extends superclass {
         // and we know who our parent is.
         //const render = GetNamedView("ThreeRenderManager");
         // Put code here to destroy the model in the render manager.
-        this.pawn3D.parent.remove(this.pawn3D);
+        if(this.pawn3D)this.pawn3D.parent.remove(this.pawn3D);
     }
 
     refresh() {
         super.refresh();
-        const render = GetNamedView("ThreeRenderManager");
+        //const render = GetNamedView("ThreeRenderManager");
         // Put code here to update the 4x4 transform of the model in the render manager.
         // this.global is a 4x4 matrix
-        this.pawn3D.fromArray(this.global); 
+        // console.log("PM_ThreeVisible.refresh()", this.global)
+        if(this.pawn3D){
+            this.pawn3D.matrix.fromArray(this.global); 
+            this.pawn3D.matrixWorldNeedsUpdate = true;
+        }
     }
 
     setRenderObject(object3D) {
-        // const render = GetNamedView("ThreeRenderManager");
+        //console.log("PM_ThreeVisible.setRenderObject", object3D)
+        const render = GetNamedView("ThreeRenderManager");
+        if(this.pawn3D){
+            this.pawn3D.parent.remove(this.pawn3D);
+            disposeObjectTree(this.pawn3D);
+        }
         // Put code here to instantiate the model in the three render manager.
         // You probably also want to the set the transform to this.global
         this.pawn3D = object3D;
+        this.pawn3D.matrixAutoUpdate = false;
         this.pawn3D.matrix.fromArray(this.global); 
+        render.scene.add(this.pawn3D);
     }
 
 };
@@ -39,20 +50,34 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 export const PM_ThreeCamera = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        if (this.isMine) {
-            const render = GetNamedView("ThreeRenderManager");
+
+        if (this.isMyPlayerPawn) {
+             const render = GetNamedView("ThreeRenderManager");
             // Put code here to initialize the camera transform to this.global
             render.camera.matrix.fromArray(this.global);
+            render.camera.matrixAutoUpdate = false;
+            render.camera.matrix.fromArray(this.global); 
+            render.camera.matrixWorldNeedsUpdate = true;
+            //render.camera.rotation.y = Math.PI;
         }
     }
 
     refresh() {
         super.refresh();
-        if (!this.isMine) return;
+        if (!this.isMyPlayerPawn) return;
+        // console.log("PM_ThreeCamera.refresh()", this.global)
         const render = GetNamedView("ThreeRenderManager");
-        // Put code to to update the camera transform in the render manager when this.global changes.
+        // Put code to update the camera transform in the render manager when this.global changes.
         render.camera.matrix.fromArray(this.global);
+        render.camera.matrixWorldNeedsUpdate = true;
+        // console.log(render.camera.matrix)
     }
+
+    setCameraOffset(m) {
+        this.offset = m;
+        this.needRefresh = true;
+    }
+
 };
 
 //------------------------------------------------------------------------------------------
@@ -66,16 +91,16 @@ export class ThreeRenderManager extends NamedView {
         super("ThreeRenderManager");
         // Put code here to initialize the three.js renderer.
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color( 0xaa4444 );
-        this.scene.fog = new THREE.FogExp2( 0xaa4444, 0.0525 );
-        this.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        this.scene.background = new THREE.Color( 0x4444cc );
+        //this.scene.fog = new THREE.FogExp2( 0x4444cc, 0.0525 );
+        this.scene.add(new THREE.AmbientLight(0x555555, 0.5));
         const light = new THREE.PointLight(0xffffff, 1);
-        light.position.set(50, 50, 50);
+        light.position.set(25, 25, 25);
         this.scene.add(light);
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
         const threeCanvas = document.getElementById("three");
         this.renderer = new THREE.WebGLRenderer({ canvas: threeCanvas });
-        this.renderer.setClearColor(0xaa4444);
+        this.renderer.setClearColor(0x4444aa);
     }
 
     destroy() {
@@ -83,7 +108,7 @@ export class ThreeRenderManager extends NamedView {
         disposeObjectTree(this.scene);
         this.scene = null;
         this.camera = null;
-        this.renderer.parentNode.removeChild(this.renderer);
+        //this.renderer.parentNode.removeChild(this.renderer);
         this.renderer = null;
     }
 
@@ -125,7 +150,7 @@ export function disposeObject(obj, removeFromParent = true, destroyGeometry = tr
         })
 }
 
-DisposeOptions = {
+var DisposeOptions = {
     removeFromParent: true,
     destroyGeometry: true,
     destroyMaterial: true,
