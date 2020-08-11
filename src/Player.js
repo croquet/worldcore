@@ -19,6 +19,7 @@ export class PlayerManager extends Model {
     }
 
     destroy() {
+        super.destroy();
         this.players = null;
     }
 

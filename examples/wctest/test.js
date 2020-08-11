@@ -4,8 +4,9 @@
 
 import { Session } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_translation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,
-    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, PawnManager, q_multiply, PlayerManager, AM_Player, PM_Player } from "../worldcore";
+    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, PawnManager, q_multiply, PlayerManager, AM_Player, PM_Player } from "@croquet/worldcore";
 import diana from "./assets/diana.jpg";
+// import { RapierPhysicsManager } from "../wc_demo1/node_modules/@croquet/worldcore/src/RapierPhysics";
 
 //------------------------------------------------------------------------------------------
 // MyActor
@@ -43,7 +44,7 @@ class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible, PM_Player) {
 
         this.material = new Material();
         this.material.pass = 'opaque';
-        this.material.texture.loadFromURL(diana);
+        // this.material.texture.loadFromURL(diana);
 
         this.setDrawCall(new DrawCall(this.cube, this.material));
 
@@ -70,6 +71,7 @@ class MyModelRoot extends ModelRoot {
 
     createManagers() {
         this.playerManager = this.addManager(PlayerManager.create());
+        // this.phyicsManager = this.addManager(RapierPhysicsManager.create());
         this.actorManager = this.addManager(ActorManager.create());
     }
 }
