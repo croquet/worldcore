@@ -129,7 +129,7 @@ export const PM_AudioListener = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
         const audio = GetNamedView("AudioManager");
-        if (this.isMine) this.refreshAudioPosition();
+        if (this.isMyPlayerPawn) this.refreshAudioPosition();
         // this.subscribe("input", "focus", this.refreshAudio);
     }
 
@@ -145,7 +145,7 @@ export const PM_AudioListener = superclass => class extends superclass {
 
     refresh() {
         super.refresh();
-        if (this.isMine) this.refreshAudioPosition();
+        if (this.isMyPlayerPawn) this.refreshAudioPosition();
     }
 
 };

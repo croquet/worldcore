@@ -14,7 +14,7 @@ export class RapierPhysicsManager extends Model {
     init() {
         super.init();
         this.beWellKnownAs('RapierPhysicsManager');
-        this.world = new RAPIER.World(0.0, -9.81, 0.0);
+        // this.world = new RAPIER.World(0.0, -9.81, 0.0);
     }
 
     destroy() {
