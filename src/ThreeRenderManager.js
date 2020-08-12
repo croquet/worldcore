@@ -57,7 +57,6 @@ export const PM_ThreeCamera = superclass => class extends superclass {
             // Put code here to initialize the camera transform to this.global
             render.camera.matrix.fromArray(this.global);
             render.camera.matrixAutoUpdate = false;
-            render.camera.matrix.fromArray(this.global); 
             render.camera.matrixWorldNeedsUpdate = true;
             //render.camera.rotation.y = Math.PI;
         }
@@ -98,6 +97,10 @@ export class ThreeRenderManager extends NamedView {
         this.renderer = new THREE.WebGLRenderer({ canvas: threeCanvas });
         this.renderer.setClearColor(0x4444aa);
         this.renderer.shadowMap.enabled = true;
+        const light = new THREE.PointLight(0xffffff, 1);
+        light.position.set(50, 50, 50);
+        this.scene.add(light);
+        console.log(this.scene)
     }
 
     destroy() {
