@@ -2,9 +2,10 @@
   "name": "@croquet/wctest",
   "version": "0.0.1",
   "description": "Worldcore Testbed",
-  "main": "test-ael.js",
+  "main": "test.js",
   "scripts": {
-    "start": "parcel test.html"
+    "start": "webpack-dev-server --mode development --devtool source-map --watch",
+    "build": "webpack --mode production"
   },
   "browserslist": [
     "> 5%"
@@ -12,9 +13,15 @@
   "author": "Croquet Studios",
   "license": "ISC",
   "dependencies": {
-    "@croquet/croquet": "^0.3.3"
+    "@croquet/croquet": "^0.3.3",
+    "@croquet/worldcore": "file:../..",
+    "@dimforge/rapier3d": "^0.1.6"
   },
   "devDependencies": {
-    "parcel": "^1.12.4"
+    "file-loader": "^6.0.0",
+    "html-webpack-plugin": "^4.3.0",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
   }
 }
