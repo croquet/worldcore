@@ -42,6 +42,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
         this.pawn3D = object3D;
         this.pawn3D.matrixAutoUpdate = false;
         this.pawn3D.matrix.fromArray(this.global); 
+        this.pawn3D.matrixWorldNeedsUpdate = true;
         render.scene.add(this.pawn3D);
     }
 
@@ -56,7 +57,6 @@ export const PM_ThreeCamera = superclass => class extends superclass {
             // Put code here to initialize the camera transform to this.global
             render.camera.matrix.fromArray(this.global);
             render.camera.matrixAutoUpdate = false;
-            render.camera.matrix.fromArray(this.global); 
             render.camera.matrixWorldNeedsUpdate = true;
             //render.camera.rotation.y = Math.PI;
         }
@@ -91,16 +91,16 @@ export class ThreeRenderManager extends NamedView {
         super("ThreeRenderManager");
         // Put code here to initialize the three.js renderer.
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color( 0x4444cc );
-        //this.scene.fog = new THREE.FogExp2( 0x4444cc, 0.0525 );
-        this.scene.add(new THREE.AmbientLight(0x555555, 0.5));
-        const light = new THREE.PointLight(0xffffff, 1);
-        light.position.set(25, 25, 25);
-        this.scene.add(light);
+       // this.scene.add(new THREE.AmbientLight(0x444444));
         this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
         const threeCanvas = document.getElementById("three");
         this.renderer = new THREE.WebGLRenderer({ canvas: threeCanvas });
         this.renderer.setClearColor(0x4444aa);
+        this.renderer.shadowMap.enabled = true;
+        const light = new THREE.PointLight(0xffffff, 1);
+        light.position.set(50, 50, 50);
+        this.scene.add(light);
+        console.log(this.scene)
     }
 
     destroy() {
@@ -115,6 +115,10 @@ export class ThreeRenderManager extends NamedView {
     update() {
         // This gets called every frame. This is where you draw the whole scene.
         this.renderer.render(this.scene, this.camera); 
+    }
+
+    setShadow(bool){
+        this.renderer.shadowMap.enabled = bool;
     }
 
 }
