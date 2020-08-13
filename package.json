@@ -10,7 +10,8 @@
   "author": "Brian Upton",
   "license": "ISC",
   "dependencies": {
-    "@croquet/croquet": "^0.3.3"
+    "@croquet/croquet": "^0.3.3",
+    "@dimforge/rapier3d": "^0.1.6"
   },
   "devDependencies": {
     "eslint": "^5.14.1",
