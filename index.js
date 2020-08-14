@@ -6,7 +6,7 @@ export * from "./src/ModelRoot";
 export * from "./src/NamedView";
 export * from "./src/Pawn";
 export * from "./src/Player";
-export * from "./src/RapierPhysics";
+// export * from "./src/RapierPhysics";
 export * from "./src/Vector";
 export * from "./src/ViewRoot";
 export * from "./src/ViewAssetCache";
