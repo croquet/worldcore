@@ -15,7 +15,7 @@
   "dependencies": {
     "@croquet/croquet": "^0.3.3",
     "@croquet/worldcore": "file:../..",
-    "@dimforge/rapier3d": "^0.1.6"
+    "@dimforge/rapier3d": "^0.1.7"
   },
   "devDependencies": {
     "file-loader": "^6.0.0",
