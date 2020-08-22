@@ -16,9 +16,6 @@ load();
 //-- RapierPhysicsManager ------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-let rb;
-let c;
-
 // Maintains a list of players connected to the session.
 
 export class RapierPhysicsManager extends Model {
@@ -28,55 +25,19 @@ export class RapierPhysicsManager extends Model {
             "RAPIER.World": {
                 cls: RAPIER.World,
                 write: world => world.takeSnapshot(),
-                read: snapshot => {
-                    const world = RAPIER.World.restoreSnapshot(snapshot);
-                    // // provide a mapping solely for use in reading objects
-                    // world._bodyMap = new Map();
-                    // world._colliderMap = new Map();
-                    // // world._jointMap = new Map();
-                    // world.forEachRigidBody(body => { body.world = world; world._bodyMap.set(body.handle(), body); });
-                    // world.forEachCollider(collider => { collider.world = world; world._colliderMap.set(collider.handle(), collider); });
-                    // // world.forEachJoint(joint => { joint.world = world; world._jointMap.set(joint.handle(), joint); });
-                    return world;
-                },
+                read:  snapshot => RAPIER.World.restoreSnapshot(snapshot)
             }
         };
     }
 
     init() {
         super.init();
-        console.log("Starting rapier physics!!!!!!!!");
+        console.log("Starting rapier physics");
         this.beWellKnownAs('RapierPhysicsManager');
-        this.world = new RAPIER.World(0.0, -9.8, 0.0);
-        console.log(RAPIER);
-        console.log(this.world);
-        this.world.timestep = 0.02;
-        console.log(this.world.timestep);
-
-        this.world.step();
-
-        // const rbd = new RAPIER.RigidBodyDesc('dynamic');
-        // rbd.setTranslation(0, 0, 0);
-        // console.log(rbd);
-
-        // rb = this.world.createRigidBody(rbd);
-        // console.log(rb);
-
-        // this.rbh = rb.handle();
-
-        // const cd = RAPIER.ColliderDesc.ball(5);
-        // cd.density = 1;
-        // c = rb.createCollider(cd);
-
-        //this.future(20).tick();
-
-        // this.world.removeRigidBody(rb);
-
-        this.subscribe("input", "dDown", this.start);
-    }
-
-    start()  {
-        this.future(20).tick();
+        this.world = new RAPIER.World(0.0, -10, 0.0);
+        this.timeStep = 50; // In ms
+        this.world.timestep = this.timeStep / 1000;
+        this.future(0).tick();
     }
 
     destroy() {
@@ -86,23 +47,16 @@ export class RapierPhysicsManager extends Model {
 
     tick() {
         this.world.step();
-        // const pointer = this.world.getRigidBody(this.rbh);
-        // const t = pointer.translation();
-        // console.log(t.y);
-        this.future(20).tick();
+        this.future(this.timeStep).tick();
     }
-
 
 }
 RapierPhysicsManager.register("RapierPhysicsManager");
 
 
 //------------------------------------------------------------------------------------------
-//-- RapierPhysics --------------------------------------------------------------------------------
+//-- RapierPhysics -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-// The player actor is automatically created whenever a player joins. You should only ever
-// declare one actor as the player actor.
 
 //-- Actor ---------------------------------------------------------------------------------
 
@@ -110,34 +64,34 @@ export const AM_RapierPhysics = superclass => class extends superclass {
 
     init(...arg) {
         super.init(...arg);
-        console.log("Actor Physics Plugin");
 
         const physicManager =  this.wellKnownModel('RapierPhysicsManager');
         const rbd = new RAPIER.RigidBodyDesc('dynamic');
 
-        const q = q_axisAngle([0,1,0], toRad(45));
-
-        rbd.setTranslation(0, 0, 0);
-        rbd.setRotation(q[0], q[1], q[2], q[3]);
-
         const rb = physicManager.world.createRigidBody(rbd);
         this.rigidBodyHandle = rb.handle();
-        console.log("Creating dynamic");
-        console.log(this.rigidBodyHandle);
 
-        const cd = RAPIER.ColliderDesc.ball(0.5);
-        cd.density = 1;
-        c = rb.createCollider(cd);
+        const cdBall = RAPIER.ColliderDesc.ball(0.5);
+        cdBall.density = 1;
 
-        // physicManager.world.removeRigidBody(rb);
+        const cdBox = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
+        cdBox.density = 1;
+        const c = rb.createCollider(cdBox);
 
+    }
+
+    get rigidBody() {
+        if  (!this.$rigidBody) {
+            const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+            this.$rigidBody = physicsManager.world.getRigidBody(this.rigidBodyHandle);
+        }
+        return this.$rigidBody
     }
 
     destroy() {
         super.destroy();
-        // const physicManager =  this.wellKnownModel('RapierPhysicsManager');
-        // const pointer = physicManager.world.getRigidBody(this.rbh);
-        // physicManager.world.removeRigidBody(pointer);
+        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        physicsManager.world.removeRigidBody(this.rigidBody);
     }
 
 
@@ -146,40 +100,43 @@ RegisterMixin(AM_RapierPhysics);
 
 //-- Actor ---------------------------------------------------------------------------------
 
-export const AM_RapierPhysicsS = superclass => class extends superclass {
+export const AM_RapierPhysicsStatic = superclass => class extends superclass {
 
     init(...arg) {
         super.init(...arg);
-        console.log("Static Physics Plugin");
 
         const physicManager =  this.wellKnownModel('RapierPhysicsManager');
         const rbd = new RAPIER.RigidBodyDesc('static');
-
-        const q = q_axisAngle([0,1,0], toRad(0));
-
-        rbd.setTranslation(0, -2, 0);
-        rbd.setRotation(q[0], q[1], q[2], q[3]);
+        rbd.setTranslation(0,-3,0);
 
         const rb = physicManager.world.createRigidBody(rbd);
         this.rigidBodyHandle = rb.handle();
-        console.log("Creating static");
-        console.log(this.rigidBodyHandle);
 
-        const cd = RAPIER.ColliderDesc.ball(0.5);
-        cd.density = 1;
-        c = rb.createCollider(cd);
+        const cdBall = RAPIER.ColliderDesc.ball(0.5);
+        cdBall.density = 1;
 
-        // physicManager.world.removeRigidBody(rb);
+        const cdBox = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
+        cdBox.density = 1;
+        const c = rb.createCollider(cdBox);
 
+    }
+
+    get rigidBody() {
+        if  (!this.$rigidBody) {
+            const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+            this.$rigidBody = physicsManager.world.getRigidBody(this.rigidBodyHandle);
+        }
+        return this.$rigidBody
     }
 
     destroy() {
         super.destroy();
-        // const physicManager =  this.wellKnownModel('RapierPhysicsManager');
-        // const pointer = physicManager.world.getRigidBody(this.rbh);
-        // physicManager.world.removeRigidBody(pointer);
+        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        physicsManager.world.removeRigidBody(this.rigidBody);
     }
 
 
 };
-RegisterMixin(AM_RapierPhysicsS);
+RegisterMixin(AM_RapierPhysicsStatic);
+
+

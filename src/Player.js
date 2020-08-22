@@ -32,6 +32,7 @@ export class PlayerManager extends Model {
     }
 
     exit(viewId) {
+        if (!PlayerManager.playerType) return;
         const player = this.players.get(viewId);
         this.unsubscribe(player.id, "playerChanged");
         player.destroy();

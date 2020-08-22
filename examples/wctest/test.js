@@ -4,14 +4,14 @@
 
 import { Session } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_translation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,
-    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, PawnManager, q_multiply, PlayerManager, AM_Player, PM_Player, RapierPhysicsManager, AM_RapierPhysics, AM_RapierPhysicsS } from "@croquet/worldcore";
+    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, PawnManager, q_multiply, PlayerManager, AM_Player, PM_Player, RapierPhysicsManager, AM_RapierPhysics, AM_RapierPhysicsS, AM_RapierPhysicsStatic } from "@croquet/worldcore";
 import diana from "./assets/diana.jpg";
 
 //------------------------------------------------------------------------------------------
 // MyActor
 //------------------------------------------------------------------------------------------
 
-class MyActor extends mix(Actor).with(AM_Smoothed, AM_Player, AM_RapierPhysics) {
+class MyActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
     init(options) {
         super.init("MyPawn", options);
         this.setLocation([0,0,0]);
@@ -20,31 +20,31 @@ class MyActor extends mix(Actor).with(AM_Smoothed, AM_Player, AM_RapierPhysics) 
 
     tick(delta) {
         const physicManager =  this.wellKnownModel('RapierPhysicsManager');
-        const pointer = physicManager.world.getRigidBody(this.rigidBodyHandle);
-        // console.log(this.rigidBodyHandle);
+        // const pointer = physicManager.world.getRigidBody(this.rigidBodyHandle);
 
-        const q0 = q_axisAngle([0,0,1], 0.0007 * delta);
-        const q1 = q_axisAngle([0,1,0], -0.0011 * delta);
-        const q2 = q_multiply(this.rotation, q_multiply(q0, q1));
+        // const q0 = q_axisAngle([0,0,1], 0.0007 * delta);
+        // const q1 = q_axisAngle([0,1,0], -0.0011 * delta);
+        // const q2 = q_multiply(this.rotation, q_multiply(q0, q1));
 
-        pointer.setRotation(q2[0], q2[1], q2[2], q2[3]);
-        //this.rotateTo(q2);
-        //this.rotateTo(q_multiply(this.rotation, q_multiply(q0, q1)));
+        // this.rigidBody.setRotation(q2[0], q2[1], q2[2], q2[3]);
+        // this.rotateTo(q2);
+        // this.rotateTo(q_multiply(this.rotation, q_multiply(q0, q1)));
 
-        const t = pointer.translation();
-        const r = pointer.rotation();
+        const t = this.rigidBody.translation();
+        const r = this.rigidBody.rotation();
 
         const v = [t.x, t.y, t.z];
         const q = [r.x, r.y, r.z, r.w];
-        //console.log(this.location);
-        // console.log(v);
-        // console.log(q);
-        this.moveTo(v);
 
-        // this.moveTo([t.x, t.y, t.z]);
+        this.moveTo(v);
 
 
         this.rotateTo(q);
+
+        if (v[1] < -5) {
+            this.destroy();
+            return;
+        }
         this.future(20).tick(20);
     }
 
@@ -56,7 +56,7 @@ MyActor.register('MyActor');
 // MyPawn
 //------------------------------------------------------------------------------------------
 
-class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible, PM_Player) {
+class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
     constructor(...args) {
         super(...args);
 
@@ -85,85 +85,50 @@ class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible, PM_Player) {
 }
 MyPawn.register('MyPawn');
 
+class aaa {
+    static ttt()  { if (super.ttt) super.ttt(); console.log("ttt");}
+}
+
+class bbb extends aaa {
+    static ttt()  { if (super.ttt) super.ttt(); console.log("ooo");}
+}
+
+
 //------------------------------------------------------------------------------------------
-// MyActor2
+// MyBlock
 //------------------------------------------------------------------------------------------
 
-class MyActor2 extends mix(Actor).with(AM_Smoothed, AM_RapierPhysicsS) {
+class MyBlock extends mix(Actor).with(AM_Smoothed, AM_RapierPhysicsStatic) {
     init(options) {
-        super.init("MyPawn2", options);
-        this.setLocation([0,-2,0]);
-        this.future(0).tick(0);
+        super.init("MyPawn", options);
+        this.setLocation([0,-3,0]);
+        // this.future(0).tick(0);
     }
 
-    tick(delta) {
-        const physicManager =  this.wellKnownModel('RapierPhysicsManager');
-        const pointer = physicManager.world.getRigidBody(this.rigidBodyHandle);
-        // console.log(this.rigidBodyHandle);
+    // tick(delta) {
+    //     const physicManager =  this.wellKnownModel('RapierPhysicsManager');
 
-        const q0 = q_axisAngle([0,0,1], 0.0007 * delta);
-        const q1 = q_axisAngle([0,1,0], -0.0011 * delta);
-        const q2 = q_multiply(this.rotation, q_multiply(q0, q1));
+    //     const t = this.rigidBody.translation();
+    //     const r = this.rigidBody.rotation();
 
-        pointer.setRotation(q2[0], q2[1], q2[2], q2[3]);
-        //this.rotateTo(q2);
-        //this.rotateTo(q_multiply(this.rotation, q_multiply(q0, q1)));
+    //     const v = [t.x, t.y, t.z];
+    //     const q = [r.x, r.y, r.z, r.w];
 
-        const t = pointer.translation();
-        const r = pointer.rotation();
-
-        const v = [t.x, t.y, t.z];
-        const q = [r.x, r.y, r.z, r.w];
-        //console.log(this.location);
-        // console.log(v);
-        // console.log(q);
-        this.moveTo(v);
-
-        // this.moveTo([t.x, t.y, t.z]);
+    //     this.moveTo(v);
 
 
-        this.rotateTo(q);
-        this.future(20).tick(20);
-    }
+    //     this.rotateTo(q);
+
+    //     if (v[1] < -5) {
+    //         this.destroy();
+    //         return;
+    //     }
+    //     this.future(20).tick(20);
+    // }
 
 }
-MyActor2.register('MyActor2');
+MyBlock.register('MyBlock');
 
-
-//------------------------------------------------------------------------------------------
-// MyPawn
-//------------------------------------------------------------------------------------------
-
-class MyPawn2 extends mix(Pawn).with(PM_Smoothed, PM_Visible, PM_Player) {
-    constructor(...args) {
-        super(...args);
-
-        this.cube = UnitCube();
-        this.cube.load();
-        this.cube.clear();
-
-        this.material = new Material();
-        this.material.pass = 'opaque';
-        this.material.texture.loadFromURL(diana);
-
-        this.setDrawCall(new DrawCall(this.cube, this.material));
-
-        this.subscribe("input", "1Down", this.test1);
-        this.subscribe("input", "2Down", this.test2);
-    }
-
-    test1() {
-        if (this.isMyPlayerPawn) this.draw.isHidden = true;
-    }
-
-    test2() {
-        if (this.isMyPlayerPawn) this.draw.isHidden = false;
-    }
-
-}
-MyPawn2.register('MyPawn2');
-
-let rrr;
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -172,14 +137,26 @@ let rrr;
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting test");
-        this.testActor = MyActor2.create();
+        console.log("Starting test!!!!");
+
+        this.subscribe("input", "mouseXY", this.mouse);
+        this.subscribe("input", "dDown", this.spawn);
+
+        MyBlock.create();
+    }
+
+    mouse(xy) {
+        // console.log(xy);
+    }
+
+    spawn() {
+        MyActor.create();
     }
 
     createManagers() {
         console.log("Creating root");
         this.playerManager = this.addManager(PlayerManager.create());
-        this.phyicsManager = this.addManager(RapierPhysicsManager.create(rrr));
+        this.phyicsManager = this.addManager(RapierPhysicsManager.create());
         this.actorManager = this.addManager(ActorManager.create());
     }
 }
@@ -219,18 +196,5 @@ class MyViewRoot extends ViewRoot {
 
 Session.join("wctest", MyModelRoot, MyViewRoot, {tps: "50"});
 
-// async function go() {
-//     console.log("Running go");
-//     rrr = await import("@dimforge/rapier3d");
-//     console.log(rrr);
-//     // App.messages = true;
-//     // App.makeWidgetDock();
-//     // const session = await Session.join(`rapier-test-${App.autoSession("q")}`, RapierModel, RapierView);
-
-//     const session = await Session.join("game", MyModelRoot, MyViewRoot, {tps: "50"});
-//     // console.log(session.model.world);
-// }
-
-// go();
 
 
