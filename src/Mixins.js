@@ -177,12 +177,12 @@ export const PM_Tree = superclass => class extends superclass {
 //-- Actor ---------------------------------------------------------------------------------
 
 export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
-    init(...args) {
-        // super.init(...args);
-        this.scale = v3_unit();
-        this.rotation = q_identity();
-        this.location = v3_zero();
-        super.init(...args);
+    init(pawn, options) {
+        options = options || {};
+        this.location = options.location || v3_zero();
+        this.rotation = options.rotation || q_identity();
+        this.scale = options.scale || v3_unit();
+        super.init(pawn, options);
     }
 
     localChanged() {
