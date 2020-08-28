@@ -41,6 +41,40 @@ export const PM_Visible = superclass => class extends superclass {
 
 };
 
+//------------------------------------------------------------------------------------------
+//-- InstancedVisible ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Special version of instanced that uses an instanced mesh. Note that destroy does not
+// remove the draw call from the scene, it just removes the transform for this instance.
+
+
+export const PM_InstancedVisible = superclass => class extends superclass {
+
+    destroy() {
+        super.destroy();
+        if (this.draw) this.draw.instances.delete(this.actor.id);
+    }
+
+    refresh() {
+        super.refresh();
+        if (this.draw) this.draw.instances.set(this.actor.id, this.global);
+    }
+
+    setDrawCall(draw) {
+        const scene = GetNamedView('ViewRoot').render.scene;
+        //if (this.draw) scene.removeDrawCall(this.draw);
+        this.draw = draw;
+        this.draw.instances.set(this.actor.id, this.global);
+        if (this.draw) scene.addDrawCall(this.draw);
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- Camera Mixin --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
 export const PM_Camera = superclass => class extends superclass {
     constructor(...args) {
         super(...args);

@@ -38,7 +38,12 @@ export class RapierPhysicsManager extends Model {
         this.timeStep = 50; // In ms
         this.world.timestep = this.timeStep / 1000;
         this.rigidBodies = [];
-        this.future(0).tick();
+        // this.future(0).tick();
+    }
+
+    togglePause() {
+        this.running = !this.running;
+        if (this.running) this.future(0).tick();
     }
 
     destroy() {
@@ -47,6 +52,7 @@ export class RapierPhysicsManager extends Model {
     }
 
     tick() {
+        if (!this.running) return;
         this.world.step();
         this.world.forEachActiveRigidBodyHandle(h => {
                     const rb = this.rigidBodies[h];

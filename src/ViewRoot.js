@@ -1,5 +1,6 @@
 import { NamedView, ClearNamedViews } from "./NamedView";
 import { PawnManager} from "./Pawn";
+import { ClearObjectCache } from "./ObjectCache";
 
 //------------------------------------------------------------------------------------------
 //-- ViewRoot ------------------------------------------------------------------------------
@@ -10,6 +11,7 @@ export class ViewRoot extends NamedView {
         ClearNamedViews();
         super("ViewRoot");
         console.log("Starting view ...");
+        ClearObjectCache();
         this.model = model;
         this.managers = new Set();
         this.createManagers(); // ael - allow subclasses to get in first
