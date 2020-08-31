@@ -5,7 +5,7 @@
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_translation, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView,
-    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, q_multiply, PlayerManager, AM_Player, PM_Player, RapierPhysicsManager, AM_RapierPhysics, AM_RapierPhysicsS, AM_RapierPhysicsStatic, rapierStart, setRapier, LoadRapier, v3_normalize, TAU, sphericalRandom, q_identity, Triangles, CachedObject, GetNamedModel } from "@croquet/worldcore";
+    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, q_multiply, PlayerManager, AM_Player, PM_Player, RapierPhysicsManager, AM_RapierPhysics, AM_RapierPhysicsS, AM_RapierPhysicsStatic, rapierStart, setRapier, LoadRapier, v3_normalize, TAU, sphericalRandom, q_identity, Triangles, CachedObject, GetNamedModel, RegisterMixin } from "@croquet/worldcore";
 import diana from "./assets/diana.jpg";
 import paper from "./assets/paper.jpg";
 import { Constants } from "../q2/node_modules/@croquet/teatime";
@@ -28,11 +28,17 @@ class MyActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
         const axis = sphericalRandom();
         const angle = Math.random() * TAU;
         const rotation = q_axisAngle(axis, angle);
-        const location = [4*Math.random()-2, 20, 4*Math.random()-2];
+        const location = [4*Math.random()-2, 50, 4*Math.random()-2];
 
         this.index = Math.floor(Math.random() * 30);
         // this.color = Constants.colors[this.index];
+        // super.init("MyPawn", {location, rotation});
+
+
         super.init("MyPawn", {location, rotation});
+        // this.setLocation(location);
+        // this.setRotation(rotation);
+        this.addRigidBody({type: 'dynamic'});
         this.addBoxCollider({
             size: [0.5, 0.5, 0.5],
             friction: 1,
@@ -122,6 +128,7 @@ MyPawn.register('MyPawn');
 class FloorActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
     init() {
         super.init("FloorPawn", {rigidBodyType: 'static', location: [0,0,0], scale: [1,1,1]});
+        this.addRigidBody({type: 'static'});
         this.addBoxCollider({
             size: [50,1,50],
             friction: 1,
@@ -157,6 +164,92 @@ class FloorPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
 }
 FloorPawn.register('FloorPawn');
 
+//------------------------------------------------------------------------------------------
+
+class NonModel {
+    constructor() {
+        console.log("Constructing nonmodel");
+        this.value = 1234;
+    }
+}
+
+class UnModel {
+    constructor() {
+        console.log("Constructing unmodel");
+        this.value = 1234;
+    }
+}
+
+class TestActor extends Actor {
+
+    static xxx() {
+        console.log("Static xxx1");
+    }
+
+    static types() {
+        console.log("TestActor types");
+        return {
+            "SomeUniqueName": NonModel,
+            "AnotherName": UnModel
+        };
+      }
+
+    init(...args) {
+        super.init(...args);
+        console.log("Creating test actor");
+        this.nonModel = new NonModel();
+    }
+
+}
+console.log(TestActor);
+TestActor.register('TestActor');
+
+// class TestActor2 extends TestActor {
+
+//     static types() {
+//         console.log("TestActor2 types");
+//         return {
+//             "SomeUniqueName": NonModel,
+//             "AnotherName": UnModel
+//         };
+//       }
+
+// }
+// TestActor2.register('TestActor2');
+
+const AM_Test = superclass => class extends superclass {
+
+    static xxx() {
+        console.log("Static xxx2");
+    }
+
+   static types() {
+       super.types();
+       console.log("Mixin types");
+       return {
+           "SomeUniqueName": NonModel,
+           "AnotherName": UnModel
+       };
+   }
+
+    init(pawn, options) {
+        super.init(pawn, options);
+        this.unModel = new UnModel();
+    }
+};
+RegisterMixin(AM_Test);
+
+class MixedActor extends mix(TestActor).with(AM_Test) {
+
+    static yyy() {
+        console.log("Static yyy");
+    }
+
+}
+console.log(MixedActor);
+MixedActor.register('MixedActor');
+
+
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -165,15 +258,23 @@ FloorPawn.register('FloorPawn');
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting test!!!!!!!");
+        console.log("Starting test!!!!!!");
 
-        this.subscribe("input", " Down", this.start);
+        // this.subscribe("input", " Down", this.start);
 
         FloorActor.create();
+
+
+        //TestActor2.create();
+
+        MixedActor.xxx();
+        MixedActor.create();
+
+
         this.actors = [];
 
         this.seedColors();
-        this.future(200).tick();
+        this.future(100).tick();
     }
 
     seedColors() {
@@ -192,9 +293,8 @@ class MyModelRoot extends ModelRoot {
     }
 
     tick() {
-        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
-        if (physicsManager.running) this.spawn();
-        this.future(200).tick();
+        this.spawn();
+        this.future(100).tick();
     }
 
     spawn() {
