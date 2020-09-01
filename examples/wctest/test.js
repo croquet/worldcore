@@ -4,7 +4,7 @@
 
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
-    AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView,
+    AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale,
     ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 
@@ -17,7 +17,7 @@ class MyActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
         const axis = sphericalRandom();
         const angle = Math.random() * TAU;
         const rotation = q_axisAngle(axis, angle);
-        const location = [2*Math.random()-1, 50, 2*Math.random()-1];
+        const location = [0*Math.random()-0, 3, 0*Math.random()-0];
 
         this.index = Math.floor(Math.random() * 30);
 
@@ -26,15 +26,51 @@ class MyActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
         this.addRigidBody({type: 'dynamic'});
         this.addBoxCollider({
             size: [0.5, 0.5, 0.5],
-            density: 1000,
+            density: 1,
             friction: 1,
             restitution: 1000
         });
+
+        const spin = v3_scale(sphericalRandom(),Math.random() * 100);
+        this.applyTorque(spin);
+        this.applyForce([0,350,0]);
 
     }
 
 }
 MyActor.register('MyActor');
+
+//------------------------------------------------------------------------------------------
+// MyProjectile
+//------------------------------------------------------------------------------------------
+
+class MyProjectile extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
+    init() {
+        const axis = sphericalRandom();
+        const angle = Math.random() * TAU;
+        const rotation = [0,0,0,1];
+        const location = [0, 16, 16];
+
+        this.index = Math.floor(Math.random() * 30);
+
+        super.init("MyPawn", {location, rotation});
+
+        this.addRigidBody({type: 'dynamic'});
+        this.addBoxCollider({
+            size: [0.5, 0.5, 0.5],
+            density: 1,
+            friction: 1,
+            restitution: 1000
+        });
+
+        const spin = v3_scale(sphericalRandom(),Math.random() * 20);
+        this.applyTorque(spin);
+        this.applyForce([0,50,-200]);
+
+    }
+
+}
+MyProjectile.register('MyProjectile');
 
 
 //------------------------------------------------------------------------------------------
@@ -138,6 +174,9 @@ class MyModelRoot extends ModelRoot {
         this.actors = [];
 
         this.seedColors();
+        this.spawnLimit = 300;
+
+        this.subscribe("input", " Down", this.shoot);
         this.future(0).tick();
     }
 
@@ -150,11 +189,20 @@ class MyModelRoot extends ModelRoot {
 
     tick() {
         this.spawn();
-        this.future(100).tick();
+        this.future(200).tick();
+    }
+
+    shoot() {
+        if (this.actors.length >= this.spawnLimit) {
+            const doomed = this.actors.shift();
+            doomed.destroy();
+        }
+        const p = MyProjectile.create();
+        this.actors.push(p);
     }
 
     spawn() {
-        if (this.actors.length >= 300) {
+        if (this.actors.length >= this.spawnLimit) {
             const doomed = this.actors.shift();
             doomed.destroy();
         }

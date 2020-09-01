@@ -98,6 +98,30 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         this.removeRigidBody();
     }
 
+    applyForce(v) {
+        if (!this.rigidBody) return;
+        const rv = new RAPIER.Vector(...v);
+        this.rigidBody.applyForce(rv, true);
+    }
+
+    applyImpulse(v) {
+        if (!this.rigidBody) return;
+        const rv = new RAPIER.Vector(...v);
+        this.rigidBody.applyImpulse(rv, true);
+    }
+
+    applyTorque(v) {
+        if (!this.rigidBody) return;
+        const rv = new RAPIER.Vector(...v);
+        this.rigidBody.applyTorque(rv, true);
+    }
+
+    applyTorqueImpulse(v) {
+        if (!this.rigidBody) return;
+        const rv = new RAPIER.Vector(...v);
+        this.rigidBody.applyTorqueImpulse(rv, true);
+    }
+
     addRigidBody(options = {}) {
         this.removeRigidBody();
         const type = options.type || 'dynamic';
