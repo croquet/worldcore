@@ -167,16 +167,18 @@ FloorPawn.register('FloorPawn');
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting test!");
+        console.log("Starting test!!!");
 
         FloorActor.create();
 
         this.actors = [];
 
         this.seedColors();
-        this.spawnLimit = 300;
+        this.spawnLimit = 200;
 
         this.subscribe("input", " Down", this.shoot);
+        this.subscribe("input", "touchTap", this.shoot);
+
         this.future(0).tick();
     }
 
