@@ -3,21 +3,10 @@
 // Croquet Studios, 2020
 
 import { Session, App } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_translation, m4_scalingRotationTranslation, Actor, Pawn, mix,
+import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView,
-    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, q_multiply, PlayerManager, AM_Player, PM_Player, RapierPhysicsManager, AM_RapierPhysics, AM_RapierPhysicsS, AM_RapierPhysicsStatic, rapierStart, setRapier, LoadRapier, v3_normalize, TAU, sphericalRandom, q_identity, Triangles, CachedObject, GetNamedModel, RegisterMixin } from "@croquet/worldcore";
-import diana from "./assets/diana.jpg";
+    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
-import { Constants } from "../q2/node_modules/@croquet/teatime";
-
-// function seedColors() {
-//     Constants.colors = [];
-//     for (let i = 0; i < 30; i++ ) {
-//         Constants.colors.push([0.5*Math.random() + 0.5, 0.5*Math.random() + 0.5, 0.5*Math.random() + 0.5, 1]);
-//     }
-// }
-
-// seedColors();
 
 //------------------------------------------------------------------------------------------
 // MyActor
@@ -28,35 +17,21 @@ class MyActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
         const axis = sphericalRandom();
         const angle = Math.random() * TAU;
         const rotation = q_axisAngle(axis, angle);
-        const location = [4*Math.random()-2, 50, 4*Math.random()-2];
+        const location = [2*Math.random()-1, 50, 2*Math.random()-1];
 
         this.index = Math.floor(Math.random() * 30);
-        // this.color = Constants.colors[this.index];
-        // super.init("MyPawn", {location, rotation});
-
 
         super.init("MyPawn", {location, rotation});
-        // this.setLocation(location);
-        // this.setRotation(rotation);
+
         this.addRigidBody({type: 'dynamic'});
         this.addBoxCollider({
             size: [0.5, 0.5, 0.5],
+            density: 1000,
             friction: 1,
-            density: 1,
-            restitution: 1
+            restitution: 1000
         });
 
-        // this.future(0).tick(20);
     }
-
-    // tick(delta) {
-
-    //     if (this.location[1] < -5) {
-    //         this.destroy();
-    //         return;
-    //     }
-    //     this.future(20).tick(20);
-    // }
 
 }
 MyActor.register('MyActor');
@@ -69,20 +44,7 @@ MyActor.register('MyActor');
 class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
     constructor(...args) {
         super(...args);
-
-        // this.cube = UnitCube();
-        // this.cube.setColor(this.actor.color);
-        // this.cube.load();
-        // this.cube.clear();
-
-        // this.material = new Material();
-        // this.material.pass = 'opaque';
-        // this.material.texture.loadFromURL(paper);
-
-        //this.setDrawCall(new DrawCall(this.cube, this.material));
-        // console.log(this.actor.index);
         this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.index, () => this.buildDraw()));
-        // console.log(this.buildDraw());
     }
 
     buildDraw() {
@@ -97,8 +59,6 @@ class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
 
     buildMesh() {
         const mesh = UnitCube();
-        // const color = [0.5*Math.random() + 0.5, 0.5*Math.random() + 0.5, 0.5*Math.random() + 0.5, 1];
-        //console.log(this.actor);
 
         const modelRoot = GetNamedView('ViewRoot').model;
         const color = modelRoot.colors[this.actor.index];
@@ -133,7 +93,7 @@ class FloorActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
             size: [50,1,50],
             friction: 1,
             density: 1,
-            restitution: 1
+            restitution: 1000
         });
 
     }
@@ -165,116 +125,20 @@ class FloorPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
 FloorPawn.register('FloorPawn');
 
 //------------------------------------------------------------------------------------------
-
-class NonModel {
-    constructor() {
-        console.log("Constructing nonmodel");
-        this.value = 1234;
-    }
-}
-
-class UnModel {
-    constructor() {
-        console.log("Constructing unmodel");
-        this.value = 1234;
-    }
-}
-
-class TestActor extends Actor {
-
-    static xxx() {
-        console.log("Static xxx1");
-    }
-
-    static types() {
-        console.log("TestActor types");
-        return {
-            "SomeUniqueName": NonModel,
-            "AnotherName": UnModel
-        };
-      }
-
-    init(...args) {
-        super.init(...args);
-        console.log("Creating test actor");
-        this.nonModel = new NonModel();
-    }
-
-}
-console.log(TestActor);
-TestActor.register('TestActor');
-
-// class TestActor2 extends TestActor {
-
-//     static types() {
-//         console.log("TestActor2 types");
-//         return {
-//             "SomeUniqueName": NonModel,
-//             "AnotherName": UnModel
-//         };
-//       }
-
-// }
-// TestActor2.register('TestActor2');
-
-const AM_Test = superclass => class extends superclass {
-
-    static xxx() {
-        console.log("Static xxx2");
-    }
-
-   static types() {
-       super.types();
-       console.log("Mixin types");
-       return {
-           "SomeUniqueName": NonModel,
-           "AnotherName": UnModel
-       };
-   }
-
-    init(pawn, options) {
-        super.init(pawn, options);
-        this.unModel = new UnModel();
-    }
-};
-RegisterMixin(AM_Test);
-
-class MixedActor extends mix(TestActor).with(AM_Test) {
-
-    static yyy() {
-        console.log("Static yyy");
-    }
-
-}
-console.log(MixedActor);
-MixedActor.register('MixedActor');
-
-
-
-//------------------------------------------------------------------------------------------
 // MyModelRoot
 //------------------------------------------------------------------------------------------
 
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting test!!!!!!");
-
-        // this.subscribe("input", " Down", this.start);
+        console.log("Starting test!");
 
         FloorActor.create();
-
-
-        //TestActor2.create();
-
-        MixedActor.xxx();
-        MixedActor.create();
-
 
         this.actors = [];
 
         this.seedColors();
-        this.future(100).tick();
+        this.future(0).tick();
     }
 
     seedColors() {
@@ -284,22 +148,14 @@ class MyModelRoot extends ModelRoot {
         }
     }
 
-    start()  {
-        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
-        physicsManager.togglePause();
-        //this.running = !this.running;
-        // if (!this.started) this.future(200).tick();
-        // this.started = true;
-    }
-
     tick() {
         this.spawn();
         this.future(100).tick();
     }
 
     spawn() {
-        if (this.actors.length >= 200) {
-            const  doomed = this.actors.shift();
+        if (this.actors.length >= 300) {
+            const doomed = this.actors.shift();
             doomed.destroy();
         }
         const a = MyActor.create();
@@ -310,7 +166,7 @@ class MyModelRoot extends ModelRoot {
     createManagers() {
         console.log("Creating root");
         this.playerManager = this.addManager(PlayerManager.create());
-        this.phyicsManager = this.addManager(RapierPhysicsManager.create());
+        this.phyicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 50}));
         this.actorManager = this.addManager(ActorManager.create());
     }
 }
@@ -348,30 +204,18 @@ class MyViewRoot extends ViewRoot {
         this.webInput = this.addManager(new WebInputManager());
         this.render = this.addManager(new RenderManager());
         this.ui = this.addManager(new UIManager());
-
         this.audio = this.addManager(new AudioManager());
         this.pawnManager = this.addManager(new PawnManager());
-
     }
 
 }
 
-//rapierStart();
 
 async function go() {
-    // const r = await import("@dimforge/rapier3d");
-    // setRapier(r);
     await LoadRapier();
     // App.messages = true;
     App.makeWidgetDock();
-    // const session = await Session.join(`rapier-test-${App.autoSession("q")}`, RapierModel, RapierView);
-    const session = await Session.join("wctest", MyModelRoot, MyViewRoot, {tps: "30"});
-    // console.log(session.model.world);
+    const session = await Session.join("wctest", MyModelRoot, MyViewRoot, {tps: "20"});
 }
 
 go();
-
-// Session.join("wctest", MyModelRoot, MyViewRoot, {tps: "50x2"});
-
-
-

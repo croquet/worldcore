@@ -1,6 +1,6 @@
 import { Model } from "@croquet/croquet";
 import { RegisterMixin } from "./Mixins";
-import { q_axisAngle, toRad, v3_multiply } from "./Vector";
+import { v3_multiply } from "./Vector";
 
 let RAPIER;
 
@@ -30,12 +30,16 @@ export class RapierPhysicsManager extends Model {
         };
     }
 
-    init() {
+    init(options = {}) {
         super.init();
         console.log("Starting rapier physics");
         this.beWellKnownAs('RapierPhysicsManager');
-        this.world = new RAPIER.World(0.0, -9.8, 0.0);
-        this.timeStep = 50; // In ms
+
+        const gravity = options.gravity || [0.0, -9.8, 0.0];
+        const timeStep = options.timeStep || 50; // In ms
+
+        this.world = new RAPIER.World(...gravity);
+        this.timeStep = timeStep;
         this.world.timestep = this.timeStep / 1000;
         this.rigidBodies = [];
         this.future(0).tick();
@@ -62,15 +66,6 @@ export class RapierPhysicsManager extends Model {
         this.future(this.timeStep).tick();
     }
 
-    addRigidBody(rb) {
-        this.rigidBodies[rb.rigidBodyHandle] = rb;
-    }
-
-    removeRigidBody(rb) {
-        this.rigidBodies[rb.rigidBodyHandle] = null;
-    }
-
-
 }
 RapierPhysicsManager.register("RapierPhysicsManager");
 
@@ -83,69 +78,55 @@ RapierPhysicsManager.register("RapierPhysicsManager");
 
 export const AM_RapierPhysics = superclass => class extends superclass {
 
-    init(pawn, options) {
-        super.init(pawn, options);
-
-        // options = options || {};
-
-        // const type = options.rigidBodyType || 'dynamic';
-        // const location = options.location || [0,0,0];
-        // const rotation = options.rotation || [0,0,0,1];
-
-        //const physicsManager =  this.wellKnownModel('RapierPhysicsManager');
-
-//       const rbd = new RAPIER.RigidBodyDesc(type);
-//       rbd.setTranslation(...location);
-//       rbd.setRotation(...rotation);
-
-        // const rb = physicsManager.world.createRigidBody(rbd);
-        // this.rigidBodyHandle = rb.handle();
-
-        //physicsManager.addRigidBody(this);
-
-        // this.listen("spatial_setLocation", this.userLocationSet);
-
-
+    static types() {
+        return {
+            ...super.types(),
+            "RAPIER.RigidBody": {
+                cls: RAPIER.RigidBody,
+                write: rb => ({world: rb.world, handle: rb.handle()}),
+                read: ({world, handle}) => {
+                    const rb = world.getRigidBody(handle);
+                    rb.world = world; // We save a ref to the world in the rb so it can rebuild itself from its handle.
+                    return rb;
+                }
+            }
+        };
     }
 
     destroy() {
         super.destroy();
-        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
-        physicsManager.removeRigidBody(this);
-        physicsManager.world.removeRigidBody(this.rigidBody);
+        this.removeRigidBody();
     }
 
-    addRigidBody(options) {
+    addRigidBody(options = {}) {
+        this.removeRigidBody();
         const type = options.type || 'dynamic';
-
-        const physicsManager =  this.wellKnownModel('RapierPhysicsManager');
 
         const rbd = new RAPIER.RigidBodyDesc(type);
         rbd.setTranslation(...this.location);
         rbd.setRotation(...this.rotation);
 
-        this.$rigidBody = physicsManager.world.createRigidBody(rbd);
-        this.rigidBodyHandle = this.rigidBody.handle();
+        const physicsManager =  this.wellKnownModel('RapierPhysicsManager');
 
-        physicsManager.addRigidBody(this);
-
+        this.rigidBody = physicsManager.world.createRigidBody(rbd);
+        this.rigidBody.world = physicsManager.world; // We save a ref to the world in the rb so it can rebuild itself from its handle.
+        physicsManager.rigidBodies[this.rigidBody.handle()] = this;
     }
 
-    get rigidBody() {
-        if  (!this.$rigidBody) {
+    removeRigidBody() {
+        if (this.rigidBody) {
             const physicsManager = this.wellKnownModel('RapierPhysicsManager');
-            this.$rigidBody = physicsManager.world.getRigidBody(this.rigidBodyHandle);
+            physicsManager.rigidBodies[this.rigidBody.handle()] = null;
+            physicsManager.world.removeRigidBody(this.rigidBody);
+            this.rigidBody = null;
         }
-        return this.$rigidBody
     }
 
-    addBoxCollider(options) {
-        options = options || {};
-
+    addBoxCollider(options = {}) {
         const size = v3_multiply(this.scale, (options.size || [1,1,1]));
 
         const cd = RAPIER.ColliderDesc.cuboid(...size);
-        cd.density = options.density || 0;
+        cd.density = options.density || 1;  // Zero or negative density causes errors
         cd.friction = options.friction || 0;
         cd.restitution = options.restitution || 0;
 
