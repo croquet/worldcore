@@ -25,7 +25,7 @@ module.exports = {
       },
     plugins: [
         new HtmlWebPackPlugin({
-            template: 'test.html',   // input
+            template: 'index.html',   // input
             filename: 'index.html'          // output filename in dist/
         }),
     ]

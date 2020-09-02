@@ -167,7 +167,7 @@ FloorPawn.register('FloorPawn');
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting test!!!");
+        console.log("Starting test!!!!");
 
         FloorActor.create();
 
@@ -265,7 +265,7 @@ async function go() {
     await LoadRapier();
     // App.messages = true;
     App.makeWidgetDock();
-    const session = await Session.join("wctest", MyModelRoot, MyViewRoot, {tps: "20"});
+    const session = await Session.join(`wctest-${App.autoSession("q")}`, MyModelRoot, MyViewRoot, {tps: "20"});
 }
 
 go();
