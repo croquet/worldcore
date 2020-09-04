@@ -3,21 +3,10 @@
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "start": "parcel test.html",
-    "lint": "eslint ."
-  },
   "author": "Brian Upton",
   "license": "ISC",
   "dependencies": {
     "@croquet/croquet": "^0.3.3",
     "@dimforge/rapier3d": "^0.1.11"
-  },
-  "devDependencies": {
-    "eslint": "^5.14.1",
-    "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-import-resolver-alias": "^1.1.2",
-    "eslint-import-resolver-parcel": "^1.8.4",
-    "eslint-plugin-import": "^2.16.0"
   }
 }
