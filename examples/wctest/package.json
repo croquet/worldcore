@@ -5,7 +5,8 @@
   "main": "test.js",
   "scripts": {
     "start": "webpack-dev-server --mode development --devtool source-map --watch",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "postinstall": "npm explore @croquet/worldcore -- npm run clean"
   },
   "browserslist": [
     "> 5%"
