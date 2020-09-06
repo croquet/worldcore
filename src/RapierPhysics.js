@@ -21,6 +21,7 @@ export function setRapier(r) {
 export class RapierPhysicsManager extends Model {
 
     static types() {
+        if (!RAPIER) return {};
         return {
             "RAPIER.World": {
                 cls: RAPIER.World,
@@ -160,6 +161,3 @@ export const AM_RapierPhysics = superclass => class extends superclass {
 
 };
 RegisterMixin(AM_RapierPhysics);
-
-
-
