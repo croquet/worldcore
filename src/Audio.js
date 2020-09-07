@@ -1,3 +1,4 @@
+import { ResonanceAudio } from "resonance-audio";
 import { NamedView, GetNamedView} from "./NamedView";
 import { m4_identity, m4_translation, m4_getTranslation, m4_getRotation, m4_rotationQ, v3_transform} from "./Vector";
 import { RegisterMixin } from "./Mixins";
