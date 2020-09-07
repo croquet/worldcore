@@ -2,15 +2,12 @@
   "name": "@croquet/wctest",
   "version": "0.0.1",
   "description": "Worldcore Testbed",
-  "main": "test.js",
+  "private": true,
   "scripts": {
     "start": "webpack-dev-server --mode development --devtool source-map --watch",
     "build": "webpack --mode production",
     "postinstall": "npm explore @croquet/worldcore -- npm run clean"
   },
-  "browserslist": [
-    "> 5%"
-  ],
   "author": "Croquet Studios",
   "license": "ISC",
   "dependencies": {
