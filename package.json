@@ -6,8 +6,8 @@
   "author": "Brian Upton",
   "license": "ISC",
   "scripts": {
-    "clean": "rm -rf node_modules; pnpm i",
-    "postinstall": "npm explore @croquet/croquet -- npm run clean"
+    "clean": "pnpm i",
+    "postinstall": "npm explore @croquet/croquet -- npm ci --production"
   },
   "dependencies": {
     "@croquet/croquet": "^0.3.3",

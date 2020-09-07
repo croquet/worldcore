@@ -6,7 +6,7 @@
   "scripts": {
     "start": "webpack-dev-server --mode development --devtool source-map --watch",
     "build": "webpack --mode production",
-    "postinstall": "npm explore @croquet/worldcore -- npm run clean"
+    "expostinstall": "npm explore @croquet/worldcore -- npm run clean"
   },
   "author": "Croquet Studios",
   "license": "ISC",
