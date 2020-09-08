@@ -10,5 +10,5 @@ Setup:
     
 Run:
 
-* `npm start`
+* `pnpm start`
 * open http://localhost:1234/
