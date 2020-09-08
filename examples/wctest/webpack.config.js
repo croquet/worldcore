@@ -1,4 +1,5 @@
 const HtmlWebPackPlugin = require('html-webpack-plugin');
+//const { DuplicatesPlugin } = require("inspectpack/plugin");
 
 var path = require('path');
 
@@ -25,7 +26,14 @@ module.exports = {
             },
         ],
     },
+    // HACK: de-duplicate croquet in public version
+    resolve: {
+        alias: {
+            "@croquet/croquet": path.resolve(__dirname, 'node_modules/@croquet/croquet/pub/croquet-croquet.js'),
+        }
+    },
     plugins: [
+//        new DuplicatesPlugin( { emitErrors: true } ), // detect duplicates
         new HtmlWebPackPlugin({
             template: 'index.html',   // input
             filename: 'index.html',   // output filename in dist/
