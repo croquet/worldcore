@@ -5,8 +5,7 @@
   "private": true,
   "scripts": {
     "start": "webpack-dev-server --mode development --devtool source-map --watch",
-    "build": "webpack --mode production",
-    "expostinstall": "npm explore @croquet/worldcore -- npm run clean"
+    "build": "webpack --mode production"
   },
   "author": "Croquet Studios",
   "license": "ISC",

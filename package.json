@@ -5,10 +5,6 @@
   "main": "index.js",
   "author": "Brian Upton",
   "license": "ISC",
-  "scripts": {
-    "clean": "pnpm i",
-    "postinstall": "npm explore @croquet/croquet -- npm ci --production"
-  },
   "dependencies": {
     "@croquet/croquet": "^0.3.3",
     "@dimforge/rapier3d": "0.1.12",
