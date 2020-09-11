@@ -1,0 +1,23 @@
+{
+  "name": "@croquet/wc_demo2",
+  "version": "0.0.1",
+  "description": "Worldcore Demo 2",
+  "private": true,
+  "scripts": {
+    "start": "webpack-dev-server --mode development --devtool source-map --watch",
+    "build": "webpack --mode production"
+  },
+  "author": "Croquet Studios",
+  "license": "ISC",
+  "dependencies": {
+    "@croquet/croquet": "^0.3.3",
+    "@croquet/worldcore": "file:../.."
+  },
+  "devDependencies": {
+    "file-loader": "^6.0.0",
+    "html-webpack-plugin": "^4.3.0",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
+  }
+}
