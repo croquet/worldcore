@@ -356,4 +356,4 @@ class MyViewRoot extends ViewRoot {
 }
 
 
-Session.join("demo1", MyModelRoot, MyViewRoot, {tps: 20});
+Session.join(`wc_three_${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 20});
