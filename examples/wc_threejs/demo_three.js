@@ -2,17 +2,20 @@
 //
 // Croquet Studios, 2020
 
-import { Session } from "@croquet/croquet";
+import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, Actor, Pawn, mix,
     PM_AudioSource, AM_AudioSource, AM_Avatar, PM_Avatar, ActorManager,
     ThreeRenderManager, PM_ThreeVisible, PawnManager, PlayerManager } from "@croquet/worldcore";
-import * as THREE from "three";
+import * as THREE from "three"; // v108
+
+import { OBJLoader } from "./three-108/OBJLoader.js";
+import { MTLLoader } from "./three-108/MTLLoader.js";
 
 import {JoinScreen, GameScreen } from  "./src/HUD";
 import { WorldActor } from "./src/World";
 
-// import football_obj from "./assets/football.obj";
-// import football_mtl from "./assets/football.mtl";
+import football_obj from "./assets/football.obj";
+import football_mtl from "./assets/football.mtl";
 import photon from "./assets/Photon.mp3";
 
 //------------------------------------------------------------------------------------------
@@ -104,7 +107,17 @@ class BallPawn extends mix(Pawn).with(PM_Avatar, PM_ThreeVisible, PM_AudioSource
     constructor(...args) {
         super(...args);
 
-        // this.loadFootball();
+        this.loadFootball(football_obj, football_mtl);
+    }
+
+    async loadFootball() {
+        const mtlLoader = new MTLLoader();
+        const materials = await new Promise( (resolve, reject) => mtlLoader.load(football_mtl, resolve, null, reject) );
+        const objLoader = new OBJLoader();
+        objLoader.setMaterials(materials);
+        const obj = await new Promise( (resolve, reject) => objLoader.load(football_obj, resolve, null, reject) );
+        obj.position.set(0, 1, 2);
+        this.setRenderObject(obj);
     }
 }
 BallPawn.register('BallPawn');
