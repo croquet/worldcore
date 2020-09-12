@@ -2,6 +2,7 @@ dependencies:
   '@croquet/croquet': 0.3.3
   '@dimforge/rapier3d': 0.1.12
   resonance-audio: 1.0.0
+  three: 0.108.0
 lockfileVersion: 5.1
 packages:
   /@babel/runtime/7.11.2:
@@ -55,6 +56,10 @@ packages:
     dev: false
     resolution:
       integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==
+  /three/0.108.0:
+    dev: false
+    resolution:
+      integrity: sha512-d1ysIXwi8qTlbmMwrTxi5pYiiYIflEr0e48krP0LAY8ndS8c6fkLHn6NvRT+o76/Fs9PBLxFViuI62iGVWwwlg==
   /toastify-js/1.9.1:
     dev: false
     resolution:
@@ -63,3 +68,4 @@ specifiers:
   '@croquet/croquet': ^0.3.3
   '@dimforge/rapier3d': 0.1.12
   resonance-audio: 1.0.0
+  three: 0.108.0

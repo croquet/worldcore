@@ -8,6 +8,7 @@
   "dependencies": {
     "@croquet/croquet": "^0.3.3",
     "@dimforge/rapier3d": "0.1.12",
-    "resonance-audio": "1.0.0"
+    "resonance-audio": "1.0.0",
+    "three": "0.108.0"
   }
 }
