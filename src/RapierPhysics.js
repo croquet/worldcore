@@ -103,24 +103,28 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         if (!this.rigidBody) return;
         const rv = new RAPIER.Vector(...v);
         this.rigidBody.applyForce(rv, true);
+        //rv.free();
     }
 
     applyImpulse(v) {
         if (!this.rigidBody) return;
         const rv = new RAPIER.Vector(...v);
         this.rigidBody.applyImpulse(rv, true);
+        // rv.free();
     }
 
     applyTorque(v) {
         if (!this.rigidBody) return;
         const rv = new RAPIER.Vector(...v);
         this.rigidBody.applyTorque(rv, true);
+        // rv.free();
     }
 
     applyTorqueImpulse(v) {
         if (!this.rigidBody) return;
         const rv = new RAPIER.Vector(...v);
         this.rigidBody.applyTorqueImpulse(rv, true);
+        //rv.free();
     }
 
     addRigidBody(options = {}) {
@@ -136,6 +140,8 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         this.rigidBody = physicsManager.world.createRigidBody(rbd);
         this.rigidBody.world = physicsManager.world; // We save a ref to the world in the rb so it can rebuild itself from its handle.
         physicsManager.rigidBodies[this.rigidBody.handle()] = this;
+
+        // rbd.free();
     }
 
     removeRigidBody() {
