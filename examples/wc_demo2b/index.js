@@ -3,7 +3,7 @@
 // Croquet Studios, 2020
 
 import { Session, App } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, ActorManager, RenderManager, PawnManager, PlayerManager, RapierPhysicsManager,
+import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, ActorManager, ThreeRenderManager, PawnManager, PlayerManager, RapierPhysicsManager,
     toRad, LoadRapier } from "@croquet/worldcore";
 import { LevelActor } from "./src/Level";
 import { MyPlayerPawn } from "./src/Player";
@@ -49,6 +49,7 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
 
+        /*
         this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
 
         this.render.lights.setAmbientColor([0.8, 0.8, 0.8]);
@@ -63,12 +64,19 @@ class MyViewRoot extends ViewRoot {
             ao.density = 0.3;
             ao.falloff = 0.5;
         }
+        */
+        this.resizeToWindow();
+    }
 
+    resizeToWindow() {
+        this.render.camera.aspect = window.innerWidth / window.innerHeight;
+        this.render.camera.updateProjectionMatrix();
+        this.render.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
     createManagers() {
         this.webInput = this.addManager(new WebInputManager());
-        this.render = this.addManager(new RenderManager());
+        this.render = this.addManager(new ThreeRenderManager());
         this.ui = this.addManager(new UIManager());
         this.audio = this.addManager(new AudioManager());
         this.pawnManager = this.addManager(new PawnManager());

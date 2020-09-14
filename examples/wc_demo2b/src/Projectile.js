@@ -1,8 +1,9 @@
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale,
-    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, m4_scaling } from "@croquet/worldcore";
+    ActorManager, RenderManager, PM_ThreeVisible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, m4_scaling } from "@croquet/worldcore";
 import paper from "../assets/paper.jpg";
+import * as THREE from 'three';
 
 //------------------------------------------------------------------------------------------
 // ProjectileActor
@@ -33,10 +34,24 @@ ProjectileActor.register('ProjectileActor');
 // ProjectilePawn
 //------------------------------------------------------------------------------------------
 
-class ProjectilePawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
+class ProjectilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
-        this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.owner, () => this.buildDraw()));
+        //this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.owner, () => this.buildDraw()));
+
+        const paperTexture = new THREE.TextureLoader().load( paper );
+
+        paperTexture.wrapS = paperTexture.wrapT = THREE.RepeatWrapping;
+        paperTexture.repeat.set(1,3);
+
+        const color = this.actor.color
+        const threeColor = new THREE.Color(color[0], color[1], color[2]);
+        const geometry = new THREE.BoxBufferGeometry( 0.2, 0.2, 0.2 );
+        const material = new THREE.MeshStandardMaterial( {map: paperTexture, color: threeColor} );
+        this.cube = new THREE.Mesh( geometry, material );
+        this.cube.castShadow = true;
+        this.cube.receiveShadow= true;
+        this.setRenderObject(this.cube);
     }
 
     buildDraw() {
