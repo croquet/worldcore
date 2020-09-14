@@ -111,6 +111,10 @@ export class Pawn extends View {
         this.subscribe(this.actor.id, event, callback);
     }
 
+    ignore(event) {
+        this.unsubscribe(this.actor.id, event);
+    }
+
     listenOnce(event, callback) {
         this.subscribe(this.actor.id, {event, handling: "oncePerFrame"}, callback);
     }

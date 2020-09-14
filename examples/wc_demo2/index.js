@@ -15,7 +15,7 @@ import { MyPlayerPawn } from "./src/Player";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting model!!!!!");
+        console.log("Starting model!!!!!!!");
         this.seedColors();
         this.level = LevelActor.create();
         this.actors = [];
@@ -79,7 +79,8 @@ class MyViewRoot extends ViewRoot {
 async function go() {
     await LoadRapier();
     App.makeWidgetDock();
-    const session = await Session.join(`wc-demo2-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 20});
+    // const session = await Session.join(`wc-demo2-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 20});
+    const session = await Session.join(`wc-demo2`, MyModelRoot, MyViewRoot, {tps: 20});
 }
 
 go();

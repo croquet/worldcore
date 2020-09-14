@@ -33,7 +33,7 @@ export class RapierPhysicsManager extends Model {
 
     init(options = {}) {
         super.init();
-        console.log("Starting rapier physics");
+        console.log("Starting rapier physics!!");
         this.beWellKnownAs('RapierPhysicsManager');
 
         const gravity = options.gravity || [0.0, -9.8, 0.0];
@@ -54,15 +54,15 @@ export class RapierPhysicsManager extends Model {
     tick() {
         this.world.step();
         this.world.forEachActiveRigidBodyHandle(h => {
-                    const rb = this.rigidBodies[h];
-                    const t = rb.rigidBody.translation();
-                    const r = rb.rigidBody.rotation();
+            const rb = this.rigidBodies[h];
+            const t = rb.rigidBody.translation();
+            const r = rb.rigidBody.rotation();
 
-                    const v = [t.x, t.y, t.z];
-                    const q = [r.x, r.y, r.z, r.w];
+            const v = [t.x, t.y, t.z];
+            const q = [r.x, r.y, r.z, r.w];
 
-                    rb.moveTo(v);
-                    rb.rotateTo(q);
+            rb.moveTo(v);
+            rb.rotateTo(q);
         });
         this.future(this.timeStep).tick();
     }
@@ -94,9 +94,33 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         };
     }
 
+    // init(...args) {
+    //     super.init(...args);
+    //     // this.listen("smoothed_moveTo", this.rapierOnMoveTo)
+    //     // this.listen("smoothed_rotateTo", this.rapierOnRotateTo)
+    // }
+
     destroy() {
-        super.destroy();
         this.removeRigidBody();
+        super.destroy();
+    }
+
+    rapierOnMoveTo(v) {
+        this.rigidBody.setNextKinematicTranslation(...v);
+    }
+
+    rapierOnRotateTo(q) {
+        this.rigidBody.setNextKinematicRotation(...q);
+    }
+
+    setRigidBodyTranslation(v) {
+        if (!this.rigidBody) return;
+        this.rigidBody.setNextKinematicTranslation(...v);
+    }
+
+    setRigidBodyRotation(q) {
+        if (!this.rigidBody) return;
+        this.rigidBody.setNextKinematicRotation(...q);
     }
 
     applyForce(v) {
@@ -141,16 +165,34 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         this.rigidBody.world = physicsManager.world; // We save a ref to the world in the rb so it can rebuild itself from its handle.
         physicsManager.rigidBodies[this.rigidBody.handle()] = this;
 
-        // rbd.free();
+        if (this.rigidBody.isKinematic()) {
+            this.listen("smoothed_moveTo", this.rapierOnMoveTo);
+            this.listen("smoothed_rotateTo", this.rapierOnRotateTo);
+        }
     }
 
     removeRigidBody() {
         if (this.rigidBody) {
+            if (this.rigidBody.isKinematic()) {
+                this.ignore("smoothed_moveTo");
+                this.ignore("smoothed_rotateTo");
+            }
             const physicsManager = this.wellKnownModel('RapierPhysicsManager');
             physicsManager.rigidBodies[this.rigidBody.handle()] = null;
             physicsManager.world.removeRigidBody(this.rigidBody);
             this.rigidBody = null;
         }
+    }
+
+    addBallCollider(options = {}) {
+        const radius = options.radius * this.scale[0]; // Non-uniform scales won't work with ball colliders
+
+        const cd = RAPIER.ColliderDesc.ball(radius);
+        cd.density = options.density || 1;  // Zero or negative density causes errors
+        cd.friction = options.friction || 0;
+        cd.restitution = options.restitution || 0;
+
+        const c = this.rigidBody.createCollider(cd);
     }
 
     addBoxCollider(options = {}) {

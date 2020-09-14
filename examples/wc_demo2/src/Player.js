@@ -13,15 +13,24 @@ class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics
         this.color = [0.5*Math.random() + 0.5, 0.5*Math.random() + 0.5, 0.5*Math.random() + 0.5, 1];
         super.init("PlayerPawn", options);
         this.setLocation([0,1.5,5]);
+        // this.setLocation([0,1.5,0]);
         this.shots = [];
+
+        this.addRigidBody({type: 'kinematic'});
+        this.addBoxCollider({
+            size: [0.5, 1.5, 0.5],
+            density: 1,
+            friction: 1,
+            restitution: 50
+        });
 
         this.listen("setName", name => {this.name = name; this.playerChanged();});
         this.listen("shoot", this.shoot);
     }
 
     destroy() {
-        super.destroy();
         this.shots.forEach(s => s.destroy());
+        super.destroy();
     }
 
     shoot() {

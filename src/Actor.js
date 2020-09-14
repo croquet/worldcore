@@ -66,6 +66,10 @@ export class Actor extends Model {
         this.subscribe(this.id, event, callback);
     }
 
+    ignore(event) {
+        this.unsubscribe(this.id, event);
+    }
+
 
 }
 Actor.register("Actor");
