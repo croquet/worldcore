@@ -1,5 +1,5 @@
 import { NamedView, GetNamedView } from "./NamedView";
-
+import * as THREE from "three";
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible Mixin -------------------------------------------------------------------------
@@ -11,7 +11,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 
     destroy() {
         super.destroy();
-        // don't need the render object because we may not even be directly in a scene 
+        // don't need the render object because we may not even be directly in a scene
         // and we know who our parent is.
         //const render = GetNamedView("ThreeRenderManager");
         // Put code here to destroy the model in the render manager.
@@ -25,7 +25,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
         // this.global is a 4x4 matrix
         // console.log("PM_ThreeVisible.refresh()", this.global)
         if(this.pawn3D){
-            this.pawn3D.matrix.fromArray(this.global); 
+            this.pawn3D.matrix.fromArray(this.global);
             this.pawn3D.matrixWorldNeedsUpdate = true;
         }
     }
@@ -41,7 +41,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
         // You probably also want to the set the transform to this.global
         this.pawn3D = object3D;
         this.pawn3D.matrixAutoUpdate = false;
-        this.pawn3D.matrix.fromArray(this.global); 
+        this.pawn3D.matrix.fromArray(this.global);
         this.pawn3D.matrixWorldNeedsUpdate = true;
         render.scene.add(this.pawn3D);
     }
@@ -114,7 +114,7 @@ export class ThreeRenderManager extends NamedView {
 
     update() {
         // This gets called every frame. This is where you draw the whole scene.
-        this.renderer.render(this.scene, this.camera); 
+        this.renderer.render(this.scene, this.camera);
     }
 
     setShadow(bool){
