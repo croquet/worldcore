@@ -1,6 +1,6 @@
 import { Model } from "@croquet/croquet";
 import { RegisterMixin } from "./Mixins";
-import { v3_multiply } from "./Vector";
+import { q_identity, v3_multiply, v3_zero } from "./Vector";
 
 let RAPIER;
 
@@ -87,18 +87,21 @@ export const AM_RapierPhysics = superclass => class extends superclass {
                 write: rb => ({world: rb.world, handle: rb.handle()}),
                 read: ({world, handle}) => {
                     const rb = world.getRigidBody(handle);
-                    rb.world = world; // We save a ref to the world in the rb so it can rebuild itself from its handle.
+                    rb.world = world; // We save a ref to the world in the rigid body so it can rebuild itself from its handle.
                     return rb;
+                }
+            },
+            "RAPIER.Collider": {
+                cls: RAPIER.Collider,
+                write: c => ({world: c.world, handle: c.handle()}),
+                read: ({world, handle}) => {
+                    const c = world.getCollider(handle);
+                    c.world = world; // We save a ref to the world in the collider so it can rebuild itself from its handle.
+                    return c;
                 }
             }
         };
     }
-
-    // init(...args) {
-    //     super.init(...args);
-    //     // this.listen("smoothed_moveTo", this.rapierOnMoveTo)
-    //     // this.listen("smoothed_rotateTo", this.rapierOnRotateTo)
-    // }
 
     destroy() {
         this.removeRigidBody();
@@ -127,28 +130,28 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         if (!this.rigidBody) return;
         const rv = new RAPIER.Vector(...v);
         this.rigidBody.applyForce(rv, true);
-        //rv.free();
+        rv.free();
     }
 
     applyImpulse(v) {
         if (!this.rigidBody) return;
         const rv = new RAPIER.Vector(...v);
         this.rigidBody.applyImpulse(rv, true);
-        // rv.free();
+        rv.free();
     }
 
     applyTorque(v) {
         if (!this.rigidBody) return;
         const rv = new RAPIER.Vector(...v);
         this.rigidBody.applyTorque(rv, true);
-        // rv.free();
+        rv.free();
     }
 
     applyTorqueImpulse(v) {
         if (!this.rigidBody) return;
         const rv = new RAPIER.Vector(...v);
         this.rigidBody.applyTorqueImpulse(rv, true);
-        //rv.free();
+        rv.free();
     }
 
     addRigidBody(options = {}) {
@@ -165,6 +168,8 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         this.rigidBody.world = physicsManager.world; // We save a ref to the world in the rb so it can rebuild itself from its handle.
         physicsManager.rigidBodies[this.rigidBody.handle()] = this;
 
+        rbd.free();
+
         if (this.rigidBody.isKinematic()) {
             this.listen("smoothed_moveTo", this.rapierOnMoveTo);
             this.listen("smoothed_rotateTo", this.rapierOnRotateTo);
@@ -172,16 +177,20 @@ export const AM_RapierPhysics = superclass => class extends superclass {
     }
 
     removeRigidBody() {
-        if (this.rigidBody) {
-            if (this.rigidBody.isKinematic()) {
-                this.ignore("smoothed_moveTo");
-                this.ignore("smoothed_rotateTo");
-            }
-            const physicsManager = this.wellKnownModel('RapierPhysicsManager');
-            physicsManager.rigidBodies[this.rigidBody.handle()] = null;
-            physicsManager.world.removeRigidBody(this.rigidBody);
-            this.rigidBody = null;
+        if (!this.rigidBody) return;
+
+        this.removeCollider();
+
+        if (this.rigidBody.isKinematic()) {
+            this.ignore("smoothed_moveTo");
+            this.ignore("smoothed_rotateTo");
         }
+        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        physicsManager.rigidBodies[this.rigidBody.handle()] = null;
+        physicsManager.world.removeRigidBody(this.rigidBody);
+
+        this.rigidBody.free();
+        this.rigidBody = null;
     }
 
     addBallCollider(options = {}) {
@@ -192,7 +201,19 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         cd.friction = options.friction || 0;
         cd.restitution = options.restitution || 0;
 
+        const translation = options.translation || v3_zero();
+        const rotation = options.rotation || q_identity();
+
+        cd.setTranslation(...translation);
+        cd.setRotation(...rotation);
+
         const c = this.rigidBody.createCollider(cd);
+
+        cd.free();
+
+        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        c.world = physicsManager.world; // We save a ref to the world in the collider so it can rebuild itself from its handle.
+        this.collider = c;
     }
 
     addBoxCollider(options = {}) {
@@ -203,7 +224,28 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         cd.friction = options.friction || 0;
         cd.restitution = options.restitution || 0;
 
+        const translation = options.translation || v3_zero();
+        const rotation = options.rotation || q_identity();
+
+        cd.setTranslation(...translation);
+        cd.setRotation(...rotation);
+
         const c = this.rigidBody.createCollider(cd);
+
+        cd.free();
+
+        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        c.world = physicsManager.world; // We save a ref to the world in the collider so it can rebuild itself from its handle.
+        this.collider = c;
+    }
+
+    removeCollider() {
+        if (!this.collider) return;
+
+        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        physicsManager.world.removeCollider(this.collider);
+        this.collider.free();
+        this.collider = null;
     }
 
 
