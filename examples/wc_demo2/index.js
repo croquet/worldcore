@@ -6,6 +6,7 @@ import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, ActorManager, RenderManager, PawnManager, PlayerManager, RapierPhysicsManager,
     toRad, LoadRapier } from "@croquet/worldcore";
 import { LevelActor } from "./src/Level";
+import { GameScreen } from "./src/HUD";
 import { MyPlayerPawn } from "./src/Player";
 
 //------------------------------------------------------------------------------------------
@@ -63,6 +64,16 @@ class MyViewRoot extends ViewRoot {
             ao.density = 0.3;
             ao.falloff = 0.5;
         }
+
+
+
+        const minUI = Math.min(this.ui.size[0], this.ui.size[1]);
+        let s = 1;
+        if (minUI < 600) s = minUI / 600;
+
+        this.ui.setScale(s);
+
+        this.gameScreen = new GameScreen(this.ui.root, {autoSize: [1,1]});
 
     }
 
