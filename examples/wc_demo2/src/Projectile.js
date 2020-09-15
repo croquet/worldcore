@@ -21,7 +21,7 @@ export class ProjectileActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysi
             size: [0.1, 0.1, 0.1],
             density: 1,
             friction: 1,
-            restitution: 50
+            restitution: 0.1
         });
         // this.addBallCollider({
         //     radius: 0.1,

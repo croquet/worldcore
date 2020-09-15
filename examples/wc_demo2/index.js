@@ -29,7 +29,7 @@ class MyModelRoot extends ModelRoot {
 
     createManagers() {
         this.playerManager = this.addManager(PlayerManager.create());
-        this.phyicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 20}));
+        this.phyicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 30}));
         this.actorManager = this.addManager(ActorManager.create());
     }
 
@@ -91,7 +91,7 @@ async function go() {
     await LoadRapier();
     App.makeWidgetDock();
     // const session = await Session.join(`wc-demo2-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 20});
-    const session = await Session.join(`wc-demo2`, MyModelRoot, MyViewRoot, {tps: 20});
+    const session = await Session.join(`wc-demo2`, MyModelRoot, MyViewRoot, {tps: 30});
 }
 
 go();

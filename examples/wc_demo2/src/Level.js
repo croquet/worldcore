@@ -12,7 +12,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
             size: [20,1,20],
             friction: 1,
             density: 1,
-            restitution: 1000
+            restitution: 0.1
         });
 
         this.fountain0 = FountainActor.create({location: [-3,1.5,0]});

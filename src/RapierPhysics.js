@@ -48,6 +48,7 @@ export class RapierPhysicsManager extends Model {
 
     destroy() {
         super.destroy();
+        // this.world.free();
         this.world = null;
     }
 
@@ -108,34 +109,32 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         super.destroy();
     }
 
-
-
     applyForce(v) {
         if (!this.rigidBody) return;
         const rv = new RAPIER.Vector(...v);
         this.rigidBody.applyForce(rv, true);
-        rv.free();
+        // rv.free();
     }
 
     applyImpulse(v) {
         if (!this.rigidBody) return;
         const rv = new RAPIER.Vector(...v);
         this.rigidBody.applyImpulse(rv, true);
-        rv.free();
+        // rv.free();
     }
 
     applyTorque(v) {
         if (!this.rigidBody) return;
         const rv = new RAPIER.Vector(...v);
         this.rigidBody.applyTorque(rv, true);
-        rv.free();
+        // rv.free();
     }
 
     applyTorqueImpulse(v) {
         if (!this.rigidBody) return;
         const rv = new RAPIER.Vector(...v);
         this.rigidBody.applyTorqueImpulse(rv, true);
-        rv.free();
+        // rv.free();
     }
 
     addRigidBody(options = {}) {
@@ -152,7 +151,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         this.rigidBody.world = physicsManager.world; // We save a ref to the world in the rb so it can rebuild itself from its handle.
         physicsManager.rigidBodies[this.rigidBody.handle()] = this;
 
-        rbd.free();
+        // rbd.free();
 
         if (this.rigidBody.isKinematic()) {
             this.listen("spatial_setLocation", this.kinematicSetLocation);
@@ -184,7 +183,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         physicsManager.rigidBodies[this.rigidBody.handle()] = null;
         physicsManager.world.removeRigidBody(this.rigidBody);
 
-        this.rigidBody.free();
+        // this.rigidBody.free();
         this.rigidBody = null;
     }
 
@@ -204,7 +203,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
 
         const c = this.rigidBody.createCollider(cd);
 
-        cd.free();
+        // cd.free();
 
         const physicsManager = this.wellKnownModel('RapierPhysicsManager');
         c.world = physicsManager.world; // We save a ref to the world in the collider so it can rebuild itself from its handle.
@@ -227,7 +226,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
 
         const c = this.rigidBody.createCollider(cd);
 
-        cd.free();
+        // cd.free();
 
         const physicsManager = this.wellKnownModel('RapierPhysicsManager');
         c.world = physicsManager.world; // We save a ref to the world in the collider so it can rebuild itself from its handle.
@@ -239,7 +238,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
 
         const physicsManager = this.wellKnownModel('RapierPhysicsManager');
         physicsManager.world.removeCollider(this.collider);
-        this.collider.free();
+        // this.collider.free();
         this.collider = null;
     }
 
