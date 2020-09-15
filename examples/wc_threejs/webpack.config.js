@@ -25,10 +25,13 @@ module.exports = {
             },
         ],
     },
-    // HACK: de-duplicate croquet and three.js
+    // use Croquet loaded via <script>
+    externals: {
+        "@croquet/croquet": "Croquet",
+    },
+    // HACK: de-duplicate three.js
     resolve: {
         alias: {
-            "@croquet/croquet": path.resolve(__dirname, 'node_modules/@croquet/croquet/pub/croquet-croquet.js'),
             "three": path.resolve(__dirname, 'node_modules/three'),
         }
     },

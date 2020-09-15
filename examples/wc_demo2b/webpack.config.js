@@ -25,11 +25,9 @@ module.exports = {
             },
         ],
     },
-    // HACK: de-duplicate croquet in public version
-    resolve: {
-        alias: {
-            "@croquet/croquet": path.resolve(__dirname, 'node_modules/@croquet/croquet/pub/croquet-croquet.js'),
-        }
+    // use Croquet loaded via <script>
+    externals: {
+        "@croquet/croquet": "Croquet",
     },
     plugins: [
         new HtmlWebPackPlugin({
