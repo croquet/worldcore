@@ -97,9 +97,9 @@ export class ThreeRenderManager extends NamedView {
         this.renderer = new THREE.WebGLRenderer({ canvas: threeCanvas });
         this.renderer.setClearColor(0x4444aa);
         this.renderer.shadowMap.enabled = true;
-        const light = new THREE.PointLight(0xffffff, 1);
-        light.position.set(50, 50, 50);
-        this.scene.add(light);
+        //const light = new THREE.PointLight(0xffffff, 1);
+        //light.position.set(50, 50, 50);
+        //this.scene.add(light);
         console.log(this.scene)
     }
 

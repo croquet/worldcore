@@ -1,5 +1,4 @@
 dependencies:
-  '@croquet/croquet': 0.3.3
   '@croquet/worldcore': 'link:../..'
 devDependencies:
   file-loader: 6.1.0_webpack@4.44.1
@@ -958,6 +957,7 @@ packages:
   /@babel/runtime/7.11.2:
     dependencies:
       regenerator-runtime: 0.13.7
+    dev: true
     resolution:
       integrity: sha512-TeWkU52so0mPtDcaCTxNBI/IHiz0pZgr8VEFqXFtZWpYD08ZB6FaSwVAS8MKRQAP3bYKiVjwysOJgMFY28o6Tw==
   /@babel/template/7.10.4:
@@ -990,17 +990,6 @@ packages:
     dev: true
     resolution:
       integrity: sha512-bvM7Qz6eKnJVFIn+1LPtjlBFPVN5jNDc1XmN15vWe7Q3DPBufWWsLiIvUu7xW87uTG6QoggpIDnUgLQvPheU+Q==
-  /@croquet/croquet/0.3.3:
-    dependencies:
-      '@babel/runtime': 7.11.2
-      fast-json-stable-stringify: 2.1.0
-      fastpriorityqueue: 0.6.3
-      pako: 1.0.11
-      seedrandom: 3.0.5
-      toastify-js: 1.9.1
-    dev: false
-    resolution:
-      integrity: sha512-JzDF+xeNiJzF6Qlsu89rGgqnAXlzKElSi1wkyCbZ/dQ2SFcyPnZEIV/8rVDvsotv7mOPMS4u8ED7wCTpyJF9Ng==
   /@iarna/toml/2.2.5:
     dev: true
     resolution:
@@ -3175,6 +3164,7 @@ packages:
     resolution:
       integrity: sha512-g1KuQwHOZAmOZMuBtHdxDtju+T2RT8jgCC9aANsbpdiDDTSnjgfuVsIBNKbUeJI3oKMRExcfNDtJl4OhbffMsw==
   /fast-json-stable-stringify/2.1.0:
+    dev: true
     resolution:
       integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==
   /fast-levenshtein/2.0.6:
@@ -3185,10 +3175,6 @@ packages:
     dev: true
     resolution:
       integrity: sha512-483XLLxTVIwWK3QTrMGRqUfUpoOs/0hbQrl2oz4J0pAcm3A3bu84wxTFqGqkJzewCLdME38xJLJAxBABfQT8sQ==
-  /fastpriorityqueue/0.6.3:
-    dev: false
-    resolution:
-      integrity: sha512-l4Whw9/MDkl/0XuqZEzGE/sw9T7dIxuUnxqq4ZJDLt8AE45j8wkx4/nBRZm50aQ9kN71NB9mwQzglLsvQGROsw==
   /faye-websocket/0.10.0:
     dependencies:
       websocket-driver: 0.6.5
@@ -5108,6 +5094,7 @@ packages:
     resolution:
       integrity: sha1-8/dSL073gjSNqBYbrZ7P1Rv4OnU=
   /pako/1.0.11:
+    dev: true
     resolution:
       integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==
   /parallel-transform/1.2.0:
@@ -5978,6 +5965,7 @@ packages:
     resolution:
       integrity: sha512-MguG95oij0fC3QV3URf4V2SDYGJhJnJGqvIIgdECeODCT98wSWDAJ94SSuVpYQUoTcGUIL6L4yNB7j1DFFHSBg==
   /regenerator-runtime/0.13.7:
+    dev: true
     resolution:
       integrity: sha512-a54FxoJDIr27pgf7IgeQGxmqUNYrcV338lf/6gH456HZ/PhX+5BcwHXG9ajESmwe6WRO0tAzRUrRmNONWgkrew==
   /regenerator-transform/0.14.5:
@@ -6260,10 +6248,6 @@ packages:
       node: '>= 8.9.0'
     resolution:
       integrity: sha512-SHiNtMOUGWBQJwzISiVYKu82GiV4QYGePp3odlY1tuKO7gPtphAT5R/py0fA6xtbgLL/RvtJZnU9b8s0F1q0Xg==
-  /seedrandom/3.0.5:
-    dev: false
-    resolution:
-      integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==
   /select-hose/2.0.0:
     dev: true
     resolution:
@@ -6898,10 +6882,6 @@ packages:
       node: '>=0.10.0'
     resolution:
       integrity: sha512-FWtleNAtZ/Ki2qtqej2CXTOayOH9bHDQF+Q48VpWyDXjbYxA4Yz8iDB31zXOBUlOHHKidDbqGVrTUvQMPmBGBw==
-  /toastify-js/1.9.1:
-    dev: false
-    resolution:
-      integrity: sha512-B3LTJURySMix/xWqVHyj2XGVsIHesb4euGVuIaFfKxfmjM4F6HMgbW9V66DHUEt98jGlGpeTWSiSJ78UfrJVbA==
   /toidentifier/1.0.0:
     dev: true
     engines:
@@ -7507,7 +7487,6 @@ packages:
     resolution:
       integrity: sha512-AX3Zw5iPruN5ie6xGRIDgqkT+ZhnRlZMLMHAs8tg7nRruy2Nb+i5o9bwghAogtM08q1dpr2LVoS8KSTMYpWXUw==
 specifiers:
-  '@croquet/croquet': ^0.3.3
   '@croquet/worldcore': 'file:../..'
   file-loader: ^6.1.0
   html-webpack-plugin: ^4.4.1
