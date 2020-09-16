@@ -178,6 +178,7 @@ class MyModelRoot extends ModelRoot {
 
         this.subscribe("input", " Down", this.shoot);
         this.subscribe("input", "touchTap", this.shoot);
+        this.subscribe("input", "dDown", this.raycast);
 
         this.future(0).tick();
     }
@@ -192,6 +193,13 @@ class MyModelRoot extends ModelRoot {
     tick() {
         this.spawn();
         this.future(200).tick();
+    }
+
+    raycast() {
+        console.log("Raycast!");
+        const phyicsManager = this.wellKnownModel('RapierPhysicsManager');
+        phyicsManager.castRay([1,1,1], [1,0,0], 100);
+
     }
 
     shoot() {
@@ -247,6 +255,14 @@ class MyViewRoot extends ViewRoot {
             ao.falloff = 0.7;
 
         }
+
+        this.webInput.addChord("strafeLeft", ['ArrowLeft', 'Shift']);
+        this.webInput.addChord("spinLeft", ['ArrowLeft'], ['Shift']);
+
+        this.subscribe("input", "spinLeftDown", () => console.log("Spin Left Down"));
+        this.subscribe("input", "spinLeftUp", () => console.log("Spin Left Up"));
+        this.subscribe("input", "strafeLeftDown", () => console.log("Strafe Left Down"));
+        this.subscribe("input", "strafeLeftUp", () => console.log("Strafe Left Up"));
 
     }
 

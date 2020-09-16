@@ -33,7 +33,7 @@ class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics
     }
 
     shoot() {
-        if (this.shots.length >= 20) {
+        if (this.shots.length >= 15) {
             const doomed = this.shots.shift();
             doomed.destroy();
         }

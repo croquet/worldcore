@@ -16,7 +16,7 @@ import { MyPlayerPawn } from "./src/Player";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting model!!!!!!!");
+        console.log("Starting modelx!!!!");
         this.seedColors();
         this.level = LevelActor.create();
         this.actors = [];
@@ -29,7 +29,7 @@ class MyModelRoot extends ModelRoot {
 
     createManagers() {
         this.playerManager = this.addManager(PlayerManager.create());
-        this.phyicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 30}));
+        this.phyicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 20}));
         this.actorManager = this.addManager(ActorManager.create());
     }
 
