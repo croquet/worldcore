@@ -8,6 +8,8 @@ import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, ActorMan
 import { LevelActor } from "./src/Level";
 import { MyPlayerPawn } from "./src/Player";
 
+import * as THREE from 'three';
+
 //------------------------------------------------------------------------------------------
 // MyModelRoot
 //------------------------------------------------------------------------------------------
@@ -66,6 +68,7 @@ class MyViewRoot extends ViewRoot {
         }
         */
         this.resizeToWindow();
+        this.render.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     }
 
     resizeToWindow() {
