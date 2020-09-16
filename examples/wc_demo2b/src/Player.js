@@ -18,8 +18,17 @@ class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics
     init(options) {
         this.color = [0.5*Math.random() + 0.5, 0.5*Math.random() + 0.5, 0.5*Math.random() + 0.5, 1];
         super.init("PlayerPawn", options);
-        this.setLocation([0,1.5,5]);
+        this.setLocation([0,2.2,5]);
         this.shots = [];
+
+        this.addRigidBody({type: 'kinematic'});
+        this.addBoxCollider({
+            size: [0.3, 1.0, 0.3],
+            density: 1,
+            friction: 1,
+            restitution: 50,
+            translation: [0, -0.6, 0]
+        });
 
         this.listen("setName", name => {this.name = name; this.playerChanged();});
         this.listen("shoot", this.shoot);
@@ -64,6 +73,11 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
     constructor(...args) {
         super(...args);
         this.tug = 0.2;
+        // custom movement speed scaling value so we can have a bit more fine-tuned control of player character
+        this.myMovementSensitivity = 0.5;
+        this.myRotationSensitivity = 1.25;
+        // client-side lerping of movement tilt to reduce snapping when moving 
+        this.myTiltLerp = [0, 0];
 
         if (this.isMyPlayerPawn) {
             playerPawn = this;
@@ -74,6 +88,8 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
             this.left = 0;
             this.fore = 0;
             this.back = 0;
+            this.strafeLeft = 0;
+            this.strafeRight = 0;
 
             this.activateControls();
 
@@ -93,8 +109,8 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
             this.setDrawCall(new DrawCall(this.cube, this.material));*/
             // console.log(this.cube);
             // console.log(this.material);
-
-
+            this.myCustomTimeOffset = Math.random() * 100000;
+            console.log(this.myCustomTimeOffset);
             this.loadPawnModel();
         }
     }
@@ -112,16 +128,45 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
 
         /*const geometry = new THREE.BoxBufferGeometry( 1, 3, 1 );
         this.cube = new THREE.Mesh( geometry, material );*/
-        const material = new THREE.MeshStandardMaterial( {map: pawntxt} );
+
+
+        const material = new THREE.MeshStandardMaterial( {map: pawntxt, 
+            flatShading: false, 
+            blending: THREE.NormalBlending,
+            metalness: 0,
+            roughness: 100 } );
         obj.children[1].material = material;
         //console.log(obj);
         obj.children[1].position.set(0,-1,0);
         obj.children[1].scale.set(0.33,0.33,0.33);
         obj.children[1].rotation.set(0,3.14,0);
+        obj.children[1].castShadow = true;
+        obj.children[1].receiveShadow = true;
+        this.myMesh = obj.children[1];
         //obj.SetScale([0.5, 0.5, 0.5]);
         obj.castShadow = true;
         obj.receiveShadow= true;
         this.setRenderObject(obj);
+    }
+
+    update(time, delta) {
+        super.update(time, delta);
+        var offset = (Math.sin( (time + this.myCustomTimeOffset) / 750) * 0.025);
+        // represents maximum forward/backward tilt when moving
+        var tiltFore = this.actor.velocity[2] * 30;
+        var tiltSide = this.actor.velocity[0] * 30;
+        // represents how quickly the character will reach those maximum tilt values
+        var modifiedDelta = delta * 0.005;
+
+        // actual lerping function that moves the local tilt value to reflect the model velocity
+        this.myTiltLerp[0] = (1-modifiedDelta)*this.myTiltLerp[0]+modifiedDelta*tiltFore
+        this.myTiltLerp[1] = (1-modifiedDelta)*this.myTiltLerp[1]+modifiedDelta*tiltSide
+
+        if (this.myMesh !== undefined)
+        {
+            this.myMesh.position.set(0, -1.5 + offset, 0);
+            this.myMesh.rotation.set(this.myTiltLerp[0], 3.1415, this.myTiltLerp[1]);
+        }
     }
 
     destroy() {
@@ -158,29 +203,75 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
         this.subscribe("hud", "left", f => this.turnLeft(1 * f));
         this.subscribe("hud", "right", f => this.turnRight(-1 * f));
 
+        this.subscribe("input", "qDown", () => this.goLeft(-1));
+        this.subscribe("input", "qUp", () => this.goLeft(0));
+        this.subscribe("input", "eDown", () => this.goRight(1));
+        this.subscribe("input", "eUp", () => this.goRight(0));
+
+        this.subscribe("input", "shiftDown", () => this.goLeft(-1));
+        this.subscribe("input", "shiftUp", () => this.goLeft(0));
+
+
         this.subscribe("input", " Down", this.shoot);
         this.subscribe("input", "touchTap", this.shoot);
 
     }
 
     turnRight(a) {
-        this.right = a;
+        this.right = a * this.myRotationSensitivity;
+        if (this.back > 0) {
+            this.right *= -1;
+        }
         this.setSpin(q_axisAngle([0,1,0], 0.0015 * (this.right + this.left)));
     }
 
     turnLeft(a) {
-        this.left = a;
+        this.left = a * this.myRotationSensitivity;
+        if (this.back > 0) {
+            this.left *= -1
+        }
         this.setSpin(q_axisAngle([0,1,0], 0.0015 * (this.right + this.left)));
     }
 
+    goLeft(x)
+    {
+        this.strafeLeft = x * this.myMovementSensitivity;
+        this.setVelocity([ 0.01 * (this.strafeLeft + this.strafeRight), 0,  0.01 * (this.fore + this.back)]);
+    }
+
+    goRight(x)
+    {
+        this.strafeRight = x * this.myMovementSensitivity;
+        this.setVelocity([ 0.01 * (this.strafeLeft + this.strafeRight), 0,  0.01 * (this.fore + this.back)]);
+    }
+
     goFore(z) {
-        this.fore = z;
-        this.setVelocity([0, 0,  0.01 * (this.fore + this.back)]);
+        this.fore = z * this.myMovementSensitivity;
+
+        this.setVelocity([0.01 * (this.strafeLeft + this.strafeRight), 0,  0.01 * (this.fore + this.back)]);
     }
 
     goBack(z) {
-        this.back = z;
-        this.setVelocity([0, 0,  0.01 * (this.fore + this.back)]);
+        this.back = z * this.myMovementSensitivity;
+        if (z > 0)
+        {
+            if (this.right < 0) {
+                this.right *= -1;
+            }
+            if (this.left > 0) {
+                this.left *= -1;
+            }
+        }
+        else {
+            if (this.right > 0) {
+                this.right *= -1;
+            }
+            if (this.left < 0) {
+                this.left *= -1;
+            }
+        }
+        this.setVelocity([0.01 * (this.strafeLeft + this.strafeRight), 0,  0.01 * (this.fore + this.back)]);
+        this.setSpin(q_axisAngle([0,1,0], 0.0015 * (this.right + this.left)));
     }
 
     shoot() {

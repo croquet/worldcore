@@ -75,27 +75,26 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
        floor.receiveShadow = true;
        floor.position.set(0, 1, 0);
        group.add(floor);
-       group.add(new THREE.AmbientLight( 0x222222  ));
+       group.add(new THREE.AmbientLight( 0x444444  ));
 
 
-       var light = new THREE.DirectionalLight( 0xdfebff, 1 );
-       //light.position.set( 50, 200, 100 );
+       var light = new THREE.DirectionalLight( 0x999999, 0.85 );
        light.position.set( 100, 100, 0 );
-       light.position.multiplyScalar( 1.3 );
+       //light.position.multiplyScalar( 1.3 );
 
        light.castShadow = true;
 
-       light.shadow.mapSize.width = 1024;
-       light.shadow.mapSize.height = 1024;
+       light.shadow.mapSize.width = 4096;
+       light.shadow.mapSize.height = 4096;
 
-       var d = 300;
+       var d = 100;
 
        light.shadow.camera.left = - d;
        light.shadow.camera.right = d;
        light.shadow.camera.top = d;
        light.shadow.camera.bottom = - d;
 
-       light.shadow.camera.far = 1000;
+       light.shadow.camera.far = 3000;
 
        this.setRenderObject(group);
        group.parent.add(light);

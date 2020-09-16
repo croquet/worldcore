@@ -13,18 +13,26 @@ const SWIPE_DURATION = 300;   // milliseconds
 const SWIPE_DISTANCE = 50;     // pixels
 
 const keys = new Set();
+const chordNames = new Map();
+const upChordKeys = new Map();
+const downChordKeys = new Map();
 
 // Returns true if the key is pressed. Includes entries for mouse buttons.
 export function KeyDown(key) {
     return keys.has(key);
 }
 
-// Returns true if the combination of keys is pressed.
-export function ChordDown(chord) {
-    let allDown = true;
-    chord.forEach(k => {allDown &= KeyDown(k);});
-    return allDown;
-}
+//Returns true if the combination of keys is pressed/unpressed.
+// export function ChordDown(name) {
+//     const chord = chordNames.get(name);
+//     if (!chord) return false;
+//     const down = chord.down;
+//     const up = chord.up;
+//     let all = true;
+//     down.forEach(d => {all &= KeyDown(d);});
+//     up.forEach(u => {all &= !KeyDown(u);});
+//     return all;
+// }
 
 //----------------------------------------------------------------------------------------------------
 // Input
@@ -39,7 +47,7 @@ export class WebInputManager extends NamedView {
         super("Input");
         this.listeners = [];
         this.touches = [];
-        this.chords = new Map();
+
 
         this.lastClick = 0;
         this.penultimateClick = 0;
@@ -98,8 +106,16 @@ export class WebInputManager extends NamedView {
     }
 
     // If you want the input handler to report a chord event, you need to add the chord and give it an event name.
-    addChord(name, chord) {
-        chord.forEach(key => this.chords.set(key, {name, chord}));
+    addChord(name, down = [], up = []) {
+        chordNames.set(name, {down, up});
+        down.forEach(d => {
+            if (!downChordKeys.has(d)) downChordKeys.set(d, new Set());
+            downChordKeys.get(d).add(name);
+        });
+        up.forEach(u => {
+            if (!upChordKeys.has(u)) upChordKeys.set(u, new Set());
+            upChordKeys.get(u).add(name);
+        });
     }
 
     get touchCount() {
@@ -120,17 +136,74 @@ export class WebInputManager extends NamedView {
     }
 
     onChordDown(key) {
-        if (!this.chords.has(key)) return;
-        const entry = this.chords.get(key);
-        if (!ChordDown(entry.chord)) return;
-        if (this.inPointerLock) this.publish("input", entry.name + "Down");
+        const downs = [];
+        const ups = [];
+
+        if (downChordKeys.has(key)) {
+            downChordKeys.get(key).forEach( name => {
+                if (this.chordTest(name)) downs.push(name);
+            });
+        }
+
+        if (upChordKeys.has(key)) {
+            upChordKeys.get(key).forEach( name => {
+                if (!this.chordTest(name)) ups.push(name);
+            });
+        }
+
+        ups.forEach(name => {
+            if (!KeyDown(name)) return;
+            keys.delete(name);
+            this.publish("input", name + "Up");
+        });
+
+        downs.forEach(name => {
+            if (KeyDown(name)) return;
+            keys.add(name);
+            this.publish("input", name + "Down");
+        });
+
     }
 
     onChordUp(key) {
-        if (!this.chords.has(key)) return;
-        const entry = this.chords.get(key);
-        if (!ChordDown(entry.chord)) return;
-        if (this.inPointerLock) this.publish("input", entry.name + "Up");
+        const downs = [];
+        const ups = [];
+
+        if (downChordKeys.has(key)) {
+            downChordKeys.get(key).forEach( name => {
+                if (!this.chordTest(name)) ups.push(name);
+            });
+        }
+
+        if (upChordKeys.has(key)) {
+            upChordKeys.get(key).forEach( name => {
+                if (this.chordTest(name)) downs.push(name);
+            });
+        }
+
+        ups.forEach(name => {
+            if (!KeyDown(name)) return;
+            keys.delete(name);
+            this.publish("input", name + "Up");
+        });
+
+        downs.forEach(name => {
+            if (KeyDown(name)) return;
+            keys.add(name);
+            this.publish("input", name + "Down");
+        });
+
+    }
+
+    chordTest(name) {
+        const chord = chordNames.get(name);
+        if (!chord) return false;
+        const down = chord.down;
+        const up = chord.up;
+        let all = true;
+        down.forEach(d => {all &= KeyDown(d);});
+        up.forEach(u => {all &= !KeyDown(u);});
+        return all;
     }
 
     get isFullscreen() {
@@ -218,8 +291,8 @@ export class WebInputManager extends NamedView {
         } else {
             this.publish("input", key + "Down", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
             this.publish("input", "keyDown", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
+            this.onChordDown(key);
         }
-        this.onChordDown(key);
     }
 
     // onControlKey(e) {
@@ -259,8 +332,8 @@ export class WebInputManager extends NamedView {
         if (!KeyDown(key)) return;
         this.publish("input", key + "Up", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
         this.publish("input", "keyUp", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
-        this.onChordUp(key);
         keys.delete(key);
+        this.onChordUp(key);
     }
 
     onMouseDown(event) {
@@ -292,8 +365,8 @@ export class WebInputManager extends NamedView {
         const pX = event.clientX;
         const pY = event.clientY;
         this.publish("input", key + "Up", [pX, pY]);
-        this.onChordUp(key);
         keys.delete(key);
+        this.onChordUp(key);
     }
 
     onWheel(event) {
