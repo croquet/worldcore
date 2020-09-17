@@ -126,8 +126,6 @@ class MyViewRoot extends ViewRoot {
         obj.children[0].rotation.set(0,0,0);
         obj.children[0].castShadow = true;
         obj.children[0].receiveShadow = true;
-        // save mesh for later use
-        this.myMesh = obj.children[0];
         obj.castShadow = true;
         obj.receiveShadow = true;
 
@@ -153,6 +151,10 @@ class MyViewRoot extends ViewRoot {
         obj.children[0].scale.set( 0.2, 0.2, 0.2);
         obj.children[0].material.map = objtxt;
         obj.children[0].material.color = new THREE.Color(1, 1, 1);
+        obj.children[0].castShadow = true;
+        obj.children[0].receiveShadow = true;
+        obj.castShadow = true;
+        obj.receiveShadow = true;
 
         this.slimeObj = obj;
         console.log(this.slimeObj);
