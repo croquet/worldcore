@@ -34,13 +34,13 @@ export class ProjectileActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysi
 
         super.init("ProjectilePawn", options);
 
-        this.debugCollision = false;
-        this.collisionLocation = [0, 0, 0];
-        this.collisionScale = 0.25;
+        // this.debugCollision = false;
+        // this.collisionLocation = [0, 0, 0];
+        // this.collisionScale = 0.25;
 
         this.addRigidBody({type: 'dynamic'});
         this.addBallCollider({
-            radius: this.collisionScale,
+            radius: 0.25,
             /*size: [this.collisionScale[0],
             this.collisionScale[1],
             this.collisionScale[2]],*/
@@ -85,8 +85,8 @@ class ProjectilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         const obj = await new Promise( (resolve, reject) => fbxLoader.load(fireball_fbx, resolve, null, reject) );
 
         // create material with custom settings to apply to loaded model
-        const material = new THREE.MeshStandardMaterial( {map: firetxt, 
-            flatShading: false, 
+        const material = new THREE.MeshStandardMaterial( {map: firetxt,
+            flatShading: false,
             blending: THREE.NormalBlending,
             metalness: 0,
             roughness: 100,
@@ -106,12 +106,12 @@ class ProjectilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         if (this.actor.debugCollision)
         {
             const threeColor = new THREE.Color(255, 255, 255);
-            const geometry = new THREE.SphereBufferGeometry( 
+            const geometry = new THREE.SphereBufferGeometry(
                 this.actor.collisionScale, 12, 12 );
             const debugmaterial = new THREE.MeshStandardMaterial( {wireframe: true, color: threeColor} );
             let cube = new THREE.Mesh( geometry, debugmaterial );
-            cube.position.set(this.actor.collisionLocation[0] * 20, 
-                this.actor.collisionLocation[1] * 20, 
+            cube.position.set(this.actor.collisionLocation[0] * 20,
+                this.actor.collisionLocation[1] * 20,
                 this.actor.collisionLocation[2] * 20);
             obj.add(cube);
         }

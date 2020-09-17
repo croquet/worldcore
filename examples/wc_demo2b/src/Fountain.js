@@ -41,7 +41,7 @@ export class SprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
         let until = Math.random() * 0.5 + 0.5;
         until *= 2000;
         until += 2000;
-        this.future(until).jump();
+        // this.future(until).jump();
     }
 
     jump()
@@ -72,7 +72,7 @@ class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         let obj = view.slimeObj.clone(true);
         const color = view.model.colors[this.actor.index];
         // by default all objects end up sharing the same referenced material, so manually create
-        // a new instance here to ensure they don't all have the same underlying texture 
+        // a new instance here to ensure they don't all have the same underlying texture
         obj.children[0].material = view.slimeObj.children[0].material.clone();
         obj.children[0].material.color = new THREE.Color(color[0], color[1], color[2]);
 
@@ -122,7 +122,7 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
         this.debugCollision = false;
 
         this.spray = [];
-        this.spawnLimit = 50;
+        this.spawnLimit = 35;
         this.future(0).tick();
     }
 
@@ -164,8 +164,8 @@ class FountainPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible)
         const render = GetNamedView("ThreeRenderManager");
 
         // create material with custom settings to apply to loaded model
-        const material = new THREE.MeshStandardMaterial( {map: fnttxt, 
-            flatShading: false, 
+        const material = new THREE.MeshStandardMaterial( {map: fnttxt,
+            flatShading: false,
             blending: THREE.NormalBlending,
             metalness: 0,
             roughness: 0.7,
@@ -186,14 +186,14 @@ class FountainPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible)
         if (this.actor.debugCollision)
         {
             const threeColor = new THREE.Color(255, 255, 255);
-            const geometry = new THREE.BoxBufferGeometry( 
-                this.actor.collisionScale[0] * 2, 
-                this.actor.collisionScale[1] * 2, 
+            const geometry = new THREE.BoxBufferGeometry(
+                this.actor.collisionScale[0] * 2,
+                this.actor.collisionScale[1] * 2,
                 this.actor.collisionScale[2] * 2 );
             const debugmaterial = new THREE.MeshStandardMaterial( {wireframe: true, color: threeColor} );
             let cube = new THREE.Mesh( geometry, debugmaterial );
-            cube.position.set(this.actor.collisionLocation[0] * 20, 
-                this.actor.collisionLocation[1] * 20, 
+            cube.position.set(this.actor.collisionLocation[0] * 20,
+                this.actor.collisionLocation[1] * 20,
                 this.actor.collisionLocation[2] * 20);
             obj.add(cube);
         }

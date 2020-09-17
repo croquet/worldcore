@@ -37,7 +37,7 @@ assetManager.setURLModifier(url => {
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting model!!!!!");
+        console.log("Starting model!!!!!!");
         this.seedColors();
         this.level = LevelActor.create();
         this.actors = [];
@@ -114,8 +114,8 @@ class MyViewRoot extends ViewRoot {
         let obj = await new Promise( (resolve, reject) => fbxLoader.load(fireball_fbx, resolve, null, reject) );
 
         // create material with custom settings to apply to loaded model
-        let material = new THREE.MeshStandardMaterial( {map: objtxt, 
-            flatShading: false, 
+        let material = new THREE.MeshStandardMaterial( {map: objtxt,
+            flatShading: false,
             blending: THREE.NormalBlending,
             metalness: 0,
             roughness: 100 } );
@@ -132,18 +132,18 @@ class MyViewRoot extends ViewRoot {
         if (this.debugCollision)
         {
             const threeColor = new THREE.Color(255, 255, 255);
-            const geometry = new THREE.SphereBufferGeometry( 
+            const geometry = new THREE.SphereBufferGeometry(
                 this.actor.collisionScale, 12, 12 );
             const debugmaterial = new THREE.MeshStandardMaterial( {wireframe: true, color: threeColor} );
             let cube = new THREE.Mesh( geometry, debugmaterial );
-            cube.position.set(this.actor.collisionLocation[0] * 20, 
-                this.actor.collisionLocation[1] * 20, 
+            cube.position.set(this.actor.collisionLocation[0] * 20,
+                this.actor.collisionLocation[1] * 20,
                 this.actor.collisionLocation[2] * 20);
             obj.add(cube);
         }
         console.log("Finished loading fireball.");
         this.fireballObj = obj;
-        // END FIREBALL LOADING // 
+        // END FIREBALL LOADING //
 
         // LOAD SPRAYPAWN / SLIME MODEL //
         objtxt = new THREE.TextureLoader().load( slime_txt );

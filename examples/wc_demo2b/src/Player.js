@@ -67,7 +67,7 @@ class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics
             default:
                 break;
         }
-        /*console.log("color RNG is: " + colorRNG + ", primary is " 
+        /*console.log("color RNG is: " + colorRNG + ", primary is "
         + primary[0] + ", secondary is " + secondary[0] + ", tertiary is " + tertiary[0]);*/
         this.color = [0, 0, 0, 1];
         this.color[primary[0]] = primary[1];
@@ -96,7 +96,7 @@ class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics
     }
 
     shoot() {
-        if (this.shots.length >= 20) {
+        if (this.shots.length >= 10) {
             const doomed = this.shots.shift();
             doomed.destroy();
         }
@@ -132,7 +132,7 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
         // custom movement speed scaling value so we can have a bit more fine-tuned control of player character
         this.myMovementSensitivity = 0.5;
         this.myRotationSensitivity = 1.25;
-        // client-side lerping of movement tilt to reduce snapping when moving 
+        // client-side lerping of movement tilt to reduce snapping when moving
         this.myTiltLerp = [0, 0];
 
         if (this.isMyPlayerPawn) {
@@ -168,13 +168,13 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
         // load model from fbxloader
         const obj = await new Promise( (resolve, reject) => fbxLoader.load(pawn_fbx, resolve, null, reject) );
 
-        const threeColor = new THREE.Color(this.actor.color[0], 
-            this.actor.color[1], 
+        const threeColor = new THREE.Color(this.actor.color[0],
+            this.actor.color[1],
             this.actor.color[2]);
 
         // create material with custom settings to apply to loaded model
-        /*const material = new THREE.MeshStandardMaterial( {map: pawntxt, 
-            flatShading: false, 
+        /*const material = new THREE.MeshStandardMaterial( {map: pawntxt,
+            flatShading: false,
             blending: THREE.NormalBlending,
             metalness: 0,
             roughness: 100,
