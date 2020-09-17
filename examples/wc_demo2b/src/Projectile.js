@@ -5,6 +5,23 @@ import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAn
 import paper from "../assets/paper.jpg";
 import * as THREE from 'three';
 
+import { FBXLoader } from "../loaders/FBXLoader.js";
+
+import fireball_txt from "../assets/fireball_baseColor.png";
+import fireball_emi from "../assets/fireball_emissive.png";
+import fireball_fbx from "../assets/fireball_mesh.fbx";
+
+const ASSETS = {
+    "./lambert5_Base_Color.png": fireball_txt,
+};
+
+const assetManager = new THREE.LoadingManager();
+assetManager.setURLModifier(url => {
+    const asset = ASSETS[url] || url;
+    console.log(`FBX: mapping ${url} to ${asset}`)
+    return asset;
+});
+
 //------------------------------------------------------------------------------------------
 // ProjectileActor
 //------------------------------------------------------------------------------------------
@@ -17,9 +34,16 @@ export class ProjectileActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysi
 
         super.init("ProjectilePawn", options);
 
+        this.debugCollision = false;
+        this.collisionLocation = [0, 0, 0];
+        this.collisionScale = 0.25;
+
         this.addRigidBody({type: 'dynamic'});
-        this.addBoxCollider({
-            size: [0.1, 0.1, 0.1],
+        this.addBallCollider({
+            radius: this.collisionScale,
+            /*size: [this.collisionScale[0],
+            this.collisionScale[1],
+            this.collisionScale[2]],*/
             density: 1,
             friction: 1,
             restitution: 50
@@ -37,53 +61,52 @@ ProjectileActor.register('ProjectileActor');
 class ProjectilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
-        //this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.owner, () => this.buildDraw()));
 
-        const paperTexture = new THREE.TextureLoader().load( paper );
-
-        paperTexture.wrapS = paperTexture.wrapT = THREE.RepeatWrapping;
-        paperTexture.repeat.set(1,3);
-
-        const color = this.actor.color
-        const threeColor = new THREE.Color(color[0], color[1], color[2]);
-        const geometry = new THREE.BoxBufferGeometry( 0.2, 0.2, 0.2 );
-        const material = new THREE.MeshStandardMaterial( {map: paperTexture, color: threeColor} );
-        this.cube = new THREE.Mesh( geometry, material );
-        this.cube.castShadow = true;
-        this.cube.receiveShadow= true;
-        this.setRenderObject(this.cube);
+        this.loadFireball();
     }
 
-    buildDraw() {
-        const mesh = CachedObject("cubeMesh" + this.actor.owner, () => this.buildMesh());
-        const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
-        const draw = new InstancedDrawCall(mesh, material);
+    async loadFireball()
+    {
+        const firetxt = new THREE.TextureLoader().load( fireball_txt );
+        const fireemi = new THREE.TextureLoader().load( fireball_emi );
+        const fbxLoader = new FBXLoader(assetManager);
 
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        // load model from fbxloader
+        const obj = await new Promise( (resolve, reject) => fbxLoader.load(fireball_fbx, resolve, null, reject) );
 
-        return draw;
+        // create material with custom settings to apply to loaded model
+        const material = new THREE.MeshStandardMaterial( {map: firetxt, 
+            flatShading: false, 
+            blending: THREE.NormalBlending,
+            metalness: 0,
+            roughness: 100,
+            emissive: fireemi } );
+        // overwrite material
+        obj.children[0].material = material;
+        obj.children[0].position.set(0,0,0);
+        obj.children[0].scale.set( 0.2, 0.2, 0.2);
+        obj.children[0].rotation.set(0,0,0);
+        obj.children[0].castShadow = true;
+        obj.children[0].receiveShadow = true;
+        // save mesh for later use
+        this.myMesh = obj.children[0];
+        obj.castShadow = true;
+        obj.receiveShadow = true;
+
+        if (this.actor.debugCollision)
+        {
+            const threeColor = new THREE.Color(255, 255, 255);
+            const geometry = new THREE.SphereBufferGeometry( 
+                this.actor.collisionScale, 12, 12 );
+            const debugmaterial = new THREE.MeshStandardMaterial( {wireframe: true, color: threeColor} );
+            let cube = new THREE.Mesh( geometry, debugmaterial );
+            cube.position.set(this.actor.collisionLocation[0] * 20, 
+                this.actor.collisionLocation[1] * 20, 
+                this.actor.collisionLocation[2] * 20);
+            obj.add(cube);
+        }
+
+        this.setRenderObject(obj);
     }
-
-    buildMesh() {
-        const mesh = UnitCube();
-        mesh.transform(m4_scaling(0.2));
-
-        const modelRoot = GetNamedView('ViewRoot').model;
-        // console.log(this.actor.color);
-        const color = this.actor.color;
-
-        mesh.setColor(color);
-        mesh.load();
-        mesh.clear();
-        return mesh;
-    }
-
-    buildMaterial() {
-        const material = new Material();
-        material.pass = 'instanced';
-        material.texture.loadFromURL(paper);
-        return material;
-    }
-
 }
 ProjectilePawn.register('ProjectilePawn');
