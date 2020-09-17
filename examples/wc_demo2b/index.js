@@ -7,6 +7,7 @@ import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, ActorMan
     toRad, LoadRapier } from "@croquet/worldcore";
 import { LevelActor } from "./src/Level";
 import { MyPlayerPawn } from "./src/Player";
+import { GameScreen } from "./src/HUD";
 
 import * as THREE from 'three';
 
@@ -69,6 +70,14 @@ class MyViewRoot extends ViewRoot {
         */
         this.resizeToWindow();
         this.render.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        const minUI = Math.min(this.ui.size[0], this.ui.size[1]);
+        let s = 1;
+        if (minUI < 600) s = minUI / 600;
+
+        this.ui.setScale(s);
+
+        this.gameScreen = new GameScreen(this.ui.root, {autoSize: [1,1]});
     }
 
     resizeToWindow() {
@@ -83,6 +92,12 @@ class MyViewRoot extends ViewRoot {
         this.ui = this.addManager(new UIManager());
         this.audio = this.addManager(new AudioManager());
         this.pawnManager = this.addManager(new PawnManager());
+
+        // create custom chords necessary for input
+        this.webInput.addChord("strafeLeft", ['ArrowLeft', 'Shift']);
+        this.webInput.addChord("spinLeft", ['ArrowLeft'], ['Shift']);
+        this.webInput.addChord("strafeRight", ['ArrowRight', 'Shift']);
+        this.webInput.addChord("spinRight", ['ArrowRight'], ['Shift']);
     }
 
 }
