@@ -9,6 +9,16 @@ import * as THREE from 'three';
 
 import { FBXLoader } from "../loaders/FBXLoader.js";
 
+const ASSETS = {
+    "./avatar_txt_baseColor.png": pawn_txt,
+};
+
+const assetManager = new THREE.LoadingManager();
+assetManager.setURLModifier(url => {
+    const asset = ASSETS[url] || url;
+    console.log(`FBX: mapping ${url} to ${asset}`)
+    return asset;
+});
 
 //------------------------------------------------------------------------------------------
 // PlayerActor
@@ -76,7 +86,7 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
         // custom movement speed scaling value so we can have a bit more fine-tuned control of player character
         this.myMovementSensitivity = 0.5;
         this.myRotationSensitivity = 1.25;
-        // client-side lerping of movement tilt to reduce snapping when moving 
+        // client-side lerping of movement tilt to reduce snapping when moving
         this.myTiltLerp = [0, 0];
 
         if (this.isMyPlayerPawn) {
@@ -117,9 +127,7 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
 
     async loadPawnModel()
     {
-        const pawntxt = new THREE.TextureLoader().load( pawn_txt );
-        const fbxLoader = new FBXLoader();
-
+        const fbxLoader = new FBXLoader(assetManager);
         const obj = await new Promise( (resolve, reject) => fbxLoader.load(pawn_fbx, resolve, null, reject) );
 
 
@@ -129,20 +137,13 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
         /*const geometry = new THREE.BoxBufferGeometry( 1, 3, 1 );
         this.cube = new THREE.Mesh( geometry, material );*/
 
-
-        const material = new THREE.MeshStandardMaterial( {map: pawntxt, 
-            flatShading: false, 
-            blending: THREE.NormalBlending,
-            metalness: 0,
-            roughness: 100 } );
-        obj.children[1].material = material;
         //console.log(obj);
-        obj.children[1].position.set(0,-1,0);
-        obj.children[1].scale.set(0.33,0.33,0.33);
-        obj.children[1].rotation.set(0,3.14,0);
-        obj.children[1].castShadow = true;
-        obj.children[1].receiveShadow = true;
-        this.myMesh = obj.children[1];
+        this.myMesh = obj.children[0];
+        this.myMesh.position.set(0,-1,0);
+        this.myMesh.scale.set(0.33,0.33,0.33);
+        this.myMesh.rotation.set(0,3.14,0);
+        this.myMesh.castShadow = true;
+        this.myMesh.receiveShadow = true;
         //obj.SetScale([0.5, 0.5, 0.5]);
         obj.castShadow = true;
         obj.receiveShadow= true;
