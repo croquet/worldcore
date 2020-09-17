@@ -204,7 +204,7 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
 
     update(time, delta) {
         super.update(time, delta);
-        var offset = (Math.sin( (time + this.actor.myCustomTimeOffset) / 750) * 0.025);
+        var offset = (Math.sin( (this.now() + this.actor.myCustomTimeOffset) / 750) * 0.025);
         // represents maximum forward/backward tilt when moving
         var tiltFore = this.actor.velocity[2] * 30;
         var tiltSide = this.actor.velocity[0] * 30;
