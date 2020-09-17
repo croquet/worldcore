@@ -17,7 +17,7 @@ const ASSETS = {
 const assetManager = new THREE.LoadingManager();
 assetManager.setURLModifier(url => {
     const asset = ASSETS[url] || url;
-    console.log(`FBX: mapping ${url} to ${asset}`)
+    //console.log(`FBX: mapping ${url} to ${asset}`)
     return asset;
 });
 
@@ -66,7 +66,20 @@ class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         super(...args);
         //this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.index, () => this.buildDraw()));
 
-        const paperTexture = new THREE.TextureLoader().load( paper );
+        const view = GetNamedView('ViewRoot');
+        if (view.slimeObj)
+        {
+        let obj = view.slimeObj.clone(true);
+        const color = view.model.colors[this.actor.index];
+        // by default all objects end up sharing the same referenced material, so manually create
+        // a new instance here to ensure they don't all have the same underlying texture 
+        obj.children[0].material = view.slimeObj.children[0].material.clone();
+        obj.children[0].material.color = new THREE.Color(color[0], color[1], color[2]);
+
+        this.setRenderObject(obj);
+        }
+
+        /*const paperTexture = new THREE.TextureLoader().load( paper );
 
         paperTexture.wrapS = paperTexture.wrapT = THREE.RepeatWrapping;
         paperTexture.repeat.set(1,3);
@@ -79,7 +92,7 @@ class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.cube = new THREE.Mesh( geometry, material );
         this.cube.castShadow = true;
         this.cube.receiveShadow= true;
-        this.setRenderObject(this.cube);
+        this.setRenderObject(this.cube);*/
     }
 
 }
@@ -148,13 +161,16 @@ class FountainPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible)
         // load model from fbxloader
         const obj = await new Promise( (resolve, reject) => fbxLoader.load(fountain_fbx, resolve, null, reject) );
 
+        const render = GetNamedView("ThreeRenderManager");
+
         // create material with custom settings to apply to loaded model
         const material = new THREE.MeshStandardMaterial( {map: fnttxt, 
             flatShading: false, 
             blending: THREE.NormalBlending,
             metalness: 0,
-            roughness: 100,
-            normalMap: fntnrm } );
+            roughness: 0.7,
+            normalMap: fntnrm,
+            envMap: render.scene.background } );
         // overwrite material
         obj.children[0].material = material;
         obj.children[0].position.set(0,0,0);

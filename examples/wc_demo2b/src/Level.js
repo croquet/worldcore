@@ -1,4 +1,4 @@
-import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, PM_ThreeVisible, Triangles, Material, DrawCall, AM_RapierPhysics, q_axisAngle } from "@croquet/worldcore";
+import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, PM_ThreeVisible, Triangles, Material, DrawCall, AM_RapierPhysics, q_axisAngle, GetNamedView } from "@croquet/worldcore";
 import { FountainActor } from "./Fountain";
 import paper from "../assets/paper.jpg";
 import * as THREE from 'three';
@@ -16,17 +16,30 @@ import castlewall_fbx from "../assets/castle_wall.fbx";
 import castlewallcorner_txt from "../assets/castle_tower_baseColor.png";
 import castlewallcorner_nrm from "../assets/castle_tower_normal.png";
 import castlewallcorner_fbx from "../assets/castle_tower.fbx";
+// skybox
+import skybox_front_txt from "../assets/skybox_front.png";
+import skybox_top_txt from "../assets/skybox_top.png";
+import skybox_bottom_txt from "../assets/skybox_bottom.png";
+import skybox_right_txt from "../assets/skybox_right.png";
+import skybox_left_txt from "../assets/skybox_left.png";
+import skybox_back_txt from "../assets/skybox_back.png";
 
 
 const ASSETS = {
     "./lambert5_Base_Color.png": castlewall_txt,
     "./lambert1_Base_Color.png": castlewallcorner_txt,
+    "./skybox_back.png": skybox_back_txt,
+    "./skybox_front.png": skybox_front_txt,
+    "./skybox_left.png": skybox_left_txt,
+    "./skybox_top.png": skybox_top_txt,
+    "./skybox_bottom.png": skybox_bottom_txt,
+    "./skybox_right.png": skybox_right_txt,
 };
 
 const assetManager = new THREE.LoadingManager();
 assetManager.setURLModifier(url => {
     const asset = ASSETS[url] || url;
-    console.log(`FBX: mapping ${url} to ${asset}`)
+    //console.log(`FBX: mapping ${url} to ${asset}`)
     return asset;
 });
 
@@ -38,7 +51,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
 
         this.addRigidBody({type: 'static'});
         this.addBoxCollider({
-            size: [20,1,20],
+            size: [40,1,40],
             friction: 1,
             density: 1,
             restitution: 1000
@@ -165,38 +178,62 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         const floor = new THREE.Mesh(
            // width, height, widthSegments, heightSegments
            new THREE.PlaneGeometry(200, 200, 10, 10),
-           new THREE.MeshStandardMaterial( { map: paperTexture} )
+           new THREE.MeshStandardMaterial( { map: paperTexture, metalness: 0.1, roughness: 0.9} )
         );
         //floor.position.y = -1.5;
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         floor.position.set(0, 1, 0);
         group.add(floor);
+        this.myFloor = floor;
 
-        group.add(new THREE.AmbientLight( 0x444444  ));
+        group.add(new THREE.AmbientLight( 0xC9D3FF, 0.75 ));
 
-        var light = new THREE.DirectionalLight( 0x999999, 0.85 );
-        light.position.set( 100, 100, 0 );
+        // warm light from sun
+        var sunlight = new THREE.DirectionalLight( 0xFFF8D0, 0.85 );
+        // cool light from sky
+        //var skylight = new THREE.DirectionalLight( 0xC9D3FF, 0.1 );
+    
+        sunlight.position.set( 200, 100, 200 );
+        //sunlight.rotation.set(Math.PI/2, Math.PI/2, 0);
         //light.position.multiplyScalar( 1.3 );
 
-        light.castShadow = true;
+        sunlight.castShadow = true;
 
-        light.shadow.mapSize.width = 4096;
-        light.shadow.mapSize.height = 4096;
+        sunlight.shadow.mapSize.width = 4096;
+        sunlight.shadow.mapSize.height = 4096;
  
         var d = 100;
 
-        light.shadow.camera.left = - d;
-        light.shadow.camera.right = d;
-        light.shadow.camera.top = d;
-        light.shadow.camera.bottom = - d;
+        sunlight.shadow.camera.left = - d;
+        sunlight.shadow.camera.right = d;
+        sunlight.shadow.camera.top = d;
+        sunlight.shadow.camera.bottom = - d;
 
-        light.shadow.camera.far = 3000;
+        sunlight.shadow.camera.far = 3000;
 
         this.setRenderObject(group);
-        group.parent.add(light);
+        group.parent.add(sunlight);
          
+        this.buildSkybox();
+    }
 
+    async buildSkybox()
+    {
+        const render = GetNamedView("ThreeRenderManager");
+
+        const loader = new THREE.CubeTextureLoader();
+        this.envTexture = loader.load([
+            skybox_front_txt,
+            skybox_back_txt,
+            skybox_top_txt,
+            skybox_bottom_txt,
+            skybox_left_txt,
+            skybox_right_txt,
+        ]);
+        render.scene.background = this.envTexture;
+        console.log(this.myFloor);
+        this.myFloor.material.envMap = this.envTexture;
     }
 
     destroy() {
@@ -252,13 +289,16 @@ class WallPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         // load model from fbxloader
         const obj = await new Promise( (resolve, reject) => fbxLoader.load(castlewall_fbx, resolve, null, reject) );
 
+        const render = GetNamedView("ThreeRenderManager");
+
         // create material with custom settings to apply to loaded model
         const material = new THREE.MeshStandardMaterial( {map: pawntxt, 
             flatShading: false, 
             blending: THREE.NormalBlending,
             metalness: 0,
-            roughness: 100,
-            normalMap: pawnnrm } );
+            roughness: 0.8,
+            normalMap: pawnnrm,
+            envMap: render.scene.background } );
         // overwrite material
         obj.children[0].material = material;
         obj.children[0].position.set(0,0,0);
@@ -337,13 +377,16 @@ class WallCornerPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         // load model from fbxloader
         const obj = await new Promise( (resolve, reject) => fbxLoader.load(castlewallcorner_fbx, resolve, null, reject) );
 
+        const render = GetNamedView("ThreeRenderManager");
+
         // create material with custom settings to apply to loaded model
         const material = new THREE.MeshStandardMaterial( {map: pawntxt, 
             flatShading: false, 
             blending: THREE.NormalBlending,
             metalness: 0,
             roughness: 100,
-            normalMap: pawnnrm } );
+            normalMap: pawnnrm,
+            envMap: render.scene.background } );
         // overwrite material
         obj.children[0].material = material;
         obj.children[0].position.set(0,0,0);

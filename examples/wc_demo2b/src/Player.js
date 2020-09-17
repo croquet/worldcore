@@ -18,7 +18,7 @@ const ASSETS = {
 const assetManager = new THREE.LoadingManager();
 assetManager.setURLModifier(url => {
     const asset = ASSETS[url] || url;
-    console.log(`FBX: mapping ${url} to ${asset}`)
+    //console.log(`FBX: mapping ${url} to ${asset}`)
     return asset;
 });
 

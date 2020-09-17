@@ -18,7 +18,7 @@ const ASSETS = {
 const assetManager = new THREE.LoadingManager();
 assetManager.setURLModifier(url => {
     const asset = ASSETS[url] || url;
-    console.log(`FBX: mapping ${url} to ${asset}`)
+    //console.log(`FBX: mapping ${url} to ${asset}`)
     return asset;
 });
 
@@ -62,9 +62,19 @@ class ProjectilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
-        this.loadFireball();
+        //this.loadFireball();
+        // instead of using FBXLoader to create new object instance every time, instead copy static
+        // fireball model/texture from viewroot.
+        const view = GetNamedView('ViewRoot');
+        let obj = new THREE.Group().copy(view.fireballObj, true);
+        const color = this.actor.color;
+        obj.children[0].material = view.fireballObj.children[0].material.clone();
+        obj.children[0].material.color = new THREE.Color(color[0], color[1], color[2]);
+        this.setRenderObject(obj);
     }
 
+    // old loadFireball logic that was bad and inefficient as it pulled a new fireball every time anyone
+    // shot - forcing a load for every single projectile
     async loadFireball()
     {
         const firetxt = new THREE.TextureLoader().load( fireball_txt );
