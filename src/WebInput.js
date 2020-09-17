@@ -262,7 +262,7 @@ export class WebInputManager extends NamedView {
     }
 
     futureResize() {
-        this.publish("input", "resize");
+        this.publish("input", "resize", [window.innerWidth, window.innerHeight]);
     }
 
     onFocus(event) {

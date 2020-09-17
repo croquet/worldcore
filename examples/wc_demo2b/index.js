@@ -78,9 +78,11 @@ class MyViewRoot extends ViewRoot {
         this.ui.setScale(s);
 
         this.gameScreen = new GameScreen(this.ui.root, {autoSize: [1,1]});
+        this.subscribe("input", "resize", this.resizeToWindow);
     }
 
     resizeToWindow() {
+        console.log("resizing!");
         this.render.camera.aspect = window.innerWidth / window.innerHeight;
         this.render.camera.updateProjectionMatrix();
         this.render.renderer.setSize(window.innerWidth, window.innerHeight);
