@@ -75,6 +75,9 @@ class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics
         this.color[tertiary[0]] = tertiary[1];
         super.init("PlayerPawn", options);
         this.setLocation([0,2.2,5]);
+
+        this.myCustomTimeOffset = Math.random() * 100000;
+
         this.shots = [];
 
         this.addRigidBody({type: 'kinematic'});
@@ -152,8 +155,6 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
             // this.subscribe("hud", "enterGame", this.activateControls);
 
         } else {
-            this.myCustomTimeOffset = Math.random() * 100000;
-            console.log(this.myCustomTimeOffset);
             this.loadPawnModel();
         }
     }
@@ -203,7 +204,7 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
 
     update(time, delta) {
         super.update(time, delta);
-        var offset = (Math.sin( (time + this.myCustomTimeOffset) / 750) * 0.025);
+        var offset = (Math.sin( (time + this.actor.myCustomTimeOffset) / 750) * 0.025);
         // represents maximum forward/backward tilt when moving
         var tiltFore = this.actor.velocity[2] * 30;
         var tiltSide = this.actor.velocity[0] * 30;
