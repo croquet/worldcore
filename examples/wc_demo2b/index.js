@@ -56,8 +56,55 @@ class MyModelRoot extends ModelRoot {
 
     seedColors() {
         this.colors = [];
+        let colorRNG = 0;
+        let primary = [0, 0];
+        let secondary = [1, 0];
+        let tertiary = [2, 0];
+        let selectedColor = [0, 0, 0];
         for (let i = 0; i < 100; i++ ) {
-            this.colors.push([0.7*Math.random() + 0.3, 0.7*Math.random() + 0.3, 0.7*Math.random() + 0.3, 1]);
+            colorRNG = Math.floor( Math.random() * 6);
+            primary[1] = 0.3*Math.random() + 0.7;
+            secondary[1] = 0.5*Math.random() + 0.5;
+            tertiary[1] = 0.3*Math.random();
+            switch (colorRNG)
+        {
+            case 0:
+                primary[0] = 0;
+                secondary[0] = 1;
+                tertiary[0] = 2;
+                break;
+            case 1:
+                primary[0] = 0;
+                secondary[0] = 2;
+                tertiary[0] = 1;
+                break;
+            case 2:
+                primary[0] = 1;
+                secondary[0] = 2;
+                tertiary[0] = 0;
+                break;
+            case 3:
+                primary[0] = 1;
+                secondary[0] = 0;
+                tertiary[0] = 2;
+                break;
+            case 4:
+                primary[0] = 2;
+                secondary[0] = 0;
+                tertiary[0] = 1;
+                break;
+            case 5:
+                primary[0] = 2;
+                secondary[0] = 1;
+                tertiary[0] = 0;
+                break;
+            default:
+                break;
+        }
+        selectedColor[primary[0]] = primary[1];
+        selectedColor[secondary[0]] = secondary[1];
+        selectedColor[tertiary[0]] = tertiary[1];
+            this.colors.push([selectedColor[0], selectedColor[1], selectedColor[2], 1]);
         }
     }
 }

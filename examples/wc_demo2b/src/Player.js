@@ -29,9 +29,9 @@ assetManager.setURLModifier(url => {
 class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics) {
     init(options) {
         let colorRNG = Math.floor( Math.random() * 6);
-        let primary = [0, 0.5*Math.random() + 0.5];
-        let secondary = [1, 0.5*Math.random() + 0.2];
-        let tertiary = [2, 0.5*Math.random()];
+        let primary = [0, 0.3*Math.random() + 0.7];
+        let secondary = [1, 0.5*Math.random() + 0.5];
+        let tertiary = [2, 0.3*Math.random()];
         switch (colorRNG)
         {
             case 0:

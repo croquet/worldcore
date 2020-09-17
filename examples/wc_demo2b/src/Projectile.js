@@ -36,14 +36,14 @@ export class ProjectileActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysi
 
         // this.debugCollision = false;
         // this.collisionLocation = [0, 0, 0];
-        // this.collisionScale = 0.25;
+        this.collisionScale = [0.2, 0.2, 0.2];
 
         this.addRigidBody({type: 'dynamic'});
-        this.addBallCollider({
-            radius: 0.25,
-            /*size: [this.collisionScale[0],
+        this.addBoxCollider({
+            //radius: 0.25,
+            size: [this.collisionScale[0],
             this.collisionScale[1],
-            this.collisionScale[2]],*/
+            this.collisionScale[2]],
             density: 1,
             friction: 1,
             restitution: 50
