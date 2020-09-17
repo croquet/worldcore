@@ -11,6 +11,17 @@ import fireball_txt from "../assets/fireball_baseColor.png";
 import fireball_emi from "../assets/fireball_emissive.png";
 import fireball_fbx from "../assets/fireball_mesh.fbx";
 
+const ASSETS = {
+    "./lambert5_Base_Color.png": fireball_txt,
+};
+
+const assetManager = new THREE.LoadingManager();
+assetManager.setURLModifier(url => {
+    const asset = ASSETS[url] || url;
+    console.log(`FBX: mapping ${url} to ${asset}`)
+    return asset;
+});
+
 //------------------------------------------------------------------------------------------
 // ProjectileActor
 //------------------------------------------------------------------------------------------
@@ -58,7 +69,7 @@ class ProjectilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     {
         const firetxt = new THREE.TextureLoader().load( fireball_txt );
         const fireemi = new THREE.TextureLoader().load( fireball_emi );
-        const fbxLoader = new FBXLoader();
+        const fbxLoader = new FBXLoader(assetManager);
 
         // load model from fbxloader
         const obj = await new Promise( (resolve, reject) => fbxLoader.load(fireball_fbx, resolve, null, reject) );

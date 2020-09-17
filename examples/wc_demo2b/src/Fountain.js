@@ -10,6 +10,17 @@ import fountain_txt from "../assets/castle_fountain_baseColor.png";
 import fountain_nrm from "../assets/castle_fountain_normal.png";
 import fountain_fbx from "../assets/castle_fountain.fbx";
 
+const ASSETS = {
+    "./lambert5_Base_Color.png": fountain_txt,
+};
+
+const assetManager = new THREE.LoadingManager();
+assetManager.setURLModifier(url => {
+    const asset = ASSETS[url] || url;
+    console.log(`FBX: mapping ${url} to ${asset}`)
+    return asset;
+});
+
 //------------------------------------------------------------------------------------------
 // SprayActor
 //------------------------------------------------------------------------------------------
@@ -132,7 +143,7 @@ class FountainPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible)
     {
         const fnttxt = new THREE.TextureLoader().load( fountain_txt );
         const fntnrm = new THREE.TextureLoader().load( fountain_nrm );
-        const fbxLoader = new FBXLoader();
+        const fbxLoader = new FBXLoader(assetManager);
 
         // load model from fbxloader
         const obj = await new Promise( (resolve, reject) => fbxLoader.load(fountain_fbx, resolve, null, reject) );

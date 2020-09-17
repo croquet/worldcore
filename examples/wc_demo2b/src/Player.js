@@ -12,11 +12,7 @@ import * as THREE from 'three';
 import { FBXLoader } from "../loaders/FBXLoader.js";
 
 const ASSETS = {
-<<<<<<< Updated upstream
     "./avatar_txt_baseColor.png": pawn_txt,
-=======
-    "./avatar_txt_baseColor.png": require("../assets/avatarGreyScale_baseColor.png"),
->>>>>>> Stashed changes
 };
 
 const assetManager = new THREE.LoadingManager();
@@ -136,7 +132,7 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
         // custom movement speed scaling value so we can have a bit more fine-tuned control of player character
         this.myMovementSensitivity = 0.5;
         this.myRotationSensitivity = 1.25;
-        // client-side lerping of movement tilt to reduce snapping when moving
+        // client-side lerping of movement tilt to reduce snapping when moving 
         this.myTiltLerp = [0, 0];
 
         if (this.isMyPlayerPawn) {
@@ -164,35 +160,14 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
 
     async loadPawnModel()
     {
-<<<<<<< Updated upstream
-        const fbxLoader = new FBXLoader(assetManager);
-        const obj = await new Promise( (resolve, reject) => fbxLoader.load(pawn_fbx, resolve, null, reject) );
-=======
         const pawntxt = new THREE.TextureLoader().load( pawn_txt );
         const pawnem = new THREE.TextureLoader().load( pawn_em );
 
         const fbxLoader = new FBXLoader(assetManager);
->>>>>>> Stashed changes
 
         // load model from fbxloader
         const obj = await new Promise( (resolve, reject) => fbxLoader.load(pawn_fbx, resolve, null, reject) );
 
-<<<<<<< Updated upstream
-        //paperTexture.wrapS = paperTexture.wrapT = THREE.RepeatWrapping;
-        //paperTexture.repeat.set(1,3);
-
-        /*const geometry = new THREE.BoxBufferGeometry( 1, 3, 1 );
-        this.cube = new THREE.Mesh( geometry, material );*/
-
-        //console.log(obj);
-        this.myMesh = obj.children[0];
-        this.myMesh.position.set(0,-1,0);
-        this.myMesh.scale.set(0.33,0.33,0.33);
-        this.myMesh.rotation.set(0,3.14,0);
-        this.myMesh.castShadow = true;
-        this.myMesh.receiveShadow = true;
-        //obj.SetScale([0.5, 0.5, 0.5]);
-=======
         const threeColor = new THREE.Color(this.actor.color[0], 
             this.actor.color[1], 
             this.actor.color[2]);
@@ -207,21 +182,20 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
             emissive: threeColor,
             emissiveMap: pawnem } );*/
         // overwrite material
-        obj.children[1].material.map = pawntxt;
-        obj.children[1].material.color = threeColor;
-        obj.children[1].material.emissive = threeColor;
-        obj.children[1].material.emissiveMap = pawnem;
-        obj.children[1].material.roughness = 100;
-        obj.children[1].material.metalness = 0;
+        obj.children[0].material.map = pawntxt;
+        obj.children[0].material.color = threeColor;
+        obj.children[0].material.emissive = threeColor;
+        obj.children[0].material.emissiveMap = pawnem;
+        obj.children[0].material.roughness = 100;
+        obj.children[0].material.metalness = 0;
 
-        obj.children[1].position.set(0,-1,0);
-        obj.children[1].scale.set(0.33,0.33,0.33);
-        obj.children[1].rotation.set(0,3.14,0);
-        obj.children[1].castShadow = true;
-        obj.children[1].receiveShadow = true;
+        obj.children[0].position.set(0,-1,0);
+        obj.children[0].scale.set(0.33,0.33,0.33);
+        obj.children[0].rotation.set(0,3.14,0);
+        obj.children[0].castShadow = true;
+        obj.children[0].receiveShadow = true;
         // save mesh for later use
-        this.myMesh = obj.children[1];
->>>>>>> Stashed changes
+        this.myMesh = obj.children[0];
         obj.castShadow = true;
         obj.receiveShadow= true;
         this.setRenderObject(obj);

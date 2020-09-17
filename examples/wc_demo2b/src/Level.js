@@ -7,7 +7,7 @@ import { FBXLoader } from "../loaders/FBXLoader.js";
 
 // asset imports //
 // grass ground texture
-import castleflooor_txt from "../assets/castle_floor_baseColor.png";
+import castlefloor_txt from "../assets/castle_floor_baseColor.png";
 // castle wall segment
 import castlewall_txt from "../assets/castle_wall_baseColor.png";
 import castlewall_nrm from "../assets/castle_wall_normal.png";
@@ -16,6 +16,20 @@ import castlewall_fbx from "../assets/castle_wall.fbx";
 import castlewallcorner_txt from "../assets/castle_tower_baseColor.png";
 import castlewallcorner_nrm from "../assets/castle_tower_normal.png";
 import castlewallcorner_fbx from "../assets/castle_tower.fbx";
+
+
+const ASSETS = {
+    "./lambert5_Base_Color.png": castlewall_txt,
+    "./lambert1_Base_Color.png": castlewallcorner_txt,
+};
+
+const assetManager = new THREE.LoadingManager();
+assetManager.setURLModifier(url => {
+    const asset = ASSETS[url] || url;
+    console.log(`FBX: mapping ${url} to ${asset}`)
+    return asset;
+});
+
 
 export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
     init() {
@@ -144,7 +158,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
         let group = new THREE.Group();
 
-        const paperTexture = new THREE.TextureLoader().load( castleflooor_txt );
+        const paperTexture = new THREE.TextureLoader().load( castlefloor_txt );
 
         paperTexture.wrapS = paperTexture.wrapT = THREE.RepeatWrapping;
         paperTexture.repeat.set(50,50);
@@ -233,7 +247,7 @@ class WallPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     {
         const pawntxt = new THREE.TextureLoader().load( castlewall_txt );
         const pawnnrm = new THREE.TextureLoader().load( castlewall_nrm );
-        const fbxLoader = new FBXLoader();
+        const fbxLoader = new FBXLoader(assetManager);
 
         // load model from fbxloader
         const obj = await new Promise( (resolve, reject) => fbxLoader.load(castlewall_fbx, resolve, null, reject) );
@@ -318,7 +332,7 @@ class WallCornerPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     {
         const pawntxt = new THREE.TextureLoader().load( castlewallcorner_txt );
         const pawnnrm = new THREE.TextureLoader().load( castlewallcorner_nrm );
-        const fbxLoader = new FBXLoader();
+        const fbxLoader = new FBXLoader(assetManager);
 
         // load model from fbxloader
         const obj = await new Promise( (resolve, reject) => fbxLoader.load(castlewallcorner_fbx, resolve, null, reject) );
