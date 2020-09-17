@@ -12,7 +12,7 @@ class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics
     init(options) {
         this.color = [0.5*Math.random() + 0.5, 0.5*Math.random() + 0.5, 0.5*Math.random() + 0.5, 1];
         super.init("PlayerPawn", options);
-        this.setLocation([0,1.5,5]);
+        this.setLocation([0,1.5,10.65]);
         this.shots = [];
 
         this.addRigidBody({type: 'kinematic'});

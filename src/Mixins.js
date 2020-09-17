@@ -597,16 +597,16 @@ export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) 
 
             if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], delta*this.speed*this.multiplySpeed) );
             if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], delta*this.strafeSpeed*this.multiplySpeed) );
-            this.moveTo(this.verify(loc, lastLoc));
+            // this.moveTo(this.verify(loc, lastLoc));
         }
         if(!this.doomed)this.future(this.mouseLook_tickStep).tick(this.mouseLook_tickStep);
     }
 
     // Enables the subclass to ensure that this change is valid
     // Example - collision with a wall will change the result
-    verify(loc, lastLoc){
-        return loc;
-    }
+    // verify(loc, lastLoc){
+    //     return loc;
+    // }
 
 };
 
@@ -677,20 +677,20 @@ export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) 
             this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
         }
         if (this.isMoving) {
-            let lastLoc = this._location;
+            // let lastLoc = this._location;
             let m4 = m4_rotationQ(this._rotation);
             if (this.grounded) m4 = m4_fastGrounded(m4);
             if (this.speed) this._location = v3_add(this._location, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed*this.multiplySpeed) );
             if (this.strafeSpeed) this._location = v3_add(this._location, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed*this.multiplySpeed) );
-            this._location = this.verify(this._location, lastLoc);
+            // this._location = this.verify(this._location, lastLoc);
         }
         super.update(time);
     }
 
     // Enables the subclass to ensure that this change is valid
     // Example - collision with a wall will change the result
-    verify(loc, lastLoc) {
-        return loc;
-    }
+    // verify(loc, lastLoc) {
+    //     return loc;
+    // }
 
 };

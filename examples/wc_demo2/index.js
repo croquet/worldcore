@@ -16,7 +16,7 @@ import { MyPlayerPawn } from "./src/Player";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting modelx!!!!");
+        console.log("Starting model!!!!!!");
         this.seedColors();
         this.level = LevelActor.create();
         this.actors = [];
