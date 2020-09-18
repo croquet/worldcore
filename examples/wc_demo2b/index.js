@@ -146,10 +146,6 @@ class MyViewRoot extends ViewRoot {
 
         this.gameScreen = new GameScreen(this.ui.root, {autoSize: [1,1]});
         this.subscribe("input", "resize", this.resizeToWindow);
-
-        // load all instanced/shared models once to prevent constant reloading whenever a new instance
-        // of a model is created.
-        this.loadSharedModels();
     }
 
     async loadSharedModels() {
@@ -158,6 +154,7 @@ class MyViewRoot extends ViewRoot {
     }
 
     async loadFireball() {
+        console.log("Start loading fireball");
         // LOAD FIREBALL / PLAYER PROJECTILE MODEL //
         let objtxt = new THREE.TextureLoader().load( fireball_txt );
         const fbxLoader = new FBXLoader(assetManager);
@@ -199,6 +196,7 @@ class MyViewRoot extends ViewRoot {
 
     async loadSlime() {
         // LOAD SPRAYPAWN / SLIME MODEL //
+        console.log("Start loading slime");
         const objtxt = new THREE.TextureLoader().load( slime_txt );
         const fbxLoader = new FBXLoader(assetManager);
         const obj = await new Promise( (resolve, reject) => fbxLoader.load(slime_fbx, resolve, null, reject) );
@@ -223,6 +221,10 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
+        // start loading all instanced/shared models once to prevent constant reloading whenever a new instance
+        // of a model is created. Needs to happen *before* creating pawns so the promises are there.
+        this.loadSharedModels();
+
         this.webInput = this.addManager(new WebInputManager());
         this.render = this.addManager(new ThreeRenderManager());
         this.ui = this.addManager(new UIManager());
