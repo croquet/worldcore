@@ -61,62 +61,22 @@ ProjectileActor.register('ProjectileActor');
 class ProjectilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
+        this.getFireball();
+    }
 
-        //this.loadFireball();
+    async getFireball() {
         // instead of using FBXLoader to create new object instance every time, instead copy static
         // fireball model/texture from viewroot.
         const view = GetNamedView('ViewRoot');
-        let obj = new THREE.Group().copy(view.fireballObj, true);
+        console.log("waiting for fireball");
+        const fireballObj = await view.fireballPromise;
+        console.log("got fireball");
+        let obj = new THREE.Group().copy(fireballObj, true);
         const color = this.actor.color;
-        obj.children[0].material = view.fireballObj.children[0].material.clone();
+        obj.children[0].material = fireballObj.children[0].material.clone();
         obj.children[0].material.color = new THREE.Color(color[0], color[1], color[2]);
         this.setRenderObject(obj);
     }
 
-    // old loadFireball logic that was bad and inefficient as it pulled a new fireball every time anyone
-    // shot - forcing a load for every single projectile
-    async loadFireball()
-    {
-        const firetxt = new THREE.TextureLoader().load( fireball_txt );
-        const fireemi = new THREE.TextureLoader().load( fireball_emi );
-        const fbxLoader = new FBXLoader(assetManager);
-
-        // load model from fbxloader
-        const obj = await new Promise( (resolve, reject) => fbxLoader.load(fireball_fbx, resolve, null, reject) );
-
-        // create material with custom settings to apply to loaded model
-        const material = new THREE.MeshStandardMaterial( {map: firetxt,
-            flatShading: false,
-            blending: THREE.NormalBlending,
-            metalness: 0,
-            roughness: 100,
-            emissive: fireemi } );
-        // overwrite material
-        obj.children[0].material = material;
-        obj.children[0].position.set(0,0,0);
-        obj.children[0].scale.set( 0.2, 0.2, 0.2);
-        obj.children[0].rotation.set(0,0,0);
-        obj.children[0].castShadow = true;
-        obj.children[0].receiveShadow = true;
-        // save mesh for later use
-        this.myMesh = obj.children[0];
-        obj.castShadow = true;
-        obj.receiveShadow = true;
-
-        if (this.actor.debugCollision)
-        {
-            const threeColor = new THREE.Color(255, 255, 255);
-            const geometry = new THREE.SphereBufferGeometry(
-                this.actor.collisionScale, 12, 12 );
-            const debugmaterial = new THREE.MeshStandardMaterial( {wireframe: true, color: threeColor} );
-            let cube = new THREE.Mesh( geometry, debugmaterial );
-            cube.position.set(this.actor.collisionLocation[0] * 20,
-                this.actor.collisionLocation[1] * 20,
-                this.actor.collisionLocation[2] * 20);
-            obj.add(cube);
-        }
-
-        this.setRenderObject(obj);
-    }
 }
 ProjectilePawn.register('ProjectilePawn');
