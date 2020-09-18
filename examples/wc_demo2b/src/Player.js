@@ -269,8 +269,8 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
         this.subscribe("hud", "strafeleft", f => this.goLeft(-1 * f));
         this.subscribe("hud", "straferight", f => this.goRight(1 * f));
 
-        this.subscribe("input", " Down", this.shoot);
-        this.subscribe("input", "touchTap", this.shoot);
+        this.subscribe("hud", "shoot", this.shoot);
+        //this.subscribe("input", "touchTap", this.shoot);
 
     }
 
