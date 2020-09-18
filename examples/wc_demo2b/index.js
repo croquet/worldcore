@@ -153,6 +153,11 @@ class MyViewRoot extends ViewRoot {
     }
 
     async loadSharedModels() {
+        this.fireballPromise = this.loadFireball();
+        this.slimePromise = this.loadSlime();
+    }
+
+    async loadFireball() {
         // LOAD FIREBALL / PLAYER PROJECTILE MODEL //
         let objtxt = new THREE.TextureLoader().load( fireball_txt );
         const fbxLoader = new FBXLoader(assetManager);
@@ -189,12 +194,14 @@ class MyViewRoot extends ViewRoot {
             obj.add(cube);
         }
         console.log("Finished loading fireball.");
-        this.fireballObj = obj;
-        // END FIREBALL LOADING //
+        return obj;
+    }
 
+    async loadSlime() {
         // LOAD SPRAYPAWN / SLIME MODEL //
-        objtxt = new THREE.TextureLoader().load( slime_txt );
-        obj = await new Promise( (resolve, reject) => fbxLoader.load(slime_fbx, resolve, null, reject) );
+        const objtxt = new THREE.TextureLoader().load( slime_txt );
+        const fbxLoader = new FBXLoader(assetManager);
+        const obj = await new Promise( (resolve, reject) => fbxLoader.load(slime_fbx, resolve, null, reject) );
         obj.children[0].scale.set( 0.2, 0.2, 0.2);
         obj.children[0].material.map = objtxt;
         obj.children[0].material.color = new THREE.Color(1, 1, 1);
@@ -203,13 +210,9 @@ class MyViewRoot extends ViewRoot {
         obj.castShadow = true;
         obj.receiveShadow = true;
 
-        this.slimeObj = obj;
-        console.log(this.slimeObj);
         console.log("finished loading slime object");
+        return obj;
         // END SPRAYPAWN LOADING //
-
-        // LOAD PLAYERCHARACTER / WIZARD MODEL //
-        // END PLAYERCHARACTER LOADING //
     }
 
     resizeToWindow() {

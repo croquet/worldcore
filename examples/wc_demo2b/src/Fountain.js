@@ -66,19 +66,6 @@ class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         super(...args);
         //this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.index, () => this.buildDraw()));
 
-        const view = GetNamedView('ViewRoot');
-        if (view.slimeObj)
-        {
-        let obj = view.slimeObj.clone(true);
-        const color = view.model.colors[this.actor.index];
-        // by default all objects end up sharing the same referenced material, so manually create
-        // a new instance here to ensure they don't all have the same underlying texture
-        obj.children[0].material = view.slimeObj.children[0].material.clone();
-        obj.children[0].material.color = new THREE.Color(color[0], color[1], color[2]);
-
-        this.setRenderObject(obj);
-        }
-
         /*const paperTexture = new THREE.TextureLoader().load( paper );
 
         paperTexture.wrapS = paperTexture.wrapT = THREE.RepeatWrapping;
@@ -93,8 +80,23 @@ class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.cube.castShadow = true;
         this.cube.receiveShadow= true;
         this.setRenderObject(this.cube);*/
+        this.getSlime();
     }
 
+    async getSlime() {
+        const view = GetNamedView('ViewRoot');
+        console.log("waiting for slime");
+        const slimeObj = await view.slimePromise;
+        console.log("got slime");
+        let obj = slimeObj.clone(true);
+        const color = view.model.colors[this.actor.index];
+        // by default all objects end up sharing the same referenced material, so manually create
+        // a new instance here to ensure they don't all have the same underlying texture
+        obj.children[0].material = slimeObj.children[0].material.clone();
+        obj.children[0].material.color = new THREE.Color(color[0], color[1], color[2]);
+
+        this.setRenderObject(obj);
+    }
 }
 SprayPawn.register('SprayPawn');
 
