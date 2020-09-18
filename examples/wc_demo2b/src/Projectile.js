@@ -68,9 +68,8 @@ class ProjectilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         // instead of using FBXLoader to create new object instance every time, instead copy static
         // fireball model/texture from viewroot.
         const view = GetNamedView('ViewRoot');
-        console.log("waiting for fireball");
         const fireballObj = await view.fireballPromise;
-        console.log("got fireball");
+        if (!fireballObj) return console.warn('wtf?')
         let obj = new THREE.Group().copy(fireballObj, true);
         const color = this.actor.color;
         obj.children[0].material = fireballObj.children[0].material.clone();

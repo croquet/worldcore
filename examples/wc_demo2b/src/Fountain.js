@@ -85,9 +85,8 @@ class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     async getSlime() {
         const view = GetNamedView('ViewRoot');
-        console.log("waiting for slime");
         const slimeObj = await view.slimePromise;
-        console.log("got slime");
+        if (!slimeObj) return console.warn('wtf?')
         let obj = slimeObj.clone(true);
         const color = view.model.colors[this.actor.index];
         // by default all objects end up sharing the same referenced material, so manually create
