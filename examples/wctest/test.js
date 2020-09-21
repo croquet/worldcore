@@ -180,7 +180,7 @@ class MyModelRoot extends ModelRoot {
         this.subscribe("input", "touchTap", this.shoot);
         this.subscribe("input", "dDown", this.raycast);
 
-        this.future(0).tick();
+        // this.future(0).tick();
     }
 
     seedColors() {
@@ -198,8 +198,8 @@ class MyModelRoot extends ModelRoot {
     raycast() {
         console.log("Raycast!");
         const phyicsManager = this.wellKnownModel('RapierPhysicsManager');
-        phyicsManager.castRay([1,1,1], [1,0,0], 100);
-
+        const rr = phyicsManager.castRay([0,50,0], [0,-1,0], 50);
+        console.log(rr);
     }
 
     shoot() {

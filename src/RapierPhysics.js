@@ -72,7 +72,25 @@ export class RapierPhysicsManager extends Model {
         const o = new RAPIER.Vector(...origin);
         const d = new RAPIER.Vector(...direction);
         const ray = new RAPIER.Ray(o,d);
-        const intersection = this.world.castRay(ray, 100.0);
+        const intersect = this.world.castRay(ray, length);
+        o.free();
+        d.free();
+        if (!intersect) return null;
+
+        const colliderHandle = intersect.colliderHandle();
+        const n = intersect.normal();
+        const normal = [n.x, n.y, n.z];
+        const distance = intersect.toi();
+
+        const collider = this.world.getCollider(colliderHandle);
+        const rigidBodyHandle = collider.parentHandle();
+        const actor = this.rigidBodies[rigidBodyHandle];
+
+        n.free();
+        intersect.free();
+        collider.free();
+
+        return {actor, normal, distance};
     }
 
 }
