@@ -2,7 +2,7 @@
 import { Constants } from "@croquet/croquet";
 import { GetNamedView } from "./NamedView";
 import { PM_Dynamic } from "./Pawn";
-import { GetViewDelta } from "./ViewRoot";
+// import { GetViewDelta } from "./ViewRoot";
 import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_multiply, v3_lerp, v3_equals,
     q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_fastGrounded, v3_transform } from  "./Vector";
 
@@ -356,8 +356,8 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         return this._global;
     }
 
-    update(time) {
-        super.update(time);
+    update(time, delta) {
+        super.update(time, delta);
         let tug = this.tug;
         if (this.delta) tug = Math.min(1, tug * this.delta / 15);
         const changed = (this.isMoving || this.isRotating || this.isScaling);
@@ -460,18 +460,38 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
     constructor(...args) {
         super(...args);
         this.tug = 0.05;    // Bias the tug even more toward the pawn's immediate position.
+
+        this.moveThrottle = 100;    // MS between moveTo events
+        this.lastMoveTime = this.lastFrameTime;
+        this.rotateThrottle = 100;  // MS between rotateTo events
+        this.lastRotateTime = this.lastFrameTime;
+
         this.velocity = v3_zero();
         this.spin = q_identity();
     }
 
     moveTo(v) {
         this._location = v;
-        this.say("avatar_moveTo", v);
+        if (this.lastFrameTime < this.lastMoveTime + this.moveThrottle) {
+            this.lastMoveCache = v;
+        } else {
+            this.lastMoveTime = this.lastFrameTime;
+            this.lastMoveCache = null;
+            this.say("avatar_moveTo", v);
+        }
     }
 
     rotateTo(q) {
         this._rotation = q;
-        this.say("avatar_rotateTo", q);
+        if (this.lastFrameTime < this.lastRotateTime + this.rotateThrottle) {
+            // console.log("cache");
+            this.lastRotateCache = q;
+        } else {
+            // console.log("throttle rot");
+            this.lastRotateTime = this.lastFrameTime;
+            this.lastRotateCache = null;
+            this.say("avatar_rotateTo", q);
+        }
     }
 
     setVelocity(v) {
@@ -486,19 +506,31 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
         this.say("avatar_setSpin", this.spin);
     }
 
-    update(time) {
-        if (this.isRotating) this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
-        // if (this.isMoving) {
-        //     const lastLoc = this._location;
-        //     this._location = this.verify(v3_add(this._location, v3_scale(this.velocity, GetViewDelta())), lastLoc);
-        // }
+    update(time, delta) {
+        if (this.lastMoveCache && time > this.lastMoveTime + this.moveThrottle) {
+            this.lastMoveTime = time;
+            this.say("avatar_moveTo", this.lastMoveCache);
+            this.lastMoveCache = null;
+        }
+
+        if (this.lastRotateCache && time > this.lastRotateTime + this.rotateThrottle) {
+            // console.log("final rot");
+            this.lastRotateTime = time;
+            this.say("avatar_rotateTo", this.lastRotateCache);
+            this.lastRotateCache = null;
+        }
+
+        if (this.isRotating) {
+            this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), delta));
+        }
         if (this.isMoving)  {
-            const relative = v3_scale(this.velocity, GetViewDelta());
+            const relative = v3_scale(this.velocity, delta);
             const move = v3_transform(relative, m4_rotationQ(this.rotation));
             this._location = v3_add(this._location, move);
         }
-        super.update(time);
+        super.update(time, delta);
     }
+
 
     // Enables the subclass to ensure that this change is valid
     // Example - collision with a wall will change the result
@@ -525,172 +557,172 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
 //-- Actor ---------------------------------------------------------------------------------
 
-export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) {
+// export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) {
 
-    init(...args) {
-        super.init(...args);
-        this.mouseLook_tickStep = 15;
-        this.speed = 0;
-        this.strafeSpeed = 0;
-        this.multiplySpeed = 1;
-        this.spin = q_identity();
-        this.grounded = true; // this forces user onto x/z plane for motion
-        this.listen("mouseLook_moveTo", this.onMoveTo);
-        this.listen("mouseLook_rotateTo", this.onRotateTo);
-        this.listen("mouseLook_setSpeed", this.onSetSpeed);
-        this.listen("mouseLook_setStrafeSpeed", this.onSetStrafeSpeed);
-        this.listen("mouseLook_setMultiplySpeed", this.onSetMultiplySpeed);
-        this.listen("mouseLook_setSpin", this.onSetSpin);
-        this.listen("mouseLook_showState", this.onShowState);
+//     init(...args) {
+//         super.init(...args);
+//         this.mouseLook_tickStep = 15;
+//         this.speed = 0;
+//         this.strafeSpeed = 0;
+//         this.multiplySpeed = 1;
+//         this.spin = q_identity();
+//         this.grounded = true; // this forces user onto x/z plane for motion
+//         this.listen("mouseLook_moveTo", this.onMoveTo);
+//         this.listen("mouseLook_rotateTo", this.onRotateTo);
+//         this.listen("mouseLook_setSpeed", this.onSetSpeed);
+//         this.listen("mouseLook_setStrafeSpeed", this.onSetStrafeSpeed);
+//         this.listen("mouseLook_setMultiplySpeed", this.onSetMultiplySpeed);
+//         this.listen("mouseLook_setSpin", this.onSetSpin);
+//         this.listen("mouseLook_showState", this.onShowState);
 
-        this.tickCounter = 0;
-        this.movingCounter = 0;
-        this.checkSum = 0;
-        this.future(0).tick(0);
-    }
+//         this.tickCounter = 0;
+//         this.movingCounter = 0;
+//         this.checkSum = 0;
+//         this.future(0).tick(0);
+//     }
 
-    onMoveTo(v) {
-        this.moveTo(v);
-    }
+//     onMoveTo(v) {
+//         this.moveTo(v);
+//     }
 
-    onRotateTo(q) {
-        this.rotateTo(q);
-    }
+//     onRotateTo(q) {
+//         this.rotateTo(q);
+//     }
 
-    onSetSpeed(s) {
-        this.speed = s;
-        this.isMoving = s !== 0 || this.strafeSpeed !==0;
-    }
+//     onSetSpeed(s) {
+//         this.speed = s;
+//         this.isMoving = s !== 0 || this.strafeSpeed !==0;
+//     }
 
-    onSetStrafeSpeed(ss) {
-        this.strafeSpeed = ss;
-        this.isMoving = ss !== 0 || this.speed !== 0;
-    }
+//     onSetStrafeSpeed(ss) {
+//         this.strafeSpeed = ss;
+//         this.isMoving = ss !== 0 || this.speed !== 0;
+//     }
 
-    onSetMultiplySpeed(ms) {
-        this.multiplySpeed = ms;
-    }
+//     onSetMultiplySpeed(ms) {
+//         this.multiplySpeed = ms;
+//     }
 
-    onSetSpin(q) {
-        this.spin = q;
-        this.isRotating = !q_isZero(this.spin);
-    }
+//     onSetSpin(q) {
+//         this.spin = q;
+//         this.isRotating = !q_isZero(this.spin);
+//     }
 
-    //replicated show state message to ensure teatime is working properly
-    onShowState(){
-        console.log("--AM_MouseLook State--");
-        console.log("AM_MouseLook: ", this);
-        console.log("location: ", this.location);
-        console.log("rotation: ", this.rotation);
-        console.log("checkSum: ", this.checkSum);
-    }
+//     //replicated show state message to ensure teatime is working properly
+//     onShowState(){
+//         console.log("--AM_MouseLook State--");
+//         console.log("AM_MouseLook: ", this);
+//         console.log("location: ", this.location);
+//         console.log("rotation: ", this.rotation);
+//         console.log("checkSum: ", this.checkSum);
+//     }
 
-    setGrounded(bool){ this.grounded = bool; }
+//     setGrounded(bool){ this.grounded = bool; }
 
-    tick(delta) {
-        if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
-        if (this.isMoving) {
-            let m4 = m4_rotationQ(this.rotation);
-            if(this.grounded) m4 = m4_fastGrounded(m4);
-            let lastLoc = this.location;
-            let loc = this.location;
+//     tick(delta) {
+//         if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
+//         if (this.isMoving) {
+//             let m4 = m4_rotationQ(this.rotation);
+//             if(this.grounded) m4 = m4_fastGrounded(m4);
+//             let lastLoc = this.location;
+//             let loc = this.location;
 
-            if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], delta*this.speed*this.multiplySpeed) );
-            if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], delta*this.strafeSpeed*this.multiplySpeed) );
-            // this.moveTo(this.verify(loc, lastLoc));
-        }
-        if(!this.doomed)this.future(this.mouseLook_tickStep).tick(this.mouseLook_tickStep);
-    }
+//             if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], delta*this.speed*this.multiplySpeed) );
+//             if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], delta*this.strafeSpeed*this.multiplySpeed) );
+//             // this.moveTo(this.verify(loc, lastLoc));
+//         }
+//         if(!this.doomed)this.future(this.mouseLook_tickStep).tick(this.mouseLook_tickStep);
+//     }
 
-    // Enables the subclass to ensure that this change is valid
-    // Example - collision with a wall will change the result
-    // verify(loc, lastLoc){
-    //     return loc;
-    // }
+//     // Enables the subclass to ensure that this change is valid
+//     // Example - collision with a wall will change the result
+//     // verify(loc, lastLoc){
+//     //     return loc;
+//     // }
 
-};
+// };
 
-RegisterMixin(AM_MouseLook);
+// RegisterMixin(AM_MouseLook);
 
-//-- Pawn ----------------------------------------------------------------------------------
+// //-- Pawn ----------------------------------------------------------------------------------
 
-// Tug is set even lower so that heatbeat stutters on the actor side will not affect pawn
-// motion. However this means the pawn will take longer to "settle" into its final position.
-//
-// It's possible to have different tug values depending on whether the avatar is controlled
-// locally or not.
+// // Tug is set even lower so that heatbeat stutters on the actor side will not affect pawn
+// // motion. However this means the pawn will take longer to "settle" into its final position.
+// //
+// // It's possible to have different tug values depending on whether the avatar is controlled
+// // locally or not.
 
-export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) {
-    constructor(...args) {
-        super(...args);
-        this.tug = 0.05;    // Bias the tug even more toward the pawn's immediate position.
-        this.speed = 0;
-        this.strafeSpeed = 0;
-        this.multiplySpeed = 1;
-        this.spin = q_identity();
-        this.grounded = true;
-    }
+// export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) {
+//     constructor(...args) {
+//         super(...args);
+//         this.tug = 0.05;    // Bias the tug even more toward the pawn's immediate position.
+//         this.speed = 0;
+//         this.strafeSpeed = 0;
+//         this.multiplySpeed = 1;
+//         this.spin = q_identity();
+//         this.grounded = true;
+//     }
 
-    moveTo(v) {
-        this._location = v;
-        this.say("mouseLook_moveTo", v);
-    }
+//     moveTo(v) {
+//         this._location = v;
+//         this.say("mouseLook_moveTo", v);
+//     }
 
-    rotateTo(q) {
-        this._rotation = q;
-        this.say("mouseLook_rotateTo", q);
-    }
+//     rotateTo(q) {
+//         this._rotation = q;
+//         this.say("mouseLook_rotateTo", q);
+//     }
 
-    setSpeed(s) {
-        this.speed = s;
-        this.isMoving = this.isMoving || s!=0;
-        this.say("mouseLook_setSpeed", s);
-    }
+//     setSpeed(s) {
+//         this.speed = s;
+//         this.isMoving = this.isMoving || s!=0;
+//         this.say("mouseLook_setSpeed", s);
+//     }
 
-    setStrafeSpeed(ss) {
-        this.strafeSpeed = ss;
-        this.isMoving = this.isMoving || ss!=0;
-        this.say("mouseLook_setStrafeSpeed", ss);
-    }
+//     setStrafeSpeed(ss) {
+//         this.strafeSpeed = ss;
+//         this.isMoving = this.isMoving || ss!=0;
+//         this.say("mouseLook_setStrafeSpeed", ss);
+//     }
 
-    setMultiplySpeed(ms) {
-        this.multiplySpeed = ms;
-        this.say("mouseLook_setMultiplySpeed", ms);
-    }
+//     setMultiplySpeed(ms) {
+//         this.multiplySpeed = ms;
+//         this.say("mouseLook_setMultiplySpeed", ms);
+//     }
 
-    setSpin(q) {
-        this.spin = q;
-        this.isRotating = this.isRotating || !q_isZero(this.spin);
-        this.say("mouseLook_setSpin", this.spin);
-    }
+//     setSpin(q) {
+//         this.spin = q;
+//         this.isRotating = this.isRotating || !q_isZero(this.spin);
+//         this.say("mouseLook_setSpin", this.spin);
+//     }
 
-    showState() {
-        console.log("--PM_MouseLook State--");
-        console.log("PM_MouseLook: ", this);
-        console.log("location: ", this._location);
-        console.log("rotation: ", this._rotation);
-        this.say("mouseLook_showState");
-    }
+//     showState() {
+//         console.log("--PM_MouseLook State--");
+//         console.log("PM_MouseLook: ", this);
+//         console.log("location: ", this._location);
+//         console.log("rotation: ", this._rotation);
+//         this.say("mouseLook_showState");
+//     }
 
-    update(time) {
-        if (this.isRotating) {
-            this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
-        }
-        if (this.isMoving) {
-            // let lastLoc = this._location;
-            let m4 = m4_rotationQ(this._rotation);
-            if (this.grounded) m4 = m4_fastGrounded(m4);
-            if (this.speed) this._location = v3_add(this._location, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed*this.multiplySpeed) );
-            if (this.strafeSpeed) this._location = v3_add(this._location, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed*this.multiplySpeed) );
-            // this._location = this.verify(this._location, lastLoc);
-        }
-        super.update(time);
-    }
+//     update(time) {
+//         if (this.isRotating) {
+//             this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
+//         }
+//         if (this.isMoving) {
+//             // let lastLoc = this._location;
+//             let m4 = m4_rotationQ(this._rotation);
+//             if (this.grounded) m4 = m4_fastGrounded(m4);
+//             if (this.speed) this._location = v3_add(this._location, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed*this.multiplySpeed) );
+//             if (this.strafeSpeed) this._location = v3_add(this._location, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed*this.multiplySpeed) );
+//             // this._location = this.verify(this._location, lastLoc);
+//         }
+//         super.update(time);
+//     }
 
-    // Enables the subclass to ensure that this change is valid
-    // Example - collision with a wall will change the result
-    // verify(loc, lastLoc) {
-    //     return loc;
-    // }
+//     // Enables the subclass to ensure that this change is valid
+//     // Example - collision with a wall will change the result
+//     // verify(loc, lastLoc) {
+//     //     return loc;
+//     // }
 
-};
+// };

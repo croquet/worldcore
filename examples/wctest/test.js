@@ -4,9 +4,76 @@
 
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
-    AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale,
-    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject } from "@croquet/worldcore";
+    AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale, AM_Avatar, PM_Avatar,
+    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
+
+
+//------------------------------------------------------------------------------------------
+// MoveActor
+//------------------------------------------------------------------------------------------
+
+class MoveActor extends mix(Actor).with(AM_Avatar) {
+    init() {
+        // const axis = sphericalRandom();
+        // const angle = Math.random() * TAU;
+        // const rotation = q_axisAngle(axis, angle);
+        // const location = [0*Math.random()-0, 3, 0*Math.random()-0];
+
+        // this.index = Math.floor(Math.random() * 30);
+
+        super.init("MovePawn");
+
+    }
+
+}
+MoveActor.register('MoveActor');
+
+//------------------------------------------------------------------------------------------
+// MovePawn
+//------------------------------------------------------------------------------------------
+
+let mp;
+
+class MovePawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible) {
+    constructor(...args) {
+        super(...args);
+        this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.index, () => this.buildDraw()));
+        mp = this;
+    }
+
+    buildDraw() {
+        const mesh = CachedObject("moveMesh" + this.actor.index, () => this.buildMesh());
+        const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
+        const draw = new InstancedDrawCall(mesh, material);
+
+        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+
+        return draw;
+    }
+
+    buildMesh() {
+        const mesh = UnitCube();
+
+        // const modelRoot = GetNamedView('ViewRoot').model;
+        // const color = modelRoot.colors[this.actor.index];
+
+        // mesh.setColor(color);
+        mesh.load();
+        mesh.clear();
+        return mesh;
+    }
+
+    buildMaterial() {
+        const material = new Material();
+        material.pass = 'instanced';
+        material.texture.loadFromURL(paper);
+        return material;
+    }
+
+
+}
+MovePawn.register('MovePawn');
 
 //------------------------------------------------------------------------------------------
 // MyActor
@@ -147,7 +214,7 @@ class FloorPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
         const c =  [0.6,0.6,0.6,1];
 
         this.mesh = new Triangles();
-        this.mesh.addFace([[-50, 0.5, -50], [-50, 0.5, 50], [50, 0.5, 50], [50, 0.5, -50]], [c,c,c,c], [[0,0], [25,0], [25,25], [0,25]]);
+        this.mesh.addFace([[-50, 0, -50], [-50, 0, 50], [50, 0, 50], [50, 0, -50]], [c,c,c,c], [[0,0], [25,0], [25,25], [0,25]]);
         this.mesh.load();
         this.mesh.clear();
 
@@ -170,6 +237,7 @@ class MyModelRoot extends ModelRoot {
         console.log("Starting test!!!!");
 
         FloorActor.create();
+        const move = MoveActor.create();
 
         this.actors = [];
 
@@ -263,6 +331,7 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "spinLeftUp", () => console.log("Spin Left Up"));
         this.subscribe("input", "strafeLeftDown", () => console.log("Strafe Left Down"));
         this.subscribe("input", "strafeLeftUp", () => console.log("Strafe Left Up"));
+        this.subscribe("input", "mouseDelta", this.onMouseDelta)
 
     }
 
@@ -274,6 +343,23 @@ class MyViewRoot extends ViewRoot {
         this.pawnManager = this.addManager(new PawnManager());
     }
 
+    onMouseDelta(delta) {
+        // console.log(delta);
+        // if (mp) {
+        //     const loc = mp.location;
+        //     // console.log(loc);
+        //     const newLoc = [loc[0]+0.01 * delta[0], loc[1], loc[2]+0.01 * delta[1]];
+        //     mp.moveTo(newLoc);
+        // }
+        if (mp) {
+            const rot = mp.rotation;
+            const dRot = q_axisAngle([0,1,0], delta[0] * 0.005);
+            const newRot = q_multiply(mp.rotation, dRot);
+            mp.rotateTo(newRot);
+
+        }
+    }
+
 }
 
 
@@ -281,7 +367,7 @@ async function go() {
     await LoadRapier();
     // App.messages = true;
     App.makeWidgetDock();
-    const session = await Session.join(`wctest-${App.autoSession("q")}`, MyModelRoot, MyViewRoot, {tps: "20"});
+    const session = await Session.join(`wctest-${App.autoSession("q")}`, MyModelRoot, MyViewRoot, {tps: "60"});
 }
 
 go();
