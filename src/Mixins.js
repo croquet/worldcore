@@ -130,6 +130,11 @@ export const AM_Tree = superclass => class extends superclass {
         child.parent = null;
         this.say("tree_removeChild", child.id);
     }
+
+    // Allow derived classes to perform addition operations when added or removed from a parent.
+
+    onAddChild(child) {}
+    onRemoveChild(child) {}
 };
 RegisterMixin(AM_Tree);
 
@@ -183,6 +188,16 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
         this.rotation = options.rotation || q_identity();
         this.scale = options.scale || v3_unit();
         super.init(pawn, options);
+    }
+
+    onAddChild(child) {
+        super.onAddChild(child);
+        child.globalChanged();
+    }
+
+    onRemoveChild(child) {
+        super.onRemoveChild(child);
+        child.globalChanged();
     }
 
     localChanged() {
