@@ -504,11 +504,12 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
     // No matter how often throttleRotateTo is called, it will only send a message to the reflector once per throttle interval.
 
     throttledRotateTo(q) {
+        const nq = q_normalize(q)
         if (this.lastFrameTime < this.lastRotateTime + this.rotateThrottle) {
-            this._rotation = q;
+            this._rotation = nq;
             this.lastRotateCache = q;
         } else {
-            this.rotateTo(q);
+            this.rotateTo(nq);
         }
     }
 
@@ -536,19 +537,11 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
         }
         super.update(time, delta);
 
-        if (this.lastMoveCache && this.lastFrameTime > this.lastMoveTime + this.moveThrottle) {
-            this.moveTo(this.lastMoveCache);
-            // this.lastMoveTime = time;
-            // this.say("avatar_moveTo", this.lastMoveCache);
-            // this.lastMoveCache = null;
-        }
+        // If a throttled move sequence ends, send the final cached value
 
-        if (this.lastRotateCache && this.lastFrameTime > this.lastRotateTime + this.rotateThrottle) {
-            this.rotateTo(this.lastRotateCache);
-            // this.lastRotateTime = time;
-            // this.say("avatar_rotateTo", this.lastRotateCache);
-            // this.lastRotateCache = null;
-        }
+        if (this.lastMoveCache && this.lastFrameTime > this.lastMoveTime + this.moveThrottle) this.moveTo(this.lastMoveCache);
+        if (this.lastRotateCache && this.lastFrameTime > this.lastRotateTime + this.rotateThrottle) this.rotateTo(this.lastRotateCache);
+
     }
 
 
