@@ -461,18 +461,29 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
         super(...args);
         this.tug = 0.05;    // Bias the tug even more toward the pawn's immediate position.
 
-        this.moveThrottle = 100;    // MS between moveTo events
+        this.moveThrottle = 15;    // MS between throttled moveTo events
         this.lastMoveTime = this.lastFrameTime;
-        this.rotateThrottle = 100;  // MS between rotateTo events
+        this.rotateThrottle = 50;  // MS between throttled rotateTo events
         this.lastRotateTime = this.lastFrameTime;
 
         this.velocity = v3_zero();
         this.spin = q_identity();
     }
 
+    // Instantly sends a move event to the reflector. If you're calling it repeatly, maybe use throttledMoveTo instead.
+
     moveTo(v) {
         this._location = v;
+        this.lastMoveTime = this.lastFrameTime;
+        this.lastMoveCache = null;
+        this.say("avatar_moveTo", v);
+    }
+
+    // No matter how often throttledMoveTo is called, it will only send a message to the reflector once per throttle interval.
+
+    throttledMoveTo(v) {
         if (this.lastFrameTime < this.lastMoveTime + this.moveThrottle) {
+            this._location = v;
             this.lastMoveCache = v;
         } else {
             this.lastMoveTime = this.lastFrameTime;
@@ -481,16 +492,23 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
         }
     }
 
+    // Instantly sends a rotate event to the reflector. If you're calling it repeatly, maybe use throttledRotateTo instead.
+
     rotateTo(q) {
         this._rotation = q;
+        this.lastRotateTime = this.lastFrameTime;
+        this.lastRotateCache = null;
+        this.say("avatar_rotateTo", q);
+    }
+
+    // No matter how often throttleRotateTo is called, it will only send a message to the reflector once per throttle interval.
+
+    throttledRotateTo(q) {
         if (this.lastFrameTime < this.lastRotateTime + this.rotateThrottle) {
-            // console.log("cache");
+            this._rotation = q;
             this.lastRotateCache = q;
         } else {
-            // console.log("throttle rot");
-            this.lastRotateTime = this.lastFrameTime;
-            this.lastRotateCache = null;
-            this.say("avatar_rotateTo", q);
+            this.rotateTo(q);
         }
     }
 
@@ -507,18 +525,6 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
     }
 
     update(time, delta) {
-        if (this.lastMoveCache && time > this.lastMoveTime + this.moveThrottle) {
-            this.lastMoveTime = time;
-            this.say("avatar_moveTo", this.lastMoveCache);
-            this.lastMoveCache = null;
-        }
-
-        if (this.lastRotateCache && time > this.lastRotateTime + this.rotateThrottle) {
-            // console.log("final rot");
-            this.lastRotateTime = time;
-            this.say("avatar_rotateTo", this.lastRotateCache);
-            this.lastRotateCache = null;
-        }
 
         if (this.isRotating) {
             this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), delta));
@@ -529,6 +535,20 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
             this._location = v3_add(this._location, move);
         }
         super.update(time, delta);
+
+        if (this.lastMoveCache && this.lastFrameTime > this.lastMoveTime + this.moveThrottle) {
+            this.moveTo(this.lastMoveCache);
+            // this.lastMoveTime = time;
+            // this.say("avatar_moveTo", this.lastMoveCache);
+            // this.lastMoveCache = null;
+        }
+
+        if (this.lastRotateCache && this.lastFrameTime > this.lastRotateTime + this.rotateThrottle) {
+            this.rotateTo(this.lastRotateCache);
+            // this.lastRotateTime = time;
+            // this.say("avatar_rotateTo", this.lastRotateCache);
+            // this.lastRotateCache = null;
+        }
     }
 
 

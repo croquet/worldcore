@@ -38,6 +38,7 @@ let mp;
 class MovePawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible) {
     constructor(...args) {
         super(...args);
+        this.tug = 0.2;
         this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.index, () => this.buildDraw()));
         mp = this;
     }
@@ -344,18 +345,19 @@ class MyViewRoot extends ViewRoot {
     }
 
     onMouseDelta(delta) {
-        // console.log(delta);
+        console.log(delta);
         // if (mp) {
         //     const loc = mp.location;
         //     // console.log(loc);
-        //     const newLoc = [loc[0]+0.01 * delta[0], loc[1], loc[2]+0.01 * delta[1]];
-        //     mp.moveTo(newLoc);
+        //     const newLoc = [loc[0]+0.03 * delta[0], loc[1], loc[2]+0.03 * delta[1]];
+        //     mp.throttledMoveTo(newLoc);
         // }
         if (mp) {
             const rot = mp.rotation;
             const dRot = q_axisAngle([0,1,0], delta[0] * 0.005);
             const newRot = q_multiply(mp.rotation, dRot);
-            mp.rotateTo(newRot);
+            mp.throttledRotateTo(newRot);
+            // mp.rotateTo(newRot);
 
         }
     }
@@ -367,7 +369,8 @@ async function go() {
     await LoadRapier();
     // App.messages = true;
     App.makeWidgetDock();
-    const session = await Session.join(`wctest-${App.autoSession("q")}`, MyModelRoot, MyViewRoot, {tps: "60"});
+    // const session = await Session.join(`wctest-${App.autoSession("q")}`, MyModelRoot, MyViewRoot, {tps: "60"});
+    const session = await Session.join(`wctest`, MyModelRoot, MyViewRoot, {tps: "60"});
 }
 
 go();
