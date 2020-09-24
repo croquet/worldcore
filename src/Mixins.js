@@ -326,7 +326,9 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         this._rotation = this.actor.rotation;
         this._location = this.actor.location;
 
-        this.tug = 0.2;
+        // this.tug = 0.2;
+        this.defaultTug = 0.2;
+        this._tug = this.defaultTug
 
         this.scaleEpsilon = 0.0001;
         this.rotationEpsilon = 0.000001;
@@ -341,6 +343,18 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         this.listenOnce("smoothed_scaleTo", () => this.isScaling = true);
     }
 
+    onAddChild(id) {
+        super.onAddChild(id);
+        const child = GetNamedView("PawnManager").get(id);
+        child.refreshTug();
+    }
+
+    onRemoveChild(id) {
+        super.onRemoveChild(id);
+        const child = GetNamedView("PawnManager").get(id);
+        child.refreshTug();
+    }
+
     localChanged() {
         this._local = null;
         this.globalChanged();
@@ -352,9 +366,23 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         if (this.children) this.children.forEach(child => child.globalChanged());
     }
 
+    setTug(t) {
+        this.defaultTug = t;
+        this.refreshTug();
+    }
+
+    refreshTug() {
+        if (this.parent && this.parent.tug) {
+            this._tug = this.parent.tug;
+        } else {
+            this._tug = this.defaultTug;
+        }
+    }
+
     get scale() { return this._scale; }
     get location() { return this._location; }
     get rotation() { return this._rotation; }
+    get tug() { return this._tug; }
 
     get local() {
         if (!this._local) this._local = m4_scalingRotationTranslation(this._scale, this._rotation, this._location);
@@ -474,7 +502,7 @@ RegisterMixin(AM_Avatar);
 export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
     constructor(...args) {
         super(...args);
-        this.tug = 0.05;    // Bias the tug even more toward the pawn's immediate position.
+        this.setTug(0.05);    // Bias the tug even more toward the pawn's immediate position.
 
         this.moveThrottle = 15;    // MS between throttled moveTo events
         this.lastMoveTime = this.lastFrameTime;
@@ -519,12 +547,11 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
     // No matter how often throttleRotateTo is called, it will only send a message to the reflector once per throttle interval.
 
     throttledRotateTo(q) {
-        const nq = q_normalize(q)
         if (this.lastFrameTime < this.lastRotateTime + this.rotateThrottle) {
-            this._rotation = nq;
+            this._rotation = q;
             this.lastRotateCache = q;
         } else {
-            this.rotateTo(nq);
+            this.rotateTo(q);
         }
     }
 

@@ -38,7 +38,7 @@ let mp;
 class MovePawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible) {
     constructor(...args) {
         super(...args);
-        this.tug = 0.2;
+        // this.tug = 0.2;
         this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.index, () => this.buildDraw()));
         mp = this;
     }
