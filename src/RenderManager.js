@@ -79,10 +79,10 @@ export const PM_Camera = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
         if (this.isMyPlayerPawn) {
-            this.setCameraOffset(m4_identity());
+            // this.setCameraOffset(m4_identity());
             const render = GetNamedView("RenderManager");
-            const m = m4_multiply(this.global, this.offset);
-            render.camera.setLocation(m);
+            // const m = m4_multiply(this.global, this.offset);
+            render.camera.setLocation(this.lookGlobal);
             render.camera.setProjection(toRad(60), 1.0, 10000.0);
         }
     }
@@ -91,15 +91,14 @@ export const PM_Camera = superclass => class extends superclass {
         super.refresh();
         if (!this.isMyPlayerPawn) return;
         const render = GetNamedView("RenderManager");
-        const m = m4_multiply(this.global, this.offset);
-        render.camera.setLocation(m);
-        render.camera.setProjection(toRad(60), 1.0, 10000.0);
+        // const m = m4_multiply(this.global, this.offset);
+        render.camera.setLocation(this.lookGlobal);
     }
 
-    setCameraOffset(m) {
-        this.offset = m;
-        this.needRefresh = true;
-    }
+    // setCameraOffset(m) {
+    //     this.offset = m;
+    //     this.needRefresh = true;
+    // }
 
 
 };

@@ -167,7 +167,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         const type = options.type || 'dynamic';
 
         const rbd = new RAPIER.RigidBodyDesc(type);
-        rbd.setTranslation(...this.location);
+        rbd.setTranslation(...this.translation);
         rbd.setRotation(...this.rotation);
 
         const physicsManager =  this.wellKnownModel('RapierPhysicsManager');
@@ -179,7 +179,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         // rbd.free();
 
         if (this.rigidBody.isKinematic()) {
-            this.listen("spatial_setLocation", this.kinematicSetLocation);
+            this.listen("spatial_setTranslation", this.kinematicSetTranslation);
             this.listen("spatial_setRotation", this.kinematicSetRotation);
             this.listen("smoothed_moveTo", this.kinematicMoveTo);
             this.listen("smoothed_rotateTo", this.kinematicRotateTo);
@@ -188,7 +188,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
 
     // Kinematic bodies are driven by the player, not the physics system, so we catch move events and pass them on to Rapier.
 
-    kinematicSetLocation(v) { this.rigidBody.setTranslation(...v); }
+    kinematicSetTranslation(v) { this.rigidBody.setTranslation(...v); }
     kinematicSetRotation(q) { this.rigidBody.setRotation(...q); }
     kinematicMoveTo(v) { this.rigidBody.setNextKinematicTranslation(...v); }
     kinematicRotateTo(q) { this.rigidBody.setNextKinematicRotation(...q); }
@@ -199,7 +199,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         this.removeCollider();
 
         if (this.rigidBody.isKinematic()) {
-            this.ignore("spatial_setLocation");
+            this.ignore("spatial_setTranslation");
             this.ignore("spatial_setRotation");
             this.ignore("smoothed_moveTo");
             this.ignore("smoothed_rotateTo");

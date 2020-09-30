@@ -4,7 +4,7 @@ import { GetNamedView } from "./NamedView";
 import { PM_Dynamic } from "./Pawn";
 // import { GetViewDelta } from "./ViewRoot";
 import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_fastGrounded, v3_transform } from  "./Vector";
+    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_fastGrounded, v3_transform, q_euler, TAU, toDeg, clampRad } from  "./Vector";
 
 // Mixin
 //
@@ -173,7 +173,7 @@ export const PM_Tree = superclass => class extends superclass {
 //-- Spatial -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Spatial actors have a location, rotation and scale in 3D space. They inherit from Tree
+// Spatial actors have a translation, rotation and scale in 3D space. They inherit from Tree
 // so they also maintain a hierachy of transforms.
 //
 // They don't have any view-side smoothing, so the pawn will change its transform to exactly
@@ -184,7 +184,7 @@ export const PM_Tree = superclass => class extends superclass {
 export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
     init(pawn, options) {
         options = options || {};
-        this.location = options.location || v3_zero();
+        this.translation = options.translation || v3_zero();
         this.rotation = options.rotation || q_identity();
         this.scale = options.scale || v3_unit();
         super.init(pawn, options);
@@ -224,14 +224,18 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
         this.localChanged();
     }
 
-    setLocation(v) {
-        this.location = v;
-        this.say("spatial_setLocation", v);
+    // setRotationEuler(e) { // x = pitch, y = yaw, z = roll
+    //     this.setRotation(q_euler(...e));
+    // };
+
+    setTranslation(v) {
+        this.translation = v;
+        this.say("spatial_setTranslation", v);
         this.localChanged();
     }
 
     get local() {
-        if (!this.$local) this.$local = m4_scalingRotationTranslation(this.scale, this.rotation, this.location);
+        if (!this.$local) this.$local = m4_scalingRotationTranslation(this.scale, this.rotation, this.translation);
         return this.$local;
     }
 
@@ -244,6 +248,10 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
         }
         return this.$global;
     }
+
+    // Allows objects to have a look direction that's different from their facing.
+
+    // get lookGlobal() { return this.global; }
 
 };
 RegisterMixin(AM_Spatial);
@@ -268,10 +276,11 @@ globalChanged() {
 }
 
 get scale() { return this.actor.scale; }
-get location() { return this.actor.location; }
+get translation() { return this.actor.translation; }
 get rotation() { return this.actor.rotation; }
 get local() { return this.actor.local; }
 get global() { return this.actor.global; }
+get lookGlobal() { return this.global; } // Allows objects to have an offset camera position
 
 };
 
@@ -282,7 +291,7 @@ get global() { return this.actor.global; }
 // Smoothed actors generate interpolation information when they get movement commands. Their
 // pawns use this to reposition themselves on every frame update.
 //
-// Setting location/rotation/scale will pop the pawn to the new value. If you want the transition
+// Setting translation/rotation/scale will pop the pawn to the new value. If you want the transition
 // to be interpolated, use moveTo, rotateTo, or scaleTo instead.
 
 //-- Actor ---------------------------------------------------------------------------------
@@ -290,18 +299,21 @@ get global() { return this.actor.global; }
 export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
     moveTo(v) {
-        this.location = v;
+        this.translation = v;
         this.say("smoothed_moveTo", v);
+        this.localChanged();
     }
 
     rotateTo(q) {
         this.rotation = q;
         this.say("smoothed_rotateTo", q);
+        this.localChanged();
     }
 
     scaleTo(v) {
         this.scale = v;
         this.say("smoothed_scaleTo", v);
+        this.localChanged();
     }
 
 };
@@ -313,7 +325,7 @@ RegisterMixin(AM_Smoothed);
 // transforms. The closer tug is to 1, the more closely the pawn will track the actor,
 // but the more vulnerable the pawn is to latency/stutters in the simulation.
 
-// When the difference between actor and pawn scale/rotation/location drops below an epsilon,
+// When the difference between actor and pawn scale/rotation/translation drops below an epsilon,
 // interpolation is paused
 
 const DynamicSpatial = superclass => PM_Dynamic(PM_Spatial(superclass)); // Merge dynamic and spatial base mixins
@@ -324,19 +336,17 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 
         this._scale = this.actor.scale;
         this._rotation = this.actor.rotation;
-        this._location = this.actor.location;
+        this._translation = this.actor.translation;
 
-        // this.tug = 0.2;
-        this.defaultTug = 0.2;
-        this._tug = this.defaultTug
+        this.setTug(0.2);
 
         this.scaleEpsilon = 0.0001;
         this.rotationEpsilon = 0.000001;
-        this.locationEpsilon = 0.0001;
+        this.translationEpsilon = 0.0001;
 
         this.listenOnce("spatial_setScale", v => this._scale = v);
         this.listenOnce("spatial_setRotation", q => this._rotation = q);
-        this.listenOnce("spatial_setLocation", v => this._location = v);
+        this.listenOnce("spatial_setTranslation", v => this._translation = v);
 
         this.listenOnce("smoothed_moveTo", () => this.isMoving = true);
         this.listenOnce("smoothed_rotateTo", () => this.isRotating = true);
@@ -380,12 +390,12 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     }
 
     get scale() { return this._scale; }
-    get location() { return this._location; }
+    get translation() { return this._translation; }
     get rotation() { return this._rotation; }
     get tug() { return this._tug; }
 
     get local() {
-        if (!this._local) this._local = m4_scalingRotationTranslation(this._scale, this._rotation, this._location);
+        if (!this._local) this._local = m4_scalingRotationTranslation(this._scale, this._rotation, this._translation);
         return this._local;
     }
 
@@ -404,22 +414,29 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         let tug = this.tug;
         if (this.delta) tug = Math.min(1, tug * this.delta / 15);
         const changed = (this.isMoving || this.isRotating || this.isScaling);
-        if (this.isScaling) {
-            this._scale = v3_lerp(this._scale, this.actor.scale, tug);
-            this.isScaling = !v3_equals(this._scale, this.actor.scale, this.scaleEpsilon);
-        }
-        if (this.isRotating) {
-            this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-            this.isRotating = !q_equals(this._rotation, this.actor.rotation, this.rotationEpsilon);
-        }
-        if (this.isMoving) {
-            this._location = v3_lerp(this._location, this.actor.location, tug);
-            this.isMoving = !v3_equals(this._location, this.actor.location, this.locationEpsilon);
-        }
+        if (this.isScaling) this.interpolateScale(tug);
+        if (this.isRotating) this.interpolateRotation(tug);
+        if (this.isMoving) this.interpolateTranslation(tug);
         if (changed) this.localChanged();
         if (this.needRefresh) this.refresh();
         this.needRefresh = false;
     }
+
+    interpolateScale(tug) {
+        this._scale = v3_lerp(this._scale, this.actor.scale, tug);
+        this.isScaling = !v3_equals(this._scale, this.actor.scale, this.scaleEpsilon);
+    }
+
+    interpolateRotation(tug) {
+        this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
+        this.isRotating = !q_equals(this._rotation, this.actor.rotation, this.rotationEpsilon);
+    }
+
+    interpolateTranslation(tug) {
+        this._translation = v3_lerp(this._translation, this.actor.translation, tug);
+        this.isMoving = !v3_equals(this._translation, this.actor.translation, this.translationEpsilon);
+    }
+
 };
 
 
@@ -427,7 +444,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 //-- Avatar --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Avatar actors maintain a primary view-side scale/rotation/location that you can drive directly
+// Avatar actors maintain a primary view-side scale/rotation/translation that you can drive directly
 // from player inputs so the avatar responds quickly to player input. On every frame this
 // transform is averaged with the official model-side values.
 //
@@ -474,20 +491,13 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
     tick(delta) {
         if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
         if (this.isMoving) {
-            // let lastLoc = this.location;
-            // this.moveTo(this.verify(v3_add(this.location, v3_scale(this.velocity, delta)), lastLoc));
-
-            const relative = v3_scale(this.velocity, delta); ///???
+            const relative = v3_scale(this.velocity, delta);
             const move = v3_transform(relative, m4_rotationQ(this.rotation));
-            this.moveTo(v3_add(this.location, move));
+            this.moveTo(v3_add(this.translation, move));
         }
         if (!this.doomed) this.future(this.avatar_tickStep).tick(this.avatar_tickStep);
     }
-    // Enables the subclass to ensure that this change is valid
-    // Example - collision with a wall will change the result
-    // verify(loc, lastLoc){
-    //     return loc;
-    // }
+
 };
 RegisterMixin(AM_Avatar);
 
@@ -506,6 +516,7 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
         this.moveThrottle = 15;    // MS between throttled moveTo events
         this.lastMoveTime = this.lastFrameTime;
+
         this.rotateThrottle = 50;  // MS between throttled rotateTo events
         this.lastRotateTime = this.lastFrameTime;
 
@@ -516,7 +527,7 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
     // Instantly sends a move event to the reflector. If you're calling it repeatly, maybe use throttledMoveTo instead.
 
     moveTo(v) {
-        this._location = v;
+        this._translation = v;
         this.lastMoveTime = this.lastFrameTime;
         this.lastMoveCache = null;
         this.say("avatar_moveTo", v);
@@ -526,7 +537,7 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
     throttledMoveTo(v) {
         if (this.lastFrameTime < this.lastMoveTime + this.moveThrottle) {
-            this._location = v;
+            this._translation = v;
             this.lastMoveCache = v;
         } else {
             this.lastMoveTime = this.lastFrameTime;
@@ -575,7 +586,7 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
         if (this.isMoving)  {
             const relative = v3_scale(this.velocity, delta);
             const move = v3_transform(relative, m4_rotationQ(this.rotation));
-            this._location = v3_add(this._location, move);
+            this._translation = v3_add(this._translation, move);
         }
         super.update(time, delta);
 
@@ -586,20 +597,250 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
     }
 
-
-    // Enables the subclass to ensure that this change is valid
-    // Example - collision with a wall will change the result
-    // verify(loc, lastLoc){
-    //     return loc;
-    // }
 };
 
 
 //------------------------------------------------------------------------------------------
-//-- MouseLook --------------------------------------------------------------------------------
+//-- SpatialEuler --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// MouseLook actors maintain a primary view-side scale/rotation/location that you can drive directly
+const AM_SpatialEulerExtension = superclass => class extends superclass {
+
+    init(pawn, options) {
+        options = options || {};
+        this.setEulerAngles(options);
+        this.rotation = q_euler(this.pitch, this.yaw, this.roll);
+        super.init(pawn, options);
+    }
+
+    setEulerRotation(e) {
+        this.setAngles(e);
+        this.rotation = q_euler(this.pitch, this.yaw, this.roll);
+        this.say("spatialEuler_setRotation", e);
+        this.localChanged();
+    };
+
+    setEulerAngles(e) {
+        this.pitch = e.pitch || 0;
+        this.yaw = e.yaw || 0;
+        this.roll = e.roll || 0;
+        this.clampEulerAngles();
+    }
+
+    clampEulerAngles() {
+        this.pitch = clampRad(this.pitch);
+        this.yaw = clampRad(this.yaw);
+        this.roll = clampRad(this.roll);
+    }
+
+}
+
+export const AM_SpatialEuler = superclass => AM_SpatialEulerExtension(AM_Spatial(superclass));
+RegisterMixin(AM_SpatialEuler);
+
+
+//-- Pawn ----------------------------------------------------------------------------------
+
+const PM_SpatialEulerExtension = superclass => class extends superclass {
+
+    get pitch() { return this.actor.pitch};
+    get yaw() { return this.actor.yaw};
+    get roll() { return this.actor.roll};
+
+}
+
+export const PM_SpatialEuler = superclass => PM_SpatialEulerExtension(PM_Spatial(superclass));
+
+//------------------------------------------------------------------------------------------
+//-- SmoothedEuler -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+const AM_SmoothedEulerExtension = superclass => class extends AM_SpatialEulerExtension(superclass) {
+
+    rotateToEuler(e) {
+        this.setEulerAngles(e);
+        this.rotation = q_euler(this.pitch, this.yaw, this.roll);
+        this.say("smoothedEuler_rotateTo", e);
+        this.localChanged();
+    }
+
+}
+
+export const AM_SmoothedEuler = superclass => AM_SmoothedEulerExtension(AM_Smoothed(superclass));
+RegisterMixin(AM_SmoothedEuler);
+
+//-- Pawn ----------------------------------------------------------------------------------
+
+const PM_SmoothedEulerExtension = superclass => class extends PM_SpatialEulerExtension(superclass) {
+
+    constructor(...args) {
+        super(...args);
+        this._pitch = this.actor.pitch;
+        this._yaw = this.actor.yaw;
+        this._roll = this.actor.roll;
+        this.clampEulerAngles();
+        this._rotation = q_euler(this._pitch, this._yaw, this._roll);
+        this.listenOnce("spatialEuler_setRotation", this.setEulerRotation);
+        this.listenOnce("smoothedEuler_rotateTo", () => this.isRotating = true);
+    }
+
+    setEulerRotation(e) {
+        this._pitch = e.pitch || 0;
+        this._yaw = e.yaw || 0;
+        this._roll = e.roll || 0;
+        this.clampEulerAngles();
+        this._rotation = q_euler(this._pitch, this._yaw, this._roll);
+    }
+
+    interpolateRotation(tug) {
+
+        let dPitch = this.actor.pitch - this._pitch;
+        if (dPitch < -Math.PI) dPitch += TAU;
+        if (dPitch > Math.PI) dPitch -= TAU;
+
+        let dYaw = this.actor.yaw - this._yaw;
+        if (dYaw < -Math.PI) dYaw += TAU;
+        if (dYaw > Math.PI) dYaw -= TAU;
+
+        let dRoll = this.actor.roll - this._roll;
+        if (dRoll < -Math.PI) dRoll += TAU;
+        if (dRoll > Math.PI) dRoll -= TAU;
+
+        this._pitch = this._pitch + dPitch * tug;
+        this._yaw = this._yaw + dYaw * tug;
+        this._roll = this._roll + dRoll * tug;
+
+        this.clampEulerAngles();
+
+        this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
+
+        this.isRotating = !q_equals(this._rotation, this.actor.rotation, this.rotationEpsilon) ||
+            (Math.abs(dPitch) > this.rotationEpsilon) ||
+            (Math.abs(dYaw) > this.rotationEpsilon) ||
+            (Math.abs(dRoll) > this.rotationEpsilon);
+
+    }
+
+    clampEulerAngles() {
+        this._pitch = clampRad(this._pitch);
+        this._yaw = clampRad(this._yaw);
+        this._roll = clampRad(this._roll);
+    }
+}
+
+export const PM_SmoothedEuler = superclass => PM_SmoothedEulerExtension(PM_Smoothed(superclass));
+
+
+//------------------------------------------------------------------------------------------
+//-- MouselookAvatar -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+//-- Actor ---------------------------------------------------------------------------------
+
+export const AM_MouselookAvatar = superclass => class extends AM_SmoothedEuler(superclass) {
+
+    init(...args) {
+        super.init(...args);
+        this.avatar_tickStep = 15;
+        this.velocity = v3_zero();
+        this.listen("avatar_rotateTo", this.onRotateTo);
+        this.listen("avatar_setVelocity", this.onSetVelocity);
+        this.future(0).tick(0);
+    }
+
+    onRotateTo(e) {
+        this.rotateToEuler({yaw: e[1]});
+    }
+
+    onSetVelocity(v) {
+        this.velocity = v;
+        this.isMoving = !v3_isZero(this.velocity);
+    }
+
+    tick(delta) {
+        if (this.isMoving) {
+            const relative = v3_scale(this.velocity, delta);
+            const move = v3_transform(relative, m4_rotationQ(this.rotation));
+            this.moveTo(v3_add(this.translation, move));
+        }
+        if (!this.doomed) this.future(this.avatar_tickStep).tick(this.avatar_tickStep);
+    }
+}
+RegisterMixin(AM_MouselookAvatar);
+
+//-- Pawn ---------------------------------------------------------------------------------
+
+const PM_MouselookAvatar = superclass => class extends PM_SmoothedEuler(superclass) {
+
+    constructor(...args) {
+        super(...args);
+        this.setTug(0.05);    // Bias the tug even more toward the pawn's immediate position.
+
+        this.rotateThrottle = 50;  // MS between throttled rotateTo events
+        this.lastRotateTime = this.lastFrameTime;
+
+        this.velocity = v3_zero();
+    }
+
+    rotateTo(e) {
+        this.setEulerRotation(e);
+        this.lastRotateTime = this.lastFrameTime;
+        this.lastRotateCache = null;
+        this.say("avatar_rotateTo", [e.yaw, e.pitch]);
+    }
+
+    throttledRotateTo(e) {
+        if (this.lastFrameTime < this.lastRotateTime + this.rotateThrottle) {
+            this.setEulerRotation(e);
+            this.lastRotateCache = e;
+        } else {
+            this.rotateTo(e);
+        }
+    }
+
+    setVelocity(v) {
+        this.velocity = v;
+        this.isMoving = this.isMoving || !v3_isZero(this.velocity);
+        this.say("avatar_setVelocity", this.velocity);
+    }
+
+    update(time, delta) {
+
+        if (this.isMoving)  {
+            const relative = v3_scale(this.velocity, delta);
+            const move = v3_transform(relative, m4_rotationQ(this.rotation));
+            this._translation = v3_add(this._translation, move);
+        }
+        super.update(time, delta);
+
+        // If a throttled move sequence ends, send the final cached value
+
+        if (this.lastRotateCache && this.lastFrameTime > this.lastRotateTime + this.rotateThrottle) this.rotateTo(this.lastRotateCache);
+
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// MouseLook actors maintain a primary view-side scale/rotation/translation that you can drive directly
 // from player inputs so the mouselook avatar responds quickly to player input. On every frame this
 // transform is averaged with the official model-side values.
 //
@@ -667,7 +908,7 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 //     onShowState(){
 //         console.log("--AM_MouseLook State--");
 //         console.log("AM_MouseLook: ", this);
-//         console.log("location: ", this.location);
+//         console.log("translation: ", this.translation);
 //         console.log("rotation: ", this.rotation);
 //         console.log("checkSum: ", this.checkSum);
 //     }
@@ -679,8 +920,8 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 //         if (this.isMoving) {
 //             let m4 = m4_rotationQ(this.rotation);
 //             if(this.grounded) m4 = m4_fastGrounded(m4);
-//             let lastLoc = this.location;
-//             let loc = this.location;
+//             let lastLoc = this.translation;
+//             let loc = this.translation;
 
 //             if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], delta*this.speed*this.multiplySpeed) );
 //             if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], delta*this.strafeSpeed*this.multiplySpeed) );
@@ -719,7 +960,7 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 //     }
 
 //     moveTo(v) {
-//         this._location = v;
+//         this._translation = v;
 //         this.say("mouseLook_moveTo", v);
 //     }
 
@@ -754,7 +995,7 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 //     showState() {
 //         console.log("--PM_MouseLook State--");
 //         console.log("PM_MouseLook: ", this);
-//         console.log("location: ", this._location);
+//         console.log("translation: ", this._translation);
 //         console.log("rotation: ", this._rotation);
 //         this.say("mouseLook_showState");
 //     }
@@ -764,12 +1005,12 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 //             this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
 //         }
 //         if (this.isMoving) {
-//             // let lastLoc = this._location;
+//             // let lastLoc = this._translation;
 //             let m4 = m4_rotationQ(this._rotation);
 //             if (this.grounded) m4 = m4_fastGrounded(m4);
-//             if (this.speed) this._location = v3_add(this._location, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed*this.multiplySpeed) );
-//             if (this.strafeSpeed) this._location = v3_add(this._location, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed*this.multiplySpeed) );
-//             // this._location = this.verify(this._location, lastLoc);
+//             if (this.speed) this._translation = v3_add(this._translation, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed*this.multiplySpeed) );
+//             if (this.strafeSpeed) this._translation = v3_add(this._translation, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed*this.multiplySpeed) );
+//             // this._translation = this.verify(this._translation, lastLoc);
 //         }
 //         super.update(time);
 //     }

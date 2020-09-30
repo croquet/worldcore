@@ -5,7 +5,7 @@ import paper from "../assets/paper.jpg";
 export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
     init() {
 
-        super.init("LevelPawn", {location: [0,0,0], scale: [1,1,1]});
+        super.init("LevelPawn", {translation: [0,0,0], scale: [1,1,1]});
 
         this.addRigidBody({type: 'static'});
         this.addBoxCollider({
@@ -15,8 +15,8 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
             restitution: 0.1
         });
 
-        this.fountain0 = FountainActor.create({location: [-3,1.5,0]});
-        this.fountain1 = FountainActor.create({location: [3,1.5,0], rotation: q_axisAngle([0,1,0], Math.PI)});
+        this.fountain0 = FountainActor.create({translation: [-3,1.5,0]});
+        this.fountain1 = FountainActor.create({translation: [3,1.5,0], rotation: q_axisAngle([0,1,0], Math.PI)});
 
     }
 

@@ -12,6 +12,11 @@ export const TAU = Math.PI * 2;
 export function toRad(x) { return x * TO_RAD; }
 export function toDeg(x) { return x * TO_DEG; }
 
+export function clampRad(x) {
+    while (x < 0) x += TAU;
+    return x % TAU;
+}
+
 export function gaussian(count, step = 1, standardDeviation = 1) {
     const sd = 2 * standardDeviation * standardDeviation;
     const a = 1/Math.sqrt(Math.PI * sd);
@@ -998,6 +1003,57 @@ export function q_axisAngle(axis, angle) {
     return [sinH * axis[0], sinH * axis[1], sinH * axis[2], cosH];
 }
 
+export function q_euler(x, y ,z) {
+    x *= 0.5
+    y *= 0.5
+    z *= 0.5
+    const sinX = Math.sin(x);
+    const cosX = Math.cos(x);
+    const sinY = Math.sin(y);
+    const cosY = Math.cos(y);
+    const sinZ = Math.sin(z);
+    const cosZ = Math.cos(z);
+
+    return [
+        sinX * cosY * cosZ - cosX * sinY * sinZ,
+        cosX * sinY * cosZ + sinX * cosY * sinZ,
+        cosX * cosY * sinZ - sinX * sinY * cosZ,
+        cosX * cosY * cosZ + sinX * sinY * sinZ
+    ];
+
+}
+
+// /**
+//  * Creates a quaternion from the given euler angle x, y, z.
+//  *
+//  * @param {quat} out the receiving quaternion
+//  * @param {x} Angle to rotate around X axis in degrees.
+//  * @param {y} Angle to rotate around Y axis in degrees.
+//  * @param {z} Angle to rotate around Z axis in degrees.
+//  * @returns {quat} out
+//  * @function
+//  */
+// export function fromEuler(out, x, y, z) {
+//     let halfToRad = 0.5 * Math.PI / 180.0;
+//     x *= halfToRad;
+//     y *= halfToRad;
+//     z *= halfToRad;
+
+//     let sx = Math.sin(x);
+//     let cx = Math.cos(x);
+//     let sy = Math.sin(y);
+//     let cy = Math.cos(y);
+//     let sz = Math.sin(z);
+//     let cz = Math.cos(z);
+
+//     out[0] = sx * cy * cz - cx * sy * sz;
+//     out[1] = cx * sy * cz + sx * cy * sz;
+//     out[2] = cx * cy * sz - sx * sy * cz;
+//     out[3] = cx * cy * cz + sx * sy * sz;
+
+//     return out;
+// }
+
 export function q_scale(q,s) {
     return [q[0] * s, q[1] * s, q[2] * s, q[3] * s, q[4] * s];
 }
@@ -1062,6 +1118,8 @@ export function q_equals(a,b,e = 0.0001) { // e is an epsilon
 export function q_isZero(q) {
     return !(q[0] || q[1] || q[2]);
 }
+
+
 
 
 //--------------------------------------------------------------------------------

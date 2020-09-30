@@ -5,7 +5,7 @@
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale, AM_Avatar, PM_Avatar,
-    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply } from "@croquet/worldcore";
+    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply, q_euler, m4_rotationQ, v3_transform, AM_SmoothedEuler, PM_SmoothedEuler, ToDeg, PM_SpatialEuler, AM_SpatialEuler, KeyDown } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 
 
@@ -13,17 +13,19 @@ import paper from "./assets/paper.jpg";
 // MoveActor
 //------------------------------------------------------------------------------------------
 
-class MoveActor extends mix(Actor).with(AM_Avatar) {
-    init() {
-        // const axis = sphericalRandom();
-        // const angle = Math.random() * TAU;
-        // const rotation = q_axisAngle(axis, angle);
-        // const location = [0*Math.random()-0, 3, 0*Math.random()-0];
+class MoveActor extends mix(Actor).with(AM_SmoothedEuler) {
+    init(options) {
+        super.init("MovePawn", options);
+        this.future(0).tick();
+    }
 
-        // this.index = Math.floor(Math.random() * 30);
-
-        super.init("MovePawn");
-
+    tick() {
+        // console.log("tick");
+        const yaw = this.yaw + toRad(30);
+        // ?console.log(yaw);
+        // this.setRotation({yaw});
+        if (KeyDown("d")) this.rotateToEuler({yaw});
+        this.future(100).tick();
     }
 
 }
@@ -35,7 +37,7 @@ MoveActor.register('MoveActor');
 
 let mp;
 
-class MovePawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible) {
+class MovePawn extends mix(Pawn).with(PM_SmoothedEuler, PM_InstancedVisible) {
     constructor(...args) {
         super(...args);
         // this.tug = 0.2;
@@ -238,7 +240,7 @@ class MyModelRoot extends ModelRoot {
         console.log("Starting test!!!!");
 
         FloorActor.create();
-        const move = MoveActor.create();
+        const move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
 
         this.actors = [];
 
@@ -265,10 +267,10 @@ class MyModelRoot extends ModelRoot {
     }
 
     raycast() {
-        console.log("Raycast!");
+        // console.log("Raycast!");
         const phyicsManager = this.wellKnownModel('RapierPhysicsManager');
         const rr = phyicsManager.castRay([0,50,0], [0,-1,0], 50);
-        console.log(rr);
+        // console.log(rr);
     }
 
     shoot() {
@@ -332,7 +334,7 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "spinLeftUp", () => console.log("Spin Left Up"));
         this.subscribe("input", "strafeLeftDown", () => console.log("Strafe Left Down"));
         this.subscribe("input", "strafeLeftUp", () => console.log("Strafe Left Up"));
-        this.subscribe("input", "mouseDelta", this.onMouseDelta)
+        // this.subscribe("input", "mouseDelta", this.onMouseDelta)
 
     }
 
@@ -345,7 +347,7 @@ class MyViewRoot extends ViewRoot {
     }
 
     onMouseDelta(delta) {
-        console.log(delta);
+        // console.log(delta);
         // if (mp) {
         //     const loc = mp.location;
         //     // console.log(loc);

@@ -55,7 +55,7 @@ export const PM_ThreeCamera = superclass => class extends superclass {
         if (this.isMyPlayerPawn) {
              const render = GetNamedView("ThreeRenderManager");
             // Put code here to initialize the camera transform to this.global
-            render.camera.matrix.fromArray(this.global);
+            render.camera.matrix.fromArray(this.lookGlobal);
             render.camera.matrixAutoUpdate = false;
             render.camera.matrixWorldNeedsUpdate = true;
             //render.camera.rotation.y = Math.PI;
@@ -68,15 +68,15 @@ export const PM_ThreeCamera = superclass => class extends superclass {
         // console.log("PM_ThreeCamera.refresh()", this.global)
         const render = GetNamedView("ThreeRenderManager");
         // Put code to update the camera transform in the render manager when this.global changes.
-        render.camera.matrix.fromArray(this.global);
+        render.camera.matrix.fromArray(this.lookGlobal);
         render.camera.matrixWorldNeedsUpdate = true;
         // console.log(render.camera.matrix)
     }
 
-    setCameraOffset(m) {
-        this.offset = m;
-        this.needRefresh = true;
-    }
+    // setCameraOffset(m) {
+    //     this.offset = m;
+    //     this.needRefresh = true;
+    // }
 
 };
 
