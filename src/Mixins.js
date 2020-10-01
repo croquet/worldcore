@@ -3,8 +3,8 @@ import { Constants } from "@croquet/croquet";
 import { GetNamedView } from "./NamedView";
 import { PM_Dynamic } from "./Pawn";
 // import { GetViewDelta } from "./ViewRoot";
-import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_fastGrounded, v3_transform, q_euler, TAU, toDeg, clampRad } from  "./Vector";
+import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_translation, m4_rotationX, m4_multiply, v3_lerp, v3_equals,
+    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_fastGrounded, v3_transform, q_euler, TAU, toDeg, clampRad, q_axisAngle } from  "./Vector";
 
 // Mixin
 //
@@ -582,11 +582,13 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
         if (this.isRotating) {
             this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), delta));
+            this.localChanged();
         }
         if (this.isMoving)  {
             const relative = v3_scale(this.velocity, delta);
             const move = v3_transform(relative, m4_rotationQ(this.rotation));
             this._translation = v3_add(this._translation, move);
+            this.localChanged();
         }
         super.update(time, delta);
 
@@ -599,227 +601,224 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
 };
 
-
-//------------------------------------------------------------------------------------------
-//-- SpatialEuler --------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-const AM_SpatialEulerExtension = superclass => class extends superclass {
-
-    init(pawn, options) {
-        options = options || {};
-        this.setEulerAngles(options);
-        this.rotation = q_euler(this.pitch, this.yaw, this.roll);
-        super.init(pawn, options);
-    }
-
-    setEulerRotation(e) {
-        this.setAngles(e);
-        this.rotation = q_euler(this.pitch, this.yaw, this.roll);
-        this.say("spatialEuler_setRotation", e);
-        this.localChanged();
-    };
-
-    setEulerAngles(e) {
-        this.pitch = e.pitch || 0;
-        this.yaw = e.yaw || 0;
-        this.roll = e.roll || 0;
-        this.clampEulerAngles();
-    }
-
-    clampEulerAngles() {
-        this.pitch = clampRad(this.pitch);
-        this.yaw = clampRad(this.yaw);
-        this.roll = clampRad(this.roll);
-    }
-
-}
-
-export const AM_SpatialEuler = superclass => AM_SpatialEulerExtension(AM_Spatial(superclass));
-RegisterMixin(AM_SpatialEuler);
-
-
-//-- Pawn ----------------------------------------------------------------------------------
-
-const PM_SpatialEulerExtension = superclass => class extends superclass {
-
-    get pitch() { return this.actor.pitch};
-    get yaw() { return this.actor.yaw};
-    get roll() { return this.actor.roll};
-
-}
-
-export const PM_SpatialEuler = superclass => PM_SpatialEulerExtension(PM_Spatial(superclass));
-
-//------------------------------------------------------------------------------------------
-//-- SmoothedEuler -------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-const AM_SmoothedEulerExtension = superclass => class extends AM_SpatialEulerExtension(superclass) {
-
-    rotateToEuler(e) {
-        this.setEulerAngles(e);
-        this.rotation = q_euler(this.pitch, this.yaw, this.roll);
-        this.say("smoothedEuler_rotateTo", e);
-        this.localChanged();
-    }
-
-}
-
-export const AM_SmoothedEuler = superclass => AM_SmoothedEulerExtension(AM_Smoothed(superclass));
-RegisterMixin(AM_SmoothedEuler);
-
-//-- Pawn ----------------------------------------------------------------------------------
-
-const PM_SmoothedEulerExtension = superclass => class extends PM_SpatialEulerExtension(superclass) {
-
-    constructor(...args) {
-        super(...args);
-        this._pitch = this.actor.pitch;
-        this._yaw = this.actor.yaw;
-        this._roll = this.actor.roll;
-        this.clampEulerAngles();
-        this._rotation = q_euler(this._pitch, this._yaw, this._roll);
-        this.listenOnce("spatialEuler_setRotation", this.setEulerRotation);
-        this.listenOnce("smoothedEuler_rotateTo", () => this.isRotating = true);
-    }
-
-    setEulerRotation(e) {
-        this._pitch = e.pitch || 0;
-        this._yaw = e.yaw || 0;
-        this._roll = e.roll || 0;
-        this.clampEulerAngles();
-        this._rotation = q_euler(this._pitch, this._yaw, this._roll);
-    }
-
-    interpolateRotation(tug) {
-
-        let dPitch = this.actor.pitch - this._pitch;
-        if (dPitch < -Math.PI) dPitch += TAU;
-        if (dPitch > Math.PI) dPitch -= TAU;
-
-        let dYaw = this.actor.yaw - this._yaw;
-        if (dYaw < -Math.PI) dYaw += TAU;
-        if (dYaw > Math.PI) dYaw -= TAU;
-
-        let dRoll = this.actor.roll - this._roll;
-        if (dRoll < -Math.PI) dRoll += TAU;
-        if (dRoll > Math.PI) dRoll -= TAU;
-
-        this._pitch = this._pitch + dPitch * tug;
-        this._yaw = this._yaw + dYaw * tug;
-        this._roll = this._roll + dRoll * tug;
-
-        this.clampEulerAngles();
-
-        this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-
-        this.isRotating = !q_equals(this._rotation, this.actor.rotation, this.rotationEpsilon) ||
-            (Math.abs(dPitch) > this.rotationEpsilon) ||
-            (Math.abs(dYaw) > this.rotationEpsilon) ||
-            (Math.abs(dRoll) > this.rotationEpsilon);
-
-    }
-
-    clampEulerAngles() {
-        this._pitch = clampRad(this._pitch);
-        this._yaw = clampRad(this._yaw);
-        this._roll = clampRad(this._roll);
-    }
-}
-
-export const PM_SmoothedEuler = superclass => PM_SmoothedEulerExtension(PM_Smoothed(superclass));
-
-
 //------------------------------------------------------------------------------------------
 //-- MouselookAvatar -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 //-- Actor ---------------------------------------------------------------------------------
 
-export const AM_MouselookAvatar = superclass => class extends AM_SmoothedEuler(superclass) {
+export const AM_MouselookAvatar = superclass => class extends AM_Avatar(superclass) {
 
-    init(...args) {
-        super.init(...args);
-        this.avatar_tickStep = 15;
-        this.velocity = v3_zero();
-        this.listen("avatar_rotateTo", this.onRotateTo);
-        this.listen("avatar_setVelocity", this.onSetVelocity);
-        this.future(0).tick(0);
+    init(pawn, options) {
+        options = options || {};
+        this.lookPitch = options.lookPitch || 0;
+        this.lookYaw = options.lookYaw || 0;
+
+        super.init(pawn, options);
+
+        this.listen("avatar_lookTo", this.onLookTo);
     }
 
-    onRotateTo(e) {
-        this.rotateToEuler({yaw: e[1]});
+    onLookTo(e) {
+        this.lookPitch = e[0];
+        this.lookYaw = e[1];
+        this.rotateTo(q_euler(0, this.lookYaw, 0));
     }
 
-    onSetVelocity(v) {
-        this.velocity = v;
-        this.isMoving = !v3_isZero(this.velocity);
-    }
-
-    tick(delta) {
-        if (this.isMoving) {
-            const relative = v3_scale(this.velocity, delta);
-            const move = v3_transform(relative, m4_rotationQ(this.rotation));
-            this.moveTo(v3_add(this.translation, move));
-        }
-        if (!this.doomed) this.future(this.avatar_tickStep).tick(this.avatar_tickStep);
-    }
 }
 RegisterMixin(AM_MouselookAvatar);
 
 //-- Pawn ---------------------------------------------------------------------------------
 
-const PM_MouselookAvatar = superclass => class extends PM_SmoothedEuler(superclass) {
+export const PM_MouselookAvatar = superclass => class extends PM_Avatar(superclass) {
 
     constructor(...args) {
         super(...args);
-        this.setTug(0.05);    // Bias the tug even more toward the pawn's immediate position.
 
-        this.rotateThrottle = 50;  // MS between throttled rotateTo events
-        this.lastRotateTime = this.lastFrameTime;
+        this.lookPitch = this.actor.lookPitch;
+        this.lookYaw = this.actor.lookYaw;
 
-        this.velocity = v3_zero();
+        this.lookThrottle = 15;  // MS between throttled lookTo events
+        this.lastlookTime = this.lastFrameTime;
+
+        this.lookOffset = [0,1,0];
     }
 
-    rotateTo(e) {
-        this.setEulerRotation(e);
-        this.lastRotateTime = this.lastFrameTime;
-        this.lastRotateCache = null;
-        this.say("avatar_rotateTo", [e.yaw, e.pitch]);
+    lookTo(pitch, yaw) {
+        this.setLookAngles(pitch, yaw);
+        this.lastLookTime = this.lastFrameTime;
+        this.lastLookCache = null;
+        this.say("avatar_lookTo", [pitch, yaw]);
     }
 
-    throttledRotateTo(e) {
-        if (this.lastFrameTime < this.lastRotateTime + this.rotateThrottle) {
-            this.setEulerRotation(e);
-            this.lastRotateCache = e;
+    throttledLookTo(pitch, yaw) {
+        pitch = Math.min(Math.PI/2, Math.max(-Math.PI/2, pitch));
+        yaw = clampRad(yaw);
+        if (this.lastFrameTime < this.lastLookTime + this.lookThrottle) {
+            this.setLookAngles(pitch, yaw);
+            this.lastLookCache = {pitch, yaw};
         } else {
-            this.rotateTo(e);
+            this.lookTo(pitch,yaw);
         }
     }
 
-    setVelocity(v) {
-        this.velocity = v;
-        this.isMoving = this.isMoving || !v3_isZero(this.velocity);
-        this.say("avatar_setVelocity", this.velocity);
+    setLookAngles(pitch, yaw) {
+        this.lookPitch = pitch;
+        this.lookYaw = yaw;
+        this._rotation = q_euler(0, yaw, 0);
+    }
+
+    get lookGlobal() {
+        const m0 = m4_translation(this.lookOffset);
+        const m1 = m4_rotationX(this.lookPitch);
+        const m2 = m4_multiply(m1, m0);
+        return m4_multiply(m2, this.global);
     }
 
     update(time, delta) {
-
-        if (this.isMoving)  {
-            const relative = v3_scale(this.velocity, delta);
-            const move = v3_transform(relative, m4_rotationQ(this.rotation));
-            this._translation = v3_add(this._translation, move);
-        }
         super.update(time, delta);
 
-        // If a throttled move sequence ends, send the final cached value
-
-        if (this.lastRotateCache && this.lastFrameTime > this.lastRotateTime + this.rotateThrottle) this.rotateTo(this.lastRotateCache);
+        if (this.lastLookCache && this.lastFrameTime > this.lastLookTime + this.lookThrottle) {
+            this.lookTo(this.lastLookCache.pitch, this.lastLookCache.yaw);
+        }
 
     }
 
 }
+
+
+
+//------------------------------------------------------------------------------------------
+//-- SpatialEuler --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// const AM_SpatialEulerExtension = superclass => class extends superclass {
+
+//     init(pawn, options) {
+//         options = options || {};
+//         this.setEulerAngles(options);
+//         this.rotation = q_euler(this.pitch, this.yaw, this.roll);
+//         super.init(pawn, options);
+//     }
+
+//     setEulerRotation(e) {
+//         this.setAngles(e);
+//         this.rotation = q_euler(this.pitch, this.yaw, this.roll);
+//         this.say("spatialEuler_setRotation", e);
+//         this.localChanged();
+//     };
+
+//     setEulerAngles(e) {
+//         this.pitch = e.pitch || 0;
+//         this.yaw = e.yaw || 0;
+//         this.roll = e.roll || 0;
+//         this.clampEulerAngles();
+//     }
+
+//     clampEulerAngles() {
+//         this.pitch = clampRad(this.pitch);
+//         this.yaw = clampRad(this.yaw);
+//         this.roll = clampRad(this.roll);
+//     }
+
+// }
+
+// export const AM_SpatialEuler = superclass => AM_SpatialEulerExtension(AM_Spatial(superclass));
+// RegisterMixin(AM_SpatialEuler);
+
+
+// //-- Pawn ----------------------------------------------------------------------------------
+
+// const PM_SpatialEulerExtension = superclass => class extends superclass {
+
+//     get pitch() { return this.actor.pitch};
+//     get yaw() { return this.actor.yaw};
+//     get roll() { return this.actor.roll};
+
+// }
+
+// export const PM_SpatialEuler = superclass => PM_SpatialEulerExtension(PM_Spatial(superclass));
+
+// //------------------------------------------------------------------------------------------
+// //-- SmoothedEuler -------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+
+// const AM_SmoothedEulerExtension = superclass => class extends AM_SpatialEulerExtension(superclass) {
+
+//     rotateToEuler(e) {
+//         this.setEulerAngles(e);
+//         this.rotation = q_euler(this.pitch, this.yaw, this.roll);
+//         this.say("smoothedEuler_rotateTo", e);
+//         this.localChanged();
+//     }
+
+// }
+
+// export const AM_SmoothedEuler = superclass => AM_SmoothedEulerExtension(AM_Smoothed(superclass));
+// RegisterMixin(AM_SmoothedEuler);
+
+// //-- Pawn ----------------------------------------------------------------------------------
+
+// const PM_SmoothedEulerExtension = superclass => class extends PM_SpatialEulerExtension(superclass) {
+
+//     constructor(...args) {
+//         super(...args);
+//         this._pitch = this.actor.pitch;
+//         this._yaw = this.actor.yaw;
+//         this._roll = this.actor.roll;
+//         this.clampEulerAngles();
+//         this._rotation = q_euler(this._pitch, this._yaw, this._roll);
+//         this.listenOnce("spatialEuler_setRotation", this.setEulerRotation);
+//         this.listenOnce("smoothedEuler_rotateTo", () => this.isRotating = true);
+//     }
+
+//     setEulerRotation(e) {
+//         this._pitch = e.pitch || 0;
+//         this._yaw = e.yaw || 0;
+//         this._roll = e.roll || 0;
+//         this.clampEulerAngles();
+//         this._rotation = q_euler(this._pitch, this._yaw, this._roll);
+//     }
+
+//     interpolateRotation(tug) {
+
+//         let dPitch = this.actor.pitch - this._pitch;
+//         if (dPitch < -Math.PI) dPitch += TAU;
+//         if (dPitch > Math.PI) dPitch -= TAU;
+
+//         let dYaw = this.actor.yaw - this._yaw;
+//         if (dYaw < -Math.PI) dYaw += TAU;
+//         if (dYaw > Math.PI) dYaw -= TAU;
+
+//         let dRoll = this.actor.roll - this._roll;
+//         if (dRoll < -Math.PI) dRoll += TAU;
+//         if (dRoll > Math.PI) dRoll -= TAU;
+
+//         this._pitch = this._pitch + dPitch * tug;
+//         this._yaw = this._yaw + dYaw * tug;
+//         this._roll = this._roll + dRoll * tug;
+
+//         this.clampEulerAngles();
+
+//         this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
+
+//         this.isRotating = !q_equals(this._rotation, this.actor.rotation, this.rotationEpsilon) ||
+//             (Math.abs(dPitch) > this.rotationEpsilon) ||
+//             (Math.abs(dYaw) > this.rotationEpsilon) ||
+//             (Math.abs(dRoll) > this.rotationEpsilon);
+
+//     }
+
+//     clampEulerAngles() {
+//         this._pitch = clampRad(this._pitch);
+//         this._yaw = clampRad(this._yaw);
+//         this._roll = clampRad(this._roll);
+//     }
+// }
+
+// export const PM_SmoothedEuler = superclass => PM_SmoothedEulerExtension(PM_Smoothed(superclass));
+
+
 
 
 

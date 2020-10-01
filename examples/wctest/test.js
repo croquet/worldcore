@@ -5,7 +5,7 @@
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale, AM_Avatar, PM_Avatar,
-    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply, q_euler, m4_rotationQ, v3_transform, AM_SmoothedEuler, PM_SmoothedEuler, ToDeg, PM_SpatialEuler, AM_SpatialEuler, KeyDown } from "@croquet/worldcore";
+    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply, q_euler, m4_rotationQ, v3_transform, ToDeg, PM_Spatial, AM_Spatial, KeyDown, AM_MouselookAvatar, PM_MouselookAvatar, PM } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 
 
@@ -13,19 +13,9 @@ import paper from "./assets/paper.jpg";
 // MoveActor
 //------------------------------------------------------------------------------------------
 
-class MoveActor extends mix(Actor).with(AM_SmoothedEuler) {
+class MoveActor extends mix(Actor).with(AM_MouselookAvatar) {
     init(options) {
         super.init("MovePawn", options);
-        this.future(0).tick();
-    }
-
-    tick() {
-        // console.log("tick");
-        const yaw = this.yaw + toRad(30);
-        // ?console.log(yaw);
-        // this.setRotation({yaw});
-        if (KeyDown("d")) this.rotateToEuler({yaw});
-        this.future(100).tick();
     }
 
 }
@@ -37,10 +27,9 @@ MoveActor.register('MoveActor');
 
 let mp;
 
-class MovePawn extends mix(Pawn).with(PM_SmoothedEuler, PM_InstancedVisible) {
+class MovePawn extends mix(Pawn).with(PM_MouselookAvatar, PM_InstancedVisible) {
     constructor(...args) {
         super(...args);
-        // this.tug = 0.2;
         this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.index, () => this.buildDraw()));
         mp = this;
     }
@@ -58,10 +47,6 @@ class MovePawn extends mix(Pawn).with(PM_SmoothedEuler, PM_InstancedVisible) {
     buildMesh() {
         const mesh = UnitCube();
 
-        // const modelRoot = GetNamedView('ViewRoot').model;
-        // const color = modelRoot.colors[this.actor.index];
-
-        // mesh.setColor(color);
         mesh.load();
         mesh.clear();
         return mesh;
@@ -77,115 +62,6 @@ class MovePawn extends mix(Pawn).with(PM_SmoothedEuler, PM_InstancedVisible) {
 
 }
 MovePawn.register('MovePawn');
-
-//------------------------------------------------------------------------------------------
-// MyActor
-//------------------------------------------------------------------------------------------
-
-class MyActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
-    init() {
-        const axis = sphericalRandom();
-        const angle = Math.random() * TAU;
-        const rotation = q_axisAngle(axis, angle);
-        const location = [0*Math.random()-0, 3, 0*Math.random()-0];
-
-        this.index = Math.floor(Math.random() * 30);
-
-        super.init("MyPawn", {location, rotation});
-
-        this.addRigidBody({type: 'dynamic'});
-        this.addBoxCollider({
-            size: [0.5, 0.5, 0.5],
-            density: 1,
-            friction: 1,
-            restitution: 1000
-        });
-
-        const spin = v3_scale(sphericalRandom(),Math.random() * 100);
-        this.applyTorque(spin);
-        this.applyForce([0,350,0]);
-
-    }
-
-}
-MyActor.register('MyActor');
-
-//------------------------------------------------------------------------------------------
-// MyProjectile
-//------------------------------------------------------------------------------------------
-
-class MyProjectile extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
-    init() {
-        const axis = sphericalRandom();
-        const angle = Math.random() * TAU;
-        const rotation = [0,0,0,1];
-        const location = [0, 16, 16];
-
-        this.index = Math.floor(Math.random() * 30);
-
-        super.init("MyPawn", {location, rotation});
-
-        this.addRigidBody({type: 'dynamic'});
-        this.addBoxCollider({
-            size: [0.5, 0.5, 0.5],
-            density: 1,
-            friction: 1,
-            restitution: 1000
-        });
-
-        const spin = v3_scale(sphericalRandom(),Math.random() * 20);
-        this.applyTorque(spin);
-        this.applyForce([0,50,-200]);
-
-    }
-
-}
-MyProjectile.register('MyProjectile');
-
-
-//------------------------------------------------------------------------------------------
-// MyPawn
-//------------------------------------------------------------------------------------------
-
-class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
-    constructor(...args) {
-        super(...args);
-        this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.index, () => this.buildDraw()));
-    }
-
-    buildDraw() {
-        const mesh = CachedObject("cubeMesh" + this.actor.index, () => this.buildMesh());
-        const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
-        const draw = new InstancedDrawCall(mesh, material);
-
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-
-        return draw;
-    }
-
-    buildMesh() {
-        const mesh = UnitCube();
-
-        const modelRoot = GetNamedView('ViewRoot').model;
-        const color = modelRoot.colors[this.actor.index];
-
-        mesh.setColor(color);
-        mesh.load();
-        mesh.clear();
-        return mesh;
-    }
-
-    buildMaterial() {
-        const material = new Material();
-        material.pass = 'instanced';
-        material.texture.loadFromURL(paper);
-        return material;
-    }
-
-
-}
-MyPawn.register('MyPawn');
-
 
 //------------------------------------------------------------------------------------------
 // FloorActor
@@ -237,7 +113,7 @@ FloorPawn.register('FloorPawn');
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting test!!!!");
+        console.log("Starting test!!!!!");
 
         FloorActor.create();
         const move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
@@ -334,7 +210,8 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "spinLeftUp", () => console.log("Spin Left Up"));
         this.subscribe("input", "strafeLeftDown", () => console.log("Strafe Left Down"));
         this.subscribe("input", "strafeLeftUp", () => console.log("Strafe Left Up"));
-        // this.subscribe("input", "mouseDelta", this.onMouseDelta)
+        this.subscribe("input", "mouseDelta", this.onMouseDelta)
+        this.subscribe("input", "pDown", ()=> this.webInput.enterPointerLock());
 
     }
 
@@ -347,20 +224,16 @@ class MyViewRoot extends ViewRoot {
     }
 
     onMouseDelta(delta) {
-        // console.log(delta);
-        // if (mp) {
-        //     const loc = mp.location;
-        //     // console.log(loc);
-        //     const newLoc = [loc[0]+0.03 * delta[0], loc[1], loc[2]+0.03 * delta[1]];
-        //     mp.throttledMoveTo(newLoc);
-        // }
         if (mp) {
-            const rot = mp.rotation;
-            const dRot = q_axisAngle([0,1,0], delta[0] * 0.005);
-            const newRot = q_multiply(mp.rotation, dRot);
-            mp.throttledRotateTo(newRot);
+            const yaw = delta[0] * 0.005;
+            const pitch = delta[1] * 0.005;
+            // const dRot = q_axisAngle([0,1,0], yaw);
+            // const newRot = q_multiply(mp.rotation, dRot);
+            const newPitch = mp.lookPitch + pitch;
+            const newYaw = mp.lookYaw + yaw;
+            // const newYaw = mp.lookYaw;
             // mp.rotateTo(newRot);
-
+            mp.throttledLookTo(newPitch, newYaw);
         }
     }
 

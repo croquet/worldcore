@@ -26,6 +26,7 @@ export class PlayerManager extends Model {
     join(viewId) {
         if (!PlayerManager.playerType) return;
         const player = PlayerManager.playerType.create({playerId: viewId});
+        if (this.players.has(viewId)) console.warn("PlayerManager received duplicate view-join for viewId " + viewId);
         this.players.set(viewId, player);
         this.subscribe(player.id, "playerChanged", this.playerChanged);
         this.listChanged();
@@ -34,6 +35,7 @@ export class PlayerManager extends Model {
     exit(viewId) {
         if (!PlayerManager.playerType) return;
         const player = this.players.get(viewId);
+        if (!player) console.warn("PlayerManager received duplicate view-exit for viewId " + viewId);
         this.unsubscribe(player.id, "playerChanged");
         player.destroy();
         this.players.delete(viewId);
