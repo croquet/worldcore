@@ -47,7 +47,7 @@ assetManager.setURLModifier(url => {
 export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
     init() {
 
-        super.init("LevelPawn", {location: [0,0,0], scale: [1,1,1]});
+        super.init("LevelPawn", {translation: [0,0,0], scale: [1,1,1]});
 
         this.addRigidBody({type: 'static'});
         this.addBoxCollider({
@@ -57,8 +57,8 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
             restitution: 1000
         });
 
-        this.fountain0 = FountainActor.create({location: [-3,1,0]});
-        this.fountain1 = FountainActor.create({location: [3,1,0], rotation: q_axisAngle([0,1,0], Math.PI)});
+        this.fountain0 = FountainActor.create({translation: [-3,1,0]});
+        this.fountain1 = FountainActor.create({translation: [3,1,0], rotation: q_axisAngle([0,1,0], Math.PI)});
         this.buildCastleWalls();
     }
 
@@ -73,7 +73,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
         localOffset = 0;
         for (let i = 0; i < 6; i++) {
             wallSegment = WallActor.create({
-                location: [20 + this.globalOffset[0],
+                translation: [20 + this.globalOffset[0],
                     1 + this.globalOffset[1],
                     8 + this.globalOffset[2] + localOffset],
                 scale: [0.05, 0.05, 0.05]});
@@ -82,7 +82,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
         }
         localOffset -= 2.5;
         wallSegment = WallCornerActor.create({
-            location: [20 + this.globalOffset[0],
+            translation: [20 + this.globalOffset[0],
                 1 + this.globalOffset[1],
                 8 + this.globalOffset[2] + localOffset],
             scale: [0.05, 0.05, 0.05]});
@@ -92,7 +92,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
         localOffset = 7.5;
         for (let i = 0; i < 6; i++) {
             wallSegment = WallActor.create({
-                location: [20 + this.globalOffset[0] - localOffset,
+                translation: [20 + this.globalOffset[0] - localOffset,
                     1 + this.globalOffset[1],
                     8 + this.globalOffset[2] + 57.5],
                 scale: [0.05, 0.05, 0.05],
@@ -102,7 +102,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
         }
         localOffset -= 2.5;
         wallSegment = WallCornerActor.create({
-            location: [20 + this.globalOffset[0] - localOffset,
+            translation: [20 + this.globalOffset[0] - localOffset,
                 1 + this.globalOffset[1],
                 8 + this.globalOffset[2] + 57.5],
             scale: [0.05, 0.05, 0.05],
@@ -113,7 +113,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
         localOffset = -50;
         for (let i = 0; i < 6; i++) {
             wallSegment = WallActor.create({
-                location: [20 + this.globalOffset[0] - 65,
+                translation: [20 + this.globalOffset[0] - 65,
                     1 + this.globalOffset[1],
                     8 + this.globalOffset[2] - localOffset],
                 scale: [0.05, 0.05, 0.05],
@@ -123,7 +123,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
         }
         localOffset -= 2.5;
         wallSegment = WallCornerActor.create({
-            location: [20 + this.globalOffset[0] - 65,
+            translation: [20 + this.globalOffset[0] - 65,
                 1 + this.globalOffset[1],
                 8 + this.globalOffset[2] - localOffset],
             scale: [0.05, 0.05, 0.05],
@@ -134,7 +134,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
         localOffset = -57.5;
         for (let i = 0; i < 6; i++) {
             wallSegment = WallActor.create({
-                location: [20 + this.globalOffset[0] + localOffset,
+                translation: [20 + this.globalOffset[0] + localOffset,
                     1 + this.globalOffset[1],
                     8 + this.globalOffset[2] - 7.5],
                 scale: [0.05, 0.05, 0.05],
@@ -144,7 +144,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
         }
         localOffset -= 2.5;
         wallSegment = WallCornerActor.create({
-            location: [20 + this.globalOffset[0] + localOffset,
+            translation: [20 + this.globalOffset[0] + localOffset,
                 1 + this.globalOffset[1],
                 8 + this.globalOffset[2] - 7.5],
             scale: [0.05, 0.05, 0.05],
@@ -193,7 +193,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         var sunlight = new THREE.DirectionalLight( 0xFFF8D0, 0.85 );
         // cool light from sky
         //var skylight = new THREE.DirectionalLight( 0xC9D3FF, 0.1 );
-    
+
         sunlight.position.set( 200, 100, 200 );
         //sunlight.rotation.set(Math.PI/2, Math.PI/2, 0);
         //light.position.multiplyScalar( 1.3 );
@@ -202,7 +202,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
         sunlight.shadow.mapSize.width = 4096;
         sunlight.shadow.mapSize.height = 4096;
- 
+
         var d = 100;
 
         sunlight.shadow.camera.left = - d;
@@ -214,7 +214,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
         this.setRenderObject(group);
         group.parent.add(sunlight);
-         
+
         this.buildSkybox();
     }
 
@@ -292,8 +292,8 @@ class WallPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         const render = GetNamedView("ThreeRenderManager");
 
         // create material with custom settings to apply to loaded model
-        const material = new THREE.MeshStandardMaterial( {map: pawntxt, 
-            flatShading: false, 
+        const material = new THREE.MeshStandardMaterial( {map: pawntxt,
+            flatShading: false,
             blending: THREE.NormalBlending,
             metalness: 0,
             roughness: 0.8,
@@ -316,14 +316,14 @@ class WallPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         if (this.actor.debugCollision)
         {
             const threeColor = new THREE.Color(255, 255, 255);
-            const geometry = new THREE.BoxBufferGeometry( 
-                this.actor.collisionScale[0] * 2, 
-                this.actor.collisionScale[1] * 2, 
+            const geometry = new THREE.BoxBufferGeometry(
+                this.actor.collisionScale[0] * 2,
+                this.actor.collisionScale[1] * 2,
                 this.actor.collisionScale[2] * 2 );
             const debugmaterial = new THREE.MeshStandardMaterial( {wireframe: true, color: threeColor} );
             let cube = new THREE.Mesh( geometry, debugmaterial );
-            cube.position.set(this.actor.collisionLocation[0] * 20, 
-                this.actor.collisionLocation[1] * 20, 
+            cube.position.set(this.actor.collisionLocation[0] * 20,
+                this.actor.collisionLocation[1] * 20,
                 this.actor.collisionLocation[2] * 20);
             obj.add(cube);
         }
@@ -380,8 +380,8 @@ class WallCornerPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         const render = GetNamedView("ThreeRenderManager");
 
         // create material with custom settings to apply to loaded model
-        const material = new THREE.MeshStandardMaterial( {map: pawntxt, 
-            flatShading: false, 
+        const material = new THREE.MeshStandardMaterial( {map: pawntxt,
+            flatShading: false,
             blending: THREE.NormalBlending,
             metalness: 0,
             roughness: 100,
@@ -401,17 +401,17 @@ class WallCornerPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         obj.position.set(0, 0, 0);
         this.setRenderObject(obj);
 
-        if (this.actor.debugCollision) 
+        if (this.actor.debugCollision)
         {
             const threeColor = new THREE.Color(255, 255, 255);
-            const geometry = new THREE.BoxBufferGeometry( 
-                this.actor.collisionScale[0] * 2, 
-                this.actor.collisionScale[1] * 2, 
+            const geometry = new THREE.BoxBufferGeometry(
+                this.actor.collisionScale[0] * 2,
+                this.actor.collisionScale[1] * 2,
                 this.actor.collisionScale[2] * 2 );
             const debugmaterial = new THREE.MeshStandardMaterial( {wireframe: true, color: threeColor} );
             let cube = new THREE.Mesh( geometry, debugmaterial );
-            cube.position.set(this.actor.collisionLocation[0] * 20, 
-                this.actor.collisionLocation[1] * 20, 
+            cube.position.set(this.actor.collisionLocation[0] * 20,
+                this.actor.collisionLocation[1] * 20,
                 this.actor.collisionLocation[2] * 20);
             obj.add(cube);
         }

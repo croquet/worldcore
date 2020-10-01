@@ -74,7 +74,7 @@ class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics
         this.color[secondary[0]] = secondary[1];
         this.color[tertiary[0]] = tertiary[1];
         super.init("PlayerPawn", options);
-        this.setLocation([0,2.2,5]);
+        this.setTranslation([0,2.2,5]);
 
         this.myCustomTimeOffset = Math.random() * 100000;
 
@@ -105,8 +105,8 @@ class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics
         }
 
         const rotation = [...this.rotation];
-        const location = [...this.location];
-        const projectile = ProjectileActor.create({rotation, location, owner: this.id, color: this.color});
+        const translation = [...this.translation];
+        const projectile = ProjectileActor.create({rotation, translation, owner: this.id, color: this.color});
         const spin = v3_scale(sphericalRandom(),Math.random() * 0.0005);
 
         const rotationMatrix = m4_rotationQ(rotation);
@@ -131,7 +131,7 @@ export function MyPlayerPawn() {return playerPawn;}
 class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSource, PM_ThreeVisible, PM_Player, PM_ThreeCamera) {
     constructor(...args) {
         super(...args);
-        this.tug = 0.2;
+        // this.tug = 0.2;
         // custom movement speed scaling value so we can have a bit more fine-tuned control of player character
         this.myMovementSensitivity = 0.5;
         this.myRotationSensitivity = 1.25;

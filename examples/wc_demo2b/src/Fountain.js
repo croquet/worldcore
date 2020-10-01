@@ -132,7 +132,7 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
             const doomed = this.spray.shift();
             doomed.destroy();
         }
-        const p = SprayActor.create({location: this.location});
+        const p = SprayActor.create({translation: this.translation});
         const spin = v3_scale(sphericalRandom(),Math.random() * 0.002);
         const rotationMatrix = m4_rotationQ(this.rotation);
         const force = v3_transform([0.025 + 0.005 * Math.random(), 0.07 + 0.005 * Math.random(), 0], rotationMatrix);
