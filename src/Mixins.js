@@ -2,9 +2,8 @@
 import { Constants } from "@croquet/croquet";
 import { GetNamedView } from "./NamedView";
 import { PM_Dynamic } from "./Pawn";
-// import { GetViewDelta } from "./ViewRoot";
 import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_translation, m4_rotationX, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, m4_fastGrounded, v3_transform, q_euler, TAU, toDeg, clampRad, q_axisAngle } from  "./Vector";
+    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, v3_transform, q_euler, TAU, clampRad } from  "./Vector";
 
 // Mixin
 //
@@ -224,10 +223,6 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
         this.localChanged();
     }
 
-    // setRotationEuler(e) { // x = pitch, y = yaw, z = roll
-    //     this.setRotation(q_euler(...e));
-    // };
-
     setTranslation(v) {
         this.translation = v;
         this.say("spatial_setTranslation", v);
@@ -248,10 +243,6 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
         }
         return this.$global;
     }
-
-    // Allows objects to have a look direction that's different from their facing.
-
-    // get lookGlobal() { return this.global; }
 
 };
 RegisterMixin(AM_Spatial);
@@ -605,6 +596,10 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 //-- MouselookAvatar -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// MouselookAvatar is an extension of the normal avatar with a look direction that can be driven
+// by mouse or other continous xy inputs. The avatar internally stores pitch and yaw information
+// that can be used for animation if necessary. Both pitch and yaw are smoothed in the pawn.
+
 //-- Actor ---------------------------------------------------------------------------------
 
 export const AM_MouselookAvatar = superclass => class extends AM_Avatar(superclass) {
@@ -635,14 +630,17 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
     constructor(...args) {
         super(...args);
 
-        this.lookPitch = this.actor.lookPitch;
-        this.lookYaw = this.actor.lookYaw;
+        this._lookPitch = this.actor.lookPitch;
+        this._lookYaw = this.actor.lookYaw;
 
         this.lookThrottle = 15;  // MS between throttled lookTo events
         this.lastlookTime = this.lastFrameTime;
 
-        this.lookOffset = [0,1,0];
+        this.lookOffset = [0,1,0]; // Vector displacing the camera from the avatar origin.
     }
+
+    get lookPitch() { return this._lookPitch}
+    get lookYaw() { return this._lookYaw}
 
     lookTo(pitch, yaw) {
         this.setLookAngles(pitch, yaw);
@@ -663,8 +661,8 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
     }
 
     setLookAngles(pitch, yaw) {
-        this.lookPitch = pitch;
-        this.lookYaw = yaw;
+        this._lookPitch = pitch;
+        this._lookYaw = yaw;
         this._rotation = q_euler(0, yaw, 0);
     }
 
@@ -673,6 +671,21 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
         const m1 = m4_rotationX(this.lookPitch);
         const m2 = m4_multiply(m1, m0);
         return m4_multiply(m2, this.global);
+    }
+
+    interpolateRotation(tug) {
+        super.interpolateRotation(tug);
+
+        let dPitch = this.actor.lookPitch - this._lookPitch;
+        if (dPitch < -Math.PI) dPitch += TAU;
+        if (dPitch > Math.PI) dPitch -= TAU;
+
+        let dYaw = this.actor.lookYaw - this._lookYaw;
+        if (dYaw < -Math.PI) dYaw += TAU;
+        if (dYaw > Math.PI) dYaw -= TAU;
+
+        this._lookPitch = this._lookPitch + dPitch * tug;
+        this._lookYaw = clampRad(this._lookYaw + dYaw * tug);
     }
 
     update(time, delta) {
@@ -687,337 +700,3 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
 }
 
 
-
-//------------------------------------------------------------------------------------------
-//-- SpatialEuler --------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// const AM_SpatialEulerExtension = superclass => class extends superclass {
-
-//     init(pawn, options) {
-//         options = options || {};
-//         this.setEulerAngles(options);
-//         this.rotation = q_euler(this.pitch, this.yaw, this.roll);
-//         super.init(pawn, options);
-//     }
-
-//     setEulerRotation(e) {
-//         this.setAngles(e);
-//         this.rotation = q_euler(this.pitch, this.yaw, this.roll);
-//         this.say("spatialEuler_setRotation", e);
-//         this.localChanged();
-//     };
-
-//     setEulerAngles(e) {
-//         this.pitch = e.pitch || 0;
-//         this.yaw = e.yaw || 0;
-//         this.roll = e.roll || 0;
-//         this.clampEulerAngles();
-//     }
-
-//     clampEulerAngles() {
-//         this.pitch = clampRad(this.pitch);
-//         this.yaw = clampRad(this.yaw);
-//         this.roll = clampRad(this.roll);
-//     }
-
-// }
-
-// export const AM_SpatialEuler = superclass => AM_SpatialEulerExtension(AM_Spatial(superclass));
-// RegisterMixin(AM_SpatialEuler);
-
-
-// //-- Pawn ----------------------------------------------------------------------------------
-
-// const PM_SpatialEulerExtension = superclass => class extends superclass {
-
-//     get pitch() { return this.actor.pitch};
-//     get yaw() { return this.actor.yaw};
-//     get roll() { return this.actor.roll};
-
-// }
-
-// export const PM_SpatialEuler = superclass => PM_SpatialEulerExtension(PM_Spatial(superclass));
-
-// //------------------------------------------------------------------------------------------
-// //-- SmoothedEuler -------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
-
-// const AM_SmoothedEulerExtension = superclass => class extends AM_SpatialEulerExtension(superclass) {
-
-//     rotateToEuler(e) {
-//         this.setEulerAngles(e);
-//         this.rotation = q_euler(this.pitch, this.yaw, this.roll);
-//         this.say("smoothedEuler_rotateTo", e);
-//         this.localChanged();
-//     }
-
-// }
-
-// export const AM_SmoothedEuler = superclass => AM_SmoothedEulerExtension(AM_Smoothed(superclass));
-// RegisterMixin(AM_SmoothedEuler);
-
-// //-- Pawn ----------------------------------------------------------------------------------
-
-// const PM_SmoothedEulerExtension = superclass => class extends PM_SpatialEulerExtension(superclass) {
-
-//     constructor(...args) {
-//         super(...args);
-//         this._pitch = this.actor.pitch;
-//         this._yaw = this.actor.yaw;
-//         this._roll = this.actor.roll;
-//         this.clampEulerAngles();
-//         this._rotation = q_euler(this._pitch, this._yaw, this._roll);
-//         this.listenOnce("spatialEuler_setRotation", this.setEulerRotation);
-//         this.listenOnce("smoothedEuler_rotateTo", () => this.isRotating = true);
-//     }
-
-//     setEulerRotation(e) {
-//         this._pitch = e.pitch || 0;
-//         this._yaw = e.yaw || 0;
-//         this._roll = e.roll || 0;
-//         this.clampEulerAngles();
-//         this._rotation = q_euler(this._pitch, this._yaw, this._roll);
-//     }
-
-//     interpolateRotation(tug) {
-
-//         let dPitch = this.actor.pitch - this._pitch;
-//         if (dPitch < -Math.PI) dPitch += TAU;
-//         if (dPitch > Math.PI) dPitch -= TAU;
-
-//         let dYaw = this.actor.yaw - this._yaw;
-//         if (dYaw < -Math.PI) dYaw += TAU;
-//         if (dYaw > Math.PI) dYaw -= TAU;
-
-//         let dRoll = this.actor.roll - this._roll;
-//         if (dRoll < -Math.PI) dRoll += TAU;
-//         if (dRoll > Math.PI) dRoll -= TAU;
-
-//         this._pitch = this._pitch + dPitch * tug;
-//         this._yaw = this._yaw + dYaw * tug;
-//         this._roll = this._roll + dRoll * tug;
-
-//         this.clampEulerAngles();
-
-//         this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-
-//         this.isRotating = !q_equals(this._rotation, this.actor.rotation, this.rotationEpsilon) ||
-//             (Math.abs(dPitch) > this.rotationEpsilon) ||
-//             (Math.abs(dYaw) > this.rotationEpsilon) ||
-//             (Math.abs(dRoll) > this.rotationEpsilon);
-
-//     }
-
-//     clampEulerAngles() {
-//         this._pitch = clampRad(this._pitch);
-//         this._yaw = clampRad(this._yaw);
-//         this._roll = clampRad(this._roll);
-//     }
-// }
-
-// export const PM_SmoothedEuler = superclass => PM_SmoothedEulerExtension(PM_Smoothed(superclass));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// MouseLook actors maintain a primary view-side scale/rotation/translation that you can drive directly
-// from player inputs so the mouselook avatar responds quickly to player input. On every frame this
-// transform is averaged with the official model-side values.
-//
-// If you're using player-controlled avatars, you'll probably want to set:
-//      * Session tps to >60 with no cheat beats
-//      * AM_MouseLook tick frequecy to <16
-//
-// This will create the smoothest/fastest response.
-//
-
-//-- Actor ---------------------------------------------------------------------------------
-
-// export const AM_MouseLook = superclass => class extends AM_Smoothed(superclass) {
-
-//     init(...args) {
-//         super.init(...args);
-//         this.mouseLook_tickStep = 15;
-//         this.speed = 0;
-//         this.strafeSpeed = 0;
-//         this.multiplySpeed = 1;
-//         this.spin = q_identity();
-//         this.grounded = true; // this forces user onto x/z plane for motion
-//         this.listen("mouseLook_moveTo", this.onMoveTo);
-//         this.listen("mouseLook_rotateTo", this.onRotateTo);
-//         this.listen("mouseLook_setSpeed", this.onSetSpeed);
-//         this.listen("mouseLook_setStrafeSpeed", this.onSetStrafeSpeed);
-//         this.listen("mouseLook_setMultiplySpeed", this.onSetMultiplySpeed);
-//         this.listen("mouseLook_setSpin", this.onSetSpin);
-//         this.listen("mouseLook_showState", this.onShowState);
-
-//         this.tickCounter = 0;
-//         this.movingCounter = 0;
-//         this.checkSum = 0;
-//         this.future(0).tick(0);
-//     }
-
-//     onMoveTo(v) {
-//         this.moveTo(v);
-//     }
-
-//     onRotateTo(q) {
-//         this.rotateTo(q);
-//     }
-
-//     onSetSpeed(s) {
-//         this.speed = s;
-//         this.isMoving = s !== 0 || this.strafeSpeed !==0;
-//     }
-
-//     onSetStrafeSpeed(ss) {
-//         this.strafeSpeed = ss;
-//         this.isMoving = ss !== 0 || this.speed !== 0;
-//     }
-
-//     onSetMultiplySpeed(ms) {
-//         this.multiplySpeed = ms;
-//     }
-
-//     onSetSpin(q) {
-//         this.spin = q;
-//         this.isRotating = !q_isZero(this.spin);
-//     }
-
-//     //replicated show state message to ensure teatime is working properly
-//     onShowState(){
-//         console.log("--AM_MouseLook State--");
-//         console.log("AM_MouseLook: ", this);
-//         console.log("translation: ", this.translation);
-//         console.log("rotation: ", this.rotation);
-//         console.log("checkSum: ", this.checkSum);
-//     }
-
-//     setGrounded(bool){ this.grounded = bool; }
-
-//     tick(delta) {
-//         if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
-//         if (this.isMoving) {
-//             let m4 = m4_rotationQ(this.rotation);
-//             if(this.grounded) m4 = m4_fastGrounded(m4);
-//             let lastLoc = this.translation;
-//             let loc = this.translation;
-
-//             if(this.speed)loc = v3_add(loc, v3_scale( [ m4[8], m4[9], m4[10]], delta*this.speed*this.multiplySpeed) );
-//             if(this.strafeSpeed)loc = v3_add(loc, v3_scale( [ m4[0], m4[1], m4[2]], delta*this.strafeSpeed*this.multiplySpeed) );
-//             // this.moveTo(this.verify(loc, lastLoc));
-//         }
-//         if(!this.doomed)this.future(this.mouseLook_tickStep).tick(this.mouseLook_tickStep);
-//     }
-
-//     // Enables the subclass to ensure that this change is valid
-//     // Example - collision with a wall will change the result
-//     // verify(loc, lastLoc){
-//     //     return loc;
-//     // }
-
-// };
-
-// RegisterMixin(AM_MouseLook);
-
-// //-- Pawn ----------------------------------------------------------------------------------
-
-// // Tug is set even lower so that heatbeat stutters on the actor side will not affect pawn
-// // motion. However this means the pawn will take longer to "settle" into its final position.
-// //
-// // It's possible to have different tug values depending on whether the avatar is controlled
-// // locally or not.
-
-// export const PM_MouseLook = superclass => class extends PM_Smoothed(superclass) {
-//     constructor(...args) {
-//         super(...args);
-//         this.tug = 0.05;    // Bias the tug even more toward the pawn's immediate position.
-//         this.speed = 0;
-//         this.strafeSpeed = 0;
-//         this.multiplySpeed = 1;
-//         this.spin = q_identity();
-//         this.grounded = true;
-//     }
-
-//     moveTo(v) {
-//         this._translation = v;
-//         this.say("mouseLook_moveTo", v);
-//     }
-
-//     rotateTo(q) {
-//         this._rotation = q;
-//         this.say("mouseLook_rotateTo", q);
-//     }
-
-//     setSpeed(s) {
-//         this.speed = s;
-//         this.isMoving = this.isMoving || s!=0;
-//         this.say("mouseLook_setSpeed", s);
-//     }
-
-//     setStrafeSpeed(ss) {
-//         this.strafeSpeed = ss;
-//         this.isMoving = this.isMoving || ss!=0;
-//         this.say("mouseLook_setStrafeSpeed", ss);
-//     }
-
-//     setMultiplySpeed(ms) {
-//         this.multiplySpeed = ms;
-//         this.say("mouseLook_setMultiplySpeed", ms);
-//     }
-
-//     setSpin(q) {
-//         this.spin = q;
-//         this.isRotating = this.isRotating || !q_isZero(this.spin);
-//         this.say("mouseLook_setSpin", this.spin);
-//     }
-
-//     showState() {
-//         console.log("--PM_MouseLook State--");
-//         console.log("PM_MouseLook: ", this);
-//         console.log("translation: ", this._translation);
-//         console.log("rotation: ", this._rotation);
-//         this.say("mouseLook_showState");
-//     }
-
-//     update(time) {
-//         if (this.isRotating) {
-//             this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), GetViewDelta()));
-//         }
-//         if (this.isMoving) {
-//             // let lastLoc = this._translation;
-//             let m4 = m4_rotationQ(this._rotation);
-//             if (this.grounded) m4 = m4_fastGrounded(m4);
-//             if (this.speed) this._translation = v3_add(this._translation, v3_scale( [ m4[8], m4[9], m4[10]], GetViewDelta()*this.speed*this.multiplySpeed) );
-//             if (this.strafeSpeed) this._translation = v3_add(this._translation, v3_scale( [ m4[0], m4[1], m4[2]], GetViewDelta()*this.strafeSpeed*this.multiplySpeed) );
-//             // this._translation = this.verify(this._translation, lastLoc);
-//         }
-//         super.update(time);
-//     }
-
-//     // Enables the subclass to ensure that this change is valid
-//     // Example - collision with a wall will change the result
-//     // verify(loc, lastLoc) {
-//     //     return loc;
-//     // }
-
-// };
