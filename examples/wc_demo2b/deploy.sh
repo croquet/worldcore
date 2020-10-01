@@ -9,10 +9,11 @@ pnpm i || exit 1
 
 # build this
 rm -rf dist
-pnpm run build || exit 1
+pnpm run build-dev || exit 1
+# (we temporarily deploy a dev build)
 
 # copy to croquet.io/testing/
-TARGET=../../../ARCOS/servers/croquet-io-testing/wc_demo2
+TARGET=../../../wonderland/servers/croquet-io-testing/wc_demo2
 rm -rf $TARGET/*
 cp -a dist/ $TARGET/
 
