@@ -131,6 +131,7 @@ export function MyPlayerPawn() {return playerPawn;}
 class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSource, PM_ThreeVisible, PM_Player, PM_ThreeCamera) {
     constructor(...args) {
         super(...args);
+        this.setTug(0.2);
         // this.tug = 0.2;
         // custom movement speed scaling value so we can have a bit more fine-tuned control of player character
         this.myMovementSensitivity = 0.5;
