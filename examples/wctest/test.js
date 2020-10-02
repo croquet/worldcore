@@ -5,7 +5,7 @@
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale, AM_Avatar, PM_Avatar,
-    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply, q_euler, m4_rotationQ, v3_transform, ToDeg, PM_Spatial, AM_Spatial, KeyDown, AM_MouselookAvatar, PM_MouselookAvatar, PM } from "@croquet/worldcore";
+    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply, q_euler, m4_rotationQ, v3_transform, ToDeg, PM_Spatial, AM_Spatial, KeyDown, AM_MouselookAvatar, PM_MouselookAvatar, PM, q_lookAt, v3_rotate, v3_normalize } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 
 
@@ -212,6 +212,20 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "strafeLeftUp", () => console.log("Strafe Left Up"));
         this.subscribe("input", "mouseDelta", this.onMouseDelta)
         this.subscribe("input", "pDown", ()=> this.webInput.enterPointerLock());
+
+        // const f = v3_normalize([1,0,1]);
+        // const u = [0,1,0];
+        // const t = v3_normalize([-1,0,-1]);
+        // console.log(t);
+        // const q = q_lookAt(f,u,t);
+        // const q2 = q_axisAngle([0,1,0], toRad(45));
+        // console.log(q);
+        // // console.log(q2);
+        // const v = v3_rotate(f, q);
+        // const v2 = v3_transform(f, m4_rotationQ(q2));
+        // console.log(v);
+        // // console.log(v2);
+
 
     }
 

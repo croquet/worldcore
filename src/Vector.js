@@ -289,6 +289,21 @@ export function v3_transform(v, m) {
     ];
 }
 
+export function v3_rotate(v, q) {
+    const qx = q[0], qy = q[1], qz = q[2], qw = q[3];
+    const x = v[0], y = v[1], z = v[2];
+    let uvx = qy * z - qz * y, uvy = qz * x - qx * z, uvz = qx * y - qy * x;
+    let uuvx = qy * uvz - qz * uvy, uuvy = qz * uvx - qx * uvz, uuvz = qx * uvy - qy * uvx;
+    let w2 = qw * 2;
+    uvx *= w2;
+    uvy *= w2;
+    uvz *= w2;
+    uuvx *= 2;
+    uuvy *= 2;
+    uuvz *= 2;
+    return [x + uvx + uuvx, y + uvy + uuvy, z + uvz + uuvz];
+}
+
 export function v3_equals(a,b,e = 0) { // e is an epsilon
     if (e) return (e > Math.abs(a[0]-b[0]) && e > Math.abs(a[1]-b[1]) && e > Math.abs(a[2]-b[2]));
     return (a[0] === b[0] && a[1] === b[1] && a[2] === b[2]);
@@ -946,31 +961,31 @@ export function m4_toNormal3(m) {
 }
 
 // generate ground plane matrix - no rotation out of the x/z plane
-export function m4_grounded(m) {
-    const g = [0,1,0] // the up vector
-    var x = [m[0], m[1], m[2]];
-    var z = v3_cross(x, g);
-    z[1] = 0;
-    z = v3_normalize(z);
-    x = v3_cross(g, z);
-    x[1] = 0;
-    x = v3_normalize(x)
-    return [x[0], x[1], x[2], 0,
-            0, 1, 0, 0,
-            z[0], z[1], z[2],0,
-            0, 0, 0, 1];
+// export function m4_grounded(m) {
+//     const g = [0,1,0] // the up vector
+//     var x = [m[0], m[1], m[2]];
+//     var z = v3_cross(x, g);
+//     z[1] = 0;
+//     z = v3_normalize(z);
+//     x = v3_cross(g, z);
+//     x[1] = 0;
+//     x = v3_normalize(x)
+//     return [x[0], x[1], x[2], 0,
+//             0, 1, 0, 0,
+//             z[0], z[1], z[2],0,
+//             0, 0, 0, 1];
 
-}
+// }
 
-// this is faster if we can assume that x and z projections in y-plane are perpendicular
-export function m4_fastGrounded(m) {
-    var x = v3_normalize([m[0], 0, m[2]]);
-    var z = v3_normalize([m[8], 0, m[10]]);
-    return [x[0], x[1], x[2], 0,
-            0, 1, 0, 0,
-            z[0], z[1], z[2], 0,
-            0, 0, 0, 1];
-}
+// // this is faster if we can assume that x and z projections in y-plane are perpendicular
+// export function m4_fastGrounded(m) {
+//     var x = v3_normalize([m[0], 0, m[2]]);
+//     var z = v3_normalize([m[8], 0, m[10]]);
+//     return [x[0], x[1], x[2], 0,
+//             0, 1, 0, 0,
+//             z[0], z[1], z[2], 0,
+//             0, 0, 0, 1];
+// }
 //--------------------------------------------------------------------------------
 //-- Quaternions -----------------------------------------------------------------
 //--------------------------------------------------------------------------------
@@ -996,13 +1011,25 @@ export function q_conjugate(q) {
 // Clockwise in radians looking along axis.
 // Axis should be normalized
 export function q_axisAngle(axis, angle) {
-    //const n = v3_normalize(axis);
     const half = angle * 0.5;
     const sinH = Math.sin(half);
     const cosH = Math.cos(half);
     return [sinH * axis[0], sinH * axis[1], sinH * axis[2], cosH];
 }
 
+// Given a forward vector and an up vector, generates the quaternion that will rotate
+// the forward vector to look at the target.
+export function q_lookAt(f, u, t) {
+    const epsilon = 0.00001;
+    const dot = v3_dot(f,t);
+    if (Math.abs(dot+1) < epsilon) return q_axisAngle(u, Math.PI)
+    if (Math.abs(dot-1) < epsilon) return q_identity();
+    const angle = Math.acos(dot);
+    const axis = v3_normalize(v3_cross(f,t));
+    return q_axisAngle(axis, angle);
+}
+
+// Creates a quaternion from the given Euler angles.
 export function q_euler(x, y ,z) {
     x *= 0.5
     y *= 0.5
@@ -1022,37 +1049,6 @@ export function q_euler(x, y ,z) {
     ];
 
 }
-
-// /**
-//  * Creates a quaternion from the given euler angle x, y, z.
-//  *
-//  * @param {quat} out the receiving quaternion
-//  * @param {x} Angle to rotate around X axis in degrees.
-//  * @param {y} Angle to rotate around Y axis in degrees.
-//  * @param {z} Angle to rotate around Z axis in degrees.
-//  * @returns {quat} out
-//  * @function
-//  */
-// export function fromEuler(out, x, y, z) {
-//     let halfToRad = 0.5 * Math.PI / 180.0;
-//     x *= halfToRad;
-//     y *= halfToRad;
-//     z *= halfToRad;
-
-//     let sx = Math.sin(x);
-//     let cx = Math.cos(x);
-//     let sy = Math.sin(y);
-//     let cy = Math.cos(y);
-//     let sz = Math.sin(z);
-//     let cz = Math.cos(z);
-
-//     out[0] = sx * cy * cz - cx * sy * sz;
-//     out[1] = cx * sy * cz + sx * cy * sz;
-//     out[2] = cx * cy * sz - sx * sy * cz;
-//     out[3] = cx * cy * cz + sx * sy * sz;
-
-//     return out;
-// }
 
 export function q_scale(q,s) {
     return [q[0] * s, q[1] * s, q[2] * s, q[3] * s, q[4] * s];
