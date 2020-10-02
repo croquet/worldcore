@@ -1,6 +1,6 @@
 const HtmlWebPackPlugin = require('html-webpack-plugin');
-
-var path = require('path');
+const request = require('sync-request');
+const path = require('path');
 
 module.exports = {
     entry : './index.js',
@@ -33,6 +33,15 @@ module.exports = {
         new HtmlWebPackPlugin({
             template: 'index.html',   // input
             filename: 'index.html',   // output filename in dist/
+            templateParameters: () => {
+                let latest_pre = "latest-pre";
+                try {
+                    latest_pre = request('GET', 'https://croquet.io/sdk/croquet-latest-pre.txt').getBody('utf8').trim();
+                } catch (error) {
+                    console.warn('failed to fetch version from https://croquet.io/sdk/croquet-latest-pre.txt');
+                }
+                return { 'latest_pre': latest_pre };
+            },
         }),
     ]
 };
