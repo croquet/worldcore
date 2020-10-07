@@ -57,14 +57,16 @@ export class WebInputManager extends NamedView {
         this.addListener(window, 'focus', e => this.onFocus(e));
         this.addListener(window, 'blur', e => this.onBlur(e));
 
-        if ('ontouchstart' in document.documentElement) {
+        if (this.hasTouch) {
+            console.log("Touch input enabled");
             this.addListener(document,'touchstart', e => this.onTouchStart(e));
             this.addListener(document,'touchend', e => this.onTouchEnd(e));
             this.addListener(document,'touchmove', e => this.onTouchMove(e));
             this.addListener(document,'touchcancel', e => this.onTouchCancel(e));
         }
 
-        if ('onmousedown' in document.documentElement) {
+        if (this.hasMouse) {
+            console.log("Mouse input enabled");
             this.addListener(document, 'click', e => this.onClick(e));
             this.addListener(document, 'mousedown', e => this.onMouseDown(e));
             this.addListener(document, 'mouseup', e => this.onMouseUp(e));
@@ -73,11 +75,24 @@ export class WebInputManager extends NamedView {
             this.addListener(document, 'wheel', e => this.onWheel(e));
         }
 
-        if ('onkeydown' in document.documentElement) {
+        if (this.hasKeyboard) {
+            console.log("Keyboard input enabled");
             this.addListener(document,'keydown', e => this.onKeyDown(e));
             this.addListener(document,'keyup', e => this.onKeyUp(e));
         }
 
+    }
+
+    get hasTouch() {
+        return 'ontouchstart' in document.documentElement;
+    }
+
+    get hasMouse() {
+        return 'onmousedown' in document.documentElement;
+    }
+
+    get hasKeyboard() {
+        return 'onkeydown' in document.documentElement
     }
 
     destroy() {
