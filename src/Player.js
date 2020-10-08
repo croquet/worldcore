@@ -99,7 +99,7 @@ export const PM_Player = superclass => class extends superclass {
     get isMyPlayerPawn() {
         let p = this;
         do {
-            if (p.actor.playerId === p.viewId) return true;
+            if (p.actor && p.actor.playerId === p.viewId) return true;
             p = p.parent;
         } while (p);
         return false;

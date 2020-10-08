@@ -3,7 +3,7 @@ import { Constants } from "@croquet/croquet";
 import { GetNamedView } from "./NamedView";
 import { PM_Dynamic } from "./Pawn";
 import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_translation, m4_rotationX, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, v3_transform, q_euler, TAU, clampRad } from  "./Vector";
+    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, v3_transform, q_euler, TAU, clampRad, q2_axisAngle } from  "./Vector";
 
 // Mixin
 //
@@ -236,7 +236,7 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
 
     get global() {
         if (this.$global) return this.$global;
-        if (this.parent) {
+        if (this.parent && this.parent.global) {
             this.$global = m4_multiply(this.local, this.parent.global);
         } else {
             this.$global = this.local;
@@ -347,6 +347,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     onAddChild(id) {
         super.onAddChild(id);
         const child = GetNamedView("PawnManager").get(id);
+        // console.log("avatar onAddChild");
         child.refreshTug();
     }
 
@@ -392,7 +393,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 
     get global() {
         if (this._global) return this._global;
-        if (this.parent) {
+        if (this.parent && this.parent.global) {
             this._global = m4_multiply(this.local, this.parent.global);
         } else {
             this._global = this.local;
@@ -667,26 +668,48 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
     }
 
     get lookGlobal() {
+        const pitchRotation = q2_axisAngle([1,0,0], this.lookPitch);
+        const yawRotation = q2_axisAngle([0,1,0], this.lookYaw);
+
+        const modelLocal =  m4_scalingRotationTranslation(this.scale, yawRotation, this.translation)
+        let modelGlobal = modelLocal;
+        if (this.parent) modelGlobal = m4_multiply(modelLocal, this.parent.global);
+
+
         const m0 = m4_translation(this.lookOffset);
-        const m1 = m4_rotationX(this.lookPitch);
+        const m1 = m4_rotationQ(pitchRotation);
         const m2 = m4_multiply(m1, m0);
-        return m4_multiply(m2, this.global);
+        return m4_multiply(m2, modelGlobal);
     }
 
-    interpolateRotation(tug) {
-        super.interpolateRotation(tug);
+    // get lookGlobal() {
+    //     const m0 = m4_translation(this.lookOffset);
+    //     const m1 = m4_rotationX(this.lookPitch);
+    //     const m2 = m4_multiply(m1, m0);
+    //     return m4_multiply(m2, this.global);
+    // }
 
-        let dPitch = this.actor.lookPitch - this._lookPitch;
-        if (dPitch < -Math.PI) dPitch += TAU;
-        if (dPitch > Math.PI) dPitch -= TAU;
+    // const yawMatrix = m4_rotationY(this.lookyaw);
+    // const pitchRotation = m4_rotationX(this.lookPitch);
+    // const m0 = m4_translation(this.lookOffset);
 
-        let dYaw = this.actor.lookYaw - this._lookYaw;
-        if (dYaw < -Math.PI) dYaw += TAU;
-        if (dYaw > Math.PI) dYaw -= TAU;
+    // const m2 = m4_multiply(m1, m0);
+    // return m4_multiply(m2, this.global);
 
-        this._lookPitch = this._lookPitch + dPitch * tug;
-        this._lookYaw = clampRad(this._lookYaw + dYaw * tug);
-    }
+    // interpolateRotation(tug) {
+    //     super.interpolateRotation(tug);
+
+    //     let dPitch = this.actor.lookPitch - this._lookPitch;
+    //     if (dPitch < -Math.PI) dPitch += TAU;
+    //     if (dPitch > Math.PI) dPitch -= TAU;
+
+    //     let dYaw = this.actor.lookYaw - this._lookYaw;
+    //     if (dYaw < -Math.PI) dYaw += TAU;
+    //     if (dYaw > Math.PI) dYaw -= TAU;
+
+    //     this._lookPitch = this._lookPitch + dPitch * tug;
+    //     this._lookYaw = clampRad(this._lookYaw + dYaw * tug);
+    // }
 
     update(time, delta) {
         super.update(time, delta);

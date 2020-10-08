@@ -86,10 +86,12 @@ export class Pawn extends View {
 
     constructor(actor) {
         super();
-        this.actor = actor;
+        this._actor = actor;
         GetNamedView("PawnManager").add(this);
         this.listen("destroyActor", this.destroy);
     }
+
+    get actor() {return this._actor};
 
     // Link is called on start-up after all pre-existing pawns are re-instatiated. This is where pawn-pawn pointers can be rebuilt.
     link() {}

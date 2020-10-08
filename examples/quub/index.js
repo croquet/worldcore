@@ -11,6 +11,7 @@ import { Surfaces } from "./src/Surfaces";
 import { TerrainRender } from "./src/TerrainRender";
 import { Voxels } from "./src/Voxels";
 import { PickBase, PickEmptyVoxel, PickSolidVoxel } from "./src/VoxelRaycast";
+import { VoxelCursor } from "./src/VoxelCursor";
 
 
 //------------------------------------------------------------------------------------------
@@ -114,6 +115,7 @@ class MyViewRoot extends ViewRoot {
         this.webInput = this.addManager(new WebInputManager());
         this.render = this.addManager(new RenderManager());
         this.terrainRender = this.addManager(new TerrainRender());
+        this.voxelCursor = this.addManager(new VoxelCursor());
         this.ui = this.addManager(new UIManager());
         this.pawnManager = this.addManager(new PawnManager());
     }
