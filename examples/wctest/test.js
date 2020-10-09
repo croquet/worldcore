@@ -16,6 +16,9 @@ import paper from "./assets/paper.jpg";
 class MoveActor extends mix(Actor).with(AM_MouselookAvatar) {
     init(options) {
         super.init("MovePawn", options);
+        //const child = ChildActor.create({translation: [0,0,2]});
+        // const child = ChildActor.create();
+        //this.addChild(child);
     }
 
 }
@@ -62,6 +65,58 @@ class MovePawn extends mix(Pawn).with(PM_MouselookAvatar, PM_InstancedVisible) {
 
 }
 MovePawn.register('MovePawn');
+
+
+//------------------------------------------------------------------------------------------
+// ChildActor
+//------------------------------------------------------------------------------------------
+
+class ChildActor extends mix(Actor).with(AM_Smoothed) {
+    init(options) {
+        super.init("ChildPawn", options);
+    }
+
+}
+ChildActor.register('ChildActor');
+
+//------------------------------------------------------------------------------------------
+// ChildPawn
+//------------------------------------------------------------------------------------------
+
+class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
+    constructor(...args) {
+        super(...args);
+        this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.index, () => this.buildDraw()));
+    }
+
+    buildDraw() {
+        const mesh = CachedObject("moveMesh" + this.actor.index, () => this.buildMesh());
+        const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
+        const draw = new InstancedDrawCall(mesh, material);
+
+        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+
+        return draw;
+    }
+
+    buildMesh() {
+        const mesh = UnitCube();
+
+        mesh.load();
+        mesh.clear();
+        return mesh;
+    }
+
+    buildMaterial() {
+        const material = new Material();
+        material.pass = 'instanced';
+        material.texture.loadFromURL(paper);
+        return material;
+    }
+
+
+}
+ChildPawn.register('ChildPawn');
 
 //------------------------------------------------------------------------------------------
 // FloorActor
@@ -116,7 +171,9 @@ class MyModelRoot extends ModelRoot {
         console.log("Starting test!!!!!");
 
         FloorActor.create();
-        const move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
+        this.move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
+        this.child = ChildActor.create({translation: [0,0,2]});
+
 
         this.actors = [];
 
@@ -125,9 +182,22 @@ class MyModelRoot extends ModelRoot {
 
         this.subscribe("input", " Down", this.shoot);
         this.subscribe("input", "touchTap", this.shoot);
-        this.subscribe("input", "dDown", this.raycast);
+        this.subscribe("input", "dDown", this.pickUp);
+        this.subscribe("input", "fDown", this.putDown);
 
         // this.future(0).tick();
+    }
+
+    pickUp() {
+        console.log("Pick up!");
+        this.move.addChild(this.child);
+        this.child.globalChanged();
+    }
+
+    putDown() {
+        console.log("Put down!");
+        this.move.removeChild(this.child);
+        this.child.globalChanged();
     }
 
     seedColors() {
@@ -213,18 +283,6 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "mouseDelta", this.onMouseDelta)
         this.subscribe("input", "pDown", ()=> this.webInput.enterPointerLock());
 
-        // const f = v3_normalize([1,0,1]);
-        // const u = [0,1,0];
-        // const t = v3_normalize([-1,0,-1]);
-        // console.log(t);
-        // const q = q_lookAt(f,u,t);
-        // const q2 = q_axisAngle([0,1,0], toRad(45));
-        // console.log(q);
-        // // console.log(q2);
-        // const v = v3_rotate(f, q);
-        // const v2 = v3_transform(f, m4_rotationQ(q2));
-        // console.log(v);
-        // // console.log(v2);
 
 
     }
