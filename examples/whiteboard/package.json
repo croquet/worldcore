@@ -6,7 +6,9 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "start": "webpack-dev-server --mode development --devtool source-map --watch",
-    "build": "webpack --mode production"
+    "build-prod": "webpack --mode production",
+    "build-dev": "webpack --mode development",
+    "deploy": "./deploy.sh"
   },
   "author": "Croquet Corporation",
   "license": "ISC",
@@ -16,7 +18,7 @@
   "devDependencies": {
     "file-loader": "^6.0.0",
     "html-webpack-plugin": "^4.3.0",
-    "inspectpack": "^4.5.2",
+    "node-fetch": "^2.6.1",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0"

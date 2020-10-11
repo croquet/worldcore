@@ -1,6 +1,6 @@
 const HtmlWebPackPlugin = require('html-webpack-plugin');
-
-var path = require('path');
+const fetch = require('node-fetch');
+const path = require('path');
 
 module.exports = {
     entry : './whiteboard.js',
@@ -12,12 +12,12 @@ module.exports = {
     devServer: {
         disableHostCheck: true,
         contentBase: path.join(__dirname, 'dist'),
-        port: 9090
+        port: 1234
     },
     module: {
         rules: [
             {
-                test: /\.(png|svg|jpg|gif|mp3)$/,
+                test: /\.(png|svg|jpg|gif|mp3|fbx)$/,
                 loader: 'file-loader',
                 options: {
                     name: '[contenthash:8].[ext]',
@@ -33,6 +33,12 @@ module.exports = {
         new HtmlWebPackPlugin({
             template: 'index.html',   // input
             filename: 'index.html',   // output filename in dist/
+            templateParameters: async () => {
+                const response = await fetch('https://croquet.io/sdk/croquet-latest-pre.txt');
+                if (!response.ok) throw Error(`${response.status} ${response.statusText} ${response.url}`);
+                const body = await response.text();
+                return { 'latest_pre': body.trim() };
+            },
         }),
     ]
 };

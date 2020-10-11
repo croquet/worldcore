@@ -1,24 +1,28 @@
 #!/bin/bash
-cd `dirname $0`
-
-HTML=whiteboard.html
+cd `dirname "$0"`
 APP=$(basename `pwd`)
+WONDERLAND=../../../wonderland
 
-TARGET=../../servers/croquet-io-testing
-CROQUET=../libraries/packages/croquet
+if [[ ! -d $WONDERLAND ]] ; then
+    echo "Where is Wonderland? Not at '$WONDERLAND' it seeems ¯\_(ツ)_/¯"
+    exit 1
+fi
 
-# check out a clean @croquet/croquet package
-(cd $CROQUET ; npm run clean)
+# update worldcore
+(cd ../../ ; pnpm i) || exit 1
 
-rm -f $TARGET/$APP/*
-npx parcel build $HTML -d $TARGET/$APP/ -o index.html --public-url . || exit
+# update this
+pnpm i || exit 1
 
-# commit to git
-git add -A $TARGET/$APP
-git commit -m "[$APP] deploy to croquet.io/testing" $TARGET/$APP || exit
-git --no-pager show --stat
+# build this
+rm -rf dist
+pnpm run build-prod || exit 1
 
-echo
-echo "You still need to"
-echo "    git push"
-echo "to deploy to https://croquet.io/testing/$APP/"
+# copy to croquet.io/testing/
+TARGET=$WONDERLAND/servers/croquet-io-testing/$APP
+rm -rf $TARGET/*
+cp -a dist/ $TARGET/
+
+# commit
+cd $TARGET
+git add . && git commit -m "[$APP] deploy to croquet.io/testing/$APP/" -- . && git --no-pager log -1 --stat
