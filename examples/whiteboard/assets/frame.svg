@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>icon/frame</title>
+    <g id="icon/frame" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group-3" transform="translate(2.000000, 4.000000)" fill="#00232E">
+            <path d="M13,0 L13,2 L18,2 L18,5 L20,5 L20,0 L13,0 Z M18,14 L13,14 L13,16 L20,16 L20,11 L18,11 L18,14 Z M0,5 L2,5 L2,2 L7,2 L7,0 L0,0 L0,5 Z M2,11 L0,11 L0,16 L7,16 L7,14 L2,14 L2,11 Z" id="Fill-1"></path>
+        </g>
+    </g>
+</svg>
