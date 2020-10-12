@@ -412,6 +412,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         if (changed) this.localChanged();
         if (this.needRefresh) this.refresh();
         this.needRefresh = false;
+        if (this.children) this.children.forEach(child => child.update(time, delta));
     }
 
     interpolateScale(tug) {

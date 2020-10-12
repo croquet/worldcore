@@ -150,6 +150,7 @@ export const PM_Dynamic = superclass => class extends superclass {
     }
 
     update(time, delta) {
+        if (this.parent) return;
         this.lastFrameTime = time;
     }
 
