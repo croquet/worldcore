@@ -12,6 +12,7 @@ import { TerrainRender } from "./src/TerrainRender";
 import { Voxels } from "./src/Voxels";
 import { PickBase, PickEmptyVoxel, PickSolidVoxel } from "./src/VoxelRaycast";
 import { VoxelCursor } from "./src/VoxelCursor";
+import { HUD } from "./src/HUD";
 
 
 //------------------------------------------------------------------------------------------
@@ -56,9 +57,13 @@ FloorPawn.register('FloorPawn');
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting quub!");
+        console.log("Starting quub!!!");
         this.voxels = Voxels.create();
         this.voxels.set(4,4,1,5);
+        this.voxels.set(5,4,1,5);
+        this.voxels.set(6,4,1,6);
+        this.voxels.set(8,4,1,5);
+        this.voxels.set(9,4,1,7);
         this.surfaces = Surfaces.create();
 
         // console.log(this.surfaces);
@@ -106,7 +111,7 @@ class MyViewRoot extends ViewRoot {
             ao.falloff = 0.7;
         }
 
-        this.subscribe("input", "mouseXY", this.onMouseXY);
+        // this.subscribe("input", "mouseXY", this.onMouseXY);
 
 
     }
@@ -117,6 +122,7 @@ class MyViewRoot extends ViewRoot {
         this.terrainRender = this.addManager(new TerrainRender());
         this.voxelCursor = this.addManager(new VoxelCursor());
         this.ui = this.addManager(new UIManager());
+        this.HUD = this.addManager(new HUD(this.ui.root));
         this.pawnManager = this.addManager(new PawnManager());
     }
 
@@ -128,13 +134,13 @@ class MyViewRoot extends ViewRoot {
         return topLayer;
     }
 
-    onMouseXY(xy) {
-        // console.log(xy);
-        // const ppp = PickBase(xy);
-        const ppp = PickEmptyVoxel(xy);
-        //const ppp = PickSolidVoxel(xy);
-        if (ppp) console.log(ppp.xyz);
-    }
+    // onMouseXY(xy) {
+    //     // console.log(xy);
+    //     // const ppp = PickBase(xy);
+    //     const ppp = PickEmptyVoxel(xy);
+    //     //const ppp = PickSolidVoxel(xy);
+    //     if (ppp) console.log(ppp.xyz);
+    // }
 
 
 }
