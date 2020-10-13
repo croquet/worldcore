@@ -304,7 +304,7 @@ export class Voxels extends Model {
         this.beWellKnownAs('Voxels');
         this.voxels = Array.from(Array(Voxels.sizeX), ()=>Array.from(Array(Voxels.sizeY), ()=>new VoxelColumn()));
         this.subscribe("hud", "newLevel", () => this.generate());
-        this.subscribe("editor", "setVoxel", data => this.set(...data.xyz, data.type));
+        this.subscribe("edit", "setVoxel", data => this.set(...data.xyz, data.type));
     }
 
     get(x, y, z) {
