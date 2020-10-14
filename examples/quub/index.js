@@ -13,6 +13,7 @@ import { Voxels } from "./src/Voxels";
 import { PickBase, PickEmptyVoxel, PickSolidVoxel } from "./src/VoxelRaycast";
 import { VoxelCursor } from "./src/VoxelCursor";
 import { HUD } from "./src/HUD";
+import { GodView } from "./src/GodView";
 
 
 //------------------------------------------------------------------------------------------
@@ -90,29 +91,18 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
 
-        this.ui.setScale(1);
-
-        // this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
-        // this.render.lights.setAmbientColor([0.8, 0.8, 0.8]);
-        // this.render.lights.setDirectionalColor([0.4, 0.4, 0.4]);
-        // this.render.lights.setDirectionalAim(v3_normalize([0.1,0.2,-1]));
-
         this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
         this.render.lights.setAmbientColor([0.8, 0.8, 0.8]);
         this.render.lights.setDirectionalColor([0.4, 0.4, 0.4]);
         this.render.lights.setDirectionalAim(v3_normalize([0.1,0.2,-1]));
-        this.render.camera.setLocation(m4_scalingRotationTranslation(1, q_axisAngle([1,0,0], toRad(45)), [10,-10,10]));
-        this.render.camera.setProjection(toRad(60), 1.0, 10000.0);
 
         const ao = this.render.aoShader;
         if (ao) {
+            ao.count = 16;
             ao.setRadius(0.4);
             ao.density = 1;
             ao.falloff = 0.7;
         }
-
-        // this.subscribe("input", "mouseXY", this.onMouseXY);
-
 
     }
 
@@ -122,7 +112,8 @@ class MyViewRoot extends ViewRoot {
         this.terrainRender = this.addManager(new TerrainRender());
         this.voxelCursor = this.addManager(new VoxelCursor());
         this.ui = this.addManager(new UIManager());
-        this.HUD = this.addManager(new HUD(this.ui.root));
+        this.hud = this.addManager(new HUD(this.ui.root));
+        this.godView = this.addManager(new GodView());
         this.pawnManager = this.addManager(new PawnManager());
     }
 
@@ -133,15 +124,6 @@ class MyViewRoot extends ViewRoot {
     get topLayer() {
         return topLayer;
     }
-
-    // onMouseXY(xy) {
-    //     // console.log(xy);
-    //     // const ppp = PickBase(xy);
-    //     const ppp = PickEmptyVoxel(xy);
-    //     //const ppp = PickSolidVoxel(xy);
-    //     if (ppp) console.log(ppp.xyz);
-    // }
-
 
 }
 

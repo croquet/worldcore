@@ -125,9 +125,9 @@ export class Voxels extends Model {
 
     //-- Constants --
 
-    static get sizeX() { return 128; }
-    static get sizeY() { return 128; }
-    static get sizeZ() { return 64; }
+    static get sizeX() { return 64; }
+    static get sizeY() { return 64; }
+    static get sizeZ() { return 32; }
     static get size() { return [Voxels.sizeX, Voxels.sizeY, Voxels.sizeZ]; }
 
     static get scaleX() { return 1; }

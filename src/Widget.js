@@ -52,6 +52,7 @@ export class UIManager extends NamedView {
         this.subscribe("input", {event: "touchXY", handling: "immediate"}, this.touchXY);
         this.subscribe("input", {event: "touchDown", handling: "immediate"}, this.touchDown);
         this.subscribe("input", {event: "touchUp", handling: "immediate"}, this.touchUp);
+        this.subscribe("input", {event: "touchTap", handling: "immediate"}, this.touchTap);
 
         this.subscribe("input", {event: "keyDown", handling: "immediate"}, this.keyDown);
         this.subscribe("input", {event: "keyRepeat", handling: "immediate"}, this.keyDown);
@@ -87,7 +88,7 @@ export class UIManager extends NamedView {
 
     setScale(scale) {
         this.scale = scale;
-        this.root.markChanged();
+        if (this.root) this.root.markChanged();
     }
 
     update() {
@@ -119,7 +120,7 @@ export class UIManager extends NamedView {
                 hover.markChanged();
             }
         }
-        this.publish("ui", "mouseXY", xy);
+        if (!focus && !hover) this.publish("ui", "mouseXY", xy);
     }
 
     mouseDown(xy) {
@@ -142,12 +143,19 @@ export class UIManager extends NamedView {
 
     touchDown(xy) {
         if (this.root && this.root.press(xy)) return;
+        this.canTap = true;
         this.publish("ui", "touchDown", xy);
     }
 
     touchUp(xy) {
         if (focus) focus.release(xy);
+        this.canTap = false;
         this.publish("ui", "touchUp", xy);
+    }
+
+    touchTap(xy) {
+        if (!this.canTap) return;
+        this.publish("ui", "touchTap", xy);
     }
 
     mouseDouble(xy) {

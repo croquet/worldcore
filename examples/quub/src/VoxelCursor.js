@@ -9,23 +9,27 @@ export class VoxelCursor extends NamedView {
 
         this.mesh = this.buildCube();
         this.setColor(12);
-        this.setMode('delete');
 
         this.material = new Material();
         this.material.pass = 'translucent';
         this.material.zOffset = 0;
+        this.isHidden = false;
+
+        const noShow = GetNamedView('Input').hasTouch; // Dont show the cursor on touch devices
 
         this.call = new DrawCall(this.mesh, this.material);
         this.call.isHidden = true;
 
         const render = GetNamedView("ViewRoot").render;
-        render.scene.addDrawCall(this.call);
+        if (!noShow) render.scene.addDrawCall(this.call);
 
-        this.subscribe("hud", "editMode", this.setMode);
         this.subscribe("hud", "editColor", this.setColor);
-        this.subscribe("input", "mouseXY", this.updateLocation);
+        this.subscribe("ui", "mouseXY", this.updateLocation);
         this.subscribe("ui", "mouse0Down", this.edit);
+        this.subscribe("ui", "touchTap", this.tap);
         this.subscribe("voxels", "changed", this.onChanged)
+        this.subscribe("god", "startDrag", this.onStartDrag);
+        this.subscribe("god", "endDrag", this.onEndDrag);
     }
 
     destroy() {
@@ -35,38 +39,39 @@ export class VoxelCursor extends NamedView {
         this.material.destroy();
     }
 
-    setMode(m) {
-        this.mode = m;
-        if (m === 'fill') {
-            this.setColor(this.color);
-        } else {
-            this.mesh.setColor([0.5, 0, 0, 0.5]);
-            this.mesh.load();
-        }
-    }
-
     setColor(c) {
         this.color = c;
-        const cc = Colors[this.color];
-        const color = [cc[0]/2, cc[1]/2, cc[2]/2, 0.5];
-        this.mesh.setColor(color);
+        if (c === 0) {
+            this.mesh.setColor([0.5, 0, 0, 0.5]);
+        } else {
+            const cc = Colors[this.color];
+            this.mesh.setColor([cc[0]/2, cc[1]/2, cc[2]/2, 0.5]);
+        }
         this.mesh.load();
+        this.updateLocation(this.xy);
     }
 
     onChanged() {
         this.updateLocation(this.xy);
     }
 
+    onStartDrag() {
+        this.isHidden = true;
+        this.updateLocation(this.xy);
+    }
+
+    onEndDrag() {
+        this.isHidden = false;
+        this.updateLocation(this.xy);
+    }
+
     updateLocation(xy) {
         if (!xy) return;
         this.xy = xy;
-        switch(this.mode) {
-            case 'fill':
-                this.updateFill(xy);
-                break;
-            case 'delete':
-                this.updateDelete(xy);
-                break;
+        if (this.color) {
+            this.updateFill(xy);
+        } else {
+            this.updateDelete(xy);
         }
     }
 
@@ -75,7 +80,7 @@ export class VoxelCursor extends NamedView {
         this.xyz = xyz;
         if (xyz) {
             const location = v3_multiply([Voxels.scaleX, Voxels.scaleY, Voxels.scaleZ], xyz);
-            this.call.isHidden = false;
+            this.call.isHidden = this.isHidden;
             this.call.transform.set(m4_translation(location));
         } else {
             this.call.isHidden = true;
@@ -87,7 +92,7 @@ export class VoxelCursor extends NamedView {
         this.xyz = xyz;
         if (xyz) {
             const location = v3_multiply([Voxels.scaleX, Voxels.scaleY, Voxels.scaleZ], xyz);
-            this.call.isHidden = false;
+            this.call.isHidden = this.isHidden;
             this.call.transform.set(m4_translation(location));
         } else {
             this.call.isHidden = true;
@@ -104,33 +109,34 @@ export class VoxelCursor extends NamedView {
         }
         if (!xyz) return null;
         xyz = v3_floor(xyz);
-        if (xyz[0] < 1 || xyz[0] > Voxels.sizeX-1) return null;
-        if (xyz[1] < 1 || xyz[1] > Voxels.sizeY-1) return null;
-        if (xyz[2] < 0 || xyz[2] > Voxels.sizeZ) return null;
+        if (xyz[0] < 1 || xyz[0] > Voxels.sizeX-2) return null;
+        if (xyz[1] < 1 || xyz[1] > Voxels.sizeY-2) return null;
+        if (xyz[2] < 0 || xyz[2] > Voxels.sizeZ-2) return null;
         return xyz;
     }
 
+    tap(xy) {
+        console.log(xy);
+        this.updateLocation(xy);
+        this.edit(xy);
+    }
+
     edit(xy) {
-        switch(this.mode) {
-            case 'fill':
-                this.fill(xy);
-                break;
-            case 'delete':
-                this.delete(xy);
-                break;
+        if (this.color) {
+            this.fill(xy);
+        } else {
+            this.delete(xy);
         }
     }
 
     fill(xy) {
         if (!this.xyz) return;
         this.publish("edit", "setVoxel", {xyz: this.xyz, type: this.color});
-        // this.call.isHidden = true;
     }
 
     delete(xy) {
         if (!this.xyz) return;
         this.publish("edit", "setVoxel", {xyz: this.xyz, type: 0});
-        // this.call.isHidden = true;
     }
 
     buildCube() {
