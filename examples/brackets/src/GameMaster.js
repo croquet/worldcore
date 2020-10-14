@@ -28,22 +28,22 @@ export class GameMaster extends Model {
 
         this.subscribe("hud", "startGame", this.startGame);
         this.subscribe("hud", "resetScores", this.resetScores);
-        this.subscribe("userList", "changed", this.checkTimer);
+        this.subscribe("playerManager", "playerChanged", this.checkTimer);
     }
 
     checkTimer() {
-        const userList = this.wellKnownModel("UserList");
-        if (userList.count === 0) {
+        const playerManager = this.wellKnownModel("PlayerManager");
+        if (playerManager.playerCount === 0) {
             this.startLobbyMode();
             return;
         }
         let done = false;
         switch (this.mode) {
             case 'seed':
-                done = userList.joinedCount === userList.pickedCount;
+                done = playerManager.joinedCount === playerManager.pickedCount;
                 break;
             case 'match':
-                done = userList.joinedCount === userList.votedCount;
+                done = playerManager.joinedCount === playerManager.votedCount;
                 break;
             case 'winner':
                 done = true;
@@ -69,24 +69,26 @@ export class GameMaster extends Model {
     }
 
     startLobbyMode() {
+        console.log("lobby!");
         this.mode = 'lobby';
         this.publish("gm", "mode", this.mode);
     }
 
     startGame() {
-        // console.log("start game!");
+        console.log("start game!");
         this.startSeedMode();
     }
 
     resetScores() {
-        const userList = this.wellKnownModel("UserList");
-        userList.users.forEach(user => { user.score = 0; });
-        userList.listChanged();
+        const pm = this.wellKnownModel("PlayerManager");
+        pm.players.forEach(player => { player.score = 0; });
+        pm.listChanged();
     }
 
     startSeedMode() {
-        const userList = this.wellKnownModel("UserList");
-        userList.users.forEach(user => { user.picks = [-1, -1, -1];});
+        console.log("seed!");
+        const players = this.wellKnownModel("PlayerManager").players;
+        players.forEach(player => { player.picks = [-1, -1, -1];});
 
         this.mode = 'seed';
         this.timer = 20;
@@ -118,15 +120,16 @@ export class GameMaster extends Model {
     }
 
     startMatchMode() {
+        console.log("match!");
         this.match = 0;
         this.publish("gm", "mode", this.mode);
         this.startMatch();
     }
 
     startMatch() {
-        const userList = this.wellKnownModel("UserList");
+        const players = this.wellKnownModel("PlayerManager").players;
         this.mode = 'match';
-        userList.users.forEach(user => { user.vote = 'x';});
+       players.forEach(player => { player.vote = 'x';});
         this.publish("gm", "timer", this.timer);
         this.publish("gm", "mode", this.mode);
         this.checkTimer();
@@ -168,16 +171,16 @@ export class GameMaster extends Model {
         if (this.match > 11) round = 2;
         if (this.match > 13 ) round = 3;
 
-        const userList = this.wellKnownModel("UserList");
-        userList.users.forEach(user => {
-            const picks = user.picks;
+        const players = this.wellKnownModel("PlayerManager").players;
+        players.forEach(player => {
+            const picks = player.picks;
             if (picks) {
                 if (picks[0] === this.winner) {
-                    user.score += RoundPoints(round, 0);
+                    player.score += RoundPoints(round, 0);
                 } else if (picks[1] === this.winner) {
-                    user.score += RoundPoints(round, 1);
+                    player.score += RoundPoints(round, 1);
                 } else if (picks[2] === this.winner) {
-                    user.score += RoundPoints(round, 2);
+                    player.score += RoundPoints(round, 2);
                 }
              }
         });
@@ -188,17 +191,17 @@ export class GameMaster extends Model {
 
     tallyVotes() {
         // if (this.mode !== 'match') return;
-        const userList = this.wellKnownModel('UserList');
+        const players = this.wellKnownModel('PlayerManger').players;
         let voters = 0;
         let aVotes = 0;
         let bVotes = 0;
-        userList.users.forEach((value, key) => {
-            const user = value;
-            if (user.hasVoted) {
+        players.forEach((value, key) => {
+            const player = value;
+            if (player.hasVoted) {
                 voters++;
-                if (user.vote.v === 'a') {
+                if (player.vote.v === 'a') {
                     aVotes++;
-                } else if (user.vote.v === 'b') {
+                } else if (player.vote.v === 'b') {
                     bVotes++;
                 }
             }
@@ -209,6 +212,7 @@ export class GameMaster extends Model {
     }
 
     startWinner() {
+        console.log("winner!");
         this.mode = 'winner';
         this.timer = 20;
         this.publish("gm", "timer", this.timer);
@@ -257,3 +261,5 @@ export class GameMaster extends Model {
         return deck;
     }
 }
+GameMaster.register("GameMaster");
+

@@ -1,0 +1,24 @@
+{
+  "name": "@croquet/brackets",
+  "version": "0.0.1",
+  "description": "Brackets",
+  "private": true,
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "start": "webpack-dev-server --mode development --devtool source-map --watch",
+    "build": "webpack --mode production"
+  },
+  "author": "Croquet Studios",
+  "license": "ISC",
+  "dependencies": {
+    "@croquet/worldcore": "file:../.."
+  },
+  "devDependencies": {
+    "file-loader": "^6.0.0",
+    "html-webpack-plugin": "^4.3.0",
+    "inspectpack": "^4.5.2",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
+  }
+}
