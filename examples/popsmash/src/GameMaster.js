@@ -97,7 +97,6 @@ export class GameMaster extends Model {
         if (this.series % 5 === 0) this.shuffle();
 
         this.question = this.questionDeck.pop();
-        // console.log(this.question);
 
         this.seed = [];
         for (let i = 0; i < 16; i++) this.seed.push(this.characterDeck.pop());
@@ -191,7 +190,7 @@ export class GameMaster extends Model {
 
     tallyVotes() {
         // if (this.mode !== 'match') return;
-        const players = this.wellKnownModel('PlayerManger').players;
+        const players = this.wellKnownModel('PlayerManager').players;
         let voters = 0;
         let aVotes = 0;
         let bVotes = 0;
@@ -199,9 +198,9 @@ export class GameMaster extends Model {
             const player = value;
             if (player.hasVoted) {
                 voters++;
-                if (player.vote.v === 'a') {
+                if (player.vote === 'a') {
                     aVotes++;
-                } else if (player.vote.v === 'b') {
+                } else if (player.vote === 'b') {
                     bVotes++;
                 }
             }

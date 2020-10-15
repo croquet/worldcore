@@ -39,7 +39,7 @@ class PlayerActor extends mix(Actor).with(AM_Player) {
     init(options) {
         super.init("PlayerPawn", options);
         this.name = null;
-        this.score = 10
+        this.score = 0
         this.picks = [-1,-1,-1];
         this.vote = 'x';
         this.listen("setName", name => {this.name = name; this.playerChanged();});
@@ -59,13 +59,6 @@ class PlayerActor extends mix(Actor).with(AM_Player) {
         return this.vote !== 'x';
     }
 
-    // get hasVoted() {
-    //     const gm = this.wellKnownModel("GameMaster");
-    //     if (!this.vote) return false;
-    //     if (this.vote.m !== gm.match) return false;
-    //     if (this.vote.v === 'x') return false;
-    //     return true;
-    // }
 }
 PlayerActor.register('PlayerActor');
 

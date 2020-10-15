@@ -99,4 +99,7 @@ Constants.Questions = [
 "Who should be captain of the cheerleading squad?",
 "Who should be homecoming queen?",
 "Who has the sickest moves?",
+"Who should play bass in the band?",
+"Who's the most punk?",
+"Who's just phoning it in?",
 ];

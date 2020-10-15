@@ -1,7 +1,7 @@
 {
-  "name": "@croquet/brackets",
+  "name": "@croquet/popsmash",
   "version": "0.0.1",
-  "description": "Brackets",
+  "description": "Pop Smash!",
   "private": true,
   "scripts": {
     "preinstall": "npx only-allow pnpm",

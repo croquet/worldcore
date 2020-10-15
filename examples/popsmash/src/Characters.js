@@ -367,7 +367,7 @@ Constants.Characters = [
 {name: "Pennywise the Clown", flavor: ""},
 {name: "Pepé Le Pew ", flavor: ""},
 {name: "Peppa Pig", flavor: ""},
-{name: "Perry the Platapus", flavor: ""},
+{name: "Perry the Platypus", flavor: ""},
 {name: "Peter Griffin", flavor: ""},
 {name: "Peter Pan", flavor: ""},
 {name: "Philip J. Fry", flavor: ""},
