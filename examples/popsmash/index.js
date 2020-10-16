@@ -32,13 +32,17 @@ MyModelRoot.register("MyModelRoot");
 //------------------------------------------------------------------------------------------
 
 class MyViewRoot extends ViewRoot {
+    constructor(...args) {
+        super(...args);
+        this.setScale(this.ui.size);
+        this.hud = new HUD(this.ui.root);
+    }
 
     createManagers() {
         this.webInput = this.addManager(new WebInputManager());
         this.ui = this.addManager(new UIManager());
-        this.setScale(this.ui.size);
         this.pawnManager = this.addManager(new PawnManager());
-        this.hud = this.addManager(new HUD(this.ui.root));
+
     }
 
     setScale(xy) {

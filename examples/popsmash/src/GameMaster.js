@@ -28,15 +28,23 @@ export class GameMaster extends Model {
 
         this.subscribe("hud", "startGame", this.startGame);
         this.subscribe("hud", "resetScores", this.resetScores);
+        this.subscribe("playerManager", "listChanged", this.checkReset);
         this.subscribe("playerManager", "playerChanged", this.checkTimer);
+    }
+
+    checkReset() {
+        console.log("listChanged");
+        const playerManager = this.wellKnownModel("PlayerManager");
+        console.log(playerManager.joinedCount);
+        if (playerManager.joinedCount === 0) {
+            console.log("Start lobby!");
+            this.startLobbyMode();
+            return;
+        }
     }
 
     checkTimer() {
         const playerManager = this.wellKnownModel("PlayerManager");
-        if (playerManager.playerCount === 0) {
-            this.startLobbyMode();
-            return;
-        }
         let done = false;
         switch (this.mode) {
             case 'seed':

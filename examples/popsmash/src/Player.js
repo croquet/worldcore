@@ -76,13 +76,13 @@ class PlayerPawn extends mix(Pawn).with(PM_Player) {
         if (this.isMyPlayerPawn) playerPawn = this;
     }
 
-    destroy() {
-        if (this.isMyPlayerPawn) playerPawn = null;
-        super.destroy();
-    }
+    // destroy() { // Destroy order is a problem if you rejoin ... investigate!
+    //     console.log("Destroying player pawn!");
+    //     // if (this.isMyPlayerPawn) playerPawn = null;
+    //     super.destroy();
+    // }
 
     setName(name) { this.say("setName", name); }
-
     setPicks(picks) {this.say("setPicks", picks);}
     setVote(vote) {this.say("setVote", vote);}
 

@@ -1011,8 +1011,8 @@ export class ButtonWidget extends ControlWidget {
     buildChildren() {
         super.buildChildren();
         this.setNormal(new BoxWidget(this, {autoSize: [1,1], color: [0.5,0.5,0.5], bubbleChanges: true}));
-        this.setHilite(new BoxWidget(this, {autoSize: [1,1], color: [0.65,0.9,0.65], bubbleChanges: true}));
-        this.setPressed(new BoxWidget(this, {autoSize: [1,1], color: [0.9,0.35,0.35], bubbleChanges: true}));
+        this.setHilite(new BoxWidget(this, {autoSize: [1,1], color: [0.65,0.65,0.65], bubbleChanges: true}));
+        this.setPressed(new BoxWidget(this, {autoSize: [1,1], color: [0.35,0.35,0.35], bubbleChanges: true}));
         this.setLabel(new TextWidget(this, {autoSize: [1,1]}));
     }
 
