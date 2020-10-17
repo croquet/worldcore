@@ -78,21 +78,34 @@ export class FountainActor extends mix(Actor).with(AM_Spatial) {
         this.spray = [];
         this.spawnLimit = 100;
         this.future(0).tick();
+
+        this.subscribe("input", "dDown", this.pause);
+        this.subscribe("input", "fDown", this.resume);
+    }
+
+    pause() {
+        this.isPaused = true;
+    }
+
+    resume() {
+        this.isPaused = false;
     }
 
     tick() {
-        if (this.spray.length >= this.spawnLimit) {
-            const doomed = this.spray.shift();
-            doomed.destroy();
+        if (!this.isPaused) {
+            if (this.spray.length >= this.spawnLimit) {
+                const doomed = this.spray.shift();
+                doomed.destroy();
+            }
+            const p = SprayActor.create({translation: this.translation});
+            const spin = v3_scale(sphericalRandom(),Math.random() * 1.5);
+            const rotationMatrix = m4_rotationQ(this.rotation);
+            const force = v3_transform([0, 18 + 5 * Math.random(), 0], rotationMatrix);
+            // const force = v3_transform([0, 18, 0], rotationMatrix);
+            p.applyTorqueImpulse(spin);
+            p.applyImpulse(force);
+            this.spray.push(p);
         }
-        const p = SprayActor.create({translation: this.translation});
-        const spin = v3_scale(sphericalRandom(),Math.random() * 1.5);
-        const rotationMatrix = m4_rotationQ(this.rotation);
-        const force = v3_transform([0, 18 + 5 * Math.random(), 0], rotationMatrix);
-        // const force = v3_transform([0, 18, 0], rotationMatrix);
-        p.applyTorqueImpulse(spin);
-        p.applyImpulse(force);
-        this.spray.push(p);
         this.future(250).tick();
     }
 

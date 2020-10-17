@@ -9,7 +9,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
 
         this.addRigidBody({type: 'static'});
         this.addBoxCollider({
-            size: [50,1,50],
+            size: [75,1,75],
             friction: 1,
             density: 1,
             restitution: 0.1
@@ -34,7 +34,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         const c = [0.5, 0.5, 0.5, 1];
 
         this.ground = new Triangles();
-        this.ground.addFace([[-50,1,50], [50,1,50], [50,1,-50], [-50,1,-50]], [c,c,c,c], [[0,0], [50,0], [50,50], [0,50]]);
+        this.ground.addFace([[-75,1,75], [75,1,75], [75,1,-75], [-75,1,-75]], [c,c,c,c], [[0,0], [75,0], [75,75], [0,75]]);
 
         this.ground.load();
         this.ground.clear();

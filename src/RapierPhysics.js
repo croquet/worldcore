@@ -52,19 +52,29 @@ export class RapierPhysicsManager extends Model {
         this.world = null;
     }
 
+    pause() {
+        this.isPaused = true;
+    }
+
+    resume() {
+        this.isPaused = false;
+    }
+
     tick() {
-        this.world.step();
-        this.world.forEachActiveRigidBodyHandle(h => {
-            const rb = this.rigidBodies[h];
-            const t = rb.rigidBody.translation();
-            const r = rb.rigidBody.rotation();
+        if (!this.isPaused) {
+            this.world.step();
+            this.world.forEachActiveRigidBodyHandle(h => {
+                const rb = this.rigidBodies[h];
+                const t = rb.rigidBody.translation();
+                const r = rb.rigidBody.rotation();
 
-            const v = [t.x, t.y, t.z];
-            const q = [r.x, r.y, r.z, r.w];
+                const v = [t.x, t.y, t.z];
+                const q = [r.x, r.y, r.z, r.w];
 
-            rb.moveTo(v);
-            rb.rotateTo(q);
-        });
+                rb.moveTo(v);
+                rb.rotateTo(q);
+            });
+        }
         this.future(this.timeStep).tick();
     }
 

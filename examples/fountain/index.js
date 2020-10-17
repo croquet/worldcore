@@ -21,11 +21,23 @@ class MyModelRoot extends ModelRoot {
         this.shots = [];
         this.subscribe("input", " Down", this.shoot);
         this.subscribe("input", "touchTap", this.shoot);
+        this.subscribe("input", "dDown", this.pause);
+        this.subscribe("input", "fDown", this.resume);
     }
 
     destroy() {
         this.level.destroy();
         super.destroy();
+    }
+
+    pause() {
+        this.isPaused = true;
+        this.phyicsManager.pause();
+    }
+
+    resume() {
+        this.isPaused = false;
+        this.phyicsManager.resume();
     }
 
     createManagers() {
@@ -42,6 +54,7 @@ class MyModelRoot extends ModelRoot {
     }
 
     shoot() {
+        if (this.isPaused) return;
         if (this.shots.length >= 20) {
             const doomed = this.shots.shift();
             doomed.destroy();
