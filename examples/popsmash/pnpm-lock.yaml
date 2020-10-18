@@ -4,6 +4,7 @@ devDependencies:
   file-loader: 6.1.1_webpack@4.44.2
   html-webpack-plugin: 4.5.0_webpack@4.44.2
   inspectpack: 4.5.2
+  node-fetch: 2.6.1
   webpack: 4.44.2_93ca2875a658e9d1552850624e6b91c7
   webpack-cli: 3.3.12_webpack@4.44.2
   webpack-dev-server: 3.11.0_93ca2875a658e9d1552850624e6b91c7
@@ -2804,6 +2805,12 @@ packages:
     dev: true
     resolution:
       integrity: sha512-ehY/mVQCf9BL0gKfsJBvFJen+1V//U+0HQMPrWct40ixE4jnv0bfvxDbWtAHL9EcaPEOJHVVYKoQn1TlZUB8Tw==
+  /node-fetch/2.6.1:
+    dev: true
+    engines:
+      node: 4.x || >=6.0.0
+    resolution:
+      integrity: sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==
   /node-forge/0.10.0:
     dev: true
     engines:
@@ -4498,6 +4505,7 @@ specifiers:
   file-loader: ^6.0.0
   html-webpack-plugin: ^4.3.0
   inspectpack: ^4.5.2
+  node-fetch: ^2.6.1
   webpack: ^4.44.1
   webpack-cli: ^3.3.12
   webpack-dev-server: ^3.11.0
