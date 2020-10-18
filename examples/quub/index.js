@@ -131,8 +131,7 @@ class MyViewRoot extends ViewRoot {
 async function go() {
     // await LoadRapier();
     App.makeWidgetDock();
-    const session = await Session.join(`wctest-${App.autoSession("q")}`, MyModelRoot, MyViewRoot, {tps: "60"});
-    // const session = await Session.join(`quub`, MyModelRoot, MyViewRoot, {tps: "60"});
+    const session = await Session.join(`wctest-${App.autoSession("q")}`, MyModelRoot, MyViewRoot, {tps: 0});
 }
 
 go();
