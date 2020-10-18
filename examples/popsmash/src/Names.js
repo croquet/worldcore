@@ -21,7 +21,7 @@ export async function checkQNickname() {
             }
         });
         Messenger.on("userInfo", "handleUserInfo");
-        Messenger.send("userInfoRequest");
+        setTimeout(() => Messenger.send("userInfoRequest"), 100);
     });
 
     function inIframe () {
