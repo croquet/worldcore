@@ -7,6 +7,7 @@ import { ModelRoot, ViewRoot, WebInputManager, UIManager, ActorManager, PawnMana
 import { GameMaster } from "./src/GameMaster";
 import {HUD} from "./src/HUD";
 import {MyPlayerManager} from "./src/Player";
+import { checkQNickname } from "./src/Names";
 
 
 //------------------------------------------------------------------------------------------
@@ -55,6 +56,7 @@ class MyViewRoot extends ViewRoot {
 
 async function go() {
     App.makeWidgetDock();
+    await checkQNickname();
     const session = await Session.join(`wctest-${App.autoSession("q")}`, MyModelRoot, MyViewRoot, {tps: "10", autoSleep: 45});
     //const session = await Session.join(`popsmash`, MyModelRoot, MyViewRoot, {tps: "10", autoSleep: 30});
 }

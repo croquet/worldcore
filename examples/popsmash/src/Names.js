@@ -1,9 +1,36 @@
-import { Constants } from "@croquet/croquet";
+import { Messenger } from "@croquet/croquet";
+
+let qUser = null;
 
 export function Nickname() {
+    if (qUser) return qUser.nickname;
     const a = Math.floor(Math.random() * adjectives.length);
     const n = Math.floor(Math.random() * nouns.length);
     return adjectives[a] + " " + nouns[n];
+}
+
+export async function checkQNickname() {
+    if (!inIframe()) return;
+
+    return new Promise(resolve => {
+        setTimeout(resolve, 1000);
+        Messenger.setReceiver({
+            handleUserInfo(userInfo) {
+                qUser = userInfo;
+                resolve();
+            }
+        });
+        Messenger.on("userInfo", "handleUserInfo");
+        Messenger.send("userInfoRequest");
+    });
+
+    function inIframe () {
+        try {
+            return window.self !== window.top;
+        } catch (e) {
+            return true;
+        }
+    }
 }
 
 const adjectives = [
