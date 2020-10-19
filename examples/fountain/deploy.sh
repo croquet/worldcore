@@ -23,7 +23,9 @@ pnpm i || exit 1
 
 # build this
 rm -rf dist
-pnpm run build || exit 1
+pnpm run build-dev || exit 1
+
+# FIXME!!! production builds fail on iOS so we are deploying dev build for now
 
 # copy to croquet.io/testing/
 TARGET=$WONDERLAND/servers/croquet-io-testing/$APP
