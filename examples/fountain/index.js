@@ -4,7 +4,7 @@
 
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, ActorManager, RenderManager, PawnManager, PlayerManager, RapierPhysicsManager,
-    toRad, LoadRapier,m4_scalingRotationTranslation, q_axisAngle, v3_scale, sphericalRandom } from "@croquet/worldcore";
+    toRad, LoadRapier,m4_scalingRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, TextWidget } from "@croquet/worldcore";
 import { LevelActor } from "./src/Level";
 import { SprayActor } from "./src/Fountain";
 
@@ -19,10 +19,10 @@ class MyModelRoot extends ModelRoot {
         this.seedColors();
         this.level = LevelActor.create();
         this.shots = [];
-        this.subscribe("input", " Down", this.shoot);
-        this.subscribe("input", "touchTap", this.shoot);
-        this.subscribe("input", "dDown", this.pause);
-        this.subscribe("input", "fDown", this.resume);
+
+        this.subscribe("hud", "shoot", this.shoot);
+        this.subscribe("hud", "pause", this.pause);
+        this.subscribe("hud", "disable", this.disable)
     }
 
     destroy() {
@@ -30,14 +30,18 @@ class MyModelRoot extends ModelRoot {
         super.destroy();
     }
 
-    pause() {
-        this.isPaused = true;
-        this.phyicsManager.pause();
+    pause(p) {
+        this.isPaused = p;
+        if (p) {
+            this.phyicsManager.pause();
+        } else {
+            this.phyicsManager.resume();
+        }
     }
 
-    resume() {
-        this.isPaused = false;
-        this.phyicsManager.resume();
+    disable(d) {
+        console.log("Diasabled: " + d);
+        this.disabled = d;
     }
 
     createManagers() {
@@ -92,6 +96,15 @@ class MyViewRoot extends ViewRoot {
             ao.falloff = 0.7;
         }
 
+        this.addHud();
+
+        this.subscribe("input", " Down", this.shoot);
+        this.subscribe("input", "touchTap", this.shoot);
+        this.subscribe("input", "pDown", this.pause);
+        this.subscribe("input", "dDown", this.disable);
+
+        this.subscribe("input", "cheatDown", this.cheat);
+
     }
 
     createManagers() {
@@ -100,6 +113,36 @@ class MyViewRoot extends ViewRoot {
         this.ui = this.addManager(new UIManager());
         this.audio = this.addManager(new AudioManager());
         this.pawnManager = this.addManager(new PawnManager());
+
+        this.webInput.addChord("cheat", ['q', 't']);
+    }
+
+    addHud() {
+        this.cheatText = new TextWidget(this.ui.root, {local: [10,10], size: [100,20], text: "Cheat On", point: 12, visible: false, alignX: 'left'});
+        this.disableText = new TextWidget(this.ui.root, {local: [10,30], size: [100,20], text: "Shots Disabled", point: 12, visible: false, alignX: 'left'});
+    }
+
+    shoot() {
+        if(!this.cheatMode && this.model.disabled) return;
+        this.publish("hud", "shoot")
+    }
+
+    pause() {
+        if (!this.cheatMode) return;
+        this.paused = !this.paused;
+        this.publish("hud", "pause", this.paused)
+    }
+
+    disable() {
+        if (!this.cheatMode) return;
+        this.disabled = !this.disabled;
+        this.disableText.set({visible: this.disabled});
+        this.publish("hud", "disable", this.disabled)
+    }
+
+    cheat() {
+        this.cheatMode = !this.cheatMode;
+        this.cheatText.set({visible: this.cheatMode});
     }
 
 }

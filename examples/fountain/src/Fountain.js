@@ -79,16 +79,11 @@ export class FountainActor extends mix(Actor).with(AM_Spatial) {
         this.spawnLimit = 100;
         this.future(0).tick();
 
-        this.subscribe("input", "dDown", this.pause);
-        this.subscribe("input", "fDown", this.resume);
+        this.subscribe("hud", "pause", this.pause);
     }
 
-    pause() {
-        this.isPaused = true;
-    }
-
-    resume() {
-        this.isPaused = false;
+    pause(p) {
+        this.isPaused = p;
     }
 
     tick() {
