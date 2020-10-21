@@ -7,6 +7,7 @@ import turnRightArrow from "../assets/arrowRight.png";
 import moveLeftArrow from "../assets/leftArrow.png";
 import moveRightArrow from "../assets/rightArrow.png";
 import shootImage from "../assets/shoot.png";
+import { MyPlayerPawn } from "./Player";
 
 //------------------------------------------------------------------------------------------
 //-- GameScreen ----------------------------------------------------------------------------
@@ -15,6 +16,7 @@ import shootImage from "../assets/shoot.png";
 export class GameScreen extends Widget {
     constructor(...args) {
         super(...args);
+        if (!MyPlayerPawn() || MyPlayerPawn().isObserver()) return;
         this.shootButton = new ButtonWidget(this, {size:[90,90], local:[30,-80], anchor:[0,1], pivot:[0,1]});
         this.shootButton.setLabel(new ImageWidget(this.srButton, {autoSize:[1,1], url: shootImage}));
         this.shootButton.onPress = () => {this.publish("hud", "shoot");};

@@ -43,7 +43,7 @@ export class PlayerManager extends Model {
     }
 
     get count() {
-        return this.users.size;
+        return this.players.size;
     }
 
     listChanged() {

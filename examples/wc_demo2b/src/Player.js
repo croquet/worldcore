@@ -28,6 +28,10 @@ assetManager.setURLModifier(url => {
 
 class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics) {
     init(options) {
+        const pm = this.wellKnownModel("PlayerManager");
+        this.joinOrder = pm.count;
+        console.log("Join order " + this.joinOrder);
+
         let colorRNG = Math.floor( Math.random() * 6);
         let primary = [0, 0.3*Math.random() + 0.7];
         let secondary = [1, 0.5*Math.random() + 0.5];
@@ -80,22 +84,29 @@ class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics
 
         this.shots = [];
 
-        this.addRigidBody({type: 'kinematic'});
-        this.addBoxCollider({
-            size: [0.3, 1.0, 0.3],
-            density: 1,
-            friction: 1,
-            restitution: 50,
-            translation: [0, -0.6, 0]
-        });
+        if(!this.isObserver()) {
+            this.addRigidBody({type: 'kinematic'});
+            this.addBoxCollider({
+                size: [0.3, 1.0, 0.3],
+                density: 1,
+                friction: 1,
+                restitution: 50,
+                translation: [0, -0.6, 0]
+            });
 
-        this.listen("setName", name => {this.name = name; this.playerChanged();});
-        this.listen("shoot", this.shoot);
+            this.listen("setName", name => {this.name = name; this.playerChanged();});
+            this.listen("shoot", this.shoot);
+        }
+
     }
 
     destroy() {
         super.destroy();
         this.shots.forEach(s => s.destroy());
+    }
+
+    isObserver() {
+        return (this.joinOrder >= 10);
     }
 
     shoot() {
@@ -151,13 +162,18 @@ class PlayerPawn extends mix(Pawn).with(PM_Avatar, PM_AudioListener, PM_AudioSou
             this.strafeLeft = 0;
             this.strafeRight = 0;
 
-            this.activateControls();
+            if (!this.isObserver()) this.activateControls();
 
             // this.subscribe("hud", "enterGame", this.activateControls);
 
         } else {
-            this.loadPawnModel();
+            if (!this.isObserver()) this.loadPawnModel();
         }
+    }
+
+    isObserver() {
+        //return (this.actor.joinOrder >= 2);
+        return (this.actor.isObserver());
     }
 
     async loadPawnModel()
