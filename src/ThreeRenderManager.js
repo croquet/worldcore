@@ -92,7 +92,7 @@ export class ThreeRenderManager extends NamedView {
         // Put code here to initialize the three.js renderer.
         this.scene = new THREE.Scene();
        // this.scene.add(new THREE.AmbientLight(0x444444));
-        this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+        this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
         const threeCanvas = document.getElementById("three");
         this.renderer = new THREE.WebGLRenderer({ canvas: threeCanvas });
         this.renderer.setClearColor(0x4444aa);
