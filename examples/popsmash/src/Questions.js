@@ -110,6 +110,4 @@ Constants.Questions = [
 "Who's the scariest?",
 "Who's really just a big softie?",
 "Who's the biggest dumpster fire?",
-"Who's the hottest mess?",
-"Who's the cutest?",
 ];

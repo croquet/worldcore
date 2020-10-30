@@ -5,6 +5,8 @@ import { Question } from "./Questions";
 import { CharacterName} from "./Characters";
 import { RoundPoints } from "./Points";
 import check from "../assets/check.png";
+import poppins from "../assets/Poppins-Medium.otf";
+import logo from "../assets/popsmashlogov1.png";
 
 const bgColor = [0.5, 0.75, 10.75];
 let playerName;
@@ -38,7 +40,7 @@ class JoinScreen extends Widget {
 
         this.background = new BoxWidget(this, {autoSize: [1,1], color: bgColor});
 
-        this.title = new TitlePanel(this.background, {autoSize:[1,0], local: [0,50]});
+        this.title = new TitlePanel(this.background, {autoSize:[1,0], local: [0,150]});
 
         this.entry = new Widget(this.background, {autoSize: [0, 0], anchor: [0.5,0.5], pivot: [0.5, 0.5], size:[600,45]});
         this.label = new TextWidget(this.entry, {local: [0, -50], size:[200,40], alignX: 'left', alignY: 'bottom', text:'Enter Player Name', point: 14});
@@ -55,19 +57,9 @@ class JoinScreen extends Widget {
         this.entryLayout.addSlot(this.enterButton);
     }
 
-    // onStart() {
-    //     this.nameEntry.selectAll();
-    //     this.nameEntry.focus();
-    // }
-
     joinGame() {
         const name = this.nameEntry.text.text.slice(0,32);
         playerName = name;
-        // if(!MyPlayerPawn()) {
-        //     console.log("No player pawn!");
-        //     console.log(this.wellKnownModel("PlayerManager"));
-        //     return;
-        // }
         MyPlayerPawn().setName(name);
         this.publish("hud", "joinGame");
     }
@@ -84,8 +76,9 @@ export class GameScreen extends Widget {
 
         this.lobbyPanel = new LobbyPanel(this, {autoSize:[1,1], visible: false});
         this.seedPanel = new SeedPanel(this, {autoSize:[1,1], visible: false});
-        this.matchPanel = new MatchPanel(this, {autoSize:[1,1], visible: false});
-        this.winnerPanel = new WinnerPanel(this, {autoSize:[1,1], visible: false});
+        this.debatePanel = new DebatePanel(this, {autoSize:[1,1], visible: false});
+        this.votePanel = new VotePanel(this, {autoSize:[1,1], visible: false})
+        this.winPanel = new WinPanel(this, {autoSize:[1,1], visible: false});
 
         // this.refresh();
 
@@ -103,11 +96,14 @@ export class GameScreen extends Widget {
             case 'seed':
                 this.activePanel = this.seedPanel;
                 break;
-            case 'match':
-                this.activePanel = this.matchPanel;
+            case 'debate':
+                this.activePanel = this.debatePanel;
                 break;
-            case 'winner':
-                this.activePanel = this.winnerPanel;
+            case 'vote':
+                this.activePanel = this.votePanel;
+                break;
+            case 'win':
+                this.activePanel = this.winPanel;
                 break;
             default:
         }
@@ -128,14 +124,15 @@ class TitlePanel extends BoxWidget {
         super(...args);
         this.set({color: bgColor});
 
-        new TextWidget(this, {autoSize: [1,1], local:[0,50], point: 48, style: 'bold', text: "Pop Smash!"});
+        // const t = new TextWidget(this, {autoSize: [1,1], local:[0,50], point: 48, style: 'bold', text: "Pop Smash!", url: poppins});
+        // t.setFontByURL(poppins);
+        const ii = new ImageWidget(this, {anchor: [0.5, 0.5], pivot: [0.5, 0.5], scale: 0.3, size: [1498,962], local:[0,0], url: logo});
     }
 }
 
 //------------------------------------------------------------------------------------------
 //-- LobbyPanel ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
 class LobbyPanel extends BoxWidget {
     constructor(...args) {
         super(...args);
@@ -149,12 +146,12 @@ class LobbyPanel extends BoxWidget {
         this.horizontal.addSlot(this.rankList);
         this.horizontal.addSlot(right);
 
-        new TitlePanel(right, {autoSize:[1,0], local: [0,10]});
+        new TitlePanel(right, {autoSize:[1,0], local: [0,50]});
 
-        const info = `Sixteen pop culture icons face-off in crazy 1-on-1 battles. Vote to determine who wins each match-up. Ties are broken by coin flip. Your goal is to predict who will be on top of the heap when the dust clears. Every time one of your picks advances to the next round, you earn points: Three points for #1, two points for #2, and one for #3.\n\n(Share the unique URL for this page to allow others to join!)`;
+        const info = `Sixteen pop culture icons face-off in crazy 1-on-1 battles. Vote to determine who wins each match-up. Your goal is to predict who will be on top of the heap when the dust clears!\n\n(Share the unique URL for this page to allow others to join!)`;
 
-        new TextWidget(right, {anchor: [0.5,0], pivot: [0.5,0], local: [0,200], autoSize: [1,0], size:[0,50], point: 24, style: 'bold', text: "Rules"});
-        new TextWidget(right, {anchor: [0.5,0], pivot: [0.5,0], local: [0,250], autoSize: [0.9,0], size:[0,300], point: 16, alignX: 'left', alignY: 'top', text: info});
+        // new TextWidget(right, {anchor: [0.5,0], pivot: [0.5,0], local: [0,200], autoSize: [1,0], size:[0,50], point: 24, style: 'bold', text: "Rules", url: poppins});
+        new TextWidget(right, {anchor: [0.5,0], pivot: [0.5,0], local: [0,250], autoSize: [0.9,0], size:[0,300], point: 16, alignX: 'left', alignY: 'top', text: info, url: poppins});
 
         const reset = new ButtonWidget(right, {anchor: [0.5,1], pivot: [0.5,1], local: [0,-20], size:[200,50]} );
         reset.label.setText("Reset Scores");
@@ -202,8 +199,6 @@ class RankList extends BoxWidget {
             ranked.push({name: player.name, score: player.score, self});
         });
 
-
-
         ranked.sort((a,b) => b.score - a.score);
 
         let rankNumber = 0;
@@ -219,9 +214,9 @@ class RankList extends BoxWidget {
                 previousScore = player.score;
             }
 
-            const rank = new TextWidget(null, {autoSize: [1,1], alignX: 'left', point: 18, text: "" + rankNumber, width: 20});
-            const name = new TextWidget(null, {autoSize: [1,1], alignX: 'left', point: 18, text: player.name || "...Joining"});
-            const score = new TextWidget(null, {autoSize: [1,1], alignX: 'right', point: 18, text: "" + player.score, width: 20});
+            const rank = new TextWidget(null, {autoSize: [1,1], alignX: 'left', point: 18, text: "" + rankNumber, width: 20, url: poppins});
+            const name = new TextWidget(null, {autoSize: [1,1], alignX: 'left', point: 18, text: player.name || "...Joining", url: poppins});
+            const score = new TextWidget(null, {autoSize: [1,1], alignX: 'right', point: 18, text: "" + player.score, width: 20, url: poppins});
 
             if (!player.name) name.set({style: 'italic'});
             if (player.self) name.set({style: 'bold'});
@@ -276,7 +271,7 @@ class QuestionPanel extends BoxWidget {
     constructor(...args) {
         super(...args);
         this.set({color:[0.9,0.9,0.9]});
-        this.textBox = new TextWidget(this, {autoSize: [1,1], style: 'italic'});
+        this.textBox = new TextWidget(this, {autoSize: [1,1], style: 'italic', url: poppins});
     }
 
     refresh() {
@@ -286,17 +281,17 @@ class QuestionPanel extends BoxWidget {
 }
 
 //------------------------------------------------------------------------------------------
-//-- RemindPanel ---------------------------------------------------------------------------
+//-- PickPanel -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class RemindPanel extends BoxWidget {
+class PickPanel extends BoxWidget {
     constructor(...args) {
         super(...args);
         this.set({color:[0.9,0.9,0.9]});
         this.vertical = new VerticalWidget(this, {autoSize: [1,1], border: [5,5,5,5]});
-        this.pick1 = new TextWidget(this, {autoSize: [1,1], point: 14, alignX: 'left', color: [1,0,0]});
-        this.pick2 = new TextWidget(this, {autoSize: [1,1], point: 14, alignX: 'left', color: [0,0.5,0]});
-        this.pick3 = new TextWidget(this, {autoSize: [1,1], point: 14, alignX: 'left', color: [0.1,0.3,0.8]});
+        this.pick1 = new TextWidget(this, {autoSize: [1,1], point: 14, alignX: 'left', color: [1,0,0], url: poppins});
+        this.pick2 = new TextWidget(this, {autoSize: [1,1], point: 14, alignX: 'left', color: [0,0.5,0], url: poppins});
+        this.pick3 = new TextWidget(this, {autoSize: [1,1], point: 14, alignX: 'left', color: [0.1,0.3,0.8], url: poppins});
 
         this.vertical.addSlot(this.pick1);
         this.vertical.addSlot(this.pick2);
@@ -331,8 +326,8 @@ class StatusPanel extends BoxWidget {
 
         this.set({color:[0.9,0.9,0.9]});
 
-        this.hint = new TextWidget(this, {anchor: [0.5,0.5], pivot: [0.5,0.5], autoSize: [0,1], size: [400, 80], point: 18, style: 'italic', text: "Hint!"});
-        this.voters = new TextWidget(this, {anchor: [1,0.5], pivot: [1,0.5], autoSize: [0,1], size: [80, 80], point: 30, text: "3/4"});
+        this.hint = new TextWidget(this, {anchor: [0.5,0.5], pivot: [0.5,0.5], autoSize: [0,1], size: [400, 80], point: 24, style: 'italic', text: "Hint!", url: poppins});
+        this.voters = new TextWidget(this, {anchor: [1,0.5], pivot: [1,0.5], autoSize: [0,1], size: [80, 80], point: 30, text: "3/4", url: poppins});
 
         this.subscribe("playerManager", "playerChanged", this.refreshVoters);
         this.subscribe("playerManager", "listChanged", this.refreshVoters);
@@ -355,10 +350,8 @@ class StatusPanel extends BoxWidget {
             case 'seed':
                 voted = pm.pickedCount;
                 break;
-            case 'match':
+            case 'vote':
                 voted = pm.votedCount;
-                break;
-            case 'score':
                 break;
             default:
         }
@@ -375,16 +368,24 @@ class StatusPanel extends BoxWidget {
         const mode = gm.mode;
         switch (mode) {
             case 'seed':
-                this.hint.setText("Predict the top three!");
+                // this.hint.setText("Predict the top three!");
+                this.hint.setText("Predict!");
                 break;
-            case 'match':
-                this.hint.setText("Vote for who wins the match-up!");
+            case 'debate':
+                // this.hint.setText("Discuss who should win the match-up!");
+                this.hint.setText("Discuss!");
                 break;
-            case 'winner':
-                this.hint.setText("Correct predictions score points!");
+            case 'vote':
+                // this.hint.setText("Vote for your personal pick!");
+                this.hint.setText("Vote!");
                 break;
-            case 'score':
+            case 'win':
+                // this.hint.setText("Score points for correct predictions!");
                 this.hint.setText("Score!");
+                break;
+            case 'finale':
+                // this.hint.setText("Score!");
+                this.hint.setText("Victory!");
                 break;
             default:
         }
@@ -402,14 +403,13 @@ class SeedGrid extends Widget {
 
         this.buttons = [];
         for ( let i = 0; i < 8; i++) {
-            this.buttons[i] = new LeftSeedButton(this, {local: [0,i*60]});
-            // this.buttons[i].setLocal([0,i*60]);
+            this.buttons[i] = new SeedButton(this, {anchor:[0.5,0], pivot:[1,0], local: [0,i*60]});
             this.buttons[i].button.onClick = () => this.pick(i);
         }
 
         for ( let i = 0; i < 8; i++) {
             const j = i + 8;
-            this.buttons[j] = new RightSeedButton(this, {anchor:[1,0], pivot:[1,0], local: [0,i*60]});
+            this.buttons[j] = new SeedButton(this, {anchor:[0.5,0], pivot:[0,0], local: [0,i*60]});
             this.buttons[j].button.onClick = () => this.pick(j);
         }
 
@@ -478,31 +478,26 @@ class SeedButton extends Widget {
     constructor(...args) {
         super(...args);
 
-        this.set({size:[250,50]});
-        this.tab = new BoxWidget(this, {size:[50,50], color: [1,0,0], visible: false});
-        this.label = new TextWidget(this.tab, {autoSize:[1,1], text:"1"});
-        this.button = new ButtonWidget(this, {size:[200,50]});
-        this.button.label.set({point: 20, wrap: true});
+        this.set({size:[210,60]});
+        this.frame = new BoxWidget(this, {autoSize:[1,1], color: bgColor, visible: true});
+        this.button = new ButtonWidget(this.frame, {autoSize:[1,1], border: [5,5,5,5]});
+        this.button.label.set({point: 20, wrap: true, url: poppins});
     }
 
     setRank(n) {
         this.button.enable();
         switch (n) {
             case 0:
-                this.tab.set({color:[1,0,0], visible: false});
-                this.label.setText("0");
+                this.frame.set({color:bgColor});
                 break;
             case 1:
-                this.tab.set({color:[1,0,0], visible: true});
-                this.label.setText("1");
+                this.frame.set({color:[1,0,0]});
                 break;
             case 2:
-                this.tab.set({color:[0,1,0], visible: true});
-                this.label.setText("2");
+                this.frame.set({color:[0,1,0]});
                 break;
             case 3:
-                this.tab.set({color:[0.3,0.5,1], visible: true});
-                this.label.setText("3");
+                this.frame.set({color:[0.3,0.5,1]});
                 break;
             default:
         }
@@ -510,31 +505,67 @@ class SeedButton extends Widget {
 
 }
 
-class LeftSeedButton extends SeedButton {
-    constructor(...args) {
-        super(...args);
+// class SeedButton2 extends Widget {
+//     constructor(...args) {
+//         super(...args);
 
-        this.tab.set({anchor:[0,0], pivot:[0,0]});
-        this.button.set({anchor:[1,0], pivot:[1,0]});
-    }
+//         this.set({size:[250,50]});
+//         this.tab = new BoxWidget(this, {size:[50,50], color: [1,0,0], visible: false});
+//         this.label = new TextWidget(this.tab, {autoSize:[1,1], text:"1"});
+//         this.button = new ButtonWidget(this, {size:[200,50]});
+//         this.button.label.set({point: 20, wrap: true});
+//     }
 
-}
+//     setRank(n) {
+//         this.button.enable();
+//         switch (n) {
+//             case 0:
+//                 this.tab.set({color:[1,0,0], visible: false});
+//                 this.label.setText("0");
+//                 break;
+//             case 1:
+//                 this.tab.set({color:[1,0,0], visible: true});
+//                 this.label.setText("1");
+//                 break;
+//             case 2:
+//                 this.tab.set({color:[0,1,0], visible: true});
+//                 this.label.setText("2");
+//                 break;
+//             case 3:
+//                 this.tab.set({color:[0.3,0.5,1], visible: true});
+//                 this.label.setText("3");
+//                 break;
+//             default:
+//         }
+//     }
 
-class RightSeedButton extends SeedButton {
-    constructor(...args) {
-        super(...args);
+// }
 
-        this.tab.set({anchor:[1,0], pivot:[1,0]});
-        this.button.set({anchor:[0,0], pivot:[0,0]});
+// class LeftSeedButton extends SeedButton {
+//     constructor(...args) {
+//         super(...args);
 
-    }
-}
+//         this.tab.set({anchor:[0,0], pivot:[0,0]});
+//         this.button.set({anchor:[1,0], pivot:[1,0]});
+//     }
+
+// }
+
+// class RightSeedButton extends SeedButton {
+//     constructor(...args) {
+//         super(...args);
+
+//         this.tab.set({anchor:[1,0], pivot:[1,0]});
+//         this.button.set({anchor:[0,0], pivot:[0,0]});
+
+//     }
+// }
 
 //------------------------------------------------------------------------------------------
-//-- MatchPanel ----------------------------------------------------------------------------
+//-- DebatePanel ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class MatchPanel extends BoxWidget {
+class DebatePanel extends BoxWidget {
     constructor(...args) {
         super(...args);
         this.set({color: bgColor});
@@ -553,50 +584,47 @@ class MatchPanel extends BoxWidget {
         this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], width: 300, border: [10,10,10,10], margin: 10});
         this.horizontal.addSlot(this.leftVertical);
 
+        this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 90});
+        this.leftVertical.addSlot(this.pickPanel);
+
         this.rankList = new RankList(null, {autoSize: [1,1]});
         this.leftVertical.addSlot(this.rankList);
 
-        this.remindPanel = new RemindPanel(null, {autoSize: [1,1], height: 90});
-        this.leftVertical.addSlot(this.remindPanel);
-
         const matchSlot = new Widget(null, {autoSize: [1,1]});
-        this.matchControls = new MatchControls(matchSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5], size: [510,300]});
+        this.matchDisplay = new MatchDisplay(matchSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5], size: [300,400]});
         this.horizontal.addSlot(matchSlot);
+
     }
 
     refresh() {
         this.questionPanel.refresh();
+        this.pickPanel.refresh();
+        this.matchDisplay.refresh();
         this.rankList.refresh();
-        this.remindPanel.refresh();
-        this.matchControls.refresh();
-        this.matchControls.resetVote();
         this.statusPanel.refresh();
     }
 }
 
 //------------------------------------------------------------------------------------------
-//-- MatchControls--------------------------------------------------------------------------
+//-- MatchDisplay--------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class MatchControls extends BoxWidget {
+class MatchDisplay extends BoxWidget {
     constructor(...args) {
         super(...args);
 
         this.set({color: bgColor});
 
-        this.round = new TextWidget(this, {anchor: [0.5, 0], pivot:[0.5, 0], style: 'bold', text: "Preliminaries"});
-        this.vs = new TextWidget(this, {anchor: [0.5,0.5], pivot:[0.5,0.5], text: "vs."});
-        this.checkBoxA = new CheckBoxWidget(this, {size: [300,50], anchor: [0.5,0.5], pivot:[0.5,1], local:[0,-20]});
-        this.checkBoxB = new CheckBoxWidget(this, {size: [300,50], anchor: [0.5,0.5], pivot:[0.5,0], local:[0,20]});
+        this.round = new TextWidget(this, {anchor: [0.5, 0], pivot:[0.5, 0], style: 'bold', text: "Preliminaries", url: poppins});
+        this.vs = new TextWidget(this, {anchor: [0.5,0.5], pivot:[0.5,0.5], style: 'bold', text: "vs.", url: poppins});
 
-        this.checkBoxA.toggle.onToggleOn = () => this.updateVote();
-        this.checkBoxA.toggle.onToggleOff = () => this.updateVote();
-        this.checkBoxB.toggle.onToggleOn = () => this.updateVote();
-        this.checkBoxB.toggle.onToggleOff = () => this.updateVote();
+        this.frameA = new BoxWidget(this, {size: [210,60], anchor: [0.5,0.5], pivot:[0.5,1], local:[0,-20], color: bgColor});
+        // this.boxA = new BoxWidget(this.frameA, {autoSize: [1,1], color: [0.5, 0.5, 0.5], border: [5,5,5,5]})
+        this.labelA = new TextWidget(this.frameA, {autoSize:[1,1], point: 20, wrap: true, url: poppins});
+        this.frameB = new BoxWidget(this, {size: [210,60], anchor: [0.5,0.5], pivot:[0.5,0], local:[0,20], color: bgColor});
+        // this.boxA = new BoxWidget(this.frameB, {autoSize: [1,1], color: [0.5, 0.5, 0.5], border: [5,5,5,5]})
+        this.labelB = new TextWidget(this.frameB, {autoSize:[1,1], point: 20, wrap: true, url: poppins});
 
-        this.toggleSet = new ToggleSet();
-        this.toggleSet.add(this.checkBoxA.toggle);
-        this.toggleSet.add(this.checkBoxB.toggle);
     }
 
     refresh() {
@@ -613,68 +641,21 @@ class MatchControls extends BoxWidget {
         } else {
             this.round.setText("Finals");
         }
-        if (2*m+1 >= gm.seed.length) return;
-        const a = gm.seed[2*m];
-        const b = gm.seed[2*m+1];
-        this.checkBoxA.label.setText(CharacterName(a));
-        this.checkBoxB.label.setText(CharacterName(b));
+        if (2*m+1 >= gm.brackets.length) return;
+        const a = gm.brackets[2*m];
+        const b = gm.brackets[2*m+1];
+        this.labelA.setText(CharacterName(a));
+        this.labelB.setText(CharacterName(b));
     }
 
-    resetVote() {
-        this.vote = "x";
-        this.checkBoxA.toggle.set({state: false});
-        this.checkBoxB.toggle.set({state: false});
-    }
-
-    updateVote() {
-        let vote ="x";
-        if (this.checkBoxA.toggle.isOn) {
-            vote = "a";
-        } else if (this.checkBoxB.toggle.isOn) {
-            vote = "b";
-        }
-        if (this.vote === vote) return;
-        this.vote = vote;
-
-        MyPlayerPawn().setVote(this.vote);
-    }
 }
 
-//------------------------------------------------------------------------------------------
-//-- CheckBoxWidget ------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-class CheckBoxWidget extends Widget {
-    constructor(...args) {
-        super(...args);
-
-        this.background = new BoxWidget(this, {autoSize: [1,1], color:[0.5, 0.5, 0.5]});
-        this.horizontal = new HorizontalWidget(this.background, {autoSize:[1,1], margin:5, bubbleChanges: true});
-        this.label = new TextWidget(null, {autoSize:[1,1], wrap: true, point:20});
-        this.frame = new BoxWidget(null, {autoSize:[1,1], border: [5,5,5,5], color:[0.1, 0.1, 0.1], width: 50});
-
-        this.horizontal.addSlot(this.label);
-        this.horizontal.addSlot(this.frame);
-
-        this.toggle = new ToggleWidget(this.frame, {autoSize:[1,1], border: [3,3,3,3]});
-        this.toggle.normalOff.set({color: [0.7, 0.7, 0.7]});
-        this.toggle.normalOn.set({color: [0.7, 0.7, 0.7]});
-        this.toggle.hiliteOff.set({color: [0.8, 0.8, 0.8]});
-        this.toggle.hiliteOn.set({color: [0.8, 0.8, 0.8]});
-        this.toggle.pressedOff.set({color: [0.6, 0.6, 0.6]});
-        this.toggle.pressedOn.set({color: [0.6, 0.6, 0.6]});
-
-        this.toggle.setLabelOn(new ImageWidget(null, {autoSize:[1,1], url: check}));
-        this.toggle.setLabelOff(new ImageWidget(null, {autoSize:[1,1]}));
-
-    }
-}
 
 //------------------------------------------------------------------------------------------
-//-- WinnerPanel ----------------------------------------------------------------------------
+//-- VotePanel -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class WinnerPanel extends BoxWidget {
+class VotePanel extends BoxWidget {
     constructor(...args) {
         super(...args);
         this.set({color: bgColor});
@@ -693,23 +674,189 @@ class WinnerPanel extends BoxWidget {
         this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], width: 300, border: [10,10,10,10], margin: 10});
         this.horizontal.addSlot(this.leftVertical);
 
+        this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 90});
+        this.leftVertical.addSlot(this.pickPanel);
+
         this.rankList = new RankList(null, {autoSize: [1,1]});
         this.leftVertical.addSlot(this.rankList);
 
-        this.remindPanel = new RemindPanel(null, {autoSize: [1,1], height: 90});
-        this.leftVertical.addSlot(this.remindPanel);
+        const matchSlot = new Widget(null, {autoSize: [1,1]});
+        this.matchControls = new MatchControls(matchSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5], size: [300,400]});
+        this.horizontal.addSlot(matchSlot);
+
+    }
+
+    refresh() {
+        this.questionPanel.refresh();
+        this.pickPanel.refresh();
+        this.matchControls.refresh();
+        this.statusPanel.refresh();
+        this.rankList.refresh();
+    }
+}
+
+//------------------------------------------------------------------------------------------
+//-- MatchControls--------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class MatchControls extends BoxWidget {
+    constructor(...args) {
+        super(...args);
+
+        this.set({color: bgColor});
+
+        this.round = new TextWidget(this, {anchor: [0.5, 0], pivot:[0.5, 0], style: 'bold', text: "Preliminaries", url: poppins});
+        this.vs = new TextWidget(this, {anchor: [0.5,0.5], pivot:[0.5,0.5], text: "vs.", url: poppins});
+
+        this.frameA = new BoxWidget(this, {size: [210,60], anchor: [0.5,0.5], pivot:[0.5,1], local:[0,-20], color: bgColor});
+        this.buttonA = new ButtonWidget(this.frameA, {autoSize:[1,1], border: [5,5,5,5]});
+        this.buttonA.label.set({point: 20, wrap: true, url: poppins});
+        this.buttonA.onClick = () => this.voteA();
+
+        this.frameB = new BoxWidget(this, {size: [210,60], anchor: [0.5,0.5], pivot:[0.5,0], local:[0,20], color: bgColor});
+        this.buttonB = new ButtonWidget(this.frameB, {autoSize:[1,1], border: [5,5,5,5]});
+        this.buttonB.label.set({point: 20, wrap: true, url: poppins});
+        this.buttonB.onClick = () => this.voteB();
+    }
+
+    voteA() {
+        if (this.vote === "a") {
+            this.voteX();
+            return;
+        }
+        this.vote = "a";
+        this.frameA.set({color: [0,1,0]});
+        this.frameB.set({color: bgColor});
+        MyPlayerPawn().setVote("a");
+
+    }
+
+    voteB() {
+        if (this.vote === "b") {
+            this.voteX();
+            return;
+        }
+        this.vote = "b";
+        this.frameA.set({color: bgColor});
+        this.frameB.set({color: [0,1,0]});
+        MyPlayerPawn().setVote("b");
+
+    }
+
+    voteX() {
+        this.vote = "x";
+        this.frameA.set({color: bgColor});
+        this.frameB.set({color: bgColor});
+        MyPlayerPawn().setVote("x");
+    }
+
+    refresh() {
+        const gm = this.wellKnownModel('GameMaster');
+        const m = gm.match;
+        if (gm.mode === "winner") {
+            this.round.setText("Winner!");
+        } else if (m < 8) {
+            this.round.setText("Preliminaries");
+        } else if (m < 12) {
+            this.round.setText("Quarterfinals");
+        } else if (m < 14) {
+            this.round.setText("Semifinals");
+        } else {
+            this.round.setText("Finals");
+        }
+        if (2*m+1 >= gm.brackets.length) return;
+        const a = gm.brackets[2*m];
+        const b = gm.brackets[2*m+1];
+        this.buttonA.label.setText(CharacterName(a));
+        this.buttonB.label.setText(CharacterName(b));
+        this.refreshVote();
+    }
+
+    refreshVote() {
+        this.vote = MyPlayerPawn().actor.vote;
+        if (this.vote === 'a') {
+            this.frameA.set({color: [0,1,0]});
+            this.frameB.set({color: bgColor});
+        } else if (this.vote === 'b') {
+            this.frameA.set({color: bgColor});
+            this.frameB.set({color: [0,1,0]});
+        } else {
+            this.frameA.set({color: bgColor});
+            this.frameB.set({color: bgColor});
+        }
+    }
+}
+
+//------------------------------------------------------------------------------------------
+//-- CheckBoxWidget ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// class CheckBoxWidget extends Widget {
+//     constructor(...args) {
+//         super(...args);
+
+//         this.background = new BoxWidget(this, {autoSize: [1,1], color:[0.5, 0.5, 0.5]});
+//         this.horizontal = new HorizontalWidget(this.background, {autoSize:[1,1], margin:5, bubbleChanges: true});
+//         this.label = new TextWidget(null, {autoSize:[1,1], wrap: true, point:20});
+//         this.frame = new BoxWidget(null, {autoSize:[1,1], border: [5,5,5,5], color:[0.1, 0.1, 0.1], width: 50});
+
+//         this.horizontal.addSlot(this.label);
+//         this.horizontal.addSlot(this.frame);
+
+//         this.toggle = new ToggleWidget(this.frame, {autoSize:[1,1], border: [3,3,3,3]});
+//         this.toggle.normalOff.set({color: [0.7, 0.7, 0.7]});
+//         this.toggle.normalOn.set({color: [0.7, 0.7, 0.7]});
+//         this.toggle.hiliteOff.set({color: [0.8, 0.8, 0.8]});
+//         this.toggle.hiliteOn.set({color: [0.8, 0.8, 0.8]});
+//         this.toggle.pressedOff.set({color: [0.6, 0.6, 0.6]});
+//         this.toggle.pressedOn.set({color: [0.6, 0.6, 0.6]});
+
+//         this.toggle.setLabelOn(new ImageWidget(null, {autoSize:[1,1], url: check}));
+//         this.toggle.setLabelOff(new ImageWidget(null, {autoSize:[1,1]}));
+
+//     }
+// }
+
+//------------------------------------------------------------------------------------------
+//-- WinPanel ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class WinPanel extends BoxWidget {
+    constructor(...args) {
+        super(...args);
+        this.set({color: bgColor});
+
+        this.vertical = new VerticalWidget(this, {autoSize: [1,1]});
+
+        this.questionPanel = new QuestionPanel(null, {autoSize: [1,0], height: 120});
+        this.vertical.addSlot(this.questionPanel);
+
+        this.horizontal = new HorizontalWidget(null, {autoSize: [1,1]});
+        this.vertical.addSlot(this.horizontal);
+
+        this.statusPanel = new StatusPanel(null, {autoSize: [1,0], height: 80});
+        this.vertical.addSlot(this.statusPanel);
+
+        this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], width: 300, border: [10,10,10,10], margin: 10});
+        this.horizontal.addSlot(this.leftVertical);
+
+        this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 90});
+        this.leftVertical.addSlot(this.pickPanel);
+
+        this.rankList = new RankList(null, {autoSize: [1,1]});
+        this.leftVertical.addSlot(this.rankList);
 
         const winnerSlot = new Widget(null, {autoSize: [1,1]});
-        this.winnerAnnunciator = new WinnerAnnunciator(winnerSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5], size: [510,300]});
+        this.winnerAnnunciator = new WinnerAnnunciator(winnerSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5], size: [300,300]});
         this.horizontal.addSlot(winnerSlot);
     }
 
     refresh() {
         this.questionPanel.refresh();
-        this.rankList.refresh();
         this.winnerAnnunciator.refresh();
         this.statusPanel.refresh();
-        this.remindPanel.refresh();
+        this.pickPanel.refresh();
+        this.rankList.refresh();
     }
 }
 
@@ -723,9 +870,9 @@ class WinnerAnnunciator extends BoxWidget {
 
         this.set({color: bgColor});
 
-        this.round = new TextWidget(this, {anchor: [0.5,0], pivot: [0.5,0], style:'bold', text: "Winner!"});
-        this.victor = new TextWidget(this, {anchor: [0.5,0], pivot: [0.5,0], local:[0,100], size: [500,100], point: 36, style:'bold', text: "Winner!"});
-        this.pick = new PickPanel(this, {anchor: [0.5,1], pivot:[0.5,1], size:[320,50]});
+        this.round = new TextWidget(this, {anchor: [0.5,0], pivot: [0.5,0], style:'bold', text: "Winner!", url: poppins});
+        this.victor = new TextWidget(this, {anchor: [0.5,0], pivot: [0.5,0], local:[0,100], size: [500,100], point: 36, style:'bold', text: "Winner!", wrap: true, url: poppins});
+        this.score = new TextWidget(this, {anchor: [0.5,0], pivot: [0.5,0], local:[0,200], size: [500,100], point: 36, style:'bold', text: "+10", url: poppins});
 
     }
 
@@ -734,17 +881,46 @@ class WinnerAnnunciator extends BoxWidget {
         const match = gm.match;
         const winner = gm.winner;
         this.victor.setText(CharacterName(winner));
-        this.pick.refresh();
 
+        let round = 0;
         if (match < 8) {
             this.round.setText("Quarterfinalist!");
         } else if (match < 12) {
+            round = 1;
             this.round.setText("Semifinalist!");
         } else if (match < 14) {
+            round = 2;
             this.round.setText("Finalist!");
         } else {
+            round = 3;
             this.round.setText("Winner!");
         }
+
+        const picks = MyPlayerPawn().actor.picks;
+        if (!picks) { this.hide(); return; }
+
+        const first = picks[0];
+        const second = picks[1];
+        const third = picks[2];
+
+        let points = 0;
+        if (winner === first) {
+            points = RoundPoints(round, 0);
+            this.score.set({color:[1,0,0], text: "+" + points});
+            this.score.show();
+        } else if (winner === second) {
+            points = RoundPoints(round, 1);
+            this.score.set({color:[0,1,0], text: "+" + points});
+            this.score.show();
+        } else if (winner === third) {
+            points = RoundPoints(round, 2);
+            this.score.set({color:[0.3,0.5,1], text: "+" + points});
+            this.score.show();
+        } else {
+            this.score.hide();
+        }
+
+
     }
 }
 
@@ -752,67 +928,67 @@ class WinnerAnnunciator extends BoxWidget {
 //-- PickPanel -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class PickPanel extends BoxWidget {
+// class PickPanel extends BoxWidget {
 
-    constructor(...args) {
-        super(...args);
+//     constructor(...args) {
+//         super(...args);
 
-        this.set({color: bgColor});
+//         this.set({color: bgColor});
 
-        this.horizontal = new HorizontalWidget(this, {autoSize:[1,1]});
+//         this.horizontal = new HorizontalWidget(this, {autoSize:[1,1]});
 
-        this.box0 = new BoxWidget(null, {autoSize:[1,1], color: bgColor, width:50});
-        this.horizontal.addSlot(this.box0);
+//         this.box0 = new BoxWidget(null, {autoSize:[1,1], color: bgColor, width:50});
+//         this.horizontal.addSlot(this.box0);
 
-        this.rank = new TextWidget(this.box0, {autoSize:[1,1], point: 28, text: "1"});
+//         this.rank = new TextWidget(this.box0, {autoSize:[1,1], point: 28, text: "1"});
 
-        this.box1 = new BoxWidget(null, {autoSize:[1,1], color: [0.5, 0.5, 0.5]});
-        this.horizontal.addSlot(this.box1);
+//         this.box1 = new BoxWidget(null, {autoSize:[1,1], color: [0.5, 0.5, 0.5]});
+//         this.horizontal.addSlot(this.box1);
 
-        this.name = new TextWidget(this.box1, {autoSize:[1,1], point: 20, border: [5,0,5,0], text: "Name"});
+//         this.name = new TextWidget(this.box1, {autoSize:[1,1], point: 20, border: [5,0,5,0], text: "Name"});
 
-        this.box2 = new BoxWidget(null, {autoSize:[1,1], color: bgColor, width:50});
-        this.horizontal.addSlot(this.box2);
+//         this.box2 = new BoxWidget(null, {autoSize:[1,1], color: bgColor, width:50});
+//         this.horizontal.addSlot(this.box2);
 
-        this.points = new TextWidget(this.box2, {autoSize:[1,1], point: 28, text: "+20", alignX: 'right'});
-    }
+//         this.points = new TextWidget(this.box2, {autoSize:[1,1], point: 28, text: "+20", alignX: 'right'});
+//     }
 
-    refresh() {
-        const gm = this.wellKnownModel('GameMaster');
-        const winner = gm.winner;
-        const match = gm.match;
-        const picks = MyPlayerPawn().actor.picks;
-        if (!picks) { this.hide(); return; }
-        let round = 0;
-        if (match > 7) round = 1;
-        if (match > 11) round = 2;
-        if (match > 13 ) round = 3;
-        const first = picks[0];
-        const second = picks[1];
-        const third = picks[2];
-        let points = 0;
-        if (winner === first) {
-            points = RoundPoints(round, 0);
-            this.box0.set({color:[1,0,0]});
-            this.rank.setText("1");
-            this.name.setText(CharacterName(first));
-            this.show();
-        } else if (winner === second) {
-            points = RoundPoints(round, 1);
-            this.box0.set({color:[0,1,0]});
-            this.rank.setText("2");
-            this.name.setText(CharacterName(second));
-            this.show();
-        } else if (winner === third) {
-            points = RoundPoints(round, 2);
-            this.box0.set({color:[0.3,0.5,1]});
-            this.rank.setText("3");
-            this.name.setText(CharacterName(third));
-            this.show();
-        } else {
-            this.hide();
-        }
-        this.points.setText("+" + points);
-    }
+//     refresh() {
+//         const gm = this.wellKnownModel('GameMaster');
+//         const winner = gm.winner;
+//         const match = gm.match;
+//         const picks = MyPlayerPawn().actor.picks;
+//         if (!picks) { this.hide(); return; }
+//         let round = 0;
+//         if (match > 7) round = 1;
+//         if (match > 11) round = 2;
+//         if (match > 13 ) round = 3;
+//         const first = picks[0];
+//         const second = picks[1];
+//         const third = picks[2];
+//         let points = 0;
+//         if (winner === first) {
+//             points = RoundPoints(round, 0);
+//             this.box0.set({color:[1,0,0]});
+//             this.rank.setText("1");
+//             this.name.setText(CharacterName(first));
+//             this.show();
+//         } else if (winner === second) {
+//             points = RoundPoints(round, 1);
+//             this.box0.set({color:[0,1,0]});
+//             this.rank.setText("2");
+//             this.name.setText(CharacterName(second));
+//             this.show();
+//         } else if (winner === third) {
+//             points = RoundPoints(round, 2);
+//             this.box0.set({color:[0.3,0.5,1]});
+//             this.rank.setText("3");
+//             this.name.setText(CharacterName(third));
+//             this.show();
+//         } else {
+//             this.hide();
+//         }
+//         this.points.setText("+" + points);
+//     }
 
-}
+// }

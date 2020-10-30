@@ -5,8 +5,8 @@ export function RoundPoints(r, p) {
 }
 
 Constants.Points = [
-    [3,2,1],        // Preliminaries
-    [3,2,1],        // Quarterfinals
-    [3,2,1],        // Semifinals
-    [3,2,1],        // Finals
+    [125,110,85],        // Preliminaries
+    [125,110,85],        // Quarterfinals
+    [125,110,85],        // Semifinals
+    [125,110,85],        // Finals
 ];

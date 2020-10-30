@@ -4,7 +4,7 @@
 
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, ActorManager, PawnManager } from "@croquet/worldcore";
-import { GameMaster } from "./src/GameMaster";
+import { GameMaster, GameMaster2 } from "./src/GameMaster";
 import {HUD} from "./src/HUD";
 import {MyPlayerManager} from "./src/Player";
 import { checkQNickname } from "./src/Names";
@@ -17,13 +17,14 @@ import { checkQNickname } from "./src/Names";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting pop smash!");
+        console.log("Starting pop smash!!!!!!!b");
     }
 
     createManagers() {
         this.playerManager = this.addManager(MyPlayerManager.create());
         this.actorManager = this.addManager(ActorManager.create());
         this.gm = this.addManager(GameMaster.create());
+        // this.gm2 = this.addManager(GameMaster2.create());
     }
 }
 MyModelRoot.register("MyModelRoot");

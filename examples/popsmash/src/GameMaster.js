@@ -7,6 +7,234 @@ export class GameMaster extends Model {
     init() {
         super.init();
         this.beWellKnownAs("GameMaster");
+        this.question = 0;
+        this.timer = 0;
+        this.startLobby();
+        this.subscribe("hud", "startGame", this.startSeed);
+        // this.subscribe("hud", "resetScores", this.resetScores);
+        this.subscribe("playerManager", "listChanged", this.checkReset);
+        this.subscribe("playerManager", "playerChanged", this.checkTimer);
+    }
+
+    setMode(m) {
+        this.mode = m;
+        this.publish("gm", "mode", m);
+    }
+
+    setTimer(t) {
+        this.timer = t;
+        this.publish("gm", "timer", t);
+    }
+
+    checkReset() {
+        const playerManager = this.wellKnownModel("PlayerManager");
+        if (playerManager.joinedCount === 0) this.startLobby();
+    }
+
+    checkTimer() {
+        switch (this.mode) {
+            case "seed":
+                this.checkSeed();
+                break;
+            case "vote":
+                this.checkVote();
+                break;
+        }
+    }
+
+    startLobby() {
+        this.setMode('lobby');
+    }
+
+    startSeed() {
+        const players = this.wellKnownModel("PlayerManager").players;
+        players.forEach(player => { player.picks = [-1, -1, -1];});
+        this.makeDecks();
+        this.question = this.questionDeck.pop();
+        this.seed = [];
+        this.brackets = [];
+        for (let i = 0; i < 16; i++) {
+            const c = this.characterDeck.pop();
+            this.seed.push(c);
+            this.brackets.push(c);
+        }
+        this.shuffle(this.brackets);
+        this.setMode('seed');
+        this.checkSeed();
+    }
+
+    checkSeed() {
+        const pm = this.wellKnownModel("PlayerManager");
+        const done = pm.joinedCount === pm.pickedCount;
+        if (done === this.inCountdown) return;
+        this.inCountdown = done;
+        if (!this.inCountdown) return;
+        this.setTimer(5);
+        this.future(1000).tickSeed();
+    }
+
+    tickSeed() {
+        if (!this.inCountdown) return;
+        this.setTimer(this.timer-1)
+        if (this.timer <= 0) {
+            this.inCountdown = false;
+            this.match = 0;
+            this.startDebate();
+            return;
+        }
+        this.future(1000).tickSeed();
+    }
+
+    startDebate() {
+        this.setMode('debate');
+        this.setTimer(5);
+        this.inCountdown = true;
+        this.future(1000).tickDebate();
+    }
+
+    tickDebate() {
+        this.setTimer(this.timer-1)
+        if (this.timer <= 0) {
+            this.startVote();
+            return;
+        }
+        this.future(1000).tickDebate();
+
+    }
+
+    startVote() {
+        const players = this.wellKnownModel("PlayerManager").players;
+        players.forEach(player => { player.vote = "x";});
+        this.setMode('vote');
+        this.checkVote();
+    }
+
+    checkVote() {
+        const pm = this.wellKnownModel("PlayerManager");
+        const done = pm.joinedCount === pm.votedCount;
+        if (done === this.inCountdown) return;
+        this.inCountdown = done;
+        if (!this.inCountdown) return;
+        this.setTimer(5);
+        this.future(1000).tickVote();
+    }
+
+    tickVote() {
+        if (!this.inCountdown) return;
+        this.setTimer(this.timer-1)
+        if (this.timer <= 0) {
+            this.inCountdown = false;
+            this.endVote();
+            return;
+        }
+        this.future(1000).tickVote();
+    }
+
+    endVote() {
+        const players = this.wellKnownModel('PlayerManager').players;
+        let aVotes = 0;
+        let bVotes = 0;
+        players.forEach( player => {
+            if (!player.hasVoted) return;
+            if (player.vote === 'a') {
+                aVotes++;
+            } else if (player.vote === 'b') {
+                bVotes++;
+            }
+        });
+
+        const a = this.brackets[this.match * 2];
+        const b = this.brackets[this.match * 2 + 1];
+        if (aVotes > bVotes) {
+            this.winner = a;
+        } else if (bVotes > aVotes) {
+            this.winner = b;
+        } else if (Math.random > 0.5) {
+            this.winner = a;
+        } else {
+            this.winner = b;
+        }
+        this.brackets.push(this.winner);
+
+        let round = 0;
+        if (this.match > 7) round = 1;
+        if (this.match > 11) round = 2;
+        if (this.match > 13 ) round = 3;
+
+        players.forEach(player => {
+            const picks = player.picks;
+            if (picks) {
+                if (picks[0] === this.winner) {
+                    player.score += RoundPoints(round, 0);
+                } else if (picks[1] === this.winner) {
+                    player.score += RoundPoints(round, 1);
+                } else if (picks[2] === this.winner) {
+                    player.score += RoundPoints(round, 2);
+                }
+             }
+        });
+        this.startWin();
+    }
+
+    startWin() {
+        console.log("Starting win!");
+        this.setMode('win');
+        this.setTimer(5);
+        this.inCountdown = true;
+        this.future(1000).tickWin();
+    }
+
+    tickWin() {
+        this.setTimer(this.timer-1)
+        if (this.timer <= 0) {
+            this.match++;
+            if (this.match > 13) {
+                this.series++;
+                this.startFinale();
+            } else {
+                this.startDebate();
+            }
+            return;
+        }
+        this.future(1000).tickWin();
+
+    }
+
+    startFinale() {
+        this.setMode('finale');
+    }
+
+    makeDecks() {
+        this.questionDeck = [];
+        for (let i = 0; i < QuestionCount(); i++) this.questionDeck.push(i);
+        this.shuffle(this.questionDeck);
+
+        this.characterDeck = [];
+        for (let i = 0; i < CharacterCount(); i++) this.characterDeck.push(i);
+        this.shuffle(this.characterDeck);
+    }
+
+    shuffle(deck) {
+        let size = deck.length;
+        while (size) {
+            const pick = Math.floor(Math.random() * size--);
+            const swap = deck[size];
+            deck[size] = deck[pick];
+            deck[pick] = swap;
+        }
+    }
+
+}
+GameMaster.register("GameMaster");
+
+//--------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------
+
+export class GameMaster2 extends Model {
+    init() {
+        super.init();
+        this.beWellKnownAs("GameMaster");
 
         this.mode = 'lobby';
         this.series = 0;
@@ -268,5 +496,5 @@ export class GameMaster extends Model {
         return deck;
     }
 }
-GameMaster.register("GameMaster");
+GameMaster2.register("GameMaster2");
 

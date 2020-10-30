@@ -827,8 +827,20 @@ export class NineSliceWidget extends ImageWidget {
 
 export class TextWidget extends Widget {
 
+    constructor(...args) {
+        super(...args);
+        if (this.url) this.setFontByURL(this.url);
+        this.subscribe(this.id, { event: "url", handling: "immediate" }, this.setFontByURL);
+    }
+
     setText(t) {this.set({text: t});}
 
+    setFontByURL(url) {
+        this._font = LoadFont(url, () => this.markChanged());
+        this.markChanged();
+    }
+
+    get url() { return this._url; }
     get bubbleChanges() { return this._bubbleChanges === undefined || this._bubbleChanges;} // Override to default to true
     get text() { if (this._text !== undefined) return this._text; return "Text";}
     get font() { return this._font || "sans-serif";}
