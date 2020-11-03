@@ -5,7 +5,7 @@ import { Question } from "./Questions";
 import { CharacterName} from "./Characters";
 import { RoundPoints } from "./Points";
 import check from "../assets/check.png";
-import poppins from "../assets/Poppins-Medium.otf";
+import poppins from "../assets/Poppins-Regular.otf";
 import logo from "../assets/popsmashlogov1.png";
 
 const bgColor = [0.5, 0.75, 10.75];
@@ -42,17 +42,17 @@ class JoinScreen extends Widget {
 
         this.title = new TitlePanel(this.background, {autoSize:[1,0], local: [0,150]});
 
-        this.entry = new Widget(this.background, {autoSize: [0, 0], anchor: [0.5,0.5], pivot: [0.5, 0.5], size:[600,45]});
-        this.label = new TextWidget(this.entry, {local: [0, -50], size:[200,40], alignX: 'left', alignY: 'bottom', text:'Enter Player Name', point: 14});
+        this.entry = new BoxWidget(this.background, {color: bgColor, autoSize: [0, 0], anchor: [0.5,0.5], pivot: [0.5, 0.5], size:[600,45]});
+        // this.label = new TextWidget(this.entry, {local: [0, 0], size:[200,40], alignX: 'left', alignY: 'bottom', text:'Enter Player Name', point: 14, url: poppins});
         this.entryLayout = new HorizontalWidget(this.entry, {autoSize: [1, 1], margin: 5});
 
         this.nameEntry = new TextFieldWidget(this.entryLayout, {autoSize: [1,0], anchor:[0,1], pivot: [0,1], size:[0,45]});
-        this.nameEntry.text.set({text: playerName || Nickname()});
+        this.nameEntry.text.set({text: playerName || Nickname(), url: poppins});
         this.nameEntry.onEnter = () => this.joinGame();
         this.entryLayout.addSlot(this.nameEntry);
 
         this.enterButton = new ButtonWidget(this.entryLayout, {autoSize: [1,0], anchor:[0,1], pivot: [0,1], size:[0,45], width: 100});
-        this.enterButton.label.set({text: "Join"});
+        this.enterButton.label.set({text: "Join", url: poppins});
         this.enterButton.onClick = () => this.joinGame();
         this.entryLayout.addSlot(this.enterButton);
     }
@@ -138,33 +138,52 @@ class LobbyPanel extends BoxWidget {
         super(...args);
         this.set({color: bgColor});
 
-        this.horizontal = new HorizontalWidget(this, {autoSize: [1,1]});
 
-        this.rankList = new RankList(null, {autoSize: [1,1], width: 250, border: [10,10,10,10]});
-        const right = new Widget(null, {autoSize: [1,1]});
 
-        this.horizontal.addSlot(this.rankList);
-        this.horizontal.addSlot(right);
 
-        new TitlePanel(right, {autoSize:[1,0], local: [0,50]});
+        const vertical = new VerticalWidget(this, {autoSize: [1,1]});
 
-        const info = `Sixteen pop culture icons face-off in crazy 1-on-1 battles. Vote to determine who wins each match-up. Your goal is to predict who will be on top of the heap when the dust clears!\n\n(Share the unique URL for this page to allow others to join!)`;
+        const title = new TitlePanel(null, {height: 400});
+        vertical.addSlot(title);
 
-        // new TextWidget(right, {anchor: [0.5,0], pivot: [0.5,0], local: [0,200], autoSize: [1,0], size:[0,50], point: 24, style: 'bold', text: "Rules", url: poppins});
-        new TextWidget(right, {anchor: [0.5,0], pivot: [0.5,0], local: [0,250], autoSize: [0.9,0], size:[0,300], point: 16, alignX: 'left', alignY: 'top', text: info, url: poppins});
+        const infoText = `Sixteen pop culture icons face-off in crazy 1-on-1 battles. Vote to determine who wins each match-up. Your goal is to predict who will be on top of the heap when the dust clears!\n\n(Share the unique URL for this page to allow others to join!)`;
 
-        const reset = new ButtonWidget(right, {anchor: [0.5,1], pivot: [0.5,1], local: [0,-20], size:[200,50]} );
-        reset.label.setText("Reset Scores");
-        reset.onClick = () => this.publish("hud", "resetScores");
+        const box = new BoxWidget(null, {color: bgColor, height: 250})
+        const info = new TextWidget(box, {autoSize: [1,1], border: [20,20,20,20], point: 28, alignX: 'left', alignY: 'top', text: infoText, url: poppins});
+        vertical.addSlot(box);
 
-        const start = new ButtonWidget(right, {anchor: [0.5,0.6], pivot: [0.5,0.5], local: [0,0], size:[200,50]} );
-        start.label.setText("Start Game");
+        const horizontal = new HorizontalWidget(this, {autoSize: [1,1], border: [20,20,20,20], margin: 20});
+        vertical.addSlot(horizontal);
+
+        this.rankList = new RankList(null);
+        horizontal.addSlot(this.rankList);
+
+        const buttonPanel = new VerticalWidget(null, {width: 250, margin: 20});
+        horizontal.addSlot(buttonPanel);
+
+        const spacer = new Widget(null);
+
+
+        const startSlot = new Widget(null, {height: 50});
+        const start = new ButtonWidget(startSlot, {autoSize: [1,1]} );
+        start.label.set({text: "Start Game", url: poppins});
         start.onClick = () => this.publish("hud", "startGame");
+        buttonPanel.addSlot(startSlot);
+
+        buttonPanel.addSlot(spacer);
+
+        const resetSlot = new Widget(null, {height: 50});
+        const reset = new ButtonWidget(resetSlot, {autoSize: [1,1]} );
+        reset.label.set({text: "Reset Scores", url: poppins});
+        reset.onClick = () => this.publish("hud", "resetScores");
+        buttonPanel.addSlot(resetSlot);
+
+
     }
 
     refresh() {
         this.markCanvasChanged();
-        this.rankList.refresh();
+        // this.rankList.refresh();
     }
 }
 
@@ -242,24 +261,40 @@ class SeedPanel extends BoxWidget {
 
         this.vertical = new VerticalWidget(this, {autoSize: [1,1]});
 
-        this.questionPanel = new QuestionPanel(null, {autoSize: [1,0], height: 120});
+        this.questionPanel = new QuestionPanel(null, {autoSize: [1,0], height: 100});
         this.vertical.addSlot(this.questionPanel);
 
-        this.horizontal = new HorizontalWidget(null, {autoSize: [1,1]});
+        this.seedGrid = new SeedGrid(null, {autoSize: [1,0], height: 600});
+        this.vertical.addSlot(this.seedGrid);
+
+        this.horizontal = new HorizontalWidget(null, {autoSize: [1,0], border: [10,10,10,10], margin: 10});
         this.vertical.addSlot(this.horizontal);
 
-        this.statusPanel = new StatusPanel(null, {autoSize: [1,0], height: 80});
-        this.vertical.addSlot(this.statusPanel);
+        this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], margin: 10});
+        this.horizontal.addSlot(this.leftVertical);
 
-        const seedSlot = new Widget(null, {autoSize: [1,1]});
-        this.seedGrid = new SeedGrid(seedSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5], size: [510,500]});
-        this.horizontal.addSlot(seedSlot);
+        this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 200});
+        this.leftVertical.addSlot(this.pickPanel);
+
+        this.spacer = new Widget(null);
+        this.leftVertical.addSlot(this.spacer);
+
+        this.statusPanel = new StatusPanel(null, {autoSize: [1,1], height: 200});
+        this.leftVertical.addSlot(this.statusPanel);
+
+        this.rankList = new RankList(null, {autoSize: [1,1]});
+        this.horizontal.addSlot(this.rankList);
+
+
+
     }
 
     refresh() {
         this.questionPanel.refresh();
         this.seedGrid.refresh();
         this.statusPanel.refresh();
+        this.pickPanel.refresh();
+        this.rankList.refresh();
     }
 }
 
@@ -271,7 +306,7 @@ class QuestionPanel extends BoxWidget {
     constructor(...args) {
         super(...args);
         this.set({color:[0.9,0.9,0.9]});
-        this.textBox = new TextWidget(this, {autoSize: [1,1], style: 'italic', url: poppins});
+        this.textBox = new TextWidget(this, {autoSize: [1,1], style: 'italic', url: poppins, point: 24});
     }
 
     refresh() {
@@ -289,30 +324,57 @@ class PickPanel extends BoxWidget {
         super(...args);
         this.set({color:[0.9,0.9,0.9]});
         this.vertical = new VerticalWidget(this, {autoSize: [1,1], border: [5,5,5,5]});
-        this.pick1 = new TextWidget(this, {autoSize: [1,1], point: 14, alignX: 'left', color: [1,0,0], url: poppins});
-        this.pick2 = new TextWidget(this, {autoSize: [1,1], point: 14, alignX: 'left', color: [0,0.5,0], url: poppins});
-        this.pick3 = new TextWidget(this, {autoSize: [1,1], point: 14, alignX: 'left', color: [0.1,0.3,0.8], url: poppins});
 
-        this.vertical.addSlot(this.pick1);
-        this.vertical.addSlot(this.pick2);
-        this.vertical.addSlot(this.pick3);
+        this.entry1 = new HorizontalWidget(this, {autoSize: [1,1]});
+        this.rank1 = new TextWidget(this, {autoSize: [1,1], point: 24, alignX: 'left', color: [1,0,0], url: poppins, text: "#1", width: 50});
+        this.name1 = new TextWidget(this, {border: [5,5,5,5], autoSize: [1,1], point: 24, alignX: 'left', color: [1,0,0], url: poppins});
+        this.points1 = new TextWidget(this, {autoSize: [1,1], point: 24, alignX: 'right', color: [1,0,0], url: poppins, text: "1000", width: 50});
+        this.entry1.addSlot(this.rank1);
+        this.entry1.addSlot(this.name1);
+        this.entry1.addSlot(this.points1);
+
+        this.entry2 = new HorizontalWidget(this, {autoSize: [1,1]});
+        this.rank2 = new TextWidget(this, {autoSize: [1,1], point: 24, alignX: 'left', color: [0,0.5,0], url: poppins, text: "#2", width: 50});
+        this.name2 = new TextWidget(this, {border: [5,5,5,5], autoSize: [1,1], point: 24, alignX: 'left', color: [0,0.5,0], url: poppins});
+        this.points2 = new TextWidget(this, {autoSize: [1,1], point: 24, alignX: 'right', color: [0,0.5,0], url: poppins, text: "1000", width: 50});
+        this.entry2.addSlot(this.rank2);
+        this.entry2.addSlot(this.name2);
+        this.entry2.addSlot(this.points2);
+
+        this.entry3 = new HorizontalWidget(this, {autoSize: [1,1]});
+        this.rank3 = new TextWidget(this, {autoSize: [1,1], point: 24, alignX: 'left', color: [0.1,0.3,0.8], url: poppins, text: "#3", width: 50});
+        this.name3 = new TextWidget(this, {border: [5,5,5,5], autoSize: [1,1], point: 24, alignX: 'left', color: [0.1,0.3,0.8], url: poppins});
+        this.points3 = new TextWidget(this, {autoSize: [1,1], point: 24, alignX: 'right', color: [0.1,0.3,0.8], url: poppins, text: "1000", width: 50});
+        this.entry3.addSlot(this.rank3);
+        this.entry3.addSlot(this.name3);
+        this.entry3.addSlot(this.points3);
+
+        this.vertical.addSlot(this.entry1);
+        this.vertical.addSlot(this.entry2);
+        this.vertical.addSlot(this.entry3);
+
+        this.subscribe("playerManager", "playerChanged", this.refresh);
     }
 
     refresh() {
         if (!MyPlayerPawn()) {
-            console.warn("No player pawn in remind panel!");
+            console.warn("No player pawn in pick panel!");
             return;
         }
         const picks = MyPlayerPawn().actor.picks;
-        let name1 = "None";
-        let name2 = "None";
-        let name3 = "None";
+        const points = MyPlayerPawn().actor.points;
+        let name1 = "???";
+        let name2 = "???";
+        let name3 = "???";
         if (picks[0] >= 0) name1 = CharacterName(picks[0]);
         if (picks[1] >= 0) name2 = CharacterName(picks[1]);
         if (picks[2] >= 0) name3 = CharacterName(picks[2]);
-        this.pick1.setText("#1 " + name1);
-        this.pick2.setText("#2 " + name2);
-        this.pick3.setText("#3 " + name3);
+        this.name1.setText(name1);
+        this.name2.setText(name2);
+        this.name3.setText(name3);
+        this.points1.setText("" + points[0]);
+        this.points2.setText("" + points[1]);
+        this.points3.setText("" + points[2]);
     }
 }
 
@@ -326,8 +388,15 @@ class StatusPanel extends BoxWidget {
 
         this.set({color:[0.9,0.9,0.9]});
 
-        this.hint = new TextWidget(this, {anchor: [0.5,0.5], pivot: [0.5,0.5], autoSize: [0,1], size: [400, 80], point: 24, style: 'italic', text: "Hint!", url: poppins});
-        this.voters = new TextWidget(this, {anchor: [1,0.5], pivot: [1,0.5], autoSize: [0,1], size: [80, 80], point: 30, text: "3/4", url: poppins});
+        const vertical = new VerticalWidget(this, {autoSize: [1,1], border: [5,5,5,5]});
+
+        const hintSlot = new BoxWidget(null, {color:[0.9,0.9,0.9], height: 40});
+        this.hint = new TextWidget(hintSlot, {autoSize: [1,1], point: 24, style: 'italic', text: "Hint!", alignX: "center", alignY: "middle", url: poppins});
+        vertical.addSlot(hintSlot);
+
+        const voterSlot = new BoxWidget(null, {color:[0.9,0.9,0.9]});
+        this.voters = new TextWidget(voterSlot, {autoSize: [1,1], point: 64, text: "3/4", alignX: "center", alignY: "middle", url: poppins});
+        vertical.addSlot(voterSlot);
 
         this.subscribe("playerManager", "playerChanged", this.refreshVoters);
         this.subscribe("playerManager", "listChanged", this.refreshVoters);
@@ -366,14 +435,15 @@ class StatusPanel extends BoxWidget {
     refreshHint() {
         const gm = this.wellKnownModel('GameMaster');
         const mode = gm.mode;
+        const round = gm.match + 1;
         switch (mode) {
             case 'seed':
                 // this.hint.setText("Predict the top three!");
-                this.hint.setText("Predict!");
+                this.hint.setText("Predict the top three!");
                 break;
             case 'debate':
                 // this.hint.setText("Discuss who should win the match-up!");
-                this.hint.setText("Discuss!");
+                this.hint.setText("Round " + round);
                 break;
             case 'vote':
                 // this.hint.setText("Vote for your personal pick!");
@@ -403,13 +473,13 @@ class SeedGrid extends Widget {
 
         this.buttons = [];
         for ( let i = 0; i < 8; i++) {
-            this.buttons[i] = new SeedButton(this, {anchor:[0.5,0], pivot:[1,0], local: [0,i*60]});
+            this.buttons[i] = new SeedButton(this, {anchor:[0.5,0.5], pivot:[1,0.5], local: [0,(i-3.5)*70]});
             this.buttons[i].button.onClick = () => this.pick(i);
         }
 
         for ( let i = 0; i < 8; i++) {
             const j = i + 8;
-            this.buttons[j] = new SeedButton(this, {anchor:[0.5,0], pivot:[0,0], local: [0,i*60]});
+            this.buttons[j] = new SeedButton(this, {anchor:[0.5,0.5], pivot:[0,0.5], local: [0,(i-3.5)*70]});
             this.buttons[j].button.onClick = () => this.pick(j);
         }
 
@@ -478,10 +548,10 @@ class SeedButton extends Widget {
     constructor(...args) {
         super(...args);
 
-        this.set({size:[210,60]});
+        this.set({size:[300,70]});
         this.frame = new BoxWidget(this, {autoSize:[1,1], color: bgColor, visible: true});
         this.button = new ButtonWidget(this.frame, {autoSize:[1,1], border: [5,5,5,5]});
-        this.button.label.set({point: 20, wrap: true, url: poppins});
+        this.button.label.set({point: 24, border: [5,5,5,5], wrap: true, url: poppins});
     }
 
     setRank(n) {
@@ -572,27 +642,56 @@ class DebatePanel extends BoxWidget {
 
         this.vertical = new VerticalWidget(this, {autoSize: [1,1]});
 
-        this.questionPanel = new QuestionPanel(null, {autoSize: [1,0], height: 120});
+        this.questionPanel = new QuestionPanel(null, {autoSize: [1,0], height: 100});
         this.vertical.addSlot(this.questionPanel);
 
-        this.horizontal = new HorizontalWidget(null, {autoSize: [1,1]});
+        const matchSlot = new Widget(null,{height: 600});
+        this.matchDisplay = new MatchDisplay(matchSlot, {autoSize: [1,1]});
+        this.vertical.addSlot(matchSlot);
+
+        this.horizontal = new HorizontalWidget(null, {autoSize: [1,0], border: [10,10,10,10], margin: 10});
         this.vertical.addSlot(this.horizontal);
 
-        this.statusPanel = new StatusPanel(null, {autoSize: [1,0], height: 80});
-        this.vertical.addSlot(this.statusPanel);
-
-        this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], width: 300, border: [10,10,10,10], margin: 10});
+        this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], margin: 10});
         this.horizontal.addSlot(this.leftVertical);
 
-        this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 90});
+        this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 200});
         this.leftVertical.addSlot(this.pickPanel);
 
-        this.rankList = new RankList(null, {autoSize: [1,1]});
-        this.leftVertical.addSlot(this.rankList);
+        this.spacer = new Widget(null);
+        this.leftVertical.addSlot(this.spacer);
 
-        const matchSlot = new Widget(null, {autoSize: [1,1]});
-        this.matchDisplay = new MatchDisplay(matchSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5], size: [300,400]});
-        this.horizontal.addSlot(matchSlot);
+        this.statusPanel = new StatusPanel(null, {autoSize: [1,1], height: 200});
+        this.leftVertical.addSlot(this.statusPanel);
+
+        this.rankList = new RankList(null, {autoSize: [1,1]});
+        this.horizontal.addSlot(this.rankList);
+
+
+
+        // this.vertical = new VerticalWidget(this, {autoSize: [1,1]});
+
+        // this.questionPanel = new QuestionPanel(null, {autoSize: [1,0], height: 120});
+        // this.vertical.addSlot(this.questionPanel);
+
+        // this.horizontal = new HorizontalWidget(null, {autoSize: [1,1]});
+        // this.vertical.addSlot(this.horizontal);
+
+        // this.statusPanel = new StatusPanel(null, {autoSize: [1,0], height: 80});
+        // this.vertical.addSlot(this.statusPanel);
+
+        // this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], width: 300, border: [10,10,10,10], margin: 10});
+        // this.horizontal.addSlot(this.leftVertical);
+
+        // this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 90});
+        // this.leftVertical.addSlot(this.pickPanel);
+
+        // this.rankList = new RankList(null, {autoSize: [1,1]});
+        // this.leftVertical.addSlot(this.rankList);
+
+        // const matchSlot = new Widget(null, {autoSize: [1,1]});
+        // this.matchDisplay = new MatchDisplay(matchSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5], size: [300,400]});
+        // this.horizontal.addSlot(matchSlot);
 
     }
 
@@ -615,32 +714,32 @@ class MatchDisplay extends BoxWidget {
 
         this.set({color: bgColor});
 
-        this.round = new TextWidget(this, {anchor: [0.5, 0], pivot:[0.5, 0], style: 'bold', text: "Preliminaries", url: poppins});
+        // this.round = new TextWidget(this, {anchor: [0.5, 0], pivot:[0.5, 0], style: 'bold', text: "Preliminaries", url: poppins});
         this.vs = new TextWidget(this, {anchor: [0.5,0.5], pivot:[0.5,0.5], style: 'bold', text: "vs.", url: poppins});
 
-        this.frameA = new BoxWidget(this, {size: [210,60], anchor: [0.5,0.5], pivot:[0.5,1], local:[0,-20], color: bgColor});
+        this.frameA = new BoxWidget(this, {size: [300,70], anchor: [0.5,0.5], pivot:[0.5,1], local:[0,-50], color: bgColor});
         // this.boxA = new BoxWidget(this.frameA, {autoSize: [1,1], color: [0.5, 0.5, 0.5], border: [5,5,5,5]})
-        this.labelA = new TextWidget(this.frameA, {autoSize:[1,1], point: 20, wrap: true, url: poppins});
-        this.frameB = new BoxWidget(this, {size: [210,60], anchor: [0.5,0.5], pivot:[0.5,0], local:[0,20], color: bgColor});
+        this.labelA = new TextWidget(this.frameA, {autoSize:[1,1], point: 24, wrap: true, url: poppins});
+        this.frameB = new BoxWidget(this, {size: [300,70], anchor: [0.5,0.5], pivot:[0.5,0], local:[0,50], color: bgColor});
         // this.boxA = new BoxWidget(this.frameB, {autoSize: [1,1], color: [0.5, 0.5, 0.5], border: [5,5,5,5]})
-        this.labelB = new TextWidget(this.frameB, {autoSize:[1,1], point: 20, wrap: true, url: poppins});
+        this.labelB = new TextWidget(this.frameB, {autoSize:[1,1], point: 24, wrap: true, url: poppins});
 
     }
 
     refresh() {
         const gm = this.wellKnownModel('GameMaster');
         const m = gm.match;
-        if (gm.mode === "winner") {
-            this.round.setText("Winner!");
-        } else if (m < 8) {
-            this.round.setText("Preliminaries");
-        } else if (m < 12) {
-            this.round.setText("Quarterfinals");
-        } else if (m < 14) {
-            this.round.setText("Semifinals");
-        } else {
-            this.round.setText("Finals");
-        }
+        // if (gm.mode === "winner") {
+        //     this.round.setText("Winner!");
+        // } else if (m < 8) {
+        //     this.round.setText("Preliminaries");
+        // } else if (m < 12) {
+        //     this.round.setText("Quarterfinals");
+        // } else if (m < 14) {
+        //     this.round.setText("Semifinals");
+        // } else {
+        //     this.round.setText("Finals");
+        // }
         if (2*m+1 >= gm.brackets.length) return;
         const a = gm.brackets[2*m];
         const b = gm.brackets[2*m+1];
@@ -662,27 +761,54 @@ class VotePanel extends BoxWidget {
 
         this.vertical = new VerticalWidget(this, {autoSize: [1,1]});
 
-        this.questionPanel = new QuestionPanel(null, {autoSize: [1,0], height: 120});
+        this.questionPanel = new QuestionPanel(null, {autoSize: [1,0], height: 100});
         this.vertical.addSlot(this.questionPanel);
 
-        this.horizontal = new HorizontalWidget(null, {autoSize: [1,1]});
+        const matchSlot = new Widget(null, {height: 600});
+        this.matchControls = new MatchControls(matchSlot, {autoSize: [1,1]});
+        this.vertical.addSlot(matchSlot);
+
+        this.horizontal = new HorizontalWidget(null, {autoSize: [1,0], border: [10,10,10,10], margin: 10});
         this.vertical.addSlot(this.horizontal);
 
-        this.statusPanel = new StatusPanel(null, {autoSize: [1,0], height: 80});
-        this.vertical.addSlot(this.statusPanel);
-
-        this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], width: 300, border: [10,10,10,10], margin: 10});
+        this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], margin: 10});
         this.horizontal.addSlot(this.leftVertical);
 
-        this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 90});
+        this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 200});
         this.leftVertical.addSlot(this.pickPanel);
 
-        this.rankList = new RankList(null, {autoSize: [1,1]});
-        this.leftVertical.addSlot(this.rankList);
+        this.spacer = new Widget(null);
+        this.leftVertical.addSlot(this.spacer);
 
-        const matchSlot = new Widget(null, {autoSize: [1,1]});
-        this.matchControls = new MatchControls(matchSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5], size: [300,400]});
-        this.horizontal.addSlot(matchSlot);
+        this.statusPanel = new StatusPanel(null, {autoSize: [1,1], height: 200});
+        this.leftVertical.addSlot(this.statusPanel);
+
+        this.rankList = new RankList(null, {autoSize: [1,1]});
+        this.horizontal.addSlot(this.rankList);
+
+        // this.vertical = new VerticalWidget(this, {autoSize: [1,1]});
+
+        // this.questionPanel = new QuestionPanel(null, {autoSize: [1,0], height: 120});
+        // this.vertical.addSlot(this.questionPanel);
+
+        // this.horizontal = new HorizontalWidget(null, {autoSize: [1,1]});
+        // this.vertical.addSlot(this.horizontal);
+
+        // this.statusPanel = new StatusPanel(null, {autoSize: [1,0], height: 80});
+        // this.vertical.addSlot(this.statusPanel);
+
+        // this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], width: 300, border: [10,10,10,10], margin: 10});
+        // this.horizontal.addSlot(this.leftVertical);
+
+        // this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 90});
+        // this.leftVertical.addSlot(this.pickPanel);
+
+        // this.rankList = new RankList(null, {autoSize: [1,1]});
+        // this.leftVertical.addSlot(this.rankList);
+
+        // const matchSlot = new Widget(null, {autoSize: [1,1]});
+        // this.matchControls = new MatchControls(matchSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5], size: [300,400]});
+        // this.horizontal.addSlot(matchSlot);
 
     }
 
@@ -705,17 +831,17 @@ class MatchControls extends BoxWidget {
 
         this.set({color: bgColor});
 
-        this.round = new TextWidget(this, {anchor: [0.5, 0], pivot:[0.5, 0], style: 'bold', text: "Preliminaries", url: poppins});
+        // this.round = new TextWidget(this, {anchor: [0.5, 0], pivot:[0.5, 0], style: 'bold', text: "Preliminaries", url: poppins});
         this.vs = new TextWidget(this, {anchor: [0.5,0.5], pivot:[0.5,0.5], text: "vs.", url: poppins});
 
-        this.frameA = new BoxWidget(this, {size: [210,60], anchor: [0.5,0.5], pivot:[0.5,1], local:[0,-20], color: bgColor});
-        this.buttonA = new ButtonWidget(this.frameA, {autoSize:[1,1], border: [5,5,5,5]});
-        this.buttonA.label.set({point: 20, wrap: true, url: poppins});
+        this.frameA = new BoxWidget(this, {size: [300,70], anchor: [0.5,0.5], pivot:[0.5,1], local:[0,-50], color: bgColor});
+        this.buttonA = new ButtonWidget(this.frameA, {autoSize: [1,1], border: [5,5,5,5]});
+        this.buttonA.label.set({point: 24, wrap: true, url: poppins});
         this.buttonA.onClick = () => this.voteA();
 
-        this.frameB = new BoxWidget(this, {size: [210,60], anchor: [0.5,0.5], pivot:[0.5,0], local:[0,20], color: bgColor});
-        this.buttonB = new ButtonWidget(this.frameB, {autoSize:[1,1], border: [5,5,5,5]});
-        this.buttonB.label.set({point: 20, wrap: true, url: poppins});
+        this.frameB = new BoxWidget(this, {size: [300,70], anchor: [0.5,0.5], pivot:[0.5,0], local:[0,50], color: bgColor});
+        this.buttonB = new ButtonWidget(this.frameB, {autoSize: [1,1], border: [5,5,5,5]});
+        this.buttonB.label.set({point: 24, wrap: true, url: poppins});
         this.buttonB.onClick = () => this.voteB();
     }
 
@@ -753,17 +879,17 @@ class MatchControls extends BoxWidget {
     refresh() {
         const gm = this.wellKnownModel('GameMaster');
         const m = gm.match;
-        if (gm.mode === "winner") {
-            this.round.setText("Winner!");
-        } else if (m < 8) {
-            this.round.setText("Preliminaries");
-        } else if (m < 12) {
-            this.round.setText("Quarterfinals");
-        } else if (m < 14) {
-            this.round.setText("Semifinals");
-        } else {
-            this.round.setText("Finals");
-        }
+        // if (gm.mode === "winner") {
+        //     this.round.setText("Winner!");
+        // } else if (m < 8) {
+        //     this.round.setText("Preliminaries");
+        // } else if (m < 12) {
+        //     this.round.setText("Quarterfinals");
+        // } else if (m < 14) {
+        //     this.round.setText("Semifinals");
+        // } else {
+        //     this.round.setText("Finals");
+        // }
         if (2*m+1 >= gm.brackets.length) return;
         const a = gm.brackets[2*m];
         const b = gm.brackets[2*m+1];
@@ -828,27 +954,56 @@ class WinPanel extends BoxWidget {
 
         this.vertical = new VerticalWidget(this, {autoSize: [1,1]});
 
-        this.questionPanel = new QuestionPanel(null, {autoSize: [1,0], height: 120});
+        this.questionPanel = new QuestionPanel(null, {autoSize: [1,0], height: 100});
         this.vertical.addSlot(this.questionPanel);
 
-        this.horizontal = new HorizontalWidget(null, {autoSize: [1,1]});
+        const winnerSlot = new Widget(null, {height: 600});
+        this.winnerAnnunciator = new WinnerAnnunciator(winnerSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5]});
+        this.vertical.addSlot(winnerSlot);
+
+        this.horizontal = new HorizontalWidget(null, {autoSize: [1,0], border: [10,10,10,10], margin: 10});
         this.vertical.addSlot(this.horizontal);
 
-        this.statusPanel = new StatusPanel(null, {autoSize: [1,0], height: 80});
-        this.vertical.addSlot(this.statusPanel);
-
-        this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], width: 300, border: [10,10,10,10], margin: 10});
+        this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], margin: 10});
         this.horizontal.addSlot(this.leftVertical);
 
-        this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 90});
+        this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 200});
         this.leftVertical.addSlot(this.pickPanel);
 
-        this.rankList = new RankList(null, {autoSize: [1,1]});
-        this.leftVertical.addSlot(this.rankList);
+        this.spacer = new Widget(null);
+        this.leftVertical.addSlot(this.spacer);
 
-        const winnerSlot = new Widget(null, {autoSize: [1,1]});
-        this.winnerAnnunciator = new WinnerAnnunciator(winnerSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5], size: [300,300]});
-        this.horizontal.addSlot(winnerSlot);
+        this.statusPanel = new StatusPanel(null, {autoSize: [1,1], height: 200});
+        this.leftVertical.addSlot(this.statusPanel);
+
+        this.rankList = new RankList(null, {autoSize: [1,1]});
+        this.horizontal.addSlot(this.rankList);
+
+
+
+        // this.vertical = new VerticalWidget(this, {autoSize: [1,1]});
+
+        // this.questionPanel = new QuestionPanel(null, {autoSize: [1,0], height: 120});
+        // this.vertical.addSlot(this.questionPanel);
+
+        // this.horizontal = new HorizontalWidget(null, {autoSize: [1,1]});
+        // this.vertical.addSlot(this.horizontal);
+
+        // this.statusPanel = new StatusPanel(null, {autoSize: [1,0], height: 80});
+        // this.vertical.addSlot(this.statusPanel);
+
+        // this.leftVertical = new VerticalWidget(null, {autoSize: [1,1], width: 300, border: [10,10,10,10], margin: 10});
+        // this.horizontal.addSlot(this.leftVertical);
+
+        // this.pickPanel = new PickPanel(null, {autoSize: [1,1], height: 90});
+        // this.leftVertical.addSlot(this.pickPanel);
+
+        // this.rankList = new RankList(null, {autoSize: [1,1]});
+        // this.leftVertical.addSlot(this.rankList);
+
+        // const winnerSlot = new Widget(null, {autoSize: [1,1]});
+        // this.winnerAnnunciator = new WinnerAnnunciator(winnerSlot, {anchor:[0.5,0.5], pivot:[0.5,0.5], size: [300,300]});
+        // this.horizontal.addSlot(winnerSlot);
     }
 
     refresh() {
@@ -870,9 +1025,9 @@ class WinnerAnnunciator extends BoxWidget {
 
         this.set({color: bgColor});
 
-        this.round = new TextWidget(this, {anchor: [0.5,0], pivot: [0.5,0], style:'bold', text: "Winner!", url: poppins});
-        this.victor = new TextWidget(this, {anchor: [0.5,0], pivot: [0.5,0], local:[0,100], size: [500,100], point: 36, style:'bold', text: "Winner!", wrap: true, url: poppins});
-        this.score = new TextWidget(this, {anchor: [0.5,0], pivot: [0.5,0], local:[0,200], size: [500,100], point: 36, style:'bold', text: "+10", url: poppins});
+        this.round = new TextWidget(this, {anchor: [0.5,0.5], pivot: [0.5,1], local:[0,-150], style:'bold', text: "Winner!", url: poppins});
+        this.victor = new TextWidget(this, {anchor: [0.5,0.5], pivot: [0.5,0.5], local:[0,0], size: [500,100], point: 36, style:'bold', text: "Winner!", wrap: true, url: poppins});
+        this.score = new TextWidget(this, {anchor: [0.5,0.5], pivot: [0.5,0], local:[0,150], size: [500,100], point: 36, style:'bold', text: "+10", url: poppins});
 
     }
 

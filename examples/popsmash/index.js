@@ -17,14 +17,13 @@ import { checkQNickname } from "./src/Names";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting pop smash!!!!!!!b");
+        console.log("Starting pop smash!");
     }
 
     createManagers() {
         this.playerManager = this.addManager(MyPlayerManager.create());
         this.actorManager = this.addManager(ActorManager.create());
         this.gm = this.addManager(GameMaster.create());
-        // this.gm2 = this.addManager(GameMaster2.create());
     }
 }
 MyModelRoot.register("MyModelRoot");
@@ -38,6 +37,8 @@ class MyViewRoot extends ViewRoot {
         super(...args);
         this.setScale(this.ui.size);
         this.hud = new HUD(this.ui.root);
+        console.log("Size: " + this.ui.size);
+        console.log("Ratio: " + this.ui.ratio);
     }
 
     createManagers() {

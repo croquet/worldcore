@@ -48,7 +48,10 @@ export class GameMaster extends Model {
 
     startSeed() {
         const players = this.wellKnownModel("PlayerManager").players;
-        players.forEach(player => { player.picks = [-1, -1, -1];});
+        players.forEach(player => {
+            player.picks = [-1, -1, -1];
+            player.points = [0,0,0];
+        });
         this.makeDecks();
         this.question = this.questionDeck.pop();
         this.seed = [];
@@ -188,9 +191,10 @@ export class GameMaster extends Model {
         this.setTimer(this.timer-1)
         if (this.timer <= 0) {
             this.match++;
-            if (this.match > 13) {
+            console.log("Next Match: " + this.match);
+            if (this.match > 14) {
                 this.series++;
-                this.startFinale();
+                this.startSeed();
             } else {
                 this.startDebate();
             }

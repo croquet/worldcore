@@ -41,6 +41,7 @@ class PlayerActor extends mix(Actor).with(AM_Player) {
         this.name = null;
         this.score = 0
         this.picks = [-1,-1,-1];
+        this.points = [0,0,0];
         this.vote = 'x';
         this.listen("setName", name => {this.name = name; this.playerChanged();});
         this.listen("setPicks", picks => {this.picks = picks; this.playerChanged();});
