@@ -2,7 +2,7 @@
 //
 // Croquet Studios, 2020
 
-import { Session, App } from "@croquet/croquet";
+import { Session, App, Data } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale, AM_Avatar, PM_Avatar,
     ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply, q_euler, m4_rotationQ, v3_transform, ToDeg, PM_Spatial, AM_Spatial, KeyDown, AM_MouselookAvatar, PM_MouselookAvatar, PM, q_lookAt, v3_rotate, v3_normalize } from "@croquet/worldcore";
@@ -89,7 +89,7 @@ class MyModelRoot extends ModelRoot {
     save(upload = true) {
         // only save if there have been edits
         const data = this.voxels.toPersistentVoxels();
-        const hash = JSON.stringify(data); // might want a real hash to shorten
+        const hash = Data.hash(data);
         if (this.saved !== hash) {
             this.saved = hash;
             if (upload) this.persistSession(() => data);
