@@ -56,20 +56,27 @@ FloorPawn.register('FloorPawn');
 //------------------------------------------------------------------------------------------
 
 class MyModelRoot extends ModelRoot {
-    init(...args) {
-        super.init(...args);
+    init(_options, persistedData) {
+        super.init(_options);
         console.log("Starting quub!!!");
-        this.voxels = Voxels.create();
-        this.voxels.set(4,4,1,5);
-        this.voxels.set(5,4,1,5);
-        this.voxels.set(6,4,1,6);
-        this.voxels.set(8,4,1,5);
-        this.voxels.set(9,4,1,7);
+
+        this.voxels = Voxels.create(persistedData);
+
+        // for testing:
+        // this.voxels.set(4,4,1,5);
+        // this.voxels.set(5,4,1,5);
+        // this.voxels.set(6,4,1,6);
+        // this.voxels.set(8,4,1,5);
+        // this.voxels.set(9,4,1,7);
+
         this.surfaces = Surfaces.create();
 
         // console.log(this.surfaces);
 
         // FloorActor.create();
+
+        this.save(false);   // only init, don't upload
+        this.future(60000).autoSave();
     }
 
 
@@ -77,6 +84,21 @@ class MyModelRoot extends ModelRoot {
         this.playerManager = this.addManager(PlayerManager.create());
         // this.phyicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 50}));
         this.actorManager = this.addManager(ActorManager.create());
+    }
+
+    save(upload = true) {
+        // only save if there have been edits
+        const data = this.voxels.toPersistentVoxels();
+        const hash = JSON.stringify(data); // might want a real hash to shorten
+        if (this.saved !== hash) {
+            this.saved = hash;
+            if (upload) this.persistSession(() => data);
+        }
+    }
+
+    autoSave() {
+        this.save();
+        this.future(60000).autoSave();
     }
 }
 MyModelRoot.register("MyModelRoot");
@@ -131,7 +153,10 @@ class MyViewRoot extends ViewRoot {
 async function go() {
     // await LoadRapier();
     App.makeWidgetDock();
-    const session = await Session.join(`wctest-${App.autoSession("q")}`, MyModelRoot, MyViewRoot, {tps: 0});
+    const session = await Session.join(App.autoSession("q"), MyModelRoot, MyViewRoot, {
+        appId: 'io.croquet.quub',
+        tps: 0,
+    });
 }
 
 go();

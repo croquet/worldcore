@@ -12,6 +12,11 @@ export class VoxelColumn   {
         this.types = new Uint8Array(types);
     }
 
+    asConstructorArgs() {
+        const empty = this.types[0] === 0 && this.types.length === 1;
+        return empty ? [] : [[...this.counts], [...this.types]];
+    }
+
     set(z, type) {
         const expand = this.expand();
         if (expand[z] === type) return false;
@@ -299,10 +304,12 @@ export class Voxels extends Model {
 
     //-- Class Methods --
 
-    init() {
+    init(persistedVoxels) {
         super.init();
         this.beWellKnownAs('Voxels');
-        this.voxels = Array.from(Array(Voxels.sizeX), ()=>Array.from(Array(Voxels.sizeY), ()=>new VoxelColumn()));
+        this.voxels = persistedVoxels
+            ? this.fromPersistentVoxels(persistedVoxels)
+            : Array.from(Array(Voxels.sizeX), ()=>Array.from(Array(Voxels.sizeY), ()=>new VoxelColumn()));
         this.subscribe("hud", "newLevel", () => this.generate());
         this.subscribe("edit", "setVoxel", data => this.set(...data.xyz, data.type));
     }
@@ -388,6 +395,14 @@ export class Voxels extends Model {
         }
     }
 
+    // persistence
 
+    toPersistentVoxels() {
+        return this.voxels.map(row => row.map(col => col.asConstructorArgs()));
+    }
+
+    fromPersistentVoxels(data) {
+        return data.map(row => row.map(args => new VoxelColumn(...args)));
+    }
 }
 Voxels.register("Voxels");
