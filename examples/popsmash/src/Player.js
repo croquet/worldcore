@@ -39,13 +39,28 @@ class PlayerActor extends mix(Actor).with(AM_Player) {
     init(options) {
         super.init("PlayerPawn", options);
         this.name = null;
-        this.score = 0
+        this.score = 0;
         this.picks = [-1,-1,-1];
         this.points = [0,0,0];
         this.vote = 'x';
         this.listen("setName", name => {this.name = name; this.playerChanged();});
         this.listen("setPicks", picks => {this.picks = picks; this.playerChanged();});
         this.listen("setVote", vote => {this.vote = vote; this.playerChanged();});
+    }
+
+    setScore(s) {
+        this.goal = s;
+        this.future(0).tickScore();
+    }
+
+    tickScore() {
+        if (this.score < this.goal) {
+            this.score += 5;
+            this.future(15).tickScore();
+        } else {
+            this.score = this.goal;
+        }
+        this.playerChanged();
     }
 
     get isJoined() {
