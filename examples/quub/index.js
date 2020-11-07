@@ -75,8 +75,7 @@ class MyModelRoot extends ModelRoot {
 
         // FloorActor.create();
 
-        this.save(false);   // only init, don't upload
-        this.future(60000).autoSave();
+        this.autoSave();    // will init the hash, but won't be uploaded
     }
 
 
@@ -86,18 +85,8 @@ class MyModelRoot extends ModelRoot {
         this.actorManager = this.addManager(ActorManager.create());
     }
 
-    save(upload = true) {
-        // only save if there have been edits
-        const data = this.voxels.toPersistentVoxels();
-        const hash = Data.hash(data);
-        if (this.saved !== hash) {
-            this.saved = hash;
-            if (upload) this.persistSession(() => data);
-        }
-    }
-
     autoSave() {
-        this.save();
+        this.persistSession(() => this.voxels.toPersistentVoxels());
         this.future(60000).autoSave();
     }
 }
