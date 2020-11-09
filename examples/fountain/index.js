@@ -15,7 +15,7 @@ import { SprayActor } from "./src/Fountain";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting model!!!");
+        console.log("Starting model!");
         this.seedColors();
         this.level = LevelActor.create();
         this.shots = [];
@@ -40,7 +40,6 @@ class MyModelRoot extends ModelRoot {
     }
 
     disable(d) {
-        console.log("Diasabled: " + d);
         this.disabled = d;
     }
 
@@ -150,7 +149,8 @@ class MyViewRoot extends ViewRoot {
 async function go() {
     await LoadRapier();
     App.makeWidgetDock();
-    const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
+    //const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
+    const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
 }
 
 go();

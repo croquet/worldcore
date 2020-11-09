@@ -19,6 +19,13 @@ export class SprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
             friction: 1,
             restitution: 0.1
         });
+
+        // this.addBallCollider({
+        //     radius: 0.5,
+        //     density: 1,
+        //     friction: 1,
+        //     restitution: 0.1
+        // });
     }
 
 }
@@ -73,7 +80,6 @@ SprayPawn.register('SprayPawn');
 
 export class FountainActor extends mix(Actor).with(AM_Spatial) {
     init(options) {
-        console.log("Creating fountain");
         super.init("Pawn", options);
         this.spray = [];
         this.spawnLimit = 100;
@@ -102,6 +108,7 @@ export class FountainActor extends mix(Actor).with(AM_Spatial) {
             this.spray.push(p);
         }
         this.future(250).tick();
+        //this.future(5000).tick();
     }
 
 }
