@@ -1,5 +1,5 @@
 import { Widget, BoxWidget, TextFieldWidget, ButtonWidget, HorizontalWidget, VerticalWidget, TextWidget, ToggleWidget, ToggleSet, ImageWidget } from "@croquet/worldcore";
-import { Nickname } from "./Names";
+import { Nickname, QNickname } from "./Names";
 import { MyPlayerPawn } from "./Player";
 import { Question } from "./Questions";
 import { CharacterName} from "./Characters";
@@ -49,7 +49,7 @@ class JoinScreen extends Widget {
         this.entryLayout = new HorizontalWidget(this.entry, {autoSize: [1, 1], margin: 5});
 
         this.nameEntry = new TextFieldWidget(this.entryLayout, {autoSize: [1,0], anchor:[0,1], pivot: [0,1], size:[0,45]});
-        this.nameEntry.text.set({text: playerName || Nickname(), url: poppins});
+        this.nameEntry.text.set({text: playerName || QNickname() || Nickname(), url: poppins});
         this.nameEntry.onEnter = () => this.joinGame();
         this.entryLayout.addSlot(this.nameEntry);
 

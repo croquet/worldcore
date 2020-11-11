@@ -3,10 +3,14 @@ import { Messenger } from "@croquet/croquet";
 let qUser = null;
 
 export function Nickname() {
-    if (qUser) return qUser.nickname;
     const a = Math.floor(Math.random() * adjectives.length);
     const n = Math.floor(Math.random() * nouns.length);
     return adjectives[a] + " " + nouns[n];
+}
+
+export function QNickname() {
+    if (qUser) return qUser.nickname;
+    return null;
 }
 
 export async function checkQNickname() {

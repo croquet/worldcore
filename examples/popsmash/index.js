@@ -37,8 +37,9 @@ class MyViewRoot extends ViewRoot {
         super(...args);
         this.setScale(this.ui.size);
         this.hud = new HUD(this.ui.root);
-        console.log("Size: " + this.ui.size);
-        console.log("Ratio: " + this.ui.ratio);
+        // console.log("Size: " + this.ui.size);
+        // console.log("Ratio: " + this.ui.ratio);
+        this.subscribe("ui", "resize", this.setScale);
     }
 
     createManagers() {
