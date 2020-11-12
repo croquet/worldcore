@@ -33,7 +33,7 @@ export class RapierPhysicsManager extends Model {
 
     init(options = {}) {
         super.init();
-        console.log("Starting rapier physics!");
+        console.log("Starting rapier physics!!!!");
         this.beWellKnownAs('RapierPhysicsManager');
 
         const gravity = options.gravity || [0.0, -9.8, 0.0];
@@ -224,32 +224,8 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         this.rigidBody = null;
     }
 
-    // addBallCollider(options = {}) {
-    //     const radius = options.radius * this.scale[0]; // Non-uniform scales won't work with ball colliders
-
-    //     const cd = RAPIER.ColliderDesc.ball(radius);
-    //     cd.density = options.density || 1;  // Zero or negative density causes errors
-    //     cd.friction = options.friction || 0;
-    //     cd.restitution = options.restitution || 0;
-
-    //     const translation = options.translation || v3_zero();
-    //     const rotation = options.rotation || q_identity();
-
-    //     cd.setTranslation(...translation);
-    //     cd.setRotation(...rotation);
-
-    //     const c = this.rigidBody.createCollider(cd);
-
-    //     // cd.free();
-
-    //     const physicsManager = this.wellKnownModel('RapierPhysicsManager');
-    //     c.world = physicsManager.world; // We save a ref to the world in the collider so it can rebuild itself from its handle.
-    //     this.collider = c;
-    // }
-
     addBallCollider(options = {}) {
-        const radius = options.radius * this.scale[0]; // Non-uniform scales won't work with ball colliders
-        // const size = v3_multiply(this.scale, (options.size || [1,1,1]));
+        const radius =  this.scale[0] * (options.radius|| 1); // Non-uniform scales won't work with ball colliders
         const translation = options.translation || v3_zero();
         const rotation = options.rotation || q_identity();
 
@@ -288,6 +264,70 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         c.world = physicsManager.world;
         this.collider = c;
 
+    }
+
+    addConeCollider(options = {}) {
+        const radius =  this.scale[0] * (options.radius|| 1); // Non-uniform scales won't work with cylinder colliders
+        const halfHeight =  this.scale[0] * (options.halfHeight|| 1);
+        const translation = options.translation || v3_zero();
+        const rotation = options.rotation || q_identity();
+
+        const cone = new RAPIER.Cone(halfHeight, radius);
+        const cd = new RAPIER.ColliderDesc(cone);
+
+        cd.density = options.density || 1;  // Zero or negative density causes errors
+        cd.friction = options.friction || 0;
+        cd.restitution = options.restitution || 0;
+        cd.translation = new RAPIER.Vector3(...translation);
+        cd.rotation = new RAPIER.Quaternion(...rotation);
+
+        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        const c = physicsManager.world.createCollider(cd, this.rigidBody.handle);
+        c.world = physicsManager.world;
+        this.collider = c;
+    }
+
+    addCylinderCollider(options = {}) {
+        const radius =  this.scale[0] * (options.radius|| 1); // Non-uniform scales won't work with cylinder colliders
+        const halfHeight =  this.scale[0] * (options.halfHeight|| 1);
+        const roundRadius = this.scale[0] * (options.roundRadius|| 0.0001);
+        const translation = options.translation || v3_zero();
+        const rotation = options.rotation || q_identity();
+
+        const cylinder = new RAPIER.RoundCylinder(halfHeight, radius, roundRadius);
+        const cd = new RAPIER.ColliderDesc(cylinder);
+
+        cd.density = options.density || 1;  // Zero or negative density causes errors
+        cd.friction = options.friction || 0;
+        cd.restitution = options.restitution || 0;
+        cd.translation = new RAPIER.Vector3(...translation);
+        cd.rotation = new RAPIER.Quaternion(...rotation);
+
+        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        const c = physicsManager.world.createCollider(cd, this.rigidBody.handle);
+        c.world = physicsManager.world;
+        this.collider = c;
+    }
+
+    addCapsuleCollider(options = {}) {
+        const radius =  this.scale[0] * (options.radius|| 1); // Non-uniform scales won't work with cylinder colliders
+        const halfHeight =  this.scale[0] * (options.halfHeight|| 1);
+        const translation = options.translation || v3_zero();
+        const rotation = options.rotation || q_identity();
+
+        const capsule = new RAPIER.Capsule(halfHeight, radius);
+        const cd = new RAPIER.ColliderDesc(capsule);
+
+        cd.density = options.density || 1;  // Zero or negative density causes errors
+        cd.friction = options.friction || 0;
+        cd.restitution = options.restitution || 0;
+        cd.translation = new RAPIER.Vector3(...translation);
+        cd.rotation = new RAPIER.Quaternion(...rotation);
+
+        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        const c = physicsManager.world.createCollider(cd, this.rigidBody.handle);
+        c.world = physicsManager.world;
+        this.collider = c;
     }
 
     removeCollider() {

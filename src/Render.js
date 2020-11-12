@@ -1635,10 +1635,10 @@ export function Cone(r0, r1, h, facets, color = [1,1,1,1]) {
         const c1 = b[j];
         const c2 = t[j];
         const c3 = t[i];
-        const v0 = [...c0, 0];
-        const v1 = [...c1, 0];
-        const v2 = [...c2, h];
-        const v3 = [...c3, h];
+        const v0 = [c0[1], -h/2, c0[0]];
+        const v1 = [c1[1], -h/2, c1[0]];
+        const v2 = [c2[1], h/2, c2[0]];
+        const v3 = [c3[1], h/2, c3[0]];
         cone.addFace([v0, v1, v2, v3], [color, color, color, color], [b[i], b[j], t[j], t[i]]);
     }
 
@@ -1647,7 +1647,7 @@ export function Cone(r0, r1, h, facets, color = [1,1,1,1]) {
     const bColors = [];
     const bCoordinates = [];
     for (let i = 0; i < facets; i++) {
-        const p = [...b[i], 0];
+        const p = [b[i][1], -h/2, b[i][0]];
         bVertices.push(p);
         bColors.push(color);
         bCoordinates.push(b[i]);
@@ -1658,7 +1658,7 @@ export function Cone(r0, r1, h, facets, color = [1,1,1,1]) {
     const tColors = [];
     const tCoordinates = [];
     for (let i = 0; i < facets; i++) {
-        const p = [...t[i], h];
+        const p = [t[i][1], h/2, t[i][0]];
         tVertices.push(p);
         tColors.push(color);
         tCoordinates.push(t[i]);
@@ -1683,10 +1683,10 @@ export function Cylinder(r, h, facets, color = [1,1,1,1]) {
         const j = (i+1) % facets;
         const c0 = b[i];
         const c1 = b[j];
-        const v0 = [...c0, 0];
-        const v1 = [...c1, 0];
-        const v2 = [...c1, h];
-        const v3 = [...c0, h];
+        const v0 = [c0[1], -h/2, c0[0]];
+        const v1 = [c1[1], -h/2, c1[0]];
+        const v2 = [c1[1], h/2, c1[0]];
+        const v3 = [c0[1], h/2, c0[0]];
         const u0 = i*diameter / (facets + 1);
         const u1 = (i+1) * diameter / (facets + 1);
         cylinder.addFace([v0, v1, v2, v3], [color, color, color, color], [[u0,0], [u1,0], [u1,h], [u0,h]]);
@@ -1696,7 +1696,7 @@ export function Cylinder(r, h, facets, color = [1,1,1,1]) {
     const tColors = [];
     const tCoordinates = [];
     for (let i = 0; i < facets; i++) {
-        const p = [...b[i], h];
+        const p = [b[i][1], h/2, b[i][0]];
         tVertices.push(p);
         tColors.push(color);
         tCoordinates.push(b[i]);
@@ -1708,7 +1708,7 @@ export function Cylinder(r, h, facets, color = [1,1,1,1]) {
     const bColors = [];
     const bCoordinates = [];
     for (let i = 0; i < facets; i++) {
-        const p = [...b[i], 0];
+        const p = [b[i][1], -h/2, b[i][0]];
         bVertices.push(p);
         bColors.push(color);
         bCoordinates.push(b[i]);

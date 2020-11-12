@@ -6,7 +6,7 @@ import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, ActorManager, RenderManager, PawnManager, PlayerManager, RapierPhysicsManager,
     toRad, LoadRapier,m4_scalingRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, TextWidget } from "@croquet/worldcore";
 import { LevelActor } from "./src/Level";
-import { SprayActor } from "./src/Fountain";
+import { CubeSprayActor, CylinderSprayActor, ConeSprayActor } from "./src/Fountain";
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -62,7 +62,25 @@ class MyModelRoot extends ModelRoot {
             const doomed = this.shots.shift();
             doomed.destroy();
         }
-        const p = SprayActor.create({translation: [0, 17, 19]});
+        let p;
+        const r = Math.random();
+        if (r < 0.4) {
+            p = CubeSprayActor.create({translation: [0, 17, 19]});
+        } else if (r < 0.8) {
+            p = CylinderSprayActor.create({translation: [0, 17, 19]});
+        } else {
+            p = ConeSprayActor.create({translation: [0, 17, 19]});
+        }
+
+
+        // if (Math.random() < 0.5) {
+        //     p = CubeSprayActor.create({translation: [0, 17, 19]});
+        // } else {
+        //     p = CylinderSprayActor.create({translation: [0, 17, 19]});
+        // }
+
+
+        // const p = CubeSprayActor.create({translation: [0, 17, 19]});
         const spin = v3_scale(sphericalRandom(),Math.random() * 1.5);
         p.applyTorqueImpulse(spin);
         p.applyImpulse([0, 0, -16]);
@@ -150,7 +168,7 @@ async function go() {
     await LoadRapier();
     App.makeWidgetDock();
     //const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
-    const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
+    const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 60, debug: "snapshot"});
 }
 
 go();
