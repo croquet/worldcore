@@ -1,4 +1,4 @@
-import { v2_sub, v2_add, v2_scale, v2_magnitude, TAU } from "./Vector";
+import { v2_sub, v2_add, v2_scale, v2_magnitude, TAU, toRad } from "./Vector";
 import { NamedView } from "./NamedView";
 
 // Need to add doubletap
@@ -56,6 +56,7 @@ export class WebInputManager extends NamedView {
         this.addListener(window, 'resize', e => this.onResize(e));
         this.addListener(window, 'focus', e => this.onFocus(e));
         this.addListener(window, 'blur', e => this.onBlur(e));
+        this.addListener(window, 'deviceorientation', e => this.onOrientation(e));
 
         if (this.hasTouch) {
             console.log("Touch input enabled");
@@ -468,6 +469,19 @@ export class WebInputManager extends NamedView {
 
     validDouble() {
         return this.touch0 && this.touch1;
+    }
+
+    onOrientation(event) {
+        const alpha = event.alpha; // yaw
+        const beta = event.beta; // Pitch if in portrait,
+        const gamma = event.gamma;
+        const pitch = toRad(beta);
+        const yaw = toRad(alpha);
+
+        // For landscape mode depends on phone orientation ...
+        // const pitch = gamma;
+        // const yaw = alpha; // 90 off
+        this.publish("input", "orientation", {pitch, yaw});
     }
 
 }

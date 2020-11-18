@@ -268,29 +268,31 @@ class MyViewRoot extends ViewRoot {
 
         }
 
+        this.subscribe("input", "orientation", this.onOrientation);
 
-        console.log("Starting WebXR!");
-        let hasWebXR = false;
-        if (navigator.xr) {
-            navigator.xr.isSessionSupported('immersive-ar').then(supported => {
-                this.vrSupported = supported;
-            })
-        }
+
+        // console.log("Starting WebXR!");
+        // let hasWebXR = false;
+        // if (navigator.xr) {
+        //     navigator.xr.isSessionSupported('immersive-ar').then(supported => {
+        //         this.vrSupported = supported;
+        //     })
+        // }
 
         // this.subscribe("input", "mouse0Down", this.startVR);
         // this.subscribe("input", "touchDown", this.startVR);
 
-        window.addEventListener('click', event => {
-            this.startVR();
+        // window.addEventListener('click', event => {
+        //     this.startVR();
 
-        }, {once: true});
+        // }, {once: true});
 
         // window.addEventListener("deviceorientation", o => this.onOrientation(o), true);
 
     }
 
     onOrientation(orient) {
-        console.log(orient.gamma);
+        console.log(orient);
     }
 
     startVR() {
@@ -377,7 +379,7 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
-        // this.webInput = this.addManager(new WebInputManager());
+        this.webInput = this.addManager(new WebInputManager());
         this.render = this.addManager(new RenderManager());
         this.ui = this.addManager(new UIManager());
         // this.audio = this.addManager(new AudioManager());
