@@ -45,7 +45,7 @@ class MyModelRoot extends ModelRoot {
 
     createManagers() {
         this.playerManager = this.addManager(PlayerManager.create());
-        this.phyicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 15}));
+        this.phyicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 30}));
         this.actorManager = this.addManager(ActorManager.create());
     }
 
@@ -113,6 +113,8 @@ class MyViewRoot extends ViewRoot {
             ao.falloff = 0.7;
         }
 
+
+
         this.addHud();
 
         this.subscribe("input", " Down", this.shoot);
@@ -168,7 +170,7 @@ async function go() {
     await LoadRapier();
     App.makeWidgetDock();
     //const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
-    const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 60, debug: "snapshot"});
+    const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30, debug: "snapshot"});
 }
 
 go();

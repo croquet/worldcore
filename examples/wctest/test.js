@@ -13,7 +13,7 @@ import paper from "./assets/paper.jpg";
 // MoveActor
 //------------------------------------------------------------------------------------------
 
-class MoveActor extends mix(Actor).with(AM_MouselookAvatar) {
+class MoveActor extends mix(Actor).with(AM_Avatar) {
     init(options) {
         super.init("MovePawn", options);
         //const child = ChildActor.create({translation: [0,0,2]});
@@ -30,7 +30,7 @@ MoveActor.register('MoveActor');
 
 let mp;
 
-class MovePawn extends mix(Pawn).with(PM_MouselookAvatar, PM_InstancedVisible) {
+class MovePawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(CachedObject("cubeDrawCall" + this.actor.index, () => this.buildDraw()));
@@ -168,7 +168,7 @@ FloorPawn.register('FloorPawn');
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting test!!!!!");
+        console.log("Starting test!");
 
         FloorActor.create();
         this.move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
@@ -179,11 +179,6 @@ class MyModelRoot extends ModelRoot {
 
         this.seedColors();
         this.spawnLimit = 200;
-
-        this.subscribe("input", " Down", this.shoot);
-        this.subscribe("input", "touchTap", this.shoot);
-        this.subscribe("input", "dDown", this.pickUp);
-        this.subscribe("input", "fDown", this.putDown);
 
         // this.future(0).tick();
     }
@@ -273,25 +268,119 @@ class MyViewRoot extends ViewRoot {
 
         }
 
-        this.webInput.addChord("strafeLeft", ['ArrowLeft', 'Shift']);
-        this.webInput.addChord("spinLeft", ['ArrowLeft'], ['Shift']);
 
-        this.subscribe("input", "spinLeftDown", () => console.log("Spin Left Down"));
-        this.subscribe("input", "spinLeftUp", () => console.log("Spin Left Up"));
-        this.subscribe("input", "strafeLeftDown", () => console.log("Strafe Left Down"));
-        this.subscribe("input", "strafeLeftUp", () => console.log("Strafe Left Up"));
-        this.subscribe("input", "mouseDelta", this.onMouseDelta)
-        this.subscribe("input", "pDown", ()=> this.webInput.enterPointerLock());
+        console.log("Starting WebXR!");
+        let hasWebXR = false;
+        if (navigator.xr) {
+            navigator.xr.isSessionSupported('immersive-ar').then(supported => {
+                this.vrSupported = supported;
+            })
+        }
 
+        // this.subscribe("input", "mouse0Down", this.startVR);
+        // this.subscribe("input", "touchDown", this.startVR);
 
+        window.addEventListener('click', event => {
+            this.startVR();
+
+        }, {once: true});
+
+        // window.addEventListener("deviceorientation", o => this.onOrientation(o), true);
 
     }
 
+    onOrientation(orient) {
+        console.log(orient.gamma);
+    }
+
+    startVR() {
+        console.log("Trying to start VR!");
+        if (!this.vrSupported) return;
+        navigator.xr.requestSession('inline', {requiredFeatures: ['local']}).then(xrSession => {
+            console.log("Has VR session!");
+            this.xrSession = xrSession;
+            console.log(this.xrSession);
+            this.xrSession.requestReferenceSpace('local').then(localReferenceSpace => {
+                console.log("Has Local Reference Space!");
+                this.localReferenceSpace = localReferenceSpace;
+
+
+                const  rm  =  GetNamedView("RenderManager");
+                const canvas = rm.display.canvas;
+                console.log(canvas);
+                //const context = canvas.getContext('webgl2', {xrCompatible: true});
+                const context = canvas.getContext('webgl2');
+                this.context = context;
+                context.makeXRCompatible().then( xxx => {
+                    //console.log(context);
+
+                    this.baseLayer = new XRWebGLLayer(this.xrSession, this.context);
+                    this.xrSession.updateRenderState({baseLayer: this.baseLayer});
+
+
+                    this.xrSession.requestAnimationFrame(this.onFrame.bind(this));
+                });
+
+            });
+
+
+
+
+            // this.xrSession.requestAnimationFrame((time, xrFrame) => {
+            //     let viewer = xrFrame.getViewerPose(xrReferenceSpace);
+            //     console.log(viewer);
+            // });
+
+            // this.xrSession.addEventListener('end', this.onEnd.bind(this));
+            // this.xrSession.addEventListener('select', this.onSelect.bind(this));
+            // this.xrSession.addEventListener('visibilitychange', this.onVisiblity.bind(this));
+
+            // this.xrSession.requestReferenceSpace('local').then(localReferenceSpace => {
+            //     console.log("Has Local Reference Space!");
+            //     this.localReferenceSpace = localReferenceSpace;
+
+            //     this.canvas = document.createElement('canvas');
+            //     this.context = this.canvas.getContext('webgl', {xrCompatible: true});
+
+            //     const {devicePixelRatio} = window;
+            //     const {clientWidth, clientHeight} = this.canvas;
+
+            //     // this.canvas.width = clientWidth * devicePixelRatio;
+            //     // this.canvas.height = clientHeight * devicePixelRatio;
+
+            //     console.log(this.canvas);
+            //     console.log(this.context);
+
+            //     this.baseLayer = new XRWebGLLayer(this.xrSession, this.context);
+            //     this.xrSession.updateRenderState({baseLayer: this.baseLayer});
+
+            //     this.xrSession.requestAnimationFrame(this.onFrame.bind(this));
+            // })
+        })
+    }
+
+    onEnd(event) {console.log(event)}
+    onSelect(event) { console.log(event)}
+    onVisiblity(event) {console.log(event)}
+
+    onFrame(timestamp, frame) {
+        // console.log("Frame!");
+        this.context.bindFramebuffer(this.context.FRAMEBUFFER, this.baseLayer.framebuffer);
+        const pose = frame.getViewerPose(this.localReferenceSpace);
+        if (pose) {
+            const o = pose.transform.orientation;
+            const q = [o.x, o.y, o.z, o.w];
+        //    console.log(q);
+            if (mp) mp.throttledRotateTo(q);
+        }
+        this.xrSession.requestAnimationFrame(this.onFrame.bind(this));
+    }
+
     createManagers() {
-        this.webInput = this.addManager(new WebInputManager());
+        // this.webInput = this.addManager(new WebInputManager());
         this.render = this.addManager(new RenderManager());
         this.ui = this.addManager(new UIManager());
-        this.audio = this.addManager(new AudioManager());
+        // this.audio = this.addManager(new AudioManager());
         this.pawnManager = this.addManager(new PawnManager());
     }
 
