@@ -1050,6 +1050,24 @@ export function q_euler(x, y ,z) {
 
 }
 
+// Returns the equivalent Euler angle around the x axis
+export function q_pitch(q) {
+    const x = q[0], y = q[1], z = q[2], w = q[3];
+    return Math.atan2(2*x*w - 2*y*z, 1 - 2*x*x - 2*z*z);
+}
+
+// Returns the equivalent Euler angle around the y axis
+export function q_yaw(q) {
+    const x = q[0], y = q[1], z = q[2], w = q[3];
+    return Math.atan2(2*y*w - 2*x*z, 1 - 2*y*y - 2*z*z);
+}
+
+// Returns the equivalent Euler angle around the z axis
+export function q_roll(q) {
+    const x = q[0], y = q[1], z = q[2], w = q[3];
+    return Math.asin(2*x*y + 2*z*w);
+}
+
 export function q_scale(q,s) {
     return [q[0] * s, q[1] * s, q[2] * s, q[3] * s, q[4] * s];
 }

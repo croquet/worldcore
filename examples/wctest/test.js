@@ -5,7 +5,8 @@
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale, AM_Avatar, PM_Avatar,
-    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply, q_euler, m4_rotationQ, v3_transform, ToDeg, PM_Spatial, AM_Spatial, KeyDown, AM_MouselookAvatar, PM_MouselookAvatar, PM, q_lookAt, v3_rotate, v3_normalize } from "@croquet/worldcore";
+    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply, q_euler, m4_rotationQ, v3_transform, ToDeg, PM_Spatial, AM_Spatial, KeyDown, AM_MouselookAvatar, PM_MouselookAvatar, PM, q_lookAt, v3_rotate, v3_normalize, q_pitch, q_roll, q_yaw, toDeg } from "@croquet/worldcore";
+import { WebXRManager } from "../../src/WebXR";
 import paper from "./assets/paper.jpg";
 
 
@@ -168,7 +169,7 @@ FloorPawn.register('FloorPawn');
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting test!");
+        console.log("Starting test!!");
 
         FloorActor.create();
         this.move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
@@ -268,7 +269,15 @@ class MyViewRoot extends ViewRoot {
 
         }
 
-        this.subscribe("input", "orientation", this.onOrientation);
+        // const q0 = q_axisAngle([1,0,0], toRad(20));
+        // const q1 = q_axisAngle([0,1,0], toRad(-200));
+        // const q = q_multiply(q0, q1);
+        // const p = q_pitch(q);
+        // const y = q_yaw(q);
+        // console.log(toDeg(p));
+        // console.log(toDeg(y));
+
+        // this.subscribe("input", "orientation", this.onOrientation);
 
 
         // console.log("Starting WebXR!");
@@ -283,7 +292,7 @@ class MyViewRoot extends ViewRoot {
         // this.subscribe("input", "touchDown", this.startVR);
 
         // window.addEventListener('click', event => {
-        //     this.startVR();
+        //     this.start();
 
         // }, {once: true});
 
@@ -293,6 +302,10 @@ class MyViewRoot extends ViewRoot {
 
     onOrientation(orient) {
         console.log(orient);
+    }
+
+    start() {
+        console.log("Trying to start VR!");
     }
 
     startVR() {
@@ -383,7 +396,9 @@ class MyViewRoot extends ViewRoot {
         this.render = this.addManager(new RenderManager());
         this.ui = this.addManager(new UIManager());
         // this.audio = this.addManager(new AudioManager());
+        this.xrManager = this.addManager(new WebXRManager());
         this.pawnManager = this.addManager(new PawnManager());
+
     }
 
     onMouseDelta(delta) {

@@ -57,6 +57,9 @@ export class WebInputManager extends NamedView {
         this.addListener(window, 'focus', e => this.onFocus(e));
         this.addListener(window, 'blur', e => this.onBlur(e));
         this.addListener(window, 'deviceorientation', e => this.onOrientation(e));
+        this.addListener(document, 'click', e => this.onClick(e));
+
+        //window.addEventListener('click', e => this.onClick(e), {once: true});
 
         if (this.hasTouch) {
             console.log("Touch input enabled");
@@ -68,7 +71,7 @@ export class WebInputManager extends NamedView {
 
         if (this.hasMouse) {
             console.log("Mouse input enabled");
-            this.addListener(document, 'click', e => this.onClick(e));
+
             this.addListener(document, 'mousedown', e => this.onMouseDown(e));
             this.addListener(document, 'mouseup', e => this.onMouseUp(e));
             this.addListener(document, 'mousemove', e => this.onMouseMove(e));
@@ -262,7 +265,8 @@ export class WebInputManager extends NamedView {
     }
 
     onClick(event) {
-        window.focus();
+        // window.focus();
+        console.log("Test click!");
         this.publish("input", "click");
     }
 
@@ -364,7 +368,7 @@ export class WebInputManager extends NamedView {
     }
 
     onTouchStart(event) {
-        event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
+        // event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
         for (const touch of event.changedTouches) {
             const id = touch.identifier;
             const x = touch.clientX;
@@ -385,7 +389,7 @@ export class WebInputManager extends NamedView {
     }
 
     onTouchEnd(event) {
-        event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
+        //event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
         for (const touch of event.changedTouches) {
             const id = touch.identifier;
             const start = this.getTouch(id);
