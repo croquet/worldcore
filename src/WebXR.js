@@ -44,9 +44,6 @@ export class WebXRManager extends NamedView {
             const o = pose.transform.orientation;
             const q = [o.x, o.y, o.z, o.w];
             this.publish("xr", "orientation", q);
-        //     const pitch = q_pitch(q);
-        //     const yaw = q_yaw(q);
-        //    console.log(toDeg(yaw));
         }
         this.xrSession.requestAnimationFrame(this.onFrame.bind(this));
     }
