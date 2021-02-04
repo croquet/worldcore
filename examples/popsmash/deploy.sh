@@ -25,10 +25,10 @@ pnpm i || exit 1
 rm -rf dist
 pnpm run build || exit 1
 
-# copy to croquet.io/testing/
-TARGET=$WONDERLAND/servers/croquet-io-testing/$APP
+# copy to croquet.io/dev/
+TARGET=$WONDERLAND/servers/croquet-io-dev/$APP
 rm -rf $TARGET/*
 cp -a dist/ $TARGET/
 
 # commit
-(cd $TARGET && git add . && git commit -m "[$APP] deploy to croquet.io/testing/$APP/" -- . && git --no-pager log -1 --stat)
+(cd $TARGET && git add . && git commit -m "[$APP] deploy to croquet.io/dev/$APP/" -- . && git --no-pager log -1 --stat)

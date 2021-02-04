@@ -21,4 +21,4 @@ git --no-pager show --stat
 echo
 echo "You still need to"
 echo "    git push"
-echo "to deploy to https://croquet.io/testing/$APP/"
+echo "to deploy to https://croquet.io/dev/$APP/"
