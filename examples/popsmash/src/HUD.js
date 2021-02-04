@@ -1,4 +1,4 @@
-import { Widget, BoxWidget, TextFieldWidget, ButtonWidget, HorizontalWidget, VerticalWidget, TextWidget, ToggleWidget, ToggleSet, ImageWidget } from "@croquet/worldcore";
+import { Widget, BoxWidget, TextFieldWidget, ButtonWidget, HorizontalWidget, VerticalWidget, TextWidget, ToggleWidget, ToggleSet, ImageWidget, GetNamedView } from "@croquet/worldcore";
 import { Nickname, QNickname } from "./Names";
 import { MyPlayerPawn } from "./Player";
 import { Question } from "./Questions";
@@ -222,7 +222,7 @@ class CommonPanel extends BoxWidget {
         this.vertical.addSlot(this.questionPanel);
 
         this.contentPanel = new Widget(null, {autoSize: [1,0], height: 600, border: [10,10,10,0]});
-        this.vertical.addSlot(this.contentPanel);
+        // this.vertical.addSlot(this.contentPanel);
 
         this.horizontal = new HorizontalWidget(null, {autoSize: [1,0], border: [10,10,10,10], margin: 10});
         this.vertical.addSlot(this.horizontal);
@@ -242,6 +242,8 @@ class CommonPanel extends BoxWidget {
         this.rankList = new RankList(null, {autoSize: [1,1]});
         this.horizontal.addSlot(this.rankList);
 
+        // this.vertical.removeSlot(1);
+        // this.horizontal.addSlot(this.contentPanel,1);
 
         this.lobbyPanel = new LobbyPanel(this.contentPanel, {autoSize: [1,1], visible: false});
         this.seedPanel = new SeedPanel(this.contentPanel, {autoSize: [1,1], visible: false});
@@ -249,6 +251,34 @@ class CommonPanel extends BoxWidget {
         this.votePanel = new VotePanel(this.contentPanel, {autoSize: [1,1], visible: false});
         this.winPanel = new WinPanel(this.contentPanel, {autoSize: [1,1], visible: false});
 
+        const ui = GetNamedView('UIManager');
+        if (ui.size[0] > ui.size[1]) {
+            this.orientation = "landscape";
+            this.horizontal.addSlot(this.contentPanel,1);
+        } else {
+            this.orientation = "portrait";
+            this.vertical.addSlot(this.contentPanel,1);
+        }
+
+        this.subscribe("ui", "resize", this.updateLayout);
+    }
+
+    updateLayout(size) {
+        if (size[0] > size[1]) {
+            if (this.orientation === "landscape") return;
+            this.orientation = "landscape";
+            this.vertical.removeSlot(1);
+            this.horizontal.addSlot(this.contentPanel,1);
+            // this.refresh();
+            this.markChanged();
+        } else {
+            if (this.orientation === "portrait") return;
+            this.orientation = "portrait";
+            this.horizontal.removeSlot(1);
+            this.vertical.addSlot(this.contentPanel,1);
+            // this.refresh();
+            this.markChanged();
+        }
     }
 
     refresh() {

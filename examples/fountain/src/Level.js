@@ -15,6 +15,38 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
             restitution: 0.1
         });
 
+        this.addBoxCollider({
+            translation: [21,0,0],
+            size: [1,40,40],
+            friction: 1,
+            density: 1,
+            restitution: 0.1
+        });
+
+        this.addBoxCollider({
+            translation: [-21,0,0],
+            size: [1,40,40],
+            friction: 1,
+            density: 1,
+            restitution: 0.1
+        });
+
+        this.addBoxCollider({
+            translation: [0,0,-21],
+            size: [40,40,1],
+            friction: 1,
+            density: 1,
+            restitution: 0.1
+        });
+
+        this.addBoxCollider({
+            translation: [0,0,21],
+            size: [40,40,1],
+            friction: 1,
+            density: 1,
+            restitution: 0.1
+        });
+
         this.fountain = FountainActor.create({translation: [0,1.5,0]});
 
     }
@@ -35,6 +67,10 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         this.ground = new Triangles();
         this.ground.addFace([[-75,1,75], [75,1,75], [75,1,-75], [-75,1,-75]], [c,c,c,c], [[0,0], [75,0], [75,75], [0,75]]);
 
+        this.ground.addFace([[-20,0,-20], [20,0,-20], [20,5,-20], [-20,5,-20]], [c,c,c,c], [[0,0], [75,0], [75,75], [0,75]]);
+        this.ground.addFace([[-20,0,20], [-20,0,-20], [-20,5,-20], [-20,5,20]], [c,c,c,c], [[0,0], [75,0], [75,75], [0,75]]);
+        this.ground.addFace([[20,0,-20], [20,0,20], [20,5,20], [20,5,-20]], [c,c,c,c], [[0,0], [75,0], [75,75], [0,75]]);
+
         this.ground.load();
         this.ground.clear();
 
@@ -52,7 +88,6 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         super.destroy();
         this.ground.destroy();
         this.material.destroy();
-
     }
 
 }

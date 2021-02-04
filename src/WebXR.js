@@ -5,8 +5,11 @@ export class WebXRManager extends NamedView {
 
     constructor() {
         super("WebXRManager");
+        console.log("Starting XR Manager!");
+        console.log(navigator.xr);
         if (!navigator.xr) return;
         navigator.xr.isSessionSupported('immersive-ar').then(supported => {
+            console.log("WebXR supported by browser!");
             if (supported) this.subscribe("input", "click", this.start);
         })
     }
@@ -43,6 +46,7 @@ export class WebXRManager extends NamedView {
         if (pose) {
             const o = pose.transform.orientation;
             const q = [o.x, o.y, o.z, o.w];
+            console.log(q);
             this.publish("xr", "orientation", q);
         }
         this.xrSession.requestAnimationFrame(this.onFrame.bind(this));

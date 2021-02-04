@@ -266,6 +266,7 @@ export class WebInputManager extends NamedView {
 
     onClick(event) {
         window.focus();
+        console.log("WebInput click!");
         this.publish("input", "click");
     }
 

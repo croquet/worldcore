@@ -181,7 +181,6 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         }
 
         const rbd = new RAPIER.RigidBodyDesc(rbStatus);
-
         rbd.translation = new RAPIER.Vector3(...this.translation);
         rbd.rotation = new RAPIER.Quaternion(...this.rotation);
 
@@ -224,6 +223,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         this.rigidBody = null;
     }
 
+
     addBallCollider(options = {}) {
         const radius =  this.scale[0] * (options.radius|| 1); // Non-uniform scales won't work with ball colliders
         const translation = options.translation || v3_zero();
@@ -247,6 +247,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
 
     addBoxCollider(options = {}) {
         const size = v3_multiply(this.scale, (options.size || [1,1,1]));
+
         const translation = options.translation || v3_zero();
         const rotation = options.rotation || q_identity();
 
@@ -261,6 +262,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
 
         const physicsManager = this.wellKnownModel('RapierPhysicsManager');
         const c = physicsManager.world.createCollider(cd, this.rigidBody.handle);
+
         c.world = physicsManager.world;
         this.collider = c;
 
@@ -332,7 +334,6 @@ export const AM_RapierPhysics = superclass => class extends superclass {
 
     removeCollider() {
         if (!this.collider) return;
-
         this.collider = null;
     }
 

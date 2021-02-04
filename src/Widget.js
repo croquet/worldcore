@@ -78,7 +78,7 @@ export class UIManager extends NamedView {
     resize() {
         if (focus) focus.blur();
         this.ratio = window.devicePixelRatio;
-        console.log("UI Pixel Ratio: " + this.ratio);
+        // console.log("UI Pixel Ratio: " + this.ratio);
         const width = window.innerWidth;
         const height = window.innerHeight;
         this.size = [width, height];
@@ -305,6 +305,9 @@ export class Widget extends View {
     get color() { return this._color || [0,0,0];}
     get bubbleChanges() { return this._bubbleChanges; } // Default to false
     get rawSize() { return this._size || [100,100];}
+
+    get width() { return this._width || 0};
+    get height() { return this._height || 0};
 
     get opacity() { // Children don't inherit opacity, but the opacity of a canvas applies to everything drawn on it.
         if (this._opacity === undefined) return 1;
@@ -598,7 +601,8 @@ export class HorizontalWidget extends LayoutWidget {
     addSlot(w,n) {
         super.addSlot(w,n);
         w.set({autoSize: [0,1]});
-        Object.defineProperty(w, 'width', { get: () => { return w._width || 0; }});
+        // if (!('width' in w)) Object.defineProperty(w, 'width', { get: () => { return w._width || 0; }});
+        // Object.defineProperty(w, 'width', { get: () => { return w._width || 0; }});
     }
 
     resizeSlots() {
@@ -634,7 +638,8 @@ export class VerticalWidget extends LayoutWidget {
     addSlot(w,n) {
         super.addSlot(w,n);
         w.set({autoSize: [1,0]});
-        Object.defineProperty(w, 'height', { get: () => { return w._height || 0; }});
+        //if (!('height' in w)) Object.defineProperty(w, 'height', { get: () => { return w._height || 0; }});
+        // Object.defineProperty(w, 'height', { get: () => { return w._height || 0; }});
     }
 
     resizeSlots() {
@@ -914,7 +919,7 @@ export class TextWidget extends Widget {
         lines.forEach((line,i) => this.cc.fillText(line, xy[0], xy[1] + (i * lineHeight) - yOffset));
     }
 
-    width() { // Returns the full width of the text in pixels given the current font.
+    pixelWidth() { // Returns the full width of the text in pixels given the current font.
         this.cc.font = this.style + " " + this.point + "px " + this.font;
         return this.cc.measureText(this.text).width;
     }
@@ -1680,7 +1685,7 @@ export class TextFieldWidget extends ControlWidget {
         if (!this.multipleSelected) { // Make sure the cursor is always visible.
 
             let textLeft = this.text.local[0] * this.scale;
-            const textWidth = this.text.width();
+            const textWidth = this.text.pixelWidth();
             const textRight = textLeft + textWidth;
             const clipRight = this.clip.size[0];
 

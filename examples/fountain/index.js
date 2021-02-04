@@ -15,7 +15,7 @@ import { CubeSprayActor, CylinderSprayActor, ConeSprayActor } from "./src/Founta
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting model!");
+        console.log("Starting model!!");
         this.seedColors();
         this.level = LevelActor.create();
         this.shots = [];
@@ -58,7 +58,7 @@ class MyModelRoot extends ModelRoot {
 
     shoot() {
         if (this.isPaused) return;
-        if (this.shots.length >= 20) {
+        if (this.shots.length >= 50) {
             const doomed = this.shots.shift();
             doomed.destroy();
         }
@@ -72,15 +72,6 @@ class MyModelRoot extends ModelRoot {
             p = ConeSprayActor.create({translation: [0, 17, 19]});
         }
 
-
-        // if (Math.random() < 0.5) {
-        //     p = CubeSprayActor.create({translation: [0, 17, 19]});
-        // } else {
-        //     p = CylinderSprayActor.create({translation: [0, 17, 19]});
-        // }
-
-
-        // const p = CubeSprayActor.create({translation: [0, 17, 19]});
         const spin = v3_scale(sphericalRandom(),Math.random() * 1.5);
         p.applyTorqueImpulse(spin);
         p.applyImpulse([0, 0, -16]);
@@ -169,8 +160,9 @@ class MyViewRoot extends ViewRoot {
 async function go() {
     await LoadRapier();
     App.makeWidgetDock();
-    //const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
-    const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30, debug: "snapshot"});
+    const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
+    //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30, debug: "snapshot"});
+    //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
 }
 
 go();

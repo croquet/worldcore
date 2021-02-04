@@ -245,13 +245,11 @@ export class FountainActor extends mix(Actor).with(AM_Spatial) {
             const spin = v3_scale(sphericalRandom(),Math.random() * 0.5);
             const rotationMatrix = m4_rotationQ(this.rotation);
             const force = v3_transform([0, 18 + 5 * Math.random(), 0], rotationMatrix);
-            // const force = v3_transform([0, 18, 0], rotationMatrix);
             p.applyTorqueImpulse(spin);
             p.applyImpulse(force);
             this.spray.push(p);
         }
         this.future(250).tick();
-        //this.future(5000).tick();
     }
 
 }
