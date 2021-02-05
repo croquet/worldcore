@@ -160,8 +160,8 @@ class MyViewRoot extends ViewRoot {
 async function go() {
     await LoadRapier();
     App.makeWidgetDock();
-    //const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
-    const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
+    const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
+    //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
     //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
 }
 
