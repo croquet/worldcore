@@ -64,7 +64,7 @@ class MyModelRoot extends ModelRoot {
         }
         let p;
         const r = Math.random();
-        if (r < 0.4) {
+        if (r < 1) {
             p = CubeSprayActor.create({translation: [0, 17, 19]});
         } else if (r < 0.8) {
             p = CylinderSprayActor.create({translation: [0, 17, 19]});
@@ -160,8 +160,8 @@ class MyViewRoot extends ViewRoot {
 async function go() {
     await LoadRapier();
     App.makeWidgetDock();
-    const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
-    //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30, debug: "snapshot"});
+    //const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
+    const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
     //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
 }
 
