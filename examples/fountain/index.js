@@ -58,13 +58,13 @@ class MyModelRoot extends ModelRoot {
 
     shoot() {
         if (this.isPaused) return;
-        if (this.shots.length >= 50) {
+        if (this.shots.length >= 30) {
             const doomed = this.shots.shift();
             doomed.destroy();
         }
         let p;
         const r = Math.random();
-        if (r < 1) {
+        if (r < 0.4) {
             p = CubeSprayActor.create({translation: [0, 17, 19]});
         } else if (r < 0.8) {
             p = CylinderSprayActor.create({translation: [0, 17, 19]});
@@ -161,7 +161,7 @@ async function go() {
     await LoadRapier();
     App.makeWidgetDock();
     const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
-    //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
+    // const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30, debug: "snapshot"});
     //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
 }
 

@@ -1,6 +1,6 @@
 dependencies:
   '@croquet/croquet': 0.3.3
-  '@dimforge/rapier3d': 0.2.4
+  '@dimforge/rapier3d': 0.3.1
   resonance-audio: 1.0.0
   three: 0.108.0
 lockfileVersion: 5.1
@@ -22,10 +22,10 @@ packages:
     dev: false
     resolution:
       integrity: sha512-JzDF+xeNiJzF6Qlsu89rGgqnAXlzKElSi1wkyCbZ/dQ2SFcyPnZEIV/8rVDvsotv7mOPMS4u8ED7wCTpyJF9Ng==
-  /@dimforge/rapier3d/0.2.4:
+  /@dimforge/rapier3d/0.3.1:
     dev: false
     resolution:
-      integrity: sha512-O1VORNpT2juGmAkEMvw+weUa0/2Z/cgfHQmumBR8bAorqF9b/4vAVd88rBxSy25LMBwEwmt1F4TPPc7JO48NaQ==
+      integrity: sha512-ytNcx5j7PHt1BTvJSkowwMx6XTh8etCiU0Nf2ydyWKdXcL52FXZuhLF3/nF5cNW3FbM9XI8dQ//ac6lxsb6/NQ==
   /fast-json-stable-stringify/2.1.0:
     dev: false
     resolution:
@@ -66,6 +66,6 @@ packages:
       integrity: sha512-B3LTJURySMix/xWqVHyj2XGVsIHesb4euGVuIaFfKxfmjM4F6HMgbW9V66DHUEt98jGlGpeTWSiSJ78UfrJVbA==
 specifiers:
   '@croquet/croquet': ^0.3.3
-  '@dimforge/rapier3d': 0.2.4
+  '@dimforge/rapier3d': 0.3.1
   resonance-audio: 1.0.0
   three: 0.108.0

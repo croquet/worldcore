@@ -235,7 +235,7 @@ export class FountainActor extends mix(Actor).with(AM_Spatial) {
             }
             let p;
             const r = Math.random();
-            if (r < 1) {
+            if (r < 0.4) {
                 p = CubeSprayActor.create({translation: this.translation});
             } else if (r < 0.8) {
                 p = CylinderSprayActor.create({translation: this.translation});
