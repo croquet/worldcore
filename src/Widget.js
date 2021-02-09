@@ -290,7 +290,7 @@ export class Widget extends View {
 
     show() { this.set({visible: true}); }
     hide() { this.set({visible: false}); }
-    toggleVisible() { this.set({visible: !this.visible}); }
+    toggleVisible() { this.set({visible: !this.isVisible}); }
 
     visiblityChanged() {
         if (this.children) this.children.forEach(child => child.visiblityChanged());
@@ -667,6 +667,20 @@ export class VerticalWidget extends LayoutWidget {
 }
 
 //------------------------------------------------------------------------------------------
+//-- EmptyWidget ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Clears the background when its drawn
+
+export class EmptyWidget extends Widget {
+
+    draw() {
+        this.clear();
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
 //-- BoxWidget -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -823,7 +837,8 @@ export class NineSliceWidget extends ImageWidget {
 // Draws a piece of static text.
 //
 // Text should always be drawn over some background widget to refresh properly. When a text
-// widget is updated, it triggers a refresh of its parent.
+// widget is updated, it triggers a refresh of its parent. If you floating text, put in in an
+// EmptyWidget.
 //
 // Needs:
 //

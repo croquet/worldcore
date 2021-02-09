@@ -22,7 +22,8 @@ class MyModelRoot extends ModelRoot {
 
         this.subscribe("hud", "shoot", this.shoot);
         this.subscribe("hud", "pause", this.pause);
-        this.subscribe("hud", "disable", this.disable)
+        this.subscribe("hud", "disable", this.disable);
+        this.subscribe("test", "ping", this.ignore);
     }
 
     destroy() {
@@ -42,6 +43,8 @@ class MyModelRoot extends ModelRoot {
     disable(d) {
         this.disabled = d;
     }
+
+    ignore() {}
 
     createManagers() {
         this.playerManager = this.addManager(PlayerManager.create());
@@ -104,8 +107,6 @@ class MyViewRoot extends ViewRoot {
             ao.falloff = 0.7;
         }
 
-
-
         this.addHud();
 
         this.subscribe("input", " Down", this.shoot);
@@ -155,14 +156,27 @@ class MyViewRoot extends ViewRoot {
         this.cheatText.set({visible: this.cheatMode});
     }
 
+    reportLatency(latency) {
+        console.log(latency);
+    }
+
+
+
 }
 
 async function go() {
     await LoadRapier();
     App.makeWidgetDock();
-    const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
-    // const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30, debug: "snapshot"});
+    //const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
+    const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30, debug: "snapshot"});
+    setInterval(ping, 500, session)
     //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
+}
+
+function ping(session) {
+    if (!session.view) return;
+    session.view.publish("test", "ping");
+    session.view.reportLatency(session.latency);
 }
 
 go();
