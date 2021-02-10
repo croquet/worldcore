@@ -196,7 +196,13 @@ class DrawView extends ViewRoot {
             Messenger.setReceiver(this);
             Messenger.send("appReady");
             Messenger.on("appInfoRequest", () => {
-                Messenger.send("appInfo", { appName: "whiteboard", label: "whiteboard", iconName: "whiteboard.svgIcon", urlTemplate: "../whiteboard/?q=${q}" });
+                // feb 2021: as a quick fix for wanting whiteboard
+                // always to appear in a transparent miniBrowser,
+                // GL pays attention to a "transparent" flag in the
+                // appInfo.  each user's whiteboard will cause a
+                // beTransparent event to be sent on initialisation,
+                // but the duplication is harmless.
+                Messenger.send("appInfo", { appName: "whiteboard", label: "whiteboard", iconName: "whiteboard.svgIcon", urlTemplate: "../whiteboard/?q=${q}", transparent: true });
                 });
         }
 
@@ -558,14 +564,16 @@ class DrawView extends ViewRoot {
             x = this.offset[0]-x;
             y = this.offset[1]-y;
 
-            this.setPose(this.scale, [x,y]);
+            this.setPose(s, [x,y]);
         }
         this.lastxy = xy;
      }
 
     onMouseWheel(delta){
+        /* @@ feb 2021: disable zoom
         this.lastxy =  this.toLocal(this.wheelxy);
         this.setPose(this.scale-(delta * 0.0002));
+        */
     }
 
     onTouchDouble(event)
@@ -580,12 +588,12 @@ class DrawView extends ViewRoot {
         }
        // {xy, zoom, dial}
         let xy = event.xy;
-        let s = this.startScale*event.zoom;
+        let s = 1; // this.startScale*event.zoom; @@ feb 2021: disable zoom
         let x = s*(this.lastxy[0]-xy[0]);
         let y = s*(this.lastxy[1]-xy[1]);
         x = this.offset[0]-x;
         y = this.offset[1]-y;
-        this.setPose(this.startScale*event.zoom, [x,y]);
+        this.setPose(s, [x,y]);
         this.lastxy = event.xy;
     }
 
