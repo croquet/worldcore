@@ -58,7 +58,7 @@ window.addEventListener('hashchange', function() {
 
 class DrawModel extends ModelRoot {
 
-    init() { // Note that models are initialized with "init" instead of "constructor"!
+    init(options, persistentData) { // Note that models are initialized with "init" instead of "constructor"!
         super.init();
         this.pages = []; // holds all of the pages
         this.transferLines = [];
@@ -68,8 +68,13 @@ class DrawModel extends ModelRoot {
         this.listen("add-my-line", this.addLines);
         this.listen("undo-line", this.undo);
         this.listen("redo-line", this.redo);
+        this.listen("end-of-line", this.savePersistentData);
         //this.listen("previous-page", this.previousPage);
         //this.listen("next-page", this.nextPage);
+
+        if (persistentData) {
+            this.loadPersistentData(persistentData);
+        }
     }
 
     startLine( lineInfo , start){
@@ -120,6 +125,7 @@ class DrawModel extends ModelRoot {
         if(this.page.completeLines.length){
             this.page.undoLines.push(this.page.completeLines.pop());
             this.say("redraw-all");
+            this.savePersistentData();
         }
     }
 
@@ -128,6 +134,7 @@ class DrawModel extends ModelRoot {
         if(this.page.undoLines.length){
             this.page.completeLines.push(this.page.undoLines.pop());
             this.say("redraw-all");
+            this.savePersistentData();
         }
     }
 
@@ -140,10 +147,11 @@ class DrawModel extends ModelRoot {
             this.page = this.pages[this.currentPage];
             this.transferLines.forEach(line=>this.startLine(line[0], line[1])); //restart in-process lines on new page
             this.say("redraw-all");
+            this.savePersistentData();
         }
     }
 
-    nextPage(){
+    nextPage(loading){
         //console.log("nextPage");
         if(this.currentPage<this.pages.length-1){
             this.killAllLines(); // terminate all in-process lines
@@ -153,6 +161,7 @@ class DrawModel extends ModelRoot {
             this.transferLines.forEach(line=>this.startLine(line[0], line[1])); //restart in-process lines on new page
         } else this.newPage();
         this.say("redraw-all");
+        if (!loading) this.savePersistentData();
     }
 
     newPage(){
@@ -164,6 +173,18 @@ class DrawModel extends ModelRoot {
             this.transferLines.forEach(line=>this.startLine(line[0], line[1])); //restart in-process lines on new page
             this.say("page-change", this.currentPage);
         }
+    }
+
+    savePersistentData(){
+        let func = () => ({pages: this.pages, currentPage: this.currentPage});
+        this.persistSession(func);
+    }
+
+    loadPersistentData(data){
+        let {pages, currentPage} = data;
+        this.pages = pages;
+        this.currentPage = currentPage - 1;
+        this.nextPage(true);
     }
 
     say(event, data) {
@@ -676,6 +697,7 @@ class DrawView extends ViewRoot {
         this.say("add-my-line", {viewId: this.viewId, line:this.line, done:bool});
         if(bool){ // end of the line...
             this.lastXY = null;
+            this.say("end-of-line");
         }
         this.line = []; //reset for the next line
         //console.log("sayLine")
@@ -874,7 +896,7 @@ async function go() {
     App.messages = true;
     App.makeWidgetDock({badge: true, qrcode: true});
 
-    await Session.join(`Whiteboard-${App.autoSession()}`, DrawModel, DrawView, { tps: 0 });
+    await Session.join(`Whiteboard-${App.autoSession()}`, DrawModel, DrawView, { appId: "io.croquet.whiteboard", tps: 1 });
 }
 
 go();
