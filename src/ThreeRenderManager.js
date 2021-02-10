@@ -100,7 +100,7 @@ export class ThreeRenderManager extends NamedView {
         //const light = new THREE.PointLight(0xffffff, 1);
         //light.position.set(50, 50, 50);
         //this.scene.add(light);
-        console.log(this.scene)
+        // console.log(this.scene)
     }
 
     destroy() {
