@@ -244,8 +244,12 @@ class DrawView extends ViewRoot {
         this.listen("redraw-all", this.redrawAll);
         this.listen("page-change", this.doPageChange);
         this.redrawAll();
-        this.scale = 1;
-        this.offset = [0,0];
+
+        // switch to using resetPose to ensure offset is correct
+        // this.scale = 1;
+        // this.offset = [0,0];
+        this.resetPose();
+
         this.lastTime = 0;
         this.lastScale = 1;
         this.startScale = 1;
