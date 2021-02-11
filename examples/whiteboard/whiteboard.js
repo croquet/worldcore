@@ -337,8 +337,8 @@ class DrawView extends ViewRoot {
         this.subscribe("ui", "resize", this.onWindowResize);
         this.subscribe("ui", "mouse0Down", this.onMouse0Down); // input
         this.subscribe("ui", "mouse0Up", this.onMouse0Up); // input
-        this.subscribe("input", "mouse2Down", this.onMouse2Down); // input
-        this.subscribe("input", "mouse2Up", this.onMouse2Up); // input
+        // this.subscribe("input", "mouse2Down", this.onMouse2Down); // input
+        // this.subscribe("input", "mouse2Up", this.onMouse2Up); // input
         this.subscribe("ui", "mouseXY", this.onMouseXY);
         this.subscribe("input", "wheel", this.onMouseWheel);
 
