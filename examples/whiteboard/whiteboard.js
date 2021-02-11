@@ -262,7 +262,8 @@ class DrawView extends ViewRoot {
                 // beTransparent event to be sent on initialisation,
                 // but the duplication is harmless.
                 Messenger.send("appInfo", { appName: "whiteboard", label: "whiteboard", iconName: "whiteboard.svgIcon", urlTemplate: "../whiteboard/?q=${q}", transparent: true });
-                });
+            });
+            Messenger.startPublishingPointerMove();
         }
 
         this.webInput = this.addManager(new WebInputManager());
