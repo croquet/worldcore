@@ -892,11 +892,18 @@ export class ColorBrushHUD extends Widget{
 
 //----------------- 5. WidgetDock and Session.join ---------------------
 
-async function go() {
+function go() {
     App.messages = true;
     App.makeWidgetDock({badge: true, qrcode: true});
 
-    await Session.join(`Whiteboard-${App.autoSession()}`, DrawModel, DrawView, { appId: "io.croquet.whiteboard", tps: 1 });
+    const joinArgs = {
+        appId: 'io.croquet.whiteboard',
+        name: App.autoSession(),
+        password: 'dummy-pass',
+        model: DrawModel,
+        view: DrawView,
+        tps: 1
+        };
+    Session.join(joinArgs);
 }
-
 go();
