@@ -175,8 +175,46 @@ class DrawModel extends ModelRoot {
         }
     }
 
-    savePersistentData(){
-        let func = () => ({pages: this.pages, currentPage: this.currentPage});
+    savePersistentData() {
+        // saving persistent data is a heavy operation - involving
+        // gathering all necessary data, stringifying and hashing
+        // it, polling all clients to decide who's going to upload,
+        // then compressing, encrypting and uploading the data,
+        // then informing the reflector of the upload URL.
+        // here we throttle to requesting a new persistence capture
+        // 60s after the first triggering operation (on the guess
+        // that in this app, one operation is likely to signal the
+        // start of a batch).
+        // after a successful capture, the next trigger will schedule
+        // the next delayed capture.
+        const DELAY = 60000;
+        const now = this.now();
+        const last = this.lastPersist || -1;
+        const next = this.nextPersist || -1;
+
+        // if a future time is already recorded (and is still in
+        // the future), nothing needs to be done.
+        if (next > now) return;
+
+        // in theory a new trigger can arrive at exactly the same
+        // teatime as a future() message, but after that message has
+        // already been processed.  in that case, drop through so
+        // the app's state will be captured again (after a further
+        // delay).
+        if (next === now && last !== now) {
+            this.lastPersist = now;
+            this.throttledSavePersistentData();
+            return;
+        }
+
+        // schedule delayed capture
+        const timeToNext = DELAY;
+        this.nextPersist = now + timeToNext;
+        this.future(timeToNext).savePersistentData();
+    }
+
+    throttledSavePersistentData() {
+        let func = () => ({ pages: this.pages, currentPage: this.currentPage });
         this.persistSession(func);
     }
 
