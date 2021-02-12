@@ -164,10 +164,20 @@ class DrawModel extends ModelRoot {
         if (!loading) this.savePersistentData();
     }
 
-    newPage(){
+    newPage(optLines){
+        if (optLines) {
+            let page = {inProcessLines: {}, completeLines: optLines, undoLines: []};
+            this.page = page;
+            this.pages = [page];
+            this.currentPage = 0;
+            this.transferLines = [];
+            this.say("page-change", this.currentPage);
+            this.say("redraw-all");
+            return;
+        }
         if(this.page === undefined || this.page.completeLines.length>0){
             if(this.page !== undefined)this.killAllLines(); // terminate all in-process lines
-            this.page = {inProcessLines: {}, completeLines: [], undoLines: []}
+            this.page = {inProcessLines: {}, completeLines: [], undoLines: []};
             this.pages.push(this.page);
             this.currentPage = this.pages.length-1;
             this.transferLines.forEach(line=>this.startLine(line[0], line[1])); //restart in-process lines on new page
@@ -214,15 +224,29 @@ class DrawModel extends ModelRoot {
     }
 
     throttledSavePersistentData() {
-        let func = () => ({ pages: this.pages, currentPage: this.currentPage });
+        let func = () => {
+            let page = this.pages[0];
+            let completeLines = page.completeLines;
+            console.log("lines", completeLines.length);
+            return {lines: completeLines, version: "whiteboard-nopages"};
+        };
         this.persistSession(func);
     }
 
     loadPersistentData(data){
+        if (data.version && data.version === "whiteboard-nopages") {
+            this.loadPersitentDataForPage(data);
+            return;
+        }
         let {pages, currentPage} = data;
         this.pages = pages;
         this.currentPage = currentPage - 1;
         this.nextPage(true);
+    }
+
+    loadPersitentDataForPage(data) {
+        let lines = data.lines;
+        this.newPage(lines);
     }
 
     say(event, data) {
