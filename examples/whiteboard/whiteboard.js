@@ -748,6 +748,7 @@ class DrawView extends ViewRoot {
                 let fromP = lines[from];
                 if (!fromP) {
                     console.log("pLine has been changed");
+                    console.log(lines, from, viewId);
                     return;
                 }
                 this.ctx[this.layer].moveTo(fromP[0], fromP[1]);
