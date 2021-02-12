@@ -2,23 +2,23 @@
 // Multi-page white board drawing tool
 // Croquet Corporation, 2020
 
-
 import {Constants, App, Session, Messenger} from "@croquet/croquet";
-import { WebInputManager, UIManager, ModelRoot, ViewRoot, Widget, ToggleWidget, GetNamedView, BoxWidget, ImageWidget, SliderWidget, ToggleSet, NineSliceWidget, ButtonWidget, TextWidget } from "@croquet/worldcore";
+import { WebInputManager, UIManager, ModelRoot, ViewRoot, Widget, ToggleWidget, GetNamedView, BoxWidget, ImageWidget, ToggleSet, ButtonWidget, } from "@croquet/worldcore";
 
 import smallBrush from "./assets/pen-small.svg";
 import mediumBrush from "./assets/pen-med.svg";
 import largeBrush from "./assets/pen-lrg.svg";
 import redoIcon from "./assets/redo@3x.svg";
 import undoIcon from "./assets/undo@3x.svg";
-import arrowLeftIcon from "./assets/backward@3x.svg";
-import arrowRightIcon from "./assets/forward@3x.svg";
+//import arrowLeftIcon from "./assets/backward@3x.svg";
+//import arrowRightIcon from "./assets/forward@3x.svg";
 import expandIcon from "./assets/frame.svg";
-import compressIcon from "./assets/frame.svg";
 import homeIcon from "./assets/home@3x.svg";
 import cloneIcon from "./assets/copy@3x.svg";
 import colorBrushHideIcon from "./assets/tool-grid@3x.svg";
-import colorBrushShowIcon from "./assets/tool-grid@3x.svg";
+
+let compressIcon =  expandIcon;
+let colorBrushShowIcon = colorBrushHideIcon;
 
 //import doubleArrowLeftIcon from "./assets/double-arrow-left.png";
 //import doubleArrowRightIcon from "./assets/double-arrow-right.png";
@@ -393,8 +393,9 @@ class DrawView extends ViewRoot {
         this.subscribe(this.model.id, event, callback);
     }
 
-    undo(){this.say("undo-line")}
-    redo(){this.say("redo-line")}
+    undo(){this.say("undo-line");}
+
+    redo(){this.say("redo-line");}
 
     setupWebInputManager() {
         this.subscribe("ui", "resize", this.onWindowResize);
@@ -553,14 +554,14 @@ class DrawView extends ViewRoot {
     // copy image out of canvas.
     // no way to paste back in of course unless I canibalize PIX
     selectText(element) {
-        var doc = document;
+        let doc = document;
         if (doc.body.createTextRange) {
-            var range = document.body.createTextRange();
+            let range = document.body.createTextRange();
             range.moveToElementText(element);
             range.select();
         } else if (window.getSelection) {
-            var selection = window.getSelection();
-            var range = document.createRange();
+            let selection = window.getSelection();
+            let range = document.createRange();
             range.selectNodeContents(element);
             selection.removeAllRanges();
             selection.addRange(range);
@@ -570,7 +571,7 @@ class DrawView extends ViewRoot {
     //this should probably just copy the part of the image that is actually being used.
     copyToClipboard(){
         var img = document.createElement('img');
-        img.src = this.canvas0.toDataURL()
+        img.src = this.canvas0.toDataURL();
 
         var div = document.createElement('div');
         div.contentEditable = true;
@@ -582,8 +583,6 @@ class DrawView extends ViewRoot {
         document.execCommand('Copy');
         document.body.removeChild(div);
     }
-
-
 
     toLocal(xy){
         let r = this.canvas0.getBoundingClientRect();
@@ -731,26 +730,33 @@ class DrawView extends ViewRoot {
     }
 
     hearLine(range){
-        let viewId = range[0]
+        let viewId = range[0];
         let from = range[1];
         let to = range[2];
         if(viewId!==this.viewId){
-           let pLines = this.model.page.inProcessLines[viewId];
-           if(pLines){
-            //console.log(pLines);
+            let pLines = this.model.page.inProcessLines[viewId];
+            //this value may be gone by this time
+            if(pLines){
+                //console.log(pLines);
 
                 let lineInfo = pLines.lineInfo;
                 this.setupLine( lineInfo );
                 this.ctx[this.layer].beginPath();
                 //console.log(pLines.base, pLines.lines.length);
-                this.ctx[this.layer].moveTo(pLines.lines[from][0], pLines.lines[from][1]);
+                let lines = pLines.lines;
+                // and this may not be here
+                let fromP = lines[from];
+                if (!fromP) {
+                    console.log("pLine has been changed");
+                    return;
+                }
+                this.ctx[this.layer].moveTo(fromP[0], fromP[1]);
                 for(let i = from+1; i<to; i++){
                     //console.log(pLines.base, pLines.lines.length, i)
-                    this.ctx[this.layer].lineTo(pLines.lines[i][0], pLines.lines[i][1]);
+                    this.ctx[this.layer].lineTo(lines[i][0], lines[i][1]);
                 }
                 this.ctx[this.layer].stroke();
             }
-
         }
     }
 
