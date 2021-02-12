@@ -227,7 +227,6 @@ class DrawModel extends ModelRoot {
         let func = () => {
             let page = this.pages[0];
             let completeLines = page.completeLines;
-            console.log("lines", completeLines.length);
             return {lines: completeLines, version: "whiteboard-nopages"};
         };
         this.persistSession(func);
@@ -753,8 +752,13 @@ class DrawView extends ViewRoot {
                 }
                 this.ctx[this.layer].moveTo(fromP[0], fromP[1]);
                 for(let i = from+1; i<to; i++){
+                    let toP = lines[i];
+                    if (!toP) {
+                        console.log("to value exceeded range");
+                        return;
+                    }
                     //console.log(pLines.base, pLines.lines.length, i)
-                    this.ctx[this.layer].lineTo(lines[i][0], lines[i][1]);
+                    this.ctx[this.layer].lineTo(toP[0], toP[1]);
                 }
                 this.ctx[this.layer].stroke();
             }
