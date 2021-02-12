@@ -71,13 +71,21 @@ class DrawModel extends ModelRoot {
         this.listen("end-of-line", this.savePersistentData);
         //this.listen("previous-page", this.previousPage);
         //this.listen("next-page", this.nextPage);
+        this.subscribe(this.sessionId, "view-exit", this.viewExit);
 
         if (persistentData) {
             this.loadPersistentData(persistentData);
         }
     }
 
+    viewExit(viewId) {
+        this.pages.forEach((page) => {
+            delete page.inProcessLines[viewId];
+        });
+    }
+
     startLine( lineInfo , start){
+        window.model = this;
         let line = start === undefined?[]:[start];
         this.page.inProcessLines[lineInfo.viewId]={lineInfo: lineInfo, completed: false, base:0, lines: line};
     }
@@ -746,15 +754,15 @@ class DrawView extends ViewRoot {
                 // and this may not be here
                 let fromP = lines[from];
                 if (!fromP) {
-                    console.log("pLine has been changed");
-                    console.log(lines, from, viewId);
+                    // console.log("pLine has been changed");
+                    // console.log(lines, from, viewId);
                     return;
                 }
                 this.ctx[this.layer].moveTo(fromP[0], fromP[1]);
                 for(let i = from+1; i<to; i++){
                     let toP = lines[i];
                     if (!toP) {
-                        console.log("to value exceeded range");
+                        console.log("value exceededs the range");
                         return;
                     }
                     //console.log(pLines.base, pLines.lines.length, i)
