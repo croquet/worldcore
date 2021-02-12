@@ -24,6 +24,9 @@ class MyModelRoot extends ModelRoot {
         this.subscribe("hud", "pause", this.pause);
         this.subscribe("hud", "disable", this.disable);
         this.subscribe("test", "ping", this.ignore);
+        this.subscribe("input", "dDown", this.test);
+
+        // this.future(100).test();
     }
 
     destroy() {
@@ -79,6 +82,14 @@ class MyModelRoot extends ModelRoot {
         p.applyTorqueImpulse(spin);
         p.applyImpulse([0, 0, -16]);
         this.shots.push(p);
+    }
+
+    test() {
+        console.log("Test");
+        // const ttt = ISLAND.snapshot();
+        const sss = this.phyicsManager.world.takeSnapshot();
+        console.log(sss);
+        // this.future(100).test();
     }
 }
 MyModelRoot.register("MyModelRoot");
@@ -167,8 +178,8 @@ class MyViewRoot extends ViewRoot {
 async function go() {
     await LoadRapier();
     App.makeWidgetDock();
-    const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
-    //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30, debug: "snapshot"});
+    // const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
+    const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30, debug: "snapshot"});
     //setInterval(ping, 500, session)
     //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
 }

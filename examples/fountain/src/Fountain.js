@@ -217,7 +217,7 @@ export class FountainActor extends mix(Actor).with(AM_Spatial) {
     init(options) {
         super.init("Pawn", options);
         this.spray = [];
-        this.spawnLimit = 100;
+        this.spawnLimit = 200;
         this.future(0).tick();
 
         this.subscribe("hud", "pause", this.pause);
