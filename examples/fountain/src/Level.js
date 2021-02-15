@@ -47,7 +47,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
             restitution: 0.1
         });
 
-        this.fountain = FountainActor.create({translation: [0,1.5,0]});
+        this.fountain = FountainActor.create({translation: [0,0,0]});
 
     }
 

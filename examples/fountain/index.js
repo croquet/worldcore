@@ -64,7 +64,7 @@ class MyModelRoot extends ModelRoot {
 
     shoot() {
         if (this.isPaused) return;
-        if (this.shots.length >= 30) {
+        if (this.shots.length >= 50) {
             const doomed = this.shots.shift();
             doomed.destroy();
         }
@@ -133,7 +133,7 @@ class MyViewRoot extends ViewRoot {
         this.webInput = this.addManager(new WebInputManager());
         this.render = this.addManager(new RenderManager());
         this.ui = this.addManager(new UIManager());
-        this.audio = this.addManager(new AudioManager());
+        // this.audio = this.addManager(new AudioManager());
         this.pawnManager = this.addManager(new PawnManager());
 
         this.webInput.addChord("cheat", ['q', 't']);
@@ -167,9 +167,9 @@ class MyViewRoot extends ViewRoot {
         this.cheatText.set({visible: this.cheatMode});
     }
 
-    reportLatency(latency) {
-        console.log(latency);
-    }
+    // reportLatency(latency) {
+    //     console.log(latency);
+    // }
 
 
 
@@ -179,7 +179,16 @@ async function go() {
     await LoadRapier();
     App.makeWidgetDock();
     // const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
-    const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30, debug: "snapshot"});
+    // const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30, debug: "snapshot"});
+
+    const session = await Session.join({
+        appId: 'io.croquet.fountain',
+        name: App.autoSession(),
+        // name: 'test',
+        model: MyModelRoot,
+        view: MyViewRoot,
+        tps: 30,
+    });
     //setInterval(ping, 500, session)
     //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
 }
