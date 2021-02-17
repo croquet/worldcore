@@ -4,7 +4,7 @@
 
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, ActorManager, RenderManager, PawnManager, PlayerManager, RapierPhysicsManager,
-    toRad, LoadRapier,m4_scalingRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, TextWidget } from "@croquet/worldcore";
+    toRad, LoadRapier,m4_scalingRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, TextWidget, GetViewFPS } from "@croquet/worldcore";
 import { LevelActor } from "./src/Level";
 import { CubeSprayActor, CylinderSprayActor, ConeSprayActor } from "./src/Fountain";
 
@@ -23,8 +23,8 @@ class MyModelRoot extends ModelRoot {
         this.subscribe("hud", "shoot", this.shoot);
         this.subscribe("hud", "pause", this.pause);
         this.subscribe("hud", "disable", this.disable);
-        this.subscribe("test", "ping", this.ignore);
-        this.subscribe("input", "dDown", this.test);
+        // this.subscribe("test", "ping", this.ignore);
+        // this.subscribe("input", "dDown", this.test);
 
         // this.future(100).test();
     }
@@ -47,7 +47,7 @@ class MyModelRoot extends ModelRoot {
         this.disabled = d;
     }
 
-    ignore() {}
+    // ignore() {}
 
     createManagers() {
         this.playerManager = this.addManager(PlayerManager.create());
@@ -84,13 +84,13 @@ class MyModelRoot extends ModelRoot {
         this.shots.push(p);
     }
 
-    test() {
-        console.log("Test");
-        // const ttt = ISLAND.snapshot();
-        const sss = this.phyicsManager.world.takeSnapshot();
-        console.log(sss);
-        // this.future(100).test();
-    }
+    // test() {
+    //     console.log("Test");
+    //     // const ttt = ISLAND.snapshot();
+    //     const sss = this.phyicsManager.world.takeSnapshot();
+    //     console.log(sss);
+    //     // this.future(100).test();
+    // }
 }
 MyModelRoot.register("MyModelRoot");
 
@@ -126,6 +126,8 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "dDown", this.disable);
 
         this.subscribe("input", "cheatDown", this.cheat);
+
+        // this.future(500).postFPS();
 
     }
 
@@ -169,6 +171,16 @@ class MyViewRoot extends ViewRoot {
 
     // reportLatency(latency) {
     //     console.log(latency);
+    // }
+
+    // postFPS() {
+    //     console.log(Math.round(GetViewFPS()));
+    //     this.future(500).postFPS();
+    // }
+
+    // update(time) {
+    //     super.update(time);
+    //     console.log(Math.round(GetViewFPS()));
     // }
 
 

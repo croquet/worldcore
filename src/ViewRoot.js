@@ -36,6 +36,8 @@ export class ViewRoot extends NamedView {
         viewTime0 = viewTime1;
         viewTime1 = time;
         viewDelta = viewTime1 - viewTime0;
+        viewDeltas.shift();
+        viewDeltas.push(viewDelta);
         this.managers.forEach(m => { if (m.update) m.update(time, viewDelta); });
     }
 
@@ -46,6 +48,7 @@ export class ViewRoot extends NamedView {
 let viewTime0 = 0;
 let viewTime1 = 0;
 let viewDelta = 0;
+let viewDeltas = new Array(10).fill(15); // Last 10 updates
 
 export function GetViewTime() {
     return viewTime1;
@@ -53,4 +56,9 @@ export function GetViewTime() {
 
 export function GetViewDelta() {
     return viewDelta;
+}
+
+export function GetViewFPS() { // Averaged over last 10 updates
+    const average = viewDeltas.reduce( (t, v) => t + v ) / viewDeltas.length;
+    return 1000 / average;
 }
