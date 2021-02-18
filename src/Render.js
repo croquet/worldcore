@@ -1,6 +1,6 @@
 import { View } from "@croquet/croquet";
 import { LoadImage } from "./ViewAssetCache";
-import { m4_identity, m4_invert, m4_perspective, m4_transpose, v3_transform, v3_sub, v3_normalize, v3_cross, m4_multiply, v4_transform, m4_getTranslation, TAU, v2_rotate, v2_scale, v3_opposite, m4_toNormal4 } from "./Vector";
+import { m4_identity, m4_invert, m4_perspective, m4_transpose, v3_transform, v3_sub, v3_normalize, v3_cross, m4_multiply, v4_transform, v3_scale, m4_getTranslation, TAU, v2_rotate, v2_scale, v3_opposite, m4_toNormal4, v3_multiply } from "./Vector";
 
 //------------------------------------------------------------------------------------------
 // Rendering Globals
@@ -746,8 +746,6 @@ export class DrawCall {
 
     draw() {
         if (this.isHidden) return;
-        // this.material.texture.apply(0);
-        // this.material.decal.apply(1);
         this.material.apply();
         this.transform.apply();
         this.mesh.draw();
@@ -1614,6 +1612,156 @@ export function UnitCube() {
     cube.addFace([[0.5, 0.5, 0.5], [-0.5, 0.5, 0.5], [-0.5, -0.5, 0.5], [0.5, -0.5, 0.5]], [[1,1,1,1], [1,1,1,1], [1,1,1,1], [1,1,1,1]], [[0,0], [1,0], [1,1], [0,1]]);
     cube.addFace([[0.5, 0.5, 0.5], [0.5, -0.5, 0.5], [0.5, -0.5, -0.5], [0.5, 0.5, -0.5]], [[1,1,1,1], [1,1,1,1], [1,1,1,1], [1,1,1,1]], [[0,0], [1,0], [1,1], [0,1]]);
     return cube;
+}
+
+export function Cube(x, y, z, color = [1,1,1,1]) {
+    const cube = new Triangles();
+    x /= 2;
+    y /= 2;
+    z /= 2;
+    cube.addFace([[-x, -y, -z], [-x, y, -z], [x, y, -z], [x, -y, -z]], [color, color, color, color], [[0,0], [1,0], [1,1], [0,1]]);
+    cube.addFace([[-x, -y, -z], [-x, -y, z], [-x, y, z], [-x, y, -z]], [color, color, color, color], [[0,0], [1,0], [1,1], [0,1]]);
+    cube.addFace([[-x, -y, -z], [x, -y, -z], [x, -y, z], [-x, -y, z]], [color, color, color, color], [[0,0], [1,0], [1,1], [0,1]]);
+    cube.addFace([[x, y, z], [x, y, -z], [-x, y, -z], [-x, y, z]], [color, color, color, color], [[0,0], [1,0], [1,1], [0,1]]);
+    cube.addFace([[x, y, z], [-x, y, z], [-x, -y, z], [x, -y, z]], [color, color, color, color], [[0,0], [1,0], [1,1], [0,1]]);
+    cube.addFace([[x, y, z], [x, -y, z], [x, -y, -z], [x, y, -z]], [color, color, color, color], [[0,0], [1,0], [1,1], [0,1]]);
+    return cube;
+}
+
+export function Sphere(r, facets, c = [1,1,1,1]) {
+    const sphere = new Triangles();
+    const ff = 1/facets;
+
+    //-- -X --
+
+    for (let i = 0; i < facets; i++) {
+        for (let j = 0; j < facets; j++) {
+
+            const p0 = v3_scale(Spherify([-1, -1 + 2*ff*i, -1 + 2*ff*j]),r);
+            const p1 = v3_scale(Spherify([-1, -1 + 2*ff*i, -1 + 2*ff*(j+1)]),r);
+            const p2 = v3_scale(Spherify([-1, -1 + 2*ff*(i+1), -1 + 2*ff*(j+1)]),r);
+            const p3 = v3_scale(Spherify([-1, -1 + 2*ff*(i+1), -1 + 2*ff*j]),r);
+
+            const u0 = i * ff;
+            const u1 = u0 + ff;
+            const v0 = j * ff;
+            const v1 = v0 + ff;
+
+            sphere.addFace([p0, p1, p2, p3], [c, c, c, c], [[u0,v0], [u1,v0], [u1,v1], [u0,v1]]);
+        }
+    }
+
+    //-- +X --
+
+    for (let i = 0; i < facets; i++) {
+        for (let j = 0; j < facets; j++) {
+
+            const p0 = v3_scale(Spherify([1, -1 + 2*ff*i, -1 + 2*ff*j]),r);
+            const p1 = v3_scale(Spherify([1, -1 + 2*ff*(i+1), -1 + 2*ff*j]),r);
+            const p2 = v3_scale(Spherify([1, -1 + 2*ff*(i+1), -1 + 2*ff*(j+1)]),r);
+            const p3 = v3_scale(Spherify([1, -1 + 2*ff*i, -1 + 2*ff*(j+1)]),r);
+
+            const u0 = i * ff;
+            const u1 = u0 + ff;
+            const v0 = j * ff;
+            const v1 = v0 + ff;
+
+            sphere.addFace([p0, p1, p2, p3], [c, c, c, c], [[u0,v0], [u1,v0], [u1,v1], [u0,v1]]);
+        }
+    }
+
+    //-- -Y --
+
+    for (let i = 0; i < facets; i++) {
+        for (let j = 0; j < facets; j++) {
+
+            const p0 = v3_scale(Spherify([-1 + 2*ff*i, -1 , -1 + 2*ff*j]),r);
+            const p1 = v3_scale(Spherify([-1 + 2*ff*(i+1), -1 , -1 + 2*ff*j]),r);
+            const p2 = v3_scale(Spherify([-1 + 2*ff*(i+1), -1,  -1 + 2*ff*(j+1)]),r);
+            const p3 = v3_scale(Spherify([-1 + 2*ff*i, -1, -1 + 2*ff*(j+1)]),r);
+
+            const u0 = i * ff;
+            const u1 = u0 + ff;
+            const v0 = j * ff;
+            const v1 = v0 + ff;
+
+            sphere.addFace([p0, p1, p2, p3], [c, c, c, c], [[u0,v0], [u1,v0], [u1,v1], [u0,v1]]);
+        }
+    }
+
+    //-- +Y --
+
+    for (let i = 0; i < facets; i++) {
+        for (let j = 0; j < facets; j++) {
+
+            const p0 = v3_scale(Spherify([-1 + 2*ff*i, 1, -1 + 2*ff*j]),r);
+            const p1 = v3_scale(Spherify([-1 + 2*ff*i, 1, -1 + 2*ff*(j+1)]),r);
+            const p2 = v3_scale(Spherify([-1 + 2*ff*(i+1), 1, -1 + 2*ff*(j+1)]),r);
+            const p3 = v3_scale(Spherify([-1 + 2*ff*(i+1), 1, -1 + 2*ff*j]),r);
+
+            const u0 = i * ff;
+            const u1 = u0 + ff;
+            const v0 = j * ff;
+            const v1 = v0 + ff;
+
+            sphere.addFace([p0, p1, p2, p3], [c, c, c, c], [[u0,v0], [u1,v0], [u1,v1], [u0,v1]]);
+        }
+    }
+
+    //-- -Z --
+
+    for (let i = 0; i < facets; i++) {
+        for (let j = 0; j < facets; j++) {
+
+            const p0 = v3_scale(Spherify([-1 + 2*ff*i, -1 + 2*ff*j, -1]),r);
+            const p1 = v3_scale(Spherify([-1 + 2*ff*i, -1 + 2*ff*(j+1), -1]),r);
+            const p2 = v3_scale(Spherify([-1 + 2*ff*(i+1), -1 + 2*ff*(j+1), -1]),r);
+            const p3 = v3_scale(Spherify([-1 + 2*ff*(i+1), -1 + 2*ff*j, -1]),r);
+
+            const u0 = i * ff;
+            const u1 = u0 + ff;
+            const v0 = j * ff;
+            const v1 = v0 + ff;
+
+            sphere.addFace([p0, p1, p2, p3], [c, c, c, c], [[u0,v0], [u1,v0], [u1,v1], [u0,v1]]);
+        }
+    }
+
+    //-- +Z --
+
+    for (let i = 0; i < facets; i++) {
+        for (let j = 0; j < facets; j++) {
+
+            const p0 = v3_scale(Spherify([-1 + 2*ff*i, -1 + 2*ff*j, 1]),r);
+            const p1 = v3_scale(Spherify([-1 + 2*ff*(i+1), -1 + 2*ff*j, 1]),r);
+            const p2 = v3_scale(Spherify([-1 + 2*ff*(i+1), -1 + 2*ff*(j+1), 1]),r);
+            const p3 = v3_scale(Spherify([-1 + 2*ff*i, -1 + 2*ff*(j+1), 1]),r);
+
+            const u0 = i * ff;
+            const u1 = u0 + ff;
+            const v0 = j * ff;
+            const v1 = v0 + ff;
+
+            sphere.addFace([p0, p1, p2, p3], [c, c, c, c], [[u0,v0], [u1,v0], [u1,v1], [u0,v1]]);
+        }
+    }
+
+    return sphere;
+}
+
+// This yields more equal-sized triangles that the typical normalization approach
+// For more info see: http://mathproofs.blogspot.com/2005/07/mapping-cube-to-sphere.html
+// And: https://medium.com/game-dev-daily/four-ways-to-create-a-mesh-for-a-sphere-d7956b825db4
+
+function Spherify(v3) {
+    const p2 = v3_multiply(v3, v3);
+    const x = p2[0];
+    const y = p2[1];
+    const z = p2[2];
+    const rx = v3[0] * Math.sqrt(1.0 - 0.5 * (y + z) + y*z/3.0);
+    const ry = v3[1] * Math.sqrt(1.0 - 0.5 * (z + x) + z*x/3.0);
+    const rz = v3[2] * Math.sqrt(1.0 - 0.5 * (x + y) + x*y/3.0);
+    return [rx, ry, rz];
 }
 
 export function Cone(r0, r1, h, facets, color = [1,1,1,1]) {
