@@ -16,7 +16,7 @@ import { Sphere } from "../../src/Render";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Starting model!!");
+        console.log("Starting model!");
         this.seedColors();
         this.level = LevelActor.create();
         this.shots = [];
@@ -27,7 +27,6 @@ class MyModelRoot extends ModelRoot {
         // this.subscribe("test", "ping", this.ignore);
         // this.subscribe("input", "dDown", this.test);
 
-        // this.future(100).test();
     }
 
     destroy() {
@@ -52,14 +51,17 @@ class MyModelRoot extends ModelRoot {
 
     createManagers() {
         this.playerManager = this.addManager(PlayerManager.create());
-        this.phyicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 30}));
+        this.phyicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 15}));
         this.actorManager = this.addManager(ActorManager.create());
     }
 
     seedColors() {
         this.colors = [];
         for (let i = 0; i < 100; i++ ) {
-            this.colors.push([0.7*Math.random() + 0.3, 0.7*Math.random() + 0.3, 0.7*Math.random() + 0.3, 1]);
+            const r = Math.random() * 0.9;
+            const g = Math.random() * 0.9;
+            const b = Math.random() * 0.9;
+            this.colors.push([0.9-r, 0.9-g, 1-b, 1]);
         }
     }
 
@@ -74,7 +76,7 @@ class MyModelRoot extends ModelRoot {
         if (r < 0.5) {
             p = CubeSprayActor.create({translation: [0, 17, 19]});
         } else if (r < 0.7) {
-            p = CylinderSprayActor.create({translation: [0, 17, 19]});
+            p = BallSprayActor.create({translation: [0, 17, 19]});
         } else if (r < 0.9) {
             p = CylinderSprayActor.create({translation: [0, 17, 19]});
         } else {
@@ -197,8 +199,8 @@ async function go() {
 
     const session = await Session.join({
         appId: 'io.croquet.fountain',
-        // name: App.autoSession(),
-        name: 'test',
+        name: App.autoSession(),
+        // name: 'test',
         model: MyModelRoot,
         view: MyViewRoot,
         tps: 30,

@@ -8,7 +8,7 @@ import paper from "../assets/paper.jpg";
 
 export class CubeSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
     init(options) {
-        this.index = Math.floor(Math.random() * 30);
+        this.index = Math.floor(Math.random() * 10);
 
         super.init("CubeSprayPawn", options);
 
@@ -18,7 +18,7 @@ export class CubeSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysic
             size: [0.5, 0.5, 0.5],
             density: 1,
             friction: 1,
-            restitution: 0.1
+            restitution: 0.5
         });
 
     }
@@ -72,7 +72,7 @@ CubeSprayPawn.register('CubeSprayPawn');
 
 export class CylinderSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
     init(options) {
-        this.index = Math.floor(Math.random() * 30);
+        this.index = Math.floor(10 + Math.random() * 10);
 
         super.init("CylinderSprayPawn", options);
 
@@ -83,7 +83,7 @@ export class CylinderSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPh
             halfHeight: 0.5,
             density: 1.5,
             friction: 1,
-            restitution: 0.1
+            restitution: 0.5
         });
 
     }
@@ -137,7 +137,7 @@ CylinderSprayPawn.register('CylinderSprayPawn');
 
 export class BallSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
     init(options) {
-        this.index = Math.floor(Math.random() * 30);
+        this.index = Math.floor(20 + Math.random() * 10);
 
         super.init("BallSprayPawn", options);
 
@@ -145,9 +145,9 @@ export class BallSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysic
 
         this.addBallCollider({
             radius: 0.5,
-            density: 1.5,
+            density: 2,
             friction: 1,
-            restitution: 0.1
+            restitution: 0.5
         });
 
     }
@@ -201,7 +201,7 @@ BallSprayPawn.register('BallSprayPawn');
 
 export class ConeSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
     init(options) {
-        this.index = Math.floor(Math.random() * 30);
+        this.index = Math.floor(30 + Math.random() * 10);
 
         super.init("ConeSprayPawn", options);
 
@@ -212,7 +212,7 @@ export class ConeSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysic
             halfHeight: 0.5,
             density: 3,
             friction: 1,
-            restitution: 0.1
+            restitution: 0.5
         });
 
 
@@ -281,9 +281,9 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
         this.addCylinderCollider({
             radius: 1,
             halfHeight: 3,
-            density: 1.5,
+            density: 1,
             friction: 1,
-            restitution: 0.1
+            restitution: 0.5
         });
 
         this.subscribe("hud", "pause", this.pause);
@@ -301,11 +301,11 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
             }
             let p;
             const r = Math.random();
-            const origin = v3_add(this.translation, [0,3.5,0]);
-            if (r < 1) {
+            const origin = v3_add(this.translation, [0,3,0]);
+            if (r < 0.5) {
                 p = CubeSprayActor.create({translation: origin});
             } else if (r < 0.7) {
-                p = CylinderSprayActor.create({translation: origin});
+                p = BallSprayActor.create({translation: origin});
             } else if (r < 0.9) {
                 p = CylinderSprayActor.create({translation: origin});
             } else {
@@ -313,7 +313,8 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
             }
             const spin = v3_scale(sphericalRandom(),Math.random() * 0.5);
             const rotationMatrix = m4_rotationQ(this.rotation);
-            const force = v3_transform([0, 18 + 5 * Math.random(), 0], rotationMatrix);
+            //const force = v3_transform([0, 18 + 5 * Math.random(), 0], rotationMatrix);
+            const force = [0, 18 + 5 * Math.random(), 0];
             p.applyTorqueImpulse(spin);
             p.applyImpulse(force);
             this.spray.push(p);
