@@ -6,8 +6,7 @@ import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, ActorManager, RenderManager, PawnManager, PlayerManager, RapierPhysicsManager,
     toRad, LoadRapier,m4_scalingRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, TextWidget, GetViewFPS } from "@croquet/worldcore";
 import { LevelActor } from "./src/Level";
-import { CubeSprayActor, CylinderSprayActor, ConeSprayActor, BallSprayActor } from "./src/Fountain";
-import { Sphere } from "../../src/Render";
+import { CubeSprayActor, CylinderSprayActor, ConeSprayActor } from "./src/Fountain";
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -71,11 +70,9 @@ class MyModelRoot extends ModelRoot {
         }
         let p;
         const r = Math.random();
-        if (r < 0.5) {
+        if (r < 0.4) {
             p = CubeSprayActor.create({translation: [0, 17, 19]});
-        } else if (r < 0.7) {
-            p = CylinderSprayActor.create({translation: [0, 17, 19]});
-        } else if (r < 0.9) {
+        } else if (r < 0.8) {
             p = CylinderSprayActor.create({translation: [0, 17, 19]});
         } else {
             p = ConeSprayActor.create({translation: [0, 17, 19]});
@@ -130,6 +127,7 @@ class MyViewRoot extends ViewRoot {
 
         this.subscribe("input", "cheatDown", this.cheat);
 
+        // this.future(500).postFPS();
 
     }
 
@@ -197,8 +195,8 @@ async function go() {
 
     const session = await Session.join({
         appId: 'io.croquet.fountain',
-        // name: App.autoSession(),
-        name: 'test',
+        name: App.autoSession(),
+        // name: 'test',
         model: MyModelRoot,
         view: MyViewRoot,
         tps: 30,
