@@ -12,6 +12,10 @@ export function setRapier(r) {
     RAPIER = r;
 }
 
+export function RapierVersion() {
+    return RAPIER.version();
+}
+
 //------------------------------------------------------------------------------------------
 //-- RapierPhysicsManager ------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -33,7 +37,7 @@ export class RapierPhysicsManager extends Model {
 
     init(options = {}) {
         super.init();
-        console.log("Starting rapier physics!!!!");
+        console.log("Starting rapier physics!");
         this.beWellKnownAs('RapierPhysicsManager');
 
         const gravity = options.gravity || [0.0, -9.8, 0.0];

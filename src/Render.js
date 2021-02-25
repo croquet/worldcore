@@ -1777,6 +1777,7 @@ export function Cone(r0, r1, h, facets, color = [1,1,1,1]) {
         t.push(v2_rotate(rotor1, a));
     }
 
+    const diameter = r0 * TAU;
     for (let i = 0; i < facets; i++) {
         const j = (i+1) % facets;
         const c0 = b[i];
@@ -1787,7 +1788,9 @@ export function Cone(r0, r1, h, facets, color = [1,1,1,1]) {
         const v1 = [c1[1], -h/2, c1[0]];
         const v2 = [c2[1], h/2, c2[0]];
         const v3 = [c3[1], h/2, c3[0]];
-        cone.addFace([v0, v1, v2, v3], [color, color, color, color], [b[i], b[j], t[j], t[i]]);
+        const u0 = i*diameter / (facets + 1);
+        const u1 = (i+1) * diameter / (facets + 1);
+        cone.addFace([v0, v1, v2, v3], [color, color, color, color], [[u0,0], [u1,0], [u1,h], [u0,h]]);
     }
 
     b.reverse();

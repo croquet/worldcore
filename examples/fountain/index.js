@@ -4,7 +4,7 @@
 
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, ActorManager, RenderManager, PawnManager, PlayerManager, RapierPhysicsManager,
-    toRad, LoadRapier,m4_scalingRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, TextWidget, GetViewFPS } from "@croquet/worldcore";
+    toRad, LoadRapier,m4_scalingRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, TextWidget, GetViewFPS, RapierVersion } from "@croquet/worldcore";
 import { LevelActor } from "./src/Level";
 import { CubeSprayActor, CylinderSprayActor, ConeSprayActor, BallSprayActor } from "./src/Fountain";
 import { Sphere } from "../../src/Render";
@@ -25,7 +25,7 @@ class MyModelRoot extends ModelRoot {
         this.subscribe("hud", "pause", this.pause);
         this.subscribe("hud", "disable", this.disable);
         // this.subscribe("test", "ping", this.ignore);
-        // this.subscribe("input", "dDown", this.test);
+        this.subscribe("input", "dDown", this.test);
 
     }
 
@@ -89,13 +89,9 @@ class MyModelRoot extends ModelRoot {
         this.shots.push(p);
     }
 
-    // test() {
-    //     console.log("Test");
-    //     // const ttt = ISLAND.snapshot();
-    //     const sss = this.phyicsManager.world.takeSnapshot();
-    //     console.log(sss);
-    //     // this.future(100).test();
-    // }
+    test() {
+        console.log(RapierVersion());
+    }
 }
 MyModelRoot.register("MyModelRoot");
 

@@ -273,7 +273,7 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
     init(options) {
         super.init("FountainPawn", options);
         this.spray = [];
-        this.spawnLimit = 250;
+        this.spawnLimit = 200;
         this.future(0).tick();
 
         this.addRigidBody({type: 'static'});
@@ -314,7 +314,7 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
             const spin = v3_scale(sphericalRandom(),Math.random() * 0.5);
             const rotationMatrix = m4_rotationQ(this.rotation);
             //const force = v3_transform([0, 18 + 5 * Math.random(), 0], rotationMatrix);
-            const force = [0, 18 + 5 * Math.random(), 0];
+            const force = [0, 17.5 + 5 * Math.random(), 0];
             p.applyTorqueImpulse(spin);
             p.applyImpulse(force);
             this.spray.push(p);
