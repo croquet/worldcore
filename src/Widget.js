@@ -1,5 +1,5 @@
 import { View } from "@croquet/croquet";
-import { v2_sub, v2_multiply, v2_add, v2_scale, v4_scale } from "./Vector";
+import { v2_sub, v2_multiply, v2_add, v2_scale, v4_scale, v2_normalize, v2_magnitude } from "./Vector";
 import { LoadFont, LoadImage} from "./ViewAssetCache";
 import { NamedView } from "./NamedView";
 
@@ -220,7 +220,7 @@ export class Widget extends View {
     }
 
     addChild(child) {
-        if (child.parent === this) return;
+        if (!child || child.parent === this) return;
         if (!this.children) this.children = new Set();
         if (child.parent) child.parent.removeChild(child);
         this.children.add(child);
@@ -230,12 +230,14 @@ export class Widget extends View {
     }
 
     removeChild(child) {
+        if (!child) return;
         if (this.children) this.children.delete(child);
         child.setParent(null);
         this.markChanged();
     }
 
     destroyChild(child) {
+        if (!child) return;
         this.removeChild(child);
         child.destroy();
     }
@@ -1301,7 +1303,7 @@ export class ToggleSet  {
 // Managages a slider.
 //
 // The Bar and Knob can be replaced by Image/NineSlice widgets for a prettier look.
-// The Knob will always be square and match the short dimension of the bar.
+// The Knob will always be square and matches the short dimension of the bar.
 
 export class SliderWidget extends ControlWidget {
 
@@ -1394,6 +1396,112 @@ export class SliderWidget extends ControlWidget {
 
 }
 
+
+//------------------------------------------------------------------------------------------
+//-- JoystickWidget ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Managages a virtual joystick.
+//
+// The background and the knob can be set to image or nine-slice widgets to look prettier.
+//
+// Don't mess with the gate. It's a helper widget to limit the movement of the knob.
+//
+// The joystick outputs an xy vector. Each value can range from -1 to 1. The magnitude of the
+// vector will never exceed 1.
+//
+// The deadRadius is the deadzone at the center of the joystick that always returns 0. It's % of
+// the total radius of the control.
+
+
+export class JoystickWidget extends ControlWidget {
+
+    buildChildren() {
+        super.buildChildren();
+
+        this.setBackground(new BoxWidget(this, {color: [0.5,0.5,0.5]}));
+        this.gate = new Widget(this.bg, {anchor: [0.5, 0.5], pivot: [0.5, 0.5], autoSize: [1, 1], border: [10,10,10,10], bubbleChanges: true})
+        this.setKnob(new BoxWidget(this.gate, {color: [0.8,0.8,0.8], size: [20,20]}));
+        this.deadRadius = 0.1;
+        this.xy = [0,0];
+    }
+
+    setBackground(w) {
+        if (this.bg && this.bg !== w) {
+            this.bg.removeChild(this.gate);
+            this.destroyChild(this.bg);
+        }
+        this.bg = w;
+        this.bg.set({autoSize: [1,1], bubbleChanges: true})
+        this.addChild(w);
+        this.bg.addChild(this.gate);
+    }
+
+    setKnob(w) {
+        if (this.knob && this.knob !== w) {
+            this.gate.destroyChild(this.knob);
+        }
+        this.knob = w;
+        this.knob.set({anchor: [0.5, 0.5], pivot: [0.5, 0.5], bubbleChanges: true})
+        const size = this.knob.size;
+        const x = size[0] / 2;
+        const y = size[1] / 2;
+        this.gate.set({border: [x,y,x,y]});
+        this.gate.addChild(this.knob);
+    }
+
+    recenter() {
+        this.knob.set({anchor: [0.5,0.5]});
+        this.xy = [0,0];
+        this.onChange([0,0]);
+    }
+
+    press(xy) {
+        if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
+        this.isPressed = true;
+        this.focus();
+        this.moveKnob(xy);
+        return true;
+    }
+
+    release(xy) {
+        this.isPressed = false;
+        this.blur();
+        this.recenter();
+    }
+
+    drag(xy) {
+        this.moveKnob(xy);
+    }
+
+    moveKnob(xy) {
+        const local = v2_sub(xy, this.gate.global);
+
+        const x = 2 * local[0] / this.gate.size[0] - 1;
+        const y = 2 * local[1] / this.gate.size[1] - 1;
+        let v = [x,y];
+        const m = v2_magnitude(v);
+
+        if (m == 0) {
+            this.recenter();
+            return;
+        }
+
+        const n = v2_scale(v, 1/m);
+        if (m > 1) v = n;
+
+        this.knob.set({anchor: [(v[0]+1)/2,(v[1]+1)/2]});
+
+        const clamp = Math.max(0, v2_magnitude(v)-this.deadRadius) / (1-this.deadRadius);
+        this.xy = v2_scale(n,clamp);
+        this.onChange(this.xy);
+    }
+
+    onChange(xy) {
+    }
+}
+
+
 //------------------------------------------------------------------------------------------
 //-- TextFieldWidget -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -1485,7 +1593,7 @@ export class TextFieldWidget extends ControlWidget {
         this.isPressed = false;
     }
 
-    // Still need to support dragging past the end of the widget. These is where it should go.
+    // Still need to support dragging past the end of the widget. This is where it should go.
     drag(xy) {
         if (!this.isPressed) return;
         const local = v2_sub(xy, this.text.global);
@@ -1502,11 +1610,10 @@ export class TextFieldWidget extends ControlWidget {
 
     keyInput(input) {
         const key = input.key;
-        // console.log(key);
         const ctrl = input.ctrl || input.meta;
         console.log(ctrl);
         if (ctrl) {
-            // console.log(key);
+
             switch (key) {
                 case 'x':
                     this.cut();

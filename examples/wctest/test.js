@@ -5,7 +5,7 @@
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, AM_Avatar, PM_Avatar,
-    ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial } from "@croquet/worldcore";
+    ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, BoxWidget, JoystickWidget } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 
 
@@ -18,19 +18,25 @@ class MoveActor extends mix(Actor).with(AM_Avatar) {
         super.init("MovePawn", options);
         const child = ChildActor.create({translation: [0,1.1,0]});
         this.q = q_identity();
+        this.spin = 0;
+        this.pitch = 0;
         this.addChild(child);
         this.future(50).tick();
+        this.subscribe("hud", "joy", this.joy);
     }
 
     tick() {
-        const axis = v3_normalize([0,0,1]);
-        this.q = q_multiply(this.q, q_axisAngle(axis, 0.073));
+        this.q = q_multiply(this.q, q_axisAngle([0,1,0], this.spin * 0.15));
+        this.q = q_multiply(this.q, q_axisAngle([1,0,0], this.pitch * 0.15));
         this.q = q_normalize(this.q);
         this.rotateTo(this.q);
         this.future(50).tick();
     }
 
-
+    joy(xy) {
+        this.spin = xy[0];
+        this.pitch = xy[1];
+    }
 
 }
 MoveActor.register('MoveActor');
@@ -221,6 +227,11 @@ class MyViewRoot extends ViewRoot {
             ao.falloff = 1;
 
         }
+
+        this.HUD = new Widget(this.ui.root, {autoSize: [1,1]});
+        this.joy = new JoystickWidget(this.HUD, {local: [50,50], size:[300,300]});
+        this.joy.onChange = xy => { this.publish("hud", "joy", xy); };
+
     }
 
     createManagers() {
