@@ -71,13 +71,26 @@ export class AudioManager extends NamedView {
         }
         sound.setDefaults();
         return sound;
+    }
 
+    addStaticSound(url) {
+        let sound;
+        if (this.staticPool.length) {
+            sound = this.staticPool.pop();
+            sound.setURL(url);
+        } else {
+            sound = new StaticSound(url);
+        }
+        sound.setDefaults();
+        return sound;
     }
 
     removeSound(sound) {
         sound.setURL(undefined);
         if (sound instanceof SpatialSound) {
             this.spatialPool.push(sound);
+        } else if (sound instanceof StaticSound) {
+            this.staticPool.push(sound);
         }
 
     }
@@ -120,6 +133,34 @@ class SpatialSound {
     }
 }
 
+//------------------------------------------------------------------------------------------
+//-- StaticSound ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class StaticSound {
+    constructor(url) {
+        this.audioElement = new Audio(url);
+    }
+
+    setDefaults() {
+        this.setVolume(1);
+    }
+
+    setURL(url) {
+        this.audioElement.src = url;
+    }
+
+    setVolume(volume) {
+        this.audioElement.volume = volume;
+    }
+
+    play() {
+        if (audioContext.state !== "running") return;
+        this.audioElement.load();
+        this.audioElement.play();
+    }
+}
+
 
 //------------------------------------------------------------------------------------------
 //-- PM_AudioListener ----------------------------------------------------------------------
@@ -128,14 +169,9 @@ class SpatialSound {
 export const PM_AudioListener = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        const audio = GetNamedView("AudioManager");
+        this.staticSounds = new Map();
         if (this.isMyPlayerPawn) this.refreshAudioPosition();
-        // this.subscribe("input", "focus", this.refreshAudio);
-    }
-
-    destroy() {
-        GetNamedView("AudioManager");
-        super.destroy();
+        this.listen("playSound", this.playStaticSound);
     }
 
     refreshAudioPosition() {
@@ -146,6 +182,29 @@ export const PM_AudioListener = superclass => class extends superclass {
     refresh() {
         super.refresh();
         if (this.isMyPlayerPawn) this.refreshAudioPosition();
+    }
+
+    addStaticSound(url) {
+        if (this.staticSounds.has(url)) return;
+        const audio = GetNamedView("AudioManager");
+        const sound = audio.addStaticSound(url);
+        this.staticSounds.set(url, sound);
+    }
+
+    removeStaticSound(url) {
+        if (!this.staticSounds.has(url)) return;
+        const audio = GetNamedView("AudioManager");
+        const sound = this.staticSounds.get(url);
+        audio.removeSound(sound);
+        this.staticSounds.delete(url);
+    }
+
+    playStaticSound(data) {
+        if (!this.isMyPlayerPawn) return;
+        this.addStaticSound(data.url);
+        const sound = this.staticSounds.get(data.url);
+        sound.setVolume(data.volume);
+        sound.play();
     }
 
 };
@@ -161,9 +220,10 @@ export const AM_AudioSource = superclass => class extends superclass {
         super.init(...args);
     }
 
-    playSound(url) {
-        this.say("playSound", url);
+    playSound(url, volume) {
+        this.say("playSound", {url, volume});
     }
+
 
 };
 RegisterMixin(AM_AudioSource);
@@ -173,15 +233,15 @@ RegisterMixin(AM_AudioSource);
 export const PM_AudioSource = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        this.sounds = new Map();
-        this.listen("playSound", this.playSound);
+        this.spatialSounds = new Map();
+        this.listen("playSound", this.playSpatialSound);
     }
 
     destroy() {
         super.destroy();
         const audio = GetNamedView("AudioManager");
         if (!audio) return;
-        this.sounds.forEach(sound => {
+        this.spatialSounds.forEach(sound => {
             audio.removeSound(sound);
         });
     }
@@ -190,31 +250,33 @@ export const PM_AudioSource = superclass => class extends superclass {
         super.refresh();
         const location = m4_getTranslation(this.global);
         const rotation = m4_getRotation(this.global);
-        this.sounds.forEach(sound => {
+        this.spatialSounds.forEach(sound => {
             sound.setLocation(location);
         });
     }
 
-    addSound(url) {
-        if (this.sounds.has(url)) return;
+    addSpatialSound(url) {
+        if (this.spatialSounds.has(url)) return;
         const location = m4_getTranslation(this.global);
         const audio = GetNamedView("AudioManager");
         const sound = audio.addSpatialSound(url);
         sound.setLocation(location);
-        this.sounds.set(url, sound);
+        this.spatialSounds.set(url, sound);
     }
 
-    removeSound(url) {
-        if (!this.sounds.has(url)) return;
+    removeSpatialSound(url) {
+        if (!this.spatialSounds.has(url)) return;
         const audio = GetNamedView("AudioManager");
-        const sound = this.sounds.get(url);
+        const sound = this.spatialSounds.get(url);
         audio.removeSound(sound);
-        this.sounds.delete(url);
+        this.spatialSounds.delete(url);
     }
 
-    playSound(url) {
-        this.addSound(url);
-        const sound = this.sounds.get(url);
+    playSpatialSound(data) {
+        if (this.isMyPlayerPawn) return;
+        this.addSpatialSound(data.url);
+        const sound = this.spatialSounds.get(data.url);
+        sound.setVolume(data.volume);
         sound.play();
     }
 
