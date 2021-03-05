@@ -243,8 +243,8 @@ export const PM_AudioListener = superclass => class extends superclass {
 
 export const AM_AudioSource = superclass => class extends superclass {
 
-    playSound(url, volume) {
-        this.say("playSound", {url, volume = 1});
+    playSound(url, volume = 1) {
+        this.say("playSound", {url, volume});
     }
 
 };
