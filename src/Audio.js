@@ -1,6 +1,6 @@
  import { ResonanceAudio } from "resonance-audio";
-import { NamedView, GetNamedView} from "./NamedView";
-import { m4_identity, m4_translation, m4_getTranslation, m4_getRotation, m4_rotationQ, v3_transform} from "./Vector";
+import { NamedView, GetNamedView } from "./NamedView";
+import { m4_getTranslation, m4_getRotation, m4_rotationQ, v3_transform } from "./Vector";
 import { RegisterMixin } from "./Mixins";
 
 let audioContext;
@@ -9,6 +9,8 @@ let audioResonance;
 //------------------------------------------------------------------------------------------
 //-- AudioManager --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// The manager maintains pools of spatial and static sounds and reuses them.
 
 export class AudioManager extends NamedView {
     constructor() {
@@ -166,12 +168,27 @@ class StaticSound {
 //-- PM_AudioListener ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Including this mixin will create a spatial listener that will play any sounds that
+// are triggered by by an AudioSource. If this Pawn is itself the AudioSource, then the
+// sound will be played as a nonspatialized static sound.
+//
+// If you want to play sounds that only this listener can hear, use playStaticSound directly.
+
 export const PM_AudioListener = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
         this.staticSounds = new Map();
         if (this.isMyPlayerPawn) this.refreshAudioPosition();
-        this.listen("playSound", this.playStaticSound);
+        this.listen("playSound", this.playStaticSoundForMyself);
+    }
+
+    destroy() {
+        super.destroy();
+        const audio = GetNamedView("AudioManager");
+        if (!audio) return;
+        this.staticSounds.forEach(sound => {
+            audio.removeSound(sound);
+        });
     }
 
     refreshAudioPosition() {
@@ -200,11 +217,15 @@ export const PM_AudioListener = superclass => class extends superclass {
     }
 
     playStaticSound(data) {
-        if (!this.isMyPlayerPawn) return;
         this.addStaticSound(data.url);
         const sound = this.staticSounds.get(data.url);
         sound.setVolume(data.volume);
         sound.play();
+    }
+
+    playStaticSoundForMyself(data) {
+        if (!this.isMyPlayerPawn) return;
+        this.playStaticSound(data);
     }
 
 };
@@ -213,17 +234,18 @@ export const PM_AudioListener = superclass => class extends superclass {
 //-- AudioSource ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// An AudioSource triggers a sound from the Actor. If the source is also the listener, the
+// play message will be processed by the listener Pawn as a static sound. Otherwise
+// the play message will be processed by the source Pawn as a spatial sound. This way every
+// player hears the sound in the right location.
+
 //-- Actor ---------------------------------------------------------------------------------
 
 export const AM_AudioSource = superclass => class extends superclass {
-    init(...args) {
-        super.init(...args);
-    }
 
     playSound(url, volume) {
-        this.say("playSound", {url, volume});
+        this.say("playSound", {url, volume = 1});
     }
-
 
 };
 RegisterMixin(AM_AudioSource);
@@ -234,7 +256,7 @@ export const PM_AudioSource = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
         this.spatialSounds = new Map();
-        this.listen("playSound", this.playSpatialSound);
+        this.listen("playSound", this.playSpatialSoundForOthers);
     }
 
     destroy() {
@@ -273,11 +295,15 @@ export const PM_AudioSource = superclass => class extends superclass {
     }
 
     playSpatialSound(data) {
-        if (this.isMyPlayerPawn) return;
         this.addSpatialSound(data.url);
         const sound = this.spatialSounds.get(data.url);
         sound.setVolume(data.volume);
         sound.play();
+    }
+
+    playSpatialSoundForOthers(data) {
+        if (this.isMyPlayerPawn) return;
+        this.playSpatialSound(data);
     }
 
 };

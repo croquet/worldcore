@@ -199,7 +199,6 @@ class CameraActor extends mix(Actor).with(AM_Spatial, AM_Player, AM_AudioSource)
     }
 
     test() {
-        console.log("test");
         this.playSound(photon,0.05);
     }
 }
