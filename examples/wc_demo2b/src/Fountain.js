@@ -36,7 +36,7 @@ export class SprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
             size: [0.1, 0.1, 0.1],
             density: 1,
             friction: 1,
-            restitution: 50
+            restitution: 0.1
         });
         let until = Math.random() * 0.5 + 0.5;
         until *= 2000;
@@ -116,7 +116,7 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
             size: this.collisionScale,
             density: 1,
             friction: 1,
-            restitution: 50,
+            restitution: 0.1,
             translation: this.collisionLocation
         });
 

@@ -54,7 +54,7 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
             size: [40,1,40],
             friction: 1,
             density: 1,
-            restitution: 1000
+            restitution: 0.1
         });
 
         this.fountain0 = FountainActor.create({translation: [-3,1,0]});
@@ -261,7 +261,7 @@ export class WallActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
             size: [this.collisionScale[0],this.collisionScale[1],this.collisionScale[2]],
             friction: 1,
             density: 1,
-            restitution: 1000,
+            restitution: 0.1,
             translation: [this.collisionLocation[0],this.collisionLocation[1],this.collisionLocation[2]]
         });
     }

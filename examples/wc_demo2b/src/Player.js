@@ -90,7 +90,7 @@ class PlayerActor extends mix(Actor).with(AM_Avatar, AM_Player, AM_RapierPhysics
                 size: [0.3, 1.0, 0.3],
                 density: 1,
                 friction: 1,
-                restitution: 50,
+                restitution: 0.1,
                 translation: [0, -0.6, 0]
             });
 
