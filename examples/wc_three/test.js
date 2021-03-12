@@ -5,20 +5,18 @@
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, ActorManager, PawnManager, PlayerManager, Widget, JoystickWidget, ThreeRenderManager, Actor, Pawn, mix,
     AM_Avatar, PM_Avatar, PM_ThreeVisible, AM_Spatial, PM_Spatial, toRad, q_identity, q_multiply, q_axisAngle, q_normalize, v3_normalize,
-    AM_Smoothed, PM_Smoothed } from "@croquet/worldcore";
+    AM_Smoothed, PM_Smoothed, GetNamedView, PM_ThreeCamera, PM_Player, AM_Player } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
-import slime_txt from "./assets/slime_texture.png";
-import slime_fbx from "./assets/slime_mesh.fbx";
+import slimeTexture from "./assets/slime_texture.png";
+import slimeModel from "./assets/slime_mesh.fbx";
 
-import { FBXLoader } from "./loaders/FBXLoader.js";
 
 
 import * as THREE from 'three';
 
-const assetManager = new THREE.LoadingManager();
+// const assetManager = new THREE.LoadingManager();
 
-export let slimeTexture;
-export let slimeObject;
+
 
 
 
@@ -65,29 +63,24 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
-        console.log("Building move pawn!");
+        const render = GetNamedView("ThreeRenderManager");
 
-        // let slimeObj = slimeObject.clone(true);
-        // slimeObj.castShadow = true;
-        // slimeObj.receiveShadow = true;
-        // console.log(slimeObj);
-        // slimeObj.children[0].material = slimeObject.children[0].material.clone();
-        // slimeObj.children[0].material.color = new THREE.Color(0.7,0.5,0.5);
+        let texture;
+        let model;
 
+        render.loadTexture(slimeTexture).then(t => {
+            texture = t;
+            return render.loadFBXModel(slimeModel);
+        }).then(m => {
+            model = m;
 
-        // const paperTexture = new THREE.TextureLoader().load( paper );
+            model.children[0].material.map = texture;
+            model.children[0].material.color = new THREE.Color(0.5, 0.1, 0.1);
+            model.children[0].castShadow = true;
+            model.children[0].receiveShadow = true;
+            this.setRenderObject(model);
+        }).catch( () => console.error("Slime not loaded!") );
 
-        // paperTexture.wrapS = paperTexture.wrapT = THREE.RepeatWrapping;
-        // paperTexture.repeat.set(1,3);
-
-        // const color = new THREE.Color(0xbbeecc);
-        // const geometry = new THREE.BoxBufferGeometry( 1, 1, 1 );
-        // const material = new THREE.MeshStandardMaterial( {map: paperTexture, color: color} );
-        // this.cube = new THREE.Mesh( geometry, material );
-        // this.cube.castShadow = true;
-        // this.cube.receiveShadow = true;
-        //this.setRenderObject(this.cube);
-        this.setRenderObject(slimeObject);
     }
 
 }
@@ -103,6 +96,7 @@ class ChildActor extends mix(Actor).with(AM_Smoothed) {
         super.init("ChildPawn", options);
         this.q = q_identity();
         this.future(50).tick();
+        this.subscribe("input", "dDown", this.destroy);
     }
 
     tick() {
@@ -123,18 +117,25 @@ ChildActor.register('ChildActor');
 class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
-        const paperTexture = new THREE.TextureLoader().load( paper );
 
-        paperTexture.wrapS = paperTexture.wrapT = THREE.RepeatWrapping;
-        paperTexture.repeat.set(1,3);
+        const render = GetNamedView("ThreeRenderManager");
 
-        const color = new THREE.Color(0xbbeecc);
-        const geometry = new THREE.BoxBufferGeometry( 0.5, 0.5, 0.5 );
-        const material = new THREE.MeshStandardMaterial( {map: paperTexture, color: color} );
-        this.cube = new THREE.Mesh( geometry, material );
-        this.cube.castShadow = true;
-        this.cube.receiveShadow = true;
-        this.setRenderObject(this.cube);
+        let texture;
+        let model;
+
+        render.loadTexture(slimeTexture).then(t => {
+            texture = t;
+            return render.loadFBXModel(slimeModel);
+        }).then(m => {
+            model = m;
+            model.children[0].scale.set( 0.5, 0.5, 0.5);
+            model.children[0].material.map = texture;
+            model.children[0].material.color = new THREE.Color(0.5, 0.5, 0.1);
+            model.children[0].castShadow = true;
+            model.children[0].receiveShadow = true;
+            this.setRenderObject(model);
+        }).catch( () => console.error("Slime not loaded!") );
+
     }
 
 }
@@ -184,32 +185,20 @@ LevelPawn.register('LevelPawn');
 // CameraActor
 //------------------------------------------------------------------------------------------
 
-// class CameraActor extends mix(Actor).with(AM_Spatial) {
-//     init(options) {
-//         super.init("CameraPawn", options);
-
-//         this.subscribe("input", "dDown", this.test);
-//     }
-
-//     test() {
-//         this.playSound(photon,0.05);
-//     }
-// }
-// CameraActor.register('CameraActor');
+class CameraActor extends mix(Actor).with(AM_Spatial, AM_Player) {
+    init(options) {
+        super.init("CameraPawn", options);
+    }
+}
+CameraActor.register('CameraActor');
 
 //------------------------------------------------------------------------------------------
 // CameraPawn
 //------------------------------------------------------------------------------------------
 
-// class CameraPawn extends mix(Pawn).with(PM_Spatial, PM_Camera, PM_Player, PM_AudioListener) {
-//     constructor(...args) {
-//         super(...args);
-
-//     }
-
-
-// }
-// CameraPawn.register('CameraPawn');
+class CameraPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeCamera, PM_Player) {
+}
+CameraPawn.register('CameraPawn');
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -218,6 +207,7 @@ LevelPawn.register('LevelPawn');
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
+        console.log("Starting model ...");
         this.level = LevelActor.create();
         this.move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
     }
@@ -244,10 +234,6 @@ class MyViewRoot extends ViewRoot {
         this.joy = new JoystickWidget(this.HUD, {local: [50,50], size:[300,300]});
         this.joy.onChange = xy => { this.publish("hud", "joy", xy); };
 
-        this.render.loadTextures([slime_txt, paper]).then(value => {
-            console.log("success!");
-        })
-
     }
 
     createManagers() {
@@ -258,35 +244,9 @@ class MyViewRoot extends ViewRoot {
 
     }
 
-
-
 }
-
-
-async function loadSlime() {
-    console.log("Start loading slime");
-    slimeTexture = new THREE.TextureLoader().load( slime_txt );
-    const fbxLoader = new FBXLoader(assetManager);
-    const slimeGroup = await new Promise( (resolve, reject) => fbxLoader.load(slime_fbx, resolve, null, reject) );
-    slimeObject = slimeGroup.children[0];
-    slimeGroup.remove(slimeObject);
-    slimeObject.material.map = slimeTexture;
-    slimeObject.material.color = new THREE.Color(0.5, 0.1, 0.1);
-    slimeObject.castShadow = true;
-    slimeObject.receiveShadow = true;
-
-
-    console.log(slimeTexture);
-    console.log(slimeObject);
-
-    console.log("finished loading slime object");
-
-}
-
 
 async function go() {
-
-    await loadSlime();
 
     const session = await Session.join({
         appId: 'io.croquet.wctest',

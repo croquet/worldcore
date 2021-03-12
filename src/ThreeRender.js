@@ -1,6 +1,6 @@
 import { NamedView, GetNamedView } from "./NamedView";
-
 import * as THREE from 'three';
+import { FBXLoader } from "../lib/three/FBXLoader.js"; // This external dependency on a third Party FBX loader isn't great ...
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible Mixin --------------------------------------------------------------------
@@ -12,8 +12,20 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 
     destroy() {
         super.destroy();
-        const render = GetNamedView("ThreeRenderManager");
-        // Put code here to destroy the model in the render manager.
+        this.disposeRenderObject(this.renderObject);
+    }
+
+    disposeRenderObject(object) { // Recursively destroys render objects
+        if (!object) return;
+        const doomed = [];
+        object.children.forEach(child => doomed.push(child));
+        doomed.forEach(child => this.disposeRenderObject(child));
+        if (object.geometry && object.material) {
+            object.geometry.dispose();
+            const materials = [].concat(object.material);
+            materials.forEach(material => material.dispose());
+        }
+        if (object.parent) object.parent.remove(object);
     }
 
     refresh() {
@@ -42,18 +54,21 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 export const PM_ThreeCamera = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        if (this.isMine) {
-            const render = GetNamedView("ThreeRenderManager");
-            // Put code here to initialize the camera transform to this.global
+
+        if (this.isMyPlayerPawn) {
+             const render = GetNamedView("ThreeRenderManager");
+            render.camera.matrix.fromArray(this.lookGlobal);
+            render.camera.matrixAutoUpdate = false;
+            render.camera.matrixWorldNeedsUpdate = true;
         }
     }
 
     refresh() {
         super.refresh();
-        if (!this.isMine) return;
+        if (!this.isMyPlayerPawn) return;
         const render = GetNamedView("ThreeRenderManager");
-        // Put code to to update the camera transform in the render manager when this.global changes.
-
+        render.camera.matrix.fromArray(this.lookGlobal);
+        render.camera.matrixWorldNeedsUpdate = true;
     }
 
 };
@@ -81,11 +96,9 @@ export class ThreeRenderManager extends NamedView {
         this.renderer.shadowMap.enabled = true;
         this.setBackground([0.5, 0.5, 0.7, 1]);
 
-        // this.textureCache = new Map();
+        THREE.Cache.enabled = true;
 
         this.subscribe("input", "resize", () => this.resize());
-
-
     }
 
     destroy() {
@@ -93,6 +106,7 @@ export class ThreeRenderManager extends NamedView {
         this.renderer.dispose();
         this.scene.dispose();
         this.canvas.remove();
+        THREE.Cache.clear();
     }
 
     resize() {
@@ -108,12 +122,45 @@ export class ThreeRenderManager extends NamedView {
         this.renderer.setClearColor(new THREE.Color(bg[0], bg[1], bg[2]), bg[3]);
     }
 
-    loadTextures(urls) {
+    // Loads multiple textures. Returns a promise. This can be used to prime the cache with a bunch
+    // of textures in parallel.
+
+    loadTextureCache(urls) {
         return new Promise((resolve, reject) => {
             const loadManager = new THREE.LoadingManager(resolve, undefined, reject);
             const textureLoader = new THREE.TextureLoader(loadManager);
-            urls.forEach(url => textureLoader.load(url))
-        })
+            urls.forEach(url => textureLoader.load(url, resolve, undefined, reject));
+        });
+    }
+
+    // Loads a single texture. Returns a promise. The resolve callback receives the pointer to the texture.
+
+    loadTexture(url) {
+        return new Promise((resolve, reject) => {
+            const textureLoader = new THREE.TextureLoader();
+            return textureLoader.load(url, resolve, undefined, reject);
+        });
+    }
+
+    // Loads multiple FBX models. Returns a promise. This can be used to prime the cache with a bunch
+    // of models in parallel.
+
+    loadFBXModels(urls) {
+        return new Promise((resolve, reject) => {
+            const loadManager = new THREE.LoadingManager(resolve, undefined, reject);
+            const fbxLoader = new FBXLoader(loadManager);
+            urls.forEach(url => fbxLoader.load(url))
+        });
+    }
+
+    // Loads a single FBX model. Returns a promise. The resolve callback receives the pointer to the model.
+    // The loader creates a top level group with the other models stored under it.
+
+    loadFBXModel(url) {
+        return new Promise((resolve, reject) => {
+            const fbxLoader = new FBXLoader();
+            return fbxLoader.load(url, resolve, undefined, reject);
+        });
     }
 
 }
