@@ -43,6 +43,27 @@ export const PM_ThreeVisible = superclass => class extends superclass {
         this.renderObject.matrix.fromArray(this.global);
         this.renderObject.matrixWorldNeedsUpdate = true;
         render.scene.add(this.renderObject);
+
+        this.pawn3D = this.renderObject; // Legacy support for object highlighting in Verizon demo. Delete when we don't need to support it.
+    }
+
+    // Loads a single texture. Returns a promise. The resolve callback receives the pointer to the texture.
+
+    loadTexture(url) {
+        return new Promise((resolve, reject) => {
+            const textureLoader = new THREE.TextureLoader();
+            return textureLoader.load(url, resolve, undefined, reject);
+        });
+    }
+
+        // Loads a single FBX model. Returns a promise. The resolve callback receives the pointer to the model.
+    // The loader creates a top level group with the other models stored under it.
+
+    loadFBXModel(url) {
+        return new Promise((resolve, reject) => {
+            const fbxLoader = new FBXLoader();
+            return fbxLoader.load(url, resolve, undefined, reject);
+        });
     }
 
 };
@@ -133,14 +154,7 @@ export class ThreeRenderManager extends NamedView {
         });
     }
 
-    // Loads a single texture. Returns a promise. The resolve callback receives the pointer to the texture.
 
-    loadTexture(url) {
-        return new Promise((resolve, reject) => {
-            const textureLoader = new THREE.TextureLoader();
-            return textureLoader.load(url, resolve, undefined, reject);
-        });
-    }
 
     // Loads multiple FBX models. Returns a promise. This can be used to prime the cache with a bunch
     // of models in parallel.
@@ -153,14 +167,6 @@ export class ThreeRenderManager extends NamedView {
         });
     }
 
-    // Loads a single FBX model. Returns a promise. The resolve callback receives the pointer to the model.
-    // The loader creates a top level group with the other models stored under it.
 
-    loadFBXModel(url) {
-        return new Promise((resolve, reject) => {
-            const fbxLoader = new FBXLoader();
-            return fbxLoader.load(url, resolve, undefined, reject);
-        });
-    }
 
 }

@@ -63,14 +63,12 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
-        const render = GetNamedView("ThreeRenderManager");
-
         let texture;
         let model;
 
-        render.loadTexture(slimeTexture).then(t => {
+        this.loadTexture(slimeTexture).then(t => {
             texture = t;
-            return render.loadFBXModel(slimeModel);
+            return this.loadFBXModel(slimeModel);
         }).then(m => {
             model = m;
 
@@ -118,14 +116,12 @@ class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
-        const render = GetNamedView("ThreeRenderManager");
-
         let texture;
         let model;
 
-        render.loadTexture(slimeTexture).then(t => {
+        this.loadTexture(slimeTexture).then(t => {
             texture = t;
-            return render.loadFBXModel(slimeModel);
+            return this.loadFBXModel(slimeModel);
         }).then(m => {
             model = m;
             model.children[0].scale.set( 0.5, 0.5, 0.5);
