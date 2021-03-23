@@ -2,6 +2,7 @@ import { View } from "@croquet/croquet";
 import { v2_sub, v2_multiply, v2_add, v2_scale, v4_scale, v2_normalize, v2_magnitude } from "./Vector";
 import { LoadFont, LoadImage} from "./ViewAssetCache";
 import { NamedView } from "./NamedView";
+import QRCode from "../lib/qr/qrcode";
 
 let ui;             // The UI manager
 let hover;          // The control widget that currently is hovered.
@@ -723,11 +724,46 @@ export class ImageWidget extends Widget {
         this.markChanged();
     }
 
+    loadFromCanvas(c) {
+        this._image = c;
+        this.markChanged();
+    }
+
     draw() {
         if (!this.image) return;
         const xy = this.origin;
         const size = this.size;
         this.cc.drawImage(this.image, xy[0], xy[1], size[0], size[1]);
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- QRWidget ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class QRWidget extends ImageWidget {
+    constructor(...args) {
+        super(...args);
+        this._element = document.createElement('div');
+        if (this.text) this.makeFromText(this.text);
+        this.subscribe(this.id, { event: "text", handling: "immediate" }, this.makeFromText);
+    }
+
+    get text() { return this._text; }
+
+    destroy() {
+        super.destroy();
+        this._element.remove();
+    }
+
+    makeFromText(t) {
+        this._text = t;
+        this.markChanged();
+        const code = new QRCode(this._element, {
+            text: t
+        });
+        if (code) this.loadFromCanvas(code.getCanvas());
     }
 
 }

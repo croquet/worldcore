@@ -65,8 +65,12 @@ export const PM_InstancedVisible = superclass => class extends superclass {
         const scene = GetNamedView('ViewRoot').render.scene;
         //if (this.draw) scene.removeDrawCall(this.draw);
         this.draw = draw;
-        this.draw.instances.set(this.actor.id, this.global);
-        if (this.draw) scene.addDrawCall(this.draw);
+        if (this.draw) {
+            this.draw.instances.set(this.actor.id, this.global);
+            scene.addDrawCall(this.draw);
+        }
+
+        // if (this.draw) scene.addDrawCall(this.draw);
     }
 
 }
@@ -78,8 +82,8 @@ export const PM_InstancedVisible = superclass => class extends superclass {
 export const PM_Camera = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        if (this.isMyPlayerPawn) {
-            const render = GetNamedView("RenderManager");
+        const render = GetNamedView("RenderManager");
+        if (this.isMyPlayerPawn && render) {
             render.camera.setLocation(this.lookGlobal);
             render.camera.setProjection(toRad(60), 1.0, 10000.0);
         }
@@ -87,8 +91,9 @@ export const PM_Camera = superclass => class extends superclass {
 
     refresh() {
         super.refresh();
-        if (!this.isMyPlayerPawn) return;
         const render = GetNamedView("RenderManager");
+        if (!this.isMyPlayerPawn && render) return;
+
         render.camera.setLocation(this.lookGlobal);
     }
 
