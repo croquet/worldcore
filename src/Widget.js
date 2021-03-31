@@ -761,7 +761,12 @@ export class QRWidget extends ImageWidget {
         this._text = t;
         this.markChanged();
         const code = new QRCode(this._element, {
-            text: t
+            text: t,
+            width: 128,
+            height: 128,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L   // L, M, Q, H
         });
         if (code) this.loadFromCanvas(code.getCanvas());
     }
