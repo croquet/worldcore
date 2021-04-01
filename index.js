@@ -13,9 +13,10 @@ export * from "./src/ViewAssetCache";
 
 // Optional modules
 
-export * from "./src/Input";
+
 // export * from "./src/WebInput";
 // export * from "./src/Widget";
+export * from "./src/Input";
 export * from "./src/Widget2";
 export * from "./src/Render";
 export * from "./src/RenderManager";

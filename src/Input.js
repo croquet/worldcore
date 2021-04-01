@@ -1,4 +1,4 @@
-import { v2_sub, v2_add, v2_scale, v2_magnitude, TAU, toRad } from "./Vector";
+import { v2_sub, v2_add, v2_scale, v2_magnitude, TAU, toRad, toDeg } from "./Vector";
 import { NamedView } from "./NamedView";
 
 // Need to add doubletap
@@ -13,7 +13,6 @@ const SWIPE_DURATION = 300;   // milliseconds
 const SWIPE_DISTANCE = 50;     // pixels
 
 const keys = new Set();
-const pointers = new Map();
 const chordNames = new Map();
 const upChordKeys = new Map();
 const downChordKeys = new Map();
@@ -46,10 +45,14 @@ export function KeyDown(key) {
 export class InputManager2 extends NamedView {
     constructor() {
         super("InputMananger");
+
+        console.log("Starting input manager");
         this.listeners = [];
-        // this.touches = [];
 
         this.presses = new Map();
+        this.lastDown = {};
+        this.penultimateDown = {};
+        // this.doubleXY = null;
 
         // this.lastClick = 0;
         // this.penultimateClick = 0;
@@ -61,7 +64,7 @@ export class InputManager2 extends NamedView {
         this.addListener(window, 'focus', e => this.onFocus(e));
         this.addListener(window, 'blur', e => this.onBlur(e));
         this.addListener(window, 'deviceorientation', e => this.onOrientation(e));
-        // this.addListener(document, 'click', e => this.onClick(e));
+        this.addListener(document, 'click', e => this.onClick(e));
         this.addListener(document, 'pointerlockchange', e => this.onPointerLock(e));
 
         this.addListener(document, 'pointerdown', e => this.onPointerDown(e));
@@ -74,61 +77,7 @@ export class InputManager2 extends NamedView {
         this.addListener(document,'keydown', e => this.onKeyDown(e));
         this.addListener(document,'keyup', e => this.onKeyUp(e));
 
-        // console.log("Starting input");
-        // if (this.hasMouse) console.log("Mouse input enabled");
-
-
-        // console.log(document.documentElement.style);
-        // console.log(document.documentElement.style.touchAction);
-
-        // this.addListener(document,'touchstart', e => this.onTouchStart(e));
-        // this.addListener(document,'touchend', e => this.onTouchEnd(e));
-        // this.addListener(document,'touchmove', e => this.onTouchMove(e));
-
-
-        // this.addListener(document, 'pointercancel', e => this.onPointerUp(e));
-        // this.addListener(document, 'pointerout', e => this.onPointerUp(e));
-        // this.addListener(document, 'pointerleave', e => this.onPointerUp(e));
-
-
-
-
-
-        // if (this.hasTouch) {
-        //     console.log("Touch input enabled");
-        //     this.addListener(document,'touchstart', e => this.onTouchStart(e));
-        //     this.addListener(document,'touchend', e => this.onTouchEnd(e));
-        //     this.addListener(document,'touchmove', e => this.onTouchMove(e));
-        //     this.addListener(document,'touchcancel', e => this.onTouchCancel(e));
-        // }
-
-        // if (this.hasMouse) {
-        //     console.log("Mouse input enabled");
-
-        //     this.addListener(document, 'mousedown', e => this.onMouseDown(e));
-        //     this.addListener(document, 'mouseup', e => this.onMouseUp(e));
-        //     this.addListener(document, 'mousemove', e => this.onMouseMove(e));
-        //     this.addListener(document, 'pointerlockchange', e => this.onPointerLock(e));
-        //     this.addListener(document, 'wheel', e => this.onWheel(e));
-        // }
-
-        // if (this.hasKeyboard) {
-
-        // }
-
     }
-
-    // get hasTouch() {
-    //     return 'ontouchstart' in document.documentElement;
-    // }
-
-    // get hasMouse() {
-    //     return 'onmousedown' in document.documentElement;
-    // }
-
-    // get hasKeyboard() {
-    //     return 'onkeydown' in document.documentElement
-    // }
 
     destroy() {
         super.destroy();
@@ -167,23 +116,6 @@ export class InputManager2 extends NamedView {
             upChordKeys.get(u).add(name);
         });
     }
-
-    // get touchCount() {
-    //     return this.touches.length;
-    // }
-
-    // addTouch(touch) {
-    //     if (this.getTouch(touch.id)) return;
-    //     this.touches.push(touch);
-    // }
-
-    // removeTouch(id) {
-    //     this.touches = this.touches.filter(touch => touch.id !== id);
-    // }
-
-    // getTouch(id) {
-    //     return this.touches.find(touch => touch.id === id);
-    // }
 
     onChordDown(key) {
         const downs = [];
@@ -295,13 +227,9 @@ export class InputManager2 extends NamedView {
         document.exitPointerLock();
     }
 
-
-
     onPointerLock(event) {
         this.publish("input", "pointerLock", this.inPointerLock);
     }
-
-
 
     onResize(event) {
         // Delay actual resize event to address iOS posting of resize before page layout finishes.
@@ -348,27 +276,110 @@ export class InputManager2 extends NamedView {
         this.onChordUp(key);
     }
 
-    // onClick(event) {
-    //     window.focus();
-    //     this.publish("input", "click");
-    // }
+    onClick(event) {
+        window.focus();
+        this.publish("input", "click");
+    }
 
     onPointerDown(event) {
-        this.presses.set(event.pointerId, event);
-        console.log(this.presses.size);
+        this.presses.set(event.pointerId, {id: event.pointerId, time: event.timeStamp, start: [event.clientX, event.clientY], xy: [event.clientX, event.clientY]});
         this.publish("input", "pointerDown", {id: event.pointerId, type: event.PointerType, button: event.button, xy: [event.clientX, event.clientY]});
+        if (event.pointerId === this.lastDown.id && event.button === this.lastDown.button && event.timeStamp - this.lastDown.time < DOUBLE_DURATION) {
+            if (event.pointerId === this.penultimateDown.id && event.button === this.penultimateDown.button && event.timeStamp - this.penultimateDown.time < TRIPLE_DURATION) {
+                this.publish("input", "tripleDown", {id: event.pointerId, type: event.PointerType, button: event.button, xy: [event.clientX, event.clientY]});
+            } else {
+                this.publish("input", "doubleDown", {id: event.pointerId, type: event.PointerType, button: event.button, xy: [event.clientX, event.clientY]});
+            }
+        }
+        this.penultimateDown = this.lastDown;
+        this.lastDown = {id: event.pointerId, button: event.button, time: event.timeStamp}
+        this.zoomStart();
+
     }
 
     onPointerUp(event) {
+        const press = this.presses.get(event.pointerId);
+        if (press) {
+            press.xy = [event.clientX, event.clientY];
+            const duration = event.timeStamp - press.time;
+            const dx = event.clientX - press.start[0];
+            const dy = event.clientY - press.start[1];
+            const ax = Math.abs(dx);
+            const ay = Math.abs(dy);
+            if (duration < TAP_DURATION && ax < TAP_DISTANCE && ay < TAP_DISTANCE) {
+                this.publish("input", "tap", {id: event.pointerId, type: event.PointerType, button: event.button, xy: [event.clientX, event.clientY]});
+            }
+            if (duration < SWIPE_DURATION && ax > SWIPE_DISTANCE) {
+                this.publish("input", "swipeX", {id: event.pointerId, type: event.PointerType, button: event.button, distance: dx});
+            }
+            if (duration < SWIPE_DURATION && ay > SWIPE_DISTANCE) {
+                this.publish("input", "swipeY", {id: event.pointerId, type: event.PointerType, button: event.button, distance: dy});
+            }
+        }
+
         this.presses.delete(event.pointerId);
         this.publish("input", "pointerUp", {id: event.pointerId, type: event.PointerType, button: event.button, xy: [event.clientX, event.clientY]});
+        this.zoomEnd();
     }
 
     onPointerMove(event) {
-        this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
+        const press = this.presses.get(event.pointerId);
+        if (press) {
+            press.xy = [event.clientX, event.clientY];
+            const duration = event.timeStamp - press.time;
+            const dx = event.clientX - press.start[0];
+            const dy = event.clientY - press.start[1];
+            const ax = Math.abs(dx);
+            const ay = Math.abs(dy);
+            if (duration > TAP_DURATION || ax > TAP_DISTANCE || ay > TAP_DISTANCE) { // Only publish pressed move events that aren't taps
+                this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
+            }
+        } else {
+            this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
+        }
+        this.zoomUpdate();
     }
 
+    zoomStart() {
+        if (this.presses.size !== 2) return;
 
+        const values = Array.from(this.presses.values());
+        const press0 = values[0];
+        const press1 = values[1];
+        const mid = v2_scale(v2_add(press0.xy, press1.xy), 0.5);
+
+        this.publish("input", "zoomStart", {mid, zoom: 1, dial: 0});
+    }
+
+    zoomEnd() {
+        if (this.presses.size >= 2) return;
+
+        this.publish("input", "zoomEnd");
+    }
+
+    zoomUpdate() {
+        if (this.presses.size < 2) return;
+
+        const values = Array.from(this.presses.values());
+        const press0 = values[0];
+        const press1 = values[1];
+        const mid = v2_scale(v2_add(press0.xy, press1.xy), 0.5);
+
+        const delta0 = v2_sub(press1.start, press0.start);
+        const delta1 = v2_sub(press1.xy, press0.xy);
+        const gap0 = v2_magnitude(delta0);
+        const gap1 = v2_magnitude(delta1);
+
+        let zoom = 1;
+        if (gap0 > 0) zoom = gap1 / gap0;
+
+        const angle0 = Math.atan2(delta0[0], delta0[1]);
+        const angle1 = Math.atan2(delta1[0], delta1[1]);
+        let dial = (angle1 - angle0 + TAU) % TAU;
+        if (dial > Math.PI) dial -= TAU;
+
+        this.publish("input", "zoomUpdate", {mid, zoom, dial});
+    }
 
     onWheel(event) {
         event.preventDefault();

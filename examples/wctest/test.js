@@ -5,7 +5,7 @@
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, AM_Avatar, PM_Avatar,
-    ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, BoxWidget, JoystickWidget, AudioManager, PM_Camera, AM_Player, PM_Player, PM_AudioListener, PM_AudioSource, AM_AudioSource, InputManager2, TextWidget, ButtonWidget, SliderWidget } from "@croquet/worldcore";
+    ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, BoxWidget, JoystickWidget, AudioManager, PM_Camera, AM_Player, PM_Player, PM_AudioListener, PM_AudioSource, AM_AudioSource, InputManager2, TextWidget, ButtonWidget, SliderWidget, TextFieldWidget } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 import photon from "./assets/Photon.mp3";
 
@@ -255,21 +255,27 @@ class MyViewRoot extends ViewRoot {
 
         this.HUD = new Widget(this.ui.root, {autoSize: [1,1]});
 
-        this.button0 = new ButtonWidget(this.HUD, {local: [20,20], size: [200,100]});
-        this.button0.onClick = () => console.log("0");
-        this.button1 = new ButtonWidget(this.HUD, {local: [20,140], size: [200,100]});
-        this.button1.onClick = () => console.log("1");
-        // this.slider = new SliderWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [50, 300]});
-        this.joy0 = new JoystickWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200]});
-        this.joy1 = new JoystickWidget(this.HUD, {anchor: [0,1], pivot: [0,1], local: [20,-20], size: [200, 200]});
+        this.button0 = new ButtonWidget(this.HUD, {local: [20,120], size: [200,100]});
+        // this.button0.onClick = () => console.log("0");
+        // this.button1 = new ButtonWidget(this.HUD, {local: [20,140], size: [200,100]});
+        // this.button1.onClick = () => console.log("1");
+        // // this.slider = new SliderWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [50, 300]});
+        // this.joy0 = new JoystickWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200]});
+        // this.joy1 = new JoystickWidget(this.HUD, {anchor: [0,1], pivot: [0,1], local: [20,-20], size: [200, 200]});
+
+        this.field = new TextFieldWidget(this.HUD, {local:[20,20], size: [300, 40]});
+        this.field.text.setText("Hello World!");
 
         // this.subscribe("ui", "pointerDown", () => console.log("Down!"));
         // this.subscribe("ui", "pointerUp", () => console.log("Up!"));
         // this.subscribe("ui", "pointerMove", () => console.log("Move!"));
+
+        // this.subscribe("input", "dDown", () => { console.log("ddd"); this.field.entry.toggleVisible()});
     }
 
     createManagers() {
         this.input = this.addManager(new InputManager2());
+        // this.input = this.addManager(new WebInputManager());
         this.render = this.addManager(new RenderManager());
         this.ui = this.addManager(new UIManager());
         this.pawnManager = this.addManager(new PawnManager());
