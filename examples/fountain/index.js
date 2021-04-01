@@ -788,12 +788,21 @@ class ARKitView extends View {
 
 window.hideFountain = Boolean(window.webkit && window.webkit.messageHandlers.arwebkit);
 
+const getCurrentTimeInterval = () => Math.floor((new Date()).getTime() / (1000 * 60 * 3));
+const initTimeInterval = getCurrentTimeInterval();
+setInterval(() => {
+  const currentTimeInterval = getCurrentTimeInterval();
+  if (currentTimeInterval !== initTimeInterval) {
+    window.location = window.location;
+  }
+}, 1000);
+
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 async function go() {
     await LoadRapier();
     App.makeWidgetDock();
     //const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
-    const session = await Session.join(`croquet-ar-kit-4`, MyModelRoot, MyViewRoot, {tps: 30, autoSleep: false, options: {disableFountain: true}, viewIdDebugSuffix: window.hideFountain? 'mobile':''});
+    const session = await Session.join(`croquet-ar-chat-${initTimeInterval}`, MyModelRoot, MyViewRoot, {tps: 30, autoSleep: true, options: {disableFountain: true}, debug: ["snapshot"], viewIdDebugSuffix: window.hideFountain? 'mobile':''});
     window.session = session;
 }
 
