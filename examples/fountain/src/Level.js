@@ -12,8 +12,10 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
             size: [75,1,75],
             friction: 1,
             density: 1,
-            restitution: 0.1
+            restitution: 0.000000000000001
         });
+
+        this._isFountain = true;
 
         this.fountain = FountainActor.create({translation: [0,1.5,0]});
 
@@ -26,26 +28,27 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
 }
 LevelActor.register('LevelActor');
 
-class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
+class LevelPawn extends mix(Pawn).with(...(window.hideFountain? [PM_Spatial] : [PM_Spatial, PM_Visible])) {
     constructor(...args) {
         super(...args);
 
-        const c = [0.5, 0.5, 0.5, 1];
+        if(!window.hideFountain) {
+            const c = [0.5, 0.5, 0.5, 1];
 
-        this.ground = new Triangles();
-        this.ground.addFace([[-75,1,75], [75,1,75], [75,1,-75], [-75,1,-75]], [c,c,c,c], [[0,0], [75,0], [75,75], [0,75]]);
+            this.ground = new Triangles();
+            this.ground.addFace([[-75,1,75], [75,1,75], [75,1,-75], [-75,1,-75]], [c,c,c,c], [[0,0], [75,0], [75,75], [0,75]]);
 
-        this.ground.load();
-        this.ground.clear();
+            this.ground.load();
+            this.ground.clear();
 
-        this.material = new Material();
-        this.material.pass = 'opaque';
-        this.material.texture.loadFromURL(paper);
+            this.material = new Material();
+            this.material.pass = 'opaque';
+            this.material.texture.loadFromURL(paper);
 
-        this.draw = new DrawCall(this.ground, this.material);
+            this.draw = new DrawCall(this.ground, this.material);
 
-        this.setDrawCall(this.draw);
-
+            this.setDrawCall(this.draw);
+        }
     }
 
     destroy() {

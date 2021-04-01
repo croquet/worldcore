@@ -3,7 +3,7 @@ dependencies:
   '@dimforge/rapier3d': 0.2.4
   resonance-audio: 1.0.0
   three: 0.108.0
-lockfileVersion: 5.1
+lockfileVersion: 5.2
 packages:
   /@babel/runtime/7.11.2:
     dependencies:
