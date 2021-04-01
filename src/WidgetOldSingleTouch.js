@@ -5,43 +5,8 @@ import { NamedView } from "./NamedView";
 import QRCode from "../lib/qr/qrcode";
 
 let ui;             // The UI manager
-
-let pressedControls = new Map();    // Maps pointer ids to the control widget they were last pressed inside
-let keyboardFocus;                  // The widget currently receiving input from the keyboard
-
-//------------------------------------------------------------------------------------------
-//-- Helper Functions ----------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// Widget attributes can be either values or arrays ... this compares arbitrary things.
-
-function deepEquals(a, b) {
-    if (a === b) return true;
-    if (!a || !b) return false;
-    const al = a.length;
-    const bl = b.length;
-    if (!al || !bl) return false;
-    if (al !== bl) return false;
-    for (let i = 0; i < al; i++) if (a[i] !== b[i]) return false;
-    return true;
-}
-
-function canvasColor(r, g, b) {
-    return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
-}
-
-function isLetter(c) { // Returns true if the character is an alphabetic letter.
-    return c.toLowerCase() !== c.toUpperCase();
-}
-
-function isDigit(c) { // Returns true if the character is a digit.
-    return c.match(/[0-9]/i);
-}
-
-function isLetterOrDigit(c) {
-    return isLetter(c) || isDigit(c);
-}
-
+let hover;          // The control widget that currently is hovered.
+let focus;          // The control widget that currently has focus.
 
 //------------------------------------------------------------------------------------------
 //-- UIManager -----------------------------------------------------------------------------
@@ -50,7 +15,8 @@ function isLetterOrDigit(c) {
 // The UI is the top-level UI manager. It creates the canvas that the UI is drawn on, and catches events
 // and passes them to the widget tree.
 //
-// It re-publishes pointer events after it's given the UI widgets a chance to intercept them.
+// It re-publishes cursorDown and touchDown events after it's given the UI widgets a chance to intercept
+// them.
 //
 // Takes the device's pixel ratio into account. This can be over-ridden using SetScale.
 
@@ -68,33 +34,26 @@ export class UIManager extends NamedView {
         this.resize();
         this.root = new CanvasWidget(this, {autoSize: [1,1]});
 
-        // this.fakeText = document.createElement("input"); // This is a hack to trigger a virtual keyboard on a mobile device
-        // this.fakeText.setAttribute("type", "text");
-        // this.fakeText.style.position = "absolute";
-        // this.fakeText.value = "A"; // Fool keyboard into not automatically using caps
-        // this.fakeText.style.opacity = "0";
-        // this.fakeText.addEventListener("focusout", this.fakeTextBlur);
-        // document.body.insertBefore(this.fakeText, null);
+        this.fakeText = document.createElement("input"); // This is a hack to trigger a virtual keyboard on a mobile device
+        this.fakeText.setAttribute("type", "text");
+        this.fakeText.style.position = "absolute";
+        this.fakeText.value = "A"; // Fool keyboard into not automatically using caps
+        this.fakeText.style.opacity = "0";
+        this.fakeText.addEventListener("focusout", this.fakeTextBlur);
+        document.body.insertBefore(this.fakeText, null);
 
         this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
-        this.subscribe("input", {event: "pointerMove", handling: "immediate"}, this.pointerMove);
-        this.subscribe("input", {event: "pointerDown", handling: "immediate"}, this.pointerDown);
-        this.subscribe("input", {event: "pointerUp", handling: "immediate"}, this.pointerUp);
+        this.subscribe("input", {event: "mouseXY", handling: "immediate"}, this.mouseXY);
+        this.subscribe("input", {event: "mouse0Down", handling: "immediate"}, this.mouseDown);
+        this.subscribe("input", {event: "mouse0Up", handling: "immediate"}, this.mouseUp);
 
-        this.subscribe("input", {event: "doubleDown", handling: "immediate"}, this.doubleDown);
-        this.subscribe("input", {event: "tripleDown", handling: "immediate"}, this.tripleDown);
+        this.subscribe("input", {event: "mouse0Double", handling: "immediate"}, this.mouseDouble);
+        this.subscribe("input", {event: "mouse0Triple", handling: "immediate"}, this.mouseTriple);
 
-        // this.subscribe("input", {event: "mouseXY", handling: "immediate"}, this.mouseXY);
-        // this.subscribe("input", {event: "mouse0Down", handling: "immediate"}, this.mouseDown);
-        // this.subscribe("input", {event: "mouse0Up", handling: "immediate"}, this.mouseUp);
-
-        // this.subscribe("input", {event: "mouse0Double", handling: "immediate"}, this.mouseDouble);
-        // this.subscribe("input", {event: "mouse0Triple", handling: "immediate"}, this.mouseTriple);
-
-        // this.subscribe("input", {event: "touchXY", handling: "immediate"}, this.touchXY);
-        // this.subscribe("input", {event: "touchDown", handling: "immediate"}, this.touchDown);
-        // this.subscribe("input", {event: "touchUp", handling: "immediate"}, this.touchUp);
-        // this.subscribe("input", {event: "touchTap", handling: "immediate"}, this.touchTap);
+        this.subscribe("input", {event: "touchXY", handling: "immediate"}, this.touchXY);
+        this.subscribe("input", {event: "touchDown", handling: "immediate"}, this.touchDown);
+        this.subscribe("input", {event: "touchUp", handling: "immediate"}, this.touchUp);
+        this.subscribe("input", {event: "touchTap", handling: "immediate"}, this.touchTap);
 
         this.subscribe("input", {event: "keyDown", handling: "immediate"}, this.keyDown);
         this.subscribe("input", {event: "keyRepeat", handling: "immediate"}, this.keyDown);
@@ -102,8 +61,7 @@ export class UIManager extends NamedView {
 
     destroy() {
         super.destroy();
-        // pressedControls.clear();
-        // if (focusedControl) focusedControl.blur();
+        if (focus) focus.blur();
         if (this.root) this.root.destroy();
         ui = null;
     }
@@ -119,7 +77,7 @@ export class UIManager extends NamedView {
     get isVisible() { return true; }
 
     resize() {
-        // if (focused) focused.blur();
+        if (focus) focus.blur();
         this.ratio = window.devicePixelRatio;
         // console.log("UI Pixel Ratio: " + this.ratio);
         const width = window.innerWidth;
@@ -144,111 +102,76 @@ export class UIManager extends NamedView {
         this.isChanged = true;
     }
 
-    pointerMove(event) {
-
-        const pressed = pressedControls.get(event.id);
-        if (pressed) {
-            pressed.pointerDrag(event);
-        } else if (event.type === "mouse" && this.root) {
-            this.root.pointerMove(event);
-            this.publish("ui", "pointerMove", event);
+    mouseXY(xy) {
+        const oldHover = hover;
+        this.root.setCursor('default');
+        if (this.inMouseDown) {
+            if (focus) focus.drag(xy);
+        } else {
+            if (hover) hover.mouseMove(xy);
+            if (this.root) this.root.mouseMove(xy);
         }
-    }
-
-    pointerDown(event) {
-        if (event.button !== 0) return;
-        if (this.root && this.root.pointerDown(event)) return;
-        this.publish("ui", "pointerDown", event);
-    }
-
-    doubleDown(event) {
-        if (keyboardFocus) keyboardFocus.doubleDown(event);
-    }
-
-    tripleDown(event) {
-        if (keyboardFocus) keyboardFocus.tripleDown(event);
-    }
-
-    pointerUp(event) {
-        if (event.button !== 0) return;
-        const pressed = pressedControls.get(event.id);
-        if (pressed) {
-            pressed.pointerUp(event); }
-        else {
-            this.publish("ui", "pointerUp", event);
+        if (oldHover !== hover) {
+            if (oldHover) {
+                oldHover.onUnhover();
+                oldHover.markChanged();
+            }
+            if (hover) {
+                hover.onHover();
+                hover.markChanged();
+            }
         }
+        if (!focus && !hover) this.publish("ui", "mouseXY", xy);
     }
 
-    // mouseXY(xy) {
-    //     const oldHover = hover;
-    //     this.root.setCursor('default');
-    //     if (this.inMouseDown) {
-    //         if (focus) focus.drag(xy);
-    //     } else {
-    //         if (hover) hover.mouseMove(xy);
-    //         if (this.root) this.root.mouseMove(xy);
-    //     }
-    //     if (oldHover !== hover) {
-    //         if (oldHover) {
-    //             oldHover.onUnhover();
-    //             oldHover.markChanged();
-    //         }
-    //         if (hover) {
-    //             hover.onHover();
-    //             hover.markChanged();
-    //         }
-    //     }
-    //     if (!focus && !hover) this.publish("ui", "mouseXY", xy);
-    // }
+    mouseDown(xy) {
+        this.inMouseDown = true;
+        if (focus && focus.press(xy)) return;
+        if (hover && hover.press(xy)) return;
+        this.publish("ui", "mouse0Down", xy);
+    }
 
-    // mouseDown(xy) {
-    //     this.inMouseDown = true;
-    //     if (focus && focus.press(xy)) return;
-    //     if (hover && hover.press(xy)) return;
-    //     this.publish("ui", "mouse0Down", xy);
-    // }
+    mouseUp(xy) {
+        this.inMouseDown = false;
+        if (focus) focus.release(xy);
+        this.publish("ui", "mouse0Up", xy);
+    }
 
-    // mouseUp(xy) {
-    //     this.inMouseDown = false;
-    //     if (focus) focus.release(xy);
-    //     this.publish("ui", "mouse0Up", xy);
-    // }
+    touchXY(xy) {
+        if (focus) focus.drag(xy);
+        this.publish("ui", "touchXY", xy);
+    }
 
-    // touchXY(xy) {
-    //     if (focus) focus.drag(xy);
-    //     this.publish("ui", "touchXY", xy);
-    // }
+    touchDown(xy) {
+        if (this.root && this.root.press(xy)) return;
+        this.canTap = true;
+        this.publish("ui", "touchDown", xy);
+    }
 
-    // touchDown(xy) {
-    //     if (this.root && this.root.press(xy)) return;
-    //     this.canTap = true;
-    //     this.publish("ui", "touchDown", xy);
-    // }
+    touchUp(xy) {
+        if (focus) focus.release(xy);
+        this.canTap = false;
+        this.publish("ui", "touchUp", xy);
+    }
 
-    // touchUp(xy) {
-    //     if (focus) focus.release(xy);
-    //     this.canTap = false;
-    //     this.publish("ui", "touchUp", xy);
-    // }
+    touchTap(xy) {
+        if (!this.canTap) return;
+        this.publish("ui", "touchTap", xy);
+    }
 
-    // touchTap(xy) {
-    //     if (!this.canTap) return;
-    //     this.publish("ui", "touchTap", xy);
-    // }
+    mouseDouble(xy) {
+        if (!focus || !focus.doubleClick) return;
+        focus.doubleClick(xy);
+    }
 
-    // mouseDouble(xy) {
-    //     if (!focus || !focus.doubleClick) return;
-    //     focus.doubleClick(xy);
-    // }
-
-    // mouseTriple(xy) {
-    //     if (!focus || !focus.tripleClick) return;
-    //     focus.tripleClick(xy);
-    // }
+    mouseTriple(xy) {
+        if (!focus || !focus.tripleClick) return;
+        focus.tripleClick(xy);
+    }
 
 
     keyDown(key) {
-        if (keyboardFocus) keyboardFocus.keyInput(key);
+        if (focus && focus.keyInput) focus.keyInput(key);
     }
 
 
@@ -256,21 +179,20 @@ export class UIManager extends NamedView {
     // gets drawn underneath the real text entry widget. Giving this fake text field focus pops up the
     // keyboard. When we have our own virtual keyboard as part of the widget system, this should go away.
 
-    // requestVirtualKeyboard(xy) {
-    //     console.log("requet");
-    //     this.fakeText.style.left = xy[0] + 'px';
-    //     this.fakeText.style.top = xy[1] + 'px';
-    //     this.fakeText.focus();
-    // }
+    requestVirtualKeyboard(xy) {
+        this.fakeText.style.left = xy[0] + 'px';
+        this.fakeText.style.top = xy[1] + 'px';
+        this.fakeText.focus();
+    }
 
-    // dismissVirtualKeyboard() {
-    //     // this.fakeText.blur();
-    // }
+    dismissVirtualKeyboard() {
+        this.fakeText.blur();
+    }
 
-    // fakeTextBlur() {
-    //     this.value = "A"; // This prevents the virtual keyboard from defaults to caps
-    //     if (keyboardFocus) keyboardFocus.blur();
-    // }
+    fakeTextBlur() {
+        this.value = "A"; // This prevents the virtual keyboard from defaults to caps
+        if (focus) focus.blur();
+    }
 
 }
 
@@ -283,7 +205,6 @@ export class UIManager extends NamedView {
 export class Widget extends View {
     constructor(parent, options) {
         super();
-        // this._visible = true;
         this.set(options);
         if (parent) parent.addChild(this);
 
@@ -324,6 +245,7 @@ export class Widget extends View {
 
     setParent(p) {  // This should only be called by addChild & removeChild
         this.parent = p;
+        // this.markChanged();
     }
 
     setCanvasWidget(canvasWidget) {
@@ -352,7 +274,6 @@ export class Widget extends View {
 
     // Mark the whole canvas changed (used for hiding widgets)
     markCanvasChanged() {
-        // console.log("Mark canvas changed");
         if (this.canvasWidget) this.canvasWidget.markChanged();
     }
 
@@ -384,7 +305,6 @@ export class Widget extends View {
     get autoSize() { return this._autoSize || [0,0];}
     get isClipped() { return this._clip; }  // Default to false
     get isVisible() { return this._visible === undefined || this._visible;} // Default to true
-    // get isVisible() { return this._visible } // Default to true
     get color() { return this._color || [0,0,0];}
     get bubbleChanges() { return this._bubbleChanges; } // Default to false
     get rawSize() { return this._size || [100,100];}
@@ -411,6 +331,8 @@ export class Widget extends View {
         if (this.$size) return this.$size;
         const size = this._size || [100,100];
         this.$size = v2_scale(size, this.scale);
+        // this.$size = size;
+        // this.$size = [...size];
         if (this.parent) {
             const parentSize = this.parent.size;
             if (this.autoSize[0]) this.$size[0] = parentSize[0] * this.autoSize[0];
@@ -459,41 +381,26 @@ export class Widget extends View {
         return true;
     }
 
-    pointerMove(event) {
-        if (!this.isVisible) return;
-        if (this.children) this.children.forEach(child => child.pointerMove(event));
+    mouseMove(xy) { // Propagates down the widget tree.
+        if (!this.isVisible || !this.inside(xy)) return;
+        if (this.children) this.children.forEach(child => child.mouseMove(xy));
     }
 
-    pointerDown(event) {
-        if (!this.isVisible) return false;
+    press(xy) { // Propagates down the widget tree. Returns true if a child handles it.
+        if (!this.isVisible || !this.inside(xy)) return false;
         let consumed = false;
-        if (this.children) this.children.forEach(child => consumed = child.pointerDown(event) || consumed);
+        if (this.children) this.children.forEach(child => consumed = child.press(xy) || consumed);
         return consumed;
     }
 
-    pointerUp(event) {}
+    release(xy) {} // Only sent to the current focus.
 
-    pointerDrag(event) {}
-
-    // mouseMove(xy) { // Propagates down the widget tree.
-    //     if (!this.isVisible || !this.inside(xy)) return;
-    //     if (this.children) this.children.forEach(child => child.mouseMove(xy));
-    // }
-
-    // press(xy) { // Propagates down the widget tree. Returns true if a child handles it.
-    //     if (!this.isVisible || !this.inside(xy)) return false;
-    //     let consumed = false;
-    //     if (this.children) this.children.forEach(child => consumed = child.press(xy) || consumed);
-    //     return consumed;
-    // }
-
-    // release(xy) {} // Only sent to the current focus.
-
-    // drag(xy) {} // Only sent to the current focus.
+    drag(xy) {} // Only sent to the current focus.
 
     update() {
         if (!this.isVisible) return;
         this.cc.save();
+        // this.cc.scale(this.scale, this.scale);
         this.cc.globalAlpha = this.opacity;
         if (this.isClipped) this.clip();
         if (this.isChanged) this.draw();
@@ -502,9 +409,8 @@ export class Widget extends View {
         this.isChanged = false;
     }
 
-    // Some complex widgets need more control over how they build and update their children
+    // Some elements may need more control over the order they update their children
     buildChildren() {}
-
     updateChildren() {
         this.children.forEach(child => child.update());
     }
@@ -598,11 +504,6 @@ export class CanvasWidget extends ElementWidget {
         this.canvasWidget = this;
     }
 
-    markChanged() {
-        super.markChanged();
-        // console.log("Canvas marked changed");
-    }
-
     setCanvasWidget() {
         this.canvasWidget = this;
         if (this.children) this.children.forEach(child => child.setCanvasWidget(this.canvasWidget));
@@ -613,6 +514,159 @@ export class CanvasWidget extends ElementWidget {
         this.cc.scale(ui.ratio, ui.ratio);
         this.clear();
     }
+}
+
+//------------------------------------------------------------------------------------------
+//-- IFrameWidget ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class IFrameWidget extends ElementWidget {
+    constructor(...args) {
+        super(...args);
+        this.element = document.createElement("iframe");
+        this.element.style.cssText = "position: absolute; left: 0; top: 0; border: 0;";
+        document.body.insertBefore(this.element, null);
+    }
+
+    get source() { return this._source || ""; }
+
+    update() {
+        if (this.isChanged) this.draw();
+        this.isChanged = false;
+    }
+
+    draw() {
+        super.draw();
+        this.element.src = this.source;
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- LayoutWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class LayoutWidget extends Widget {
+    constructor(...args) {
+        super(...args);
+        this.slots = [];
+        this.markChanged();
+    }
+
+    updateChildren() {
+        if (this.isChanged) this.resizeSlots();
+        this.slots.forEach(slot => slot.update());
+    }
+
+    resizeSlots() {}
+
+    get slotCount() { return this.slots.size; }
+    get margin() { return this._margin || 0; }
+
+    slot(n) {
+        return this.slots[n];
+    }
+
+    addSlot(w,n) {
+        n = n || this.slots.length;
+        this.addChild(w);
+        w.set({bubbleChanges: true});
+        this.slots.splice(n,0,w);
+        this.markChanged();
+    }
+
+    removeSlot(n) {
+        if (this.slots[n]) this.removeChild(this.slots[n]);
+        this.slots.splice(n,1);
+        this.markChanged();
+    }
+
+    destroySlot(n) {
+        if (this.slots[n]) this.slots[n].destroy();
+        this.slots.splice(n,1);
+        this.markChanged();
+    }
+
+    destroyAllSlots() {
+        this.slots.forEach(slot => slot.destroy());
+        this.slots = [];
+        this.markChanged();
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- HorizontalWidget ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class HorizontalWidget extends LayoutWidget {
+
+    addSlot(w,n) {
+        super.addSlot(w,n);
+        w.set({autoSize: [0,1]});
+        // if (!('width' in w)) Object.defineProperty(w, 'width', { get: () => { return w._width || 0; }});
+        // Object.defineProperty(w, 'width', { get: () => { return w._width || 0; }});
+    }
+
+    resizeSlots() {
+        let widthSum = Math.max(0, (this.slots.length - 1) * this.margin);
+        let autoCount = 0;
+        this.slots.forEach(slot => {
+            if (slot.width) {
+                widthSum += slot.width;
+            } else {
+                autoCount++;
+            }
+        });
+
+        let autoWidth = 0;
+        if (autoCount > 0) autoWidth = Math.max(0, (this.size[0] / this.scale - widthSum) / autoCount);
+        let offset = 0;
+        this.slots.forEach(slot => {
+            let width = autoWidth;
+            if (slot.width) width = slot.width;
+            slot.set({size:[width, 0], local:[offset,0]});
+            offset += width + this.margin;
+        });
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- VerticalWidget ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class VerticalWidget extends LayoutWidget {
+
+    addSlot(w,n) {
+        super.addSlot(w,n);
+        w.set({autoSize: [1,0]});
+        //if (!('height' in w)) Object.defineProperty(w, 'height', { get: () => { return w._height || 0; }});
+        // Object.defineProperty(w, 'height', { get: () => { return w._height || 0; }});
+    }
+
+    resizeSlots() {
+        let heightSum = Math.max(0, (this.slots.length - 1) * this.margin);
+        let autoCount = 0;
+        this.slots.forEach(slot => {
+            if (slot.height) {
+                heightSum += slot.height;
+            } else {
+                autoCount++;
+            }
+        });
+
+        let autoHeight = 0;
+        if (autoCount > 0) autoHeight = Math.max(0, (this.size[1] / this.scale - heightSum) / autoCount);
+        let offset = 0;
+        this.slots.forEach(slot => {
+            let height = autoHeight;
+            if (slot.height) height = slot.height;
+            slot.set({size: [0, height], local:[0, offset]});
+            offset += height + this.margin;
+        });
+    }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -638,14 +692,183 @@ export class EmptyWidget extends Widget {
 export class BoxWidget extends Widget {
 
     draw() {
-        // console.log("Box draw");
-        // console.log(this);
-        // console.log(this._visible);
-        // console.log(this.isVisible);
         const xy = this.origin;
         const size = this.size;
         this.cc.fillStyle = canvasColor(...this.color);
         this.cc.fillRect(xy[0], xy[1], size[0], size[1]);
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- ImageWidget ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Displays an image.
+
+export class ImageWidget extends Widget {
+    constructor(...args) {
+        super(...args);
+        if (this.url) this.loadFromURL(this.url);
+        this.subscribe(this.id, { event: "url", handling: "immediate" }, this.loadFromURL);
+    }
+
+    get image() { return this._image; }     // A canvas
+    get url() { return this._url; }
+
+    loadFromURL(url) {
+        this._image = LoadImage(url, image => {
+            this._image = image;
+            this.markChanged();
+        });
+        this.markChanged();
+    }
+
+    loadFromCanvas(c) {
+        this._image = c;
+        this.markChanged();
+    }
+
+    draw() {
+        if (!this.image) return;
+        const xy = this.origin;
+        const size = this.size;
+        this.cc.drawImage(this.image, xy[0], xy[1], size[0], size[1]);
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- QRWidget ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class QRWidget extends ImageWidget {
+    constructor(...args) {
+        super(...args);
+        this._element = document.createElement('div');
+        if (this.text) this.makeFromText(this.text);
+        this.subscribe(this.id, { event: "text", handling: "immediate" }, this.makeFromText);
+    }
+
+    get text() { return this._text; }
+
+    destroy() {
+        super.destroy();
+        this._element.remove();
+    }
+
+    makeFromText(t) {
+        this._text = t;
+        this.markChanged();
+        const code = new QRCode(this._element, {
+            text: t,
+            width: 128,
+            height: 128,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L   // L, M, Q, H
+        });
+        if (code) this.loadFromCanvas(code.getCanvas());
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- NineSliceWidget -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Displays a nine-slice image that scales to preserve the proportions of its edges.
+
+export class NineSliceWidget extends ImageWidget {
+
+    get inset() { return this._inset || [32, 32, 32, 32];}              // Offset in pixels from edge of image to make slices
+    get insetScale() { return (this._insetScale || 1) * this.scale;}    // Scaling factor to translate inset to screen pixels
+
+    draw() {
+        if (!this.image) return;
+        const height = this.image.height;
+        const width = this.image.width;
+        const xy = this.origin;
+        const x = xy[0];
+        const y = xy[1];
+        const size = this.size;
+        const xSize = size[0];
+        const ySize = size[1];
+        const left = this.inset[0];
+        const top = this.inset[1];
+        const right = this.inset[2];
+        const bottom = this.inset[3];
+        const insetScale = this.insetScale;
+
+        // Left Column
+        this.cc.drawImage(
+            this.image,
+            0, 0,
+            left, top,
+            x, y,
+            left * insetScale, top * insetScale
+        );
+        this.cc.drawImage(
+            this.image,
+            0, top,
+            left, height - top - bottom,
+            x, y + top * insetScale,
+            left * insetScale, ySize - (top + bottom) * insetScale
+        );
+        this.cc.drawImage(
+            this.image,
+            0, height - bottom,
+            left, bottom,
+            x, y + ySize- bottom * insetScale,
+            left * insetScale, bottom * insetScale
+        );
+
+        //Middle Column
+        this.cc.drawImage(
+            this.image,
+            left, 0,
+            width - left - right, top,
+            x + left * insetScale, y,
+            xSize - (left + right) * insetScale, top * insetScale
+        );
+        this.cc.drawImage(
+            this.image,
+            left, top,
+            width - left - right, height - top - bottom,
+            x + left * insetScale, y + top * insetScale,
+            xSize - (left + right) * insetScale, ySize - (top + bottom) * insetScale
+        );
+        this.cc.drawImage(
+            this.image,
+            left, height - bottom,
+            width - left - right, bottom,
+            x + left * insetScale, y + ySize - bottom * insetScale,
+            xSize - (left + right) * insetScale, bottom * insetScale
+        );
+
+        // Right Column
+        this.cc.drawImage(
+            this.image,
+            width-right, 0,
+            right, top,
+            x + xSize - right * insetScale, y,
+            right * insetScale, top * insetScale
+        );
+        this.cc.drawImage(
+            this.image,
+            width-right, top,
+            right, height - top - bottom,
+            x + xSize - right * insetScale, y + top * insetScale,
+            right * insetScale, ySize - (top + bottom) * insetScale
+        );
+        this.cc.drawImage(
+            this.image,
+            width-right, height - bottom,
+            right, bottom,
+            x + xSize - right * insetScale, y + ySize - bottom * insetScale,
+            right * insetScale, bottom * insetScale
+        );
+
     }
 
 }
@@ -790,15 +1013,13 @@ export class TextWidget extends Widget {
 
 // Base class for all widgets that can be interacted with.
 
+// Only control widgets can have focus. The current focus receives key, drag and release events.
+
 // Control widgets have enabled/disabled states. The disabled state is implemented with a translucent overlay.
-// If the widget has an irregular shape, you'll need to provide an overlay that matches the control shape.
+// If the widget has an irregular shape, you'll need to provide an overlaythat matches the
+// control shape.
 
 export class ControlWidget extends Widget {
-    constructor(...args) {
-        super(...args);
-        this.isHovered = false;
-        this.isPressed = false;
-    }
 
     buildChildren() {
         super.buildChildren();
@@ -810,6 +1031,8 @@ export class ControlWidget extends Widget {
     toggleDisabled() { this.set({ disabled: !this.disabled }); }
 
     get isDisabled() { return this._disabled;}
+    get isHovered() { return this === hover; }
+    get isFocused() { return this === focus; }
 
     setDim(w) {
         if (this.dim && this.dim !== w) this.destroyChild(this.dim);
@@ -817,94 +1040,38 @@ export class ControlWidget extends Widget {
         this.addChild(w);
     }
 
-    pointerMove(event) {
-        const inside = this.inside(event.xy);
-        if (!this.isVisible || this.isDisabled || this.isHovered === inside) return;
-        this.isHovered = inside;
-        this.markChanged();
-        this.isHovered ? this.onHover() : this.onUnhover();
-    }
-
-    pointerDrag(event) {
-        const inside = this.inside(event.xy);
-        this.onDrag(event.xy);
-        if (this.isPressed === inside) return;
-        this.isPressed = inside;
-        this.markChanged();
-    }
-
-    pointerDown(event) {
-        if (this.invisible || this.isDisabled || !this.inside(event.xy)) return false;
-        pressedControls.set(event.id, this);
-        this.isPressed = true;
-        this.markChanged();
-        this.onPress(event.xy);
-        return true;
-    }
-
-    pointerUp(event) {
-        pressedControls.delete(event.id);
-        this.isPressed = false;
-        this.markChanged();
-        this.onRelease(event.xy);
-        if (this.inside(event.xy)) this.onClick(event.xy);
-    }
-
-    onHover() {}
-    onUnhover() {}
-    onPress(xy) {}
-    onRelease(xy) {}
-    onDrag(xy) {}
-    onClick(xy) {} // Release while pressed and pointer is inside
-
-}
-
-//------------------------------------------------------------------------------------------
-//-- FocusWidget ---------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// Controls that can receive keyboard focus. Only one widget at a time can have focus.
-// Focus widgets also can receive double and triple clicks.
-
-export class FocusWidget extends ControlWidget {
-
-    pointerDown(event) {
-        const result = super.pointerDown(event);
-        result ? this.focus() : this.blur();
-        return result;
-    }
-
-    doubleDown(event) {
-        if (this.invisible || this.isDisabled || !this.inside(event.xy)) return;
-        this.onDoubleDown(event.xy);
-    }
-
-    tripleDown(event) {
-        if (this.invisible || this.isDisabled || !this.inside(event.xy)) return;
-        this.onTripleDown(event.xy);
-    }
-
-    get isFocused() {return this === keyboardFocus};
-
     focus() {
-        if (this.isFocused) return;
-        if (keyboardFocus) keyboardFocus.blur();
-        keyboardFocus = this;
+        if (this.isDisabled || this.isFocused) return;
+        if (focus) focus.blur();
+        focus = this;
         this.onFocus();
+        this.markChanged();
     }
 
     blur() {
-        if (keyboardFocus !== this) return;
-        keyboardFocus = null;
+        if (!this.isFocused) return;
+        focus = null;
         this.onBlur();
+        this.markChanged();
     }
 
     onFocus() {}
     onBlur() {}
-    onDoubleDown() {}
-    onTripleDown() {}
-}
 
+    mouseMove(xy) {
+        if (!this.isVisible || this.isDisabled || !this.inside(xy)) { // Unhover
+            if (this.isHovered) hover = null;
+            return;
+        }
+        hover = this;
+        super.mouseMove(xy);
+
+    }
+
+    onHover() {}
+    onUnhover() {}
+
+}
 
 //------------------------------------------------------------------------------------------
 //-- ButtonWidget --------------------------------------------------------------------------
@@ -956,6 +1123,218 @@ export class ButtonWidget extends ControlWidget {
         if (this.label) this.label.update();
         if (this.isDisabled) this.dim.update();
     }
+
+    drag(xy) {
+        const inside = this.inside(xy);
+        if (this.isPressed === inside) return;
+        this.isPressed = inside;
+        this.markChanged();
+    }
+
+    press(xy) {
+        if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
+        this.isPressed = true;
+        this.focus();
+        this.onPress();
+        return true;
+    }
+
+    release(xy) {
+        this.isPressed = false;
+        this.blur();
+        this.onRelease();
+        if (this.inside(xy)) this.onClick();
+    }
+
+    // Called when the user presses and releases the button.
+
+    onClick() {}
+    onPress() {}
+    onRelease() {}
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- ToggleWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Draws a button that can be toggled between an on and off state.
+
+export class ToggleWidget extends ControlWidget {
+
+    constructor(...args) {
+        super(...args);
+
+        if (!this._state) this._state = false; // Prevent toggle change events when an undefined state is set to false.
+
+        // Handle state changes triggered by another widget in the set.
+        this.setChanged();
+        this.subscribe(this.id, { event: "state", handling: "immediate" }, this.stateChanged);
+        this.subscribe(this.id, { event: "toggleSet", handling: "immediate" }, this.setChanged);
+    }
+
+    destroy() {
+        super.destroy();
+        if (this.toggleSet) this.toggleSet.remove(this);
+    }
+
+    buildChildren() {
+        super.buildChildren();
+        this.setNormalOn(new BoxWidget(this, {autoSize: [1,1], color: [0.5,0.5,0.7], bubbleChanges: true}));
+        this.setNormalOff(new BoxWidget(this, {autoSize: [1,1], color: [0.5, 0.5, 0.5], bubbleChanges: true}));
+        this.setHiliteOn(new BoxWidget(this, {autoSize: [1,1], color: [0.6, 0.6, 0.8], bubbleChanges: true}));
+        this.setHiliteOff(new BoxWidget(this, {autoSize: [1,1], color: [0.6, 0.6, 0.6], bubbleChanges: true}));
+        this.setPressedOn(new BoxWidget(this, {autoSize: [1,1], color: [0.4, 0.4, 0.6], bubbleChanges: true}));
+        this.setPressedOff(new BoxWidget(this, {autoSize: [1,1], color: [0.4, 0.4, 0.4], bubbleChanges: true}));
+        this.setLabelOn(new TextWidget(this, {autoSize: [1,1], text: "On", bubbleChanges: true}));
+        this.setLabelOff(new TextWidget(this, {autoSize: [1,1], text: "Off", bubbleChanges: true}));
+    }
+
+    get isOn() { return this._state; }
+    get toggleSet() { return this._toggleSet; }
+
+    setNormalOn(w) {
+        if (this.normalOn && this.normalOn !== w) this.destroyChild(this.normalOn);
+        this.normalOn = w;
+        this.addChild(w);
+    }
+
+    setNormalOff(w) {
+        if (this.normalOff && this.normalOff !== w) this.destroyChild(this.normalOff);
+        this.normalOff = w;
+        this.addChild(w);
+    }
+
+    setHiliteOn(w) {
+        if (this.hiliteOn && this.hiliteOn !== w) this.destroyChild(this.hiliteOn);
+        this.hiliteOn = w;
+        this.addChild(w);
+    }
+
+    setHiliteOff(w) {
+        if (this.hiliteOff && this.hiliteOff !== w) this.destroyChild(this.hiliteOff);
+        this.hiliteOff = w;
+        this.addChild(w);
+    }
+
+    setPressedOn(w) {
+        if (this.pressedOn && this.presedOn !== w) this.destroyChild(this.pressedOn);
+        this.pressedOn = w;
+        this.addChild(w);
+    }
+
+    setPressedOff(w) {
+        if (this.pressedOff && this.presedOff !== w) this.destroyChild(this.pressedOff);
+        this.pressedOff = w;
+        this.addChild(w);
+    }
+
+    setLabelOn(w) {
+        if (this.labelOn && this.labelOn !== w) this.destroyChild(this.labelOn);
+        this.labelOn = w;
+        this.addChild(w);
+    }
+
+    setLabelOff(w) {
+        if (this.labelOff && this.labelOff !== w) this.destroyChild(this.labelOff);
+        this.labelOff = w;
+        this.addChild(w);
+    }
+
+    updateChildren() {
+        let background;
+        let label;
+        if (this.isOn) {
+            background = this.normalOn;
+            if (this.isHovered) background = this.hiliteOn;
+            if (this.isPressed) background = this.pressedOn;
+            label = this.labelOn;
+        } else {
+            background = this.normalOff;
+            if (this.isHovered) background = this.hiliteOff;
+            if (this.isPressed) background = this.pressedOff;
+            label = this.labelOff;
+        }
+        if (background) background.update();
+        if (label) label.update();
+        if (this.isDisabled) this.dim.update();
+    }
+
+    drag(xy) {
+        const inside = this.inside(xy);
+        if (this.isPressed === inside) return;
+        this.isPressed = inside;
+        this.markChanged();
+    }
+
+    press(xy) {
+        if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
+        this.isPressed = true;
+        this.focus();
+        return true;
+    }
+
+    release(xy) {
+        this.isPressed = false;
+        this.blur();
+        if (!this.inside(xy)) return;
+        if (this.toggleSet) {
+            this.toggleSet.pick(this);
+        } else {
+            this.set({state: !this.isOn});
+        }
+    }
+
+    setChanged() {
+        if (this.oldSet) this.oldSet.remove(this);
+        if (this.toggleSet) this.toggleSet.add(this);
+        this.oldSet = this.toggleSet;
+    }
+
+    stateChanged(state) {
+        if (state) {
+            this.onToggleOn();
+        } else {
+            this.onToggleOff();
+        }
+    }
+
+    // Called when the toggle changes state either directly or indirectly.
+
+    onToggleOn() {}
+    onToggleOff() {}
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- ToggleSet -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Helper class that manages a linked set of toggle widgets. You can pass a list of toggles
+// into the constructor.
+
+export class ToggleSet  {
+    constructor(...args) {
+        this.toggles = new Set();
+        args.forEach(arg => arg.set({toggleSet: this}));
+    }
+
+    add(toggle) {
+        if (this.toggles.has(toggle)) return;
+        if (toggle.toggleSet !== this) toggle.set({toggleSet: this});
+        this.toggles.add(toggle);
+    }
+
+    remove(toggle) {
+        if (toggle.toggleSet === this) toggle.set({toggleSet: undefined});
+        this.toggles.delete(toggle);
+    }
+
+    pick(on) {
+        on.set({state: true});
+        this.toggles.forEach(toggle => { if (toggle !== on) toggle.set({state: false}); });
+    }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -1023,15 +1402,21 @@ export class SliderWidget extends ControlWidget {
         this.knob.set({local:xy});
     }
 
-    onPress(xy) {
+    press(xy) {
+        if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
+        this.isPressed = true;
+        this.focus();
+        this.moveKnob(xy);
+        return true;
+    }
+
+    release(xy) {
+        this.isPressed = false;
+        this.blur();
         this.moveKnob(xy);
     }
 
-    onRelease(xy) {
-        this.moveKnob(xy);
-    }
-
-    onDrag(xy) {
+    drag(xy) {
         this.moveKnob(xy);
     }
 
@@ -1051,6 +1436,7 @@ export class SliderWidget extends ControlWidget {
     }
 
 }
+
 
 //------------------------------------------------------------------------------------------
 //-- JoystickWidget ------------------------------------------------------------------------
@@ -1111,15 +1497,21 @@ export class JoystickWidget extends ControlWidget {
         this.onChange([0,0]);
     }
 
-    onPress(xy) {
+    press(xy) {
+        if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
+        this.isPressed = true;
+        this.focus();
         this.moveKnob(xy);
+        return true;
     }
 
-    onRelease(xy) {
+    release(xy) {
+        this.isPressed = false;
+        this.blur();
         this.recenter();
     }
 
-    onDrag(xy) {
+    drag(xy) {
         this.moveKnob(xy);
     }
 
@@ -1150,13 +1542,14 @@ export class JoystickWidget extends ControlWidget {
     }
 }
 
+
 //------------------------------------------------------------------------------------------
 //-- TextFieldWidget -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 // A single line of text that can be typed into.
 
-export class TextFieldWidget extends FocusWidget {
+export class TextFieldWidget extends ControlWidget {
 
     get leftSelect() { return this._leftSelect || 0; }
     get rightSelect() { return this._rightSelect || 0; }
@@ -1173,7 +1566,7 @@ export class TextFieldWidget extends FocusWidget {
         this.text = new TextWidget(this.clip, {autoSize:[0,1], local:[0,0], alignX:'left', wrap: false, text:""});
         this.entry = new BoxWidget(this.text, {autoSize:[0,1], local:[this.leftOffset,0], size:[1,1], bubbleChanges: true, visible: this.isFocused && !this.multipleSelected});
         this.hilite = new BoxWidget(this.text, {autoSize:[0,1], local:[this.leftOffset, 0], size:[this.hiliteSize,1], color: [1,0,0], opacity:0.2,
-            bubbleChanges: true, visible: this.isFocused && this.multipleSelected});
+            bubbleChanges: true , visible: this.isFocused && this.multipleSelected});
 
         // Suppress redrawing the whole canvas when the entry cursor or the hilite is hidden.
         this.entry.markCanvasChanged = () => {};
@@ -1181,16 +1574,9 @@ export class TextFieldWidget extends FocusWidget {
     }
 
     updateChildren() {
+        this.refresh();
         this.background.update();
         if (this.isDisabled) this.dim.update();
-    }
-
-    onHover() {
-        this.setCursor("text");
-    }
-
-    onUnhover() {
-        this.setCursor("default");
     }
 
     onFocus() {
@@ -1200,8 +1586,21 @@ export class TextFieldWidget extends FocusWidget {
 
     onBlur() {
         ui.dismissVirtualKeyboard();
-        this.refreshHilite();
+        this.refresh();
     }
+
+    // onFocus() {
+    //     ui.requestVirtualKeyboard(this.global);
+    //     this.refresh();
+    //     this.future(530).cursorBlink();
+    // }
+
+    // onBlur() {
+    //     ui.dismissVirtualKeyboard();
+    //     this.cursor.hide(true);
+    //     this.gel.hide(true);
+    //     this.markChanged();
+    // }
 
     blink() {
         if (!this.isFocused) return;
@@ -1210,16 +1609,34 @@ export class TextFieldWidget extends FocusWidget {
         this.future(530).blink();
     }
 
-    onPress(xy) {
+    mouseMove(xy) {
+        if (!this.isVisible || !this.inside(xy)) return;
+        this.setCursor("text");
+        super.mouseMove(xy);
+    }
+
+    press(xy) {
+        if (this.invisible || this.isDisabled || !this.inside(xy)) {
+            this.blur();
+            return false;
+        }
+        this.focus();
+        this.isPressed = true;
         const local = v2_sub(xy, this.text.global);
         const select = this.text.findSelect(local[0]);
         this.selectStart = select;
         this.set({leftSelect: select, rightSelect: select});
-        this.refreshHilite();
+        this.refresh();
+        return true;
+    }
+
+    release(xy) {
+        this.isPressed = false;
     }
 
     // Still need to support dragging past the end of the widget. This is where it should go.
-    onDrag(xy) {
+    drag(xy) {
+        if (!this.isPressed) return;
         const local = v2_sub(xy, this.text.global);
         const select = this.text.findSelect(local[0]);
         if (this.selectStart < select) {
@@ -1229,13 +1646,13 @@ export class TextFieldWidget extends FocusWidget {
         } else {
             this.set({leftSelect: select, rightSelect: select});
         }
-        this.refreshHilite();
+        this.refresh();
     }
 
     keyInput(input) {
         const key = input.key;
         const ctrl = input.ctrl || input.meta;
-        // console.log(ctrl);
+        console.log(ctrl);
         if (ctrl) {
 
             switch (key) {
@@ -1271,6 +1688,36 @@ export class TextFieldWidget extends FocusWidget {
                     if (key.length === 1) this.insert(key);
             }
         }
+
+
+        // switch (input) {
+        //     case 'Enter':
+        //         this.enter();
+        //         break;
+        //     case 'Backspace':
+        //         this.backspace();
+        //         break;
+        //     case 'Delete':
+        //         this.delete();
+        //         break;
+        //     case 'ArrowLeft':
+        //         this.cursorLeft();
+        //         break;
+        //     case 'ArrowRight':
+        //         this.cursorRight();
+        //         break;
+        //     case 'Cut':
+        //         this.cut();
+        //         break;
+        //     case 'Copy':
+        //         this.copy();
+        //         break;
+        //     case 'Paste':
+        //         this.paste();
+        //         break;
+        //     default:
+        //        if (input.length === 1) this.insert(input);
+        // }
     }
 
     insert(s) {
@@ -1284,7 +1731,7 @@ export class TextFieldWidget extends FocusWidget {
         this.text.setText(t);
         this.insertLeft += s.length;
         this.insertRight = this.insertLeft;
-        this.refreshHilite();
+        this.refresh();
     }
 
     filter(s) {
@@ -1297,7 +1744,7 @@ export class TextFieldWidget extends FocusWidget {
         } else {
             this.deleteOne();
         }
-        this.refreshHilite();
+        this.refresh();
     }
 
     backspace() {
@@ -1306,7 +1753,7 @@ export class TextFieldWidget extends FocusWidget {
         } else {
             this.backspaceOne();
         }
-        this.refreshHilite();
+        this.refresh();
     }
 
     deleteRange() {
@@ -1333,13 +1780,13 @@ export class TextFieldWidget extends FocusWidget {
     cursorLeft() {
         const c = Math.max(0, this.leftSelect - 1);
         this.set({leftSelect: c, rightSelect: c});
-        this.refreshHilite();
+        this.refresh();
     }
 
     cursorRight() {
         const c = Math.min(this.text.text.length, this.leftSelect + 1);
         this.set({leftSelect: c, rightSelect: c});
-        this.refreshHilite();
+        this.refresh();
     }
 
     cut() {
@@ -1359,7 +1806,9 @@ export class TextFieldWidget extends FocusWidget {
         navigator.clipboard.readText().then(text => this.insert(text));
     }
 
-    onDoubleDown(xy) {
+    doubleClick(xy) {
+        if (!this.inside(xy)) return;
+
         const local = v2_sub(xy, this.text.global);
         const select = this.text.findSelect(local[0]);
         const t = this.text.text;
@@ -1377,21 +1826,22 @@ export class TextFieldWidget extends FocusWidget {
             } else if (right < t.length) right++;
         }
         this.set({leftSelect: left, rightSelect: right});
-        this.refreshHilite();
+        this.refresh();
     }
 
-    onTripleDown(xy) {
+    tripleClick(xy) {
+        if (!this.inside(xy)) return;
         this.selectAll();
     }
 
     selectAll() {
         this.set({leftSelect: 0, rightSelect: this.text.text.length});
-        this.refreshHilite();
+        this.refresh();
     }
 
-    // Update the position of the entry cursor and the highlight.
+    // Update the position of the cursor and the highlight.
 
-    refreshHilite() {
+    refresh() {
         this.entry.set({local:[this.leftOffset,0], visible: this.isFocused && !this.multipleSelected} );
         this.hilite.set({local:[this.leftOffset, 0], size:[this.hiliteSize,1], visible: this.isFocused && this.multipleSelected});
 
@@ -1424,8 +1874,9 @@ export class TextFieldWidget extends FocusWidget {
     }
 
     enter() {
-        this.onEnter();
         this.blur();
+        this.onEnter();
+        this.refresh();
     }
 
     onEnter() {
@@ -1433,6 +1884,211 @@ export class TextFieldWidget extends FocusWidget {
 
 }
 
+//------------------------------------------------------------------------------------------
+//-- Helper Functions ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Widget attributes can be either values or arrays ... this compares arbitrary things.
+
+function deepEquals(a, b) {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    const al = a.length;
+    const bl = b.length;
+    if (!al || !bl) return false;
+    if (al !== bl) return false;
+    for (let i = 0; i < al; i++) if (a[i] !== b[i]) return false;
+    return true;
+}
+
+function canvasColor(r, g, b) {
+    return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
+}
+
+function isLetter(c) { // Returns true if the character is an alphabetic letter.
+    return c.toLowerCase() !== c.toUpperCase();
+}
+
+function isDigit(c) { // Returns true if the character is a digit.
+    return c.match(/[0-9]/i);
+}
+
+function isLetterOrDigit(c) {
+    return isLetter(c) || isDigit(c);
+}
 
 
+// -----------------------------------------------------------------------------------------
+//-- PaneWidget ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
+// Old experiments with a windowing system. Needs to be cleaned up and made a proper part of
+// WC eventually. Also this sort of stuff will be basis for pop-up menus.
+
+// let layer = 10;
+
+// export class PaneControlWidget extends ControlWidget {
+
+//     buildChildren() {
+//         super.buildChildren();
+//         this.head = new BoxWidget(this, {autoSize: [1,0], border:[5,5,5,0],size:[0,50], color:[0.5,0.7,0.7], visible: true});
+//         this.frame = new BoxWidget(this, {autoSize: [1,1], border:[5,45,5,5], color:[0.9,0.7,0.7]});
+//         this.test = new ButtonWidget(this.head, {size: [30,30], local: [10,10]});
+//         this.test.label.setText("");
+//         this.test.onClick = () => this.parent.destroy();
+//     }
+
+//     updateChildren() {
+//         this.frame.update();
+//         this.head.update();
+//     }
+
+//     get dragMargin() { return this._dragMargin || 20;}
+
+//     mouseMove(xy) { // Propagates down the widget tree. Returns true if a child handles it.
+//         super.mouseMove(xy);
+//         // if (this.head.isVisible) {
+//         //     this.head.set({visible: this.inside(xy)});
+//         // } else {
+//         //     this.head.set({visible: this.frame.inside(xy)});
+//         // }
+
+//         const local = this.localXY(xy);
+//         const x = local[0];
+//         const y = local[1];
+//         const m = this.dragMargin;
+//         const s = this.size;
+
+//         let c = "default";
+//         if (this.head.inside(xy)) this.dragType = "move";
+//         if (x < m) {
+//             if (y < m) {
+//                 this.dragType = "topLeft";
+//                 c = "nw-resize";
+//             } else if (y > s[1]-m) {
+//                 this.dragType = "bottomLeft";
+//                 c = "sw-resize";
+//             } else {
+//                 this.dragType = "left";
+//                 c = "ew-resize";
+//             }
+//         } else if (x > s[0]- m) {
+//             if (y < m) {
+//                 this.dragType = "topRight";
+//                 c = "ne-resize";
+//             } else if (y > s[1]-m) {
+//                 this.dragType = "bottomRight";
+//                 c = "se-resize";
+//             } else {
+//                 this.dragType = "right";
+//                 c = "ew-resize";
+//             }
+//         } else if (y < m) {
+//             this.dragType = "top";
+//             c = "ns-resize";
+//         } else if (y > s[1]-m) {
+//             this.dragType = "bottom";
+//             c = "ns-resize";
+//         } else {
+//             // this.dragType = "none";
+//             // c = "default";
+//         }
+//         this.setCursor(c);
+//     }
+
+//     press(xy) {
+//         if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
+//         this.parent.guard.show();
+//         if (this.parent.zIndex < layer) {
+//             layer += 10;
+//             this.parent.set({zIndex: layer});
+//             this.parent.contents.set({zIndex: layer+1});
+//         }
+//         this.parent.guard.set({zIndex: this.parent.zIndex+2});
+//         this.dragSize = [...this.parent.rawSize];
+//         this.dragLocal = [...this.parent.local];
+//         this.dragStart = [...xy];
+//         this.focus();
+//         return true;
+//     }
+
+//     release(xy) {
+//         console.log("release");
+//         // this.parent.guard.set({zIndex: this.parent.zIndex -1 });
+//         this.blur();
+//     }
+
+//     drag(xy) {
+//         const diff = v2_sub(xy, this.dragStart);
+//         const raw = [...this.parent.rawSize];
+//         const s0 = v2_add(this.dragSize, diff);
+//         const s1 = v2_sub(this.dragSize, diff);
+//         const ul = v2_add(this.dragLocal, diff);
+//         switch (this.dragType) {
+//             case "move":
+//                 this.parent.set({local: ul});
+//                 break;
+//             case "topLeft":
+//                 this.parent.set({local: ul, size: s1});
+//                 break;
+//             case "top":
+//                 this.parent.set({local: [this.dragLocal[0], ul[1]], size: [raw[0], s1[1]]});
+//                 break;
+//             case "left":
+//                 this.parent.set({local: [ul[0], this.dragLocal[1]], size: [s1[0], raw[1]]});
+//                 break;
+//             case "topRight":
+//                 this.parent.set({local: [this.dragLocal[0], ul[1]], size: [s0[0], s1[1]]});
+//                 break;
+//             case "bottomLeft":
+//                 this.parent.set({local: [ul[0], this.dragLocal[1]], size: [s1[0], s0[1]]});
+//                 break;
+//             case "bottomRight":
+//                 this.parent.set({size: s0});
+//                 break;
+//             case "right":
+//                 this.parent.set({size: [s0[0], raw[1]]});
+//                 break;
+//             case "bottom":
+//                 this.parent.set({size: [raw[0], s0[1]]});
+//                 break;
+//             default:
+//         }
+//     }
+
+//     localXY(xy) {
+//         return v2_sub(xy, this.global);
+//     }
+
+// }
+
+// export class PaneWidget extends CanvasWidget {
+
+//     buildChildren() {
+//         super.buildChildren();
+//         this.control = new PaneControlWidget(this, {autoSize:[1,1]});
+//         this.contents = new IFrameWidget(this, {autoSize: [1,1], border:[10,50,10,10], zIndex: this.zIndex + 1});
+//         this.guard = new CanvasWidget(this, {autoSize:[1,1], border:[10,50,10,10], zIndex: this.zIndex + 2, visible:true}); // Guard needs to be refreshed once to position it.
+//         this.contents.set({source: "https://croquet.io/quub/#GUEST/1cry0ylrjmy"});
+//     }
+
+//     updateChildren() {
+//         this.control.update();
+//         this.contents.update();
+//         this.guard.update();
+//     }
+
+
+//     // mouseMove(xy) { // Propagates down the widget tree. Returns true if a child handles it.
+//     //     if (!this.isVisible || !this.inside(xy)) {
+//     //         if (this.head.isVisible) this.head.hide();
+//     //         return false;
+//     //     }
+//     //     this.head.show();
+//     //     if (this.head.inside(xy)) this.setCursor("default");
+//     //     if (this.frame.inside(xy)) this.setCursor("move");
+//     //     return true;
+//     // }
+
+
+// }

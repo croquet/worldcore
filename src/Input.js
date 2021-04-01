@@ -42,7 +42,7 @@ export function KeyDown(key) {
 // Supports adding chord events to report when multiple buttons are pressed simultaneously.
 //----------------------------------------------------------------------------------------------------
 
-export class InputManager2 extends NamedView {
+export class InputManager extends NamedView {
     constructor() {
         super("InputMananger");
 

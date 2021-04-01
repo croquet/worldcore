@@ -13,15 +13,11 @@ export * from "./src/ViewAssetCache";
 
 // Optional modules
 
-
-// export * from "./src/WebInput";
-// export * from "./src/Widget";
 export * from "./src/Input";
-export * from "./src/Widget2";
+export * from "./src/Widget";
 export * from "./src/Render";
 export * from "./src/RenderManager";
 export * from "./src/RapierPhysics";
-// export * from "./src/ThreeRenderManager";
 export * from "./src/ThreeRender";
 export * from "./src/WebXR";
 export * from "./src/Audio";

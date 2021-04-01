@@ -5,8 +5,43 @@ import { NamedView } from "./NamedView";
 import QRCode from "../lib/qr/qrcode";
 
 let ui;             // The UI manager
-let hover;          // The control widget that currently is hovered.
-let focus;          // The control widget that currently has focus.
+
+let pressedControls = new Map();    // Maps pointer ids to the control widget they were last pressed inside
+let keyboardFocus;                  // The widget currently receiving input from the keyboard
+
+//------------------------------------------------------------------------------------------
+//-- Helper Functions ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Widget attributes can be either values or arrays ... this compares arbitrary things.
+
+function deepEquals(a, b) {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    const al = a.length;
+    const bl = b.length;
+    if (!al || !bl) return false;
+    if (al !== bl) return false;
+    for (let i = 0; i < al; i++) if (a[i] !== b[i]) return false;
+    return true;
+}
+
+function canvasColor(r, g, b) {
+    return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
+}
+
+function isLetter(c) { // Returns true if the character is an alphabetic letter.
+    return c.toLowerCase() !== c.toUpperCase();
+}
+
+function isDigit(c) { // Returns true if the character is a digit.
+    return c.match(/[0-9]/i);
+}
+
+function isLetterOrDigit(c) {
+    return isLetter(c) || isDigit(c);
+}
+
 
 //------------------------------------------------------------------------------------------
 //-- UIManager -----------------------------------------------------------------------------
@@ -15,8 +50,7 @@ let focus;          // The control widget that currently has focus.
 // The UI is the top-level UI manager. It creates the canvas that the UI is drawn on, and catches events
 // and passes them to the widget tree.
 //
-// It re-publishes cursorDown and touchDown events after it's given the UI widgets a chance to intercept
-// them.
+// It re-publishes pointer events after it's given the UI widgets a chance to intercept them.
 //
 // Takes the device's pixel ratio into account. This can be over-ridden using SetScale.
 
@@ -34,34 +68,28 @@ export class UIManager extends NamedView {
         this.resize();
         this.root = new CanvasWidget(this, {autoSize: [1,1]});
 
-        this.fakeText = document.createElement("input"); // This is a hack to trigger a virtual keyboard on a mobile device
-        this.fakeText.setAttribute("type", "text");
-        this.fakeText.style.position = "absolute";
-        this.fakeText.value = "A"; // Fool keyboard into not automatically using caps
-        this.fakeText.style.opacity = "0";
-        this.fakeText.addEventListener("focusout", this.fakeTextBlur);
-        document.body.insertBefore(this.fakeText, null);
+        // this.fakeText = document.createElement("input"); // This is a hack to trigger a virtual keyboard on a mobile device
+        // this.fakeText.setAttribute("type", "text");
+        // this.fakeText.style.position = "absolute";
+        // this.fakeText.value = "A"; // Fool keyboard into not automatically using caps
+        // this.fakeText.style.opacity = "0";
+        // this.fakeText.addEventListener("focusout", this.fakeTextBlur);
+        // document.body.insertBefore(this.fakeText, null);
 
         this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
-        this.subscribe("input", {event: "mouseXY", handling: "immediate"}, this.mouseXY);
-        this.subscribe("input", {event: "mouse0Down", handling: "immediate"}, this.mouseDown);
-        this.subscribe("input", {event: "mouse0Up", handling: "immediate"}, this.mouseUp);
-
-        this.subscribe("input", {event: "mouse0Double", handling: "immediate"}, this.mouseDouble);
-        this.subscribe("input", {event: "mouse0Triple", handling: "immediate"}, this.mouseTriple);
-
-        this.subscribe("input", {event: "touchXY", handling: "immediate"}, this.touchXY);
-        this.subscribe("input", {event: "touchDown", handling: "immediate"}, this.touchDown);
-        this.subscribe("input", {event: "touchUp", handling: "immediate"}, this.touchUp);
-        this.subscribe("input", {event: "touchTap", handling: "immediate"}, this.touchTap);
-
+        this.subscribe("input", {event: "pointerMove", handling: "immediate"}, this.pointerMove);
+        this.subscribe("input", {event: "pointerDown", handling: "immediate"}, this.pointerDown);
+        this.subscribe("input", {event: "pointerUp", handling: "immediate"}, this.pointerUp);
+        this.subscribe("input", {event: "doubleDown", handling: "immediate"}, this.doubleDown);
+        this.subscribe("input", {event: "tripleDown", handling: "immediate"}, this.tripleDown);
         this.subscribe("input", {event: "keyDown", handling: "immediate"}, this.keyDown);
         this.subscribe("input", {event: "keyRepeat", handling: "immediate"}, this.keyDown);
     }
 
     destroy() {
         super.destroy();
-        if (focus) focus.blur();
+        pressedControls.clear();
+        if (keyboardFocus) keyboardFocus.blur();
         if (this.root) this.root.destroy();
         ui = null;
     }
@@ -77,9 +105,7 @@ export class UIManager extends NamedView {
     get isVisible() { return true; }
 
     resize() {
-        if (focus) focus.blur();
         this.ratio = window.devicePixelRatio;
-        // console.log("UI Pixel Ratio: " + this.ratio);
         const width = window.innerWidth;
         const height = window.innerHeight;
         this.size = [width, height];
@@ -102,76 +128,43 @@ export class UIManager extends NamedView {
         this.isChanged = true;
     }
 
-    mouseXY(xy) {
-        const oldHover = hover;
-        this.root.setCursor('default');
-        if (this.inMouseDown) {
-            if (focus) focus.drag(xy);
-        } else {
-            if (hover) hover.mouseMove(xy);
-            if (this.root) this.root.mouseMove(xy);
+    pointerMove(event) {
+
+        const pressed = pressedControls.get(event.id);
+        if (pressed) {
+            pressed.pointerDrag(event);
+        } else if (event.type === "mouse" && this.root) {
+            this.root.pointerMove(event);
+            this.publish("ui", "pointerMove", event);
         }
-        if (oldHover !== hover) {
-            if (oldHover) {
-                oldHover.onUnhover();
-                oldHover.markChanged();
-            }
-            if (hover) {
-                hover.onHover();
-                hover.markChanged();
-            }
+    }
+
+    pointerDown(event) {
+        if (event.button !== 0) return;
+        if (this.root && this.root.pointerDown(event)) return;
+        this.publish("ui", "pointerDown", event);
+    }
+
+    doubleDown(event) {
+        if (keyboardFocus) keyboardFocus.doubleDown(event);
+    }
+
+    tripleDown(event) {
+        if (keyboardFocus) keyboardFocus.tripleDown(event);
+    }
+
+    pointerUp(event) {
+        if (event.button !== 0) return;
+        const pressed = pressedControls.get(event.id);
+        if (pressed) {
+            pressed.pointerUp(event); }
+        else {
+            this.publish("ui", "pointerUp", event);
         }
-        if (!focus && !hover) this.publish("ui", "mouseXY", xy);
     }
-
-    mouseDown(xy) {
-        this.inMouseDown = true;
-        if (focus && focus.press(xy)) return;
-        if (hover && hover.press(xy)) return;
-        this.publish("ui", "mouse0Down", xy);
-    }
-
-    mouseUp(xy) {
-        this.inMouseDown = false;
-        if (focus) focus.release(xy);
-        this.publish("ui", "mouse0Up", xy);
-    }
-
-    touchXY(xy) {
-        if (focus) focus.drag(xy);
-        this.publish("ui", "touchXY", xy);
-    }
-
-    touchDown(xy) {
-        if (this.root && this.root.press(xy)) return;
-        this.canTap = true;
-        this.publish("ui", "touchDown", xy);
-    }
-
-    touchUp(xy) {
-        if (focus) focus.release(xy);
-        this.canTap = false;
-        this.publish("ui", "touchUp", xy);
-    }
-
-    touchTap(xy) {
-        if (!this.canTap) return;
-        this.publish("ui", "touchTap", xy);
-    }
-
-    mouseDouble(xy) {
-        if (!focus || !focus.doubleClick) return;
-        focus.doubleClick(xy);
-    }
-
-    mouseTriple(xy) {
-        if (!focus || !focus.tripleClick) return;
-        focus.tripleClick(xy);
-    }
-
 
     keyDown(key) {
-        if (focus && focus.keyInput) focus.keyInput(key);
+        if (keyboardFocus) keyboardFocus.keyInput(key);
     }
 
 
@@ -179,20 +172,21 @@ export class UIManager extends NamedView {
     // gets drawn underneath the real text entry widget. Giving this fake text field focus pops up the
     // keyboard. When we have our own virtual keyboard as part of the widget system, this should go away.
 
-    requestVirtualKeyboard(xy) {
-        this.fakeText.style.left = xy[0] + 'px';
-        this.fakeText.style.top = xy[1] + 'px';
-        this.fakeText.focus();
-    }
+    // requestVirtualKeyboard(xy) {
+    //     console.log("requet");
+    //     this.fakeText.style.left = xy[0] + 'px';
+    //     this.fakeText.style.top = xy[1] + 'px';
+    //     this.fakeText.focus();
+    // }
 
-    dismissVirtualKeyboard() {
-        this.fakeText.blur();
-    }
+    // dismissVirtualKeyboard() {
+    //     // this.fakeText.blur();
+    // }
 
-    fakeTextBlur() {
-        this.value = "A"; // This prevents the virtual keyboard from defaults to caps
-        if (focus) focus.blur();
-    }
+    // fakeTextBlur() {
+    //     this.value = "A"; // This prevents the virtual keyboard from defaults to caps
+    //     if (keyboardFocus) keyboardFocus.blur();
+    // }
 
 }
 
@@ -205,6 +199,7 @@ export class UIManager extends NamedView {
 export class Widget extends View {
     constructor(parent, options) {
         super();
+        // this._visible = true;
         this.set(options);
         if (parent) parent.addChild(this);
 
@@ -245,7 +240,6 @@ export class Widget extends View {
 
     setParent(p) {  // This should only be called by addChild & removeChild
         this.parent = p;
-        // this.markChanged();
     }
 
     setCanvasWidget(canvasWidget) {
@@ -274,6 +268,7 @@ export class Widget extends View {
 
     // Mark the whole canvas changed (used for hiding widgets)
     markCanvasChanged() {
+        // console.log("Mark canvas changed");
         if (this.canvasWidget) this.canvasWidget.markChanged();
     }
 
@@ -305,6 +300,7 @@ export class Widget extends View {
     get autoSize() { return this._autoSize || [0,0];}
     get isClipped() { return this._clip; }  // Default to false
     get isVisible() { return this._visible === undefined || this._visible;} // Default to true
+    // get isVisible() { return this._visible } // Default to true
     get color() { return this._color || [0,0,0];}
     get bubbleChanges() { return this._bubbleChanges; } // Default to false
     get rawSize() { return this._size || [100,100];}
@@ -331,8 +327,6 @@ export class Widget extends View {
         if (this.$size) return this.$size;
         const size = this._size || [100,100];
         this.$size = v2_scale(size, this.scale);
-        // this.$size = size;
-        // this.$size = [...size];
         if (this.parent) {
             const parentSize = this.parent.size;
             if (this.autoSize[0]) this.$size[0] = parentSize[0] * this.autoSize[0];
@@ -381,26 +375,25 @@ export class Widget extends View {
         return true;
     }
 
-    mouseMove(xy) { // Propagates down the widget tree.
-        if (!this.isVisible || !this.inside(xy)) return;
-        if (this.children) this.children.forEach(child => child.mouseMove(xy));
+    pointerMove(event) {
+        if (!this.isVisible) return;
+        if (this.children) this.children.forEach(child => child.pointerMove(event));
     }
 
-    press(xy) { // Propagates down the widget tree. Returns true if a child handles it.
-        if (!this.isVisible || !this.inside(xy)) return false;
+    pointerDown(event) {
+        if (!this.isVisible) return false;
         let consumed = false;
-        if (this.children) this.children.forEach(child => consumed = child.press(xy) || consumed);
+        if (this.children) this.children.forEach(child => consumed = child.pointerDown(event) || consumed);
         return consumed;
     }
 
-    release(xy) {} // Only sent to the current focus.
+    pointerUp(event) {}
 
-    drag(xy) {} // Only sent to the current focus.
+    pointerDrag(event) {}
 
     update() {
         if (!this.isVisible) return;
         this.cc.save();
-        // this.cc.scale(this.scale, this.scale);
         this.cc.globalAlpha = this.opacity;
         if (this.isClipped) this.clip();
         if (this.isChanged) this.draw();
@@ -409,8 +402,9 @@ export class Widget extends View {
         this.isChanged = false;
     }
 
-    // Some elements may need more control over the order they update their children
+    // Some complex widgets need more control over how they build and update their children
     buildChildren() {}
+
     updateChildren() {
         this.children.forEach(child => child.update());
     }
@@ -502,6 +496,11 @@ export class CanvasWidget extends ElementWidget {
 
         this.context = this.element.getContext('2d');
         this.canvasWidget = this;
+    }
+
+    markChanged() {
+        super.markChanged();
+        // console.log("Canvas marked changed");
     }
 
     setCanvasWidget() {
@@ -604,8 +603,6 @@ export class HorizontalWidget extends LayoutWidget {
     addSlot(w,n) {
         super.addSlot(w,n);
         w.set({autoSize: [0,1]});
-        // if (!('width' in w)) Object.defineProperty(w, 'width', { get: () => { return w._width || 0; }});
-        // Object.defineProperty(w, 'width', { get: () => { return w._width || 0; }});
     }
 
     resizeSlots() {
@@ -641,8 +638,6 @@ export class VerticalWidget extends LayoutWidget {
     addSlot(w,n) {
         super.addSlot(w,n);
         w.set({autoSize: [1,0]});
-        //if (!('height' in w)) Object.defineProperty(w, 'height', { get: () => { return w._height || 0; }});
-        // Object.defineProperty(w, 'height', { get: () => { return w._height || 0; }});
     }
 
     resizeSlots() {
@@ -692,6 +687,10 @@ export class EmptyWidget extends Widget {
 export class BoxWidget extends Widget {
 
     draw() {
+        // console.log("Box draw");
+        // console.log(this);
+        // console.log(this._visible);
+        // console.log(this.isVisible);
         const xy = this.origin;
         const size = this.size;
         this.cc.fillStyle = canvasColor(...this.color);
@@ -1013,13 +1012,15 @@ export class TextWidget extends Widget {
 
 // Base class for all widgets that can be interacted with.
 
-// Only control widgets can have focus. The current focus receives key, drag and release events.
-
 // Control widgets have enabled/disabled states. The disabled state is implemented with a translucent overlay.
-// If the widget has an irregular shape, you'll need to provide an overlaythat matches the
-// control shape.
+// If the widget has an irregular shape, you'll need to provide an overlay that matches the control shape.
 
 export class ControlWidget extends Widget {
+    constructor(...args) {
+        super(...args);
+        this.isHovered = false;
+        this.isPressed = false;
+    }
 
     buildChildren() {
         super.buildChildren();
@@ -1031,8 +1032,6 @@ export class ControlWidget extends Widget {
     toggleDisabled() { this.set({ disabled: !this.disabled }); }
 
     get isDisabled() { return this._disabled;}
-    get isHovered() { return this === hover; }
-    get isFocused() { return this === focus; }
 
     setDim(w) {
         if (this.dim && this.dim !== w) this.destroyChild(this.dim);
@@ -1040,38 +1039,94 @@ export class ControlWidget extends Widget {
         this.addChild(w);
     }
 
-    focus() {
-        if (this.isDisabled || this.isFocused) return;
-        if (focus) focus.blur();
-        focus = this;
-        this.onFocus();
+    pointerMove(event) {
+        const inside = this.inside(event.xy);
+        if (!this.isVisible || this.isDisabled || this.isHovered === inside) return;
+        this.isHovered = inside;
+        this.markChanged();
+        this.isHovered ? this.onHover() : this.onUnhover();
+    }
+
+    pointerDrag(event) {
+        const inside = this.inside(event.xy);
+        this.onDrag(event.xy);
+        if (this.isPressed === inside) return;
+        this.isPressed = inside;
         this.markChanged();
     }
 
-    blur() {
-        if (!this.isFocused) return;
-        focus = null;
-        this.onBlur();
+    pointerDown(event) {
+        if (this.invisible || this.isDisabled || !this.inside(event.xy)) return false;
+        pressedControls.set(event.id, this);
+        this.isPressed = true;
         this.markChanged();
+        this.onPress(event.xy);
+        return true;
     }
 
-    onFocus() {}
-    onBlur() {}
-
-    mouseMove(xy) {
-        if (!this.isVisible || this.isDisabled || !this.inside(xy)) { // Unhover
-            if (this.isHovered) hover = null;
-            return;
-        }
-        hover = this;
-        super.mouseMove(xy);
-
+    pointerUp(event) {
+        pressedControls.delete(event.id);
+        this.isPressed = false;
+        this.markChanged();
+        this.onRelease(event.xy);
+        if (this.inside(event.xy)) this.onClick(event.xy);
     }
 
     onHover() {}
     onUnhover() {}
+    onPress(xy) {}
+    onRelease(xy) {}
+    onDrag(xy) {}
+    onClick(xy) {} // Release while pressed and pointer is inside
 
 }
+
+//------------------------------------------------------------------------------------------
+//-- FocusWidget ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Controls that can receive keyboard focus. Only one widget at a time can have focus.
+// Focus widgets also can receive double and triple clicks.
+
+export class FocusWidget extends ControlWidget {
+
+    pointerDown(event) {
+        const result = super.pointerDown(event);
+        result ? this.focus() : this.blur();
+        return result;
+    }
+
+    doubleDown(event) {
+        if (this.invisible || this.isDisabled || !this.inside(event.xy)) return;
+        this.onDoubleDown(event.xy);
+    }
+
+    tripleDown(event) {
+        if (this.invisible || this.isDisabled || !this.inside(event.xy)) return;
+        this.onTripleDown(event.xy);
+    }
+
+    get isFocused() {return this === keyboardFocus};
+
+    focus() {
+        if (this.isFocused) return;
+        if (keyboardFocus) keyboardFocus.blur();
+        keyboardFocus = this;
+        this.onFocus();
+    }
+
+    blur() {
+        if (keyboardFocus !== this) return;
+        keyboardFocus = null;
+        this.onBlur();
+    }
+
+    onFocus() {}
+    onBlur() {}
+    onDoubleDown() {}
+    onTripleDown() {}
+}
+
 
 //------------------------------------------------------------------------------------------
 //-- ButtonWidget --------------------------------------------------------------------------
@@ -1123,35 +1178,6 @@ export class ButtonWidget extends ControlWidget {
         if (this.label) this.label.update();
         if (this.isDisabled) this.dim.update();
     }
-
-    drag(xy) {
-        const inside = this.inside(xy);
-        if (this.isPressed === inside) return;
-        this.isPressed = inside;
-        this.markChanged();
-    }
-
-    press(xy) {
-        if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
-        this.isPressed = true;
-        this.focus();
-        this.onPress();
-        return true;
-    }
-
-    release(xy) {
-        this.isPressed = false;
-        this.blur();
-        this.onRelease();
-        if (this.inside(xy)) this.onClick();
-    }
-
-    // Called when the user presses and releases the button.
-
-    onClick() {}
-    onPress() {}
-    onRelease() {}
-
 }
 
 //------------------------------------------------------------------------------------------
@@ -1260,30 +1286,38 @@ export class ToggleWidget extends ControlWidget {
         if (this.isDisabled) this.dim.update();
     }
 
-    drag(xy) {
-        const inside = this.inside(xy);
-        if (this.isPressed === inside) return;
-        this.isPressed = inside;
-        this.markChanged();
-    }
+    // drag(xy) {
+    //     const inside = this.inside(xy);
+    //     if (this.isPressed === inside) return;
+    //     this.isPressed = inside;
+    //     this.markChanged();
+    // }
 
-    press(xy) {
-        if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
-        this.isPressed = true;
-        this.focus();
-        return true;
-    }
+    // press(xy) {
+    //     if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
+    //     this.isPressed = true;
+    //     this.focus();
+    //     return true;
+    // }
 
-    release(xy) {
-        this.isPressed = false;
-        this.blur();
-        if (!this.inside(xy)) return;
+    onClick() {
         if (this.toggleSet) {
             this.toggleSet.pick(this);
         } else {
             this.set({state: !this.isOn});
         }
     }
+
+    // release(xy) {
+    //     this.isPressed = false;
+    //     this.blur();
+    //     if (!this.inside(xy)) return;
+    //     if (this.toggleSet) {
+    //         this.toggleSet.pick(this);
+    //     } else {
+    //         this.set({state: !this.isOn});
+    //     }
+    // }
 
     setChanged() {
         if (this.oldSet) this.oldSet.remove(this);
@@ -1402,21 +1436,15 @@ export class SliderWidget extends ControlWidget {
         this.knob.set({local:xy});
     }
 
-    press(xy) {
-        if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
-        this.isPressed = true;
-        this.focus();
-        this.moveKnob(xy);
-        return true;
-    }
-
-    release(xy) {
-        this.isPressed = false;
-        this.blur();
+    onPress(xy) {
         this.moveKnob(xy);
     }
 
-    drag(xy) {
+    onRelease(xy) {
+        this.moveKnob(xy);
+    }
+
+    onDrag(xy) {
         this.moveKnob(xy);
     }
 
@@ -1436,7 +1464,6 @@ export class SliderWidget extends ControlWidget {
     }
 
 }
-
 
 //------------------------------------------------------------------------------------------
 //-- JoystickWidget ------------------------------------------------------------------------
@@ -1497,21 +1524,15 @@ export class JoystickWidget extends ControlWidget {
         this.onChange([0,0]);
     }
 
-    press(xy) {
-        if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
-        this.isPressed = true;
-        this.focus();
+    onPress(xy) {
         this.moveKnob(xy);
-        return true;
     }
 
-    release(xy) {
-        this.isPressed = false;
-        this.blur();
+    onRelease(xy) {
         this.recenter();
     }
 
-    drag(xy) {
+    onDrag(xy) {
         this.moveKnob(xy);
     }
 
@@ -1542,14 +1563,13 @@ export class JoystickWidget extends ControlWidget {
     }
 }
 
-
 //------------------------------------------------------------------------------------------
 //-- TextFieldWidget -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 // A single line of text that can be typed into.
 
-export class TextFieldWidget extends ControlWidget {
+export class TextFieldWidget extends FocusWidget {
 
     get leftSelect() { return this._leftSelect || 0; }
     get rightSelect() { return this._rightSelect || 0; }
@@ -1566,7 +1586,7 @@ export class TextFieldWidget extends ControlWidget {
         this.text = new TextWidget(this.clip, {autoSize:[0,1], local:[0,0], alignX:'left', wrap: false, text:""});
         this.entry = new BoxWidget(this.text, {autoSize:[0,1], local:[this.leftOffset,0], size:[1,1], bubbleChanges: true, visible: this.isFocused && !this.multipleSelected});
         this.hilite = new BoxWidget(this.text, {autoSize:[0,1], local:[this.leftOffset, 0], size:[this.hiliteSize,1], color: [1,0,0], opacity:0.2,
-            bubbleChanges: true , visible: this.isFocused && this.multipleSelected});
+            bubbleChanges: true, visible: this.isFocused && this.multipleSelected});
 
         // Suppress redrawing the whole canvas when the entry cursor or the hilite is hidden.
         this.entry.markCanvasChanged = () => {};
@@ -1574,9 +1594,16 @@ export class TextFieldWidget extends ControlWidget {
     }
 
     updateChildren() {
-        this.refresh();
         this.background.update();
         if (this.isDisabled) this.dim.update();
+    }
+
+    onHover() {
+        this.setCursor("text");
+    }
+
+    onUnhover() {
+        this.setCursor("default");
     }
 
     onFocus() {
@@ -1586,21 +1613,8 @@ export class TextFieldWidget extends ControlWidget {
 
     onBlur() {
         ui.dismissVirtualKeyboard();
-        this.refresh();
+        this.refreshHilite();
     }
-
-    // onFocus() {
-    //     ui.requestVirtualKeyboard(this.global);
-    //     this.refresh();
-    //     this.future(530).cursorBlink();
-    // }
-
-    // onBlur() {
-    //     ui.dismissVirtualKeyboard();
-    //     this.cursor.hide(true);
-    //     this.gel.hide(true);
-    //     this.markChanged();
-    // }
 
     blink() {
         if (!this.isFocused) return;
@@ -1609,34 +1623,16 @@ export class TextFieldWidget extends ControlWidget {
         this.future(530).blink();
     }
 
-    mouseMove(xy) {
-        if (!this.isVisible || !this.inside(xy)) return;
-        this.setCursor("text");
-        super.mouseMove(xy);
-    }
-
-    press(xy) {
-        if (this.invisible || this.isDisabled || !this.inside(xy)) {
-            this.blur();
-            return false;
-        }
-        this.focus();
-        this.isPressed = true;
+    onPress(xy) {
         const local = v2_sub(xy, this.text.global);
         const select = this.text.findSelect(local[0]);
         this.selectStart = select;
         this.set({leftSelect: select, rightSelect: select});
-        this.refresh();
-        return true;
-    }
-
-    release(xy) {
-        this.isPressed = false;
+        this.refreshHilite();
     }
 
     // Still need to support dragging past the end of the widget. This is where it should go.
-    drag(xy) {
-        if (!this.isPressed) return;
+    onDrag(xy) {
         const local = v2_sub(xy, this.text.global);
         const select = this.text.findSelect(local[0]);
         if (this.selectStart < select) {
@@ -1646,13 +1642,12 @@ export class TextFieldWidget extends ControlWidget {
         } else {
             this.set({leftSelect: select, rightSelect: select});
         }
-        this.refresh();
+        this.refreshHilite();
     }
 
     keyInput(input) {
         const key = input.key;
         const ctrl = input.ctrl || input.meta;
-        console.log(ctrl);
         if (ctrl) {
 
             switch (key) {
@@ -1688,36 +1683,6 @@ export class TextFieldWidget extends ControlWidget {
                     if (key.length === 1) this.insert(key);
             }
         }
-
-
-        // switch (input) {
-        //     case 'Enter':
-        //         this.enter();
-        //         break;
-        //     case 'Backspace':
-        //         this.backspace();
-        //         break;
-        //     case 'Delete':
-        //         this.delete();
-        //         break;
-        //     case 'ArrowLeft':
-        //         this.cursorLeft();
-        //         break;
-        //     case 'ArrowRight':
-        //         this.cursorRight();
-        //         break;
-        //     case 'Cut':
-        //         this.cut();
-        //         break;
-        //     case 'Copy':
-        //         this.copy();
-        //         break;
-        //     case 'Paste':
-        //         this.paste();
-        //         break;
-        //     default:
-        //        if (input.length === 1) this.insert(input);
-        // }
     }
 
     insert(s) {
@@ -1731,7 +1696,7 @@ export class TextFieldWidget extends ControlWidget {
         this.text.setText(t);
         this.insertLeft += s.length;
         this.insertRight = this.insertLeft;
-        this.refresh();
+        this.refreshHilite();
     }
 
     filter(s) {
@@ -1744,7 +1709,7 @@ export class TextFieldWidget extends ControlWidget {
         } else {
             this.deleteOne();
         }
-        this.refresh();
+        this.refreshHilite();
     }
 
     backspace() {
@@ -1753,7 +1718,7 @@ export class TextFieldWidget extends ControlWidget {
         } else {
             this.backspaceOne();
         }
-        this.refresh();
+        this.refreshHilite();
     }
 
     deleteRange() {
@@ -1780,13 +1745,13 @@ export class TextFieldWidget extends ControlWidget {
     cursorLeft() {
         const c = Math.max(0, this.leftSelect - 1);
         this.set({leftSelect: c, rightSelect: c});
-        this.refresh();
+        this.refreshHilite();
     }
 
     cursorRight() {
         const c = Math.min(this.text.text.length, this.leftSelect + 1);
         this.set({leftSelect: c, rightSelect: c});
-        this.refresh();
+        this.refreshHilite();
     }
 
     cut() {
@@ -1806,9 +1771,7 @@ export class TextFieldWidget extends ControlWidget {
         navigator.clipboard.readText().then(text => this.insert(text));
     }
 
-    doubleClick(xy) {
-        if (!this.inside(xy)) return;
-
+    onDoubleDown(xy) {
         const local = v2_sub(xy, this.text.global);
         const select = this.text.findSelect(local[0]);
         const t = this.text.text;
@@ -1826,22 +1789,21 @@ export class TextFieldWidget extends ControlWidget {
             } else if (right < t.length) right++;
         }
         this.set({leftSelect: left, rightSelect: right});
-        this.refresh();
+        this.refreshHilite();
     }
 
-    tripleClick(xy) {
-        if (!this.inside(xy)) return;
+    onTripleDown(xy) {
         this.selectAll();
     }
 
     selectAll() {
         this.set({leftSelect: 0, rightSelect: this.text.text.length});
-        this.refresh();
+        this.refreshHilite();
     }
 
-    // Update the position of the cursor and the highlight.
+    // Update the position of the entry cursor and the highlight.
 
-    refresh() {
+    refreshHilite() {
         this.entry.set({local:[this.leftOffset,0], visible: this.isFocused && !this.multipleSelected} );
         this.hilite.set({local:[this.leftOffset, 0], size:[this.hiliteSize,1], visible: this.isFocused && this.multipleSelected});
 
@@ -1874,49 +1836,14 @@ export class TextFieldWidget extends ControlWidget {
     }
 
     enter() {
-        this.blur();
         this.onEnter();
-        this.refresh();
+        this.blur();
     }
 
     onEnter() {
     }
 
 }
-
-//------------------------------------------------------------------------------------------
-//-- Helper Functions ----------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// Widget attributes can be either values or arrays ... this compares arbitrary things.
-
-function deepEquals(a, b) {
-    if (a === b) return true;
-    if (!a || !b) return false;
-    const al = a.length;
-    const bl = b.length;
-    if (!al || !bl) return false;
-    if (al !== bl) return false;
-    for (let i = 0; i < al; i++) if (a[i] !== b[i]) return false;
-    return true;
-}
-
-function canvasColor(r, g, b) {
-    return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
-}
-
-function isLetter(c) { // Returns true if the character is an alphabetic letter.
-    return c.toLowerCase() !== c.toUpperCase();
-}
-
-function isDigit(c) { // Returns true if the character is a digit.
-    return c.match(/[0-9]/i);
-}
-
-function isLetterOrDigit(c) {
-    return isLetter(c) || isDigit(c);
-}
-
 
 // -----------------------------------------------------------------------------------------
 //-- PaneWidget ----------------------------------------------------------------------------
@@ -2092,3 +2019,7 @@ function isLetterOrDigit(c) {
 
 
 // }
+
+
+
+

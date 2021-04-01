@@ -5,8 +5,10 @@
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, AM_Avatar, PM_Avatar,
-    ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, BoxWidget, JoystickWidget, AudioManager, PM_Camera, AM_Player, PM_Player, PM_AudioListener, PM_AudioSource, AM_AudioSource, InputManager2, TextWidget, ButtonWidget, SliderWidget, TextFieldWidget } from "@croquet/worldcore";
+    ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, BoxWidget, JoystickWidget, AudioManager, PM_Camera, AM_Player, PM_Player, PM_AudioListener, PM_AudioSource, AM_AudioSource, InputManager, TextWidget, ButtonWidget, SliderWidget, TextFieldWidget, VerticalWidget, QRWidget, ImageWidget, NineSliceWidget,
+    ToggleWidget, ToggleSet } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
+import llama from "./assets/llama.jpg";
 import photon from "./assets/Photon.mp3";
 
 
@@ -254,8 +256,19 @@ class MyViewRoot extends ViewRoot {
         }
 
         this.HUD = new Widget(this.ui.root, {autoSize: [1,1]});
+        this.vertical = new VerticalWidget(this.HUD, {local: [20,120], size: [200,300], margin: 10})
 
-        this.button0 = new ButtonWidget(this.HUD, {local: [20,120], size: [200,100]});
+
+        this.button0 = new ToggleWidget();
+        this.button1 = new ToggleWidget();
+        this.image = new ImageWidget(null, {url: llama});
+
+        this.toggleSet = new ToggleSet(this.button0, this.button1);
+
+        this.vertical.addSlot(this.button0);
+        this.vertical.addSlot(this.button1);
+        this.vertical.addSlot(this.image);
+
         // this.button0.onClick = () => console.log("0");
         // this.button1 = new ButtonWidget(this.HUD, {local: [20,140], size: [200,100]});
         // this.button1.onClick = () => console.log("1");
@@ -274,7 +287,7 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
-        this.input = this.addManager(new InputManager2());
+        this.input = this.addManager(new InputManager());
         // this.input = this.addManager(new WebInputManager());
         this.render = this.addManager(new RenderManager());
         this.ui = this.addManager(new UIManager());
