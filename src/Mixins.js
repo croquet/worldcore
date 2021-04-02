@@ -181,13 +181,17 @@ export const PM_Tree = superclass => class extends superclass {
 //-- Actor ---------------------------------------------------------------------------------
 
 export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
-    init(pawn, options) {
-        options = options || {};
-        this.translation = options.translation || v3_zero();
-        this.rotation = options.rotation || q_identity();
-        this.scale = options.scale || v3_unit();
-        super.init(pawn, options);
-    }
+    // init(pawn, options) {
+    //     options = options || {};
+    //     this.translation = options.translation || v3_zero();
+    //     this.rotation = options.rotation || q_identity();
+    //     this.scale = options.scale || v3_unit();
+    //     super.init(pawn, options);
+    // }
+
+    get translation() { return this._translation || v3_zero() };
+    get rotation() { return this._rotation || q_identity() };
+    get scale() { return this._scale || v3_unit() };
 
     onAddChild(child) {
         super.onAddChild(child);
@@ -212,22 +216,40 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
     }
 
     setScale(v) {
-        this.scale = v;
+        this.set({scale: v});
         this.say("spatial_setScale", v);
         this.localChanged();
     }
 
     setRotation(q) {
-        this.rotation = q;
-        this.say("spatial_setRotation", q);
+        this.set({rotation: v});
+        this.say("spatial_setRotation", v);
         this.localChanged();
     }
 
     setTranslation(v) {
-        this.translation = v;
+        this.set({translation: v});
         this.say("spatial_setTranslation", v);
         this.localChanged();
     }
+
+    // setScale(v) {
+    //     this.scale = v;
+    //     this.say("spatial_setScale", v);
+    //     this.localChanged();
+    // }
+
+    // setRotation(q) {
+    //     this.rotation = q;
+    //     this.say("spatial_setRotation", q);
+    //     this.localChanged();
+    // }
+
+    // setTranslation(v) {
+    //     this.translation = v;
+    //     this.say("spatial_setTranslation", v);
+    //     this.localChanged();
+    // }
 
     get local() {
         if (!this.$local) this.$local = m4_scalingRotationTranslation(this.scale, this.rotation, this.translation);
@@ -290,19 +312,22 @@ get lookGlobal() { return this.global; } // Allows objects to have an offset cam
 export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
     moveTo(v) {
-        this.translation = v;
+        // this.translation = v;
+        this.set({translation: v});
         this.say("smoothed_moveTo", v);
         this.localChanged();
     }
 
     rotateTo(q) {
-        this.rotation = q;
+        // this.rotation = q;
+        this.set({rotation: q});
         this.say("smoothed_rotateTo", q);
         this.localChanged();
     }
 
     scaleTo(v) {
-        this.scale = v;
+        // this.scale = v;
+        this.set({scale: v});
         this.say("smoothed_scaleTo", v);
         this.localChanged();
     }

@@ -44,18 +44,36 @@ export class Actor extends Model {
     init(pawnType = 'Pawn', options) {
         super.init();
         this.pawnType = pawnType;
-        if (options) {
-            this.userId = options.userId;   // The viewId of the user that owns this actor.
-        }
+        this.set(options);
+        // if (options) {
+        //     this.userId = options.userId;   // The viewId of the user that owns this actor.
+        // }
         this.wellKnownModel('ActorManager').add(this);
         this.publish("actor", "createActor", this);
     }
+
+    get userId() { return this._userId; }
 
     destroy() {
         this.doomed = true; // About to be destroyed. This is used to prevent creating new future messages.
         this.say("destroyActor");
         this.wellKnownModel('ActorManager').delete(this);
         super.destroy();
+    }
+
+    set(options) {
+        // let changed = false;
+        for (const option in options) {
+            const n = "_" + option;
+            const v = options[option];
+            if (!deepEquals(this[n], v)) {
+                this[n] = v;
+                // changed = true;
+                this.say(option, v);
+                // this.publish(this.id, option, v);
+            }
+        }
+        // if (changed) this.markChanged();
     }
 
     say(event, data) {
@@ -73,3 +91,14 @@ export class Actor extends Model {
 
 }
 Actor.register("Actor");
+
+function deepEquals(a, b) {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    const al = a.length;
+    const bl = b.length;
+    if (!al || !bl) return false;
+    if (al !== bl) return false;
+    for (let i = 0; i < al; i++) if (a[i] !== b[i]) return false;
+    return true;
+}
