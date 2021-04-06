@@ -62,18 +62,15 @@ export class Actor extends Model {
     }
 
     set(options) {
-        // let changed = false;
         for (const option in options) {
             const n = "_" + option;
             const v = options[option];
             if (!deepEquals(this[n], v)) {
+                const o = this[n];
                 this[n] = v;
-                // changed = true;
-                this.say(option, v);
-                // this.publish(this.id, option, v);
+                this.say(n, {o,v});
             }
         }
-        // if (changed) this.markChanged();
     }
 
     say(event, data) {

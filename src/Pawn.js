@@ -7,10 +7,12 @@ import { NamedView, GetNamedView } from "./NamedView";
 //------------------------------------------------------------------------------------------
 
 const pawnRegistry = new Map();
+let pm; // Local pointer for pawns
 
 export class PawnManager extends NamedView {
     constructor() {
         super("PawnManager");
+        pm = this;
         this.pawns = new Map();
         this.dynamic = new Set();
         this.rebuild();
@@ -23,6 +25,7 @@ export class PawnManager extends NamedView {
         const doomed = new Map(this.pawns);
         doomed.forEach(pawn => pawn.destroy());
         this.detach(); // de-register as a view
+        pm = null;
     }
 
     rebuild() {
@@ -87,11 +90,12 @@ export class Pawn extends View {
     constructor(actor) {
         super();
         this._actor = actor;
-        GetNamedView("PawnManager").add(this);
+        pm.add(this);
         this.listen("destroyActor", this.destroy);
     }
 
     get actor() {return this._actor};
+    get pawnManager() { return pm};
 
     // Link is called on start-up after all pre-existing pawns are re-instatiated. This is where pawn-pawn pointers can be rebuilt.
     link() {}
@@ -101,7 +105,7 @@ export class Pawn extends View {
     refresh() {}
 
     destroy() {
-        GetNamedView("PawnManager").delete(this);
+        pm.delete(this);
         this.detach(); // Calling View clean-up.
     }
 
@@ -129,6 +133,7 @@ export class Pawn extends View {
         return this.userId === this.viewId;
     }
 
+
 }
 Pawn.register('Pawn');
 
@@ -141,11 +146,11 @@ Pawn.register('Pawn');
 export const PM_Dynamic = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        GetNamedView("PawnManager").addDynamic(this);
+        pm.addDynamic(this);
     }
 
     destroy() {
-        GetNamedView("PawnManager").deleteDynamic(this);
+        pm.deleteDynamic(this);
         super.destroy();
     }
 
@@ -154,4 +159,8 @@ export const PM_Dynamic = superclass => class extends superclass {
         this.lastFrameTime = time;
     }
 
-};
+}
+
+export function GetPawn(actorId) {
+    return pm.get(actorId);
+}

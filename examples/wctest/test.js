@@ -6,7 +6,7 @@ import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, AM_Avatar, PM_Avatar,
     ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, BoxWidget, JoystickWidget, AudioManager, PM_Camera, AM_Player, PM_Player, PM_AudioListener, PM_AudioSource, AM_AudioSource, InputManager, TextWidget, ButtonWidget, SliderWidget, TextFieldWidget, VerticalWidget, QRWidget, ImageWidget, NineSliceWidget,
-    ToggleWidget, ToggleSet } from "@croquet/worldcore";
+    ToggleWidget, ToggleSet, GetNamedModel } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import photon from "./assets/Photon.mp3";
@@ -17,30 +17,33 @@ import photon from "./assets/Photon.mp3";
 //------------------------------------------------------------------------------------------
 
 class MoveActor extends mix(Actor).with(AM_Avatar, AM_AudioSource) {
-    init(options) {
-        super.init("MovePawn", options);
-        this.setTranslation([0,0,-5]);
-        const child = ChildActor.create({translation: [0,1.1,0]});
-        this.q = q_identity();
-        this.spin = 0;
-        this.pitch = 0;
-        this.addChild(child);
-        this.future(50).tick();
-        this.subscribe("hud", "joy", this.joy);
+    init() {
+        super.init("MovePawn", {translation: [0,0,-4]});
+        // console.log("Creating child!");
+        const child = ChildActor.create({parent: this, translation: [0,1.1,0]});
+
+        // console.log(child.translation);
+        // this.q = q_identity();
+        // this.spin = 0;
+        // this.pitch = 0;
+        // this.addChild(child);
+        // this.future(50).tick();
+        // this.subscribe("hud", "joy", this.joy);
+        this.subscribe("input", "qDown",  () => this.destroy());
     }
 
-    tick() {
-        this.q = q_multiply(this.q, q_axisAngle([0,1,0], this.spin * 0.15));
-        this.q = q_multiply(this.q, q_axisAngle([1,0,0], this.pitch * 0.15));
-        this.q = q_normalize(this.q);
-        this.rotateTo(this.q);
-        this.future(50).tick();
-    }
+    // tick() {
+    //     this.q = q_multiply(this.q, q_axisAngle([0,1,0], this.spin * 0.15));
+    //     this.q = q_multiply(this.q, q_axisAngle([1,0,0], this.pitch * 0.15));
+    //     this.q = q_normalize(this.q);
+    //     this.rotateTo(this.q);
+    //     this.future(50).tick();
+    // }
 
-    joy(xy) {
-        this.spin = xy[0];
-        this.pitch = xy[1];
-    }
+    // joy(xy) {
+    //     this.spin = xy[0];
+    //     this.pitch = xy[1];
+    // }
 
 
 }
@@ -50,13 +53,11 @@ MoveActor.register('MoveActor');
 // MovePawn
 //------------------------------------------------------------------------------------------
 
-let mp;
-
 class MovePawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible, PM_AudioSource) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(CachedObject("moveDrawCall", () => this.buildDraw()));
-        mp = this;
+        this.subscribe("hud", "joy", this.joy);
     }
 
     buildDraw() {
@@ -84,6 +85,15 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible, PM_AudioSo
         return material;
     }
 
+    joy(xy) {
+        const spin = xy[0];
+        const pitch = xy[1];
+        let q = q_multiply(q_identity(), q_axisAngle([0,1,0], spin * 0.005));
+        q = q_multiply(q, q_axisAngle([1,0,0], pitch * 0.005));
+        q = q_normalize(q);
+        this.setSpin(q);
+    }
+
 
 }
 MovePawn.register('MovePawn');
@@ -93,19 +103,36 @@ MovePawn.register('MovePawn');
 // ChildActor
 //------------------------------------------------------------------------------------------
 
-class ChildActor extends mix(Actor).with(AM_Smoothed) {
+class ChildActor extends mix(Actor).with(AM_Avatar) {
     init(options) {
         super.init("ChildPawn", options);
-        this.q = q_identity();
-        this.future(50).tick();
+        // this.q = q_identity();
+        // this.future(50).tick();
+        this.mp = this.parent;
+        // console.log(mp);
+        this.subscribe("input", "dDown", this.rot0);
+        this.subscribe("input", "fDown", this.rot1);
+        this.subscribe("input", "gDown", () => this.set({parent: this.mp}));
+        // this.subscribe("input", "gDown", () => console.log(this.mp));
+        this.subscribe("input", "hDown", () => this.set({parent: null}));
     }
 
     tick() {
         const axis = v3_normalize([2,1,3]);
-        this.q = q_multiply(this.q, q_axisAngle(axis, 0.13));
-        this.q = q_normalize(this.q);
-        this.rotateTo(this.q);
+        let q = this.rotation;
+        q = q_multiply(q, q_axisAngle(axis, 0.13));
+        q = q_normalize(q);
+        // console.log(this.rotation);
+        this.rotateTo(q);
         this.future(50).tick();
+    }
+
+    rot0() {
+        this.setRotation(q_identity());
+    }
+
+    rot1() {
+        this.setRotation(q_axisAngle([1,0,0], 0.13));
     }
 
 }
@@ -115,10 +142,16 @@ ChildActor.register('ChildActor');
 // ChildPawn
 //------------------------------------------------------------------------------------------
 
-class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
+class ChildPawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(CachedObject("childDrawCall", () => this.buildDraw()));
+
+        // console.log(this.scale);
+        // console.log(this.rotation);
+        // console.log(this.translation);
+        // console.log(this.local);
+        // console.log(this.global);
     }
 
     buildDraw() {
@@ -146,6 +179,10 @@ class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
         return material;
     }
 
+    // refresh() {
+    //     console.log("child refresh");
+    //     super.refresh();
+    // }
 
 }
 ChildPawn.register('ChildPawn');
@@ -186,31 +223,30 @@ class FloorPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
 FloorPawn.register('FloorPawn');
 
 //------------------------------------------------------------------------------------------
-// CameraActor
-//------------------------------------------------------------------------------------------
+// // CameraActor
+// //------------------------------------------------------------------------------------------
 
-class CameraActor extends mix(Actor).with(AM_Spatial, AM_Player) {
-    init(options) {
-        super.init("CameraPawn", options);
+// class CameraActor extends mix(Actor).with(AM_Spatial, AM_Player) {
+//     init(options) {
+//         super.init("CameraPawn", options);
 
-    }
+//     }
 
-}
-CameraActor.register('CameraActor');
+// }
+// CameraActor.register('CameraActor');
 
-//------------------------------------------------------------------------------------------
-// CameraPawn
-//------------------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+// // CameraPawn
+// //------------------------------------------------------------------------------------------
 
-class CameraPawn extends mix(Pawn).with(PM_Spatial, PM_Camera, PM_Player) {
-    constructor(...args) {
-        super(...args);
+// class CameraPawn extends mix(Pawn).with(PM_Spatial, PM_Camera, PM_Player) {
+//     constructor(...args) {
+//         super(...args);
 
-    }
+//     }
 
-
-}
-CameraPawn.register('CameraPawn');
+// }
+// CameraPawn.register('CameraPawn');
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -219,7 +255,7 @@ CameraPawn.register('CameraPawn');
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-
+        console.log("Start Model!");
         FloorActor.create();
         this.move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
     }
@@ -273,7 +309,8 @@ class MyViewRoot extends ViewRoot {
         // this.button1 = new ButtonWidget(this.HUD, {local: [20,140], size: [200,100]});
         // this.button1.onClick = () => console.log("1");
         // // this.slider = new SliderWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [50, 300]});
-        // this.joy0 = new JoystickWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200]});
+        this.joy0 = new JoystickWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200]});
+        this.joy0.onChange = xy => {this.publish("hud", "joy", xy)};
         // this.joy1 = new JoystickWidget(this.HUD, {anchor: [0,1], pivot: [0,1], local: [20,-20], size: [200, 200]});
 
         this.field = new TextFieldWidget(this.HUD, {local:[20,20], size: [300, 40]});
@@ -304,7 +341,7 @@ async function go() {
         name: 'test',
         model: MyModelRoot,
         view: MyViewRoot,
-        tps: 30,
+        tps: 15,
     });
 }
 
