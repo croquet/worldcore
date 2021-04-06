@@ -15,7 +15,9 @@ export class VoxelCursor extends NamedView {
         this.material.zOffset = 0;
         this.isHidden = false;
 
-        const noShow = GetNamedView('Input').hasTouch; // Dont show the cursor on touch devices
+        const noShow = 'ontouchstart' in document.documentElement;
+
+        // const noShow = GetNamedView('Input').hasTouch; // Dont show the cursor on touch devices
 
         this.call = new DrawCall(this.mesh, this.material);
         this.call.isHidden = true;
@@ -24,12 +26,34 @@ export class VoxelCursor extends NamedView {
         if (!noShow) render.scene.addDrawCall(this.call);
 
         this.subscribe("hud", "editColor", this.setColor);
-        this.subscribe("ui", "mouseXY", this.updateLocation);
-        this.subscribe("ui", "mouse0Down", this.edit);
-        this.subscribe("ui", "touchTap", this.tap);
+        // this.subscribe("ui", "mouseXY", this.updateLocation);
+        // this.subscribe("ui", "mouse0Down", this.edit);
+        // this.subscribe("ui", "touchTap", this.tap);
+
+        this.subscribe("ui", "pointerMove", this.onPointerMove);
+        this.subscribe("ui", "pointerDown", this.onPointerDown);
+        this.subscribe("ui", "tap",this.onPointerTap);
         this.subscribe("voxels", "changed", this.onChanged)
         this.subscribe("god", "startDrag", this.onStartDrag);
         this.subscribe("god", "endDrag", this.onEndDrag);
+    }
+
+    onPointerMove(event) {
+        if (event.type === "mouse" && event.button !== 2) {
+            this.updateLocation(event.xy);
+        }
+    }
+
+    onPointerDown(event) {
+        if (event.type === "mouse" && event.button !== 2) {
+            this.edit(event.xy);
+        }
+    }
+
+    onPointerTap(event) {
+        if (event.type === "touch") {
+            this.tap(event.xy);
+        }
     }
 
     destroy() {
@@ -66,6 +90,7 @@ export class VoxelCursor extends NamedView {
     }
 
     updateLocation(xy) {
+        // console.log("UpdateLocation");
         if (!xy) return;
         this.xy = xy;
         if (this.color) {
@@ -116,12 +141,13 @@ export class VoxelCursor extends NamedView {
     }
 
     tap(xy) {
-        console.log(xy);
+        // console.log("Tap");
         this.updateLocation(xy);
         this.edit(xy);
     }
 
     edit(xy) {
+        // console.log("Edit");
         if (this.color) {
             this.fill(xy);
         } else {

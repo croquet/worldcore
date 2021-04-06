@@ -20,19 +20,25 @@ export class GodView extends NamedView {
 
         this.subscribe("input", 'wheel', this.wheelZoom);
 
-        this.subscribe("input", 'mouse2Down', this.startDrag);
-        this.subscribe("input", 'mouse2Up', this.endDrag);
-        this.subscribe("ui", 'mouseXY', this.drag);
+        // this.subscribe("input", 'mouse2Down', this.startDrag);
+        // this.subscribe("input", 'mouse2Up', this.endDrag);
+        // this.subscribe("ui", 'mouseXY', this.drag);
 
-        this.subscribe("ui", 'touchDown', this.startDrag);
-        this.subscribe("ui", 'touchUp', this.endDrag);
-        this.subscribe("ui", 'touchXY', this.drag);
+        this.subscribe("ui", 'pointerDown', this.startDrag);
+        this.subscribe("ui", 'pointerUp', this.endDrag);
+        this.subscribe("ui", 'pointerMove', this.drag);
+
+        // this.subscribe("ui", 'touchDown', this.startDrag);
+        // this.subscribe("ui", 'touchUp', this.endDrag);
+        // this.subscribe("ui", 'touchXY', this.drag);
 
         this.subscribe("input", 'doubleStart',this.doubleStart);
         this.subscribe("input", 'doubleChanged', this.doubleChanged);
     }
 
-    startDrag(xy) {
+    startDrag(event) {
+        if (event.type === "mouse" && event.button !== 2) return;
+        const xy = event.xy;
         if (KeyDown('Shift') || (xy[1] > this.camera.height - 150)) {
             this.lastX = xy[0];
             this.pivot = this.findGrab([this.camera.width / 2, this.camera.height / 2]);
@@ -42,7 +48,8 @@ export class GodView extends NamedView {
         this.publish("god", "startDrag");
     }
 
-    drag(xy) {
+    drag(event) {
+        const xy = event.xy;
         if (this.grab) {
             const look = this.camera.viewLookRay(...xy);
             const elevation = translation[2] - this.grab[2];
@@ -58,7 +65,7 @@ export class GodView extends NamedView {
         }
     }
 
-    endDrag(xy) {
+    endDrag(event) {
         this.grab = null;
         this.pivot = null;
         this.publish("god", "endDrag");

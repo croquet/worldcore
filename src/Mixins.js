@@ -257,7 +257,7 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
 
     init(pawn,options) {
         super.init(pawn, options);
-        console.log("Start spatial!!!!");
+        // console.log("Start spatial!!!!");
         // this.localChanged();
     }
 

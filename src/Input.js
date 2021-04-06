@@ -283,12 +283,12 @@ export class InputManager extends NamedView {
 
     onPointerDown(event) {
         this.presses.set(event.pointerId, {id: event.pointerId, time: event.timeStamp, start: [event.clientX, event.clientY], xy: [event.clientX, event.clientY]});
-        this.publish("input", "pointerDown", {id: event.pointerId, type: event.PointerType, button: event.button, xy: [event.clientX, event.clientY]});
+        this.publish("input", "pointerDown", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
         if (event.pointerId === this.lastDown.id && event.button === this.lastDown.button && event.timeStamp - this.lastDown.time < DOUBLE_DURATION) {
             if (event.pointerId === this.penultimateDown.id && event.button === this.penultimateDown.button && event.timeStamp - this.penultimateDown.time < TRIPLE_DURATION) {
-                this.publish("input", "tripleDown", {id: event.pointerId, type: event.PointerType, button: event.button, xy: [event.clientX, event.clientY]});
+                this.publish("input", "tripleDown", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
             } else {
-                this.publish("input", "doubleDown", {id: event.pointerId, type: event.PointerType, button: event.button, xy: [event.clientX, event.clientY]});
+                this.publish("input", "doubleDown", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
             }
         }
         this.penultimateDown = this.lastDown;
@@ -307,18 +307,18 @@ export class InputManager extends NamedView {
             const ax = Math.abs(dx);
             const ay = Math.abs(dy);
             if (duration < TAP_DURATION && ax < TAP_DISTANCE && ay < TAP_DISTANCE) {
-                this.publish("input", "tap", {id: event.pointerId, type: event.PointerType, button: event.button, xy: [event.clientX, event.clientY]});
+                this.publish("input", "tap", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
             }
             if (duration < SWIPE_DURATION && ax > SWIPE_DISTANCE) {
-                this.publish("input", "swipeX", {id: event.pointerId, type: event.PointerType, button: event.button, distance: dx});
+                this.publish("input", "swipeX", {id: event.pointerId, type: event.pointerType, button: event.button, distance: dx});
             }
             if (duration < SWIPE_DURATION && ay > SWIPE_DISTANCE) {
-                this.publish("input", "swipeY", {id: event.pointerId, type: event.PointerType, button: event.button, distance: dy});
+                this.publish("input", "swipeY", {id: event.pointerId, type: event.pointerType, button: event.button, distance: dy});
             }
         }
 
         this.presses.delete(event.pointerId);
-        this.publish("input", "pointerUp", {id: event.pointerId, type: event.PointerType, button: event.button, xy: [event.clientX, event.clientY]});
+        this.publish("input", "pointerUp", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
         this.zoomEnd();
     }
 

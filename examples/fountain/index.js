@@ -3,7 +3,7 @@
 // Croquet Studios, 2020
 
 import { Session, App } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, ActorManager, RenderManager, PawnManager, PlayerManager, RapierPhysicsManager,
+import { ModelRoot, ViewRoot, InputManager, UIManager, AudioManager, ActorManager, RenderManager, PawnManager, PlayerManager, RapierPhysicsManager,
     toRad, LoadRapier,m4_scalingRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, TextWidget, GetViewFPS, RapierVersion } from "@croquet/worldcore";
 import { LevelActor } from "./src/Level";
 import { CubeSprayActor, CylinderSprayActor, ConeSprayActor, BallSprayActor } from "./src/Fountain";
@@ -132,7 +132,7 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
-        this.webInput = this.addManager(new WebInputManager());
+        this.webInput = this.addManager(new InputManager());
         this.render = this.addManager(new RenderManager());
         this.ui = this.addManager(new UIManager());
         // this.audio = this.addManager(new AudioManager());

@@ -5,10 +5,10 @@ devDependencies:
   html-webpack-plugin: 4.5.0_webpack@4.44.2
   inspectpack: 4.5.2
   node-fetch: 2.6.1
-  webpack: 4.44.2_webpack-cli@3.3.12
+  webpack: 4.44.2_93ca2875a658e9d1552850624e6b91c7
   webpack-cli: 3.3.12_webpack@4.44.2
   webpack-dev-server: 3.11.0_93ca2875a658e9d1552850624e6b91c7
-lockfileVersion: 5.2
+lockfileVersion: 5.1
 packages:
   /@types/anymatch/1.3.1:
     dev: true
@@ -1543,7 +1543,7 @@ packages:
     dependencies:
       loader-utils: 2.0.0
       schema-utils: 2.7.1
-      webpack: 4.44.2_webpack-cli@3.3.12
+      webpack: 4.44.2_93ca2875a658e9d1552850624e6b91c7
     dev: true
     engines:
       node: '>= 10.13.0'
@@ -1963,7 +1963,7 @@ packages:
       pretty-error: 2.1.1
       tapable: 1.1.3
       util.promisify: 1.0.0
-      webpack: 4.44.2_webpack-cli@3.3.12
+      webpack: 4.44.2_93ca2875a658e9d1552850624e6b91c7
     dev: true
     engines:
       node: '>=6.9'
@@ -3963,7 +3963,7 @@ packages:
       serialize-javascript: 4.0.0
       source-map: 0.6.1
       terser: 4.8.0
-      webpack: 4.44.2_webpack-cli@3.3.12
+      webpack: 4.44.2_93ca2875a658e9d1552850624e6b91c7
       webpack-sources: 1.4.3
       worker-farm: 1.7.0
     dev: true
@@ -4235,7 +4235,7 @@ packages:
       loader-utils: 1.4.0
       supports-color: 6.1.0
       v8-compile-cache: 2.1.1
-      webpack: 4.44.2_webpack-cli@3.3.12
+      webpack: 4.44.2_93ca2875a658e9d1552850624e6b91c7
       yargs: 13.3.2
     dev: true
     engines:
@@ -4251,7 +4251,7 @@ packages:
       mime: 2.4.6
       mkdirp: 0.5.5
       range-parser: 1.2.1
-      webpack: 4.44.2_webpack-cli@3.3.12
+      webpack: 4.44.2_93ca2875a658e9d1552850624e6b91c7
       webpack-log: 2.0.0
     dev: true
     engines:
@@ -4291,7 +4291,7 @@ packages:
       strip-ansi: 3.0.1
       supports-color: 6.1.0
       url: 0.11.0
-      webpack: 4.44.2_webpack-cli@3.3.12
+      webpack: 4.44.2_93ca2875a658e9d1552850624e6b91c7
       webpack-cli: 3.3.12_webpack@4.44.2
       webpack-dev-middleware: 3.7.2_webpack@4.44.2
       webpack-log: 2.0.0
@@ -4325,7 +4325,7 @@ packages:
     dev: true
     resolution:
       integrity: sha512-lgTS3Xhv1lCOKo7SA5TjKXMjpSM4sBjNV5+q2bqesbSPs5FjGmU6jjtBSkX9b4qW87vDIsCIlUPOEhbZrMdjeQ==
-  /webpack/4.44.2_webpack-cli@3.3.12:
+  /webpack/4.44.2_93ca2875a658e9d1552850624e6b91c7:
     dependencies:
       '@webassemblyjs/ast': 1.9.0
       '@webassemblyjs/helper-module-context': 1.9.0
@@ -4356,6 +4356,7 @@ packages:
       node: '>=6.11.5'
     hasBin: true
     peerDependencies:
+      webpack: '*'
       webpack-cli: '*'
       webpack-command: '*'
     peerDependenciesMeta:

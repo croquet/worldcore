@@ -80,6 +80,7 @@ export class UIManager extends NamedView {
         this.subscribe("input", {event: "pointerMove", handling: "immediate"}, this.pointerMove);
         this.subscribe("input", {event: "pointerDown", handling: "immediate"}, this.pointerDown);
         this.subscribe("input", {event: "pointerUp", handling: "immediate"}, this.pointerUp);
+        this.subscribe("input", {event: "tap", handling: "immediate"}, this.pointerTap);
         this.subscribe("input", {event: "doubleDown", handling: "immediate"}, this.doubleDown);
         this.subscribe("input", {event: "tripleDown", handling: "immediate"}, this.tripleDown);
         this.subscribe("input", {event: "keyDown", handling: "immediate"}, this.keyDown);
@@ -129,19 +130,24 @@ export class UIManager extends NamedView {
     }
 
     pointerMove(event) {
-
         const pressed = pressedControls.get(event.id);
         if (pressed) {
             pressed.pointerDrag(event);
         } else if (event.type === "mouse" && this.root) {
             this.root.pointerMove(event);
             this.publish("ui", "pointerMove", event);
+        } else {
+            this.publish("ui", "pointerMove", event);
         }
     }
 
     pointerDown(event) {
-        if (event.button !== 0) return;
+        if (event.button !== 0) {
+            this.publish("ui", "pointerDown", event);
+            return;
+        }
         if (this.root && this.root.pointerDown(event)) return;
+        this.canTap = true;
         this.publish("ui", "pointerDown", event);
     }
 
@@ -154,13 +160,22 @@ export class UIManager extends NamedView {
     }
 
     pointerUp(event) {
-        if (event.button !== 0) return;
+        if (event.button !== 0) {
+            this.publish("ui", "pointerUp", event);
+            return;
+        }
         const pressed = pressedControls.get(event.id);
         if (pressed) {
             pressed.pointerUp(event); }
         else {
+            this.canTap = false;
             this.publish("ui", "pointerUp", event);
         }
+    }
+
+    pointerTap(event) {
+        if (!this.canTap) return;
+        this.publish("ui", "tap", event);
     }
 
     keyDown(key) {

@@ -3,7 +3,7 @@
 // Croquet Studios, 2020
 
 import { Session, App, Data } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, WebInputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
+import { ModelRoot, ViewRoot, InputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale, AM_Avatar, PM_Avatar,
     ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply, q_euler, m4_rotationQ, v3_transform, ToDeg, PM_Spatial, AM_Spatial, KeyDown, AM_MouselookAvatar, PM_MouselookAvatar, PM, q_lookAt, v3_rotate, v3_normalize } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
@@ -118,7 +118,7 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
-        this.webInput = this.addManager(new WebInputManager());
+        this.webInput = this.addManager(new InputManager());
         this.render = this.addManager(new RenderManager());
         this.terrainRender = this.addManager(new TerrainRender());
         this.voxelCursor = this.addManager(new VoxelCursor());
@@ -139,11 +139,24 @@ class MyViewRoot extends ViewRoot {
 }
 
 
+// async function go() {
+//     // await LoadRapier();
+//     App.makeWidgetDock();
+//     const session = await Session.join(App.autoSession("q"), MyModelRoot, MyViewRoot, {
+//         appId: 'io.croquet.quub',
+//         tps: 0,
+//     });
+// }
+
+// go();
+
 async function go() {
-    // await LoadRapier();
-    App.makeWidgetDock();
-    const session = await Session.join(App.autoSession("q"), MyModelRoot, MyViewRoot, {
+
+    const session = await Session.join({
         appId: 'io.croquet.quub',
+        name: App.autoSession(),
+        model: MyModelRoot,
+        view: MyViewRoot,
         tps: 0,
     });
 }

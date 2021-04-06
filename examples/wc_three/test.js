@@ -3,7 +3,7 @@
 // Croquet Studios, 2021
 
 import { Session, App } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, WebInputManager, UIManager, ActorManager, PawnManager, PlayerManager, Widget, JoystickWidget, ThreeRenderManager, Actor, Pawn, mix,
+import { ModelRoot, ViewRoot, InputManager, UIManager, ActorManager, PawnManager, PlayerManager, Widget, JoystickWidget, ThreeRenderManager, Actor, Pawn, mix,
     AM_Avatar, PM_Avatar, PM_ThreeVisible, AM_Spatial, PM_Spatial, toRad, q_identity, q_multiply, q_axisAngle, q_normalize, v3_normalize,
     AM_Smoothed, PM_Smoothed, GetNamedView, PM_ThreeCamera, PM_Player, AM_Player } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
@@ -24,15 +24,14 @@ import * as THREE from 'three';
 // MoveActor
 //------------------------------------------------------------------------------------------
 
-class MoveActor extends mix(Actor).with(AM_Avatar) {
+class MoveActor extends mix(Actor).with(AM_Smoothed) {
     init(options) {
         super.init("MovePawn", options);
         this.setTranslation([0,0,-5]);
-        const child = ChildActor.create({translation: [0,1.1,0]});
+        const child = ChildActor.create({parent: this, translation: [0,1.1,0]});
         this.q = q_identity();
         this.spin = 0;
         this.pitch = 0;
-        this.addChild(child);
         this.future(50).tick();
         this.subscribe("hud", "joy", this.joy);
     }
@@ -58,7 +57,7 @@ MoveActor.register('MoveActor');
 // MovePawn
 //------------------------------------------------------------------------------------------
 
-class MovePawn extends mix(Pawn).with(PM_Avatar, PM_ThreeVisible) {
+class MovePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(...args) {
         super(...args);
@@ -233,7 +232,7 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
-        this.webInput = this.addManager(new WebInputManager());
+        this.webInput = this.addManager(new InputManager());
         this.render = this.addManager(new ThreeRenderManager());
         this.ui = this.addManager(new UIManager());
         this.pawnManager = this.addManager(new PawnManager());
