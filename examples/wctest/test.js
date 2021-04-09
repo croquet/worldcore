@@ -308,7 +308,8 @@ class MyViewRoot extends ViewRoot {
         // this.button0.onClick = () => console.log("0");
         // this.button1 = new ButtonWidget(this.HUD, {local: [20,140], size: [200,100]});
         // this.button1.onClick = () => console.log("1");
-        // // this.slider = new SliderWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [50, 300]});
+        // this.slider = new SliderWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [50, 300], throttle: 100});
+        // this.slider.onChange = p => console.log(p);
         this.joy0 = new JoystickWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200]});
         this.joy0.onChange = xy => {this.publish("hud", "joy", xy)};
         // this.joy1 = new JoystickWidget(this.HUD, {anchor: [0,1], pivot: [0,1], local: [20,-20], size: [200, 200]});

@@ -3,6 +3,7 @@ import { v2_sub, v2_multiply, v2_add, v2_scale, v4_scale, v2_normalize, v2_magni
 import { LoadFont, LoadImage} from "./ViewAssetCache";
 import { NamedView } from "./NamedView";
 import QRCode from "../lib/qr/qrcode";
+import { GetViewTime } from "./ViewRoot";
 
 let ui;             // The UI manager
 
@@ -1386,6 +1387,7 @@ export class ToggleSet  {
 
 }
 
+
 //------------------------------------------------------------------------------------------
 //-- SliderWidget --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -1394,8 +1396,18 @@ export class ToggleSet  {
 //
 // The Bar and Knob can be replaced by Image/NineSlice widgets for a prettier look.
 // The Knob will always be square and matches the short dimension of the bar.
+//
+// Since drag updates can be very high-frequency, you can set a throttle to limit the
+// update frequency to once per x milliseconds
 
 export class SliderWidget extends ControlWidget {
+
+    constructor(...args) {
+        super(...args);
+        this.lastChangeTime = GetViewTime();
+    }
+
+    get throttle() { return this._throttle || 0}; // MS between control updates
 
     get isHorizontal() { return this.size[0] > this.size[1]; }
     get step() { return this._step || 0; }        // The number of descrete steps the slider has. (0=continuous)
@@ -1453,14 +1465,17 @@ export class SliderWidget extends ControlWidget {
 
     onPress(xy) {
         this.moveKnob(xy);
+        this.change(this.percent);
     }
 
     onRelease(xy) {
         this.moveKnob(xy);
+        this.change(this.percent);
     }
 
     onDrag(xy) {
         this.moveKnob(xy);
+        this.throttledChange(this.percent);
     }
 
     moveKnob(xy) {
@@ -1472,7 +1487,26 @@ export class SliderWidget extends ControlWidget {
             p = Math.max(0,Math.min(1,local[1] / this.size[1]));
         }
         this.set({percent: p});
-        this.onChange(this.percent);
+
+    }
+
+    change(p) {
+        this.lastChangeTime = GetViewTime();
+        this.lastChangeCache = null;
+        this.onChange(p);
+    }
+
+    throttledChange(p) {
+        if (GetViewTime() < this.lastChangeTime + this.throttle) {
+            this.lastChangeCache = p;
+        } else {
+            this.change(p);
+        }
+    }
+
+    update() {
+        super.update();
+        if (this.lastChangeCache && GetViewTime() >= this.lastChangeTime + this.throttle) this.change(this.lastChangeCache);
     }
 
     onChange(percent) {
@@ -1495,9 +1529,20 @@ export class SliderWidget extends ControlWidget {
 //
 // The deadRadius is the deadzone at the center of the joystick that always returns 0. It's % of
 // the total radius of the control.
+//
+// Since drag updates can be very high-frequency, you can set a throttle to limit the
+// update frequency to once per x milliseconds
+
 
 
 export class JoystickWidget extends ControlWidget {
+
+    constructor(...args) {
+        super(...args);
+        this.lastChangeTime = GetViewTime();
+    }
+
+    get throttle() { return this._throttle || 0}; // MS between control updates
 
     buildChildren() {
         super.buildChildren();
@@ -1536,19 +1581,21 @@ export class JoystickWidget extends ControlWidget {
     recenter() {
         this.knob.set({anchor: [0.5,0.5]});
         this.xy = [0,0];
-        this.onChange([0,0]);
     }
 
     onPress(xy) {
         this.moveKnob(xy);
+        this.change(this.xy);
     }
 
     onRelease(xy) {
         this.recenter();
+        this.change(this.xy);
     }
 
     onDrag(xy) {
         this.moveKnob(xy);
+        this.throttledChange(this.xy);
     }
 
     moveKnob(xy) {
@@ -1571,11 +1618,30 @@ export class JoystickWidget extends ControlWidget {
 
         const clamp = Math.max(0, v2_magnitude(v)-this.deadRadius) / (1-this.deadRadius);
         this.xy = v2_scale(n,clamp);
-        this.onChange(this.xy);
+    }
+
+    change(xy) {
+        this.lastChangeTime = GetViewTime();
+        this.lastChangeCache = null;
+        this.onChange(xy);
+    }
+
+    throttledChange(xy) {
+        if (GetViewTime() < this.lastChangeTime + this.throttle) {
+            this.lastChangeCache = xy;
+        } else {
+            this.change(xy);
+        }
+    }
+
+    update() {
+        super.update();
+        if (this.lastChangeCache && GetViewTime() >= this.lastChangeTime + this.throttle) this.change(this.lastChangeCache);
     }
 
     onChange(xy) {
     }
+
 }
 
 //------------------------------------------------------------------------------------------
