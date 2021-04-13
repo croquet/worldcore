@@ -57,7 +57,8 @@ export class InputManager extends NamedView {
         // this.lastClick = 0;
         // this.penultimateClick = 0;
 
-        document.documentElement.style.touchAction = "none";
+        // document.documentElement.style.touchAction = "none";
+        document.body.style.touchAction = "none";
 
         this.addListener(document, 'contextmenu', e => e.preventDefault());
         this.addListener(window, 'resize', e => this.onResize(e));
