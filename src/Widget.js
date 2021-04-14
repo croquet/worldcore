@@ -320,6 +320,7 @@ export class Widget extends View {
     get color() { return this._color || [0,0,0];}
     get bubbleChanges() { return this._bubbleChanges; } // Default to false
     get rawSize() { return this._size || [100,100];}
+    get lockAspectRatio() { return this._lockAspectRatio }; // Use with autoSize [1,0] or [0,1] to scale widget while preserving aspect ratio
 
     get width() { return this._width || 0};
     get height() { return this._height || 0};
@@ -345,8 +346,14 @@ export class Widget extends View {
         this.$size = v2_scale(size, this.scale);
         if (this.parent) {
             const parentSize = this.parent.size;
-            if (this.autoSize[0]) this.$size[0] = parentSize[0] * this.autoSize[0];
-            if (this.autoSize[1]) this.$size[1] = parentSize[1] * this.autoSize[1];
+            if (this.autoSize[0]) {
+                this.$size[0] = parentSize[0] * this.autoSize[0];
+                if (this.lockAspectRatio && size[0] && !this.autoSize[1]) this.$size[1] = this.$size[0] * size[1] / size[0];
+            }
+            if (this.autoSize[1]) {
+                this.$size[1] = parentSize[1] * this.autoSize[1];
+                if (this.lockAspectRatio && size[1] && !this.autoSize[0]) this.$size[0] = this.$size[1] * size[0] / size[1];
+            }
         }
         const border = this.border;
         this.$size[0] -= (border[0] + border[2]);
@@ -516,7 +523,6 @@ export class CanvasWidget extends ElementWidget {
 
     markChanged() {
         super.markChanged();
-        // console.log("Canvas marked changed");
     }
 
     setCanvasWidget() {
@@ -703,10 +709,6 @@ export class EmptyWidget extends Widget {
 export class BoxWidget extends Widget {
 
     draw() {
-        // console.log("Box draw");
-        // console.log(this);
-        // console.log(this._visible);
-        // console.log(this.isVisible);
         const xy = this.origin;
         const size = this.size;
         this.cc.fillStyle = canvasColor(...this.color);
@@ -1420,19 +1422,21 @@ export class SliderWidget extends ControlWidget {
 
     buildChildren() {
         super.buildChildren();
-        this.setBar(new BoxWidget(this, {autoSize:[1,1], color: [0.5,0.5,0.5], bubbleChanges: true}));
-        this.setKnob(new BoxWidget(this, {color: [0.8,0.8,0.8], border:[2,2,2,2], bubbleChanges: true}));
+        this.setBar(new BoxWidget(this, {color: [0.5,0.5,0.5]}));
+        this.setKnob(new BoxWidget(this, {color: [0.8,0.8,0.8], border:[2,2,2,2]}));
     }
 
     setBar(w) {
         if (this.bar && this.bar !== w) this.destroyChild(this.bar);
         this.bar = w;
+        this.bar.set({autoSize: [1,1], bubbleChanges: true})
         this.addChild(w);
     }
 
     setKnob(w) {
         if (this.knob && this.knob !== w) this.destroyChild(this.knob);
         this.knob = w;
+        this.knob.set({bubbleChanges: true})
         this.setKnobSize();
         this.addChild(w);
     }
@@ -1447,7 +1451,7 @@ export class SliderWidget extends ControlWidget {
     }
 
     updateChildren() {
-        this.refreshKnob();
+        this.setKnobSize();
         if (this.bar) this.bar.update();
         if (this.knob) this.knob.update();
         if (this.isDisabled) this.dim.update();
@@ -1540,18 +1544,17 @@ export class JoystickWidget extends ControlWidget {
     constructor(...args) {
         super(...args);
         this.lastChangeTime = GetViewTime();
+        this.deadRadius = 0.1;
+        this.xy = [0,0];
     }
 
     get throttle() { return this._throttle || 0}; // MS between control updates
 
     buildChildren() {
         super.buildChildren();
-
         this.setBackground(new BoxWidget(this, {color: [0.5,0.5,0.5]}));
         this.gate = new Widget(this.bg, {anchor: [0.5, 0.5], pivot: [0.5, 0.5], autoSize: [1, 1], border: [10,10,10,10], bubbleChanges: true})
         this.setKnob(new BoxWidget(this.gate, {color: [0.8,0.8,0.8], size: [20,20]}));
-        this.deadRadius = 0.1;
-        this.xy = [0,0];
     }
 
     setBackground(w) {
@@ -1571,7 +1574,7 @@ export class JoystickWidget extends ControlWidget {
         }
         this.knob = w;
         this.knob.set({anchor: [0.5, 0.5], pivot: [0.5, 0.5], bubbleChanges: true})
-        const size = this.knob.size;
+        const size = this.knob.rawSize;
         const x = size[0] / 2;
         const y = size[1] / 2;
         this.gate.set({border: [x,y,x,y]});

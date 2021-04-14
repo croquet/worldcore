@@ -6,7 +6,7 @@ import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, WebInputManager, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, AM_Avatar, PM_Avatar,
     ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, BoxWidget, JoystickWidget, AudioManager, PM_Camera, AM_Player, PM_Player, PM_AudioListener, PM_AudioSource, AM_AudioSource, InputManager, TextWidget, ButtonWidget, SliderWidget, TextFieldWidget, VerticalWidget, QRWidget, ImageWidget, NineSliceWidget,
-    ToggleWidget, ToggleSet, GetNamedModel } from "@croquet/worldcore";
+    ToggleWidget, ToggleSet, GetNamedModel, HorizontalWidget } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import photon from "./assets/Photon.mp3";
@@ -298,24 +298,46 @@ class MyViewRoot extends ViewRoot {
         this.button0 = new ToggleWidget();
         this.button1 = new ToggleWidget();
         this.image = new ImageWidget(null, {url: llama});
+        this.joyC = new JoystickWidget(null);
+
 
         this.toggleSet = new ToggleSet(this.button0, this.button1);
 
-        this.vertical.addSlot(this.button0);
         this.vertical.addSlot(this.button1);
         this.vertical.addSlot(this.image);
+        this.vertical.addSlot(this.joyC);
+        this.vertical.addSlot(this.button0);
+
+        // this.horizontal = new HorizontalWidget(this.HUD, {anchor: [0,1], pivot: [0,1], local: [20,-20], size: [400,150]})
+        this.box = new Widget(this.HUD, {anchor: [0,1], pivot: [0,1], local: [20,-20], size: [400,150]})
+
+
+
+        this.joyA = new JoystickWidget(this.box, {size: [50,50], autoSize: [0,1], anchor: [0,0], pivot: [0,0], lockAspectRatio: true});
+        this.joyB = new JoystickWidget(this.box, {size: [100,100], autoSize: [0,1], anchor: [1,0], pivot: [1,0], lockAspectRatio: true});
+        // this.slider = new SliderWidget(null);
+
+        // this.horizontal.addSlot(this.joyA);
+        // this.horizontal.addSlot(this.joyB);
+        // this.horizontal.markChanged();
+        // this.horizontal.addSlot(this.image);
+
+        // this.horizontal.addSlot(this.button0);
+        // this.horizontal.addSlot(this.image);
+        // this.horizontal.addSlot(this.button1);
+        // this.joyA.markChanged();
 
         // this.button0.onClick = () => console.log("0");
         // this.button1 = new ButtonWidget(this.HUD, {local: [20,140], size: [200,100]});
         // this.button1.onClick = () => console.log("1");
-        // this.slider = new SliderWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [50, 300], throttle: 100});
+        // this.sliderx = new SliderWidget(this.HUD, {anchor: [1,0], pivot: [1,0], local: [-20, 20], size: [50, 300], throttle: 100});
         // this.slider.onChange = p => console.log(p);
         this.joy0 = new JoystickWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200]});
         this.joy0.onChange = xy => {this.publish("hud", "joy", xy)};
         // this.joy1 = new JoystickWidget(this.HUD, {anchor: [0,1], pivot: [0,1], local: [20,-20], size: [200, 200]});
 
-        this.field = new TextFieldWidget(this.HUD, {local:[20,20], size: [300, 40]});
-        this.field.text.setText("Hello World!");
+        // this.field = new TextFieldWidget(this.HUD, {local:[20,20], size: [300, 40]});
+        // this.field.text.setText("Hello World!");
 
         // this.subscribe("ui", "pointerDown", () => console.log("Down!"));
         // this.subscribe("ui", "pointerUp", () => console.log("Up!"));
