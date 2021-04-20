@@ -9,7 +9,6 @@ export class ModelRoot extends Model {
     init() {
         super.init();
         console.log("Starting model ...");
-        this.beWellKnownAs("ModelRoot");
         this.managers = new Set();
         this.createManagers();
     }

@@ -298,14 +298,13 @@ class MyViewRoot extends ViewRoot {
         this.button0 = new ToggleWidget();
         this.button1 = new ToggleWidget();
         this.image = new ImageWidget(null, {url: llama});
-        this.joyC = new JoystickWidget(null);
-
+        // this.joyC = new JoystickWidget(null);
 
         this.toggleSet = new ToggleSet(this.button0, this.button1);
 
         this.vertical.addSlot(this.button1);
         this.vertical.addSlot(this.image);
-        this.vertical.addSlot(this.joyC);
+        // this.vertical.addSlot(this.joyC);
         this.vertical.addSlot(this.button0);
 
         // this.horizontal = new HorizontalWidget(this.HUD, {anchor: [0,1], pivot: [0,1], local: [20,-20], size: [400,150]})
@@ -313,8 +312,8 @@ class MyViewRoot extends ViewRoot {
 
 
 
-        this.joyA = new JoystickWidget(this.box, {size: [50,50], autoSize: [0,1], anchor: [0,0], pivot: [0,0], lockAspectRatio: true});
-        this.joyB = new JoystickWidget(this.box, {size: [100,100], autoSize: [0,1], anchor: [1,0], pivot: [1,0], lockAspectRatio: true});
+        // this.joyA = new JoystickWidget(this.box, {size: [50,50], autoSize: [0,1], anchor: [0,0], pivot: [0,0], lockAspectRatio: true});
+        // this.joyB = new JoystickWidget(this.box, {size: [100,100], autoSize: [0,1], anchor: [1,0], pivot: [1,0], lockAspectRatio: true});
         // this.slider = new SliderWidget(null);
 
         // this.horizontal.addSlot(this.joyA);
@@ -347,11 +346,11 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
-        this.input = this.addManager(new InputManager());
-        // this.input = this.addManager(new WebInputManager());
-        this.render = this.addManager(new RenderManager());
-        this.ui = this.addManager(new UIManager());
-        this.pawnManager = this.addManager(new PawnManager());
+        this.input = this.addManager(new InputManager(this.model));
+        // this.input = this.addManager(new WebInputManager(this.model));
+        this.render = this.addManager(new RenderManager(this.model));
+        this.ui = this.addManager(new UIManager(this.model));
+        this.pawnManager = this.addManager(new PawnManager(this.model));
     }
 
 }

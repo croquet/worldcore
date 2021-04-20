@@ -8,17 +8,17 @@ import { ClearObjectCache } from "./ObjectCache";
 
 export class ViewRoot extends NamedView {
     constructor(model) {
-        ClearNamedViews();
-        super("ViewRoot");
         console.log("Starting view ...");
+        ClearNamedViews();
+        super("ViewRoot", model);
         ClearObjectCache();
-        this.model = model;
+        // this.model = model;
         this.managers = new Set();
         this.createManagers(); // ael - allow subclasses to get in first
     }
 
     createManagers() {
-        this.pawnManager = this.addManager(new PawnManager());
+        this.pawnManager = this.addManager(new PawnManager(this.model));
     }
 
     detach() {

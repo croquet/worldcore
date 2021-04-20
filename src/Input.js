@@ -43,8 +43,8 @@ export function KeyDown(key) {
 //----------------------------------------------------------------------------------------------------
 
 export class InputManager extends NamedView {
-    constructor() {
-        super("InputMananger");
+    constructor(model) {
+        super("InputMananger", model);
 
         console.log("Starting input manager");
         this.listeners = [];

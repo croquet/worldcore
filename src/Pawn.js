@@ -10,8 +10,8 @@ const pawnRegistry = new Map();
 let pm; // Local pointer for pawns
 
 export class PawnManager extends NamedView {
-    constructor() {
-        super("PawnManager");
+    constructor(model) {
+        super("PawnManager", model);
         pm = this;
         this.pawns = new Map();
         this.dynamic = new Set();
@@ -88,7 +88,7 @@ export class Pawn extends View {
     }
 
     constructor(actor) {
-        super();
+        super(actor);
         this._actor = actor;
         pm.add(this);
         this.listen("destroyActor", this.destroy);

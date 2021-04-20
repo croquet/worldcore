@@ -11,9 +11,10 @@ export function GetNamedView(name) {
 }
 
 export class NamedView extends View {
-    constructor(name) {
-        super();
+    constructor(name, model) {
+        super(model);
         this.name = name;
+        this.model = model;
         if (!name) console.error("All named views must have public names!");
         else this.registerName();
     }

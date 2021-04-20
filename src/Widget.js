@@ -57,8 +57,8 @@ function isLetterOrDigit(c) {
 
 export class UIManager extends NamedView {
 
-    constructor() {
-        super('UIManager');
+    constructor(model) {
+        super('UIManager', model);
 
         ui = this; // Global pointer for widgets to use.
 
@@ -214,8 +214,7 @@ export class UIManager extends NamedView {
 
 export class Widget extends View {
     constructor(parent, options) {
-        super();
-        // this._visible = true;
+        super(ui.model);
         this.set(options);
         if (parent) parent.addChild(this);
 
