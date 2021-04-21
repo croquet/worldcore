@@ -132,6 +132,8 @@ export const AM_Tree = superclass => class extends superclass {
     }
 
     onChangeParent(d) {
+        // console.log("actor change parent!");
+        // console.log(d);
         if (d.o) d.o._removeChild(this);
         if (d.v) d.v._addChild(this);
     }
@@ -176,7 +178,13 @@ export const PM_Tree = superclass => class extends superclass {
 
         // this.listen("tree_addChild", this.onAddChild);
         // this.listen("tree_removeChild", this.onRemoveChild);
+        if (this.actor.parent) {
+            const parent = GetNamedView("PawnManager").get(this.actor.parent.id);
+            parent.addChild(this.actor.id);
+        }
     }
+
+    // When an actor is created, the pawn needs to get the parent.
 
     link() {
         super.link();
@@ -184,6 +192,7 @@ export const PM_Tree = superclass => class extends superclass {
     }
 
     onChangeParent(d) {
+        // console.log("pawn change parent");
         if (d.o) {
             // const o = GetPawn(d.o.id);
             GetPawn(d.o.id).removeChild(this.actor.id);
@@ -255,11 +264,15 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
     //     super.init(pawn, options);
     // }
 
-    init(pawn,options) {
-        super.init(pawn, options);
-        // console.log("Start spatial!!!!");
-        // this.localChanged();
-    }
+    // init(pawn,options) {
+    //     super.init(pawn, options);
+    //     // console.log("Start spatial!!!!");
+    //     // this.localChanged();
+    //     // console.log(this._parent);
+    //     // console.log(this.rotation);
+    //     // console.log(this.local);
+    //     // console.log(this.global);
+    // }
 
     get translation() { return this._translation || v3_zero() };
     get rotation() { return this._rotation || q_identity() };
