@@ -1,6 +1,6 @@
 import { Model } from "@croquet/croquet";
 import { RegisterMixin } from "./Mixins";
-import { q_identity, v3_multiply, v3_zero } from "./Vector";
+import { q_identity, v3_magnitude, v3_multiply, v3_sub, v3_zero } from "./Vector";
 
 let RAPIER;
 
@@ -206,7 +206,18 @@ export const AM_RapierPhysics = superclass => class extends superclass {
 
     kinematicSetTranslation(v) { this.rigidBody.setTranslation(new RAPIER.Vector3(...v)); }
     kinematicSetRotation(q) { this.rigidBody.setRotation(new RAPIER.Quaternion(...q)); }
-    kinematicMoveTo(v) { this.rigidBody.setNextKinematicTranslation(new RAPIER.Vector3(...v)); }
+    kinematicMoveTo(v) {
+        this.rigidBody.setNextKinematicTranslation(new RAPIER.Vector3(...v));
+        // this.previous = this.next;
+        // const n = this.rigidBody.translation();
+        // this.next = [n.x, n.y, n.z];
+        // const delta = v3_sub(this.next,this.previous);
+        // const mag = v3_magnitude(delta);
+
+
+
+        // console.log(mag );
+    }
     kinematicRotateTo(q) { this.rigidBody.setNextKinematicRotation(new RAPIER.Quaternion(...q)); }
 
     removeRigidBody() {

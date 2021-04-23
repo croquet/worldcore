@@ -115,6 +115,9 @@ export const AM_Tree = superclass => class extends superclass {
         super.init(...args);
     }
 
+    // Is it possible the listen should come after the super? Vanessa bug ... .
+    // Maybe catch parent separately from the super.init
+
     destroy() {
         new Set(this.children).forEach(child => child.destroy());
         // if (this.parent) this.parent.removeChild(this);
