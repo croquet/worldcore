@@ -101,8 +101,8 @@ export const PM_ThreeCamera = superclass => class extends superclass {
 // The top render interface that controls the execution of draw passes.
 
 export class ThreeRenderManager extends NamedView {
-    constructor() {
-        super("ThreeRenderManager");
+    constructor(model) {
+        super("ThreeRenderManager", model);
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);

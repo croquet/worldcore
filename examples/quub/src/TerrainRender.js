@@ -23,8 +23,8 @@ import { Colors } from "./Colors";
 // corresponding draw calls.
 
 export class TerrainRender extends View {
-    constructor() {
-        super();
+    constructor(...args) {
+        super(...args);
         const render = GetNamedView("ViewRoot").render;
 
         this.exteriorMaterial = new Material();

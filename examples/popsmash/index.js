@@ -3,7 +3,7 @@
 // Croquet Studios, 2020
 
 import { Session, App } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, WebInputManager, UIManager, ActorManager, PawnManager } from "@croquet/worldcore";
+import { ModelRoot, ViewRoot, InputManager, UIManager, ActorManager, PawnManager } from "@croquet/worldcore";
 import { GameMaster, GameMaster2 } from "./src/GameMaster";
 import {HUD} from "./src/HUD";
 import {MyPlayerManager} from "./src/Player";
@@ -43,9 +43,9 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
-        this.webInput = this.addManager(new WebInputManager());
-        this.ui = this.addManager(new UIManager());
-        this.pawnManager = this.addManager(new PawnManager());
+        this.webInput = this.addManager(new InputManager(this.model));
+        this.ui = this.addManager(new UIManager(this.model));
+        this.pawnManager = this.addManager(new PawnManager(this.model));
 
     }
 

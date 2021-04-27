@@ -9,8 +9,8 @@ let yaw = toRad(315);
 let fov = toRad(20);
 
 export class GodView extends NamedView {
-    constructor() {
-        super("GodView");
+    constructor(model) {
+        super("GodView", model);
 
         const render = GetNamedView('RenderManager');
         this.camera = render.camera;

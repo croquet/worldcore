@@ -232,11 +232,10 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
-        this.webInput = this.addManager(new InputManager());
-        this.render = this.addManager(new ThreeRenderManager());
-        this.ui = this.addManager(new UIManager());
-        this.pawnManager = this.addManager(new PawnManager());
-
+        this.webInput = this.addManager(new InputManager(this.model));
+        this.render = this.addManager(new ThreeRenderManager(this.model));
+        this.ui = this.addManager(new UIManager(this.model));
+        this.pawnManager = this.addManager(new PawnManager(this.model));
     }
 
 }

@@ -118,14 +118,14 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
-        this.webInput = this.addManager(new InputManager());
-        this.render = this.addManager(new RenderManager());
-        this.terrainRender = this.addManager(new TerrainRender());
-        this.voxelCursor = this.addManager(new VoxelCursor());
-        this.ui = this.addManager(new UIManager());
+        this.webInput = this.addManager(new InputManager(this.model));
+        this.render = this.addManager(new RenderManager(this.model));
+        this.terrainRender = this.addManager(new TerrainRender(this.model));
+        this.voxelCursor = this.addManager(new VoxelCursor(this.model));
+        this.ui = this.addManager(new UIManager(this.model));
         this.hud = this.addManager(new HUD(this.ui.root));
-        this.godView = this.addManager(new GodView());
-        this.pawnManager = this.addManager(new PawnManager());
+        this.godView = this.addManager(new GodView(this.model));
+        this.pawnManager = this.addManager(new PawnManager(this.model));
     }
 
     setTopLayer(top) {

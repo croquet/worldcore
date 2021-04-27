@@ -132,11 +132,11 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
-        this.webInput = this.addManager(new InputManager());
-        this.render = this.addManager(new RenderManager());
-        this.ui = this.addManager(new UIManager());
+        this.webInput = this.addManager(new InputManager(this.model));
+        this.render = this.addManager(new RenderManager(this.model));
+        this.ui = this.addManager(new UIManager(this.model));
         // this.audio = this.addManager(new AudioManager());
-        this.pawnManager = this.addManager(new PawnManager());
+        this.pawnManager = this.addManager(new PawnManager(this.model));
 
         this.webInput.addChord("cheat", ['q', 't']);
     }

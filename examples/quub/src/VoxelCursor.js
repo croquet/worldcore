@@ -4,8 +4,8 @@ import { Voxels } from "./Voxels";
 import { Colors } from "./Colors";
 
 export class VoxelCursor extends NamedView {
-    constructor() {
-        super("VoxelCursor");
+    constructor(model) {
+        super("VoxelCursor", model);
 
         this.mesh = this.buildCube();
         this.setColor(12);
