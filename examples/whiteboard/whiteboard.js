@@ -3,7 +3,7 @@
 // Croquet Corporation, 2020
 
 import {Constants, App, Session, Messenger} from "@croquet/croquet";
-import { WebInputManager, UIManager, ModelRoot, ViewRoot, Widget, ToggleWidget, GetNamedView, BoxWidget, ImageWidget, ToggleSet, ButtonWidget, } from "@croquet/worldcore";
+import { InputManager, UIManager, ModelRoot, ViewRoot, Widget, ToggleWidget, GetNamedView, BoxWidget, ImageWidget, ToggleSet, ButtonWidget, } from "@croquet/worldcore";
 
 import smallBrush from "./assets/pen-small.svg";
 import mediumBrush from "./assets/pen-med.svg";
@@ -17,7 +17,7 @@ import homeIcon from "./assets/home@3x.svg";
 import cloneIcon from "./assets/copy@3x.svg";
 import colorBrushHideIcon from "./assets/tool-grid@3x.svg";
 
-let compressIcon =  expandIcon;
+//let compressIcon =  expandIcon;
 let colorBrushShowIcon = colorBrushHideIcon;
 
 //import doubleArrowLeftIcon from "./assets/double-arrow-left.png";
@@ -87,7 +87,7 @@ class DrawModel extends ModelRoot {
     startLine( lineInfo , start){
         window.model = this;
         let line = start === undefined?[]:[start];
-        this.page.inProcessLines[lineInfo.viewId]={lineInfo: lineInfo, completed: false, base:0, lines: line};
+        this.page.inProcessLines[lineInfo.viewId]={lineInfo, completed: false, base:0, lines: line};
     }
 
     killAllLines(){ // someone changed the page - destroy all of the current incomplete lines
@@ -95,8 +95,9 @@ class DrawModel extends ModelRoot {
         Object.values(this.page.inProcessLines).forEach( line=>{
             if(line.completed === false){
                 let lastPoint = this.killLine(line.lineInfo.viewId); // terminate the line here and move it to the next
-                if(lastPoint)
+                if(lastPoint) {
                     this.transferLines.push([line.lineInfo, lastPoint]);
+                }
             }
         });
     }
@@ -108,7 +109,7 @@ class DrawModel extends ModelRoot {
             this.page.completeLines.push(lines);
             return lines.lines[lines.lines.length - 1]; // return the last drawn point
         }
-        else delete this.page.inProcessLines[viewId];
+        delete this.page.inProcessLines[viewId];
         return null;
     }
 
@@ -282,7 +283,7 @@ class DrawView extends ViewRoot {
         this.model = model;
 
         if (window.parent !== window) {
-            // assume that we're embedded in Q
+            // assume that we're embedded in Greenlight
             Messenger.setReceiver(this);
             Messenger.send("appReady");
             Messenger.on("appInfoRequest", () => {
@@ -297,9 +298,9 @@ class DrawView extends ViewRoot {
             Messenger.startPublishingPointerMove();
         }
 
-        this.webInput = this.addManager(new WebInputManager());
+        this.webInput = this.addManager(new InputManager(model));
 
-        this.ui = this.addManager(new UIManager());
+        this.ui = this.addManager(new UIManager(model));
         let hud = new HUD();
         this.ui.root.addChild(hud);
 
@@ -317,7 +318,6 @@ class DrawView extends ViewRoot {
 
         this.onWindowResize();
         this.isDrawing = false;
-        this.isDragging = false;
         this.lineInfo = {viewId: this.viewId, lineIndex:0, lineWidth: 0, shadowBlur: 0, color: '#000000', layer:0};
         this.setBrushSize(4);
         this.line = [];
@@ -346,7 +346,6 @@ class DrawView extends ViewRoot {
         this.startScale = 1;
         this.currentPage = this.model.currentPage;
         this.lastxy = [0,0];
-        this.dragxy = [0,0];
         this.countHit = 0;
         this.countMiss = 0;
         // this.future(1000).showHits();  // test framerate of updates
@@ -406,22 +405,17 @@ class DrawView extends ViewRoot {
 
     setupWebInputManager() {
         this.subscribe("ui", "resize", this.onWindowResize);
-        this.subscribe("ui", "mouse0Down", this.onMouse0Down); // input
-        this.subscribe("ui", "mouse0Up", this.onMouse0Up); // input
+        this.subscribe("ui", "pointerDown", this.onMouse0Down); // input
+        this.subscribe("ui", "pointerUp", this.onMouse0Up); // input
         // this.subscribe("input", "mouse2Down", this.onMouse2Down); // input
         // this.subscribe("input", "mouse2Up", this.onMouse2Up); // input
-        this.subscribe("ui", "mouseXY", this.onMouseXY);
-        this.subscribe("input", "wheel", this.onMouseWheel);
-
-        this.subscribe("ui",'touchDown', this.onMouse0Down);
-        this.subscribe("ui",'touchUp', this.onMouse0Up);
-        this.subscribe("ui",'touchXY', this.onMouseXY);
-        this.subscribe("input", "doubleChanged", this.onTouchDouble);
+        this.subscribe("ui", "pointerMove", this.onMouseXY);
+        this.subscribe("ui", "wheel", this.onMouseWheel);
       //  this.subscribe(document,'touchcancel', this.onTouchCancel);
         this.subscribe("input", "keyDown", this.onKeyDown);
         this.subscribe("input", "keyUp", this.onKeyUp);
         //this.subscribe("input", "keyUp", this.onKeyUp);
-      }
+    }
 
     onWindowResize() {
        // this is unused at the moment.
@@ -442,50 +436,6 @@ class DrawView extends ViewRoot {
         this.canvas0.style.position = this.canvas1.style.position = 'absolute';
         this.canvas0.style.left = this.canvas1.style.left = 8 + 'px';
         this.canvas0.style.top = this.canvas1.style.top = 8 + 'px';
-    }
-
-    setPose(scale, offset) {
-        const epsilon = 0.00001;
-
-        scale = Math.min(scale, 2);
-        scale = Math.max(scale, 0.4);
-        if(Math.abs(this.scale-scale)>epsilon){
-            this.scale = scale;
-            let width = this.canvas0.width*scale;
-            let height = this.canvas0.height*scale;
-            this.canvas0.style.width = this.canvas1.style.width = width + 'px';
-            this.canvas0.style.height = this.canvas1.style.height = height + 'px';
-        }
-
-        if(offset!==undefined)this.offset = offset;
-
-        // scale around the pointer location
-        let dx = this.lastxy[0];
-        let dy = this.lastxy[1];
-        dx = dx*this.lastScale-dx*this.scale;
-        dy = dy*this.lastScale-dy*this.scale;
-        this.offset = [this.offset[0]+dx, this.offset[1]+dy];
-
-        this.lastScale = this.scale;
-
-        let s = this.scale;
-        let is = 1/s;
-
-        let x = this.offset[0];
-        let y = this.offset[1];
-
-        let mx = this.canvas0.width*s - window.innerWidth;
-        let my = this.canvas0.height*s - window.innerHeight;
-        x = Math.max(-(mx+8), x);
-        y = Math.max(-(my+8), y);
-
-        x = Math.min(8, x);
-        y = Math.min(8, y);
-
-        this.offset = [x, y];
-        this.canvas0.style.position = this.canvas1.style.position = 'absolute';
-        this.canvas0.style.left = this.canvas1.style.left = x + 'px';
-        this.canvas0.style.top = this.canvas1.style.top = y + 'px';
     }
 
     setColor(hex){
@@ -540,7 +490,6 @@ class DrawView extends ViewRoot {
         if(event.key === "Control")this.control = true;
         // console.log("onKeyDown", this.shift, this.control, event)
         if(this.control){
-
             switch(event.key){
                 case 'z': this.undo(); break;
                 case 'y': this.redo(); break;
@@ -552,7 +501,6 @@ class DrawView extends ViewRoot {
     }
 
     onKeyUp(event){
-
         if(event.key === "Control")this.control = false;
         if(event.key === "Shift")this.shift = false;
         // console.log("keyUp", this.shift, this.control, event)
@@ -591,29 +539,16 @@ class DrawView extends ViewRoot {
         document.body.removeChild(div);
     }
 
-    toLocal(xy){
+    toLocal(evt){
+        let xy = evt.xy;
         let r = this.canvas0.getBoundingClientRect();
         let is = 1/this.scale;
         return[is*(xy[0]-r.x), is*(xy[1]-r.y)];
     }
 
-    onMouse2Down(xy){
-        //console.log("onMouse2Down", xy)
-        this.isDragging = true;
-        this.dragxy = xy;
-    }
-
-    onMouse2Up(xy){
-        //console.log("onMouse2Up", xy)
-        this.onMouseXY(xy);
-        this.isDragging = false;
-        this.isDrawing = false;
-    }
-
-    onMouse0Down(xy){
+    onMouse0Down(evt){
         // console.log("mouse0Down", xy);
-        this.wheelxy = xy;
-        xy = this.toLocal(xy);
+        let xy = this.toLocal(evt);
         this.isDrawing = true;
         this.lastxy = xy;
         this.startScale = this.scale;
@@ -622,24 +557,24 @@ class DrawView extends ViewRoot {
         this.say("start-line", this.lineInfo);
     }
 
-    onMouse0Up(xy){
+    onMouse0Up(evt){
+        let xy = evt.xy;
         // console.log("mouse0up", xy);
         if(this.isDrawing){
             xy[0]++;             // iOS does not draw a single point is moveTo and lineTo are the same, so need to force them to be different.
-            xy = this.toLocal(xy);
+            xy = this.toLocal(evt);
             this.isDrawing = false;
-            this.isDragging = false;
             this.addToLine(xy);
             this.sayLine(true);
         }
     }
 
-    onMouseXY(xy){
+    onMouseXY(evt){
+        let xy = evt.xy;
         // console.log("mouseXY", xy);
-        this.wheelxy = xy;
         if(this.isDrawing){
            // console.log("isDrawing")
-            xy = this.toLocal(xy);
+            xy = this.toLocal(evt);
             this.addToLine(xy); // draw immediately
             let t = (new Date()).getTime();
             if (t-this.lastTime>Q.THROTTLE_MOUSE) {
@@ -647,48 +582,15 @@ class DrawView extends ViewRoot {
                 this.sayLine(false);
                 this.countHit++;
             } else this.countMiss++;
-        }else if(this.isDragging){ // we are dragging
-            //console.log("isDragging")
-            //console.log("dragging onMouseXY", xy)
-            let s = this.scale;
-            //console.log(this.lastxy)
-            let x = s*(this.lastxy[0]-xy[0]);
-            let y = s*(this.lastxy[1]-xy[1]);
-
-            x = this.offset[0]-x;
-            y = this.offset[1]-y;
-
-            this.setPose(s, [x,y]);
         }
         this.lastxy = xy;
      }
 
-    onMouseWheel(delta){
+    onMouseWheel(_delta){
         /* @@ feb 2021: disable zoom
         this.lastxy =  this.toLocal(this.wheelxy);
         this.setPose(this.scale-(delta * 0.0002));
         */
-    }
-
-    onTouchDouble(event)
-    {
-        // console.log("onTouchDouble", event);
-        if(this.isDrawing){
-            this.say("kill-line", this.viewId);
-            this.isDrawing = false;
-            this.lastxy = event.xy;
-            this.line = []; //reset for the next line
-            this.lastXY = null;
-        }
-       // {xy, zoom, dial}
-        let xy = event.xy;
-        let s = 1; // this.startScale*event.zoom; @@ feb 2021: disable zoom
-        let x = s*(this.lastxy[0]-xy[0]);
-        let y = s*(this.lastxy[1]-xy[1]);
-        x = this.offset[0]-x;
-        y = this.offset[1]-y;
-        this.setPose(s, [x,y]);
-        this.lastxy = event.xy;
     }
 
     // turned off the shadowblur
@@ -850,9 +752,11 @@ export class HUD extends Widget {
 
         this.viewRoot = GetNamedView('ViewRoot');
 
+        /*
         let fullscreenButton = this.makeToggle(compressIcon, expandIcon, {local: [-20, 10], size: [35,35], anchor:[1,0], pivot:[1,0]},
             () => this.publish("hud", "open-full-screen"),
             () => this.publish("hud", "close-full-screen"));
+        */
 
         //let pp = this.makeButton(arrowLeftIcon, {local:[-20, 10], size:[35,35], anchor:[0.5,0], pivot:[1,0]}, () => this.publish("hud", "previous-page"));
         //let np = this.makeButton(arrowRightIcon, {local:[20, 10], size:[35,35], anchor:[0.5,0]}, () => this.publish("hud", "next-page"));
