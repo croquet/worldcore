@@ -20,7 +20,7 @@ class MoveActor extends mix(Actor).with(AM_Avatar, AM_AudioSource) {
     init() {
         super.init("MovePawn", {translation: [0,0,-4]});
         // console.log("Creating child!");
-        const child = ChildActor.create({parent: this, translation: [0,1.1,0]});
+        // const child = ChildActor.create({parent: this, translation: [0,1.1,0]});
 
         // console.log(child.translation);
         // this.q = q_identity();
@@ -71,7 +71,7 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible, PM_AudioSo
     }
 
     buildMesh() {
-        const mesh = Sphere(0.5, 4, [1, 1, 1, 1]);
+        const mesh = Sphere(0.5, 8, [1, 1, 1, 1]);
 
         mesh.load();
         mesh.clear();
@@ -283,6 +283,11 @@ class MyViewRoot extends ViewRoot {
         this.render.lights.setAmbientColor([0.8, 0.8, 0.8]);
         this.render.lights.setDirectionalColor([0.7, 0.7, 0.7]);
         this.render.lights.setDirectionalAim([0.2,-1,0.1]);
+
+        const cameraMatrix = m4_scalingRotationTranslation([1,1,1], q_axisAngle([1,0,0], toRad(0)), [0,0,-1]);
+        this.render.camera.setLocation(cameraMatrix);
+        this.render.camera.setProjection(toRad(60), 1.0, 10000.0);
+
 
         const ao = this.render.aoShader;
         if (ao) {
