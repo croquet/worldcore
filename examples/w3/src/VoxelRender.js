@@ -44,6 +44,7 @@ export class VoxelRender extends NamedView {
         // this.subscribe("surfaces", "changed", data => this.rebuildLocal(data.add, data.remove));
 
         this.subscribe("surfaces", "newLevel", this.rebuildAll);
+        this.subscribe("surfaces", "changed", this.rebuildLocal);
     }
 
     destroy() {
@@ -64,8 +65,8 @@ export class VoxelRender extends NamedView {
         // this.interiorMesh.rebuild();
     }
 
-    rebuildLocal(add, remove) {
-        this.exteriorMesh.rebuildLocal(add, remove);
+    rebuildLocal(data) {
+        this.exteriorMesh.rebuildLocal(data.add, data.remove);
         // this.interiorMesh.rebuildLocal(add, remove);
     }
 
@@ -238,7 +239,7 @@ class Layer {
         this.markChanged();
     }
 
-    removeKey(id) {
+    removeKey(key) {
         this.keys.delete(key);
         this.markChanged();
     }

@@ -12,8 +12,6 @@ import { Voxels } from "./Voxels";
 
 export class Surfaces extends Model {
 
-    //-- Snapshot Types --
-
     static types() {
         return { "W3:Surface": Surface };
     }
@@ -21,17 +19,9 @@ export class Surfaces extends Model {
     init() {
         super.init();
         this.beWellKnownAs("Surfaces");
-        this.buildAll();
-        // this.subscribe("voxels", "newLevel", this.rebuildAll);
-        // this.subscribe("voxels", "changed", this.rebuildLocal);
-
-        this.subscribe("voxels", "changed", this.rebuildAll);
+        this.subscribe("voxels", "newLevel", this.rebuildAll);
+        this.subscribe("voxels", "changed", this.rebuildLocal);
     }
-
-    // get surfaces() {
-    //     if (!this.$surfaces) this.buildAll();
-    //     return this.$surfaces;
-    // }
 
     set(key, surface) { // Only save the surface if it holds surface data.
         if (surface.shape) {
@@ -63,15 +53,15 @@ export class Surfaces extends Model {
     //     return floors[n].xyz;
     // }
 
-    // elevation(xyz) {
-    //     const x = Math.floor(xyz[0]);
-    //     const y = Math.floor(xyz[1]);
-    //     const z = Math.floor(xyz[2]);
-    //     const vid = Voxels.packID(x,y,z);
-    //     const s = this.surfaces.get(vid);
-    //     if (!s) return undefined;
-    //     return s.elevation(xyz[0] - x, xyz[1] - y);
-    // }
+    elevation(xyz) {
+        const x = Math.floor(xyz[0]);
+        const y = Math.floor(xyz[1]);
+        const z = Math.floor(xyz[2]);
+        const key = Voxels.packKey(x,y,z);
+        const s = this.surfaces.get(key);
+        if (!s) return undefined;
+        return s.elevation(xyz[0] - x, xyz[1] - y);
+    }
 
     rebuildAll() {
         this.buildAll();
@@ -79,10 +69,8 @@ export class Surfaces extends Model {
     }
 
     buildAll() {
-        console.log("Building surfaces ....");
         const voxels = this.wellKnownModel("Voxels");
-        // this.$surfaces = new Map();
-        // const surfaces = this.$surfaces;
+
         this.surfaces = new Map();
         const surfaces = this.surfaces;
 
@@ -138,38 +126,38 @@ export class Surfaces extends Model {
         const remove = new Set();
         const check = new Set();
         voxels.forBox(xyz, [2,2,1], [5,5,5], (type, x, y, z) => {
-            const id = Voxels.packID(x, y, z);
-            this.surfaces.delete(id);
-            remove.add(id);
-            if (!type) check.add(id);
+            const key = Voxels.packKey(x, y, z);
+            this.surfaces.delete(key);
+            remove.add(key);
+            if (!type) check.add(key);
         });
 
-        check.forEach(id => {
-            const surface = new Surface(id);
+        check.forEach(key => {
+            const surface = new Surface(key);
             surface.findFaces(voxels);
-            surface.findRamps(voxels);
-            this.set(id, surface);
+            // surface.findRamps(voxels);
+            this.set(key, surface);
         });
 
-        check.forEach(id => {
-            let surface = this.get(id);
-            if (!surface) surface = new Surface(id);
-            surface.findFloors(surfaces);
-            surface.findTriangles(surfaces);
-            this.set(id, surface);
-        });
+        // check.forEach(id => {
+        //     let surface = this.get(id);
+        //     if (!surface) surface = new Surface(id);
+        //     surface.findFloors(surfaces);
+        //     surface.findTriangles(surfaces);
+        //     this.set(id, surface);
+        // });
 
-        check.forEach(id => {
-            let surface = this.get(id);
-            if (!surface) surface = new Surface(id);
-            surface.findShims();
-            surface.liftFloors();
-            this.set(id, surface);
-        });
+        // check.forEach(id => {
+        //     let surface = this.get(id);
+        //     if (!surface) surface = new Surface(id);
+        //     surface.findShims();
+        //     surface.liftFloors();
+        //     this.set(id, surface);
+        // });
 
         const add = new Set();
-        check.forEach(id => {
-            if (this.surfaces.has(id)) add.add(id);
+        check.forEach(key => {
+            if (this.surfaces.has(key)) add.add(key);
         });
 
         this.publish("surfaces", "changed", {add, remove});
