@@ -84,35 +84,35 @@ export class Surfaces extends Model {
         });
 
         // Find air voxels adjacent to primary air voxels
-        // const secondary = new Set(primary);
-        // primary.forEach(id => {
-        //     voxels.forAdjacent(...Voxels.unpackID(id), (t, x, y, z) => {
-        //         if (!t) secondary.add(Voxels.packID(x, y, z));
-        //     });
-        // });
+        const secondary = new Set(primary);
+        primary.forEach(key => {
+            voxels.forAdjacent(...Voxels.unpackKey(key), (t, x, y, z) => {
+                if (!t) secondary.add(Voxels.packKey(x, y, z));
+            });
+        });
 
         primary.forEach(key => {
             const surface = new Surface(key);
             surface.findFaces(voxels);
-            // surface.findRamps(voxels);
+            surface.findRamps(voxels);
             this.set(key, surface);
         });
 
-        // secondary.forEach(id => {
-        //     let surface = this.get(id);
-        //     if (!surface) surface = new Surface(id);
-        //     surface.findFloors(surfaces);
-        //     surface.findTriangles(surfaces);
-        //     this.set(id, surface);
-        // });
+        secondary.forEach(key => {
+            let surface = this.get(key);
+            if (!surface) surface = new Surface(key);
+            surface.findFloors(surfaces);
+            surface.findTriangles(surfaces);
+            this.set(key, surface);
+        });
 
-        // secondary.forEach(id => {
-        //     let surface = this.get(id);
-        //     if (!surface) surface = new Surface(id);
-        //     surface.findShims();
-        //     surface.liftFloors();
-        //     this.set(id, surface);
-        // });
+        secondary.forEach(key => {
+            let surface = this.get(key);
+            if (!surface) surface = new Surface(key);
+            surface.findShims();
+            surface.liftFloors();
+            this.set(key, surface);
+        });
     }
 
     rebuildLocal(data) {
@@ -135,25 +135,25 @@ export class Surfaces extends Model {
         check.forEach(key => {
             const surface = new Surface(key);
             surface.findFaces(voxels);
-            // surface.findRamps(voxels);
+            surface.findRamps(voxels);
             this.set(key, surface);
         });
 
-        // check.forEach(id => {
-        //     let surface = this.get(id);
-        //     if (!surface) surface = new Surface(id);
-        //     surface.findFloors(surfaces);
-        //     surface.findTriangles(surfaces);
-        //     this.set(id, surface);
-        // });
+        check.forEach(key => {
+            let surface = this.get(key);
+            if (!surface) surface = new Surface(key);
+            surface.findFloors(surfaces);
+            surface.findTriangles(surfaces);
+            this.set(key, surface);
+        });
 
-        // check.forEach(id => {
-        //     let surface = this.get(id);
-        //     if (!surface) surface = new Surface(id);
-        //     surface.findShims();
-        //     surface.liftFloors();
-        //     this.set(id, surface);
-        // });
+        check.forEach(key => {
+            let surface = this.get(key);
+            if (!surface) surface = new Surface(key);
+            surface.findShims();
+            surface.liftFloors();
+            this.set(key, surface);
+        });
 
         const add = new Set();
         check.forEach(key => {
@@ -569,9 +569,9 @@ export class Surface  {
 
     findFloors(surfaces) {
         const below = Voxels.adjacent(...this.xyz,Voxels.below);
-        const belowID = Voxels.packID(...below);
-        if (!surfaces.has(belowID)) return;
-        const belowSurface = surfaces.get(belowID);
+        const belowKey = Voxels.packKey(...below);
+        if (!surfaces.has(belowKey)) return;
+        const belowSurface = surfaces.get(belowKey);
         if (belowSurface.shape !== 6) return; // Not a double ramp below
         this.shape = 4;
         this.facing = belowSurface.facing;
@@ -586,7 +586,7 @@ export class Surface  {
         const sides = this.sides;
 
         const north = Voxels.adjacent(...this.xyz,Voxels.north);
-        const northSurface = surfaces.get(Voxels.packID(...north));
+        const northSurface = surfaces.get(Voxels.packKey(...north));
         if (northSurface) {
             if (northSurface.hasWestRamp() && !this.hasWestRamp()) {
                 faces[Voxels.north] = northSurface.faces[Voxels.below];
@@ -600,7 +600,7 @@ export class Surface  {
         }
 
         const east = Voxels.adjacent(...this.xyz,Voxels.east);
-        const eastSurface = surfaces.get(Voxels.packID(...east));
+        const eastSurface = surfaces.get(Voxels.packKey(...east));
         if (eastSurface) {
             if (eastSurface.hasNorthRamp() && !this.hasNorthRamp()) {
                 faces[Voxels.east] = eastSurface.faces[Voxels.below];
@@ -614,7 +614,7 @@ export class Surface  {
         }
 
         const south = Voxels.adjacent(...this.xyz,Voxels.south);
-        const southSurface = surfaces.get(Voxels.packID(...south));
+        const southSurface = surfaces.get(Voxels.packKey(...south));
         if (southSurface) {
             if (southSurface.hasEastRamp() && !this.hasEastRamp()) {
                 faces[Voxels.south] = southSurface.faces[Voxels.below];
@@ -628,7 +628,7 @@ export class Surface  {
         }
 
         const west = Voxels.adjacent(...this.xyz,Voxels.west);
-        const westSurface = surfaces.get(Voxels.packID(...west));
+        const westSurface = surfaces.get(Voxels.packKey(...west));
         if (westSurface) {
             if (westSurface.hasSouthRamp() && !this.hasSouthRamp()) {
                 faces[Voxels.west] = westSurface.faces[Voxels.below];

@@ -6,14 +6,13 @@ import { Voxels } from "./Voxels";
 //------------------------------------------------------------------------------------------
 
 // Given xy in screen coordinates, returns the xyz coordinates of the voxel pointed at.
+// TopLayer lets you ignore the top layers of the voxel volume in a cutaway.
 
 // xyz = undefined means no surface was found.
 
-export function PickVoxel(xy) {
+export function PickVoxel(xy, topLayer = Voxels.sizeZ) {
     const viewRoot = GetNamedView("ViewRoot");
     const camera = viewRoot.render.camera;
-
-    const topLayer = Voxels.sizeZ;
     const voxels = viewRoot.model.voxels;
 
     const start = v3_divide(camera.location, Voxels.scale);
@@ -34,7 +33,8 @@ export function PickVoxel(xy) {
 //------------------------------------------------------------------------------------------
 
 // Given xy in screen coordinates, returns an object with information about the
-// voxel surface being pointed at.
+// voxel surface being pointed at. TopLayer lets you ignore the top layers
+// of the voxel volume in a cutaway.
 //
 // * xyz -- the coordinates of the empty voxel conataining the surface.
 // * intersect -- the exact point in voxel space being pointed at on the surface.
@@ -42,11 +42,10 @@ export function PickVoxel(xy) {
 //
 // xyz = undefined means no surface was found.
 
-export function PickSurface(xy) {
+export function PickSurface(xy, topLayer = Voxels.sizeZ) {
     const viewRoot = GetNamedView("ViewRoot");
     const camera = viewRoot.render.camera;
 
-    const topLayer = Voxels.sizeZ;
     const surfaces = viewRoot.model.surfaces;
 
     const start = v3_divide(camera.location, Voxels.scale);
@@ -69,6 +68,18 @@ export function PickSurface(xy) {
     });
 
     return {xyz, intersect, direction};
+}
+
+//------------------------------------------------------------------------------------------
+//-- PickFloor -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// PickSurface, but only returns a surface if you're pointing at a floor.
+
+export function PickFloor(xy, topLayer = Voxels.sizeZ) {
+    const pick = PickSurface(xy, topLayer);
+    if (pick.direction != Voxels.below) pick.xyz = null;
+    return pick;
 }
 
 //------------------------------------------------------------------------------------------

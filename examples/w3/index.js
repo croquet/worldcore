@@ -7,11 +7,13 @@ import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationT
     ActorManager, RenderManager, PawnManager, PlayerManager, InputManager, v3_normalize } from "@croquet/worldcore";
 import { Voxels } from "./src/Voxels";
 import { Surfaces } from "./src/Surfaces";
+import { Paths } from "./src/Paths";
 import { VoxelRender } from "./src/VoxelRender";
 import { VoxelCursor } from "./src/VoxelCursor";
 import { Editor } from "./src/Editor";
 import { HUD } from "./src/HUD";
 import { GodView } from "./src/GodView";
+import { PathRender, RouteRender } from "./src/Debug";
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -24,6 +26,7 @@ class MyModelRoot extends ModelRoot {
 
         this.voxels = Voxels.create();
         this.surfaces = Surfaces.create();
+        this.paths = Paths.create();
         this.voxels.generate();
     }
 
@@ -37,7 +40,6 @@ MyModelRoot.register("MyModelRoot");
 //------------------------------------------------------------------------------------------
 // MyViewRoot
 //------------------------------------------------------------------------------------------
-
 
 class MyViewRoot extends ViewRoot {
     constructor(model) {
@@ -67,17 +69,18 @@ class MyViewRoot extends ViewRoot {
         this.voxelCursor = this.addManager(new VoxelCursor(this.model));
         this.godView = this.addManager(new GodView(this.model));
         this.editor = this.addManager((new Editor(this.model)));
+        // this.pathRender = this.addManager(new PathRender(this.model));
+        // this.routeRender = this.addManager(new RouteRender(this.model));
         this.pawnManager = this.addManager(new PawnManager(this.model));
     }
 
 }
 
-
 async function go() {
 
     const session = await Session.join({
-        appId: 'io.croquet.wctest',
-        name: 'test',
+        appId: 'io.croquet.w3',
+        name: 'w3',
         model: MyModelRoot,
         view: MyViewRoot,
         tps: 15,

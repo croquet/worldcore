@@ -7,6 +7,7 @@ export * from "./src/NamedView";
 export * from "./src/ObjectCache";
 export * from "./src/Pawn";
 export * from "./src/Player";
+export * from "./src/Utilities";
 export * from "./src/Vector";
 export * from "./src/ViewRoot";
 export * from "./src/ViewAssetCache";

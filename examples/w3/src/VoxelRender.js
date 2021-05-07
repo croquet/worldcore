@@ -1,7 +1,10 @@
 import { Triangles, GetNamedView, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, NamedView } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
+import { GetTopLayer } from "./Globals";
+
 import paper from "../assets/paper.jpg";
 import stripe from "../assets/stripe50.png";
+
 
 // There are four categories of terrain geometry:
 //
@@ -31,12 +34,12 @@ export class VoxelRender extends NamedView {
         this.exteriorDrawCall = new DrawCall(this.exteriorMesh, this.exteriorMaterial);
         render.scene.addDrawCall(this.exteriorDrawCall);
 
-        // this.interiorMaterial = new Material();
-        // this.interiorMaterial.texture.loadFromURL(paper);
-        // this.interiorMaterial.decal.loadFromURL(stripe);
-        // this.interiorMesh = new InteriorMesh();
-        // this.interiorDrawCall = new DrawCall(this.interiorMesh, this.interiorMaterial);
-        // render.scene.addDrawCall(this.interiorDrawCall);
+        this.interiorMaterial = new Material();
+        this.interiorMaterial.texture.loadFromURL(paper);
+        this.interiorMaterial.decal.loadFromURL(stripe);
+        this.interiorMesh = new InteriorMesh();
+        this.interiorDrawCall = new DrawCall(this.interiorMesh, this.interiorMaterial);
+        render.scene.addDrawCall(this.interiorDrawCall);
 
         this.rebuildAll();
 
@@ -55,19 +58,19 @@ export class VoxelRender extends NamedView {
         this.exteriorMesh.destroy();
         if (render) render.scene.removeDrawCall(this.exteriorDrawCall);
 
-        // this.interiorMaterial.destroy();
-        // this.interiorMesh.destroy();
-        // if (render) render.scene.removeDrawCall(this.interiorDrawCall);
+        this.interiorMaterial.destroy();
+        this.interiorMesh.destroy();
+        if (render) render.scene.removeDrawCall(this.interiorDrawCall);
     }
 
     rebuildAll() {
         this.exteriorMesh.rebuild();
-        // this.interiorMesh.rebuild();
+        this.interiorMesh.rebuild();
     }
 
     rebuildLocal(data) {
         this.exteriorMesh.rebuildLocal(data.add, data.remove);
-        // this.interiorMesh.rebuildLocal(add, remove);
+        this.interiorMesh.rebuildLocal(data.add, data.remove);
     }
 
 }
@@ -133,7 +136,8 @@ class ExteriorMesh {
 
     draw() {
         // const top = GetNamedView("ViewRoot").topLayer;
-        const top = Voxels.sizeZ;
+        // const top = Voxels.sizeZ;
+        const top = GetTopLayer();
         if (top < Voxels.sizeZ) this.bottomLayers[top].draw();
         for (let i = top-1; i >= 0; i--) {
             this.middleLayers[i].draw();
@@ -169,33 +173,33 @@ class InteriorMesh {
         this.interiorLayers.forEach(layer=>layer.clear());
     }
 
-    layerZ(id) {
-        return id & 0x3FF;
+    layerZ(key) {
+        return key & 0x3FF;
     }
 
-    addID(id) {
-        const z = this.layerZ(id);
-        this.interiorLayers[z].addID(id);
+    addKey(key) {
+        const z = this.layerZ(key);
+        this.interiorLayers[z].addKey(key);
     }
 
-    removeID(id) {
-        const z = this.layerZ(id);
-        this.interiorLayers[z].removeID(id);
+    removeKey(key) {
+        const z = this.layerZ(key);
+        this.interiorLayers[z].removeKey(key);
     }
 
     rebuild() {
         this.clear();
         const surfaces = GetNamedView("ViewRoot").model.surfaces;
-        surfaces.surfaces.forEach((surface,id) => this.addID(id));
+        surfaces.surfaces.forEach((surface,key) => this.addKey(key));
     }
 
     rebuildLocal(add, remove) {
-        remove.forEach(id => this.removeID(id));
-        add.forEach(id => this.addID(id));
+        remove.forEach(key => this.removeKey(key));
+        add.forEach(key => this.addKey(key));
     }
 
     draw() {
-        const top = GetNamedView("ViewRoot").topLayer;
+        const top = GetTopLayer();
         if (top === Voxels.sizeZ) return;
         this.interiorLayers[top].draw();
     }
@@ -308,7 +312,7 @@ class InteriorLayer extends Layer {
     }
 
     isEmpty() {
-        return (!this.hasInterior &&!this.ids.size);
+        return (!this.hasInterior &&!this.keys.size);
     }
 
     rebuild() {
@@ -317,7 +321,7 @@ class InteriorLayer extends Layer {
         this._lines.clear();
 
         this.rebuildInterior();
-        this.ids.forEach(id=>this.buildGeometry(surfaces.get(id)));
+        this.keys.forEach(key=>this.buildGeometry(surfaces.get(key)));
 
         this._triangles.load();
         this._triangles.clear();

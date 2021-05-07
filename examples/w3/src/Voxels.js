@@ -139,47 +139,47 @@ export class Voxels extends Model {
         return [x & 0x3FF, y & 0x3FF, key & 0x3FF];
     }
 
-    // static adjacent(x,y,z, direction) {
-    //     const out = [x,y,z];
-    //     switch (direction) {
-    //         case 0: // North
-    //             out[1]++;
-    //             break;
-    //         case 1: // East
-    //             out[0]++;
-    //             break;
-    //         case 2: // South
-    //             out[1]--;
-    //             break;
-    //         case 3: // West
-    //             out[0]--;
-    //             break;
-    //         case 4: // Above
-    //             out[2]++;
-    //             break;
-    //         case 5: // Below
-    //             out[2]--;
-    //             break;
-    //         case 6: // NorthEast
-    //             out[0]++;
-    //             out[1]++;
-    //             break;
-    //         case 7: // SouthEast
-    //             out[0]++;
-    //             out[1]--;
-    //             break;
-    //         case 8: // SouthWest
-    //             out[0]--;
-    //             out[1]--;
-    //             break;
-    //         case 9: // NorthWest
-    //             out[0]--;
-    //             out[1]++;
-    //             break;
-    //             default:
-    //     }
-    //     return out;
-    // }
+    static adjacent(x,y,z, direction) {
+        const out = [x,y,z];
+        switch (direction) {
+            case 0: // North
+                out[1]++;
+                break;
+            case 1: // East
+                out[0]++;
+                break;
+            case 2: // South
+                out[1]--;
+                break;
+            case 3: // West
+                out[0]--;
+                break;
+            case 4: // Above
+                out[2]++;
+                break;
+            case 5: // Below
+                out[2]--;
+                break;
+            case 6: // NorthEast
+                out[0]++;
+                out[1]++;
+                break;
+            case 7: // SouthEast
+                out[0]++;
+                out[1]--;
+                break;
+            case 8: // SouthWest
+                out[0]--;
+                out[1]--;
+                break;
+            case 9: // NorthWest
+                out[0]--;
+                out[1]++;
+                break;
+                default:
+        }
+        return out;
+    }
 
     // Executes a callback for every valid adjacent xyz. Callback arguments are (x, y, z, direction)
     // (Does not look up the contents of the voxel.)
@@ -210,40 +210,40 @@ export class Voxels extends Model {
     //     return null;
     // }
 
-    // static toWorldXYZ(x,y,z) {
-    //     return [x * Voxels.scaleX, y * Voxels.scaleY, z * Voxels.scaleZ];
-    // }
+    static toWorldXYZ(x,y,z) {
+        return [x * Voxels.scaleX, y * Voxels.scaleY, z * Voxels.scaleZ];
+    }
 
     // static toVoxelXYZ(x,y,z) {
     //     return [x / Voxels.scaleX, y / Voxels.scaleY, z / Voxels.scaleZ];
     // }
 
-    // // Given a set of voxel ids, expands it by one in every direction including diagonally.
-    // static expandIDSet(set) {
-    //     const out = new Set();
-    //     set.forEach(id => Voxels.expandID(id).forEach(idd => out.add(idd)));
-    //     return out;
-    // }
+    // // Given a set of voxel keys, expands it by one in every direction including diagonally.
+    static expandKeySet(set) {
+        const out = new Set();
+        set.forEach(key => Voxels.expandKey(key).forEach(subKey => out.add(subKey)));
+        return out;
+    }
 
-    // Given a voxel id, returns a set expanded by one in every direction including diagonally.
-    // static expandID(id) {
-    //     const out = new Set();
-    //     const xyz = Voxels.unpackID(id);
-    //     const x0 = Math.max(xyz[0]-1, 0);
-    //     const x1 = Math.min(xyz[0]+1, 64);
-    //     const y0 = Math.max(xyz[1]-1, 0);
-    //     const y1 = Math.min(xyz[1]+1, Voxels.sizeY-1);
-    //     const z0 = Math.max(xyz[2]-1, 0);
-    //     const z1 = Math.min(xyz[2]+1, Voxels.sizeZ-1);
-    //     for (let x = x0; x <= x1; x++) {
-    //         for (let y = y0; y <= y1; y++) {
-    //             for (let z = z0; z <= z1; z++) {
-    //                 out.add(Voxels.packID(x,y,z));
-    //             }
-    //         }
-    //     }
-    //     return out;
-    // }
+    // Given a voxel key, returns a set expanded by one in every direction including diagonally.
+    static expandKey(key) {
+        const out = new Set();
+        const xyz = Voxels.unpackKey(key);
+        const x0 = Math.max(xyz[0]-1, 0);
+        const x1 = Math.min(xyz[0]+1, 64);
+        const y0 = Math.max(xyz[1]-1, 0);
+        const y1 = Math.min(xyz[1]+1, Voxels.sizeY-1);
+        const z0 = Math.max(xyz[2]-1, 0);
+        const z1 = Math.min(xyz[2]+1, Voxels.sizeZ-1);
+        for (let x = x0; x <= x1; x++) {
+            for (let y = y0; y <= y1; y++) {
+                for (let z = z0; z <= z1; z++) {
+                    out.add(Voxels.packKey(x,y,z));
+                }
+            }
+        }
+        return out;
+    }
 
     //-- Class Methods --
 
@@ -271,10 +271,10 @@ export class Voxels extends Model {
         for (let x = 0; x < Voxels.sizeX; x++) {
             for (let y = 0; y < Voxels.sizeY; y++) {
                 this.voxels[x][y].compress([1,2,2,3,0,0,0,0]);
+
             }
         }
-        // this.set(0,0,3,Voxels.air);
-        // this.set(3,3,4,Voxels.dirt);
+        this.voxels[2][2].compress([2,2,2,2, 2,0,0,0]);
         this.publish("voxels", "newLevel");
     }
 
