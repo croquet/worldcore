@@ -1,6 +1,6 @@
 import { NamedView, GetNamedView, v3_divide, Cube, Triangles, Material, DrawCall, m4_translation, v3_multiply } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
-import { PickFloor, PickSolid, PickEmpty, PickSurface, PickVoxel } from "./VoxelRaycast";
+import { PickFloorSurface, PickDigVoxel, PickFillSurface } from "./VoxelRaycast";
 import { GetTopLayer } from "./Globals";
 
 export class VoxelCursor extends NamedView {
@@ -48,13 +48,13 @@ export class VoxelCursor extends NamedView {
         let xyz;
         switch(this.mode) {
             case 'dig':
-                xyz = PickSolid(this.xy, GetTopLayer());
+                xyz = PickDigVoxel(this.xy, GetTopLayer());
                 break;
             case 'fill':
-                xyz = PickEmpty(this.xy, GetTopLayer()).xyz;
+                xyz = PickFillSurface(this.xy, GetTopLayer()).xyz;
                 break;
             case 'spawn':
-                xyz = PickFloor(this.xy, GetTopLayer()).xyz;
+                xyz = PickFloorSurface(this.xy, GetTopLayer()).xyz;
                 break;
             default:
         }

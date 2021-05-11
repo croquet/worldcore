@@ -1,6 +1,6 @@
 import { GetNamedView, NamedView } from "@croquet/worldcore";
 import { GetTopLayer } from "./Globals";
-import { PickSurface, PickVoxel, PickFloor, PickSolid, PickEmpty } from "./VoxelRaycast";
+import { PickFillSurface, PickFloorSurface, PickDigVoxel,  } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 
 export class Editor extends NamedView {
@@ -32,7 +32,7 @@ export class Editor extends NamedView {
 
     onPointerMove(data) {
         if (this.mode === 'spawn') {
-            const pick = PickFloor(data.xy, GetTopLayer());
+            const pick = PickFloorSurface(data.xy, GetTopLayer());
             const xyz = pick.xyz;
             if (xyz) {
                 this.end = Voxels.packKey(...xyz);
@@ -49,20 +49,20 @@ export class Editor extends NamedView {
     }
 
     doDig(xy) {
-        const xyz = PickSolid(xy, GetTopLayer());
+        const xyz = PickDigVoxel(xy, GetTopLayer());
         if (!xyz || !Voxels.canEdit(...xyz)) return;
         this.publish("editor", "setVoxel", {xyz, type: Voxels.air})
     }
 
     doFill(xy) {
-        const pick = PickEmpty(xy, GetTopLayer());
+        const pick = PickFillSurface(xy, GetTopLayer());
         const xyz = pick.xyz;
         if (!xyz || !Voxels.canEdit(...xyz)) return
         this.publish("editor", "setVoxel", {xyz, type: Voxels.dirt})
     }
 
     doSpawn(xy) {
-        const pick = PickFloor(xy, GetTopLayer());
+        const pick = PickFloorSurface(xy, GetTopLayer());
         const xyz = pick.xyz;
         if (!xyz || !Voxels.canEdit(...xyz)) return
         this.start = Voxels.packKey(...xyz);

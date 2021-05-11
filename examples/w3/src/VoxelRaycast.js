@@ -29,13 +29,59 @@ export function PickVoxel(xy, topLayer = Voxels.sizeZ) {
     return xyz;
 }
 
-// This should not be using PickEmpty!
+//------------------------------------------------------------------------------------------
+//-- PickSurface----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
-export function PickSolid(xy, topLayer = Voxels.sizeZ) {
+// Given xy in screen coordinates, returns an object with information about the
+// voxel surface being pointed at. TopLayer lets you ignore the top layers
+// of the voxel volume in a cutaway.
+//
+// * xyz -- the coordinates of the empty voxel conataining the surface.
+// * intersect -- the exact point in voxel space being pointed at on the surface.
+// * direction -- the orientation of the surface  relative to the empty voxel.
+//
+// xyz = undefined means no surface was found.
+
+export function PickSurface(xy, topLayer = Voxels.sizeZ) {
+    const viewRoot = GetNamedView("ViewRoot");
+    const camera = viewRoot.render.camera;
+
+    const surfaces = viewRoot.model.surfaces;
+
+    const start = v3_divide(camera.location, Voxels.scale);
+    const aim = v3_divide(camera.viewLookRay(...xy), Voxels.scale);
+
+    const raycast = FilteredVoxelRaycast(start, aim);
+
+    let intersect;
+    let direction;
+    const xyz = raycast.find(rc => {
+        if ( rc[2] >= topLayer) return false;
+        const key = Voxels.packKey(...rc);
+        const surface = surfaces.get(key);
+        if (!surface) return false;
+        for (direction = 5; direction >=0; direction--) {
+            intersect = surface.intersect(start, aim, direction);
+            if (intersect) return true;
+        }
+        return false;
+    });
+
+    return {xyz, intersect, direction};
+}
+
+//------------------------------------------------------------------------------------------
+//-- PickDigVoxel --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Returns xyz coordinates of the voxel under the cursor if it can be dug.
+
+export function PickDigVoxel(xy, topLayer = Voxels.sizeZ) {
     const test = PickVoxel(xy, topLayer);
     if (test && test[2] === topLayer-1) return test;
 
-    const pick = PickEmpty(xy, topLayer);
+    const pick = PickSurface(xy, topLayer);
     if (!pick.xyz) return null;
     const xyz = Voxels.adjacent(...pick.xyz, pick.direction);
     const viewRoot = GetNamedView("ViewRoot");
@@ -52,20 +98,12 @@ export function PickSolid(xy, topLayer = Voxels.sizeZ) {
 }
 
 //------------------------------------------------------------------------------------------
-//-- PickSurface----------------------------------------------------------------------------
+//-- PickFillSurface -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Given xy in screen coordinates, returns an object with information about the
-// voxel surface being pointed at. TopLayer lets you ignore the top layers
-// of the voxel volume in a cutaway.
-//
-// * xyz -- the coordinates of the empty voxel conataining the surface.
-// * intersect -- the exact point in voxel space being pointed at on the surface.
-// * direction -- the orientation of the surface  relative to the empty voxel.
-//
-// xyz = undefined means no surface was found.
+// Returns surface data of the voxel under the cursor if it can be filled.
 
-export function PickEmpty(xy, topLayer = Voxels.sizeZ) {
+export function PickFillSurface(xy, topLayer = Voxels.sizeZ) {
 
     const viewRoot = GetNamedView("ViewRoot");
     const camera = viewRoot.render.camera;
@@ -93,7 +131,11 @@ export function PickEmpty(xy, topLayer = Voxels.sizeZ) {
             if (!surface) return false;
             for (direction = 5; direction >=0; direction--) {
                 intersect = surface.intersect(start, aim, direction);
-                if (intersect) return true;
+                if (intersect) {
+                    let hasAdjacent = false;
+                    voxels.forAdjacent(...rc, type => hasAdjacent = hasAdjacent || type);
+                    return hasAdjacent;;
+                }
             }
         } else if (rc[2] === topLayer) {
             const below = Voxels.adjacent(...rc, Voxels.below);
@@ -111,7 +153,13 @@ export function PickEmpty(xy, topLayer = Voxels.sizeZ) {
     return {xyz, intersect, direction};
 }
 
-export function PickGrab(xy, topLayer = Voxels.sizeZ) {
+//------------------------------------------------------------------------------------------
+//-- PickGrabSurface -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Returns surface data of the voxel under the cursor if it can be grabbed during navigation.
+
+export function PickGrabSurface(xy, topLayer = Voxels.sizeZ) {
 
     const viewRoot = GetNamedView("ViewRoot");
     const camera = viewRoot.render.camera;
@@ -151,20 +199,14 @@ export function PickGrab(xy, topLayer = Voxels.sizeZ) {
     return {xyz, intersect, direction};
 }
 
-// export function PickFillVoxel(xy, topLayer = Voxels.sizeZ) {
-//     const pick = PickEmpty(xy, topLayer) {
-
-//     }
-// }
-
 //------------------------------------------------------------------------------------------
-//-- PickFloor -----------------------------------------------------------------------------
+//-- PickFloorSurface ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 // PickSurface, but only returns a surface if you're pointing at a floor.
 
-export function PickFloor(xy, topLayer = Voxels.sizeZ) {
-    const pick = PickEmpty(xy, topLayer);
+export function PickFloorSurface(xy, topLayer = Voxels.sizeZ) {
+    const pick = PickSurface(xy, topLayer);
     if (pick.direction != Voxels.below) pick.xyz = null;
     return pick;
 }
