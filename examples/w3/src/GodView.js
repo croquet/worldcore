@@ -1,6 +1,7 @@
 import { GetNamedView, NamedView, m4_scalingRotationTranslation, m4_translation, q_axisAngle, v3_scale, v3_add, v3_multiply, q_multiply,
     toRad, TAU, KeyDown, v3_transform, m4_rotationZ, m4_multiply } from "@croquet/worldcore";
-import { PickSurface } from "./VoxelRaycast";
+import { GetTopLayer } from "./Globals";
+import { PickGrab, PickSurface } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 
 let translation = [Voxels.sizeX * Voxels.scaleX / 2, -20,(Voxels.sizeZ + 10) * Voxels.scaleZ ];
@@ -68,8 +69,9 @@ export class GodView extends NamedView {
     }
 
     findGrab(xy) {
-        const pick = PickSurface(xy);
+        const pick = PickGrab(xy, GetTopLayer());
         if (!pick.xyz) return null;
+        console.log(pick.xyz);
         return v3_multiply(pick.intersect, Voxels.scale);
     }
 

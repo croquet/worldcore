@@ -38,12 +38,12 @@ export class HUD extends Widget {
             pivot: [1,0.5],
             anchor: [1,0.5],
             local: [-20,0],
-            size: [20,250],
-            step: Voxels.sizeZ,
-            percent: 1 - (GetTopLayer()-1) / (Voxels.sizeZ-1)
+            size: [20,150],
+            step: Voxels.sizeZ-2,
+            percent: 1 - (GetTopLayer()-2) / (Voxels.sizeZ-3)
         });
         cutawaySlider.onChange = p => {
-            const topLayer = Math.round(1 + (1-p) * (Voxels.sizeZ-1));
+            const topLayer = 2 + Math.round((1-p) * (Voxels.sizeZ-3));
             SetTopLayer(topLayer);
             this.publish("hud", "topLayer", topLayer);
         };

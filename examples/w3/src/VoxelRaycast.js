@@ -1,4 +1,5 @@
 import { GetNamedView, v3_divide } from "@croquet/worldcore";
+import { IntersectVoxelBase } from "./Surfaces";
 import { Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
@@ -8,7 +9,7 @@ import { Voxels } from "./Voxels";
 // Given xy in screen coordinates, returns the xyz coordinates of the voxel pointed at.
 // TopLayer lets you ignore the top layers of the voxel volume in a cutaway.
 
-// xyz = undefined means no surface was found.
+// xyz = undefined means no voxel was found.
 
 export function PickVoxel(xy, topLayer = Voxels.sizeZ) {
     const viewRoot = GetNamedView("ViewRoot");
@@ -20,12 +21,34 @@ export function PickVoxel(xy, topLayer = Voxels.sizeZ) {
 
     const raycast = FilteredVoxelRaycast(start, aim);
 
-    const result =  raycast.find(rc => {
+    let xyz =  raycast.find(rc => {
         if ( rc[2] >= topLayer) return false;
         return (voxels.get(...rc) !== 0);
     });
 
-    return result;
+    return xyz;
+}
+
+// This should not be using PickEmpty!
+
+export function PickSolid(xy, topLayer = Voxels.sizeZ) {
+    const test = PickVoxel(xy, topLayer);
+    if (test && test[2] === topLayer-1) return test;
+
+    const pick = PickEmpty(xy, topLayer);
+    if (!pick.xyz) return null;
+    const xyz = Voxels.adjacent(...pick.xyz, pick.direction);
+    const viewRoot = GetNamedView("ViewRoot");
+    const voxels = viewRoot.model.voxels;
+    const surfaces = viewRoot.model.surfaces;
+    if (!voxels.get(...xyz)) return null;
+    if (pick.direction === Voxels.below) {
+        const above = Voxels.adjacent(...xyz, Voxels.above);
+        const aboveKey = Voxels.packKey(...above);
+        const aboveSurface = surfaces.get(aboveKey);
+        if (aboveSurface && aboveSurface.hidesBelow()) return null;
+    }
+    return xyz;
 }
 
 //------------------------------------------------------------------------------------------
@@ -42,11 +65,13 @@ export function PickVoxel(xy, topLayer = Voxels.sizeZ) {
 //
 // xyz = undefined means no surface was found.
 
-export function PickSurface(xy, topLayer = Voxels.sizeZ) {
+export function PickEmpty(xy, topLayer = Voxels.sizeZ) {
+
     const viewRoot = GetNamedView("ViewRoot");
     const camera = viewRoot.render.camera;
 
     const surfaces = viewRoot.model.surfaces;
+    const voxels = viewRoot.model.voxels;
 
     const start = v3_divide(camera.location, Voxels.scale);
     const aim = v3_divide(camera.viewLookRay(...xy), Voxels.scale);
@@ -55,20 +80,82 @@ export function PickSurface(xy, topLayer = Voxels.sizeZ) {
 
     let intersect;
     let direction;
-    const xyz = raycast.find(rc => {
-        if ( rc[2] >= topLayer) return false;
-        const key = Voxels.packKey(...rc);
-        const surface = surfaces.get(key);
-        if (!surface) return false;
-        for (direction = 5; direction >=0; direction--) {
-            intersect = surface.intersect(start, aim, direction);
-            if (intersect) return true;
+    let blocked;
+    let xyz = raycast.find(rc => {
+        const voxel = voxels.get(...rc);
+
+        if (rc[2] < topLayer) blocked = blocked || voxel;
+        if (voxel) return false;
+
+        if (rc[2] < topLayer) {
+            const key = Voxels.packKey(...rc);
+            const surface = surfaces.get(key);
+            if (!surface) return false;
+            for (direction = 5; direction >=0; direction--) {
+                intersect = surface.intersect(start, aim, direction);
+                if (intersect) return true;
+            }
+        } else if (rc[2] === topLayer) {
+            const below = Voxels.adjacent(...rc, Voxels.below);
+            if (voxels.get(...below)) {
+                direction = Voxels.below;
+                intersect = IntersectVoxelBase(rc, start, aim);
+                if (intersect) return true;
+            }
         }
         return false;
     });
 
+    if (blocked) xyz = null;
+
     return {xyz, intersect, direction};
 }
+
+export function PickGrab(xy, topLayer = Voxels.sizeZ) {
+
+    const viewRoot = GetNamedView("ViewRoot");
+    const camera = viewRoot.render.camera;
+
+    const surfaces = viewRoot.model.surfaces;
+    const voxels = viewRoot.model.voxels;
+
+    const start = v3_divide(camera.location, Voxels.scale);
+    const aim = v3_divide(camera.viewLookRay(...xy), Voxels.scale);
+
+    const raycast = FilteredVoxelRaycast(start, aim);
+
+    let intersect;
+    let direction;
+    let xyz = raycast.find(rc => {
+        if (rc[2] < topLayer) {
+            const key = Voxels.packKey(...rc);
+            const surface = surfaces.get(key);
+            if (!surface) return false;
+            for (direction = 5; direction >=0; direction--) {
+                intersect = surface.intersect(start, aim, direction);
+                if (intersect) return true;
+            }
+        } else if (rc[2] === topLayer) {
+            const below = Voxels.adjacent(...rc, Voxels.below);
+            if (voxels.get(...below)) {
+                direction = Voxels.below;
+                intersect = IntersectVoxelBase(rc, start, aim);
+                if (intersect) return true;
+            }
+        }
+        return false;
+    });
+
+
+
+    return {xyz, intersect, direction};
+}
+
+// export function PickFillVoxel(xy, topLayer = Voxels.sizeZ) {
+//     const pick = PickEmpty(xy, topLayer) {
+
+//     }
+// }
 
 //------------------------------------------------------------------------------------------
 //-- PickFloor -----------------------------------------------------------------------------
@@ -77,7 +164,7 @@ export function PickSurface(xy, topLayer = Voxels.sizeZ) {
 // PickSurface, but only returns a surface if you're pointing at a floor.
 
 export function PickFloor(xy, topLayer = Voxels.sizeZ) {
-    const pick = PickSurface(xy, topLayer);
+    const pick = PickEmpty(xy, topLayer);
     if (pick.direction != Voxels.below) pick.xyz = null;
     return pick;
 }

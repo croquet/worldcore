@@ -217,6 +217,10 @@ export class Surface  {
         return this.shape > 1;
     }
 
+    hidesBelow() {
+        return (this.shape === 3 || this.shape === 6 || this.shape === 8 || this.shape === 10 || this.shape === 11);
+    }
+
     // Returns the elevation in voxel coordiates (0 to 1).
     // Returns undefined if there is no surface at this position.
     // (Note that this may cause issues with objects on diagonal seam of shapes 4,5,6)
@@ -831,15 +835,15 @@ export class Surface  {
         return null;
     }
 
-    // intersectBase(start, aim) {
-    //     const triangles = this.toVoxelSpace(this.baseTriangles());
-    //     if (!triangles) return null;
-    //     for (let i = 0; i < triangles.length; i++) {
-    //         const intersect = rayTriangleIntersect(start, aim, triangles[i]);
-    //         if (intersect) return intersect;
-    //     }
-    //     return null;
-    // }
+    intersectBase(start, aim) {
+        const triangles = this.toVoxelSpace(this.baseTriangles());
+        if (!triangles) return null;
+        for (let i = 0; i < triangles.length; i++) {
+            const intersect = rayTriangleIntersect(start, aim, triangles[i]);
+            if (intersect) return intersect;
+        }
+        return null;
+    }
 
     triangles(direction) {
         switch (direction) {
@@ -966,17 +970,18 @@ export class Surface  {
             case 9: // Cuban
             case 10: // Ramp + left shim
             case 11: // Ramp + right shim
-                return [[[0,0,0], [1,0,0], [1,1,0]], [[0,0,0], [1,1,0], [0,1,0]]];
+                // return [[[0,0,0], [1,0,0], [1,1,0]], [[0,0,0], [1,1,0], [0,1,0]]];
             case 4: // Half floor
             case 5: // Shim
-                switch (this.facing) {
-                    case 0: return [[[1,1,0], [0,1,0], [1,0,0]]];
-                    case 1: return [[[1,0,0], [1,1,0], [0,0,0]]];
-                    case 2: return [[[0,0,0], [1,0,0], [0,1,0]]];
-                    case 3: return [[[0,1,0], [0,0,0], [1,1,0]]];
-                    default: return null;
-                }
+                // switch (this.facing) {
+                //     case 0: return [[[1,1,0], [0,1,0], [1,0,0]]];
+                //     case 1: return [[[1,0,0], [1,1,0], [0,0,0]]];
+                //     case 2: return [[[0,0,0], [1,0,0], [0,1,0]]];
+                //     case 3: return [[[0,1,0], [0,0,0], [1,1,0]]];
+                //     default: return null;
+                // }
             default:
+                return [[[0,0,0], [1,0,0], [1,1,0]], [[0,0,0], [1,1,0], [0,1,0]]];
         }
         return null;
     }
@@ -1025,4 +1030,23 @@ export class Surface  {
         return null;
     }
 
+}
+
+export function VoxelBaseTriangles(xyz) {
+    const triangles = [[[0,0,0], [1,0,0], [1,1,0]], [[0,0,0], [1,1,0], [0,1,0]]];
+    return triangles.map(triangle => {
+        return triangle.map(vertex => {
+            return v3_add(xyz, vertex);
+        });
+    });
+
+}
+
+export function IntersectVoxelBase(xyz, start, aim) {
+    const triangles = VoxelBaseTriangles(xyz);
+    for (let i = 0; i < triangles.length; i++) {
+        const intersect = rayTriangleIntersect(start, aim, triangles[i]);
+        if (intersect) return intersect;
+    }
+    return null;
 }
