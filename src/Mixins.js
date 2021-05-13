@@ -1,6 +1,4 @@
-// import { addClassHash } from "@croquet/util";
 import { Constants } from "@croquet/croquet";
-import { GetNamedView } from "./NamedView";
 import { PM_Dynamic, GetPawn } from "./Pawn";
 import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_translation, m4_rotationX, m4_multiply, v3_lerp, v3_equals,
     q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, v3_transform, q_euler, TAU, clampRad, q2_axisAngle } from  "./Vector";
@@ -115,59 +113,28 @@ export const AM_Tree = superclass => class extends superclass {
         super.init(...args);
     }
 
-    // Is it possible the listen should come after the super? Vanessa bug ... .
-    // Maybe catch parent separately from the super.init
-
     destroy() {
         new Set(this.children).forEach(child => child.destroy());
-        // if (this.parent) this.parent.removeChild(this);
-        this.setParent(null);
+        this.set({parent: null});
         super.destroy();
     }
 
     get parent() { return this._parent; }
 
-    setParent(parent) { // Faster version that doesn't use generic set syntax
-        const old = this.parent;
-        if (parent === old) return;
-        this._parent = parent;
-        this.say("_parent", {o: old, v: parent});
-    }
-
     onChangeParent(d) {
-        // console.log("actor change parent!");
-        // console.log(d);
-        if (d.o) d.o._removeChild(this);
-        if (d.v) d.v._addChild(this);
+        if (d.o) d.o.removeChild(this);
+        if (d.v) d.v.addChild(this);
     }
 
-    _addChild(c) { // This should never be called directly, use setParent instead
+    addChild(c) { // This should never be called directly, use setParent instead
         if (!this.children) this.children = new Set();
         this.children.add(c);
     }
 
-    _removeChild(c) { // This should never be called directly, use setParent instead
+    removeChild(c) { // This should never be called directly, use setParent instead
         if (this.children) this.children.delete(c);
     }
 
-    // addChild(child) {
-    //     if (child.parent) child.parent.removeChild(child);
-    //     if (!this.children) this.children = new Set();
-    //     this.children.add(child);
-    //     child.parent = this;
-    //     this.say("tree_addChild", child.id);
-    // }
-
-    // removeChild(child) {
-    //     if (this.children) this.children.delete(child);
-    //     child.parent = null;
-    //     this.say("tree_removeChild", child.id);
-    // }
-
-    // Allow derived classes to perform addition operations when added or removed from a parent.
-
-    // onAddChild(child) {}
-    // onRemoveChild(child) {}
 };
 RegisterMixin(AM_Tree);
 
@@ -179,15 +146,11 @@ export const PM_Tree = superclass => class extends superclass {
         super(...args);
         this.listen("_parent", this.onChangeParent);
 
-        // this.listen("tree_addChild", this.onAddChild);
-        // this.listen("tree_removeChild", this.onRemoveChild);
         if (this.actor.parent) {
-            const parent = GetNamedView("PawnManager").get(this.actor.parent.id);
+            const parent = GetPawn(this.actor.parent.id);
             parent.addChild(this.actor.id);
         }
     }
-
-    // When an actor is created, the pawn needs to get the parent.
 
     link() {
         super.link();
@@ -195,55 +158,28 @@ export const PM_Tree = superclass => class extends superclass {
     }
 
     onChangeParent(d) {
-        // console.log("pawn change parent");
         if (d.o) {
-            // const o = GetPawn(d.o.id);
             GetPawn(d.o.id).removeChild(this.actor.id);
         }
         if (d.v) {
-            // const v = GetPawn(d.v.id);
             GetPawn(d.v.id).addChild(this.actor.id);
         }
-
-        // d.o and d.v don't indidate the parent pawns, but the parent actors!
-        // if (d.o) d.o.removeChild(this.actor.id);
-        // if (d.v) d.v.addChild(this.actor.id);
     }
 
     addChild(id) {
-        // console.log("Tree Pawn Add Child");
-        // const child = GetNamedView("PawnManager").get(id);
         const child = GetPawn(id);
         if (!child) return;
         if (!this.children) this.children = new Set();
         this.children.add(child);
         child.parent = this;
-        // console.log("Treen Pawn Super Add Child Done!");
     }
 
     removeChild(id) {
-        // const child = GetNamedView("PawnManager").get(id);
-
         const child = GetPawn(id);
         if (!child) return;
         if (this.children) this.children.delete(child);
         child.parent = null;
     }
-
-    // onAddChild(id) {
-    //     const child = GetNamedView("PawnManager").get(id);
-    //     if (!child) return;
-    //     if (!this.children) this.children = new Set();
-    //     this.children.add(child);
-    //     child.parent = this;
-    // }
-
-    // onRemoveChild(id) {
-    //     const child = GetNamedView("PawnManager").get(id);
-    //     if (!child) return;
-    //     if (this.children) this.children.delete(child);
-    //     child.parent = null;
-    // }
 };
 
 //------------------------------------------------------------------------------------------
@@ -259,23 +195,12 @@ export const PM_Tree = superclass => class extends superclass {
 //-- Actor ---------------------------------------------------------------------------------
 
 export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
-    // init(pawn, options) {
-    //     options = options || {};
-    //     this.translation = options.translation || v3_zero();
-    //     this.rotation = options.rotation || q_identity();
-    //     this.scale = options.scale || v3_unit();
-    //     super.init(pawn, options);
-    // }
-
-    // init(pawn,options) {
-    //     super.init(pawn, options);
-    //     // console.log("Start spatial!!!!");
-    //     // this.localChanged();
-    //     // console.log(this._parent);
-    //     // console.log(this.rotation);
-    //     // console.log(this.local);
-    //     // console.log(this.global);
-    // }
+    init(pawn, options) {
+        super.init(pawn, options);
+        this.listen("_scale", () => this.localChanged);
+        this.listen("_rotation", () => this.localChanged);
+        this.listen("_translation", () => this.localChanged);
+    }
 
     get translation() { return this._translation || v3_zero() };
     get rotation() { return this._rotation || q_identity() };
@@ -287,92 +212,21 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
     }
 
     removeChild(child) {
-        // console.log(child);
         super.removeChild(child);
         if (child) child.globalChanged();
     }
 
-    // onAddChild(child) {
-    //     super.onAddChild(child);
-    //     child.globalChanged();
-    // }
-
-    // onRemoveChild(child) {
-    //     super.onRemoveChild(child);
-    //     child.globalChanged();
-    // }
-
     localChanged() {
         this.$local = null;
-        this.say("spatial_localChanged");
+        this.say("localChanged");
         this.globalChanged();
     }
 
     globalChanged() {
         this.$global = null;
-        this.say("spatial_globalChanged");
+        this.say("globalChanged");
         if (this.children) this.children.forEach(child => child.globalChanged());
     }
-
-    // setScale(v) {
-    //     this.set({scale: v});
-    //     this.say("spatial_setScale", v);
-    //     this.localChanged();
-    // }
-
-    setScale(v) { // Faster version that doesn't use generic set syntax
-        const o = this.scale;
-        this._scale = v;
-        this.say("_scale", {o: o, v: v});
-        this.say("spatial_setScale", v);
-        this.localChanged();
-    }
-
-    // setRotation(q) {
-    //     this.set({rotation: q});
-    //     this.say("spatial_setRotation", q);
-    //     this.localChanged();
-    // }
-
-    setRotation(q) { // Faster version that doesn't use generic set syntax
-        const o = this.rotation;
-        this._rotation = q;
-        this.say("_rotation", {o: o, v: q});
-        this.say("spatial_setRotation", q);
-        this.localChanged();
-    }
-
-    // setTranslation(v) {
-    //     this.set({translation: v});
-    //     this.say("spatial_setTranslation", v);
-    //     this.localChanged();
-    // }
-
-    setTranslation(v) { // Faster version that doesn't use generic set syntax
-        const o = this.translation;
-        this._translation = v;
-        this.say("_translation", {o: o, v: v});
-        this.say("spatial_setTranslation", v);
-        this.localChanged();
-    }
-
-    // setScale(v) {
-    //     this.scale = v;
-    //     this.say("spatial_setScale", v);
-    //     this.localChanged();
-    // }
-
-    // setRotation(q) {
-    //     this.rotation = q;
-    //     this.say("spatial_setRotation", q);
-    //     this.localChanged();
-    // }
-
-    // setTranslation(v) {
-    //     this.translation = v;
-    //     this.say("spatial_setTranslation", v);
-    //     this.localChanged();
-    // }
 
     get local() {
         if (!this.$local) this.$local = m4_scalingRotationTranslation(this.scale, this.rotation, this.translation);
@@ -381,7 +235,7 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
 
     get global() {
         if (this.$global) return this.$global;
-        if (this.parent && this.parent.global) {
+        if (this.parent) {
             this.$global = m4_multiply(this.local, this.parent.global);
         } else {
             this.$global = this.local;
@@ -398,18 +252,12 @@ export const PM_Spatial = superclass => class extends PM_Tree(superclass) {
 
 constructor(...args) {
     super(...args);
-    this.listenOnce("spatial_localChanged", () => this.localChanged());
-    this.listenOnce("spatial_globalChanged", () => this.globalChanged());
+    this.listenOnce("localChanged", () => this.localChanged());
+    this.listenOnce("globalChanged", () => this.globalChanged());
 }
-
-// LocalChanged and globalChanged can be patched by children that inherit from PM_Spatial.
-// They are called when the actor invalidates its cached local/global transform.
 
 localChanged() {}
-
-globalChanged() {
-    this.refresh();
-}
+globalChanged() { this.refresh(); }
 
 get scale() { return this.actor.scale; }
 get translation() { return this.actor.translation; }
@@ -434,48 +282,21 @@ get lookGlobal() { return this.global; } // Allows objects to have an offset cam
 
 export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
-    // moveTo(v) {
-    //     // this.translation = v;
-    //     this.set({translation: v});
-    //     this.say("smoothed_moveTo", v);
-    //     this.localChanged();
-    // }
-
-    moveTo(v) { // Faster version that doesn't use generic set syntax
-        const o = this.translation;
+    moveTo(v) {
         this._translation = v;
-        this.say("_translation", {o: o, v: v});
-        this.say("smoothed_moveTo", v);
+        this.say("moveTo", v);
         this.localChanged();
     }
 
-    // rotateTo(q) {
-    //     // this.rotation = q;
-    //     this.set({rotation: q});
-    //     this.say("smoothed_rotateTo", q);
-    //     this.localChanged();
-    // }
-
-    rotateTo(q) { // Faster version that doesn't use generic set syntax
-        const o = this.rotation;
+    rotateTo(q) {
         this._rotation = q;
-        this.say("_rotation", {o: o, v: q});
-        this.say("smoothed_rotateTo", q);
+        this.say("rotateTo", q);
         this.localChanged();
     }
 
-    // scaleTo(v) {
-    //     // this.scale = v;
-    //     this.set({scale: v});
-    //     this.say("smoothed_scaleTo", v);
-    //     this.localChanged();
-    // }
-
-    scaleTo(v) { // Faster version that doesn't use generic set syntax
-        const o = this.scale;
+    scaleTo(v) {
         this._scale = v;
-        this.say("_scale", {o: o, v: v});
-        this.say("smoothed_scaleTo", v);
+        this.say("scaleTo", v);
         this.localChanged();
     }
 
@@ -502,54 +323,32 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         this._translation = this.actor.translation;
         this.needRefresh = true;
 
-        // console.log(this.scale);
-        // console.log(this.translation);
-        // console.log(this.rotation);
-
         this.setTug(0.2);
 
         this.scaleEpsilon = 0.0001;
         this.rotationEpsilon = 0.000001;
         this.translationEpsilon = 0.0001;
 
-        this.listenOnce("spatial_setScale", v => this._scale = v);
-        this.listenOnce("spatial_setRotation", q => this._rotation = q);
-        this.listenOnce("spatial_setTranslation", v => this._translation = v);
+        this.listenOnce("_scale", d => {this._scale = d.v; this.localChanged();});
+        this.listenOnce("_rotation", d => {this._rotation = d.v; this.localChanged();});
+        this.listenOnce("_translation", d => {this._translation = d.v; this.localChanged();});
 
-        // this.listenOnce("_scale", d => this._scale = d.v);
-        // this.listenOnce("_rotation", d => this._rotation = d.v);
-        // this.listenOnce("_translation", d => this._translation = d.v);
-
-        this.listenOnce("smoothed_moveTo", () => this.isMoving = true);
-        this.listenOnce("smoothed_rotateTo", () => this.isRotating = true);
-        this.listenOnce("smoothed_scaleTo", () => this.isScaling = true);
+        this.listenOnce("moveTo", () => this.isMoving = true);
+        this.listenOnce("rotateTo", () => this.isRotating = true);
+        this.listenOnce("scaleTo", () => this.isScaling = true);
     }
 
     addChild(id) {
         super.addChild(id);
-        const child = GetNamedView("PawnManager").get(id);
-        // console.log("avatar onAddChild");
+        const child = GetPawn(id);
         if (child) child.refreshTug();
     }
 
     removeChild(id) {
         super.removeChild(id);
-        const child = GetNamedView("PawnManager").get(id);
+        const child = GetPawn(id);
         if (child) child.refreshTug();
     }
-
-    // onAddChild(id) {
-    //     super.onAddChild(id);
-    //     const child = GetNamedView("PawnManager").get(id);
-    //     // console.log("avatar onAddChild");
-    //     child.refreshTug();
-    // }
-
-    // onRemoveChild(id) {
-    //     super.onRemoveChild(id);
-    //     const child = GetNamedView("PawnManager").get(id);
-    //     child.refreshTug();
-    // }
 
     localChanged() {
         this._local = null;
@@ -597,7 +396,6 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 
     update(time, delta) {
         super.update(time, delta);
-        // console.log(this.isRotating);
         let tug = this.tug;
         if (this.delta) tug = Math.min(1, tug * this.delta / 15);
         const changed = (this.isMoving || this.isRotating || this.isScaling);
