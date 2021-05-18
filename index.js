@@ -1,6 +1,7 @@
 // Core Engine
 
 export * from "./src/Actor";
+export * from "./src/Behavior";
 export * from "./src/Mixins";
 export * from "./src/ModelRoot";
 export * from "./src/NamedView";

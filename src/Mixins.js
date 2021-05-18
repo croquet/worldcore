@@ -197,9 +197,9 @@ export const PM_Tree = superclass => class extends superclass {
 export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
     init(pawn, options) {
         super.init(pawn, options);
-        this.listen("_scale", () => this.localChanged);
-        this.listen("_rotation", () => this.localChanged);
-        this.listen("_translation", () => this.localChanged);
+        this.listen("_scale", this.localChanged);
+        this.listen("_rotation", this.localChanged);
+        this.listen("_translation", this.localChanged);
     }
 
     get translation() { return this._translation || v3_zero() };
@@ -252,8 +252,8 @@ export const PM_Spatial = superclass => class extends PM_Tree(superclass) {
 
 constructor(...args) {
     super(...args);
-    this.listenOnce("localChanged", () => this.localChanged());
-    this.listenOnce("globalChanged", () => this.globalChanged());
+    this.listen("localChanged", this.localChanged);
+    this.listen("globalChanged", this.globalChanged);
 }
 
 localChanged() {}
@@ -494,7 +494,6 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
     // }
 
     tick(delta) {
-        // console.log(this.isRotating);
         if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
         if (this.isMoving) {
             const relative = v3_scale(this.velocity, delta);

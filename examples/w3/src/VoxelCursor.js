@@ -1,6 +1,6 @@
 import { NamedView, GetNamedView, v3_divide, Cube, Triangles, Material, DrawCall, m4_translation, v3_multiply } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
-import { PickFloorSurface, PickDigVoxel, PickFillSurface } from "./VoxelRaycast";
+import { PickFloorSurface, PickDigVoxel, PickFillSurface, PickPlantSurface } from "./VoxelRaycast";
 import { GetTopLayer } from "./Globals";
 
 export class VoxelCursor extends NamedView {
@@ -14,11 +14,6 @@ export class VoxelCursor extends NamedView {
         this.mesh.transform(m4_translation([Voxels.scaleX/2, Voxels.scaleY/2, Voxels.scaleZ/2]));
         this.mesh.load();
 
-        // this.double = ShadedCube(Voxels.scaleX, Voxels.scaleY, 2*Voxels.scaleZ, [0.5, 0.5, 0.0, 0.5], [0, 0, 0, 0]);
-        // this.double = Cube(Voxels.scaleX, Voxels.scaleY, 1.5*Voxels.scaleZ, [0.2, 0.2, 0, 0.2]);
-        // this.double.transform(m4_translation([Voxels.scaleX/2, Voxels.scaleY/2, 0.75* Voxels.scaleZ]));
-        // this.double.load();
-
         this.material = new Material();
         this.material.pass = 'translucent';
         this.material.zOffset = 0;
@@ -26,11 +21,7 @@ export class VoxelCursor extends NamedView {
         this.drawCall = new DrawCall(this.mesh, this.material);
         this.drawCall.isHidden = false;
 
-        // this.doubleCall = new DrawCall(this.double, this.material);
-        // this.doubleCall.isHidden = false;
-
         this.viewRoot.render.scene.addDrawCall(this.drawCall);
-        // this.viewRoot.render.scene.addDrawCall(this.doubleCall);
 
         this.subscribe("ui", "pointerMove", this.onPointerMove);
         this.subscribe("hud", "editMode", this.onEditMode);
@@ -56,18 +47,18 @@ export class VoxelCursor extends NamedView {
             case 'spawn':
                 xyz = PickFloorSurface(this.xy, GetTopLayer()).xyz;
                 break;
+            case 'tree':
+                xyz = PickPlantSurface(this.xy, GetTopLayer()).xyz;
+                break;
             default:
         }
 
         if (xyz && Voxels.canEdit(...xyz)) {
-            // this.doubleCall.isHidden = true;
             this.drawCall.isHidden = false;
             const location = v3_multiply([Voxels.scaleX, Voxels.scaleY, Voxels.scaleZ], xyz);
             this.drawCall.transform.set(m4_translation(location));
-            // this.doubleCall.transform.set(m4_translation(location));
         } else {
             this.drawCall.isHidden = true;
-            // this.doubleCall.isHidden = true;
         }
 
     }

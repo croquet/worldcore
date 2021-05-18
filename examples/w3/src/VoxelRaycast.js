@@ -1,4 +1,4 @@
-import { GetNamedView, v3_divide } from "@croquet/worldcore";
+import { GetNamedModel, GetNamedView, v3_divide } from "@croquet/worldcore";
 import { IntersectVoxelBase } from "./Surfaces";
 import { Voxels } from "./Voxels";
 
@@ -208,6 +208,22 @@ export function PickGrabSurface(xy, topLayer = Voxels.sizeZ) {
 export function PickFloorSurface(xy, topLayer = Voxels.sizeZ) {
     const pick = PickSurface(xy, topLayer);
     if (pick.direction != Voxels.below) pick.xyz = null;
+    return pick;
+}
+
+//------------------------------------------------------------------------------------------
+//-- PickPlantSurface ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// PickSurface, but only returns a surface if you're pointing at a floor.
+
+export function PickPlantSurface(xy, topLayer = Voxels.sizeZ) {
+    const pick = PickFloorSurface(xy, topLayer);
+    if (pick.direction != Voxels.below) pick.xyz = null;
+    if (pick.xyz) {
+        const below = Voxels.adjacent(...pick.xyz, Voxels.below);
+        if (GetNamedModel("Voxels").get(...below) != Voxels.dirt) pick.xyz = null;
+    }
     return pick;
 }
 

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------------------
-//-- PriorityQueue -----------------------------------------------------------------------------
+//-- PriorityQueue -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 // Implements a basic priority queue.
@@ -57,4 +57,45 @@ export class PriorityQueue {
         this.items[m] = swap;
         this.heapify(m);
     }
+}
+
+//------------------------------------------------------------------------------------------
+//-- TwoWayMap -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Holds a reverse map that maps values back onto keys
+
+export class TwoWayMap {
+    constructor(map = new Map()) {
+        this.map = map;
+        this.rev = new Map();
+        this.map.forEach((value, key) => { this.rev.set(value, key)})
+    }
+
+    clear() {
+        this.map.clear();
+        this.rev.clear();
+    }
+
+    set(key, value) {
+        this.map.set(key, value);
+        this.rev.set(value, key);
+    }
+
+    delete(key) {
+        if (!this.map.has(key)) return;
+        const value = this.map.get(key);
+        this.map.delete(key);
+        this.rev.delete(value);
+    }
+
+    get(key) { return this.map.get(key)}
+    revGet(value) { return this.rev.get(value)}
+    has(key) {return this.map.has(key)}
+    revHas(value) {return this.rev.has(value)}
+
+    forEach(callback) {this.map.forEach(callback)}
+    revForEach(callback) {this.rev.forEach(callback)}
+
+
 }

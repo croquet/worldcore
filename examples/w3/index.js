@@ -14,6 +14,7 @@ import { Editor } from "./src/Editor";
 import { HUD } from "./src/HUD";
 import { GodView } from "./src/GodView";
 import { PathRender, RouteRender } from "./src/Debug";
+import { Plants } from "./src/Plants";
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -27,6 +28,7 @@ class MyModelRoot extends ModelRoot {
         this.voxels = Voxels.create();
         this.surfaces = Surfaces.create();
         this.paths = Paths.create();
+        this.plants = Plants.create();
         this.voxels.generate();
     }
 

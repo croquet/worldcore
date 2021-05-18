@@ -6,7 +6,7 @@ import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     PM_InstancedVisible, GetNamedView, AM_Smoothed, PM_Smoothed,
     ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, VerticalWidget, ImageWidget,
-    ToggleWidget, ToggleSet, AM_Avatar, PM_Avatar } from "@croquet/worldcore";
+    ToggleWidget, ToggleSet, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, BehaviorManager, SequenceBehavior  } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 
@@ -88,39 +88,85 @@ MovePawn.register('MovePawn');
 // ChildActor
 //------------------------------------------------------------------------------------------
 
-class ChildActor extends mix(Actor).with(AM_Smoothed) {
+class SpinBehavior extends Behavior {
+    tick(actor, delta) {
+        const axis = v3_normalize([2,1,3]);
+        let q = actor.rotation;
+        q = q_multiply(q, q_axisAngle(axis, 0.13 * delta / 50));
+        q = q_normalize(q);
+        actor.rotateTo(q);
+        return 1;
+    }
+}
+SpinBehavior.register("SpinBehavior");
+
+
+
+class BehaviorA extends Behavior {
+    tick() { console.log("A")}
+}
+BehaviorA.register("BehaviorA");
+
+class BehaviorB extends Behavior {
+    tick() { console.log("B")}
+}
+BehaviorB.register("BehaviorB");
+
+class BehaviorC extends Behavior {
+    tick() { console.log("C")}
+}
+BehaviorC.register("BehaviorC");
+
+// class BehaviorDelay extends Behavior {
+//     constructor() {
+//         super();
+//         this.time = 0;
+//     }
+//     tick(actor, delta) {
+//         this.time += delta
+//         if (this.time < 5000) return Behavior.running;
+//         return Behavior.success;
+//     }
+// }
+// BehaviorDelay.register("BehaviorDelay");
+
+
+class TestSequence extends SequenceBehavior {
+    get children() { return [
+        BehaviorA,
+        BehaviorB,
+        BehaviorC
+    ]}
+}
+TestSequence.register("TestSequence");
+
+
+class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
+
     init(options) {
         super.init("ChildPawn", options);
+        this.set({tickRate: 1000, behavior: new TestSequence});
         this.subscribe("input", "1Down",  this.test1);
         this.subscribe("input", "2Down",  this.test2);
-        // this.future(0).tick();
-    }
-
-    tick() {
-        const axis = v3_normalize([2,1,3]);
-        let q = this.rotation;
-        q = q_multiply(q, q_axisAngle(axis, 0.13));
-        q = q_normalize(q);
-        this.rotateTo(q);
-        this.future(50).tick();
     }
 
     test1() {
-        console.log("1");
-        this.set({translation: [0,1.1,0]});
-        console.log(this.translation);
+        // console.log("1");
+        // this.set({translation: [0,1.1,0]});
+        // console.log(this.translation);
     }
 
     test2() {
-        console.log("2");
-        this.set({translation: [0,1.5,0]});
-        console.log(this.translation);
+        // this.set({translation: [0,1.5,0]});
+        // console.log(this.translation);
     }
 
 
 
 }
 ChildActor.register('ChildActor');
+
+// console.log(ChildActor.types());
 
 //------------------------------------------------------------------------------------------
 // ChildPawn
@@ -202,7 +248,7 @@ FloorPawn.register('FloorPawn');
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!");
+        console.log("Start Model!!");
         FloorActor.create();
         this.move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
     }
@@ -210,6 +256,7 @@ class MyModelRoot extends ModelRoot {
     createManagers() {
         this.playerManager = this.addManager(PlayerManager.create());
         this.actorManager = this.addManager(ActorManager.create());
+        this.behaviorManager = this.addManager(BehaviorManager.create());
     }
 }
 MyModelRoot.register("MyModelRoot");
@@ -271,7 +318,6 @@ class MyViewRoot extends ViewRoot {
     }
 
 }
-
 
 async function go() {
 

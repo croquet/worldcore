@@ -8,6 +8,8 @@ import fillOnIcon from "../assets/fillOnIcon.png";
 import fillOffIcon from "../assets/fillOffIcon.png";
 import spawnOnIcon from "../assets/spawnOnIcon.png";
 import spawnOffIcon from "../assets/spawnOffIcon.png";
+import treeOnIcon from "../assets/treeOnIcon.png";
+import treeOffIcon from "../assets/treeOffIcon.png";
 
 
 export class HUD extends Widget {
@@ -32,7 +34,13 @@ export class HUD extends Widget {
         spawnToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: spawnOffIcon}));
         spawnToggle.onToggleOn = () => this.publish("hud", "editMode", "spawn");
 
-        const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle);
+        const treeToggle = new ToggleWidget(this, {local: [80,80], size:[50,50]})
+        this.setToggleDefaults(treeToggle);
+        treeToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: treeOnIcon}));
+        treeToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: treeOffIcon}));
+        treeToggle.onToggleOn = () => this.publish("hud", "editMode", "tree");
+
+        const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle, treeToggle);
 
         const cutawaySlider = new SliderWidget(this, {
             pivot: [1,0.5],

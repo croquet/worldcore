@@ -1,6 +1,6 @@
 import { GetNamedView, NamedView } from "@croquet/worldcore";
 import { GetTopLayer } from "./Globals";
-import { PickFillSurface, PickFloorSurface, PickDigVoxel,  } from "./VoxelRaycast";
+import { PickFillSurface, PickFloorSurface, PickDigVoxel, PickPlantSurface } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 
 export class Editor extends NamedView {
@@ -24,6 +24,9 @@ export class Editor extends NamedView {
                 break;
             case 'spawn':
                 this.doSpawn(data.xy);
+                break;
+            case 'tree':
+                this.doTree(data.xy);
                 break;
             default:
         }
@@ -66,6 +69,13 @@ export class Editor extends NamedView {
         const xyz = pick.xyz;
         if (!xyz || !Voxels.canEdit(...xyz)) return
         this.start = Voxels.packKey(...xyz);
+    }
+
+    doTree(xy) {
+        const pick = PickPlantSurface(xy, GetTopLayer());
+        const xyz = pick.xyz;
+        if (!xyz || !Voxels.canEdit(...xyz)) return
+        this.publish("editor", "spawnTree", xyz);
     }
 
 

@@ -59,15 +59,11 @@ export const PM_InstancedVisible = superclass => class extends superclass {
 
     refresh() {
         super.refresh();
-        // console.log('ddd');
-        // console.log(this.draw);
-        // console.log(this.global);
         if (this.draw) this.draw.instances.set(this.actor.id, this.global);
     }
 
     setDrawCall(draw) {
         const scene = GetNamedView('ViewRoot').render.scene;
-        //if (this.draw) scene.removeDrawCall(this.draw);
         this.draw = draw;
         if (this.draw) {
             this.draw.instances.set(this.actor.id, this.global);
