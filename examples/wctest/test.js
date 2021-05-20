@@ -6,7 +6,7 @@ import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     PM_InstancedVisible, GetNamedView, AM_Smoothed, PM_Smoothed,
     ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, VerticalWidget, ImageWidget,
-    ToggleWidget, ToggleSet, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, BehaviorManager, SequenceBehavior  } from "@croquet/worldcore";
+    ToggleWidget, ToggleSet, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, BehaviorManager, SequenceBehavior, ParallelSequenceBehavior, ParallelSelectorBehavior, SelectorBehavior, ShowBehaviorRegistry  } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 
@@ -89,13 +89,13 @@ MovePawn.register('MovePawn');
 //------------------------------------------------------------------------------------------
 
 class SpinBehavior extends Behavior {
-    tick(actor, delta) {
+    tick(delta) {
         const axis = v3_normalize([2,1,3]);
-        let q = actor.rotation;
+        let q = this.actor.rotation;
         q = q_multiply(q, q_axisAngle(axis, 0.13 * delta / 50));
         q = q_normalize(q);
-        actor.rotateTo(q);
-        return 1;
+        this.actor.rotateTo(q);
+        this.run();
     }
 }
 SpinBehavior.register("SpinBehavior");
@@ -103,49 +103,64 @@ SpinBehavior.register("SpinBehavior");
 
 
 class BehaviorA extends Behavior {
-    tick() { console.log("A")}
+    tick() { console.log("A"); this.succeed()}
 }
 BehaviorA.register("BehaviorA");
 
 class BehaviorB extends Behavior {
-    tick() { console.log("B")}
+    tick() { console.log("B"); this.succeed()}
 }
 BehaviorB.register("BehaviorB");
 
 class BehaviorC extends Behavior {
-    tick() { console.log("C")}
+    tick() { console.log("C"); this.succeed()}
 }
 BehaviorC.register("BehaviorC");
 
-// class BehaviorDelay extends Behavior {
-//     constructor() {
-//         super();
-//         this.time = 0;
-//     }
-//     tick(actor, delta) {
-//         this.time += delta
-//         if (this.time < 5000) return Behavior.running;
-//         return Behavior.success;
-//     }
-// }
-// BehaviorDelay.register("BehaviorDelay");
+class DelayBehavior extends Behavior {
+    start(options) {
+        this.elapsed = 0;
+        this.delay = 5000;
+    }
 
+    tick(delta) {
+        this.elapsed += delta
+        if (this.elapsed < this.delay) {
+            this.run();
+        } else {
+            this.succeed();
+        }
+    }
+}
+DelayBehavior.register("DelayBehavior");
 
-class TestSequence extends SequenceBehavior {
+class TestSequence extends ParallelSelectorBehavior {
+
     get children() { return [
         BehaviorA,
         BehaviorB,
-        BehaviorC
+        DelayBehavior,
+        // [DelayBehavior, {delay: 5000}],
+        // [DelayBehavior, {delay: 3000}],
+        SpinBehavior
     ]}
+
 }
 TestSequence.register("TestSequence");
+
+console.log("Here is the behavior registry that is used in the Types function.")
+ShowBehaviorRegistry();
 
 
 class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
     init(options) {
         super.init("ChildPawn", options);
-        this.set({tickRate: 1000, behavior: new TestSequence});
+        this.set({tickRate: 1000});
+        // new SpinBehavior(this);
+
+        new TestSequence(this);
+
         this.subscribe("input", "1Down",  this.test1);
         this.subscribe("input", "2Down",  this.test2);
     }
@@ -248,7 +263,7 @@ FloorPawn.register('FloorPawn');
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!");
+        console.log("Start Model!!!");
         FloorActor.create();
         this.move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
     }
