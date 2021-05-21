@@ -96,6 +96,35 @@ export class TwoWayMap {
 
     forEach(callback) {this.map.forEach(callback)}
     revForEach(callback) {this.rev.forEach(callback)}
-
-
 }
+
+//------------------------------------------------------------------------------------------
+//-- Shuffle -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Returns an array of the specified length filled with random indices from 0 to length-1.
+// Each index appears only once.
+
+export function Shuffle(length) {
+    const out = new Array(length);
+    for (let n = 0; n < length; n++) out[n] = n;
+    let n = length;
+    while(n) {
+        const pick = Math.floor(Math.random() * n--);
+        const swap = out[n];
+        out[n] = out[pick];
+        out[pick] = swap;
+    }
+    return out;
+}
+
+
+// shuffle(deck) {
+//     let size = deck.length;
+//     while (size) {
+//         const pick = Math.floor(Math.random() * size--);
+//         const swap = deck[size];
+//         deck[size] = deck[pick];
+//         deck[pick] = swap;
+//     }
+// }
