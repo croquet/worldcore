@@ -149,13 +149,10 @@ DelayBehavior.register("DelayBehavior");
 class TestSequence extends SequenceBehavior {
 
     get children() { return [
-        // BehaviorA,
         InvertA,
         BehaviorB,
         BehaviorC,
-        DelayBehavior,
         BehaviorD,
-        // /SpinBehavior
     ]}
 }
 TestSequence.register("TestSequence");
@@ -169,9 +166,6 @@ TestLoop.register("TestLoop");
 class Sequence2 extends SequenceBehavior {
     get children() {return [
         TestLoop,
-        BehaviorD,
-        BehaviorC,
-        BehaviorB,
         SpinBehavior
     ]}
 } Sequence2.register("Sequence2");

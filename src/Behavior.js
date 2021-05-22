@@ -31,6 +31,7 @@ export const AM_Behavioral = superclass => class extends superclass {
 
     init(...args) {
         super.init(...args);
+        this.blackboard = new Map();
         this.tickSet = new Set();
         const firstDelta = Math.random() * this.tickRate; // Random first tick to stagger execution of behaviors
         if (!this.doomed) this.future(firstDelta).tick(firstDelta);
@@ -78,6 +79,10 @@ export class Behavior extends Model {
         super.destroy();
         this.doomed = true;
         this.actor.tickSet.delete(this);
+    }
+
+    get blackboard() {
+        return this.actor.blackboard;
     }
 
     tick(delta) {
@@ -133,7 +138,6 @@ export class SequenceBehavior extends CompositeBehavior {
     init(options) {
         super.init(options);
         this.n = 0;
-        // console.log(this.Test);
     }
 
     destroy() {
@@ -260,15 +264,21 @@ RandomSelectorBehavior.register('RandomSelectorBehavior');
 //-- ParallelSequenceBehavior --------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Executes all childred simultaenously. Succeeds if all children succeed.
+// Fails if one child fails. Aborts other children after first failure.
+//
+// XXX Probably should more the spawning out the the init and into do.
+// This would allow clean termination if no behaviors are spawned.
+
 export class ParallelSequenceBehavior extends CompositeBehavior {
 
     init(options) {
         super.init(options);
-
         this.active = new Set();
         for (let n = 0; n < this.children.length; n++) {
             this.active.add(this.spawnChild(n));
         }
+        // if (this.active.size === 0) this.succeed();
     }
 
     destroy() {
@@ -277,18 +287,14 @@ export class ParallelSequenceBehavior extends CompositeBehavior {
     }
 
     reportSuccess(child) {
-        console.log("success " + child);
         this.active.delete(child);
         if (this.active.size > 0) return;
-        console.log("Parallel sequence success");
         this.succeed();
     }
 
     reportFailure(child) {
-        console.log("failure " + child);
         this.active.delete(child);
         this.active.forEach(b => b.destroy());
-        console.log("Parallel sequence failure");
         this.fail();
     }
 
@@ -296,8 +302,44 @@ export class ParallelSequenceBehavior extends CompositeBehavior {
 ParallelSequenceBehavior.register('ParallelSequenceBehavior');
 
 //------------------------------------------------------------------------------------------
+//-- ParallelPrimaryBehavior ---------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Executes all childred simultaenously. Only reports success or failure of primary behavior.
+// Other behaviors that are still running are aborted when the primary behavior finishes.
+
+// XXX not tested yet.  Move setting primary into do.
+
+export class ParallelPrimaryBehavior extends ParallelSequenceBehavior {
+
+    init(options) {
+        super.init(options);
+        this.primary = this.active.keys()[0]; // What if active is empty?
+    }
+
+    reportSuccess(child) {
+        this.active.delete(child);
+        if (child !== this.primary) return;
+        this.active.forEach(b => b.destroy());
+        this.succeed();
+    }
+
+    reportFailure(child) {
+        this.active.delete(child);
+        if (child !== this.primary) return;
+        this.active.forEach(b => b.destroy());
+        this.fail();
+    }
+
+}
+ParallelPrimaryBehavior.register('ParallelPrimaryBehavior');
+
+//------------------------------------------------------------------------------------------
 //-- ParallelSelectorBehavior --------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Executes all childred simultaenously. Fails if all children fail.
+// Succeeds if one child succeeds. Aborts other children after first success.
 
 export class ParallelSelectorBehavior extends CompositeBehavior {
 
@@ -308,6 +350,7 @@ export class ParallelSelectorBehavior extends CompositeBehavior {
         for (let n = 0; n < this.children.length; n++) {
             this.active.add(this.spawnChild(n));
         }
+        // if (this.active.size === 0) this.fail();
     }
 
     destroy() {
@@ -316,18 +359,14 @@ export class ParallelSelectorBehavior extends CompositeBehavior {
     }
 
     reportSuccess(child) {
-        console.log("success " + child);
         this.active.delete(child);
         this.active.forEach(b => b.destroy());
-        console.log("Parallel selector success");
         this.succeed();
     }
 
     reportFailure(child) {
-        console.log("failure " + child);
         this.active.delete(child);
         if (this.active.size > 0) return;
-        console.log("Parallel selector failure");
         this.fail();
     }
 
@@ -375,6 +414,30 @@ export class InvertBehavior extends DecoratorBehavior {
 InvertBehavior.register('InvertBehavior');
 
 //------------------------------------------------------------------------------------------
+//-- SucceedBehavior -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class SucceedBehavior extends DecoratorBehavior {
+
+    reportSuccess() {this.succeed()};
+    reportFailure() {this.succeed()};
+
+}
+SucceedBehavior.register('SucceedBehavior');
+
+//------------------------------------------------------------------------------------------
+//-- FailBehavior --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class FailBehavior extends DecoratorBehavior {
+
+    reportSuccess() {this.fail()};
+    reportFailure() {this.fail()};
+
+}
+FailBehavior.register('FailBehavior');
+
+//------------------------------------------------------------------------------------------
 //-- LoopBehavior --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -406,15 +469,6 @@ export class LoopBehavior extends DecoratorBehavior {
 }
 LoopBehavior.register('LoopBehavior');
 
-
-
-// Decorators
-// Conditional decorators
-// Backboard?
-// Side behaviors -- primary cancels secondary
-// Event decorators ... for example a message-driven abort
-// Repeaters
-// Priortiy queue selectors
 
 
 
