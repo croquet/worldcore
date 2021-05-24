@@ -30,6 +30,7 @@ export const AM_Behavioral = superclass => class extends superclass {
         if (this.behavior) this.behavior.destroy();
         options.actor = this;
         this.behavior = behavior.create(options);
+        this.behavior.start();
     }
 
     get tickRate() {
@@ -69,7 +70,7 @@ export class Behavior extends Model {
         super.init(options);
         this.actor = options.actor;
         this.parent = options.parent;
-        this.future(0).tick(0);
+        // this.future(0).tick(0);
     }
 
     destroy() {
@@ -90,12 +91,24 @@ export class Behavior extends Model {
         this.unsubscribe(this.actor.id, event);
     }
 
+    // Start runs immediatel yafter the behavior is created, but before the first tick.
+    // This is where set-up happens.
+    // It should exit with SUCCEED, FAIL or RUN. (Unless this behavior has children.)
+    start() {
+        this.run();
+    }
+
     tick(delta) {
         if (this.doomed) return;
         this.do(delta);
     }
 
-    do(delta) {}
+    // Do runs on every tick.
+    // This is where the work of the behavior happens.
+    // It should exit with SUCCEED, FAIL or RUN. (Unless this behavior has children.)
+    do(delta) {
+        this.run();
+    }
 
     succeed() {
         if (this.parent) this.parent.reportSuccess(this);
@@ -143,19 +156,20 @@ CompositeBehavior.register('CompositeBehavior');
 
 export class SequenceBehavior extends CompositeBehavior {
 
-    init(options) {
-        super.init(options);
-        this.n = 0;
-    }
-
     destroy() {
         super.destroy();
         if (this.active) this.active.destroy();
     }
 
-    do() {
+    start() {
+        this.n = 0;
+        this.next();
+    }
+
+    next() {
         if (this.n < this.children.length) {
             this.active = this.spawnChild(this.n++);
+            this.active.start();
         } else {
             this.succeed();
         }
@@ -164,7 +178,7 @@ export class SequenceBehavior extends CompositeBehavior {
     reportSuccess(child) {
         if (child != this.active) console.log("error");
         this.active = null;
-        this.tick();
+        this.next();
     }
 
     reportFailure(child) {
@@ -185,19 +199,22 @@ SequenceBehavior.register('SequenceBehavior');
 
 export class RandomSequenceBehavior extends SequenceBehavior {
 
-    init(options) {
-        super.init(options);
+    start() {
         this.order = Shuffle(this.children.length);
+        this.n = 0;
+        this.next();
     }
 
-    do() {
+    next() {
         if (this.n < this.children.length) {
             const pick = this.order[this.n++];
             this.active = this.spawnChild(pick);
+            this.active.start();
         } else {
             this.succeed();
         }
     }
+
 }
 RandomSequenceBehavior.register('RandomSequenceBehavior');
 
@@ -210,19 +227,20 @@ RandomSequenceBehavior.register('RandomSequenceBehavior');
 
 export class SelectorBehavior extends CompositeBehavior {
 
-    init(options) {
-        super.init(options);
-        this.n = 0;
-    }
-
     destroy() {
         super.destroy();
         if (this.active) this.active.destroy();
     }
 
-    do() {
+    start() {
+        this.n = 0;
+        this.next();
+    }
+
+    next() {
         if (this.n < this.children.length) {
             this.active = this.spawnChild(this.n++);
+            this.active.start();
         } else {
             this.fail();
         }
@@ -237,7 +255,7 @@ export class SelectorBehavior extends CompositeBehavior {
     reportFailure(child) {
         if (child != this.active) console.log("error");
         this.active = null;
-        this.tick();
+        this.next();
     }
 
 }
@@ -252,19 +270,22 @@ SelectorBehavior.register('SelectorBehavior');
 
 export class RandomSelectorBehavior extends SelectorBehavior {
 
-    init(options) {
-        super.init(options);
+    start() {
         this.order = Shuffle(this.children.length);
+        this.n = 0;
+        this.next();
     }
 
-    do() {
+    next() {
         if (this.n < this.children.length) {
             const pick = this.order[this.n++];
             this.active = this.spawnChild(pick);
+            this.active.start();
         } else {
             this.fail();
         }
     }
+
 }
 RandomSelectorBehavior.register('RandomSelectorBehavior');
 
@@ -275,25 +296,27 @@ RandomSelectorBehavior.register('RandomSelectorBehavior');
 // Executes all childred simultaenously. Succeeds if all children succeed.
 // Fails if one child fails. Aborts other children after first failure.
 //
-// NOTE -- The order children are defined does not determine priority during
-// simultaneous completion. Instantaneous behaviors may complete in any order.
+// NOTE -- If children complete instantly, they will be resolved in the order they were declared.
 
 export class ParallelSequenceBehavior extends CompositeBehavior {
-
-    init(options) {
-        super.init(options);
-        this.active = new Set();
-    }
 
     destroy() {
         super.destroy();
         this.active.forEach(b => b.destroy());
     }
 
-    do() {
+    start() {
+        this.active = new Set();
+        const spawned = [];
         for (let n = 0; n < this.children.length; n++) {
-            this.active.add(this.spawnChild(n));
+            const child = this.spawnChild(n);
+            this.active.add(child);
+            spawned.push(child);
         }
+        spawned.forEach(child => {
+            if (this.doomed) return;
+            child.start();
+        });
     }
 
     reportSuccess(child) {
@@ -318,18 +341,31 @@ ParallelSequenceBehavior.register('ParallelSequenceBehavior');
 // Executes all childred simultaenously. Only reports success or failure of primary behavior.
 // Other behaviors that are still running are aborted when the primary behavior finishes.
 //
-// NOTE -- The order children are defined does not determine priority during
-// simultaneous completion. Instantaneous behaviors may complete in any order.
+// NOTE -- If children complete instantly, they will be resolved in the order they were declared.
 
-export class ParallelPrimaryBehavior extends ParallelSequenceBehavior {
+export class ParallelPrimaryBehavior extends CompositeBehavior {
 
-    do() {
+    destroy() {
+        super.destroy();
+        this.active.forEach(b => b.destroy());
+    }
+
+    start() {
         if (this.children.length === 0) return;
+        this.active = new Set();
+        const spawned = [];
         this.primary = this.spawnChild(0);
         this.active.add(this.primary);
+        spawned.push(this.primary);
         for (let n = 1; n < this.children.length; n++) {
-            this.active.add(this.spawnChild(n));
+            const child = this.spawnChild(n);
+            this.active.add(child);
+            spawned.push(child);
         }
+        spawned.forEach(child => {
+            if (this.doomed) return;
+            child.start();
+        });
     }
 
     reportSuccess(child) {
@@ -356,25 +392,27 @@ ParallelPrimaryBehavior.register('ParallelPrimaryBehavior');
 // Executes all childred simultaenously. Fails if all children fail.
 // Succeeds if one child succeeds. Aborts other children after first success.
 //
-// NOTE -- The order children are defined does not determine priority during
-// simultaneous completion. Instantaneous behaviors may complete in any order.
+// NOTE -- If children complete instantly, they will be resolved in the order they were declared.
 
 export class ParallelSelectorBehavior extends CompositeBehavior {
-
-    init(options) {
-        super.init(options);
-        this.active = new Set();
-    }
 
     destroy() {
         super.destroy();
         this.active.forEach(b => b.destroy());
     }
 
-    do() {
+    start() {
+        this.active = new Set();
+        const spawned = [];
         for (let n = 0; n < this.children.length; n++) {
-            this.active.add(this.spawnChild(n));
+            const child = this.spawnChild(n);
+            this.active.add(child);
+            spawned.push(child);
         }
+        spawned.forEach(child => {
+            if (this.doomed) return;
+            child.start();
+        });
     }
 
     reportSuccess(child) {
@@ -397,24 +435,21 @@ ParallelSelectorBehavior.register('ParallelSelectorBehavior');
 //-- DecoratorBehavior ---------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Holds a single child behavior. Passes on its completion status when it fnishes.
+// Holds a single child behavior. Passes on its completion status when it finishes.
 
 export class DecoratorBehavior extends Behavior {
+
+    get child() {}
 
     destroy() {
         super.destroy();
         if (this.active) this.active.destroy();
     }
 
-    spawnChild() {
-        return this.child.create({actor: this.actor, parent: this});
+    start() {
+       this.active =  this.child.create({actor: this.actor, parent: this});
+       this.active.start();
     }
-
-    do() {
-        this.active = this.spawnChild();
-    }
-
-    get child() {}
 
     reportSuccess() {this.succeed()};
     reportFailure() {this.fail()};
@@ -478,8 +513,8 @@ export class LoopBehavior extends DecoratorBehavior {
     get count() {return 0}
 
     init(options) {
-        super.init(options);
         if (this.count) this.n = 1;
+        super.init(options);
     }
 
     reportSuccess(child) {
@@ -488,7 +523,7 @@ export class LoopBehavior extends DecoratorBehavior {
         if (this.count && this.n++ === this.count) {
             this.succeed();
         } else {
-            this.tick();
+            this.start();
         }
     }
 
@@ -512,9 +547,9 @@ export class DelayBehavior extends Behavior {
 
     get delay() {return 1000} // Delay in milliseconds.
 
-    init(options) {
-        super.init(options);
+    start() {
         this.elapsed = 0;
+        this.run();
     }
 
     do(delta) {

@@ -6,7 +6,7 @@ import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     PM_InstancedVisible, GetNamedView, AM_Smoothed, PM_Smoothed,
     ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, VerticalWidget, ImageWidget,
-    ToggleWidget, ToggleSet, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, BehaviorManager, SequenceBehavior, ParallelSequenceBehavior, ParallelSelectorBehavior, SelectorBehavior, ShowBehaviorRegistry, Shuffle, RandomSequenceBehavior, InvertBehavior, LoopBehavior, ParallelPrimaryBehavior, DelayBehavior  } from "@croquet/worldcore";
+    ToggleWidget, ToggleSet, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, BehaviorManager, SequenceBehavior, ParallelSequenceBehavior, ParallelSelectorBehavior, SelectorBehavior, ShowBehaviorRegistry, Shuffle, RandomSequenceBehavior, InvertBehavior, LoopBehavior, ParallelPrimaryBehavior, DelayBehavior, RandomSelectorBehavior  } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 
@@ -101,22 +101,22 @@ class SpinBehavior extends Behavior {
 SpinBehavior.register("SpinBehavior");
 
 class BehaviorA extends Behavior {
-    do() { console.log("A"); this.fail()}
+    start() { console.log("A"); this.fail()}
 }
 BehaviorA.register("BehaviorA");
 
 class BehaviorB extends Behavior {
-    do() { console.log("B"); this.succeed()}
+    start() { console.log("B"); this.succeed()}
 }
 BehaviorB.register("BehaviorB");
 
 class BehaviorC extends Behavior {
-    do() { console.log("C"); this.succeed()}
+    start() { console.log("C"); this.succeed()}
 }
 BehaviorC.register("BehaviorC");
 
 class BehaviorD extends Behavior {
-    do() { console.log("D"); this.succeed()}
+    start() { console.log("D"); this.succeed()}
 }
 BehaviorD.register("BehaviorD");
 
@@ -126,9 +126,14 @@ class InvertA extends InvertBehavior {
 InvertA.register("InvertA");
 
 class Delay5 extends DelayBehavior {
-    get delay() {return 3000}
+    get delay() {return 500}
 }
 Delay5.register("Delay5");
+
+class Invert5 extends InvertBehavior {
+    get child() {return Delay5}
+}
+Invert5.register("Invert5");
 
 class TestSequence extends SequenceBehavior {
 
@@ -141,23 +146,23 @@ class TestSequence extends SequenceBehavior {
         Delay5,
         BehaviorD,
         Delay5,
-        SpinBehavior,
+        // SpinBehavior,
     ]}
 }
 TestSequence.register("TestSequence");
 
-// class TestLoop extends LoopBehavior {
-//     get child() { return TestSequence }
-//     get count() { return 3}
-// }
-// TestLoop.register("TestLoop");
+class TestLoop extends LoopBehavior {
+    get child() { return TestSequence }
+    get count() { return 3}
+}
+TestLoop.register("TestLoop");
 
-// class Sequence2 extends SequenceBehavior {
-//     get children() {return [
-//         TestLoop,
-//         SpinBehavior
-//     ]}
-// } Sequence2.register("Sequence2");
+class Sequence2 extends SequenceBehavior {
+    get children() {return [
+        TestLoop,
+        SpinBehavior
+    ]}
+} Sequence2.register("Sequence2");
 
 class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
@@ -165,7 +170,7 @@ class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
         super.init("ChildPawn", options);
         this.set({tickRate: 1000});
 
-        this.startBehavior(TestSequence);
+        this.startBehavior(Sequence2);
 
         this.subscribe("input", "1Down",  this.test1);
         this.subscribe("input", "2Down",  this.test2);
