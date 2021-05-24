@@ -1,37 +1,21 @@
-import { Model, Constants } from "@croquet/croquet";
+import { Model } from "@croquet/croquet";
 import { Shuffle } from "./Utilities";
 
-//------------------------------------------------------------------------------------------
-//-- BehaviorManager -----------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// Constants.WC_BEHVAVIOR_REGISTRY = [];
-// const behaviorRegistry = {};
-
-// export function ShowBehaviorRegistry() {
-//     console.log(behaviorRegistry);
-// }
-
-// export class BehaviorManager extends Model {
-
-//     static types() { return behaviorRegistry; }
-
-//     init(...args) {
-//         super.init(...args);
-//         this.beWellKnownAs("BehaviorManager");
-//     }
-// }
-// BehaviorManager.register('BehaviorMananger');
+// Implements a Behavior Tree system. Actors that are driven by behaviors should have the
+// AM_Behavioal Mixin. Every tick the actor advances the start of its behavior tree.
+//
+// New behaviors are defined by defining classes that inherit from the Behavior base class.
 
 //------------------------------------------------------------------------------------------
 //-- Behavioral ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// StartBehavior sets the actor's current root behavior.
+
 export const AM_Behavioral = superclass => class extends superclass {
 
     init(...args) {
         super.init(...args);
-        this.blackboard = new Map();
         this.tickSet = new Set();
         const firstDelta = Math.random() * this.tickRate; // Random first tick to stagger execution of behaviors
         if (!this.doomed) this.future(firstDelta).tick(firstDelta);
@@ -43,6 +27,7 @@ export const AM_Behavioral = superclass => class extends superclass {
     }
 
     startBehavior(behavior, options = {}) {
+        if (this.behavior) this.behavior.destroy();
         options.actor = this;
         this.behavior = behavior.create(options);
     }
@@ -66,6 +51,18 @@ export const AM_Behavioral = superclass => class extends superclass {
 //-- Behavior ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// All behaviors are derived from this base class. The behavior holds pointers to the actor
+// its controlling, and the parent behavior it should report to when it completes.
+//
+// Behaviors can SAY and LISTEN using the same message scope as their actor.
+//
+// All of the work a behavior does should be contained within DO. Do should
+// exit with either:
+//
+// RUN -- Continue exeuction at the next actor tick.
+// SUCCEED -- Report success to your parent and destroy yourself.
+// FAIL -- Report failure to your parent and destroy yourself.
+
 export class Behavior extends Model {
 
     init(options) {
@@ -81,8 +78,16 @@ export class Behavior extends Model {
         this.actor.tickSet.delete(this);
     }
 
-    get blackboard() {
-        return this.actor.blackboard;
+    say(event, data) {
+        this.publish(this.actor.id, event, data);
+    }
+
+    listen(event, callback) {
+        this.subscribe(this.actor.id, event, callback);
+    }
+
+    ignore(event) {
+        this.unsubscribe(this.actor.id, event);
     }
 
     tick(delta) {
@@ -111,6 +116,9 @@ Behavior.register('Behavior');
 //------------------------------------------------------------------------------------------
 //-- CompositeBehavior ---------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Behaviors with children. They don't tick themselves, but respond to reported success or
+// failure by their children who are ticking.
 
 export class CompositeBehavior extends Behavior {
 
@@ -267,23 +275,25 @@ RandomSelectorBehavior.register('RandomSelectorBehavior');
 // Executes all childred simultaenously. Succeeds if all children succeed.
 // Fails if one child fails. Aborts other children after first failure.
 //
-// XXX Probably should more the spawning out the the init and into do.
-// This would allow clean termination if no behaviors are spawned.
+// NOTE -- The order children are defined does not determine priority during
+// simultaneous completion. Instantaneous behaviors may complete in any order.
 
 export class ParallelSequenceBehavior extends CompositeBehavior {
 
     init(options) {
         super.init(options);
         this.active = new Set();
-        for (let n = 0; n < this.children.length; n++) {
-            this.active.add(this.spawnChild(n));
-        }
-        // if (this.active.size === 0) this.succeed();
     }
 
     destroy() {
         super.destroy();
         this.active.forEach(b => b.destroy());
+    }
+
+    do() {
+        for (let n = 0; n < this.children.length; n++) {
+            this.active.add(this.spawnChild(n));
+        }
     }
 
     reportSuccess(child) {
@@ -307,14 +317,19 @@ ParallelSequenceBehavior.register('ParallelSequenceBehavior');
 
 // Executes all childred simultaenously. Only reports success or failure of primary behavior.
 // Other behaviors that are still running are aborted when the primary behavior finishes.
-
-// XXX not tested yet.  Move setting primary into do.
+//
+// NOTE -- The order children are defined does not determine priority during
+// simultaneous completion. Instantaneous behaviors may complete in any order.
 
 export class ParallelPrimaryBehavior extends ParallelSequenceBehavior {
 
-    init(options) {
-        super.init(options);
-        this.primary = this.active.keys()[0]; // What if active is empty?
+    do() {
+        if (this.children.length === 0) return;
+        this.primary = this.spawnChild(0);
+        this.active.add(this.primary);
+        for (let n = 1; n < this.children.length; n++) {
+            this.active.add(this.spawnChild(n));
+        }
     }
 
     reportSuccess(child) {
@@ -340,22 +355,26 @@ ParallelPrimaryBehavior.register('ParallelPrimaryBehavior');
 
 // Executes all childred simultaenously. Fails if all children fail.
 // Succeeds if one child succeeds. Aborts other children after first success.
+//
+// NOTE -- The order children are defined does not determine priority during
+// simultaneous completion. Instantaneous behaviors may complete in any order.
 
 export class ParallelSelectorBehavior extends CompositeBehavior {
 
     init(options) {
         super.init(options);
-
         this.active = new Set();
-        for (let n = 0; n < this.children.length; n++) {
-            this.active.add(this.spawnChild(n));
-        }
-        // if (this.active.size === 0) this.fail();
     }
 
     destroy() {
         super.destroy();
         this.active.forEach(b => b.destroy());
+    }
+
+    do() {
+        for (let n = 0; n < this.children.length; n++) {
+            this.active.add(this.spawnChild(n));
+        }
     }
 
     reportSuccess(child) {
@@ -378,6 +397,8 @@ ParallelSelectorBehavior.register('ParallelSelectorBehavior');
 //-- DecoratorBehavior ---------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Holds a single child behavior. Passes on its completion status when it fnishes.
+
 export class DecoratorBehavior extends Behavior {
 
     destroy() {
@@ -395,8 +416,8 @@ export class DecoratorBehavior extends Behavior {
 
     get child() {}
 
-    reportSuccess() {};
-    reportFailure() {};
+    reportSuccess() {this.succeed()};
+    reportFailure() {this.fail()};
 
 }
 DecoratorBehavior.register('DecoratorBehavior');
@@ -404,6 +425,8 @@ DecoratorBehavior.register('DecoratorBehavior');
 //------------------------------------------------------------------------------------------
 //-- InvertBehavior ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Holds a single child behavior. Inverts its completion status when it fnishes.
 
 export class InvertBehavior extends DecoratorBehavior {
 
@@ -417,6 +440,8 @@ InvertBehavior.register('InvertBehavior');
 //-- SucceedBehavior -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Holds a single child behavior. Always returns success when it finishes.
+
 export class SucceedBehavior extends DecoratorBehavior {
 
     reportSuccess() {this.succeed()};
@@ -429,6 +454,8 @@ SucceedBehavior.register('SucceedBehavior');
 //-- FailBehavior --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Holds a single child behavior. Always returns failure when it finishes.
+
 export class FailBehavior extends DecoratorBehavior {
 
     reportSuccess() {this.fail()};
@@ -440,6 +467,11 @@ FailBehavior.register('FailBehavior');
 //------------------------------------------------------------------------------------------
 //-- LoopBehavior --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Holds a single child behavior. Will repeatedly execute it until count is reached, as long
+// as it succeeds. If it fails, the loop returns failure.
+//
+// If the count is set to 0, it executes indefinitely.
 
 export class LoopBehavior extends DecoratorBehavior {
 
@@ -468,6 +500,33 @@ export class LoopBehavior extends DecoratorBehavior {
 
 }
 LoopBehavior.register('LoopBehavior');
+
+//------------------------------------------------------------------------------------------
+//-- DelayBehavior -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Runs until the delay time is reached. Note that the accuracy of the delay depends upon
+// the granularity of the actor's tick rate.
+
+export class DelayBehavior extends Behavior {
+
+    get delay() {return 1000} // Delay in milliseconds.
+
+    init(options) {
+        super.init(options);
+        this.elapsed = 0;
+    }
+
+    do(delta) {
+        this.elapsed += delta
+        if (this.elapsed < this.delay) {
+            this.run();
+        } else {
+            this.succeed();
+        }
+    }
+}
+DelayBehavior.register("DelayBehavior");
 
 
 
