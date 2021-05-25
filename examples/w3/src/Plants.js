@@ -3,10 +3,9 @@ import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, AM_Smoothed, PM_Smoothed, Mat
     Cylinder, Cone, m4_translation, CachedObject, q_axisAngle, TAU, InstancedDrawCall, m4_rotationX, toRad, v3_scale,
     AM_Behavioral, DestroyBehavior, SequenceBehavior, Behavior
  } from "@croquet/worldcore";
-import { Voxels } from "./Voxels";
+import { Voxels, AM_Voxel } from "./Voxels";
 import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
-import { AM_Voxel } from "./Components";
 
 export class Plants extends Model {
     init() {
@@ -62,7 +61,7 @@ export class Plants extends Model {
     }
 
     onSpawnTree(xyz) {
-        TreeActor.create({key: Voxels.packKey(...xyz)});
+        TreeActor.create({translation: Voxels.toWorldXYZ(...xyz)});
     }
 
 }
@@ -76,13 +75,13 @@ class PlantActor extends mix(Actor).with(AM_Spatial, AM_Voxel, AM_Behavioral) {
     init(...args) {
         super.init(...args);
         const plants = this.wellKnownModel("Plants");
-        if (this.key) plants.set(this.key, this);
+        if (this.voxelKey) plants.set(this.voxelKey, this);
     }
 
     destroy() {
         super.destroy();
         const plants = this.wellKnownModel("Plants");
-        if (this.key) plants.delete(this.key);
+        if (this.voxelKey) plants.delete(this.voxelKey);
     }
 }
 
@@ -97,7 +96,7 @@ PlantPawn.register('PlantPawn');
 class TreeBehavior extends Behavior {
 
     start() {
-        this.maxSize = 1;
+        this.maxSize = 1 - 0.3 * this.random();
         this.size = this.actor.scale[0];
         this.run();
     }
@@ -125,12 +124,10 @@ export class TreeActor extends PlantActor {
 
     randomizePosition() {
         const size = 0.2;
-        const surface = this.wellKnownModel('Surfaces').get(this.key);
+        const surface = this.wellKnownModel('Surfaces').get(this.voxelKey);
         let x = 0.2 + 0.6 * this.random();
         let y = 0.2 + 0.6 * this.random();
-        x = 0.5, y = 0.5;
         let z = surface.rawElevation(x,y);
-
         if (z === undefined) { // Handle placing tree on half floor or shim
             x = 1-x;
             y = 1-y;
@@ -140,28 +137,26 @@ export class TreeActor extends PlantActor {
         this.roots = [x,y,z]; // Set the position the tree is planted in voxel coordinates
         this.set({
             rotation: q_axisAngle([0,0,1], TAU * this.random()),
-            translation: Voxels.toWorldXYZ(...v3_add(this.xyz, this.roots)),
+            translation: Voxels.toWorldXYZ(...v3_add(this.voxelXYZ, this.roots)),
             scale: [size, size, size]
         });
 
     }
 
     validate() {
-        const surface = this.wellKnownModel('Surfaces').get(this.key);
+        const surface = this.wellKnownModel('Surfaces').get(this.voxelKey);
         if (!surface || surface.rawElevation(this.roots[0], this.roots[1]) !== this.roots[2]) this.harvest();
     }
 
     harvest() {
         const translation0 = this.translation;
-        const translation1 = v3_add(this.translation, v3_scale([0,0,6], this.size));
-        const translation2 = v3_add(this.translation, v3_scale([0,0,12], this.size));
+        const translation1 = v3_add(this.translation, v3_scale([0,0,6], this.scale[0]));
+        const translation2 = v3_add(this.translation, v3_scale([0,0,12], this.scale[0]));
         TimberActor.create({translation: translation0, scale: this.scale});
         TimberActor.create({translation: translation1, scale: this.scale});
         TimberActor.create({translation: translation2, scale: this.scale});
         this.destroy();
     }
-
-
 }
 TreeActor.register("TreeActor");
 

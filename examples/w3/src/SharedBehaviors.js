@@ -7,8 +7,6 @@ import { Voxels } from "./Voxels";
 
 export class FallBehavior extends Behavior {
 
-    // get gravity() { return 9.8; }       //     m/s/s
-
     start() {
         this.setStartParameters();
         this.startHeight = this.actor.translation[2];

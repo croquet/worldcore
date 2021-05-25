@@ -1,5 +1,5 @@
 import { Model } from "@croquet/croquet";
-import { PerlinNoise, v3_add, v3_sub, v3_min, v3_max, v3_scale, v3_floor, rayTriangleIntersect, GetNamedModel } from "@croquet/worldcore";
+import { PerlinNoise, v3_add, v3_sub, v3_min, v3_max, v3_scale, v3_floor, rayTriangleIntersect, GetNamedModel, RegisterMixin } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- VoxelColumn ---------------------------------------------------------------------------
@@ -341,4 +341,26 @@ export class Voxels extends Model {
 
 }
 Voxels.register("Voxels");
+
+//------------------------------------------------------------------------------------------
+//-- Voxel Mixin ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Voxel actors exist in a voxel in the world. Provides utilities for getting the voxel
+// coordinates and the voxel key from the actor's world translation.
+
+//-- Actor ---------------------------------------------------------------------------------
+
+export const AM_Voxel = superclass => class extends superclass {
+
+    get voxelXYZ() {
+        return Voxels.toClippedVoxelXYZ(...this.translation);
+    }
+
+    get voxelKey() {
+        return Voxels.packKey(...this.voxelXYZ)
+    }
+
+};
+RegisterMixin(AM_Voxel);
 

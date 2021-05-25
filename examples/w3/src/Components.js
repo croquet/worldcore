@@ -1,27 +1,25 @@
-import {Constants} from "@croquet/croquet";
-import { q_identity, RegisterMixin, AM_Smoothed, v3_scale, v3_zero } from "@croquet/worldcore";
+import { RegisterMixin  } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
 //-- Voxel ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Voxel actors exist in a voxel in the world.
+// Voxel actors exist in a voxel in the world. Provides utilities for getting the voxel
+// coordinates and the voxel key from the actor's world translation.
 
 //-- Actor ---------------------------------------------------------------------------------
 
 export const AM_Voxel = superclass => class extends superclass {
 
-    // init(...args) {
-    //     super.init(...args);
-    // }
+    get voxelXYZ() {
+        return Voxels.toClippedVoxelXYZ(...this.translation);
+    }
 
-    // destroy() {
-    //     super.destroy();
-    // }
-
-    get key() { return this._key; }
-    get xyz() { return Voxels.unpackKey(this.key) }
+    get voxelKey() {
+        return Voxels.packKey(...this.voxelXYZ)
+    }
 
 };
 RegisterMixin(AM_Voxel);
+
