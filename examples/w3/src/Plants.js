@@ -1,7 +1,10 @@
 import { Model } from "@croquet/croquet";
 import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, AM_Smoothed, PM_Smoothed, Material, PM_InstancedVisible, GetNamedView, v3_add,
-    Cylinder, Cone, m4_translation, CachedObject, q_axisAngle, TAU, InstancedDrawCall, m4_rotationX, toRad } from "@croquet/worldcore";
+    Cylinder, Cone, m4_translation, CachedObject, q_axisAngle, TAU, InstancedDrawCall, m4_rotationX, toRad, v3_scale,
+    AM_Behavioral, DestroyBehavior, SequenceBehavior, Behavior
+ } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
+import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
 import { AM_Voxel } from "./Components";
 
@@ -69,7 +72,7 @@ Plants.register("Plants");
 //-- Plant ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class PlantActor extends mix(Actor).with(AM_Spatial, AM_Voxel) {
+class PlantActor extends mix(Actor).with(AM_Spatial, AM_Voxel, AM_Behavioral) {
     init(...args) {
         super.init(...args);
         const plants = this.wellKnownModel("Plants");
@@ -85,33 +88,43 @@ class PlantActor extends mix(Actor).with(AM_Spatial, AM_Voxel) {
 
 class PlantPawn extends mix(Pawn).with(PM_Spatial, PM_InstancedVisible) {
 }
+PlantPawn.register('PlantPawn');
 
 //------------------------------------------------------------------------------------------
 //-- Tree ----------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+class TreeBehavior extends Behavior {
+
+    start() {
+        this.maxSize = 1;
+        this.size = this.actor.scale[0];
+        this.run();
+    }
+
+    do(delta) {
+        const growth = 0.02;
+        this.size = Math.min(this.maxSize, this.size + growth * delta / 1000);
+        this.actor.set({scale: [this.size, this.size, this.size]});
+        if (this.size < this.maxSize) {
+            this.run();
+        } else {
+            this.succeed();
+        }
+    }
+}
+TreeBehavior.register('TreeBehavior');
+
 export class TreeActor extends PlantActor {
     init(options) {
         super.init('TreePawn', options);
+        this.set({tickRate: 500});
         this.randomizePosition();
-        const first = this.random() * 500;
-        this.future(first).tick(first);
+        this.startBehavior(TreeBehavior);
     }
 
-    // harvest() {
-    //     this.destroy();
-    //     TimberActor.create({xyz: this.location, size: this.size});
-    //     const location1 = v3_add(this.location, v3_scale([0,0,6], this.size));
-    //     TimberActor.create({xyz: location1, size: this.size});
-    //     const location2 = v3_add(this.location, v3_scale([0,0,12], this.size));
-    //     TimberActor.create({xyz: location2, size: this.size});
-    // }
-
     randomizePosition() {
-        this.size = 0.1;
-        this.size = 1;
-        this.maxSize = 1 - 0.3 * this.random();
-        this.maxSize = 1;
+        const size = 0.2;
         const surface = this.wellKnownModel('Surfaces').get(this.key);
         let x = 0.2 + 0.6 * this.random();
         let y = 0.2 + 0.6 * this.random();
@@ -125,26 +138,30 @@ export class TreeActor extends PlantActor {
             if (z === undefined) console.log("Illegal tree position! " + [x,y]);
         }
         this.roots = [x,y,z]; // Set the position the tree is planted in voxel coordinates
-        console.log(this.roots);
         this.set({
             rotation: q_axisAngle([0,0,1], TAU * this.random()),
             translation: Voxels.toWorldXYZ(...v3_add(this.xyz, this.roots)),
-            scale: [this.size, this.size, this.size]
+            scale: [size, size, size]
         });
 
     }
 
     validate() {
         const surface = this.wellKnownModel('Surfaces').get(this.key);
-        if (!surface || surface.rawElevation(this.roots[0], this.roots[1]) !== this.roots[2]) this.destroy();
+        if (!surface || surface.rawElevation(this.roots[0], this.roots[1]) !== this.roots[2]) this.harvest();
     }
 
-    tick(delta) {
-        const growth = 0.00002;
-        this.size = Math.min(this.maxSize, this.size + growth * delta);
-        this.set({scale: [this.size, this.size, this.size]});
-        if (this.size < this.maxSize) this.future(500).tick(500);
+    harvest() {
+        const translation0 = this.translation;
+        const translation1 = v3_add(this.translation, v3_scale([0,0,6], this.size));
+        const translation2 = v3_add(this.translation, v3_scale([0,0,12], this.size));
+        TimberActor.create({translation: translation0, scale: this.scale});
+        TimberActor.create({translation: translation1, scale: this.scale});
+        TimberActor.create({translation: translation2, scale: this.scale});
+        this.destroy();
     }
+
+
 }
 TreeActor.register("TreeActor");
 
@@ -185,87 +202,53 @@ class TreePawn extends PlantPawn {
 }
 TreePawn.register('TreePawn');
 
-// //------------------------------------------------------------------------------------------
-// //-- Timber --------------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+//-- Timber --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
-// // Fall behaviors need to be merged into a general fall class.
 
-// export class TimberActor extends mix(Actor).with(AM_Smoothed) {
-//     init(data) {
-//         super.init('TimberPawn');
-//         this.startHeight = data.xyz[2];
-//         this.setLocation(data.xyz);
-//         this.setScale([data.size, data.size, data.size]);
-//         this.velocity = -0.003 + this.random()*(-0.001);
-//         this.axis = sphericalRandom();
-//         this.spin = 0.0001 + this.random() * 0.0009;
-//         const delay = 100 * this.random();
-//         this.future(delay).tick(delay);
-//     }
+class TimberBehavior extends SequenceBehavior {
+    get children() { return [
+        FallBehavior,
+        DestroyBehavior
+    ]}
+}
+TimberBehavior.register("TimberBehavior");
 
-//     tick(delta) {
-//         this.velocity = Math.min(this.velocity + delta * 0.00002, 1);
-//         const xyz0 = this.location;
-//         const xyz1 = v3_sub(xyz0, [0, 0, this.velocity * delta]);
-//         const collision = this.solidCollision(xyz0, xyz1);
-//         if (collision || xyz1[2] < 0) { // Collide with a solid voxel or hit the kill plane.
-//             // spawn debris pile here
-//             this.destroy();
-//             return;
-//         }
-//         this.moveTo(xyz1);
-//         this.rotateTo(q_multiply(this.rotation, q_axisAngle(this.axis, this.spin * delta)));
-//         this.future(100).tick(100);
-//     }
+export class TimberActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
+    init(options) {
+        super.init('TimberPawn', options);
+        this.startBehavior(TimberBehavior);
+    }
+}
+TimberActor.register("TimberActor");
 
-//     // Checks to see if the timber hits a solid voxel while travelling from xyz0 to xyz1
-//     // If the timber collides with a solid voxel, returns the voxel's xyz coordinates.
+export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
+    constructor(...args) {
+        super(...args);
+        this.setDrawCall(CachedObject("timberDrawCall", () => this.buildDraw()));
+    }
 
-//     solidCollision(xyz0, xyz1) {
-//         if (xyz1[2] > this.startHeight) return undefined; // Dan't collide if above start height.
-//         const voxel0 = v3_floor(Voxels.toVoxelXYZ(...xyz0));
-//         const x = voxel0[0];
-//         const y = voxel0[1];
-//         let z = voxel0[2];
-//         const bottom = Math.floor(xyz1[2] / Voxels.scaleZ);
-//         if (z < bottom) return undefined; // Don't collide if moving up.
-//         const voxels = this.wellKnownModel('Voxels');
-//         do {
-//             if (voxels.get(x,y,z)) return [x,y,z];
-//         } while (--z > bottom);
-//         return undefined;
-//     }
+    buildDraw() {
+        const mesh = CachedObject("timberMesh", this.buildMesh);
+        const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
+        const draw = new InstancedDrawCall(mesh, material);
+        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        return draw;
+    }
 
-// }
-// TimberActor.register("TimberActor");
+    buildMaterial() {
+        const material = new Material();
+        material.pass = 'instanced';
+        material.texture.loadFromURL(paper);
+        return material;
+    }
 
-// export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
-//     constructor(...args) {
-//         super(...args);
-//         this.setDrawCall(CachedObject("timberDrawCall", () => this.buildDraw()));
-//     }
-
-//     buildDraw() {
-//         const mesh = CachedObject("timberMesh", this.buildMesh);
-//         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
-//         const draw = new InstancedDrawCall(mesh, material);
-//         GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-//         return draw;
-//     }
-
-//     buildMaterial() {
-//         const material = new Material();
-//         material.pass = 'instanced';
-//         material.texture.loadFromURL(paper);
-//         return material;
-//     }
-
-//     buildMesh() {
-//         const log = Cylinder(0.5, 5, 7, [0.7, 0.5, 0.3, 1]);
-//         log.load();
-//         log.clear();
-//         return log;
-//     }
-// }
-// TimberPawn.register("TimberPawn");
+    buildMesh() {
+        const log = Cylinder(0.5, 5, 7, [0.7, 0.5, 0.3, 1]);
+        log.load();
+        log.clear();
+        return log;
+    }
+}
+TimberPawn.register("TimberPawn");

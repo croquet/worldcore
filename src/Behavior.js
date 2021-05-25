@@ -18,6 +18,7 @@ export const AM_Behavioral = superclass => class extends superclass {
         super.init(...args);
         this.tickSet = new Set();
         const firstDelta = Math.random() * this.tickRate; // Random first tick to stagger execution of behaviors
+        // const firstDelta = 0; // Random first tick to stagger execution of behaviors
         if (!this.doomed) this.future(firstDelta).tick(firstDelta);
     }
 
@@ -38,12 +39,11 @@ export const AM_Behavioral = superclass => class extends superclass {
     }
 
     tick(delta) {
-        if (this.doomed) return;
         const ticking = new Set(this.tickSet);
         ticking.forEach(behavior => {
             behavior.tick(delta);
         })
-        this.future(this.tickRate).tick(this.tickRate);
+        if (!this.doomed) this.future(this.tickRate).tick(this.tickRate);
     }
 
 }
@@ -563,7 +563,17 @@ export class DelayBehavior extends Behavior {
 }
 DelayBehavior.register("DelayBehavior");
 
+//------------------------------------------------------------------------------------------
+//-- DestroyBehavior -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
+// Destroys the actor
+
+export class DestroyBehavior extends Behavior {
+
+    start() { this.actor.destroy(); }
+}
+DestroyBehavior.register("DestroyBehavior");
 
 
 

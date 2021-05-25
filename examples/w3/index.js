@@ -23,7 +23,7 @@ import { Plants } from "./src/Plants";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!");
+        console.log("Start Model!!!");
 
         this.voxels = Voxels.create();
         this.surfaces = Surfaces.create();

@@ -210,15 +210,22 @@ export class Voxels extends Model {
     //     return null;
     // }
 
+    // Converst from voxel space to world space
     static toWorldXYZ(x,y,z) {
         return [x * Voxels.scaleX, y * Voxels.scaleY, z * Voxels.scaleZ];
     }
 
-    // static toVoxelXYZ(x,y,z) {
-    //     return [x / Voxels.scaleX, y / Voxels.scaleY, z / Voxels.scaleZ];
-    // }
+    // Coverts from world space to voxel space
+    static toVoxelXYZ(x,y,z) {
+        return [x / Voxels.scaleX, y / Voxels.scaleY, z / Voxels.scaleZ];
+    }
 
-    // // Given a set of voxel keys, expands it by one in every direction including diagonally.
+    // Returns the voxel containing an arbitrary point in world space
+    static toClippedVoxelXYZ(x,y,z) {
+        return v3_floor(this.toVoxelXYZ(x,y,z));
+    }
+
+    // Given a set of voxel keys, expands it by one in every direction including diagonally.
     static expandKeySet(set) {
         const out = new Set();
         set.forEach(key => Voxels.expandKey(key).forEach(subKey => out.add(subKey)));
