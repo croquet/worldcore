@@ -14,7 +14,7 @@ export class FallBehavior extends Behavior {
     }
 
     setStartParameters() {
-        this.velocity = -8 + this.random()*(-4);   // m/s
+        this.velocity = -7 + this.random()*(-1);   // m/s
         this.axis = sphericalRandom();
         this.spin = 0.1 + this.random() * 0.9;
     }

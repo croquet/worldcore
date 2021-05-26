@@ -360,8 +360,7 @@ class InteriorLayer extends Layer {
 
 // These functions do the actual work of building the meshes that will be drawn.
 
-
-function TopColor(type) {
+export function TopColor(type) {
     switch (type) {
         case Voxels.lava: return [1.0, 0.0, 0.0, 1];
         case Voxels.rock: return [0.7, 0.7, 0.7, 1];
@@ -371,7 +370,7 @@ function TopColor(type) {
     return [0,0,0,1];
 }
 
-function SideColor(type) {
+export function SideColor(type) {
     switch (type) {
         case Voxels.lava: return [1.0, 0.0, 0.0, 1];
         case Voxels.rock: return [0.7, 0.7, 0.7, 1];
@@ -381,7 +380,7 @@ function SideColor(type) {
     return [0,0,0,1];
 }
 
-function InteriorColor(type) {
+export function InteriorColor(type) {
     return v4_max([0,0,0,0], v4_sub(SideColor(type), [0.2, 0.2, 0.2, 0]));
 }
 

@@ -15,6 +15,8 @@ import { HUD } from "./src/HUD";
 import { GodView } from "./src/GodView";
 import { PathRender, RouteRender } from "./src/Debug";
 import { Plants } from "./src/Plants";
+import { RubbleManager } from "./src/Rubble";
+import { StressManager } from "./src/Stress";
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -25,16 +27,18 @@ class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start Model!");
 
-        this.voxels = Voxels.create();
-        this.surfaces = Surfaces.create();
-        this.paths = Paths.create();
-        this.plants = Plants.create();
         this.voxels.generate();
     }
 
     createManagers() {
         this.playerManager = this.addManager(PlayerManager.create());
         this.actorManager = this.addManager(ActorManager.create());
+        this.voxels = this.addManager(Voxels.create());
+        this.surfaces = this.addManager(Surfaces.create());
+        this.paths = this.addManager(Paths.create());
+        this.plants = this.addManager(Plants.create());
+        this.stressManager = this.addManager(StressManager.create());
+        this.rubbleManager = this.addManager(RubbleManager.create());
     }
 }
 MyModelRoot.register("MyModelRoot");

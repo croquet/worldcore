@@ -201,7 +201,6 @@ TreePawn.register('TreePawn');
 //-- Timber --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-
 class TimberBehavior extends SequenceBehavior {
     get children() { return [
         FallBehavior,
