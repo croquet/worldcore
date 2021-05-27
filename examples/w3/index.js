@@ -16,7 +16,7 @@ import { GodView } from "./src/GodView";
 import { PathRender, RouteRender } from "./src/Debug";
 import { Plants } from "./src/Plants";
 import { RubbleManager } from "./src/Rubble";
-import { StressManager } from "./src/Stress";
+import { Stress } from "./src/Stress";
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -35,9 +35,9 @@ class MyModelRoot extends ModelRoot {
         this.actorManager = this.addManager(ActorManager.create());
         this.voxels = this.addManager(Voxels.create());
         this.surfaces = this.addManager(Surfaces.create());
+        this.stress = this.addManager(Stress.create());
         this.paths = this.addManager(Paths.create());
         this.plants = this.addManager(Plants.create());
-        this.stressManager = this.addManager(StressManager.create());
         this.rubbleManager = this.addManager(RubbleManager.create());
     }
 }

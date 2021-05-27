@@ -42,6 +42,7 @@ RubbleBehavior.register("RubbleBehavior");
 export class RubbleActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
     init(options) {
         super.init('RubblePawn', options);
+        this.set({tickRate: 50});
         this.startBehavior(RubbleBehavior)
     }
 

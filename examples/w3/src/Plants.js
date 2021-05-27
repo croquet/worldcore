@@ -212,6 +212,7 @@ TimberBehavior.register("TimberBehavior");
 export class TimberActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
     init(options) {
         super.init('TimberPawn', options);
+        this.set({tickRate: 50});
         this.startBehavior(TimberBehavior);
     }
 }
