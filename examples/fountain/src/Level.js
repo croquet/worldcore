@@ -3,9 +3,10 @@ import { FountainActor } from "./Fountain";
 import paper from "../assets/paper.jpg";
 
 export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
+    get pawn() {return LevelPawn};
     init() {
 
-        super.init("LevelPawn", {translation: [0,0,0], scale: [1,1,1]});
+        super.init({translation: [0,0,0], scale: [1,1,1]});
 
         this.addRigidBody({type: 'static'});
         this.addBoxCollider({
@@ -92,4 +93,4 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
     }
 
 }
-LevelPawn.register('LevelPawn');
+// LevelPawn.register('LevelPawn');

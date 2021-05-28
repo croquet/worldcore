@@ -15,6 +15,7 @@ import { HUD } from "./src/HUD";
 import { GodView } from "./src/GodView";
 import { PathRender, RouteRender } from "./src/Debug";
 import { Plants } from "./src/Plants";
+import { Animals } from "./src/Animals";
 import { RubbleManager } from "./src/Rubble";
 import { Stress } from "./src/Stress";
 
@@ -25,7 +26,7 @@ import { Stress } from "./src/Stress";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!");
+        console.log("Start Model!!");
 
         this.voxels.generate();
     }
@@ -38,6 +39,7 @@ class MyModelRoot extends ModelRoot {
         this.stress = this.addManager(Stress.create());
         this.paths = this.addManager(Paths.create());
         this.plants = this.addManager(Plants.create());
+        this.animals = this.addManager(Animals.create());
         this.rubbleManager = this.addManager(RubbleManager.create());
     }
 }

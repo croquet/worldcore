@@ -72,8 +72,9 @@ Plants.register("Plants");
 //------------------------------------------------------------------------------------------
 
 class PlantActor extends mix(Actor).with(AM_Spatial, AM_Voxel, AM_Behavioral) {
-    init(...args) {
-        super.init(...args);
+    get pawn() {return PlantPawn};
+    init(options) {
+        super.init(options);
         const plants = this.wellKnownModel("Plants");
         if (this.voxelKey) plants.set(this.voxelKey, this);
     }
@@ -87,7 +88,6 @@ class PlantActor extends mix(Actor).with(AM_Spatial, AM_Voxel, AM_Behavioral) {
 
 class PlantPawn extends mix(Pawn).with(PM_Spatial, PM_InstancedVisible) {
 }
-PlantPawn.register('PlantPawn');
 
 //------------------------------------------------------------------------------------------
 //-- Tree ----------------------------------------------------------------------------------
@@ -115,8 +115,10 @@ class TreeBehavior extends Behavior {
 TreeBehavior.register('TreeBehavior');
 
 export class TreeActor extends PlantActor {
+    get pawn() {return TreePawn};
+
     init(options) {
-        super.init('TreePawn', options);
+        super.init(options);
         this.set({tickRate: 500});
         this.randomizePosition();
         this.startBehavior(TreeBehavior);
@@ -195,7 +197,6 @@ class TreePawn extends PlantPawn {
     }
 
 }
-TreePawn.register('TreePawn');
 
 //------------------------------------------------------------------------------------------
 //-- Timber --------------------------------------------------------------------------------
@@ -210,8 +211,9 @@ class TimberBehavior extends SequenceBehavior {
 TimberBehavior.register("TimberBehavior");
 
 export class TimberActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
+    get pawn() {return TimberPawn};
     init(options) {
-        super.init('TimberPawn', options);
+        super.init(options);
         this.set({tickRate: 50});
         this.startBehavior(TimberBehavior);
     }
@@ -246,4 +248,3 @@ export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         return log;
     }
 }
-TimberPawn.register("TimberPawn");

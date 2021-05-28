@@ -68,7 +68,7 @@ export class Editor extends NamedView {
         const pick = PickFloorSurface(xy, GetTopLayer());
         const xyz = pick.xyz;
         if (!xyz || !Voxels.canEdit(...xyz)) return
-        this.start = Voxels.packKey(...xyz);
+        this.publish("editor", "spawnPerson", xyz);
     }
 
     doTree(xy) {

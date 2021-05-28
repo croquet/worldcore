@@ -16,8 +16,11 @@ import llama from "./assets/llama.jpg";
 //------------------------------------------------------------------------------------------
 
 class MoveActor extends mix(Actor).with(AM_Avatar) {
+
+    get pawn() {return MovePawn}
+
     init() {
-        super.init("MovePawn", {translation: [0,0,-5]});
+        super.init({translation: [0,0,-5]});
         this.child = ChildActor.create({parent: this, translation: [0,1.1,0]});
         this.subscribe("input", "qDown",  this.test);
         this.subscribe("input", "wDown",  this.test2);
@@ -81,7 +84,7 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible) {
 
 
 }
-MovePawn.register('MovePawn');
+// MovePawn.register('MovePawn');
 
 
 //------------------------------------------------------------------------------------------
@@ -166,8 +169,10 @@ class Sequence2 extends SequenceBehavior {
 
 class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
+    get pawn() {return ChildPawn}
+
     init(options) {
-        super.init("ChildPawn", options);
+        super.init(options);
         this.set({tickRate: 1000});
 
         this.startBehavior(Sequence2);
@@ -230,13 +235,14 @@ class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
     }
 
 }
-ChildPawn.register('ChildPawn');
+// ChildPawn.register('ChildPawn');
 
 //------------------------------------------------------------------------------------------
 // FloorActor
 //------------------------------------------------------------------------------------------
 
 class FloorActor extends mix(Actor).with(AM_Spatial) {
+    get pawn() {return FloorPawn}
     init(options) {
         super.init("FloorPawn", options);
     }
@@ -265,7 +271,7 @@ class FloorPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         this.setDrawCall(new DrawCall(this.mesh, this.material));
     }
 }
-FloorPawn.register('FloorPawn');
+// FloorPawn.register('FloorPawn');
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot

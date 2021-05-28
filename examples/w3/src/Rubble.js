@@ -40,8 +40,9 @@ class RubbleBehavior extends SequenceBehavior {
 RubbleBehavior.register("RubbleBehavior");
 
 export class RubbleActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
+    get pawn() {return RubblePawn}
     init(options) {
-        super.init('RubblePawn', options);
+        super.init(options);
         this.set({tickRate: 50});
         this.startBehavior(RubbleBehavior)
     }
@@ -80,4 +81,4 @@ export class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         return block;
     }
 }
-RubblePawn.register("RubblePawn");
+// RubblePawn.register("RubblePawn");

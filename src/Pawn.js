@@ -6,7 +6,7 @@ import { NamedView, GetNamedView } from "./NamedView";
 //-- PawnManager ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-const pawnRegistry = new Map();
+// const pawnRegistry = new Map();
 let pm; // Local pointer for pawns
 
 export class PawnManager extends NamedView {
@@ -39,13 +39,17 @@ export class PawnManager extends NamedView {
         this.spawnPawn(actor);
     }
 
+    // spawnPawn(actor) {
+    //     const type = pawnRegistry.get(actor.pawn);
+    //     if (!type) {
+    //         console.log("Unknown pawn type!");
+    //         return;
+    //     }
+    //     new (type)(actor);
+    // }
+
     spawnPawn(actor) {
-        const type = pawnRegistry.get(actor.pawnType);
-        if (!type) {
-            console.log("Unknown pawn type!");
-            return;
-        }
-        new (type)(actor);
+        new actor.pawn(actor);
     }
 
     add(pawn) {
@@ -83,9 +87,9 @@ export class PawnManager extends NamedView {
 
 export class Pawn extends View {
 
-    static register(name) {
-        pawnRegistry.set(name, this);
-    }
+    // static register(name) {
+    //     pawnRegistry.set(name, this);
+    // }
 
     constructor(actor) {
         super(actor);
@@ -135,7 +139,7 @@ export class Pawn extends View {
 
 
 }
-Pawn.register('Pawn');
+// Pawn.register('Pawn');
 
 //------------------------------------------------------------------------------------------
 //-- PM_Dynamic ----------------------------------------------------------------------------

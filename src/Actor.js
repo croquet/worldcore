@@ -1,4 +1,5 @@
 import { Model } from "@croquet/croquet";
+import { Pawn } from "./Pawn";
 
 //------------------------------------------------------------------------------------------
 //-- ActorManager --------------------------------------------------------------------------
@@ -40,14 +41,11 @@ ActorManager.register("ActorManager");
 //------------------------------------------------------------------------------------------
 
 export class Actor extends Model {
+    get pawn() {return Pawn}
 
-    init(pawnType = 'Pawn', options) {
+    init(options) {
         super.init();
-        this.pawnType = pawnType;
         this.set(options);
-        // if (options) {
-        //     this.userId = options.userId;   // The viewId of the user that owns this actor.
-        // }
         this.wellKnownModel('ActorManager').add(this);
         this.publish("actor", "createActor", this);
     }
@@ -85,9 +83,9 @@ export class Actor extends Model {
         this.unsubscribe(this.id, event);
     }
 
-
 }
 Actor.register("Actor");
+
 
 function deepEquals(a, b) {
     if (a === b) return true;

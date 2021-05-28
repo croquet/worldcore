@@ -16,40 +16,40 @@ import { HUD } from "./src/HUD";
 import { GodView } from "./src/GodView";
 
 
-//------------------------------------------------------------------------------------------
-// FloorActor
-//------------------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+// // FloorActor
+// //------------------------------------------------------------------------------------------
 
-class FloorActor extends mix(Actor).with(AM_Spatial) {
-    init() {
-        super.init("FloorPawn");
-    }
-}
-FloorActor.register('FloorActor');
+// class FloorActor extends mix(Actor).with(AM_Spatial) {
+//     init() {
+//         super.init("FloorPawn");
+//     }
+// }
+// FloorActor.register('FloorActor');
 
-//------------------------------------------------------------------------------------------
-// FloorPawn
-//------------------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+// // FloorPawn
+// //------------------------------------------------------------------------------------------
 
-class FloorPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
-    constructor(...args) {
-        super(...args);
+// class FloorPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
+//     constructor(...args) {
+//         super(...args);
 
-        const c =  [0.6,0.6,0.6,1];
+//         const c =  [0.6,0.6,0.6,1];
 
-        this.mesh = new Triangles();
-        this.mesh.addFace([[-50, 0, -50], [-50, 0, 50], [50, 0, 50], [50, 0, -50]], [c,c,c,c], [[0,0], [25,0], [25,25], [0,25]]);
-        this.mesh.load();
-        this.mesh.clear();
+//         this.mesh = new Triangles();
+//         this.mesh.addFace([[-50, 0, -50], [-50, 0, 50], [50, 0, 50], [50, 0, -50]], [c,c,c,c], [[0,0], [25,0], [25,25], [0,25]]);
+//         this.mesh.load();
+//         this.mesh.clear();
 
-        this.material = new Material();
-        this.material.pass = 'opaque';
-        this.material.texture.loadFromURL(paper);
+//         this.material = new Material();
+//         this.material.pass = 'opaque';
+//         this.material.texture.loadFromURL(paper);
 
-        this.setDrawCall(new DrawCall(this.mesh, this.material));
-    }
-}
-FloorPawn.register('FloorPawn');
+//         this.setDrawCall(new DrawCall(this.mesh, this.material));
+//     }
+// }
+// FloorPawn.register('FloorPawn');
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot

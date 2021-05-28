@@ -7,10 +7,11 @@ import paper from "../assets/paper.jpg";
 //------------------------------------------------------------------------------------------
 
 export class CubeSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
+    get pawn() {return CubeSprayPawn}
     init(options) {
         this.index = Math.floor(Math.random() * 10);
 
-        super.init("CubeSprayPawn", options);
+        super.init(options);
 
         this.addRigidBody({type: 'dynamic'});
 
@@ -64,17 +65,18 @@ class CubeSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
     }
 
 }
-CubeSprayPawn.register('CubeSprayPawn');
+// CubeSprayPawn.register('CubeSprayPawn');
 
 //------------------------------------------------------------------------------------------
 // CylinderSprayActor
 //------------------------------------------------------------------------------------------
 
 export class CylinderSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
+    get pawn() {return CylinderSprayPawn}
     init(options) {
         this.index = Math.floor(10 + Math.random() * 10);
 
-        super.init("CylinderSprayPawn", options);
+        super.init(options);
 
         this.addRigidBody({type: 'dynamic'});
 
@@ -129,17 +131,18 @@ class CylinderSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
     }
 
 }
-CylinderSprayPawn.register('CylinderSprayPawn');
+// CylinderSprayPawn.register('CylinderSprayPawn');
 
 //------------------------------------------------------------------------------------------
 // BallSprayActor
 //------------------------------------------------------------------------------------------
 
 export class BallSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
+    get pawn() {return BallSprayPawn}
     init(options) {
         this.index = Math.floor(20 + Math.random() * 10);
 
-        super.init("BallSprayPawn", options);
+        super.init(options);
 
         this.addRigidBody({type: 'dynamic'});
 
@@ -193,17 +196,18 @@ class BallSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
     }
 
 }
-BallSprayPawn.register('BallSprayPawn');
+// BallSprayPawn.register('BallSprayPawn');
 
 //------------------------------------------------------------------------------------------
 // ConeSprayActor
 //------------------------------------------------------------------------------------------
 
 export class ConeSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
+    get pawn() {return ConeSprayPawn}
     init(options) {
         this.index = Math.floor(30 + Math.random() * 10);
 
-        super.init("ConeSprayPawn", options);
+        super.init(options);
 
         this.addRigidBody({type: 'dynamic'});
 
@@ -263,15 +267,16 @@ class ConeSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
     }
 
 }
-ConeSprayPawn.register('ConeSprayPawn');
+// ConeSprayPawn.register('ConeSprayPawn');
 
 //------------------------------------------------------------------------------------------
 // FountainActor
 //------------------------------------------------------------------------------------------
 
 export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
+    get pawn() {return FountainPawn}
     init(options) {
-        super.init("FountainPawn", options);
+        super.init(options);
         this.spray = [];
         this.spawnLimit = 200;
         this.future(0).tick();
@@ -353,5 +358,5 @@ export class FountainPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         return material;
     }
 }
-FountainPawn.register('FountainPawn');
+// FountainPawn.register('FountainPawn');
 
