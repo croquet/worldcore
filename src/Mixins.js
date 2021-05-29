@@ -195,11 +195,11 @@ export const PM_Tree = superclass => class extends superclass {
 //-- Actor ---------------------------------------------------------------------------------
 
 export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
-    init(pawn, options) {
-        super.init(pawn, options);
+    init(...args) {
         this.listen("_scale", this.localChanged);
         this.listen("_rotation", this.localChanged);
         this.listen("_translation", this.localChanged);
+        super.init(...args);
     }
 
     get translation() { return this._translation || v3_zero() };
@@ -445,14 +445,12 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
 
     init(...args) {
-        super.init(...args);
-        this.avatar_tickStep = 15;
-        // this.velocity = v3_zero();
-        // this.spin = q_identity();
         this.listen("avatar_moveTo", this.onMoveTo);
         this.listen("avatar_rotateTo", this.onRotateTo);
         this.listen("avatar_setVelocity", this.onSetVelocity);
         this.listen("avatar_setSpin", this.onSetSpin);
+        super.init(...args);
+        this.avatar_tickStep = 15;
         this.future(0).tick(0);
     }
 
@@ -474,24 +472,12 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
         this.isMoving = !v3_isZero(this.velocity);
     }
 
-    // onSetVelocity(v) {
-    //     this.set({velocity: v});
-    //     // this.velocity = v;
-    //     this.isMoving = !v3_isZero(this.velocity);
-    // }
-
     onSetSpin(q) { // Faster version that doesn't use generic set syntax
         const o = this.spin;
         this._spin = q;
         this.say("_spin", {o: o, v: q});
         this.isRotating = !q_isZero(this.spin);
     }
-
-    // onSetSpin(q) {
-    //     this.set({spin: q});
-    //     // this.spin = q;
-    //     this.isRotating = !q_isZero(this.spin);
-    // }
 
     tick(delta) {
         if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
@@ -618,13 +604,9 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
 export const AM_MouselookAvatar = superclass => class extends AM_Avatar(superclass) {
 
-    init(pawn, options) {
-        // options = options || {};
-        // this.lookPitch = options.lookPitch || 0;
-        // this.lookYaw = options.lookYaw || 0;
-        super.init(pawn, options);
-
+    init(...args) {
         this.listen("avatar_lookTo", this.onLookTo);
+        super.init(...args);
     }
 
     get lookPitch() { return this._lookPitch || 0 };
@@ -632,8 +614,6 @@ export const AM_MouselookAvatar = superclass => class extends AM_Avatar(supercla
 
     onLookTo(e) {
         this.set({lookPitch: e[0], lookYaw: e[1]});
-        // this.lookPitch = e[0];
-        // this.lookYaw = e[1];
         this.rotateTo(q_euler(0, this.lookYaw, 0));
     }
 
@@ -697,35 +677,6 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
         const m2 = m4_multiply(m1, m0);
         return m4_multiply(m2, modelGlobal);
     }
-
-    // get lookGlobal() {
-    //     const m0 = m4_translation(this.lookOffset);
-    //     const m1 = m4_rotationX(this.lookPitch);
-    //     const m2 = m4_multiply(m1, m0);
-    //     return m4_multiply(m2, this.global);
-    // }
-
-    // const yawMatrix = m4_rotationY(this.lookyaw);
-    // const pitchRotation = m4_rotationX(this.lookPitch);
-    // const m0 = m4_translation(this.lookOffset);
-
-    // const m2 = m4_multiply(m1, m0);
-    // return m4_multiply(m2, this.global);
-
-    // interpolateRotation(tug) {
-    //     super.interpolateRotation(tug);
-
-    //     let dPitch = this.actor.lookPitch - this._lookPitch;
-    //     if (dPitch < -Math.PI) dPitch += TAU;
-    //     if (dPitch > Math.PI) dPitch -= TAU;
-
-    //     let dYaw = this.actor.lookYaw - this._lookYaw;
-    //     if (dYaw < -Math.PI) dYaw += TAU;
-    //     if (dYaw > Math.PI) dYaw -= TAU;
-
-    //     this._lookPitch = this._lookPitch + dPitch * tug;
-    //     this._lookYaw = clampRad(this._lookYaw + dYaw * tug);
-    // }
 
     update(time, delta) {
         super.update(time, delta);

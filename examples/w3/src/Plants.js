@@ -6,6 +6,7 @@ import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, AM_Smoothed, PM_Smoothed, Mat
 import { Voxels, AM_Voxel } from "./Voxels";
 import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
+import { AM_VoxelSmoothed } from "./Components";
 
 export class Plants extends Model {
     init() {
@@ -61,7 +62,7 @@ export class Plants extends Model {
     }
 
     onSpawnTree(xyz) {
-        TreeActor.create({translation: Voxels.toWorldXYZ(...xyz)});
+        TreeActor.create({xyz});
     }
 
 }
@@ -71,18 +72,18 @@ Plants.register("Plants");
 //-- Plant ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class PlantActor extends mix(Actor).with(AM_Spatial, AM_Voxel, AM_Behavioral) {
+class PlantActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral) {
     get pawn() {return PlantPawn};
     init(options) {
         super.init(options);
         const plants = this.wellKnownModel("Plants");
-        if (this.voxelKey) plants.set(this.voxelKey, this);
+        if (this.key) plants.set(this.key, this);
     }
 
     destroy() {
         super.destroy();
         const plants = this.wellKnownModel("Plants");
-        if (this.voxelKey) plants.delete(this.voxelKey);
+        if (this.key) plants.delete(this.key);
     }
 }
 
@@ -126,7 +127,7 @@ export class TreeActor extends PlantActor {
 
     randomizePosition() {
         const size = 0.2;
-        const surface = this.wellKnownModel('Surfaces').get(this.voxelKey);
+        const surface = this.wellKnownModel('Surfaces').get(this.key);
         let x = 0.2 + 0.6 * this.random();
         let y = 0.2 + 0.6 * this.random();
         let z = surface.rawElevation(x,y);
@@ -134,20 +135,20 @@ export class TreeActor extends PlantActor {
             x = 1-x;
             y = 1-y;
             z = surface.rawElevation(x,y);
-            if (z === undefined) console.log("Illegal tree position! " + [x,y]);
+            if (z === undefined) console.warn("Illegal tree position! " + [x,y]);
         }
-        this.roots = [x,y,z]; // Set the position the tree is planted in voxel coordinates
+
         this.set({
+            fraction:[x,y,z],
             rotation: q_axisAngle([0,0,1], TAU * this.random()),
-            translation: Voxels.toWorldXYZ(...v3_add(this.voxelXYZ, this.roots)),
             scale: [size, size, size]
         });
 
     }
 
     validate() {
-        const surface = this.wellKnownModel('Surfaces').get(this.voxelKey);
-        if (!surface || surface.rawElevation(this.roots[0], this.roots[1]) !== this.roots[2]) this.harvest();
+        const surface = this.wellKnownModel('Surfaces').get(this.key);
+        if (!surface || surface.rawElevation(this.fraction[0], this.fraction[1]) !== this.fraction[2]) this.harvest();
     }
 
     harvest() {
