@@ -517,13 +517,17 @@ export class LoopBehavior extends DecoratorBehavior {
         super.init(options);
     }
 
+    do() {
+        if (!this.active) this.start();
+    }
+
     reportSuccess(child) {
         if (child != this.active) console.log("error");
         this.active = null;
         if (this.count && this.n++ === this.count) {
             this.succeed();
         } else {
-            this.start();
+            this.run(); // Loop will start again on next tick.
         }
     }
 

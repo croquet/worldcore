@@ -1,4 +1,4 @@
-import { AM_Smoothed, RegisterMixin, v3_sub, v3_add, v3_floor } from "@croquet/worldcore";
+import { AM_Smoothed, RegisterMixin, v3_sub, v3_add, v3_floor, PM_Smoothed } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
@@ -6,7 +6,7 @@ import { Voxels } from "./Voxels";
 //------------------------------------------------------------------------------------------
 
 // VoxelSmoothed actors exist in a specific voxel in the world. They can be paired with either
-// AM_Spatial or AM_Smoothed pawns.
+// AM_Spatial or AM_VoxelSmoothed pawns.
 //
 // They hold an xyz value (the voxel coordinates) and a fraction (the offset within the voxel).
 // Their world translation is calcuated from these base values. You can also get the voxel key.
@@ -20,6 +20,8 @@ import { Voxels } from "./Voxels";
 export const AM_VoxelSmoothed = superclass => class extends AM_Smoothed(superclass) {
 
     init(options) {
+        this.listen("_xyz", this.localChanged);
+        this.listen("_fraction", () => {this.localChanged; console.log("ddd")});
         this.listen("_translation", this.onTranslation);
         this.listen("_key", this.onKey);
         super.init(options);
@@ -72,3 +74,14 @@ export const AM_VoxelSmoothed = superclass => class extends AM_Smoothed(supercla
 
 };
 RegisterMixin(AM_VoxelSmoothed);
+
+//-- Pawn ----------------------------------------------------------------------------------
+
+export const PM_VoxelSmoothed = superclass => class extends PM_Smoothed(superclass) {
+    constructor(...args) {
+        super(...args);
+        this.listenOnce("_xyz", d => {this._translation = this.actor.translation; this.localChanged();});
+        this.listenOnce("_fraction", d => {this._translation = this.actor.translation; this.localChanged();});
+    }
+
+};
