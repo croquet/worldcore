@@ -6,7 +6,7 @@ import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
     PM_InstancedVisible, GetNamedView, AM_Smoothed, PM_Smoothed,
     ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, VerticalWidget, ImageWidget,
-    ToggleWidget, ToggleSet, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, BehaviorManager, SequenceBehavior, ParallelSequenceBehavior, ParallelSelectorBehavior, SelectorBehavior, ShowBehaviorRegistry, Shuffle, RandomSequenceBehavior, InvertBehavior, LoopBehavior, ParallelPrimaryBehavior, DelayBehavior, RandomSelectorBehavior  } from "@croquet/worldcore";
+    ToggleWidget, ToggleSet, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, BehaviorManager, SequenceBehavior, ParallelSequenceBehavior, ParallelSelectorBehavior, SelectorBehavior, ShowBehaviorRegistry, Shuffle, RandomSequenceBehavior, InvertBehavior, LoopBehavior, ParallelPrimaryBehavior, DelayBehavior, RandomSelectorBehavior, DestroyBehavior  } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 
@@ -98,70 +98,83 @@ class SpinBehavior extends Behavior {
         q = q_multiply(q, q_axisAngle(axis, 0.13 * delta / 50));
         q = q_normalize(q);
         this.actor.rotateTo(q);
-        this.run();
     }
 }
 SpinBehavior.register("SpinBehavior");
 
 class BehaviorA extends Behavior {
-    start() { console.log("A"); this.fail()}
+    init(options) {
+        super.init(options);
+        console.log("A");
+        this.fail()
+    }
 }
 BehaviorA.register("BehaviorA");
 
 class BehaviorB extends Behavior {
-    start() { console.log("B"); this.succeed()}
+    init(options) {
+        super.init(options);
+        console.log("B");
+        this.succeed()
+    }
 }
 BehaviorB.register("BehaviorB");
 
 class BehaviorC extends Behavior {
-    start() { console.log("C"); this.succeed()}
+    init(options) {
+        super.init(options);
+        console.log("C");
+        this.succeed()
+    }
 }
 BehaviorC.register("BehaviorC");
 
 class BehaviorD extends Behavior {
-    start() { console.log("D"); this.succeed()}
+    init(options) {
+        super.init(options);
+        console.log("D");
+        this.succeed()
+    }
 }
 BehaviorD.register("BehaviorD");
 
 class InvertA extends InvertBehavior {
-    get child() {return BehaviorA}
+    get behavior() {return BehaviorA}
 }
 InvertA.register("InvertA");
 
-class Delay5 extends DelayBehavior {
-    get delay() {return 500}
-}
-Delay5.register("Delay5");
+// class Delay5 extends DelayBehavior {
+//     get delay() {return 500}
+// }
+// Delay5.register("Delay5");
 
-class Invert5 extends InvertBehavior {
-    get child() {return Delay5}
-}
-Invert5.register("Invert5");
+// class Invert5 extends InvertBehavior {
+//     get child() {return Delay5}
+// }
+// Invert5.register("Invert5");
 
 class TestSequence extends SequenceBehavior {
 
-    get children() { return [
+    get behaviors() { return [
         InvertA,
-        Delay5,
         BehaviorB,
-        Delay5,
         BehaviorC,
-        Delay5,
         BehaviorD,
-        Delay5,
+        DelayBehavior,
         // SpinBehavior,
+        // DestroyBehavior
     ]}
 }
 TestSequence.register("TestSequence");
 
 class TestLoop extends LoopBehavior {
-    get child() { return TestSequence }
-    get count() { return 3}
+    get count() { return 5};
+    get behavior() { return TestSequence }
 }
 TestLoop.register("TestLoop");
 
 class Sequence2 extends SequenceBehavior {
-    get children() {return [
+    get behaviors() {return [
         TestLoop,
         SpinBehavior
     ]}
@@ -173,7 +186,6 @@ class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
     init(options) {
         super.init(options);
-        this.set({tickRate: 1000});
 
         this.startBehavior(Sequence2);
 
