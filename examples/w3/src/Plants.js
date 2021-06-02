@@ -1,10 +1,10 @@
 import { Model } from "@croquet/croquet";
 import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, AM_Smoothed, PM_Smoothed, Material, PM_InstancedVisible, GetNamedView, v3_add,
     Cylinder, Cone, m4_translation, CachedObject, q_axisAngle, TAU, InstancedDrawCall, m4_rotationX, toRad, v3_scale,
-    AM_Behavioral, DestroyBehavior, SequenceBehavior, Behavior
+    AM_Behavioral, DestroyBehavior, SequenceBehavior, Behavior, Behavior2, AM_Behavioral2, SequenceBehavior2, DestroyBehavior2
  } from "@croquet/worldcore";
 import { Voxels, AM_Voxel } from "./Voxels";
-import { FallBehavior } from "./SharedBehaviors"
+import { FallBehavior, FallBehavior2 } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
 import { AM_VoxelSmoothed } from "./Components";
 
@@ -72,7 +72,7 @@ Plants.register("Plants");
 //-- Plant ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class PlantActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral) {
+class PlantActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral2) {
     get pawn() {return PlantPawn};
     init(options) {
         super.init(options);
@@ -94,21 +94,19 @@ class PlantPawn extends mix(Pawn).with(PM_Spatial, PM_InstancedVisible) {
 //-- Tree ----------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TreeBehavior extends Behavior {
+class TreeBehavior extends Behavior2 {
 
-    start() {
+    init(options) {
+        super.init(options);
         this.maxSize = 1 - 0.3 * this.random();
         this.size = this.actor.scale[0];
-        this.run();
     }
 
     do(delta) {
         const growth = 0.02;
         this.size = Math.min(this.maxSize, this.size + growth * delta / 1000);
         this.actor.set({scale: [this.size, this.size, this.size]});
-        if (this.size < this.maxSize) {
-            this.run();
-        } else {
+        if (this.size >= this.maxSize) {
             this.succeed();
         }
     }
@@ -120,9 +118,9 @@ export class TreeActor extends PlantActor {
 
     init(options) {
         super.init(options);
-        this.set({tickRate: 500});
+        // this.set({tickRate: 500});
         this.randomizePosition();
-        this.startBehavior(TreeBehavior);
+        this.startBehavior(TreeBehavior, {tickRate: 500});
     }
 
     randomizePosition() {
@@ -203,19 +201,18 @@ class TreePawn extends PlantPawn {
 //-- Timber --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TimberBehavior extends SequenceBehavior {
-    get children() { return [
-        FallBehavior,
-        DestroyBehavior
+class TimberBehavior extends SequenceBehavior2 {
+    get sequence() { return [
+        FallBehavior2,
+        DestroyBehavior2
     ]}
 }
 TimberBehavior.register("TimberBehavior");
 
-export class TimberActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
+export class TimberActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral2) {
     get pawn() {return TimberPawn};
     init(options) {
         super.init(options);
-        this.set({tickRate: 50});
         this.startBehavior(TimberBehavior);
     }
 }

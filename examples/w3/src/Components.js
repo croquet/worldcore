@@ -21,7 +21,7 @@ export const AM_VoxelSmoothed = superclass => class extends AM_Smoothed(supercla
 
     init(options) {
         this.listen("_xyz", this.localChanged);
-        this.listen("_fraction", () => {this.localChanged; console.log("ddd")});
+        this.listen("_fraction", this.localChanged);
         this.listen("_translation", this.onTranslation);
         this.listen("_key", this.onKey);
         super.init(options);

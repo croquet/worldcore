@@ -26,7 +26,7 @@ import { Stress } from "./src/Stress";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!!!");
+        console.log("Start Model!");
 
         this.voxels.generate();
     }
