@@ -25,9 +25,10 @@ import * as THREE from 'three';
 //------------------------------------------------------------------------------------------
 
 class MoveActor extends mix(Actor).with(AM_Smoothed) {
+    get pawn() {return MovePawn}
     init(options) {
-        super.init("MovePawn", options);
-        this.setTranslation([0,0,-5]);
+        super.init(options);
+        this.set({translation:[0,0,-5]});
         const child = ChildActor.create({parent: this, translation: [0,1.1,0]});
         this.q = q_identity();
         this.spin = 0;
@@ -81,7 +82,6 @@ class MovePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     }
 
 }
-MovePawn.register('MovePawn');
 
 
 // ------------------------------------------------------------------------------------------
@@ -89,8 +89,9 @@ MovePawn.register('MovePawn');
 // ------------------------------------------------------------------------------------------
 
 class ChildActor extends mix(Actor).with(AM_Smoothed) {
+    get pawn() {return ChildPawn}
     init(options) {
-        super.init("ChildPawn", options);
+        super.init(options);
         this.q = q_identity();
         this.future(50).tick();
         this.subscribe("input", "dDown", this.destroy);
@@ -134,15 +135,15 @@ class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     }
 
 }
-ChildPawn.register('ChildPawn');
 
 //------------------------------------------------------------------------------------------
 // LevelActor
 //------------------------------------------------------------------------------------------
 
 class LevelActor extends mix(Actor).with(AM_Spatial) {
+    get pawn() {return LevelPawn}
     init(options) {
-        super.init("LevelPawn", options);
+        super.init(options);
     }
 }
 LevelActor.register('LevelActor');
@@ -174,15 +175,15 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         this.setRenderObject(group);
     }
 }
-LevelPawn.register('LevelPawn');
 
 //------------------------------------------------------------------------------------------
 // CameraActor
 //------------------------------------------------------------------------------------------
 
 class CameraActor extends mix(Actor).with(AM_Spatial, AM_Player) {
+    get pawn() {return CameraPawn}
     init(options) {
-        super.init("CameraPawn", options);
+        super.init(options);
     }
 }
 CameraActor.register('CameraActor');
@@ -193,7 +194,6 @@ CameraActor.register('CameraActor');
 
 class CameraPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeCamera, PM_Player) {
 }
-CameraPawn.register('CameraPawn');
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot

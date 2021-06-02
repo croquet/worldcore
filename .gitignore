@@ -1,2 +1,9 @@
 node_modules
 dist
+examples/w3/.DS_Store
+examples/wc_three/.DS_Store
+examples/MazeWars/assets/.DS_Store
+examples/fountain/.DS_Store
+examples/.DS_Store
+examples/MazeWars/.DS_Store
+.DS_Store
