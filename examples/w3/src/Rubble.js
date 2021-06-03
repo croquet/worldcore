@@ -31,20 +31,11 @@ RubbleManager.register('RubbleManager');
 //-- Rubble --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class RubbleBehavior extends SequenceBehavior {
-    get children() { return [
-        FallBehavior,
-        DestroyBehavior
-    ]}
-}
-RubbleBehavior.register("RubbleBehavior");
-
 export class RubbleActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
     get pawn() {return RubblePawn}
     init(options) {
         super.init(options);
-        this.set({tickRate: 50});
-        this.startBehavior(RubbleBehavior)
+        this.startBehavior(FallBehavior, {tickRate:50});
     }
 
     get type() {return this._type};
