@@ -37,9 +37,9 @@ class MyModelRoot extends ModelRoot {
     pause(p) {
         this.isPaused = p;
         if (p) {
-            this.phyicsManager.pause();
+            this.physicsManager.pause();
         } else {
-            this.phyicsManager.resume();
+            this.physicsManager.resume();
         }
     }
 
@@ -51,7 +51,7 @@ class MyModelRoot extends ModelRoot {
 
     createManagers() {
         this.playerManager = this.addManager(PlayerManager.create());
-        this.phyicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 15}));
+        this.physicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 15}));
         this.actorManager = this.addManager(ActorManager.create());
     }
 
@@ -197,6 +197,7 @@ async function go() {
         appId: 'io.croquet.fountain',
         name: App.autoSession(),
         // name: 'test',
+        password: 'dummy-pass',
         model: MyModelRoot,
         view: MyViewRoot,
         tps: 30,
