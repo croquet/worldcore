@@ -90,8 +90,12 @@ export function v2_normalize(v) {
     return [v[0]*m, v[1]*m];
 }
 
+export function v2_abs(v) {
+    return [Math.abs(v[0]), Math.abs(v[1])];
+}
+
 export function v2_ceil(v) {
-    return [Math.ceil(v[0]), Math.v3_ceil(v[1])];
+    return [Math.ceil(v[0]), Math.ceil(v[1])];
 }
 
 export function v2_floor(v) {
@@ -197,8 +201,12 @@ export function v3_inverse(v) {
     return [1/v[0], 1/v[1], 1/v[2]];
 }
 
+export function v3_abs(v) {
+    return [Math.abs(v[0]), Math.v3_abs(v[1]), Math.abs(v[2])];
+}
+
 export function v3_ceil(v) {
-    return [Math.ceil(v[0]), Math.v3_ceil(v[1]), Math.v3_ceil(v[2])];
+    return [Math.ceil(v[0]), Math.v3_ceil(v[1]), Math.ceil(v[2])];
 }
 
 export function v3_floor(v) {

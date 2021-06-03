@@ -24,7 +24,6 @@ export class Stress extends Model{
     }
 
     onNewLevel() {
-        console.log("Rebuilding stress!");
         const voxels = this.wellKnownModel("Voxels");
 
         this.stress = new Map();

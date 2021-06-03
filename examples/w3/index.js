@@ -26,9 +26,10 @@ import { Stress } from "./src/Stress";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!!");
+        console.log("Start Model!");
 
         this.voxels.generate();
+
     }
 
     createManagers() {
@@ -91,7 +92,7 @@ async function go() {
         name: 'w3',
         model: MyModelRoot,
         view: MyViewRoot,
-        tps: 15,
+        tps: 20,
     });
 }
 

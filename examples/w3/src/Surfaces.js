@@ -39,19 +39,12 @@ export class Surfaces extends Model {
         return this.surfaces.get(key);
     }
 
-    // randomFloorID() {
-    //     const vids = [];
-    //     this.surfaces.forEach((s,vid) => { if (s.hasFloor()) vids.push(vid); });
-    //     const n = Math.floor(this.random() * vids.length);
-    //     return vids[n];
-    // }
-
-    // randomFloorXYZ() {
-    //     const floors = [];
-    //     this.surfaces.forEach(s => { if (s.hasFloor()) floors.push(s); });
-    //     const n = Math.floor(this.random() * floors.length);
-    //     return floors[n].xyz;
-    // }
+    randomFloor() {
+        const keys = [];
+        this.surfaces.forEach((surface,key) => { if (surface.hasFloor()) keys.push(key); });
+        const n = Math.floor(this.random() * keys.length);
+        return keys[n];
+    }
 
     elevation(xyz) {
         const x = Math.floor(xyz[0]);
