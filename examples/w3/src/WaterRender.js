@@ -1,4 +1,3 @@
-import { View } from "@croquet/croquet";
 import { Triangles, Material, DrawCall, GetNamedView, NamedView, v3_add } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 
@@ -24,15 +23,18 @@ export class WaterRender extends NamedView {
         const c = [0, 0, 0.8, 0.2];
         this.mesh.clear();
         const water = this.wellKnownModel("Water");
-        water.volume.forEach( (v,key) => {
-            const xyz = Voxels.unpackKey(key);
 
-            const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,v]));
-            const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,v]));
-            const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,v]));
-            const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,v]));
-            this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
+        water.layers.forEach( layer => {
+            layer.forEach( (v,key) => {
+                const xyz = Voxels.unpackKey(key);
+                const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,v]));
+                const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,v]));
+                const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,v]));
+                const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,v]));
+                this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
+            })
         })
+
         this.mesh.load();
         this.mesh.clear();
     }
