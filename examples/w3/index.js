@@ -18,6 +18,8 @@ import { Plants } from "./src/Plants";
 import { Animals } from "./src/Animals";
 import { RubbleManager } from "./src/Rubble";
 import { Stress } from "./src/Stress";
+import { Water } from "./src/Water";
+import { WaterRender } from "./src/WaterRender";
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -26,7 +28,7 @@ import { Stress } from "./src/Stress";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!");
+        console.log("Start Model!!");
 
         this.voxels.generate();
 
@@ -36,6 +38,7 @@ class MyModelRoot extends ModelRoot {
         this.playerManager = this.addManager(PlayerManager.create());
         this.actorManager = this.addManager(ActorManager.create());
         this.voxels = this.addManager(Voxels.create());
+        this.water = this.addManager(Water.create());
         this.surfaces = this.addManager(Surfaces.create());
         this.stress = this.addManager(Stress.create());
         this.paths = this.addManager(Paths.create());
@@ -74,6 +77,7 @@ class MyViewRoot extends ViewRoot {
         this.input = this.addManager(new InputManager(this.model));
         this.render = this.addManager(new RenderManager(this.model));
         this.voxelRender = this.addManager(new VoxelRender(this.model));
+        this.waterRender = this.addManager(new WaterRender(this.model));
         this.ui = this.addManager(new UIManager(this.model));
         this.voxelCursor = this.addManager(new VoxelCursor(this.model));
         this.godView = this.addManager(new GodView(this.model));

@@ -28,6 +28,9 @@ export class Editor extends NamedView {
             case 'tree':
                 this.doTree(data.xy);
                 break;
+            case 'water':
+                this.doWater(data.xy);
+                break;
             default:
         }
 
@@ -76,6 +79,13 @@ export class Editor extends NamedView {
         const xyz = pick.xyz;
         if (!xyz || !Voxels.canEdit(...xyz)) return
         this.publish("editor", "spawnTree", xyz);
+    }
+
+    doWater(xy) {
+        const pick = PickFillSurface(xy, GetTopLayer());
+        const xyz = pick.xyz;
+        if (!xyz || !Voxels.canEdit(...xyz)) return
+        this.publish("editor", "spawnWater", {xyz, volume: 1});
     }
 
 

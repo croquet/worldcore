@@ -10,6 +10,8 @@ import spawnOnIcon from "../assets/spawnOnIcon.png";
 import spawnOffIcon from "../assets/spawnOffIcon.png";
 import treeOnIcon from "../assets/treeOnIcon.png";
 import treeOffIcon from "../assets/treeOffIcon.png";
+import waterOnIcon from "../assets/waterOnIcon.png";
+import waterOffIcon from "../assets/waterOffIcon.png";
 
 
 export class HUD extends Widget {
@@ -40,7 +42,13 @@ export class HUD extends Widget {
         treeToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: treeOffIcon}));
         treeToggle.onToggleOn = () => this.publish("hud", "editMode", "tree");
 
-        const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle, treeToggle);
+        const waterToggle = new ToggleWidget(this, {local: [20,140], size:[50,50]})
+        this.setToggleDefaults(waterToggle);
+        waterToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: waterOnIcon}));
+        waterToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: waterOffIcon}));
+        waterToggle.onToggleOn = () => this.publish("hud", "editMode", "water");
+
+        const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle, treeToggle, waterToggle);
 
         const cutawaySlider = new SliderWidget(this, {
             pivot: [1,0.5],

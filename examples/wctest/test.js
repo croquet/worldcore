@@ -102,84 +102,6 @@ class SpinBehavior extends Behavior {
 }
 SpinBehavior.register("SpinBehavior");
 
-class BehaviorA extends Behavior {
-    init(options) {
-        super.init(options);
-        console.log("A");
-        this.fail()
-    }
-}
-BehaviorA.register("BehaviorA");
-
-class BehaviorB extends Behavior {
-    init(options) {
-        super.init(options);
-        console.log("B");
-        this.succeed()
-    }
-}
-BehaviorB.register("BehaviorB");
-
-class BehaviorC extends Behavior {
-    init(options) {
-        super.init(options);
-        console.log("C");
-        this.succeed()
-    }
-}
-BehaviorC.register("BehaviorC");
-
-class BehaviorD extends Behavior {
-    init(options) {
-        super.init(options);
-        console.log("D");
-        this.succeed()
-    }
-}
-BehaviorD.register("BehaviorD");
-
-class InvertA extends InvertBehavior {
-    get behavior() {return BehaviorA}
-}
-InvertA.register("InvertA");
-
-// class Delay5 extends DelayBehavior {
-//     get delay() {return 500}
-// }
-// Delay5.register("Delay5");
-
-// class Invert5 extends InvertBehavior {
-//     get child() {return Delay5}
-// }
-// Invert5.register("Invert5");
-
-class TestSequence extends SequenceBehavior {
-
-    get behaviors() { return [
-        InvertA,
-        BehaviorB,
-        BehaviorC,
-        BehaviorD,
-        DelayBehavior,
-        // SpinBehavior,
-        // DestroyBehavior
-    ]}
-}
-TestSequence.register("TestSequence");
-
-class TestLoop extends LoopBehavior {
-    get count() { return 5};
-    get behavior() { return TestSequence }
-}
-TestLoop.register("TestLoop");
-
-class Sequence2 extends SequenceBehavior {
-    get behaviors() {return [
-        TestLoop,
-        SpinBehavior
-    ]}
-} Sequence2.register("Sequence2");
-
 class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
     get pawn() {return ChildPawn}
@@ -187,7 +109,7 @@ class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
     init(options) {
         super.init(options);
 
-        this.startBehavior(Sequence2);
+        this.startBehavior(SpinBehavior);
 
         this.subscribe("input", "1Down",  this.test1);
         this.subscribe("input", "2Down",  this.test2);
@@ -295,6 +217,11 @@ class MyModelRoot extends ModelRoot {
         console.log("Start Model!!!");
         FloorActor.create();
         this.move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
+        this.subscribe("input", "tap", this.onTap);
+    }
+
+    onTap(event) {
+        // console.log("tap!");
     }
 
     createManagers() {
