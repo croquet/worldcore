@@ -26,6 +26,9 @@ export class WaterRender extends NamedView {
 
         water.layers.forEach( layer => {
             layer.forEach( (v,key) => {
+                if (v < 0.01) return;
+                // if (v < 0.01 || v > 0.99) return;
+                v = Math.min(1,v);
                 const xyz = Voxels.unpackKey(key);
                 const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,v]));
                 const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,v]));

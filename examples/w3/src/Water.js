@@ -13,7 +13,7 @@ export class Water extends Model{
         this.subscribe("voxels", "newLevel", () => this.onNewLevel());
         this.subscribe("editor", "spawnWater", this.spawnWater);
 
-        this.tick();
+        this.future(100).tick();
     }
 
     clear() {
@@ -23,7 +23,7 @@ export class Water extends Model{
 
     set(key, volume) {
         const xyz = Voxels.unpackKey(key);
-        const z = xyz[0];
+        const z = xyz[2];
         if (volume) {
             this.layers[z].set(key, volume);
         } else {
@@ -33,7 +33,7 @@ export class Water extends Model{
 
     get(key) {
         const xyz = Voxels.unpackKey(key);
-        const z = xyz[0];
+        const z = xyz[2];
         return this.layers[z].get(key) || 0;
     }
 
@@ -48,6 +48,16 @@ export class Water extends Model{
         const key = Voxels.packKey(...xyz);
         this.set(key, volume);
         this.publish("water", "changed");
+    }
+
+    get totalVolume() {
+        let v = 0;
+        this.layers.forEach(layer => {
+            layer.forEach((volume, key) => {
+                v+=volume;
+            })
+        });
+        return v;
     }
 
     tick() {
@@ -71,43 +81,46 @@ export class Water extends Model{
 
             // Calculate flow to the side.
 
-            // const old = new Map(layer).forEach((volume, key) => {
-            //     const xyz = Voxels.unpackKey(key);
-            //     let sides = [];
-            //     let sum = volume;
+            const old = new Map(layer);
 
-            //     for (let a = 0; a < 4; a++) {
-            //         const sideXYZ = Voxels.adjacent(...xyz, a);
-            //         const sideKey = Voxels.packKey(...sideXYZ);
-            //         if (!Voxels.isValid(...sideXYZ) || voxels.get(...sideXYZ)) continue; // Side voxel is solid
+            old.forEach((volume, key) => {
+                const xyz = Voxels.unpackKey(key);
+                let sides = [];
+                let sum = volume;
 
-            //         const sideVolume = old.get(sideKey) || 0;
-            //         if (sideVolume < volume) { // We should flow into it.
-            //             sides.push(sideKey);
-            //             sum += sideVolume;
-            //         }
-            //     }
+                for (let a = 0; a < 4; a++) {
+                    const sideXYZ = Voxels.adjacent(...xyz, a);
+                    const sideKey = Voxels.packKey(...sideXYZ);
+                    if (!Voxels.isValid(...sideXYZ) || voxels.get(...sideXYZ)) continue; // Side voxel is solid
 
-            //     if (sides.length===0) return; // All side volumes are higher
+                    const sideVolume = old.get(sideKey) || 0;
+                    if (sideVolume < volume) { // We should flow into it.
+                        sides.push(sideKey);
+                        sum += sideVolume;
+                    }
+                }
 
-            //     const average = sum/(count+1); // The target volume
-            //     const outFlow = (volume-average) * 0.1;
-            //     this.set(key, volume-outFlow);
+                if (sides.length===0) return; // All side volumes are higher
 
-            //     sides.forEach(sideKey => {
-            //         const sideVolume = old.get(sideKey) || 0;
-            //         const inFlow = (sideVolume-average) * 0.1;
-            //         this.set(key, sideVolume+inFlow); // This is not correct because it doesn't sum multiple inflows from adjacent volumes.
-            //         // Also verity summed inflows don't push volume over 1!
-            //     });
+                const average = sum/(sides.length+1); // The target volume
+                const outFlow = (volume-average) * 1;
+                const current = this.get(key) - outFlow;
+                this.set(key, current);
 
-            // })
+                sides.forEach(sideKey => {
+                    const sideVolume = old.get(sideKey) || 0;
+                    const inFlow = (average-sideVolume) * 1;
+                    const current = this.get(sideKey) + inFlow;
+                    this.set(sideKey, current);
+                });
+
+            })
 
         });
 
-
+        console.log(this.totalVolume);
         this.publish("water", "changed");
-        this.future(1000).tick();
+        this.future(100).tick();
     }
 
     // tick() {
