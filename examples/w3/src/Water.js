@@ -2,44 +2,94 @@ import { Model } from "@croquet/croquet";
 import { GetNamedModel } from "../../..";
 import { Voxels } from "./Voxels";
 
+class WaterLayer {
+    constructor(old) {
+            if (old && old.map) this.map = new Map(old.map);
+    }
+
+    clear() { delete this.map; }
+
+    forEach(f) {
+        if (this.map) this.map.forEach(f);
+    }
+
+    set(key, volume) {
+        if (volume) {
+            if (!this.map) this.map = new Map();
+            this.map.set(key, volume);
+        } else {
+            this.map.delete(key);
+            if (this.map.length === 0) delete this.map;
+        }
+    }
+
+    get(key) {
+        if (!this.map) return 0;
+        return this.map.get(key) || 0;
+    }
+
+    get totalVolume() {
+        let sum = 0;
+        if (this.map) this.map.forEach( v=> sum+=v );
+        return sum;
+    }
+
+}
+
+// Need to destroy water on solid fill.
+
 export class Water extends Model{
+
+    static types() {
+        return { "W3:WaterLayer": WaterLayer };
+    }
+
     init() {
         super.init();
-        console.log("Starting water!");
         this.beWellKnownAs('Water');
 
         this.clear();
 
-        this.subscribe("voxels", "newLevel", () => this.onNewLevel());
+        this.subscribe("voxels", "newLevel", this.onNewLevel);
+        this.subscribe("voxels", "changed", this.onChanged);
         this.subscribe("editor", "spawnWater", this.spawnWater);
 
-        this.future(100).tick();
+        this.tick();
     }
 
     clear() {
         this.layers = [];
-        for (let z = 0; z < Voxels.sizeZ; z++) this.layers[z] = new Map();
+        for (let z = 0; z < Voxels.sizeZ; z++) this.layers[z] = new WaterLayer();
     }
 
     set(key, volume) {
         const xyz = Voxels.unpackKey(key);
         const z = xyz[2];
-        if (volume) {
-            this.layers[z].set(key, volume);
-        } else {
-            this.layers[z].delete(key);
-        }
+        this.layers[z].set(key, volume);
     }
 
     get(key) {
         const xyz = Voxels.unpackKey(key);
         const z = xyz[2];
-        return this.layers[z].get(key) || 0;
+        return this.layers[z].get(key);
     }
 
     onNewLevel() {
         this.clear()
         this.publish("water", "changed");
+    }
+
+    onChanged(data) {
+
+        const type = data.type;
+        const old = data.old;
+        if (type && !old) { // an empty voxel has been filled.
+            const key = Voxels.packKey(...data.xyz);
+            if (this.get(key)) { // Destroy the water it contained
+                this.set(key, 0);
+                this.publish("water", "changed");
+            }
+        }
     }
 
     spawnWater(data) {
@@ -51,121 +101,99 @@ export class Water extends Model{
     }
 
     get totalVolume() {
-        let v = 0;
-        this.layers.forEach(layer => {
-            layer.forEach((volume, key) => {
-                v+=volume;
-            })
-        });
-        return v;
+        let sum = 0;
+        this.layers.forEach(layer => sum += layer.totalVolume);
+        return sum;
     }
 
-    tick() {
+    flowDown(z) {
         const voxels = this.wellKnownModel("modelRoot").voxels;
 
-        this.layers.forEach(layer => {
+        const layer = this.layers[z];
+        const below = this.layers[z-1];
+        const old = new WaterLayer(layer);
 
-            // Flow into empty voxels below.
+        old.forEach( (volume,key) => {
+            const xyz = Voxels.unpackKey(key);
+            const belowXYZ = Voxels.adjacent(...xyz, Voxels.below);
+            if (voxels.get(...belowXYZ)) return; // Voxel below is solid.
+            const belowKey = Voxels.packKey(...belowXYZ);
+            const belowVolume = below.get(belowKey);
+            if (belowVolume === 1) return; // Voxel below is full.
+            const flow = Math.min(volume, 1-belowVolume);
+            below.set(belowKey, belowVolume + flow);
+            layer.set(key, volume - flow);
+        });
 
-            new Map(layer).forEach((volume, key) => {
-                const xyz = Voxels.unpackKey(key);
-                const belowXYZ = Voxels.adjacent(...xyz, Voxels.below);
-                if (!Voxels.isValid(...belowXYZ) || voxels.get(...belowXYZ)) return; // Voxel below is solid.
-                const belowKey = Voxels.packKey(...belowXYZ);
-                const belowVolume = this.get(belowKey);
-                if (belowVolume === 1) return; // Voxel below is full.
-                const flow = Math.min(volume, 1-belowVolume);
-                this.set(belowKey, belowVolume + flow);
-                this.set(key, volume - flow);
-            })
+    }
 
-            // Calculate flow to the side.
+    flowToSide(z) {
+        const voxels = this.wellKnownModel("modelRoot").voxels;
 
-            const old = new Map(layer);
+        const layer = this.layers[z];
+        const old = new WaterLayer(layer);
 
-            old.forEach((volume, key) => {
-                const xyz = Voxels.unpackKey(key);
-                let sides = [];
-                let sum = volume;
+        old.forEach( (volume,key) => {
+            const xyz = Voxels.unpackKey(key);
 
-                for (let a = 0; a < 4; a++) {
-                    const sideXYZ = Voxels.adjacent(...xyz, a);
-                    const sideKey = Voxels.packKey(...sideXYZ);
-                    if (!Voxels.isValid(...sideXYZ) || voxels.get(...sideXYZ)) continue; // Side voxel is solid
-
-                    const sideVolume = old.get(sideKey) || 0;
-                    if (sideVolume < volume) { // We should flow into it.
-                        sides.push(sideKey);
-                        sum += sideVolume;
-                    }
+            // Find side voxels to flow into
+            const sides = [];
+            let sum = volume;
+            for (let a = 0; a < 4; a++) {
+                const sideXYZ = Voxels.adjacent(...xyz, a);
+                const sideKey = Voxels.packKey(...sideXYZ);
+                if (!Voxels.isValid(...sideXYZ) || voxels.get(...sideXYZ)) continue; // Side voxel is solid
+                const sideVolume = old.get(sideKey);
+                if (sideVolume < volume) { // We should flow into it.
+                    sides.push(sideKey);
+                    sum += sideVolume;
                 }
+            }
 
-                if (sides.length===0) return; // All side volumes are higher
+            if (sides.length===0) return; // All side volumes are higher
 
-                const average = sum/(sides.length+1); // The target volume
-                const outFlow = (volume-average) * 1;
-                const current = this.get(key) - outFlow;
-                this.set(key, current);
+            const average = sum/(sides.length+1); // The target volume
+            const outFlow = (volume-average);
+            const current = layer.get(key) - outFlow;
+            layer.set(key, current);
 
-                sides.forEach(sideKey => {
-                    const sideVolume = old.get(sideKey) || 0;
-                    const inFlow = (average-sideVolume) * 1;
-                    const current = this.get(sideKey) + inFlow;
-                    this.set(sideKey, current);
-                });
-
-            })
+            sides.forEach(sideKey => {
+                const sideVolume = old.get(sideKey);
+                const inFlow = (average-sideVolume);
+                const current = layer.get(sideKey) + inFlow;
+                layer.set(sideKey, current);
+            });
 
         });
+
+    }
+
+
+    tick() {
+
+        for (let z = Voxels.sizeZ-1; z > 0; z--) {
+            this.flowDown(z);
+            this.flowToSide(z);
+            this.flowDown(z);
+        }
 
         console.log(this.totalVolume);
         this.publish("water", "changed");
         this.future(100).tick();
     }
 
-    // tick() {
-    //     const voxels = this.wellKnownModel("modelRoot").voxels;
-    //     const totalFlow = new Map();
-    //     this.volume.forEach((volume,key) => {
-    //         const xyz = Voxels.unpackKey(key);
-    //         const flow = [0,0,0,0];
-    //         for (let a = 0; a < 4; a++) {
-    //             const adjacent = Voxels.adjacent(...xyz, a);
-    //             if (Voxels.isValid(...adjacent) && !voxels.get(...adjacent)) {
-    //                 const sideKey = Voxels.packKey(...adjacent);
-    //                 const sideVolume = this.volume.get(sideKey) || 0;
-    //                 flow[a] = Math.max(0,volume - sideVolume);
-    //                 if (flow[a] < 0.01) flow[a] = 0; // Not really great -- need way to stabilize;
-    //             }
-    //         }
-    //         totalFlow.set(key, flow)
-    //     })
-
-    //     totalFlow.forEach((flow, key) => {
-    //         const xyz = Voxels.unpackKey(key);
-    //         const total = (flow[0] + flow[1] + flow[2] + flow[3]) / 10;
-    //         let volume = this.volume.get(key) || 0
-    //         volume -= total;
-    //         this.volume.set(key,volume);
-    //         for (let a = 0; a < 4; a++) {
-    //             const adjacent = Voxels.adjacent(...xyz, a);
-    //             if (Voxels.isValid(...adjacent) && !voxels.get(...adjacent)) {
-    //                 const sideKey = Voxels.packKey(...adjacent);
-    //                 let sideVolume = this.volume.get(sideKey) || 0;
-    //                 sideVolume += flow[a] / 10;
-
-    //                 if (sideVolume) {
-    //                     this.volume.set(sideKey, sideVolume);
-    //                 }
-
-    //             }
-
-    //         }
-    //     })
-
-    //     // console.log("tick!");
-    //     this.publish("water", "changed");
-    //     this.future(100).tick();
-    // }
 }
 Water.register('Water');
+
+// Track side flows to draw waterfalls
+// Only draw the top layer
+// Don't draw hidden upper layers
+// Don't rebuild mesh every tick
+// Two-sided waterfalls for streams through holes
+// Side flows displaced for ramps etc.
+// Track active voxels so deep or still water doesn't need testing
+// Evaporation
+// Sources & sinks
+// Draw sides of water voxels on edge
+// Water affects pathing
+// Characters can drown
