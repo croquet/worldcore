@@ -46,6 +46,7 @@ export class Water extends Model{
 
     init() {
         super.init();
+        console.log("Starting water!!!!!");
         this.beWellKnownAs('Water');
 
         this.clear();
@@ -90,6 +91,7 @@ export class Water extends Model{
                 this.publish("water", "changed");
             }
         }
+
     }
 
     spawnWater(data) {
@@ -98,6 +100,7 @@ export class Water extends Model{
         const key = Voxels.packKey(...xyz);
         this.set(key, volume);
         this.publish("water", "changed");
+
     }
 
     get totalVolume() {
@@ -106,7 +109,7 @@ export class Water extends Model{
         return sum;
     }
 
-    flowDown(z) {
+    fall(z) {
         const voxels = this.wellKnownModel("modelRoot").voxels;
 
         const layer = this.layers[z];
@@ -126,6 +129,72 @@ export class Water extends Model{
         });
 
     }
+
+    flow(z) {
+        const voxels = this.wellKnownModel("modelRoot").voxels;
+
+        const layer = this.layers[z];
+
+        const flows = new Map();
+
+        layer.forEach( (volume, key) => {
+            const xyz = Voxels.unpackKey(key);
+
+            // Find side voxels to flow into
+            const sides = [];
+            let sum = volume;
+
+            for (let a = 0; a < 4; a++) {
+                const sideXYZ = Voxels.adjacent(...xyz, a);
+                const sideKey = Voxels.packKey(...sideXYZ);
+                if (!Voxels.isValid(...sideXYZ) || voxels.get(...sideXYZ)) continue; // Side voxel is solid
+                const sideVolume = layer.get(sideKey);
+                if (sideVolume < volume) { // We should flow into it.
+                    sides.push(a);
+                    sum += sideVolume;
+                }
+            }
+
+            if (sides.length===0) return; // All side volumes are higher
+
+            const average = sum/(sides.length+1); // The target volume
+
+            sides.forEach(a => {
+                const sideXYZ = Voxels.adjacent(...xyz, a);
+                const sideKey = Voxels.packKey(...sideXYZ);
+                const flow = (average - layer.get(sideKey));
+                if (!flows.has(sideKey)) flows.set(sideKey, [0,0,0,0]);
+                flows.get(sideKey)[Opposite(a)] = flow;
+            });
+
+        })
+
+        flows.forEach( (inflow, key) => {
+            const xyz = Voxels.unpackKey(key);
+            let sum = 0;
+            inflow.forEach( f=> sum += f);
+            if (sum > 1 ) {
+                inflow = inflow.map( f => f/sum);
+                sum = 1;
+            }
+
+            const volume = this.get(key);
+            this.set(key, volume + sum);
+
+            for (let a = 0; a < 4; a++) {
+                const sideXYZ = Voxels.adjacent(...xyz, a);
+                const sideKey = Voxels.packKey(...sideXYZ);
+                const sideVolume = layer.get(sideKey);
+                this.set(sideKey, sideVolume - inflow[a]);
+            }
+        })
+
+        // console.log(layer);
+        // console.log("!");
+    }
+
+
+    //-------------------------------------------------------------------------------------
 
     flowToSide(z) {
         const voxels = this.wellKnownModel("modelRoot").voxels;
@@ -172,9 +241,9 @@ export class Water extends Model{
     tick() {
 
         for (let z = Voxels.sizeZ-1; z > 0; z--) {
-            this.flowDown(z);
-            this.flowToSide(z);
-            this.flowDown(z);
+            this.fall(z);
+            this.flow(z);
+            this.fall(z);
         }
 
         console.log(this.totalVolume);
@@ -184,6 +253,16 @@ export class Water extends Model{
 
 }
 Water.register('Water');
+
+function Opposite(side) {
+    switch (side) {
+        case 0: return 2;
+        case 1: return 3;
+        case 2: return 0;
+        case 3: return 1;
+        default: return 0;
+    }
+}
 
 // Track side flows to draw waterfalls
 // Only draw the top layer

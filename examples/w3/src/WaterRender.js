@@ -20,15 +20,20 @@ export class WaterRender extends NamedView {
     }
 
     rebuildMesh() {
-        const c = [0, 0, 0.8, 0.2];
+        const color = [0, 0, 0.8, 0.2];
         this.mesh.clear();
         const water = this.wellKnownModel("Water");
 
         water.layers.forEach( layer => {
             layer.forEach( (v,key) => {
                 if (v < 0.01) return;
+                let c = color
+                if (v < 0.2) {
+                    const scale = v / 0.2;
+                    c = [0, 0, 0.8* scale, 0.2 * scale];
+                }
                 // if (v < 0.01 || v > 0.99) return;
-                v = Math.min(1,v);
+                // v = Math.min(1,v);
                 const xyz = Voxels.unpackKey(key);
                 const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,v]));
                 const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,v]));
