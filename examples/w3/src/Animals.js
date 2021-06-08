@@ -69,15 +69,16 @@ class AnimalPawn extends mix(Pawn).with(PM_VoxelSmoothed) {
 //-- Animal Behaviors ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Checks if animal has been buried in a solid voxel, or had its floor collapse. Run in parallel
+// with other behaviors.
+
 class TestTerrain extends Behavior {
     do() {
         const voxels = this.wellKnownModel("Voxels");
         const surfaces = this.wellKnownModel("Surfaces");
         if (voxels.get(...this.actor.xyz)) {
-            console.log("Buried alive!");
             this.actor.destroy();
-         } else {
-
+        } else {
             const s = surfaces.get(this.actor.key);
             if (!s || !s.hasFloor()) {
                 this.actor.startBehavior(FallBehavior, {tickRate: 50});
@@ -96,46 +97,92 @@ class PersonBehavior extends CompositeBehavior {
     init(options) {
         super.init(options);
         this.startChild(TestTerrain, {tickRate:200});
-        this.startChild(WalkTo, {tickRate: 50, xyz: [0,0,4], fraction:[0.25, 0.25, 0]});
+        this.startChild(Wander);
     }
 }
 PersonBehavior.register('PersonBehavior');
 
+class Wander extends CompositeBehavior {
+    init(options) {
+        super.init(options);
+        this.startChild(SeekBehavior, {tickRate: 500});
+    }
+
+    reportSuccess(child, data) {
+        if (child instanceof SeekBehavior) {
+            const path = data;
+            this.startChild(WalkTo, {tickRate: 50, path});
+        } else if (child instanceof WalkTo) {
+            this.startChild(SeekBehavior, {tickRate: 500});
+        }
+    };
+
+    reportFailure(child, data) {
+        if (child instanceof SeekBehavior) {
+            this.fail();
+        } else if (child instanceof WalkTo) {
+            this.startChild(SeekBehavior, {tickRate: 500});
+        }
+    };
+
+}
+Wander.register('Wander');
+
+class SeekBehavior extends Behavior {
+    init(options) {
+        super.init(options);
+        this.seek();
+    }
+
+    do() { this.seek(); }
+
+    seek() {
+        const surfaces = this.wellKnownModel("Surfaces");
+        const paths = this.wellKnownModel('Paths');
+        const key = surfaces.randomFloor();
+        const path = paths.findPath(this.actor.key, key);
+        if (path.length > 0) this.succeed(path);
+    }
+
+}
+SeekBehavior.register('SeekBehavior');
+
+// Can be started with either an xyz destination or a path. You can also
+// set fraction to determine where in the final voxel you go.
 
 class WalkTo extends Behavior {
 
     get xyz() { return this._xyz}
     get fraction() { return this._fraction || [0.5, 0.5, 0]}
+    get speed() { return this._speed || 1}; // Voxels traversed per second.
+    get path() { return this._path};
 
     init(options) {
         super.init(options);
 
-        const paths = this.wellKnownModel('Paths');
-        const start = this.actor.key;
-        const end = Voxels.packKey(...this.xyz);
-        // if (start === end) { // We're already at the destination
-        //     this.succeed();
-        //     return;
-        // }
+        if (this.path){
+            const xyz = Voxels.unpackKey(this.path[this.path.length-1]);
+            this.set({xyz});
+        } else {
+            const paths = this.wellKnownModel('Paths');
+            const start = this.actor.key;
+            const end = Voxels.packKey(...this.xyz);
+            const path = paths.findPath(start, end);
+            this.set({path});
+        }
 
-        this.path = paths.findPath(start, end);
-        console.log(this.path);
+        this.step = 0;
+
         if (this.path.length < 1) { // No path was found
             this.fail();
             return;
-        }
-
-        if (this.path.length === 1) { /// already at start
-            this.step = 0;
-            this.finale = true;
+        } else if (this.path.length === 1) { // Already at end voxel.
             this.exit = this.fraction;
         } else {
-            this.step = 0;
             const here = Voxels.unpackKey(this.path[0]);
             const there = Voxels.unpackKey(this.path[1]);
             this.exit = this.findExit(here, there);
         }
-
 
         this.forward = v2_sub(this.exit, this.actor.fraction);
 
@@ -150,92 +197,61 @@ class WalkTo extends Behavior {
     }
 
     do(delta) {
-        let key = this.actor.key;
+
         let xyz = this.actor.xyz;
         let fraction = this.actor.fraction;
 
-        let travel = 0.001 * delta;
-        let advance = v2_scale(this.forward, travel); // amount traveled this tick
+        let travel = this.speed * delta / 1000;
         let remaining = v2_sub(this.exit, fraction); // remaing distance to exit
+        let advance = v2_scale(this.forward, travel); // amount traveled this tick
 
-        while (Math.abs(advance[0]) > Math.abs(remaining[0]) || Math.abs(advance[1]) > Math.abs(remaining[1])) { // Hop to the next voxel
-
-            // Make sure the path still exits
-            const paths = this.wellKnownModel("Paths");
-            const atEnd = this.step === this.path.length-1;
-            if (!atEnd && !paths.hasExit(key, this.path[this.step+1])) { // Route no longer exists
-                console.log("Broken path!");
-                this.fail();
-                return;
-            }
-
-            // Calculate the leftover travel
-            travel -= v2_magnitude(remaining);
-
-            // Advance along the path
-            this.step++;
+        while (Math.abs(advance[0]) > Math.abs(remaining[0]) || Math.abs(advance[1]) > Math.abs(remaining[1])) { // Moved past exit
             if (this.step === this.path.length-1) { // We've arrived!
-                const previousXYZ = xyz;
-                key = this.path[this.step];
-                xyz = Voxels.unpackKey(key);
-                this.exit = this.fraction;
-                this.finale = true;
-                const entrance = this.findEntrance(xyz, previousXYZ);
-                // entrance[2] = 0;
-                fraction = entrance;
-            } else {
-                const previousXYZ = xyz;
-                key = this.path[this.step];
-                xyz = Voxels.unpackKey(key);
+                this.reposition(this.xyz, this.fraction);
+                this.succeed();
+                return;
+            } else { // Skip to next voxel
 
-                // Find the entrance point
-                const entrance = this.findEntrance(xyz, previousXYZ);
-                entrance[2] = 0;
+                const paths = this.wellKnownModel("Paths");
+                if (!paths.hasExit(Voxels.packKey(...xyz), this.path[this.step+1])) { // Route no longer exists
+                    this.fail();
+                    return;
+                }
 
-            //     // Move to next voxel
+                this.step++;
 
-                fraction = entrance;
+                const previous = xyz;
+                xyz = Voxels.unpackKey(this.path[this.step]);
+                fraction = this.findEntrance(xyz, previous);
 
-                // Find the new exit
-                const nextKey = this.path[this.step+1];
-                const nextXYZ = Voxels.unpackKey(nextKey);
-                this.exit = this.findExit(xyz, nextXYZ);
+                if (this.step === this.path.length-1) { // We've entered the final voxel
+                    this.exit = this.fraction;
+                } else {
+                    const next = Voxels.unpackKey(this.path[this.step+1]);
+                    this.exit = this.findExit(xyz, next);
+                }
 
+                travel -= v2_magnitude(remaining);
+                remaining = v2_sub(this.exit, fraction);
+                this.forward = v2_normalize(remaining);
+                advance = v2_scale(this.forward, travel);
             }
-
-            // Point ourselves toward the new exit
-
-            remaining = v2_sub(this.exit, fraction);
-            this.forward = v2_normalize(remaining);
-            advance = v2_scale(this.forward, travel);
-
-
         }
-
-        if (this.finale && v2_magnitude(remaining) < 0.01) { // We've arrived!
-            console.log("done!");
-            console.log(this.xyz);
-            console.log(this.fraction);
-            this.actor.voxelMoveTo(this.xyz, this.fraction);
-            this.succeed();
-            return;
-        }
-
 
         fraction[0] = Math.min(1, Math.max(0, fraction[0] + advance[0]));
         fraction[1] = Math.min(1, Math.max(0, fraction[1] + advance[1]));
-
-        const surfaces = this.wellKnownModel("Surfaces");
-        const surface = surfaces.get(key);
-        if (surface) {
-            fraction[2] = surface.elevation(...fraction);
-        }
-
-        this.actor.voxelMoveTo(xyz, fraction);
+        this.reposition(xyz, fraction);
         this.rotateToFacing(this.forward);
     }
 
-    // Given the xy addresses of the current voxel and the voxel you're coming from, returns the point in the current voxel
+    reposition(xyz, fraction) {
+        const surfaces = this.wellKnownModel("Surfaces");
+        const surface = surfaces.get(Voxels.packKey(...xyz));
+        if (surface) fraction[2] = surface.elevation(...fraction);
+        this.actor.voxelMoveTo(xyz, fraction);
+    }
+
+    // Given the xyz of the current voxel and the voxel you're coming from, returns the point in the current voxel
     // you should enter at.
 
     findEntrance(here, there) {
@@ -244,21 +260,21 @@ class WalkTo extends Behavior {
         const x1 = there[0];
         const y1 = there[1];
         if (x0 > x1) {
-            if (y0 > y1) return [0,0];
-            if (y0 < y1) return [0,1];
-            return [0,0.5];
+            if (y0 > y1) return [0,0,0];
+            if (y0 < y1) return [0,1,0];
+            return [0,0.5,0];
         }
         if (x0 < x1) {
-            if (y0 > y1) return [1,0];
-            if (y0 < y1) return [1,1];
-            return [1,0.5];
+            if (y0 > y1) return [1,0,0];
+            if (y0 < y1) return [1,1,0];
+            return [1,0.5,0];
         }
-        if (y0 > y1) return [0.5,0];
-        if (y0 < y1) return [0.5,1];
-        return [0.5, 0.5];
+        if (y0 > y1) return [0.5,0,0];
+        if (y0 < y1) return [0.5,1,0];
+        return [0.5,0.5,0];
     }
 
-    // Given the xy addresses of the current voxel and the voxel you're headed toward, returns the point in the current voxel
+    // Given the xyz of the current voxel and the voxel you're headed toward, returns the point in the current voxel
     // you should move toward.
 
     findExit(here, there) {
@@ -267,18 +283,18 @@ class WalkTo extends Behavior {
         const x1 = there[0];
         const y1 = there[1];
         if (x0 > x1) {
-            if (y0 > y1) return [0,0];
-            if (y0 < y1) return [0,1];
-            return [0,0.5];
+            if (y0 > y1) return [0,0,0];
+            if (y0 < y1) return [0,1,0];
+            return [0,0.5,0];
         }
         if (x0 < x1) {
-            if (y0 > y1) return [1,0];
-            if (y0 < y1) return [1,1];
-            return [1,0.5];
+            if (y0 > y1) return [1,0,0];
+            if (y0 < y1) return [1,1,0];
+            return [1,0.5,0];
         }
-        if (y0 > y1) return [0.5,0];
-        if (y0 < y1) return [0.5,1];
-        return [0.5, 0.5];
+        if (y0 > y1) return [0.5,0,0];
+        if (y0 < y1) return [0.5,1,0];
+        return [0.5, 0.5,0];
     }
 
     rotateToFacing(xy) {
@@ -289,6 +305,7 @@ class WalkTo extends Behavior {
 
 }
 WalkTo.register("WalkTo");
+
 
 //------------------------------------------------------------------------------------------
 //-- Person --------------------------------------------------------------------------------

@@ -75,9 +75,9 @@ export class Voxels extends Model {
 
     //-- Constants --
 
-    static get sizeX() { return 8; }
-    static get sizeY() { return 8; }
-    static get sizeZ() { return 8; }
+    static get sizeX() { return 16; }
+    static get sizeY() { return 16; }
+    static get sizeZ() { return 16; }
     static get size() { return [Voxels.sizeX, Voxels.sizeY, Voxels.sizeZ]; }
 
     static get scaleX() { return 5; }
@@ -277,11 +277,10 @@ export class Voxels extends Model {
     generate() {
         for (let x = 0; x < Voxels.sizeX; x++) {
             for (let y = 0; y < Voxels.sizeY; y++) {
-                this.voxels[x][y].compress([1,2,2,3,0,0,0,0]);
-
+                this.voxels[x][y].compress([1,2,2,2, 2,2,2,3, 0,0,0,0, 0,0,0,0]);
             }
         }
-        this.voxels[2][2].compress([2,2,2,2, 2,0,0,0]);
+        this.voxels[2][2].compress([1,2,2,2, 2,2,2,2, 2,0,0,0, 0,0,0,0]);
         this.publish("voxels", "newLevel");
     }
 
@@ -349,18 +348,18 @@ Voxels.register("Voxels");
 // Voxel actors exist in a voxel in the world. Provides utilities for getting the voxel
 // coordinates and the voxel key from the actor's world translation.
 
-//-- Actor ---------------------------------------------------------------------------------
+// //-- Actor ---------------------------------------------------------------------------------
 
-export const AM_Voxel = superclass => class extends superclass {
+// export const AM_Voxel = superclass => class extends superclass {
 
-    get voxelXYZ() {
-        return Voxels.toClippedVoxelXYZ(...this.translation);
-    }
+//     get voxelXYZ() {
+//         return Voxels.toClippedVoxelXYZ(...this.translation);
+//     }
 
-    get voxelKey() {
-        return Voxels.packKey(...this.voxelXYZ)
-    }
+//     get voxelKey() {
+//         return Voxels.packKey(...this.voxelXYZ)
+//     }
 
-};
-RegisterMixin(AM_Voxel);
+// };
+// RegisterMixin(AM_Voxel);
 

@@ -39,19 +39,12 @@ export class Surfaces extends Model {
         return this.surfaces.get(key);
     }
 
-    // randomFloorID() {
-    //     const vids = [];
-    //     this.surfaces.forEach((s,vid) => { if (s.hasFloor()) vids.push(vid); });
-    //     const n = Math.floor(this.random() * vids.length);
-    //     return vids[n];
-    // }
-
-    // randomFloorXYZ() {
-    //     const floors = [];
-    //     this.surfaces.forEach(s => { if (s.hasFloor()) floors.push(s); });
-    //     const n = Math.floor(this.random() * floors.length);
-    //     return floors[n].xyz;
-    // }
+    randomFloor() {
+        const keys = [];
+        this.surfaces.forEach((surface,key) => { if (surface.hasFloor()) keys.push(key); });
+        const n = Math.floor(this.random() * keys.length);
+        return keys[n];
+    }
 
     elevation(xyz) {
         const x = Math.floor(xyz[0]);
@@ -94,23 +87,23 @@ export class Surfaces extends Model {
         primary.forEach(key => {
             const surface = new Surface(key);
             surface.findFaces(voxels);
-            surface.findRamps(voxels);
+            // surface.findRamps(voxels);
             this.set(key, surface);
         });
 
         secondary.forEach(key => {
             let surface = this.get(key);
             if (!surface) surface = new Surface(key);
-            surface.findFloors(surfaces);
-            surface.findTriangles(surfaces);
+            // surface.findFloors(surfaces);
+            // surface.findTriangles(surfaces);
             this.set(key, surface);
         });
 
         secondary.forEach(key => {
             let surface = this.get(key);
             if (!surface) surface = new Surface(key);
-            surface.findShims();
-            surface.liftFloors();
+            // surface.findShims();
+            // surface.liftFloors();
             this.set(key, surface);
         });
     }
@@ -135,23 +128,23 @@ export class Surfaces extends Model {
         check.forEach(key => {
             const surface = new Surface(key);
             surface.findFaces(voxels);
-            surface.findRamps(voxels);
+            // surface.findRamps(voxels);
             this.set(key, surface);
         });
 
         check.forEach(key => {
             let surface = this.get(key);
             if (!surface) surface = new Surface(key);
-            surface.findFloors(surfaces);
-            surface.findTriangles(surfaces);
+            // surface.findFloors(surfaces);
+            // surface.findTriangles(surfaces);
             this.set(key, surface);
         });
 
         check.forEach(key => {
             let surface = this.get(key);
             if (!surface) surface = new Surface(key);
-            surface.findShims();
-            surface.liftFloors();
+            // surface.findShims();
+            // surface.liftFloors();
             this.set(key, surface);
         });
 

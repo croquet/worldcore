@@ -97,7 +97,7 @@ export class CompositeBehavior extends Behavior {
     startChild(behavior, options = {}) {
         options.actor = this.actor;
         options.parent = this;
-        return behavior.create(options);
+        behavior.create(options);
     }
 
     addChild(child) {
@@ -110,7 +110,7 @@ export class CompositeBehavior extends Behavior {
     }
 
     reportSuccess(child, data) {};
-    reportFailure(child, data) {};
+    reportFailure(child, data) { this.fail(data)};
 
 }
 CompositeBehavior.register('CompositeBehavior');
@@ -139,7 +139,7 @@ export class SequenceBehavior extends CompositeBehavior {
     }
 
     reportSuccess() { this.next(); }
-    reportFailure() { this.fail(); }
+    // reportFailure() { this.fail(); }
 
 }
 SequenceBehavior.register('SequenceBehavior');
@@ -170,7 +170,7 @@ export class RandomSequenceBehavior extends CompositeBehavior {
     }
 
     reportSuccess() { this.next(); }
-    reportFailure() { this.fail(); }
+    // reportFailure() { this.fail(); }
 
 }
 RandomSequenceBehavior.register('RandomSequenceBehavior');
@@ -197,7 +197,7 @@ export class ParallelSequenceBehavior extends CompositeBehavior {
         this.succeed();
     }
 
-    reportFailure() { this.fail(); }
+    // reportFailure() { this.fail(); }
 
 }
 ParallelSequenceBehavior.register('ParallelSequenceBehavior');
