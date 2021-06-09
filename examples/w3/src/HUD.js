@@ -12,6 +12,10 @@ import treeOnIcon from "../assets/treeOnIcon.png";
 import treeOffIcon from "../assets/treeOffIcon.png";
 import waterOnIcon from "../assets/waterOnIcon.png";
 import waterOffIcon from "../assets/waterOffIcon.png";
+import sourceOnIcon from "../assets/sourceOnIcon.png";
+import sourceOffIcon from "../assets/sourceOffIcon.png";
+import sinkOnIcon from "../assets/sinkOnIcon.png";
+import sinkOffIcon from "../assets/sinkOffIcon.png";
 
 
 export class HUD extends Widget {
@@ -48,21 +52,33 @@ export class HUD extends Widget {
         waterToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: waterOffIcon}));
         waterToggle.onToggleOn = () => this.publish("hud", "editMode", "water");
 
-        const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle, treeToggle, waterToggle);
+        const sourceToggle = new ToggleWidget(this, {local: [80,140], size:[50,50]})
+        this.setToggleDefaults(sourceToggle);
+        sourceToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sourceOnIcon}));
+        sourceToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sourceOffIcon}));
+        sourceToggle.onToggleOn = () => this.publish("hud", "editMode", "source");
 
-        const cutawaySlider = new SliderWidget(this, {
-            pivot: [1,0.5],
-            anchor: [1,0.5],
-            local: [-20,0],
-            size: [20,150],
-            step: Voxels.sizeZ-2,
-            percent: 1 - (GetTopLayer()-2) / (Voxels.sizeZ-3)
-        });
-        cutawaySlider.onChange = p => {
-            const topLayer = 2 + Math.round((1-p) * (Voxels.sizeZ-3));
-            SetTopLayer(topLayer);
-            this.publish("hud", "topLayer", topLayer);
-        };
+        const sinkToggle = new ToggleWidget(this, {local: [140,140], size:[50,50]})
+        this.setToggleDefaults(sinkToggle);
+        sinkToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sinkOnIcon}));
+        sinkToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sinkOffIcon}));
+        sinkToggle.onToggleOn = () => this.publish("hud", "editMode", "sink");
+
+        const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle, treeToggle, waterToggle, sourceToggle, sinkToggle);
+
+        // const cutawaySlider = new SliderWidget(this, {
+        //     pivot: [1,0.5],
+        //     anchor: [1,0.5],
+        //     local: [-20,0],
+        //     size: [20,150],
+        //     step: Voxels.sizeZ-2,
+        //     percent: 1 - (GetTopLayer()-2) / (Voxels.sizeZ-3)
+        // });
+        // cutawaySlider.onChange = p => {
+        //     const topLayer = 2 + Math.round((1-p) * (Voxels.sizeZ-3));
+        //     SetTopLayer(topLayer);
+        //     this.publish("hud", "topLayer", topLayer);
+        // };
     }
 
     setToggleDefaults(toggle) {

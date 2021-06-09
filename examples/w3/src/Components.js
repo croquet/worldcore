@@ -51,7 +51,7 @@ export const AM_VoxelSmoothed = superclass => class extends AM_Smoothed(supercla
     }
 
     get fraction() {
-        return this._fraction || [0,0,0];
+        return this._fraction || [0.5,0.5,0];
     }
 
     get translation() {

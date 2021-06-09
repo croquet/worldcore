@@ -51,6 +51,8 @@ export class VoxelCursor extends NamedView {
                 xyz = PickPlantSurface(this.xy, GetTopLayer()).xyz;
                 break;
             case 'water':
+            case 'source':
+            case 'sink':
                 xyz = PickFillSurface(this.xy, GetTopLayer()).xyz;
                 break;
             default:

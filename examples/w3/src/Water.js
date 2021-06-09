@@ -1,5 +1,103 @@
 import { Model } from "@croquet/croquet";
+import { Actor, Pawn, mix, PM_Spatial, PM_InstancedVisible, PM_Visible, CachedObject, UnitCube, Material, InstancedDrawCall, DrawCall, GetNamedView, GetNamedModel } from "@croquet/worldcore";
+import { AM_VoxelSmoothed } from "./Components";
 import { Voxels } from "./Voxels";
+import paper from "../assets/paper.jpg";
+
+//------------------------------------------------------------------------------------------
+//-- Water ---------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class Water extends Model{
+
+    init() {
+        super.init();
+        console.log("Starting water!!!!!");
+        this.beWellKnownAs('Water');
+
+        this.clear();
+
+        this.subscribe("voxels", "newLevel", this.onNewLevel);
+        this.subscribe("voxels", "changed", this.onChanged);
+        this.subscribe("editor", "spawnWater", this.onSpawnWater);
+        this.subscribe("editor", "spawnWaterSource", this.onSpawnWaterSource);
+
+        this.tick();
+    }
+
+    clear() {
+        if (this.layers) this.layers.forEach( layer => layer.destroy());
+        this.layers = [];
+        for (let z = 0; z < Voxels.sizeZ; z++) this.layers[z] = WaterLayer.create();
+    }
+
+    setVolume(key, volume) {
+        const xyz = Voxels.unpackKey(key);
+        const z = xyz[2];
+        this.layers[z].setVolume(key, volume);
+    }
+
+    getVolume(key) {
+        const xyz = Voxels.unpackKey(key);
+        const z = xyz[2];
+        return this.layers[z].getVolume(key);
+    }
+
+    onNewLevel() {
+        this.clear()
+        this.publish("water", "changed");
+    }
+
+    onChanged(data) {
+        const type = data.type;
+        const old = data.old;
+        if (type && !old) { // an empty voxel has been filled.
+            const key = Voxels.packKey(...data.xyz);
+            if (this.getVolume(key)) { // Destroy the water it contained
+                this.setVolume(key, 0);
+                this.publish("water", "changed");
+            }
+        }
+    }
+
+    onSpawnWater(data) {
+        const xyz = data.xyz;
+        const volume = data.volume;
+        const key = Voxels.packKey(...xyz);
+        this.setVolume(key, volume);
+        this.publish("water", "changed");
+    }
+
+    onSpawnWaterSource(data) {
+        console.log("Spawn water source");
+        const xyz = data.xyz;
+        const flow = data.flow;
+        WaterSourceActor.create({xyz, fraction: [0.5, 0.5, 0.5], flow});
+    }
+
+    get totalVolume() {
+        let sum = 0;
+        this.layers.forEach(layer => sum += layer.totalVolume);
+        return sum;
+    }
+
+    tick() {
+        for (let z = Voxels.sizeZ-1; z > 0; z--) {
+            this.layers[z].fall(this.layers[z-1]);
+            this.layers[z].flow();
+        }
+
+        // console.log(this.totalVolume);
+        this.publish("water", "changed");
+        this.future(100).tick();
+    }
+
+}
+Water.register('Water');
+
+//------------------------------------------------------------------------------------------
+//-- WaterLayer ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
 class WaterLayer extends Model {
 
@@ -103,7 +201,6 @@ class WaterLayer extends Model {
                 this.inFlow.get(sideKey)[Opposite(a)] = flow;
                 this.outFlow.get(key)[a] = -flow;
             });
-
         })
 
         // Apply inflows
@@ -120,7 +217,8 @@ class WaterLayer extends Model {
                 for (let a = 0; a < 4; a++) {   // Reduce the adjacent outflows to match
                     const sideXYZ = Voxels.adjacent(...xyz, a);
                     const sideKey = Voxels.packKey(...sideXYZ);
-                    this.outFlow.get(sideKey)[Opposite(a)] = -flow[a];
+                    const f = this.outFlow.get(sideKey);
+                    if (f) f[Opposite(a)] = -flow[a];
                 }
 
             }
@@ -134,92 +232,78 @@ class WaterLayer extends Model {
             flow.forEach( f=> volume += f);
             this.setVolume(key, volume);
         })
-
-
     }
 
 }
 WaterLayer.register('WaterLayer');
 
+//------------------------------------------------------------------------------------------
+//-- WaterSource ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
-export class Water extends Model{
+class WaterSourceActor extends mix(Actor).with(AM_VoxelSmoothed) {
+    get pawn() {return WaterSourcePawn}
+    get flow() { return this._flow || 0} // Voxels / second
 
-    init() {
-        super.init();
-        console.log("Starting water!!!!!");
-        this.beWellKnownAs('Water');
-
-        this.clear();
-
-        this.subscribe("voxels", "newLevel", this.onNewLevel);
-        this.subscribe("voxels", "changed", this.onChanged);
-        this.subscribe("editor", "spawnWater", this.spawnWater);
-
-        this.tick();
+    init(options) {
+        super.init(options)
+        const firstDelta = Math.random() * 50;
+        this.future(firstDelta).tick(firstDelta);
     }
 
-    clear() {
-        if (this.layers) this.layers.forEach( layer => layer.destroy());
-        this.layers = [];
-        for (let z = 0; z < Voxels.sizeZ; z++) this.layers[z] = WaterLayer.create();
-    }
-
-    setVolume(key, volume) {
-        const xyz = Voxels.unpackKey(key);
-        const z = xyz[2];
-        this.layers[z].setVolume(key, volume);
-    }
-
-    getVolume(key) {
-        const xyz = Voxels.unpackKey(key);
-        const z = xyz[2];
-        return this.layers[z].getVolume(key);
-    }
-
-    onNewLevel() {
-        this.clear()
-        this.publish("water", "changed");
-    }
-
-    onChanged(data) {
-        const type = data.type;
-        const old = data.old;
-        if (type && !old) { // an empty voxel has been filled.
-            const key = Voxels.packKey(...data.xyz);
-            if (this.getVolume(key)) { // Destroy the water it contained
-                this.setVolume(key, 0);
-                this.publish("water", "changed");
-            }
+    tick(delta) {
+        const voxels = this.wellKnownModel("Voxels");
+        if (voxels.get(...this.xyz)) {
+            this.destroy();
+            return;
         }
-    }
-
-    spawnWater(data) {
-        const xyz = data.xyz;
-        const volume = data.volume;
-        const key = Voxels.packKey(...xyz);
-        this.setVolume(key, volume);
-        this.publish("water", "changed");
-    }
-
-    get totalVolume() {
-        let sum = 0;
-        this.layers.forEach(layer => sum += layer.totalVolume);
-        return sum;
-    }
-
-    tick() {
-        for (let z = Voxels.sizeZ-1; z > 0; z--) {
-            this.layers[z].fall(this.layers[z-1]);
-            this.layers[z].flow();
-        }
-
-        console.log(this.totalVolume);
-        this.publish("water", "changed");
-        this.future(100).tick();
+        const water = this.wellKnownModel("Water");
+        const volume = Math.max(0, Math.min(1, water.getVolume(this.key) + delta * this.flow / 1000));
+        water.setVolume(this.key, volume);
+        this.future(50).tick(50);
     }
 
 }
-Water.register('Water');
+WaterSourceActor.register('WaterSourceActor')
+
+class WaterSourcePawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
+    constructor(...args) {
+        super(...args);
+        this.setDrawCall(this.buildDraw());
+    }
+
+    buildDraw() {
+        const mesh = this.buildMesh();
+        const material = this.buildMaterial();
+        const draw = new DrawCall(mesh, material);
+        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        return draw;
+    }
+
+    buildMaterial() {
+        const material = new Material();
+        material.pass = 'opaque';
+        material.texture.loadFromURL(paper);
+        return material;
+    }
+
+    buildMesh() {
+        const mesh = UnitCube();
+        if (this.actor.flow > 0) {
+            mesh.setColor([0, 1, 0, 1])
+        } else {
+            mesh.setColor([1, 0, 0, 1])
+        }
+        mesh.load();
+        mesh.clear();
+        return mesh;
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- Utilities -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
 // Given a voxel direction, returns the opposite.
 function Opposite(side) {
@@ -232,7 +316,7 @@ function Opposite(side) {
     }
 }
 
-// Track side flows to draw waterfalls
+// Waterfalls
 // Only draw the top layer
 // Don't display water that is hanging off an edge
 // Don't draw hidden upper layers
@@ -241,7 +325,6 @@ function Opposite(side) {
 // Side flows displaced for ramps etc.
 // Track active voxels so deep or still water doesn't need testing
 // Evaporation
-// Sources & sinks
 // Draw sides of water voxels on edge
 // Water affects pathing
 // Characters can drown

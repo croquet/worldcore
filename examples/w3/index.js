@@ -28,7 +28,7 @@ import { WaterRender } from "./src/WaterRender";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!");
+        console.log("Start Model!");
 
         this.voxels.generate();
 
@@ -57,7 +57,7 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
 
-        this.HUD = new HUD(this.ui.root, {autoSize: [1,1]});
+        this.HUD = new HUD(this.ui.root, {autoSize: [1,1], visible: true});
 
         this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
         this.render.lights.setAmbientColor([0.6, 0.6, 0.6]);
@@ -70,6 +70,11 @@ class MyViewRoot extends ViewRoot {
             ao.density = 0.5;
             ao.falloff = 1;
         }
+
+        this.subscribe("input", "qDown", () => {
+            const isVisible = this.HUD.isVisible;
+            this.HUD.set({visible: !isVisible});
+        })
 
     }
 

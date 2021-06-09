@@ -31,6 +31,12 @@ export class Editor extends NamedView {
             case 'water':
                 this.doWater(data.xy);
                 break;
+            case 'source':
+                this.doSource(data.xy);
+                break;
+            case 'sink':
+                this.doSink(data.xy);
+                break;
             default:
         }
 
@@ -86,6 +92,20 @@ export class Editor extends NamedView {
         const xyz = pick.xyz;
         if (!xyz || !Voxels.canEdit(...xyz)) return
         this.publish("editor", "spawnWater", {xyz, volume: 1});
+    }
+
+    doSource(xy) {
+        const pick = PickFillSurface(xy, GetTopLayer());
+        const xyz = pick.xyz;
+        if (!xyz || !Voxels.canEdit(...xyz)) return
+        this.publish("editor", "spawnWaterSource", {xyz, flow: 1});
+    }
+
+    doSink(xy) {
+        const pick = PickFillSurface(xy, GetTopLayer());
+        const xyz = pick.xyz;
+        if (!xyz || !Voxels.canEdit(...xyz)) return
+        this.publish("editor", "spawnWaterSource", {xyz, flow: -1});
     }
 
 
