@@ -4,7 +4,7 @@
 
 import { Session} from "@croquet/croquet";
 import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation,
-    ActorManager, RenderManager, PawnManager, PlayerManager, InputManager, v3_normalize } from "@croquet/worldcore";
+    ActorManager, RenderManager, PawnManager, PlayerManager, InputManager, v3_normalize, Triangles, Material, DrawCall } from "@croquet/worldcore";
 import { Voxels } from "./src/Voxels";
 import { Surfaces } from "./src/Surfaces";
 import { Paths } from "./src/Paths";
@@ -28,7 +28,7 @@ import { WaterRender } from "./src/WaterRender";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!");
+        console.log("Start Model!!");
 
         this.voxels.generate();
 
@@ -82,14 +82,15 @@ class MyViewRoot extends ViewRoot {
         this.input = this.addManager(new InputManager(this.model));
         this.render = this.addManager(new RenderManager(this.model));
         this.voxelRender = this.addManager(new VoxelRender(this.model));
-        this.waterRender = this.addManager(new WaterRender(this.model));
+        // this.waterRender = this.addManager(new WaterRender(this.model));
         this.ui = this.addManager(new UIManager(this.model));
-        this.voxelCursor = this.addManager(new VoxelCursor(this.model));
+
         this.godView = this.addManager(new GodView(this.model));
         this.editor = this.addManager((new Editor(this.model)));
         // this.pathRender = this.addManager(new PathRender(this.model));
         // this.routeRender = this.addManager(new RouteRender(this.model));
         this.pawnManager = this.addManager(new PawnManager(this.model));
+        this.voxelCursor = this.addManager(new VoxelCursor(this.model)); // Add this after the pawn manager to prevent GL error with water & cursor transparencies?
     }
 
 }

@@ -25,8 +25,7 @@ export const PM_Visible = superclass => class extends superclass {
 
     refresh() {
         super.refresh();
-
-        if (this.draw) this.draw.transform.set(this.global);
+        if (this.draw && this.global) this.draw.transform.set(this.global);
     }
 
     setDrawCall(draw) {
@@ -34,7 +33,7 @@ export const PM_Visible = superclass => class extends superclass {
         if (this.draw) scene.removeDrawCall(this.draw);
         this.draw = draw;
         if (this.draw) {
-            this.draw.transform.set(this.global);
+            this.draw.transform.set(this.global || m4_identity());
             scene.addDrawCall(this.draw);
         }
 

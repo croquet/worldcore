@@ -1,5 +1,6 @@
 import { Model } from "@croquet/croquet";
-import { Actor, Pawn, mix, PM_Spatial, PM_InstancedVisible, PM_Visible, CachedObject, UnitCube, Material, InstancedDrawCall, DrawCall, GetNamedView, GetNamedModel } from "@croquet/worldcore";
+import { Actor, Pawn, mix, PM_Dynamic, PM_Spatial, PM_InstancedVisible, PM_Visible, CachedObject, UnitCube, DrawCall, GetNamedView,
+    GetNamedModel, Triangles, Material, v3_add, m4_identity } from "@croquet/worldcore";
 import { AM_VoxelSmoothed } from "./Components";
 import { Voxels } from "./Voxels";
 import paper from "../assets/paper.jpg";
@@ -99,39 +100,49 @@ Water.register('Water');
 //-- WaterLayer ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class WaterLayer extends Model {
+class WaterLayer extends Actor {
 
-    init() {
-        super.init();
+    get pawn() {return WaterLayerPawn}
+
+    init(options) {
+        super.init(options);
 
         this.volume = new Map();    // How much water is currently in the voxel
         this.inFlow = new Map();    // How much water flowed into each voxel from the sides on the last tick (4-array)
         this.outFlow = new Map();   // How much water flowed out of each voxel to the sides on the last tick (4-array)
         this.inFall = new Map();    // How much water fell into each voxel from above on the last tick
         this.outFall = new Map();   // How much water fell out of each voxel on the last tick
+        this.cascade = new Map();
+
     }
 
     clear() {
         this.volume.clear();
+
         this.inFlow.clear();
         this.outFlow.clear();
         this.inFall.clear();
         this.outFall.clear();
+        this.cascade.clear();
     }
 
     setVolume(key, volume) {
         if (volume) {
             this.volume.set(key, volume);
+            this.say("addKey", key);
         } else {
             this.volume.delete(key);
+            this.say("deleteKey", key);
         }
     }
 
     getVolume(key) { return this.volume.get(key) || 0; }
+    getFull(key) { return this.full.get(key) || false; }
     getInFlow(key) { return this.inFlow.get(key) || [0,0,0,0]; }
     getOutFlow(key) { return this.outFlow.get(key) || [0,0,0,0]; }
     getInFall(key) { return this.inFall.get(key) || 0; }
     getOutFall(key) { return this.outFall.get(key) || 0; }
+    getCascade(key) { return this.cascade.get(key) || [0,0,0,0]; }
 
     get totalVolume() {
         let sum = 0;
@@ -143,6 +154,7 @@ class WaterLayer extends Model {
         const voxels = this.wellKnownModel("modelRoot").voxels;
 
         below.inFall.clear();
+        below.cascade.clear();
         this.outFall.clear();
 
         this.volume.forEach( (volume,key) => {
@@ -151,15 +163,25 @@ class WaterLayer extends Model {
             if (voxels.get(...belowXYZ)) return; // Voxel below is solid.
             const belowKey = Voxels.packKey(...belowXYZ);
             const belowVolume = below.getVolume(belowKey);
-            if (belowVolume === 1) return; // Voxel below is full.
+            if (belowVolume === 1) return // Voxel below is full.
+
             const flow = Math.min(volume, 1-belowVolume);
 
             this.outFall.set(key, -flow);
             below.inFall.set(belowKey, flow);
+
+            const inflow = this.getInFlow(key);
+            const cascade = [...this.getCascade(key)];
+            for(let a = 0; a < 4; a++) {
+                // cascade[a] = cascade[a] || inflow[a];
+                cascade[a] = Math.max(cascade[a],inflow[a]);
+            }
+
+            below.cascade.set(belowKey, cascade);
         });
 
-        below.inFall.forEach((flow, key) => below.setVolume(key, below.getVolume(key) + flow) );
-        this.outFall.forEach((flow, key) => this.setVolume(key, this.getVolume(key) + flow) );
+        below.inFall.forEach((flow, key) => below.setVolume(key, below.getVolume(key) + flow));
+        this.outFall.forEach((flow, key) => this.setVolume(key, this.getVolume(key) + flow));
 
     }
 
@@ -172,6 +194,7 @@ class WaterLayer extends Model {
         // Find side voxels to flow into
 
         this.volume.forEach( (volume, key) => {
+
             const xyz = Voxels.unpackKey(key);
 
             const sides = [];
@@ -230,12 +253,257 @@ class WaterLayer extends Model {
         this.outFlow.forEach( (flow, key) => {
             let volume = this.getVolume(key);
             flow.forEach( f=> volume += f);
+            if (volume < 0.001) volume = 0; // Test appropriate minimum
             this.setVolume(key, volume);
         })
+
+        this.say("rebuild");
     }
 
 }
 WaterLayer.register('WaterLayer');
+
+//------------------------------------------------------------------------------------------
+//-- WaterLayerPawn ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+let voxels;
+const cornerSums = Array.from(Array(Voxels.sizeX+1), () => new Array(Voxels.sizeY+1));
+const cornerCounts = Array.from(Array(Voxels.sizeX+1), () => new Array(Voxels.sizeY+1));
+
+function clearCornerGrid() {
+    cornerSums.forEach( c => c.fill(0) );
+    cornerCounts.forEach( c => c.fill(0) );
+}
+
+// We shouldn't use the averaged corner volume in cases where the corner consists of two
+// water voxels and two solid voxels diagnonally separated. These functions check for
+// that case.
+
+function neIsValid(xyz) {
+    const x = xyz[0];
+    const y = xyz[1];
+    const z = xyz[2];
+    if (!Voxels.isValid(x+1,y,z) || !Voxels.isValid(x,y+1,z)) return true;
+    if (voxels.get(x+1,y,z) && voxels.get(x,y+1,z)) return false;
+    return true;
+}
+
+function nwIsValid(xyz) {
+    const x = xyz[0];
+    const y = xyz[1];
+    const z = xyz[2];
+    if (!Voxels.isValid(x-1,y,z) || !Voxels.isValid(x,y+1,z)) return true;
+    if (voxels.get(x-1,y,z) && voxels.get(x,y+1,z)) return false;
+    return true;
+}
+
+function swIsValid(xyz) {
+    const x = xyz[0];
+    const y = xyz[1];
+    const z = xyz[2];
+    if (!Voxels.isValid(x-1,y,z) || !Voxels.isValid(x,y-1,z)) return true;
+    if (voxels.get(x-1,y,z) && voxels.get(x,y-1,z)) return false;
+    return true;
+}
+
+function seIsValid(xyz) {
+    const x = xyz[0];
+    const y = xyz[1];
+    const z = xyz[2];
+    if (!Voxels.isValid(x+1,y,z) || !Voxels.isValid(x,y-1,z)) return true;
+    if (voxels.get(x+1,y,z) && voxels.get(x,y-1,z)) return false;
+    return true;
+}
+
+
+
+class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
+
+    constructor(...args) {
+        super(...args);
+
+        voxels = this.wellKnownModel("Voxels");
+        this.volume = new Map(this.actor.volume);
+        this.tug = 0.02;
+
+        this.mesh = new Triangles();
+        const material = CachedObject("waterMaterial", this.buildMaterial);
+        const drawCall = new DrawCall(this.mesh, material);
+        this.setDrawCall(drawCall);
+        this.buildMesh();
+        this.listen("addKey", this.addKey);
+        this.listen("deleteKey", this.deleteKey);
+        this.listen("rebuild", this.rebuild);
+    }
+
+    addKey(key) {
+        if (this.volume.has(key)) return;
+        this.volume.set(key, 0);
+    }
+
+    deleteKey(key) {
+        this.volume.delete(key);
+    }
+
+    update(time, delta) {
+        super.update(time, delta);
+        let tug = this.tug;
+        if (this.delta) tug = Math.min(1, tug * this.delta / 15);
+
+        this.volume.forEach( (volume,key) => {
+            const v = volume + (this.actor.getVolume(key) - volume) * tug;
+            this.volume.set(key, v);
+        });
+    }
+
+    rebuild() {
+        this.buildMesh();
+    }
+
+    buildMaterial() {
+        const material = new Material();
+        material.pass = 'translucent';
+        material.zOffset = 0;
+        return material;
+    }
+
+    buildMesh() {
+        clearCornerGrid();
+
+        this.mesh.clear();
+        this.volume.forEach( (v,key) =>  {
+            const xyz = Voxels.unpackKey(key);
+            const x = xyz[0];
+            const y = xyz[1];
+
+            cornerSums[x][y] += v;
+            cornerSums[x+1][y] += v;
+            cornerSums[x][y+1] += v;
+            cornerSums[x+1][y+1] += v;
+
+            cornerCounts[x][y]++;
+            cornerCounts[x+1][y]++;
+            cornerCounts[x][y+1]++;
+            cornerCounts[x+1][y+1]++;
+        });
+
+        const c = [0, 0, 0.8, 0.2];
+        const w = [0.2, 0.2, 0.2, 0.1];
+
+        this.volume.forEach( (v,key) =>  {
+
+            const xyz = Voxels.unpackKey(key);
+            const x = xyz[0];
+            const y = xyz[1];
+
+            let sw = v, se = v, ne = v, nw = v;
+
+            if (swIsValid(xyz)) sw = cornerSums[x][y] / cornerCounts[x][y];
+            if (seIsValid(xyz)) se = cornerSums[x+1][y] / cornerCounts[x+1][y];
+            if (neIsValid(xyz)) ne = cornerSums[x+1][y+1] / cornerCounts[x+1][y+1];
+            if (nwIsValid(xyz)) nw = cornerSums[x][y+1] / cornerCounts[x][y+1];
+
+            const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0.5,0.5,v]));
+            const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,sw]));
+            const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,se]));
+            const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,ne]));
+            const v4 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,nw]));
+
+            const c0 = ScaleColor(c, v);
+            const c1 = ScaleColor(c, sw);
+            const c2 = ScaleColor(c, se);
+            const c3 = ScaleColor(c, ne);
+            const c4 = ScaleColor(c, nw);
+
+            this.mesh.addFace([v0, v1, v2, v3, v4, v1], [c0, c1, c2, c3, c4, c1]);
+        });
+
+        this.actor.cascade.forEach((cascade, key) => {
+            const xyz = Voxels.unpackKey(key);
+
+            const z = this.volume.get(key) || 0;
+
+            if (cascade[0]>0.01) {
+
+                let v0,v1,v2,v3;
+                if (z>0) {
+                    const o = 0.05 + 0.3 * Math.random();
+
+                    v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z+o]));
+                    v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z+o]));
+                    v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,1]));
+                    v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,1]));
+                    this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
+                    this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
+
+                    v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z]));
+                    v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z]));
+                    v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z+o]));
+                    v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z+o]));
+                    this.mesh.addFace([v0, v1, v2, v3], [w, w, w, w]);
+                    this.mesh.addFace([v3, v2, v1, v0], [w, w, w, w]);
+
+                    v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0-0.1, 1-0.2, z]));
+                    v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1+0.1, 1-0.2, z]));
+                    v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1+0.1, 1+0.2, z]));
+                    v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0-0.1, 1+0.2, z]));
+                    this.mesh.addFace([v0, v1, v2, v3], [w, w, w, w]);
+
+                } else {
+                    v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z]));
+                    v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z]));
+                    v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,1]));
+                    v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,1]));
+
+
+                    this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
+                    this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
+                }
+
+
+            }
+
+            if (cascade[1]>0.01) {
+                const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z]));
+                const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,z]));
+                const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,1]));
+                const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,1]));
+                this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
+                this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
+            }
+
+            if (cascade[2]>0.01) {
+                const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,z]));
+                const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,z]));
+                const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,1]));
+                const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,1]));
+                this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
+                this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
+            }
+
+            if (cascade[3]>0.01) {
+                const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,z]));
+                const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z]));
+                const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,1]));
+                const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,1]));
+                this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
+                this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
+            }
+
+
+        });
+
+        this.mesh.load();
+    }
+
+}
+
+function ScaleColor(c, v) {
+    if (v > 0.2) return c;
+    const scale = v / 0.2;
+    return c.map(x => x * scale);
+}
 
 //------------------------------------------------------------------------------------------
 //-- WaterSource ---------------------------------------------------------------------------
@@ -317,8 +585,6 @@ function Opposite(side) {
 }
 
 // Waterfalls
-// Only draw the top layer
-// Don't display water that is hanging off an edge
 // Don't draw hidden upper layers
 // Don't rebuild mesh every tick
 // Two-sided waterfalls for streams through holes

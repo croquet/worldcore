@@ -66,19 +66,19 @@ export class HUD extends Widget {
 
         const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle, treeToggle, waterToggle, sourceToggle, sinkToggle);
 
-        // const cutawaySlider = new SliderWidget(this, {
-        //     pivot: [1,0.5],
-        //     anchor: [1,0.5],
-        //     local: [-20,0],
-        //     size: [20,150],
-        //     step: Voxels.sizeZ-2,
-        //     percent: 1 - (GetTopLayer()-2) / (Voxels.sizeZ-3)
-        // });
-        // cutawaySlider.onChange = p => {
-        //     const topLayer = 2 + Math.round((1-p) * (Voxels.sizeZ-3));
-        //     SetTopLayer(topLayer);
-        //     this.publish("hud", "topLayer", topLayer);
-        // };
+        const cutawaySlider = new SliderWidget(this, {
+            pivot: [1,0.5],
+            anchor: [1,0.5],
+            local: [-20,0],
+            size: [20,150],
+            step: Voxels.sizeZ-2,
+            percent: 1 - (GetTopLayer()-2) / (Voxels.sizeZ-3)
+        });
+        cutawaySlider.onChange = p => {
+            const topLayer = 2 + Math.round((1-p) * (Voxels.sizeZ-3));
+            SetTopLayer(topLayer);
+            this.publish("hud", "topLayer", topLayer);
+        };
     }
 
     setToggleDefaults(toggle) {
