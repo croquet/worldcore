@@ -85,10 +85,10 @@ export class Water extends Model{
     tick() {
         for (let z = Voxels.sizeZ-1; z > 0; z--) {
             this.layers[z].fall(this.layers[z-1]);
-            this.layers[z].flow();
+            this.layers[z].flow(this.layers[z-1]);
         }
 
-        // console.log(this.totalVolume);
+        console.log(this.totalVolume);
         this.publish("water", "changed");
         this.future(100).tick();
     }
@@ -114,6 +114,8 @@ class WaterLayer extends Actor {
         this.outFall = new Map();   // How much water fell out of each voxel on the last tick
         this.cascade = new Map();
 
+        this.hide = new Set();
+
     }
 
     clear() {
@@ -124,6 +126,8 @@ class WaterLayer extends Actor {
         this.inFall.clear();
         this.outFall.clear();
         this.cascade.clear();
+
+        this.hide.clear();
     }
 
     setVolume(key, volume) {
@@ -173,7 +177,7 @@ class WaterLayer extends Actor {
             const inflow = this.getInFlow(key);
             const cascade = [...this.getCascade(key)];
             for(let a = 0; a < 4; a++) {
-                // cascade[a] = cascade[a] || inflow[a];
+                //  cascade[a] = cascade[a] || inflow[a];
                 cascade[a] = Math.max(cascade[a],inflow[a]);
             }
 
@@ -181,11 +185,13 @@ class WaterLayer extends Actor {
         });
 
         below.inFall.forEach((flow, key) => below.setVolume(key, below.getVolume(key) + flow));
-        this.outFall.forEach((flow, key) => this.setVolume(key, this.getVolume(key) + flow));
+        this.outFall.forEach((flow, key) => this.setVolume(key, this.getVolume(key) + flow)); // If there is still volume after the bottom is filled, this causes flicker.
 
     }
 
-    flow(){
+    // Combine fall and flow and bail until next tick if the fall has some left over after filling the below voxel. This prevents the spreading of a choked cascade.
+
+    flow(below){
         const voxels = this.wellKnownModel("modelRoot").voxels;
 
         this.inFlow.clear();
@@ -245,7 +251,9 @@ class WaterLayer extends Actor {
                 }
 
             }
-            this.setVolume(key, volume + sum);
+            let v = volume + sum;
+            // if (v < 0.01) v = 0; // Test appropriate minimum
+            this.setVolume(key, v);
         })
 
         // Apply outflows
@@ -253,9 +261,21 @@ class WaterLayer extends Actor {
         this.outFlow.forEach( (flow, key) => {
             let volume = this.getVolume(key);
             flow.forEach( f=> volume += f);
-            if (volume < 0.001) volume = 0; // Test appropriate minimum
+            // if (volume < 0.01) volume = 0; // Test appropriate minimum
             this.setVolume(key, volume);
         })
+
+
+        this.volume.forEach( (volume, key) => {
+            this.hide.delete(key);
+            const xyz = Voxels.unpackKey(key);
+            const belowXYZ = Voxels.adjacent(...xyz, Voxels.below);
+            if (voxels.get(...belowXYZ)) return; // Voxel below is solid.
+            const belowKey = Voxels.packKey(...belowXYZ);
+            const belowVolume = below.getVolume(belowKey);
+            if (belowVolume === 1) return // Voxel below is full.
+            this.hide.add(key);
+        });
 
         this.say("rebuild");
     }
@@ -325,7 +345,8 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
 
         voxels = this.wellKnownModel("Voxels");
         this.volume = new Map(this.actor.volume);
-        this.tug = 0.02;
+        console.log("starting pawn");
+        this.tug = 0.2;
 
         this.mesh = new Triangles();
         const material = CachedObject("waterMaterial", this.buildMaterial);
@@ -340,6 +361,7 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
     addKey(key) {
         if (this.volume.has(key)) return;
         this.volume.set(key, 0);
+        // this.volume.set(key, this.actor.getVolume(key));
     }
 
     deleteKey(key) {
@@ -349,7 +371,7 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
     update(time, delta) {
         super.update(time, delta);
         let tug = this.tug;
-        if (this.delta) tug = Math.min(1, tug * this.delta / 15);
+        if (delta) tug = Math.min(1, tug * delta / 15);
 
         this.volume.forEach( (volume,key) => {
             const v = volume + (this.actor.getVolume(key) - volume) * tug;
@@ -363,6 +385,7 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
 
     buildMaterial() {
         const material = new Material();
+        // material.pass = 'opaque';
         material.pass = 'translucent';
         material.zOffset = 0;
         return material;
@@ -373,6 +396,7 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
 
         this.mesh.clear();
         this.volume.forEach( (v,key) =>  {
+            // if (this.actor.hide.has(key)) return; // hidden voxels are edge shoulders and adjacent voxels shuould taper to zero at corners.
             const xyz = Voxels.unpackKey(key);
             const x = xyz[0];
             const y = xyz[1];
@@ -389,9 +413,11 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
         });
 
         const c = [0, 0, 0.8, 0.2];
-        const w = [0.2, 0.2, 0.2, 0.1];
+        // const w = [0.2, 0.2, 0.2, 0.1];
 
         this.volume.forEach( (v,key) =>  {
+            if (this.actor.hide.has(key)) return;
+            // if (v < 0.05) return;
 
             const xyz = Voxels.unpackKey(key);
             const x = xyz[0];
@@ -420,51 +446,23 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
         });
 
         this.actor.cascade.forEach((cascade, key) => {
+            return;
             const xyz = Voxels.unpackKey(key);
 
             const z = this.volume.get(key) || 0;
 
-            if (cascade[0]>0.01) {
+            const cc = ScaleColor(c, z);
 
-                let v0,v1,v2,v3;
-                if (z>0) {
-                    const o = 0.05 + 0.3 * Math.random();
-
-                    v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z+o]));
-                    v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z+o]));
-                    v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,1]));
-                    v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,1]));
-                    this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
-                    this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
-
-                    v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z]));
-                    v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z]));
-                    v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z+o]));
-                    v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z+o]));
-                    this.mesh.addFace([v0, v1, v2, v3], [w, w, w, w]);
-                    this.mesh.addFace([v3, v2, v1, v0], [w, w, w, w]);
-
-                    v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0-0.1, 1-0.2, z]));
-                    v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1+0.1, 1-0.2, z]));
-                    v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1+0.1, 1+0.2, z]));
-                    v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0-0.1, 1+0.2, z]));
-                    this.mesh.addFace([v0, v1, v2, v3], [w, w, w, w]);
-
-                } else {
-                    v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z]));
-                    v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z]));
-                    v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,1]));
-                    v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,1]));
-
-
-                    this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
-                    this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
-                }
-
-
+            if (cascade[0] > 0.00) {
+                const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z]));
+                const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z]));
+                const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,1]));
+                const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,1]));
+                this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
+                this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
             }
 
-            if (cascade[1]>0.01) {
+            if (cascade[1] > 0.00) {
                 const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z]));
                 const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,z]));
                 const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,1]));
@@ -473,7 +471,7 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
                 this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
             }
 
-            if (cascade[2]>0.01) {
+            if (cascade[2]> 0.00) {
                 const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,z]));
                 const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,z]));
                 const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,1]));
@@ -482,7 +480,7 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
                 this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
             }
 
-            if (cascade[3]>0.01) {
+            if (cascade[3]> 0.00) {
                 const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,z]));
                 const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z]));
                 const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,1]));
@@ -502,6 +500,7 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
 function ScaleColor(c, v) {
     if (v > 0.2) return c;
     const scale = v / 0.2;
+    // const scale = 1;
     return c.map(x => x * scale);
 }
 
