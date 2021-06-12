@@ -32,7 +32,7 @@ export class FallBehavior extends Behavior {
         if (t1[2] > this.startHeight) return undefined; // Don't collide if above start height
         const voxels = this.wellKnownModel('Voxels');
         const v0 = Voxels.toClippedVoxelXYZ(...t0);
-        const v1 = Voxels.toClippedVoxelXYZ(...t1);
+        const v1 = Voxels.toClippedVoxelXYZ(...t1); // May be a bug here
         const x = v0[0];
         const y = v0[1];
         let z = v0[2];

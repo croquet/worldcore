@@ -9,12 +9,16 @@ import paper from "../assets/paper.jpg";
 //-- Water ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// let voxels;
+
 export class Water extends Model{
 
     init() {
         super.init();
         console.log("Starting water!!!!!");
         this.beWellKnownAs('Water');
+
+        // voxels = this.wellKnownModel("Voxels");
 
         this.clear();
 
@@ -84,11 +88,13 @@ export class Water extends Model{
 
     tick() {
         for (let z = Voxels.sizeZ-1; z > 0; z--) {
-            this.layers[z].fall(this.layers[z-1]);
-            this.layers[z].flow(this.layers[z-1]);
+            // this.layers[z].fall(this.layers[z-1]);
+            // this.layers[z].flow(this.layers[z-1]);
+            this.layers[z].flow2(this.layers[z-1]);
+
         }
 
-        console.log(this.totalVolume);
+        // console.log(this.totalVolume);
         this.publish("water", "changed");
         this.future(100).tick();
     }
@@ -113,21 +119,18 @@ class WaterLayer extends Actor {
         this.inFall = new Map();    // How much water fell into each voxel from above on the last tick
         this.outFall = new Map();   // How much water fell out of each voxel on the last tick
         this.cascade = new Map();
-
-        this.hide = new Set();
+        this.cliff = new Map();
 
     }
 
     clear() {
         this.volume.clear();
-
         this.inFlow.clear();
         this.outFlow.clear();
         this.inFall.clear();
         this.outFall.clear();
         this.cascade.clear();
-
-        this.hide.clear();
+        this.cliff.clear();
     }
 
     setVolume(key, volume) {
@@ -147,6 +150,7 @@ class WaterLayer extends Actor {
     getInFall(key) { return this.inFall.get(key) || 0; }
     getOutFall(key) { return this.outFall.get(key) || 0; }
     getCascade(key) { return this.cascade.get(key) || [0,0,0,0]; }
+    getCliff(key) { return this.cliff.get(key) || [1,1,1,1]; }
 
     get totalVolume() {
         let sum = 0;
@@ -154,11 +158,13 @@ class WaterLayer extends Actor {
         return sum;
     }
 
-    fall(below) {
+    flow2(below) {
+
         const voxels = this.wellKnownModel("modelRoot").voxels;
 
+        // -- Fall --
+
         below.inFall.clear();
-        below.cascade.clear();
         this.outFall.clear();
 
         this.volume.forEach( (volume,key) => {
@@ -174,25 +180,14 @@ class WaterLayer extends Actor {
             this.outFall.set(key, -flow);
             below.inFall.set(belowKey, flow);
 
-            const inflow = this.getInFlow(key);
-            const cascade = [...this.getCascade(key)];
-            for(let a = 0; a < 4; a++) {
-                //  cascade[a] = cascade[a] || inflow[a];
-                cascade[a] = Math.max(cascade[a],inflow[a]);
-            }
-
-            below.cascade.set(belowKey, cascade);
+            this.setVolume(key, volume-flow);
+            below.setVolume(belowKey, belowVolume+flow);
         });
 
-        below.inFall.forEach((flow, key) => below.setVolume(key, below.getVolume(key) + flow));
-        this.outFall.forEach((flow, key) => this.setVolume(key, this.getVolume(key) + flow)); // If there is still volume after the bottom is filled, this causes flicker.
+        // below.inFall.forEach((flow, key) => below.setVolume(key, below.getVolume(key) + flow));
+        // this.outFall.forEach((flow, key) => this.setVolume(key, this.getVolume(key) + flow));
 
-    }
-
-    // Combine fall and flow and bail until next tick if the fall has some left over after filling the below voxel. This prevents the spreading of a choked cascade.
-
-    flow(below){
-        const voxels = this.wellKnownModel("modelRoot").voxels;
+        // -- Flow --
 
         this.inFlow.clear();
         this.outFlow.clear();
@@ -252,7 +247,6 @@ class WaterLayer extends Actor {
 
             }
             let v = volume + sum;
-            // if (v < 0.01) v = 0; // Test appropriate minimum
             this.setVolume(key, v);
         })
 
@@ -261,24 +255,208 @@ class WaterLayer extends Actor {
         this.outFlow.forEach( (flow, key) => {
             let volume = this.getVolume(key);
             flow.forEach( f=> volume += f);
-            // if (volume < 0.01) volume = 0; // Test appropriate minimum
             this.setVolume(key, volume);
         })
 
+        // -- Fall agin --
 
-        this.volume.forEach( (volume, key) => {
-            this.hide.delete(key);
+        this.volume.forEach( (volume,key) => {
+
+            if (volume < 0.001) {
+                this.setVolume(key, 0);
+                return;
+            }
+
             const xyz = Voxels.unpackKey(key);
             const belowXYZ = Voxels.adjacent(...xyz, Voxels.below);
             if (voxels.get(...belowXYZ)) return; // Voxel below is solid.
             const belowKey = Voxels.packKey(...belowXYZ);
             const belowVolume = below.getVolume(belowKey);
             if (belowVolume === 1) return // Voxel below is full.
-            this.hide.add(key);
+
+            const flow = Math.min(volume, 1-belowVolume);
+
+            const outFall = this.getOutFall(key);
+
+            this.outFall.set(key, outFall - flow);
+
+            const inFall = below.getInFall(belowKey);
+            below.inFall.set(belowKey, inFall+flow);
+
+            this.setVolume(key, volume-flow);
+            below.setVolume(belowKey, belowVolume+flow);
+
         });
 
+        //-- Find cliffs
+
+        this.cliff.clear();
+
+        this.volume.forEach( (volume, key) => {
+            const xyz = Voxels.unpackKey(key);
+            const cliff = [1,1,1,1];
+            for (let a = 0; a < 4; a++ ) {
+                const sideXYZ = Voxels.adjacent(...xyz, a);
+                const sideKey = Voxels.packKey(...sideXYZ);
+                // const xxx = this.getOutFall(sideKey);
+
+                if (this.getOutFall(sideKey)) {
+                    // console.log(xxx);
+                    cliff[a] = 0;
+                }
+
+
+            }
+            // console.log(cliff);
+            this.cliff.set(key, cliff);
+        });
+
+        //-- Detect cascades to draw waterfalls
+        // Bug here == cascades should always connect to cliffs.
+
+        // below.cascade.clear();
+
+        // this.outFall.forEach((flow, key) => {
+        //     const xyz = Voxels.unpackKey(key);
+        //     const belowXYZ = Voxels.adjacent(...xyz, Voxels.below);
+        //     if (voxels.get(...belowXYZ)) return; // Voxel below is solid.
+        //     const belowKey = Voxels.packKey(...belowXYZ);
+        //     const inflow = this.getInFlow(key);
+        //     const cascade = [...this.getCascade(key)];
+        //     for(let a = 0; a < 4; a++) {
+        //         //  cascade[a] = cascade[a] || inflow[a];
+        //         cascade[a] = Math.max(cascade[a],inflow[a]);
+        //     }
+        //     below.cascade.set(belowKey, cascade);
+        // })
+
         this.say("rebuild");
+
     }
+
+    // fall(below) {
+    //     const voxels = this.wellKnownModel("modelRoot").voxels;
+
+    //     below.inFall.clear();
+    //     below.cascade.clear();
+    //     this.outFall.clear();
+
+    //     this.volume.forEach( (volume,key) => {
+    //         const xyz = Voxels.unpackKey(key);
+    //         const belowXYZ = Voxels.adjacent(...xyz, Voxels.below);
+    //         if (voxels.get(...belowXYZ)) return; // Voxel below is solid.
+    //         const belowKey = Voxels.packKey(...belowXYZ);
+    //         const belowVolume = below.getVolume(belowKey);
+    //         if (belowVolume === 1) return // Voxel below is full.
+
+    //         const flow = Math.min(volume, 1-belowVolume);
+
+    //         this.outFall.set(key, -flow);
+    //         below.inFall.set(belowKey, flow);
+
+    //         const inflow = this.getInFlow(key);
+    //         const cascade = [...this.getCascade(key)];
+    //         for(let a = 0; a < 4; a++) {
+    //             //  cascade[a] = cascade[a] || inflow[a];
+    //             cascade[a] = Math.max(cascade[a],inflow[a]);
+    //         }
+
+    //         below.cascade.set(belowKey, cascade);
+    //     });
+
+    //     below.inFall.forEach((flow, key) => below.setVolume(key, below.getVolume(key) + flow));
+    //     this.outFall.forEach((flow, key) => this.setVolume(key, this.getVolume(key) + flow)); // If there is still volume after the bottom is filled, this causes flicker.
+
+    // }
+
+    // Combine fall and flow and bail until next tick if the fall has some left over after filling the below voxel. This prevents the spreading of a choked cascade.
+
+    // flow(below){
+    //     const voxels = this.wellKnownModel("modelRoot").voxels;
+
+    //     this.inFlow.clear();
+    //     this.outFlow.clear();
+
+    //     // Find side voxels to flow into
+
+    //     this.volume.forEach( (volume, key) => {
+
+    //         const xyz = Voxels.unpackKey(key);
+
+    //         const sides = [];
+    //         let sum = volume;
+
+    //         for (let a = 0; a < 4; a++) {
+    //             const sideXYZ = Voxels.adjacent(...xyz, a);
+    //             const sideKey = Voxels.packKey(...sideXYZ);
+    //             if (!Voxels.isValid(...sideXYZ) || voxels.get(...sideXYZ)) continue; // Side voxel is solid
+    //             const sideVolume = this.getVolume(sideKey);
+    //             if (sideVolume < volume) { // We should flow into it.
+    //                 sides.push(a);
+    //                 sum += sideVolume;
+    //             }
+    //         }
+
+    //         if (sides.length===0) return; // All side volumes are higher or solid -- no flow!
+
+    //         const average = sum/(sides.length+1); // The target volume
+
+    //         this.outFlow.set(key, [0,0,0,0]);
+    //         sides.forEach(a => {
+    //             const sideXYZ = Voxels.adjacent(...xyz, a);
+    //             const sideKey = Voxels.packKey(...sideXYZ);
+    //             const flow = (average - this.getVolume(sideKey));
+    //             if (!this.inFlow.has(sideKey)) this.inFlow.set(sideKey, [0,0,0,0]);
+    //             this.inFlow.get(sideKey)[Opposite(a)] = flow;
+    //             this.outFlow.get(key)[a] = -flow;
+    //         });
+    //     })
+
+    //     // Apply inflows
+
+    //     this.inFlow.forEach( (flow, key) => {
+    //         const volume = this.getVolume(key);
+    //         const xyz = Voxels.unpackKey(key);
+    //         let sum = 0;
+    //         flow.forEach( f=> sum += f);
+    //         if ((volume + sum) > 1 ) { // Flow + volume is too big!
+    //             flow = flow.map( f => f/(sum+volume)); // Scale the flow back to just fill the voxel
+    //             this.inFlow.set(key, flow);
+    //             sum = 1-volume;
+    //             for (let a = 0; a < 4; a++) {   // Reduce the adjacent outflows to match
+    //                 const sideXYZ = Voxels.adjacent(...xyz, a);
+    //                 const sideKey = Voxels.packKey(...sideXYZ);
+    //                 const f = this.outFlow.get(sideKey);
+    //                 if (f) f[Opposite(a)] = -flow[a];
+    //             }
+
+    //         }
+    //         let v = volume + sum;
+    //         // if (v < 0.01) v = 0; // Test appropriate minimum
+    //         this.setVolume(key, v);
+    //     })
+
+    //     // Apply outflows
+
+    //     this.outFlow.forEach( (flow, key) => {
+    //         let volume = this.getVolume(key);
+    //         flow.forEach( f=> volume += f);
+    //         // if (volume < 0.01) volume = 0; // Test appropriate minimum
+    //         this.setVolume(key, volume);
+    //     })
+
+
+    //     this.volume.forEach( (volume, key) => {
+    //         const xyz = Voxels.unpackKey(key);
+    //         const belowXYZ = Voxels.adjacent(...xyz, Voxels.below);
+    //         if (voxels.get(...belowXYZ)) return; // Voxel below is solid.
+    //         const belowKey = Voxels.packKey(...belowXYZ);
+    //         const belowVolume = below.getVolume(belowKey);
+    //         if (belowVolume === 1) return // Voxel below is full.
+    //     });
+
+    //     this.say("rebuild");
+    // }
 
 }
 WaterLayer.register('WaterLayer');
@@ -287,7 +465,6 @@ WaterLayer.register('WaterLayer');
 //-- WaterLayerPawn ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-let voxels;
 const cornerSums = Array.from(Array(Voxels.sizeX+1), () => new Array(Voxels.sizeY+1));
 const cornerCounts = Array.from(Array(Voxels.sizeX+1), () => new Array(Voxels.sizeY+1));
 
@@ -336,7 +513,7 @@ function seIsValid(xyz) {
     return true;
 }
 
-
+let voxels;
 
 class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
 
@@ -346,7 +523,8 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
         voxels = this.wellKnownModel("Voxels");
         this.volume = new Map(this.actor.volume);
         console.log("starting pawn");
-        this.tug = 0.2;
+        this.tug = 0.01;
+        // this.tug = 1;
 
         this.mesh = new Triangles();
         const material = CachedObject("waterMaterial", this.buildMaterial);
@@ -361,7 +539,6 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
     addKey(key) {
         if (this.volume.has(key)) return;
         this.volume.set(key, 0);
-        // this.volume.set(key, this.actor.getVolume(key));
     }
 
     deleteKey(key) {
@@ -385,7 +562,6 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
 
     buildMaterial() {
         const material = new Material();
-        // material.pass = 'opaque';
         material.pass = 'translucent';
         material.zOffset = 0;
         return material;
@@ -416,7 +592,6 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
         // const w = [0.2, 0.2, 0.2, 0.1];
 
         this.volume.forEach( (v,key) =>  {
-            if (this.actor.hide.has(key)) return;
             // if (v < 0.05) return;
 
             const xyz = Voxels.unpackKey(key);
@@ -429,6 +604,14 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
             if (seIsValid(xyz)) se = cornerSums[x+1][y] / cornerCounts[x+1][y];
             if (neIsValid(xyz)) ne = cornerSums[x+1][y+1] / cornerCounts[x+1][y+1];
             if (nwIsValid(xyz)) nw = cornerSums[x][y+1] / cornerCounts[x][y+1];
+
+            const cliff = this.actor.getCliff(key);
+
+
+            sw = sw * cliff[2] * cliff[3];
+            se = se * cliff[1] * cliff[2];
+            ne = ne * cliff[0] * cliff[1];
+            nw = nw * cliff[3] * cliff[0];
 
             const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0.5,0.5,v]));
             const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,sw]));
@@ -446,47 +629,57 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Dynamic, PM_Visible) {
         });
 
         this.actor.cascade.forEach((cascade, key) => {
-            return;
             const xyz = Voxels.unpackKey(key);
 
+            const x = xyz[0];
+            const y = xyz[1];
+
             const z = this.volume.get(key) || 0;
+            let sw = z, se = z, ne = z, nw = z;
 
-            const cc = ScaleColor(c, z);
+            // if (swIsValid(xyz)) sw = cornerSums[x][y] / cornerCounts[x][y];
+            // if (seIsValid(xyz)) se = cornerSums[x+1][y] / cornerCounts[x+1][y];
+            // if (neIsValid(xyz)) ne = cornerSums[x+1][y+1] / cornerCounts[x+1][y+1];
+            // if (nwIsValid(xyz)) nw = cornerSums[x][y+1] / cornerCounts[x][y+1];
 
-            if (cascade[0] > 0.00) {
-                const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z]));
-                const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z]));
+            const cc = CascadeColor(c, z);
+            // const cc = c;
+
+            if (cascade[0] > 0.01) {
+
+                const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,0]));
+                const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,0]));
                 const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,1]));
                 const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,1]));
-                this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
-                this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
+                this.mesh.addFace([v0, v1, v2, v3], [cc, cc, cc, cc]);
+                this.mesh.addFace([v3, v2, v1, v0], [cc, cc, cc, cc]);
             }
 
-            if (cascade[1] > 0.00) {
-                const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,z]));
-                const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,z]));
-                const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,1]));
-                const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,1]));
-                this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
-                this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
+            if (cascade[1] > 0.0) {
+                const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,0]));
+                const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,0]));
+                const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,0]));
+                const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [1,1,0]));
+                this.mesh.addFace([v0, v1, v2, v3], [cc, cc, cc, cc]);
+                this.mesh.addFace([v3, v2, v1, v0], [cc, cc, cc, cc]);
             }
 
-            if (cascade[2]> 0.00) {
-                const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,z]));
-                const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,z]));
-                const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,1]));
-                const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,1]));
-                this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
-                this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
+            if (cascade[2]> 0.0) {
+                const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,0]));
+                const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,0]));
+                const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,0]));
+                const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [1,0,0]));
+                this.mesh.addFace([v0, v1, v2, v3], [cc, cc, cc, cc]);
+                this.mesh.addFace([v3, v2, v1, v0], [cc, cc, cc, cc]);
             }
 
-            if (cascade[3]> 0.00) {
+            if (cascade[3]> 0.0) {
                 const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,z]));
                 const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,z]));
                 const v2 = Voxels.toWorldXYZ(...v3_add(xyz, [0,1,1]));
                 const v3 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,1]));
-                this.mesh.addFace([v0, v1, v2, v3], [c, c, c, c]);
-                this.mesh.addFace([v3, v2, v1, v0], [c, c, c, c]);
+                this.mesh.addFace([v0, v1, v2, v3], [cc, cc, cc, cc]);
+                this.mesh.addFace([v3, v2, v1, v0], [cc, cc, cc, cc]);
             }
 
 
@@ -501,6 +694,13 @@ function ScaleColor(c, v) {
     if (v > 0.2) return c;
     const scale = v / 0.2;
     // const scale = 1;
+    return c.map(x => x * scale);
+}
+
+function CascadeColor(c, v) {
+    if (v > 0.5) return c;
+    // const scale = v / 0.5;
+    const scale = 1;
     return c.map(x => x * scale);
 }
 
