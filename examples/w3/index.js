@@ -53,6 +53,16 @@ MyModelRoot.register("MyModelRoot");
 // MyViewRoot
 //------------------------------------------------------------------------------------------
 
+// const xxx = new Set();
+// xxx.add(1);
+// xxx.add(2);
+// xxx.add(3);
+// console.log(xxx);
+// xxx.forEach(x => {
+//     xxx.add(0);
+//     console.log(x);
+// });
+
 class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
