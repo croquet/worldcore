@@ -32,15 +32,34 @@ export class Water extends Model{
         for (let z = 0; z < Voxels.sizeZ; z++) this.layers[z] = WaterLayer.create({z});
     }
 
-    setVolume(key, volume) {
-        const xyz = Voxels.unpackKey(key);
-        const z = xyz[2];
-        this.layers[z].setVolume(key, volume);
+    activate(x, y, z) {
+        if (z > this.layers.length-1) return;
+        const layer = this.layers[z];
+        const key = Voxels.packKey(x,y,z);
+        layer.active.add(key);
     }
 
-    getVolume(key) {
-        const xyz = Voxels.unpackKey(key);
-        const z = xyz[2];
+    deactivate(x, y, z) {
+        if (z > this.layers.length-1) return;
+        const layer = this.layers[z];
+        const key = voxels.packKey(x,y,z);
+        layer.active.delete(key);
+    }
+
+    setVolume(x,y,z, volume) {
+        const key = Voxels.packKey(x,y,z);
+        this.layers[z].setVolume(key, volume);
+        this.activate(x,y,z+1);
+        this.activate(x,y,z);
+        this.activate(x-1,y,z);
+        this.activate(x+1,y,z);
+        this.activate(x,y-1,z);
+        this.activate(x,y+1,z);
+
+    }
+
+    getVolume(x,y,z) {
+        const key = Voxels.packKey(x,y,z);
         return this.layers[z].getVolume(key);
     }
 
@@ -49,28 +68,31 @@ export class Water extends Model{
         this.publish("water", "changed");
     }
 
-    onChanged(data) {
+    onChanged(data) { //
+        const xyz = data.xyz;
         const type = data.type;
         const old = data.old;
         if (type && !old) { // an empty voxel has been filled.
-            const key = Voxels.packKey(...data.xyz);
-            if (this.getVolume(key)) { // Destroy the water it contained
-                this.setVolume(key, 0);
-                this.publish("water", "changed");
-            }
+            this.setVolume(...xyz, 0);
+        } else { // A solid voxel is now empty. Need to activate to the sides and above
+            const x = xyz[0];
+            const y = xyz[1];
+            const z = xyz[2];
+            this.activate(x,y,z+1);
+            this.activate(x-1,y,z);
+            this.activate(x+1,y,z);
+            this.activate(x,y-1,z);
+            this.activate(x,y+1,z);
         }
     }
 
     onSpawnWater(data) {
         const xyz = data.xyz;
         const volume = data.volume;
-        const key = Voxels.packKey(...xyz);
-        this.setVolume(key, volume);
-        this.publish("water", "changed");
+        this.setVolume(...xyz, volume);
     }
 
     onSpawnWaterSource(data) {
-        console.log("Spawn water source");
         const xyz = data.xyz;
         const flow = data.flow;
         WaterSourceActor.create({xyz, fraction: [0.5, 0.5, 0.5], flow});
@@ -83,8 +105,8 @@ export class Water extends Model{
     }
 
     tick() {
-        for (let z = Voxels.sizeZ-1; z > 0; z--) {
-            this.layers[z].flow(this.layers[z-1]);
+        for (let z = Voxels.sizeZ-2; z > 0; z--) { // Note water can't go in top layer.
+            this.layers[z].flow(this.layers[z+1], this.layers[z-1]);
         }
         // console.log(this.totalVolume);
         this.future(100).tick();
@@ -105,7 +127,8 @@ class WaterLayer extends Actor {
     init(options) {
         super.init(options);
 
-        this.active = new Set();
+        this.active = new Set();    // Voxels in this layer that should be tested for water flowing out
+
         this.volume = new Map();    // How much water is currently in the voxel
         this.inFlow = new Map();    // How much water flowed into each voxel from the sides on the last tick (4-array)
         this.outFlow = new Map();   // How much water flowed out of each voxel to the sides on the last tick (4-array)
@@ -131,6 +154,7 @@ class WaterLayer extends Actor {
         } else {
             this.volume.delete(key);
         }
+        this.say("rebuild");
     }
 
     getVolume(key) { return this.volume.get(key) || 0; }
@@ -141,12 +165,19 @@ class WaterLayer extends Actor {
     getCliff(key) { return this.cliff.get(key) || [1,1,1,1]; }
 
     getDelta(key) {
-        let delta = this.getInFall(key) + this.getOutFall(key);
+        let delta = this.getInFall(key) - this.getOutFall(key);
         const inflow = this.getInFlow(key);
         const outFlow = this.getOutFlow(key);
-        for (let a = 0; a < 4; a++) delta += inflow[a] + outFlow[a];
+        for (let a = 0; a < 4; a++) delta += inflow[a] - outFlow[a];
         return delta;
     }
+
+    // getOutTotal(key) {
+    //     let sum = - this.getOutFall(key);
+    //     const outFlow = this.getOutFlow(key);
+    //     for (let a = 0; a < 4; a++) sum -= outFlow[a];
+    //     return sum;
+    // }
 
     get totalVolume() {
         let sum = 0;
@@ -160,11 +191,11 @@ class WaterLayer extends Actor {
     // Deactivate a water voxel if:
     //  1. It's delta at the end of the tick drops below the epsilon.
 
-    flow(below) {
+    flow(above, below) {
 
         const water = this.wellKnownModel('Water');
 
-        const viscosity = 0.5;
+        const viscosity = 1;
 
         below.inFall.clear();
         this.outFall.clear();
@@ -172,14 +203,24 @@ class WaterLayer extends Actor {
         this.outFlow.clear();
         this.cliff.clear();
 
-        if( this.volume.size === 0) return;
+        // if( this.volume.size === 0) return;
+
+        // this.active = new Set([...this.active].filter( key => this.getVolume(key))) // Remove active entries with zero volume
+
+        if (this.active.size > 0) {
+            console.log(this.active);
+        }
+
+        if (this.active.size === 0) return;
+        console.log(this.active);
 
         const voxels = this.wellKnownModel("modelRoot").voxels;
 
         // Fall into the voxel below
 
-        this.volume.forEach( (volume,key) => {
-            volume = this.getVolume(key);
+        this.active.forEach( (key) => {
+            const volume = this.getVolume(key);
+            if (!volume) return;
             const xyz = Voxels.unpackKey(key);
             const belowXYZ = Voxels.adjacent(...xyz, Voxels.below);
             if (voxels.get(...belowXYZ)) return; // Voxel below is solid.
@@ -187,22 +228,27 @@ class WaterLayer extends Actor {
             const belowVolume = below.getVolume(belowKey);
             if (belowVolume === 1) return // Voxel below is full.
 
+            const aboveXYZ = Voxels.adjacent(...xyz, Voxels.above);
+            const aboveKey = Voxels.packKey(...aboveXYZ);
+
             const flow = Math.min(volume, 1-belowVolume);
 
             this.outFall.set(key, -flow);
             below.inFall.set(belowKey, flow);
 
             this.setVolume(key, volume-flow);
-            // water.setVolume(key, volume-flow); // Activate voxel above
+            above.active.add(aboveKey); // Need to add sides as well to active.
 
             below.setVolume(belowKey, belowVolume+flow);
-            // water.setVolume(belowKey, belowVolume+flow); // We can route these through the global set volume, but kind of inelegant ...
+            below.active.add(belowKey);
+
         });
 
         // Calculate flow into voxels to the sides
 
-        this.volume.forEach( (volume, key) => {
-            volume = this.getVolume(key);
+        this.active.forEach( (key) => {
+            const volume = this.getVolume(key);
+            if (!volume) return;
             const xyz = Voxels.unpackKey(key);
 
             const sides = [];
@@ -234,6 +280,8 @@ class WaterLayer extends Actor {
             });
         })
 
+
+
         // Apply side inflows
 
         this.inFlow.forEach( (flow, key) => {
@@ -255,51 +303,93 @@ class WaterLayer extends Actor {
             }
             let v = volume + sum;
             this.setVolume(key, v);
-            // water.setVolume(key, v);
+            this.active.add(key);
+
         })
 
         // Apply side outflows
 
         this.outFlow.forEach( (flow, key) => {
+
             let volume = this.getVolume(key);
             flow.forEach( f=> volume += f);
 
             this.setVolume(key, volume);
-            // water.setVolume(key, volume); // Activate voxel above
         })
+
+        // Deactivate low-flow voxels
+
+        this.active.forEach( key => {
+            const delta = this.getDelta(key);
+            if (delta < 0.001) this.active.delete(key);
+        })
+
+        this.outFlow.forEach( (flow,key) => {
+            const xyz = Voxels.unpackKey(key);
+            const x = xyz[0];
+            const y = xyz[1];
+            const z = xyz[2];
+            const sum = flow.reduce((sum, f) => sum+f);
+            if (sum < -0.001 ) {
+                above.active.add(Voxels.packKey(x, y, z+1));
+                this.active.add(Voxels.packKey(x+1, y, z));
+                this.active.add(Voxels.packKey(x-1, y, z));
+                this.active.add(Voxels.packKey(x, y+1, z));
+                this.active.add(Voxels.packKey(x, y-1, z));
+            }
+        })
+
+        // ^^^^^^
+        // Left voxel has no outflow. It will be ruled inactive
+        // middle voxel has its volume drop as it flows into the right voxel and adds the left voxel to the active list
+        // Left voxel takes itself off the active list again because it had no outflow this tick!
+
+
 
         // Fall again. We do this so water doesn't hang off edge of a cliff.
 
-        this.volume.forEach( (volume,key) => {
-            volume = this.getVolume(key);
-            if (volume < 0.001) { // Clamp volume to zero if it goes below a minimum
-                this.setVolume(key, 0);
-                return;
-            }
+        // this.active.forEach( (volume,key) => {
+        //     volume = this.getVolume(key);
+        //     if (volume < 0.01) { // Clamp volume to zero if it goes below a minimum
+        //         this.setVolume(key, 0);
+        //         return;
+        //     }
+        // });
 
-            const xyz = Voxels.unpackKey(key);
-            const belowXYZ = Voxels.adjacent(...xyz, Voxels.below);
-            if (voxels.get(...belowXYZ)) return; // Voxel below is solid.
-            const belowKey = Voxels.packKey(...belowXYZ);
-            const belowVolume = below.getVolume(belowKey);
-            if (belowVolume === 1) return // Voxel below is full.
+        // this.active.forEach( (volume,key) => {
+        //     volume = this.getVolume(key);
+        //     if (volume < 0.01) { // Clamp volume to zero if it goes below a minimum
+        //         this.setVolume(key, 0);
+        //         return;
+        //     }
 
-            const flow = Math.min(volume, 1-belowVolume);
+        //     const xyz = Voxels.unpackKey(key);
+        //     const belowXYZ = Voxels.adjacent(...xyz, Voxels.below);
+        //     if (voxels.get(...belowXYZ)) return; // Voxel below is solid.
+        //     const belowKey = Voxels.packKey(...belowXYZ);
+        //     const belowVolume = below.getVolume(belowKey);
+        //     if (belowVolume === 1) return // Voxel below is full.
 
-            const outFall = this.getOutFall(key);
-            this.outFall.set(key, outFall - flow);
+        //     const aboveXYZ = Voxels.adjacent(...xyz, Voxels.above);
+        //     const aboveKey = Voxels.packKey(...aboveXYZ);
 
-            const inFall = below.getInFall(belowKey);
-            below.inFall.set(belowKey, inFall+flow);
+        //     const flow = Math.min(volume, 1-belowVolume);
 
-            this.setVolume(key, volume-flow);
-            // water.setVolume(key, volume-flow); // Activate voxel above
-            below.setVolume(belowKey, belowVolume+flow);
-            // water.setVolume(belowKey, belowVolume+flow);
+        //     const outFall = this.getOutFall(key);
+        //     this.outFall.set(key, outFall - flow);
 
-        });
+        //     const inFall = below.getInFall(belowKey);
+        //     below.inFall.set(belowKey, inFall+flow);
 
-        // If the voxel delta < epsilon, remove from active.
+        //     this.setVolume(key, volume-flow);
+        //     above.active.add(aboveKey);
+
+        //     below.setVolume(belowKey, belowVolume+flow);
+        //     below.active.add(belowKey);
+
+        // });
+
+
 
         // Find cliffs. These are voxels where the volume should taper to 0 at the sides becuase the water is falling off an edge.
         // Use active here?
@@ -315,8 +405,6 @@ class WaterLayer extends Actor {
             }
             this.cliff.set(key, cliff);
         });
-
-        this.say("rebuild");
 
     }
 

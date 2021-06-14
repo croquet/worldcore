@@ -28,7 +28,7 @@ import { WaterRender } from "./src/WaterRender";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!!");
+        console.log("Start Model!!!!");
 
         this.voxels.generate();
 
@@ -52,16 +52,6 @@ MyModelRoot.register("MyModelRoot");
 //------------------------------------------------------------------------------------------
 // MyViewRoot
 //------------------------------------------------------------------------------------------
-
-// const xxx = new Set();
-// xxx.add(1);
-// xxx.add(2);
-// xxx.add(3);
-// console.log(xxx);
-// xxx.forEach(x => {
-//     xxx.add(0);
-//     console.log(x);
-// });
 
 class MyViewRoot extends ViewRoot {
     constructor(model) {
