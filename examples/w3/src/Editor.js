@@ -98,14 +98,14 @@ export class Editor extends NamedView {
         const pick = PickFillSurface(xy, GetTopLayer());
         const xyz = pick.xyz;
         if (!xyz || !Voxels.canEdit(...xyz)) return
-        this.publish("editor", "spawnWaterSource", {xyz, flow: 1});
+        this.publish("editor", "spawnWaterSource", {xyz, flow: 2});
     }
 
     doSink(xy) {
         const pick = PickFillSurface(xy, GetTopLayer());
         const xyz = pick.xyz;
         if (!xyz || !Voxels.canEdit(...xyz)) return
-        this.publish("editor", "spawnWaterSource", {xyz, flow: -1});
+        this.publish("editor", "spawnWaterSource", {xyz, flow: -2});
     }
 
 
