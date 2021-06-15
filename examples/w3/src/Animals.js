@@ -1,4 +1,4 @@
-import { Model } from "@croquet/croquet";
+import { Model, Constants } from "@croquet/croquet";
 import { mix, Actor, Pawn, AM_Smoothed, PM_Smoothed, Material,
     AM_Behavioral, DestroyBehavior, SequenceBehavior, Behavior, PM_Visible, PM_InstancedVisible, CachedObject, UnitCube, m4_translation, m4_scaling,
     InstancedDrawCall, GetNamedView, LoopBehavior, SucceedBehavior, v2_sub, v2_scale, v2_magnitude, q_axisAngle, v2_normalize, SelectorBehavior, ParallelSelectorBehavior, CompositeBehavior
@@ -75,9 +75,13 @@ class AnimalPawn extends mix(Pawn).with(PM_VoxelSmoothed) {
 class TestTerrain extends Behavior {
     do() {
         const voxels = this.wellKnownModel("Voxels");
+        const water = this.wellKnownModel("Water");
         const surfaces = this.wellKnownModel("Surfaces");
-        if (voxels.get(...this.actor.xyz)) {
+        if (voxels.get(...this.actor.xyz)) { // Buried
             this.actor.destroy();
+        } else if (water.getVolume(...this.actor.xyz) > Constants.path.maxWaterDepth + this.actor.fraction[2] ) { // Drowned
+            console.log("Drowned!");
+            this.actor.startBehavior(FallBehavior, {tickRate: 50});
         } else {
             const s = surfaces.get(this.actor.key);
             if (!s || !s.hasFloor()) {
@@ -89,6 +93,7 @@ class TestTerrain extends Behavior {
                 this.actor.voxelMoveTo(this.actor.xyz, [x,y,z]);
             }
         }
+
     }
 }
 TestTerrain.register('TestTerrain');
@@ -198,10 +203,16 @@ class WalkTo extends Behavior {
 
     do(delta) {
 
+        const water = this.wellKnownModel('Water');
+
         let xyz = this.actor.xyz;
         let fraction = this.actor.fraction;
 
-        let travel = this.speed * delta / 1000;
+        let freedom = 1;
+        const depth = water.getVolume(...xyz) - fraction[2];
+        if (depth > Constants.path.deepWaterDepth) freedom /= Constants.path.deepWaterWeight;
+
+        let travel = freedom * this.speed * delta / 1000;
         let remaining = v2_sub(this.exit, fraction); // remaing distance to exit
         let advance = v2_scale(this.forward, travel); // amount traveled this tick
 
@@ -212,8 +223,15 @@ class WalkTo extends Behavior {
                 return;
             } else { // Skip to next voxel
 
+                const nextKey = this.path[this.step+1];
                 const paths = this.wellKnownModel("Paths");
-                if (!paths.hasExit(Voxels.packKey(...xyz), this.path[this.step+1])) { // Route no longer exists
+                if (!paths.hasExit(this.actor.key, nextKey)) { // Route no longer exists
+                    this.fail();
+                    return;
+                }
+
+                const maxDepth = Constants.path.maxDepth;
+                if (water.getVolumeByKey(nextKey) > maxDepth) { // Route is flooded
                     this.fail();
                     return;
                 }
@@ -233,13 +251,31 @@ class WalkTo extends Behavior {
 
                 travel -= v2_magnitude(remaining);
                 remaining = v2_sub(this.exit, fraction);
-                this.forward = v2_normalize(remaining);
+                // this.forward = v2_normalize(remaining);
+
+                const mag = v2_magnitude(remaining);
+                if (mag > 0)  this.forward = v2_scale(remaining, 1/mag);
+
+                if (Number.isNaN(this.forward[0])) {
+                    console.log("remaining" + remaining);
+                    console.log("forward  " + this.forward);
+                }
+
                 advance = v2_scale(this.forward, travel);
             }
         }
 
+        // if (Number.isNaN(advance[0])) {
+        //     console.log("advance  " + advance);
+        // }
+
         fraction[0] = Math.min(1, Math.max(0, fraction[0] + advance[0]));
         fraction[1] = Math.min(1, Math.max(0, fraction[1] + advance[1]));
+
+        // if (Number.isNaN(fraction[0])) {
+        //     console.log("fraction  " + fraction);
+        // }
+
         this.reposition(xyz, fraction);
         this.rotateToFacing(this.forward);
     }

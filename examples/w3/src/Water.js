@@ -62,6 +62,12 @@ export class Water extends Model{
         return this.layers[z].getVolume(key);
     }
 
+    getVolumeByKey(key) {
+        const xyz = Voxels.unpackKey(key);
+        const z = xyz[2];
+        return this.layers[z].getVolume(key);
+    }
+
     onNewLevel() {
         this.clear()
     }
@@ -106,7 +112,7 @@ export class Water extends Model{
         for (let z = Voxels.sizeZ-2; z > 0; z--) {
             this.layers[z].flow(this.layers[z+1], this.layers[z-1]);
         }
-        console.log(this.totalVolume);
+        // console.log(this.totalVolume);
         this.future(100).tick();
     }
 

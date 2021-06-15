@@ -8,7 +8,10 @@ Constants.path = {
     sideSlopeWeight: Math.sqrt(Voxels.scaleX * Voxels.scaleX + Voxels.scaleZ * Voxels.scaleZ) / 2,
     cornerFlatWeight: Math.sqrt(Voxels.scaleX * Voxels.scaleX + Voxels.scaleY * Voxels.scaleY) / 2,
     cornerSlopeWeight: Math.sqrt(Voxels.scaleX * Voxels.scaleX + Voxels.scaleY * Voxels.scaleY + Voxels.scaleZ * Voxels.scaleZ) / 2,
-    centerWeight: 0.1
+    centerWeight: 0.1,
+    maxWaterDepth: 0.6,
+    deepWaterDepth: 0.2,
+    deepWaterWeight: 2
 };
 
 const slopeEffort = Constants.path.slopeEffort;
@@ -17,6 +20,9 @@ const sideSlopeWeight = Constants.path.sideSlopeWeight;
 const cornerFlatWeight = Constants.path.cornerFlatWeight;
 const cornerSlopeWeight = Constants.path.cornerSlopeWeight;
 const centerWeight = Constants.path.centerWeight;
+const maxWaterDepth = Constants.path.maxWaterDepth;
+const deepWaterDepth = Constants.path.deepWaterDepth;
+const deepWaterWeight = Constants.path.deepWaterWeight;
 
 
 //------------------------------------------------------------------------------------------
@@ -87,6 +93,7 @@ export class Paths extends Model {
     }
 
     findPath(startKey, endKey) {
+        const water = this.wellKnownModel('Water');
         const path = [];
 
         if (!this.waypoints.has(startKey)) return path;  // Invalid start waypoint
@@ -109,10 +116,14 @@ export class Paths extends Model {
             const currentWaypoint = this.waypoints.get(currentKey);
             for (let i = 0; i < 10; i++) {
                 const exitKey = currentWaypoint.exits[i];
+                const exitWater = water.getVolumeByKey(exitKey);
                 if (!exitKey) continue; // No exit in that direction;
+                if (exitWater > maxWaterDepth) continue; // Don't walk into water that could drown you
                 if (!visited.has(exitKey)) visited.set(exitKey, {}); // First time visited
                 const exit = visited.get(exitKey);
-                const cost = current.cost + currentWaypoint.weights[i];
+                let addedCost = currentWaypoint.weights[i];
+                if (exitWater > deepWaterDepth) addedCost *= deepWaterWeight;
+                const cost = current.cost + addedCost;
                 if (exit.from && exit.cost <= cost) continue; // A better route to this exit already exists
                 exit.from = currentKey;
                 exit.cost = cost;
