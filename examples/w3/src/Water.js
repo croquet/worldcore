@@ -32,6 +32,23 @@ export class Water extends Model{
         for (let z = 0; z < Voxels.sizeZ; z++) this.layers[z] = WaterLayer.create({z});
     }
 
+    load(matrix) {
+        this.clear();
+        for (let z = 0; z < Voxels.sizeZ; z++) {
+            const layer = this.layers[z];
+            for (let x = 0; x < Voxels.sizeX; x++) {
+                for (let y = 0; y < Voxels.sizeY; y++) {
+                    const volume = matrix[x][y][z];
+                    if (volume) {
+                        const key = Voxels.packKey(x,y,z);
+                        layer.setVolume(key,volume);
+                        layer.active.add(key);
+                    }
+                }
+            }
+        }
+    }
+
     activate(x, y, z) {
         if (z > this.layers.length-1) return;
         const layer = this.layers[z];
@@ -447,11 +464,12 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Visible) {
     buildMaterial() {
         const material = new Material();
         material.pass = 'translucent';
-        material.zOffset = 0;
+        material.zOffset = 2;
         return material;
     }
 
     buildMesh() {
+        if (!this.actor.volume) return;
         clearCornerGrid();
 
         this.mesh.clear();

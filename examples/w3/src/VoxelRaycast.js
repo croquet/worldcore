@@ -23,7 +23,7 @@ export function PickVoxel(xy, topLayer = Voxels.sizeZ) {
 
     let xyz =  raycast.find(rc => {
         if ( rc[2] >= topLayer) return false;
-        return (voxels.get(...rc) !== 0);
+        return (voxels.get(...rc));
     });
 
     return xyz;

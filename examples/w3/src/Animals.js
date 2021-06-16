@@ -52,12 +52,17 @@ class AnimalActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral) {
         super.init(options);
         const animals = this.wellKnownModel("Animals");
         animals.animals.add(this);
+        if (!animals.vip) animals.vip = this;
     }
 
     destroy() {
         super.destroy();
         const animals = this.wellKnownModel("Animals");
         animals.animals.delete(this);
+        if (this === animals.vip) {
+            delete animals.vip;
+            if (animals.animals.size > 0) animals.vip = [...animals.animals][0];
+        }
     }
 }
 AnimalActor.register('AnimalActor');
@@ -298,15 +303,15 @@ class WalkTo extends Behavior {
         if (x0 > x1) {
             if (y0 > y1) return [0,0,0];
             if (y0 < y1) return [0,1,0];
-            return [0,0.5,0];
+            return [0,0.4,0];
         }
         if (x0 < x1) {
             if (y0 > y1) return [1,0,0];
             if (y0 < y1) return [1,1,0];
-            return [1,0.5,0];
+            return [1,0.6,0];
         }
-        if (y0 > y1) return [0.5,0,0];
-        if (y0 < y1) return [0.5,1,0];
+        if (y0 > y1) return [0.6,0,0];
+        if (y0 < y1) return [0.4,1,0];
         return [0.5,0.5,0];
     }
 
@@ -321,15 +326,15 @@ class WalkTo extends Behavior {
         if (x0 > x1) {
             if (y0 > y1) return [0,0,0];
             if (y0 < y1) return [0,1,0];
-            return [0,0.5,0];
+            return [0,0.6,0];
         }
         if (x0 < x1) {
             if (y0 > y1) return [1,0,0];
             if (y0 < y1) return [1,1,0];
-            return [1,0.5,0];
+            return [1,0.4,0];
         }
-        if (y0 > y1) return [0.5,0,0];
-        if (y0 < y1) return [0.5,1,0];
+        if (y0 > y1) return [0.4,0,0];
+        if (y0 < y1) return [0.6,1,0];
         return [0.5, 0.5,0];
     }
 

@@ -1,4 +1,4 @@
-import { ImageWidget, ToggleSet, ToggleWidget, Widget, SliderWidget } from "@croquet/worldcore";
+import { ImageWidget, ToggleSet, ToggleWidget, Widget, SliderWidget, ButtonWidget } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { GetTopLayer, SetTopLayer } from "./Globals";
 
@@ -16,6 +16,11 @@ import sourceOnIcon from "../assets/sourceOnIcon.png";
 import sourceOffIcon from "../assets/sourceOffIcon.png";
 import sinkOnIcon from "../assets/sinkOnIcon.png";
 import sinkOffIcon from "../assets/sinkOffIcon.png";
+
+import walkOnIcon from "../assets/walkOnIcon.png";
+import walkOffIcon from "../assets/walkOffIcon.png";
+import resetIcon from "../assets/resetIcon.png";
+
 
 
 export class HUD extends Widget {
@@ -52,19 +57,30 @@ export class HUD extends Widget {
         waterToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: waterOffIcon}));
         waterToggle.onToggleOn = () => this.publish("hud", "editMode", "water");
 
-        const sourceToggle = new ToggleWidget(this, {local: [80,140], size:[50,50]})
-        this.setToggleDefaults(sourceToggle);
-        sourceToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sourceOnIcon}));
-        sourceToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sourceOffIcon}));
-        sourceToggle.onToggleOn = () => this.publish("hud", "editMode", "source");
+        // const sourceToggle = new ToggleWidget(this, {local: [80,140], size:[50,50]})
+        // this.setToggleDefaults(sourceToggle);
+        // sourceToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sourceOnIcon}));
+        // sourceToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sourceOffIcon}));
+        // sourceToggle.onToggleOn = () => this.publish("hud", "editMode", "source");
 
-        const sinkToggle = new ToggleWidget(this, {local: [140,140], size:[50,50]})
-        this.setToggleDefaults(sinkToggle);
-        sinkToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sinkOnIcon}));
-        sinkToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sinkOffIcon}));
-        sinkToggle.onToggleOn = () => this.publish("hud", "editMode", "sink");
+        // const sinkToggle = new ToggleWidget(this, {local: [140,140], size:[50,50]})
+        // this.setToggleDefaults(sinkToggle);
+        // sinkToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sinkOnIcon}));
+        // sinkToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sinkOffIcon}));
+        // sinkToggle.onToggleOn = () => this.publish("hud", "editMode", "sink");
 
-        const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle, treeToggle, waterToggle, sourceToggle, sinkToggle);
+        const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle, treeToggle, waterToggle);
+
+        const walktoggle= new ToggleWidget(this, {anchor: [1,0], pivot: [1,0], local: [-70,20], size: [40,40]})
+        this.setToggleDefaults(walktoggle);
+        walktoggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: walkOnIcon}));
+        walktoggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: walkOffIcon}));
+        walktoggle.onToggleOn = () => this.publish("hud", "firstPerson", true);
+        walktoggle.onToggleOff = () => this.publish("hud", "firstPerson", false);
+
+        const resetButton = new ButtonWidget(this, {anchor: [1,0], pivot: [1,0], local: [-20,20], size: [40,40]})
+        resetButton.setLabel(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: resetIcon}));
+        resetButton.onClick = () => this.publish("hud", "reset");
 
         const cutawaySlider = new SliderWidget(this, {
             pivot: [1,0.5],

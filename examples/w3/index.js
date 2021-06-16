@@ -2,9 +2,8 @@
 //
 // Croquet Studios, 2021
 
-import { Session} from "@croquet/croquet";
-import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation,
-    ActorManager, RenderManager, PawnManager, PlayerManager, InputManager, v3_normalize, Triangles, Material, DrawCall } from "@croquet/worldcore";
+import { Session, App} from "@croquet/croquet";
+import { ModelRoot, ViewRoot, UIManager, ActorManager, RenderManager, PawnManager, PlayerManager, InputManager, v3_normalize } from "@croquet/worldcore";
 import { Voxels } from "./src/Voxels";
 import { Surfaces } from "./src/Surfaces";
 import { Paths } from "./src/Paths";
@@ -19,7 +18,7 @@ import { Animals } from "./src/Animals";
 import { RubbleManager } from "./src/Rubble";
 import { Stress } from "./src/Stress";
 import { Water } from "./src/Water";
-import { WaterRender } from "./src/WaterRender";
+import { WorldBuilder } from "./src/WorldBuilder";
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -28,14 +27,15 @@ import { WaterRender } from "./src/WaterRender";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!");
+        console.log("Start Model!!");
 
-        this.voxels.generate();
+        // this.voxels.generate();
+        this.worldBuilder.build();
 
     }
 
     createManagers() {
-        this.playerManager = this.addManager(PlayerManager.create());
+        // this.playerManager = this.addManager(PlayerManager.create());
         this.actorManager = this.addManager(ActorManager.create());
         this.voxels = this.addManager(Voxels.create());
         this.water = this.addManager(Water.create());
@@ -45,6 +45,7 @@ class MyModelRoot extends ModelRoot {
         this.plants = this.addManager(Plants.create());
         this.animals = this.addManager(Animals.create());
         this.rubbleManager = this.addManager(RubbleManager.create());
+        this.worldBuilder = this.addManager(WorldBuilder.create());
     }
 }
 MyModelRoot.register("MyModelRoot");
@@ -82,9 +83,7 @@ class MyViewRoot extends ViewRoot {
         this.input = this.addManager(new InputManager(this.model));
         this.render = this.addManager(new RenderManager(this.model));
         this.voxelRender = this.addManager(new VoxelRender(this.model));
-        // this.waterRender = this.addManager(new WaterRender(this.model));
         this.ui = this.addManager(new UIManager(this.model));
-
         this.godView = this.addManager(new GodView(this.model));
         this.editor = this.addManager((new Editor(this.model)));
         // this.pathRender = this.addManager(new PathRender(this.model));
@@ -96,10 +95,12 @@ class MyViewRoot extends ViewRoot {
 }
 
 async function go() {
+    App.makeWidgetDock();
 
     const session = await Session.join({
         appId: 'io.croquet.w3',
         name: 'w3',
+        // name: App.autoSession(),
         model: MyModelRoot,
         view: MyViewRoot,
         tps: 20,

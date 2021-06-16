@@ -4,7 +4,7 @@ import { GetTopLayer } from "./Globals";
 import { PickGrabSurface  } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 
-let translation = [Voxels.sizeX * Voxels.scaleX / 2, -20,(Voxels.sizeZ + 10) * Voxels.scaleZ ];
+let translation = [Voxels.sizeX * Voxels.scaleX / 2, -20,(Voxels.sizeZ+10) * Voxels.scaleZ ];
 let pitch = toRad(45);
 let yaw = toRad(0);
 let fov = toRad(60);
@@ -19,7 +19,12 @@ export class GodView extends NamedView {
         this.subscribe("input", 'pointerDown', this.onPointerDown);
         this.subscribe("input", 'pointerUp', this.onPointerUp);
         this.subscribe("input", 'pointerMove', this.onPointerMove);
+        this.subscribe("input", "zoomStart", this.onZoomStart);
+        this.subscribe("input", "zoomEnd", this.onZoomEnd);
+        this.subscribe("input", "zoomStart", this.onZoomUpdate);
         this.subscribe("input", 'wheel', this.onWheel);
+        this.subscribe("hud", "firstPerson", this.onFirstPerson);
+        this.subscribe("voxels", "newLevel", this.onNewLevel);
 
     }
 
@@ -42,6 +47,7 @@ export class GodView extends NamedView {
     }
 
     onPointerMove(data) {
+        if (this.startFOV) return;
         const xy = data.xy;
         if (this.grab) {
             const look = this.camera.viewLookRay(...xy);
@@ -58,8 +64,35 @@ export class GodView extends NamedView {
         }
     }
 
+    onZoomStart(data) {
+        const zoom = data.zoom;
+        const mid = data.mid;
+        this.startFOV = fov;
+    }
+
+    onZoomEnd(data) {
+        delete this.startFOV;
+    }
+
+    onZoomUpdate(data) {
+        if (!this.startFOV) return;
+        const zoom = data.zoom;
+        const mid = data.mid;
+        this.setFOV(this.startFOV * 1/zoom);
+    }
+
     onWheel(data) {
         this.setFOV(fov + data / 2000);
+    }
+
+    onFirstPerson(fp) {
+        this.firstPerson = fp;
+        if (!fp) this.updateCamera();
+    }
+
+    onNewLevel() {
+        this.firstPerson = false;
+        this.updateCamera();
     }
 
     setFOV(f) {
@@ -74,6 +107,7 @@ export class GodView extends NamedView {
     }
 
     updateCamera() {
+        if (this.firstPerson) return;
         const p = q_axisAngle([1,0,0], pitch);
         const y = q_axisAngle([0,0,1], yaw);
         this.camera.setLocation(m4_scalingRotationTranslation(1, q_multiply(p,y), translation));
@@ -88,7 +122,15 @@ export class GodView extends NamedView {
         yaw = (yaw + angle) % TAU;
     }
 
-    // update(time, delta) {
-
-    // }
+    update(time, delta) {
+        const animals = this.wellKnownModel("Animals");
+        if (this.firstPerson && animals.vip) {
+            const pm = GetNamedView("PawnManager");
+            const pawn = pm.get(animals.vip.id);
+            const p = q_axisAngle([1,0,0], toRad(90));
+            const r = q_multiply(p,pawn.rotation);
+            const t = v3_add([0, 0, 2], pawn.translation);
+            this.camera.setLocation(m4_scalingRotationTranslation(1, r, t));
+        }
+    }
 }

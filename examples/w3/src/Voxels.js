@@ -75,9 +75,9 @@ export class Voxels extends Model {
 
     //-- Constants --
 
-    static get sizeX() { return 16; }
-    static get sizeY() { return 16; }
-    static get sizeZ() { return 16; }
+    static get sizeX() { return 64; }
+    static get sizeY() { return 64; }
+    static get sizeZ() { return 32; }
     static get size() { return [Voxels.sizeX, Voxels.sizeY, Voxels.sizeZ]; }
 
     static get scaleX() { return 5; }
@@ -281,6 +281,15 @@ export class Voxels extends Model {
             }
         }
         this.voxels[2][2].compress([1,2,2,2, 2,2,2,2, 2,0,0,0, 0,0,0,0]);
+        this.publish("voxels", "newLevel");
+    }
+
+    load(matrix) {
+        for (let x = 0; x < Voxels.sizeX; x++) {
+            for (let y = 0; y < Voxels.sizeY; y++) {
+                this.voxels[x][y].compress(matrix[x][y]);
+            }
+        }
         this.publish("voxels", "newLevel");
     }
 

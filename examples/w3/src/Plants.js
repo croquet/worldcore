@@ -97,15 +97,14 @@ class TreeBehavior extends Behavior {
 
     init(options) {
         super.init(options);
-        this.maxSize = 1 - 0.3 * this.random();
-        this.size = this.actor.scale[0];
+        this.size = this.actor.size;
     }
 
     do(delta) {
         const growth = 0.02;
-        this.size = Math.min(this.maxSize, this.size + growth * delta / 1000);
+        this.size = Math.min(this.actor.maxSize, this.size + growth * delta / 1000);
         this.actor.set({scale: [this.size, this.size, this.size]});
-        if (this.size >= this.maxSize) {
+        if (this.size >= this.actor.maxSize) {
             this.succeed();
         }
     }
@@ -114,6 +113,8 @@ TreeBehavior.register('TreeBehavior');
 
 export class TreeActor extends PlantActor {
     get pawn() {return TreePawn};
+    get size() {return this._size || 0.2}
+    get maxSize() {return this._maxSize || 1};
 
     init(options) {
         super.init(options);
@@ -122,7 +123,7 @@ export class TreeActor extends PlantActor {
     }
 
     randomizePosition() {
-        const size = 0.2;
+        if (!this._maxSize) this._maxSize = 1 - 0.6 * this.random();
         const surface = this.wellKnownModel('Surfaces').get(this.key);
         let x = 0.2 + 0.6 * this.random();
         let y = 0.2 + 0.6 * this.random();
@@ -133,11 +134,12 @@ export class TreeActor extends PlantActor {
             z = surface.rawElevation(x,y);
             if (z === undefined) console.warn("Illegal tree position! " + [x,y]);
         }
+        // z -= 0.1; // Stick into ground. Causes validation problem.
 
         this.set({
             fraction:[x,y,z],
             rotation: q_axisAngle([0,0,1], TAU * this.random()),
-            scale: [size, size, size]
+            scale: [this.size, this.size, this.size]
         });
 
     }

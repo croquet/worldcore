@@ -60,6 +60,79 @@ export class PriorityQueue {
 }
 
 //------------------------------------------------------------------------------------------
+//-- PerlinNoise -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class PerlinNoise  {
+    constructor() {
+        this.generate();
+    }
+
+    generate() {
+        this.hashTable = this.generateHashTable();
+    }
+
+    generateHashTable() {
+        const table = [];
+        const q = new PriorityQueue((a, b) => a.key < b.key);
+        for (let n = 0; n < 256; n++) q.push({key: Math.random(), value: n});
+        while (!q.isEmpty) table.push(q.pop().value);
+        const table2 = table.concat(table);
+        return table2;
+    }
+
+    signedNoise2D(x,y) {
+        return this.noise2D(x,y) - 0.5;
+    }
+
+    noise2D(x,y) {
+        const table = this.hashTable;
+        const xInt= Math.floor(x);
+        const yInt = Math.floor(y);
+        const xf = x - xInt;
+        const yf = y - yInt;
+        const u = this.fade(xf);
+        const v = this.fade(yf);
+        const xi = xInt & 0xff;
+        const yi = yInt & 0xff;
+        const aa = table[table[xi   ] + yi];
+        const ab = table[table[xi+1 ] + yi];
+        const ba = table[table[xi   ] + yi+1];
+        const bb = table[table[xi+1 ] + yi+1];
+
+        const aaGrad = this.grad(aa, xf, yf);
+        const abGrad = this.grad(ab, xf-1, yf);
+        const baGrad = this.grad(ba, xf, yf-1);
+        const bbGrad = this.grad(bb, xf-1, yf-1);
+
+        const lerp0 = this.lerp(aaGrad, abGrad, u);
+        const lerp1 = this.lerp(baGrad, bbGrad, u);
+
+        return (this.lerp(lerp0, lerp1, v) + 1) / 2;
+    }
+
+    lerp(a, b, t) {
+        return a + t * (b - a);
+    }
+
+    fade(t) {
+        return t * t * t * (t * (t * 6 - 15) + 10);
+    }
+
+    grad(hash, x, y) {
+        switch (hash&0x3) {
+            case 0: return x + y;
+            case 1: return x - y;
+            case 2: return -x + y;
+            case 3: return -x - y;
+            default: return 0;
+        }
+    }
+
+}
+
+
+//------------------------------------------------------------------------------------------
 //-- TwoWayMap -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
