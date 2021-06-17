@@ -83,7 +83,7 @@ export class WorldBuilder extends Model {
 
         water.load(waterMatrix);
 
-        for (let n = 0; n < 350; n++) {
+        for (let n = 0; n < 250; n++) {
             const key = surfaces.randomFloor();
             const xyz = Voxels.unpackKey(key);
             const x = xyz[0];

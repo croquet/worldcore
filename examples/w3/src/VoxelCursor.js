@@ -29,6 +29,7 @@ export class VoxelCursor extends NamedView {
 
     onPointerMove(d) {
         this.xy = d.xy;
+        this.hasMouse = (d.type === 'mouse');
     }
 
     onEditMode(mode) {
@@ -37,6 +38,11 @@ export class VoxelCursor extends NamedView {
 
     update(time, delta) {
         let xyz;
+
+        if (!this.hasMouse) {
+            this.drawCall.isHidden = true;
+            return;
+        }
         switch(this.mode) {
             case 'dig':
                 xyz = PickDigVoxel(this.xy, GetTopLayer());

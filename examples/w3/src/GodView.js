@@ -1,10 +1,10 @@
 import { GetNamedView, NamedView, m4_scalingRotationTranslation, m4_translation, q_axisAngle, v3_scale, v3_add, v3_multiply, q_multiply,
-    toRad, TAU, KeyDown, v3_transform, m4_rotationZ, m4_multiply } from "@croquet/worldcore";
+    toRad, TAU, KeyDown, v3_transform, m4_rotationZ, m4_multiply, toDeg, DepthTexture } from "@croquet/worldcore";
 import { GetTopLayer } from "./Globals";
 import { PickGrabSurface  } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 
-let translation = [Voxels.sizeX * Voxels.scaleX / 2, -20,(Voxels.sizeZ+10) * Voxels.scaleZ ];
+let translation = [Voxels.sizeX * Voxels.scaleX / 2, 0,(Voxels.sizeZ+10) * Voxels.scaleZ ];
 let pitch = toRad(45);
 let yaw = toRad(0);
 let fov = toRad(60);
@@ -16,12 +16,12 @@ export class GodView extends NamedView {
         this.camera = GetNamedView('ViewRoot').render.camera;
         this.updateCamera();
 
-        this.subscribe("input", 'pointerDown', this.onPointerDown);
-        this.subscribe("input", 'pointerUp', this.onPointerUp);
-        this.subscribe("input", 'pointerMove', this.onPointerMove);
+        this.subscribe("ui", 'pointerDown', this.onPointerDown);
+        this.subscribe("ui", 'pointerUp', this.onPointerUp);
+        this.subscribe("ui", 'pointerMove', this.onPointerMove);
         this.subscribe("input", "zoomStart", this.onZoomStart);
         this.subscribe("input", "zoomEnd", this.onZoomEnd);
-        this.subscribe("input", "zoomStart", this.onZoomUpdate);
+        this.subscribe("input", "zoomUpdate", this.onZoomUpdate);
         this.subscribe("input", 'wheel', this.onWheel);
         this.subscribe("hud", "firstPerson", this.onFirstPerson);
         this.subscribe("voxels", "newLevel", this.onNewLevel);
@@ -29,9 +29,8 @@ export class GodView extends NamedView {
     }
 
     onPointerDown(data) {
-        if (data.type === 'mouse' && data.button !== 2) return;
         const xy = data.xy;
-        if (KeyDown('Shift') || xy[1] > (this.camera.height - 150)) {
+        if (KeyDown('Shift') || data.button === 2) {
             this.lastX = xy[0];
             this.pivot = this.findGrab([this.camera.width / 2, this.camera.height / 2]);
         } else {
@@ -40,14 +39,12 @@ export class GodView extends NamedView {
     }
 
     onPointerUp(data) {
-        if (data.type === 'mouse' && data.button !== 2) return;
         this.lastX = null;
         this.pivot = null;
         this.grab = null;
     }
 
     onPointerMove(data) {
-        if (this.startFOV) return;
         const xy = data.xy;
         if (this.grab) {
             const look = this.camera.viewLookRay(...xy);
@@ -65,20 +62,30 @@ export class GodView extends NamedView {
     }
 
     onZoomStart(data) {
-        const zoom = data.zoom;
+        this.inZoom = true;
         const mid = data.mid;
         this.startFOV = fov;
+        this.startYaw = yaw;
+        this.grab = this.findGrab(mid);
     }
 
     onZoomEnd(data) {
-        delete this.startFOV;
+        this.inZoom = false;
     }
 
     onZoomUpdate(data) {
-        if (!this.startFOV) return;
+        if (!this.inZoom) return;
         const zoom = data.zoom;
+        const dial = data.dial;
         const mid = data.mid;
+
         this.setFOV(this.startFOV * 1/zoom);
+        const look = this.camera.viewLookRay(...mid);
+        const elevation = translation[2] - this.grab[2];
+        const offset = v3_scale([look[0]/look[2], look[1]/look[2],1], elevation);
+        translation = v3_add(this.grab, offset);
+        yaw = this.startYaw-dial;
+        this.updateCamera();
     }
 
     onWheel(data) {
@@ -87,7 +94,13 @@ export class GodView extends NamedView {
 
     onFirstPerson(fp) {
         this.firstPerson = fp;
-        if (!fp) this.updateCamera();
+        if (fp) {
+            this.oldFOV = fov;
+            this.setFOV(toRad(80));
+        } else {
+            this.setFOV(this.oldFOV);
+            this.updateCamera();
+        }
     }
 
     onNewLevel() {

@@ -189,7 +189,7 @@ class TreePawn extends PlantPawn {
         trunk.merge(top);
         top.destroy();
         trunk.transform(m4_rotationX(toRad(90)));
-        trunk.transform(m4_translation([0,0,7.5]));
+        trunk.transform(m4_translation([0,0,7.0]));
         trunk.load();
         trunk.clear();
         return trunk;

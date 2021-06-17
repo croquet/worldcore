@@ -1,4 +1,4 @@
-import { ImageWidget, ToggleSet, ToggleWidget, Widget, SliderWidget, ButtonWidget } from "@croquet/worldcore";
+import { ImageWidget, ToggleSet, ToggleWidget, Widget, SliderWidget, ButtonWidget, TextWidget, EmptyWidget } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { GetTopLayer, SetTopLayer } from "./Globals";
 
@@ -39,17 +39,21 @@ export class HUD extends Widget {
         fillToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: fillOffIcon}));
         fillToggle.onToggleOn = () => this.publish("hud", "editMode", "fill");
 
-        const spawnToggle = new ToggleWidget(this, {local: [20,80], size:[50,50]})
+        const treeToggle = new ToggleWidget(this, {local: [20,80], size:[50,50]})
+        this.setToggleDefaults(treeToggle);
+        treeToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: treeOnIcon}));
+        treeToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: treeOffIcon}));
+        treeToggle.onToggleOn = () => this.publish("hud", "editMode", "tree");
+
+        const spawnToggle = new ToggleWidget(this, {local: [80,80], size:[50,50]})
         this.setToggleDefaults(spawnToggle);
         spawnToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: spawnOnIcon}));
         spawnToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: spawnOffIcon}));
         spawnToggle.onToggleOn = () => this.publish("hud", "editMode", "spawn");
 
-        const treeToggle = new ToggleWidget(this, {local: [80,80], size:[50,50]})
-        this.setToggleDefaults(treeToggle);
-        treeToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: treeOnIcon}));
-        treeToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: treeOffIcon}));
-        treeToggle.onToggleOn = () => this.publish("hud", "editMode", "tree");
+        const animals = this.wellKnownModel("Animals");
+        const counterBackground = new EmptyWidget(this, {local: [140,80], size: [100,50]} );
+        this.spawnCounter = new TextWidget(counterBackground, {autoSize: [1,1], point: 20, color: [1,1,1], alignX: 'left', alignY: 'middle', text: animals.animals.size.toString()})
 
         const waterToggle = new ToggleWidget(this, {local: [20,140], size:[50,50]})
         this.setToggleDefaults(waterToggle);
@@ -83,10 +87,10 @@ export class HUD extends Widget {
         resetButton.onClick = () => this.publish("hud", "reset");
 
         const cutawaySlider = new SliderWidget(this, {
-            pivot: [1,0.5],
-            anchor: [1,0.5],
-            local: [-20,0],
-            size: [20,150],
+            pivot: [1,1],
+            anchor: [1,1],
+            local: [-20,-20],
+            size: [20,200],
             step: Voxels.sizeZ-2,
             percent: 1 - (GetTopLayer()-2) / (Voxels.sizeZ-3)
         });
@@ -95,6 +99,12 @@ export class HUD extends Widget {
             SetTopLayer(topLayer);
             this.publish("hud", "topLayer", topLayer);
         };
+
+        this.subscribe("animals", { event: "countChanged", handling: "oncePerFrame" }, this.onCountChanged)
+    }
+
+    onCountChanged(n) {
+        this.spawnCounter.set({text: n.toString()})
     }
 
     setToggleDefaults(toggle) {

@@ -36,7 +36,12 @@ export class Animals extends Model {
     }
 
     onSpawnPerson(xyz) {
-        PersonActor.create({xyz});
+
+        for (let n = 0; n < 10; n++) {
+            if (this.animals.size < 200) PersonActor.create({xyz});
+        }
+
+
     }
 
 }
@@ -53,6 +58,7 @@ class AnimalActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral) {
         const animals = this.wellKnownModel("Animals");
         animals.animals.add(this);
         if (!animals.vip) animals.vip = this;
+        this.publish("animals", "countChanged", animals.animals.size);
     }
 
     destroy() {
@@ -63,6 +69,7 @@ class AnimalActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral) {
             delete animals.vip;
             if (animals.animals.size > 0) animals.vip = [...animals.animals][0];
         }
+        this.publish("animals", "countChanged", animals.animals.size);
     }
 }
 AnimalActor.register('AnimalActor');
