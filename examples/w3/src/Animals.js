@@ -38,7 +38,7 @@ export class Animals extends Model {
     onSpawnPerson(xyz) {
 
         for (let n = 0; n < 10; n++) {
-            if (this.animals.size < 200) PersonActor.create({xyz});
+            if (this.animals.size < 500) PersonActor.create({xyz});
         }
 
 
