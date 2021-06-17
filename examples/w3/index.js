@@ -99,8 +99,8 @@ async function go() {
 
     const session = await Session.join({
         appId: 'io.croquet.w3',
-        name: 'w3',
-        // name: App.autoSession(),
+        // name: 'w3',
+        name: App.autoSession(),
         model: MyModelRoot,
         view: MyViewRoot,
         tps: 20,
