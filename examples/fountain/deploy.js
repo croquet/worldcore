@@ -42,7 +42,7 @@ async function deploy() {
     // build into croquet.io/dev/
     await fsx.emptyDir(TARGET);
     console.log(`Building ${APP}...`);
-    console.log(execSync(`pnpm run build -- --output-path ${TARGET}`, {cwd: SRC}).toString());
+    console.log(execSync(`pnpm run build-dev -- --output-path ${TARGET}`, {cwd: SRC}).toString());
 
     // commit to git
     const git = simpleGit({ baseDir: TARGET });
