@@ -353,8 +353,7 @@ export class InputManager extends NamedView {
     }
 
     zoomEnd() {
-        if (this.presses.size >= 2) return;
-
+        if (this.presses.size !== 1) return;
         this.publish("input", "zoomEnd");
     }
 
