@@ -67,7 +67,7 @@ class MyModelRoot extends ModelRoot {
 
     shoot() {
         if (this.isPaused) return;
-        if (this.shots.length >= 30) {
+        if (this.shots.length >= 50) {
             const doomed = this.shots.shift();
             doomed.destroy();
         }
@@ -196,8 +196,8 @@ async function go() {
 
     const session = await Session.join({
         appId: 'io.croquet.fountain',
-        // name: App.autoSession(),
-        name: 'test',
+        name: App.autoSession(),
+        // name: 'test',
         password: 'dummy-pass',
         model: MyModelRoot,
         view: MyViewRoot,
