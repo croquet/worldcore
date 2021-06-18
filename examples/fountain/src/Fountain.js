@@ -278,7 +278,7 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
     init(options) {
         super.init(options);
         this.spray = [];
-        this.spawnLimit = 200;
+        this.spawnLimit = 100;
         this.future(0).tick();
 
         this.addRigidBody({type: 'static'});

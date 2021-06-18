@@ -67,7 +67,7 @@ class MyModelRoot extends ModelRoot {
 
     shoot() {
         if (this.isPaused) return;
-        if (this.shots.length >= 50) {
+        if (this.shots.length >= 30) {
             const doomed = this.shots.shift();
             doomed.destroy();
         }
@@ -122,7 +122,7 @@ class MyViewRoot extends ViewRoot {
         this.addHud();
 
         this.subscribe("input", " Down", this.shoot);
-        this.subscribe("input", "touchTap", this.shoot);
+        this.subscribe("input", "tap", this.shoot);
         this.subscribe("input", "pDown", this.pause);
         this.subscribe("input", "dDown", this.disable);
 
@@ -132,13 +132,14 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
-        this.webInput = this.addManager(new InputManager(this.model));
+        // this.webInput = this.addManager(new InputManager(this.model));
+        this.input = this.addManager(new InputManager(this.model));
         this.render = this.addManager(new RenderManager(this.model));
         this.ui = this.addManager(new UIManager(this.model));
         // this.audio = this.addManager(new AudioManager());
         this.pawnManager = this.addManager(new PawnManager(this.model));
 
-        this.webInput.addChord("cheat", ['q', 't']);
+        this.input.addChord("cheat", ['q', 't']);
     }
 
     addHud() {
@@ -195,8 +196,8 @@ async function go() {
 
     const session = await Session.join({
         appId: 'io.croquet.fountain',
-        name: App.autoSession(),
-        // name: 'test',
+        // name: App.autoSession(),
+        name: 'test',
         password: 'dummy-pass',
         model: MyModelRoot,
         view: MyViewRoot,
