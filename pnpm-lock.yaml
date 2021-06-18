@@ -1,17 +1,27 @@
+lockfileVersion: 5.3
+
+specifiers:
+  '@croquet/croquet': ^0.3.3
+  '@dimforge/rapier3d': 0.4.1
+  resonance-audio: 1.0.0
+  three: 0.108.0
+
 dependencies:
   '@croquet/croquet': 0.3.3
   '@dimforge/rapier3d': 0.4.1
   resonance-audio: 1.0.0
   three: 0.108.0
-lockfileVersion: 5.1
+
 packages:
+
   /@babel/runtime/7.11.2:
+    resolution: {integrity: sha512-TeWkU52so0mPtDcaCTxNBI/IHiz0pZgr8VEFqXFtZWpYD08ZB6FaSwVAS8MKRQAP3bYKiVjwysOJgMFY28o6Tw==}
     dependencies:
       regenerator-runtime: 0.13.7
     dev: false
-    resolution:
-      integrity: sha512-TeWkU52so0mPtDcaCTxNBI/IHiz0pZgr8VEFqXFtZWpYD08ZB6FaSwVAS8MKRQAP3bYKiVjwysOJgMFY28o6Tw==
+
   /@croquet/croquet/0.3.3:
+    resolution: {integrity: sha512-JzDF+xeNiJzF6Qlsu89rGgqnAXlzKElSi1wkyCbZ/dQ2SFcyPnZEIV/8rVDvsotv7mOPMS4u8ED7wCTpyJF9Ng==}
     dependencies:
       '@babel/runtime': 7.11.2
       fast-json-stable-stringify: 2.1.0
@@ -20,52 +30,45 @@ packages:
       seedrandom: 3.0.5
       toastify-js: 1.9.1
     dev: false
-    resolution:
-      integrity: sha512-JzDF+xeNiJzF6Qlsu89rGgqnAXlzKElSi1wkyCbZ/dQ2SFcyPnZEIV/8rVDvsotv7mOPMS4u8ED7wCTpyJF9Ng==
+
   /@dimforge/rapier3d/0.4.1:
+    resolution: {integrity: sha512-XptLyqPoFRZ+kfxFAigO3WWsNlTzL7yMUAPsDkny8C6HF9XLTC1KEh7u6ssNG9MIh58PomjqQtocW8zTyj4G2g==}
     dev: false
-    resolution:
-      integrity: sha512-XptLyqPoFRZ+kfxFAigO3WWsNlTzL7yMUAPsDkny8C6HF9XLTC1KEh7u6ssNG9MIh58PomjqQtocW8zTyj4G2g==
+
   /fast-json-stable-stringify/2.1.0:
+    resolution: {integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==}
     dev: false
-    resolution:
-      integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==
+
   /fastpriorityqueue/0.6.3:
+    resolution: {integrity: sha512-l4Whw9/MDkl/0XuqZEzGE/sw9T7dIxuUnxqq4ZJDLt8AE45j8wkx4/nBRZm50aQ9kN71NB9mwQzglLsvQGROsw==}
     dev: false
-    resolution:
-      integrity: sha512-l4Whw9/MDkl/0XuqZEzGE/sw9T7dIxuUnxqq4ZJDLt8AE45j8wkx4/nBRZm50aQ9kN71NB9mwQzglLsvQGROsw==
+
   /omnitone/1.3.0:
+    resolution: {integrity: sha512-iYmS66kHMw5K3E4cXaiBjjBg3hzinUhD9NrvkGZc33QcYSZVclytcD84Du2aL1Wdp7ulAfxfNMHlC8TXxuhgew==}
     dev: false
-    resolution:
-      integrity: sha512-iYmS66kHMw5K3E4cXaiBjjBg3hzinUhD9NrvkGZc33QcYSZVclytcD84Du2aL1Wdp7ulAfxfNMHlC8TXxuhgew==
+
   /pako/1.0.11:
+    resolution: {integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==}
     dev: false
-    resolution:
-      integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==
+
   /regenerator-runtime/0.13.7:
+    resolution: {integrity: sha512-a54FxoJDIr27pgf7IgeQGxmqUNYrcV338lf/6gH456HZ/PhX+5BcwHXG9ajESmwe6WRO0tAzRUrRmNONWgkrew==}
     dev: false
-    resolution:
-      integrity: sha512-a54FxoJDIr27pgf7IgeQGxmqUNYrcV338lf/6gH456HZ/PhX+5BcwHXG9ajESmwe6WRO0tAzRUrRmNONWgkrew==
+
   /resonance-audio/1.0.0:
+    resolution: {integrity: sha512-9ciGZtOhvSyfAIcAF1V6u4UKasgT02R0a19j3KE2/zC5TgMY3pVf+f+k5KXEcPP4TGOzh+KDNM6QVvBsj0e3qg==}
     dependencies:
       omnitone: 1.3.0
     dev: false
-    resolution:
-      integrity: sha512-9ciGZtOhvSyfAIcAF1V6u4UKasgT02R0a19j3KE2/zC5TgMY3pVf+f+k5KXEcPP4TGOzh+KDNM6QVvBsj0e3qg==
+
   /seedrandom/3.0.5:
+    resolution: {integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==}
     dev: false
-    resolution:
-      integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==
+
   /three/0.108.0:
+    resolution: {integrity: sha512-d1ysIXwi8qTlbmMwrTxi5pYiiYIflEr0e48krP0LAY8ndS8c6fkLHn6NvRT+o76/Fs9PBLxFViuI62iGVWwwlg==}
     dev: false
-    resolution:
-      integrity: sha512-d1ysIXwi8qTlbmMwrTxi5pYiiYIflEr0e48krP0LAY8ndS8c6fkLHn6NvRT+o76/Fs9PBLxFViuI62iGVWwwlg==
+
   /toastify-js/1.9.1:
+    resolution: {integrity: sha512-B3LTJURySMix/xWqVHyj2XGVsIHesb4euGVuIaFfKxfmjM4F6HMgbW9V66DHUEt98jGlGpeTWSiSJ78UfrJVbA==}
     dev: false
-    resolution:
-      integrity: sha512-B3LTJURySMix/xWqVHyj2XGVsIHesb4euGVuIaFfKxfmjM4F6HMgbW9V66DHUEt98jGlGpeTWSiSJ78UfrJVbA==
-specifiers:
-  '@croquet/croquet': ^0.3.3
-  '@dimforge/rapier3d': 0.4.1
-  resonance-audio: 1.0.0
-  three: 0.108.0
