@@ -13,7 +13,7 @@
   "author": "Croquet Studios",
   "license": "ISC",
   "dependencies": {
-    "@croquet/worldcore": "link:..\\.."
+    "@croquet/worldcore": "link:../.."
   },
   "devDependencies": {
     "file-loader": "^6.2.0",
