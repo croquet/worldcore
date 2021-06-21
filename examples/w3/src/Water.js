@@ -464,7 +464,7 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Visible) {
     buildMaterial() {
         const material = new Material();
         material.pass = 'translucent';
-        material.zOffset = 0;
+        material.zOffset = 2;
         return material;
     }
 
@@ -524,7 +524,7 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Visible) {
             const c3 = ScaleColor(c, ne);
             const c4 = ScaleColor(c, nw);
 
-            this.mesh.addFace([v0, v1, v2, v3, v4, v1], [c0, c1, c2, c3, c4, c1]);
+            this.mesh.addFace([v0, v1, v2, v3, v4, v1], [c0, c1, c2, c3, c4, c1], [[0.5,0.5], [0,0], [1,0], [1,1], [0,1], [0,0]]);
         });
         this.mesh.load();
     }
