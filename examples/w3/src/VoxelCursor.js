@@ -11,10 +11,13 @@ export class VoxelCursor extends NamedView {
         this.mode = 'dig';
 
         this.mesh = Cube(Voxels.scaleX, Voxels.scaleY, Voxels.scaleZ, [0.2, 0.2, 0, 0.2]);
+        this.double = Cube(Voxels.scaleX, Voxels.scaleY, 2*Voxels.scaleZ, [0.2, 0.2, 0, 0.2]);
         // this.mesh = Cube(Voxels.scaleX, Voxels.scaleY, Voxels.scaleZ, [1, 0, 0, 1]);
         // this.mesh = this.buildCube();
         this.mesh.transform(m4_translation([Voxels.scaleX/2, Voxels.scaleY/2, Voxels.scaleZ/2]));
+        this.double.transform(m4_translation([Voxels.scaleX/2, Voxels.scaleY/2, Voxels.scaleZ]));
         this.mesh.load();
+        this.double.load();
 
         this.material = new Material();
         this.material.pass = 'translucent';
@@ -23,7 +26,11 @@ export class VoxelCursor extends NamedView {
         this.drawCall = new DrawCall(this.mesh, this.material);
         this.drawCall.isHidden = false;
 
+        this.doubleCall = new DrawCall(this.double, this.material);
+        this.doubleCall.isHidden = false;
+
         this.viewRoot.render.scene.addDrawCall(this.drawCall);
+        this.viewRoot.render.scene.addDrawCall(this.doubleCall);
 
         this.subscribe("ui", "pointerMove", this.onPointerMove);
         this.subscribe("hud", "editMode", this.onEditMode);
@@ -66,15 +73,33 @@ export class VoxelCursor extends NamedView {
             default:
         }
 
-        if (xyz && Voxels.canEdit(...xyz)) {
-            this.drawCall.isHidden = false;
-            const location = v3_multiply([Voxels.scaleX, Voxels.scaleY, Voxels.scaleZ], xyz);
-            this.drawCall.transform.set(m4_translation(location));
-        } else {
-            this.drawCall.isHidden = true;
+        this.drawCall.isHidden = true;
+        this.doubleCall.isHidden = true;
+        let call = this.drawCall;
+
+        if (xyz && Voxels.canEdit(...xyz)) { // If the picked voxel is hidden by surfaces above it, draw the double-height cursor
+            const surfaces = this.wellKnownModel('Surfaces');
+            const above = Voxels.adjacent(...xyz, Voxels.above);
+            const aboveKey = Voxels.packKey(...above);
+            const aboveSurface = surfaces.get(aboveKey);
+            if (xyz[2] < GetTopLayer()-1 && aboveSurface && aboveSurface.hidesBelow()) call = this.doubleCall;
+            call.isHidden = false;
+            const translation = v3_multiply([Voxels.scaleX, Voxels.scaleY, Voxels.scaleZ], xyz);
+            call.transform.set(m4_translation(translation));
         }
 
     }
+
+    // digXYZ() {
+    //     const surfaces = this.wellKnownModel('Surfaces');
+    //     const xyz = PickDigVoxel(this.xy, GetTopLayer());
+    //     if (!xyz) return xyz;
+    //     const above = Voxels.adjacent(...xyz, Voxels.above);
+    //     const aboveKey = Voxels.packKey(...above);
+    //     const aboveSurface = surfaces.get(aboveKey);
+    //     if (aboveSurface && aboveSurface.hidesBelow()) {};
+    //     return xyz;
+    // }
 
     buildCube() {
         const lines = new Triangles();
@@ -87,26 +112,3 @@ export class VoxelCursor extends NamedView {
     }
 
 }
-
-// function ShadedCube(x, y, z, bottom = [1,1,1,1], top = [1,1,1,1]) {
-//     const cube = new Triangles();
-//     x /= 2;
-//     y /= 2;
-//     z /= 2;
-
-//     cube.addFace([[-x, -y, 0], [x, -y, 0], [x, y, 0], [-x, y, 0], ], [bottom, bottom, bottom, bottom], [[0,0], [1,0], [1,1], [0,1]]);
-
-//     cube.addFace([[-x, -y, -z], [-x, -y, z], [-x, y, z], [-x, y, -z]], [bottom, top, top, bottom], [[0,0], [1,0], [1,1], [0,1]]);
-//     cube.addFace([[-x, -y, -z], [-x, y, -z], [-x, y, z], [-x, -y, z]], [bottom, bottom, top, top], [[0,0], [1,0], [1,1], [0,1]]);
-
-//     cube.addFace([[-x, -y, -z], [x, -y, -z], [x, -y, z], [-x, -y, z]], [bottom, bottom, top, top], [[0,0], [1,0], [1,1], [0,1]]);
-//     cube.addFace([[-x, -y, -z], [-x, -y, z], [x, -y, z], [x, -y, -z]], [bottom, top, top, bottom], [[0,0], [1,0], [1,1], [0,1]]);
-
-//     cube.addFace([[x, y, z], [x, y, -z], [-x, y, -z], [-x, y, z]], [top, bottom, bottom, top], [[0,0], [1,0], [1,1], [0,1]]);
-//     cube.addFace([[x, y, z], [-x, y, z], [-x, y, -z], [x, y, -z]], [top, top, bottom, bottom], [[0,0], [1,0], [1,1], [0,1]]);
-
-//     cube.addFace([[x, y, z], [x, -y, z], [x, -y, -z], [x, y, -z]], [top, top, bottom, bottom], [[0,0], [1,0], [1,1], [0,1]]);
-//     cube.addFace([[x, y, z], [x, y, -z], [x, -y, -z], [x, -y, z]], [top, bottom, bottom, top], [[0,0], [1,0], [1,1], [0,1]]);
-
-//     return cube;
-// }

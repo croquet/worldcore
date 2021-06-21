@@ -211,7 +211,7 @@ export class Surface  {
     }
 
     hidesBelow() {
-        return (this.shape === 3 || this.shape === 6 || this.shape === 8 || this.shape === 10 || this.shape === 11);
+        return (this.shape === 3 || this.shape === 5 || this.shape === 6 || this.shape === 7 || this.shape === 8 || this.shape === 9 || this.shape === 10 || this.shape === 11);
     }
 
     // Returns the elevation in voxel coordiates (0 to 1).
