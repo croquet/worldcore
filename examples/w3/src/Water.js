@@ -464,7 +464,7 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Visible) {
     buildMaterial() {
         const material = new Material();
         material.pass = 'translucent';
-        material.zOffset = 2;
+        material.zOffset = 0;
         return material;
     }
 

@@ -27,7 +27,7 @@ import { WorldBuilder } from "./src/WorldBuilder";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!");
+        console.log("Start Model!!!");
 
         // this.voxels.generate();
         this.worldBuilder.build();
@@ -75,7 +75,16 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "qDown", () => {
             const isVisible = this.HUD.isVisible;
             this.HUD.set({visible: !isVisible});
-        })
+        });
+
+        this.subscribe("input", "fDown", () => {
+            this.isFullScreen = !this.isFullScreen;
+            if (this.isFullScreen) {
+                this.input.enterFullscreen();
+            } else {
+                this.input.exitFullscreen();
+            }
+        });
 
     }
 
@@ -99,8 +108,8 @@ async function go() {
 
     const session = await Session.join({
         appId: 'io.croquet.w3',
-        // name: 'w3',
-        name: App.autoSession(),
+        name: 'w3',
+        // name: App.autoSession(),
         model: MyModelRoot,
         view: MyViewRoot,
         tps: 20,

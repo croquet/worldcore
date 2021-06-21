@@ -183,13 +183,13 @@ class TreePawn extends PlantPawn {
     }
 
     buildMesh() {
-        const trunk = Cylinder(0.5, 15, 7, [0.7, 0.5, 0.3, 1]);
-        const top = Cone(2, 0.1, 20, 7, [0.4, 0.8, 0.4, 1]);
-        top.transform(m4_translation([0,15,0]));
+        const trunk = Cylinder(0.5, 10, 7, [0.7, 0.5, 0.3, 1]);
+        const top = Cone(2, 0.1, 15, 8, [0.4, 0.8, 0.4, 1]);
+        top.transform(m4_translation([0,10,0]));
         trunk.merge(top);
         top.destroy();
         trunk.transform(m4_rotationX(toRad(90)));
-        trunk.transform(m4_translation([0,0,7.0]));
+        trunk.transform(m4_translation([0,0,4.5]));
         trunk.load();
         trunk.clear();
         return trunk;
