@@ -1,5 +1,6 @@
-import { AM_Smoothed, RegisterMixin, v3_sub, v3_add, v3_floor, PM_Smoothed } from "@croquet/worldcore";
+import { AM_Smoothed, RegisterMixin, v3_sub, v3_add, v3_floor, PM_Smoothed, PM_InstancedVisible, m4_identity } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
+import { GetTopLayer } from "./Globals";
 
 //------------------------------------------------------------------------------------------
 //-- VoxelSmoothed -------------------------------------------------------------------------
@@ -85,3 +86,21 @@ export const PM_VoxelSmoothed = superclass => class extends PM_Smoothed(supercla
     }
 
 };
+
+
+
+
+export const PM_LayeredInstancedVisible = superclass => class extends PM_InstancedVisible(superclass) {
+
+    refresh() {
+        super.refresh();
+        if (this.draw) {
+            if (this.actor.xyz[2] <= GetTopLayer()) {
+                this.draw.instances.set(this.actor.id, this.global);
+            } else {
+                this.draw.instances.set(this.actor.id, m4_identity());
+            }
+        }
+    }
+
+}

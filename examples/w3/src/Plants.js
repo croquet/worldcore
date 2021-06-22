@@ -5,7 +5,7 @@ import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, AM_Smoothed, PM_Smoothed, Mat
  } from "@croquet/worldcore";
 import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
-import { AM_VoxelSmoothed } from "./Components";
+import { AM_VoxelSmoothed, PM_LayeredInstancedVisible } from "./Components";
 
 export class Plants extends Model {
     init() {
@@ -86,7 +86,11 @@ class PlantActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral) {
     }
 }
 
-class PlantPawn extends mix(Pawn).with(PM_Spatial, PM_InstancedVisible) {
+class PlantPawn extends mix(Pawn).with(PM_Spatial, PM_LayeredInstancedVisible) {
+    constructor(...args) {
+        super(...args);
+        this.subscribe("hud", "topLayer", this.refresh);
+    }
 }
 
 //------------------------------------------------------------------------------------------

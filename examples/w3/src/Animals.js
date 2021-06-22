@@ -1,12 +1,13 @@
 import { Model, Constants } from "@croquet/croquet";
 import { mix, Actor, Pawn, AM_Smoothed, PM_Smoothed, Material,
     AM_Behavioral, DestroyBehavior, SequenceBehavior, Behavior, PM_Visible, PM_InstancedVisible, CachedObject, UnitCube, m4_translation, m4_scaling,
-    InstancedDrawCall, GetNamedView, LoopBehavior, SucceedBehavior, v2_sub, v2_scale, v2_magnitude, q_axisAngle, v2_normalize, SelectorBehavior, ParallelSelectorBehavior, CompositeBehavior
+    InstancedDrawCall, GetNamedView, LoopBehavior, SucceedBehavior, v2_sub, v2_scale, v2_magnitude, q_axisAngle, v2_normalize, SelectorBehavior, ParallelSelectorBehavior, CompositeBehavior, DrawCall, m4_identity
  } from "@croquet/worldcore";
 import { Voxels, AM_Voxel } from "./Voxels";
-import { AM_VoxelSmoothed, PM_VoxelSmoothed} from "./Components";
+import { AM_VoxelSmoothed, PM_VoxelSmoothed, PM_LayeredInstancedVisible} from "./Components";
 import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
+import { GetTopLayer } from "./Globals";
 
 export class Animals extends Model {
     init() {
@@ -378,16 +379,19 @@ class PersonActor extends AnimalActor {
 }
 PersonActor.register('PersonActor');
 
-class PersonPawn extends mix(AnimalPawn).with(PM_InstancedVisible) {
+class PersonPawn extends mix(AnimalPawn).with(PM_LayeredInstancedVisible) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(CachedObject("personDrawCall", () => this.buildDraw()));
+        // this.setDrawCall(this.buildDraw());
     }
 
     buildDraw() {
         const mesh = CachedObject("personMesh", this.buildMesh);
+        // const mesh = this.buildMesh();
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
+        // const draw = new DrawCall(mesh, material);
         GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
         return draw;
     }
@@ -395,6 +399,53 @@ class PersonPawn extends mix(AnimalPawn).with(PM_InstancedVisible) {
     buildMaterial() {
         const material = new Material();
         material.pass = 'instanced';
+        material.texture.loadFromURL(paper);
+        return material;
+    }
+
+    buildMesh() {
+        const mesh = UnitCube();
+        mesh.transform(m4_translation([0,0,0.5]));
+        mesh.transform(m4_scaling([0.6, 0.6, 2.2]));
+        mesh.transform(m4_translation([0,0,-0.2]));
+        mesh.load();
+        mesh.clear();
+        return mesh;
+    }
+
+    buildShinyMesh() {
+        const mesh = UnitCube();
+        mesh.setColor([1, 0,0,1]);
+        mesh.transform(m4_translation([0,0,0.5]));
+        mesh.transform(m4_scaling([0.6, 0.6, 2.2]));
+        mesh.transform(m4_translation([0,0,-0.2]));
+        mesh.load();
+        mesh.clear();
+        return mesh;
+    }
+
+}
+
+class PersonPawn2 extends mix(AnimalPawn).with(PM_Visible) {
+    constructor(...args) {
+        super(...args);
+        // this.setDrawCall(CachedObject("personDrawCall", () => this.buildDraw()));
+        this.setDrawCall(this.buildDraw());
+    }
+
+    buildDraw() {
+        // const mesh = CachedObject("personMesh", this.buildMesh);
+        const mesh = this.buildMesh();
+        const material = CachedObject("paperMaterial", this.buildMaterial);
+        // const draw = new InstancedDrawCall(mesh, material);
+        const draw = new DrawCall(mesh, material);
+        // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        return draw;
+    }
+
+    buildMaterial() {
+        const material = new Material();
+        material.pass = 'opaque';
         material.texture.loadFromURL(paper);
         return material;
     }

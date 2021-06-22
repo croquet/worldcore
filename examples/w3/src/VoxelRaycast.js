@@ -88,12 +88,12 @@ export function PickDigVoxel(xy, topLayer = Voxels.sizeZ) {
     const voxels = viewRoot.model.voxels;
     const surfaces = viewRoot.model.surfaces;
     if (!voxels.get(...xyz)) return null;
-    if (pick.direction === Voxels.below) {
-        const above = Voxels.adjacent(...xyz, Voxels.above);
-        const aboveKey = Voxels.packKey(...above);
-        const aboveSurface = surfaces.get(aboveKey);
-        // if (aboveSurface && aboveSurface.hidesBelow()) return null;
-    }
+    // if (pick.direction === Voxels.below) {
+    //     const above = Voxels.adjacent(...xyz, Voxels.above);
+    //     const aboveKey = Voxels.packKey(...above);
+    //     const aboveSurface = surfaces.get(aboveKey);
+    //     if (aboveSurface && aboveSurface.hidesBelow()) return null;
+    // }
     return xyz;
 }
 
