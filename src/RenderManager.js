@@ -29,6 +29,7 @@ export const PM_Visible = superclass => class extends superclass {
     }
 
     setDrawCall(draw) {
+        if (this.draw === draw) return;
         const scene = GetNamedView('RenderManager').scene;
         if (this.draw) scene.removeDrawCall(this.draw);
         this.draw = draw;

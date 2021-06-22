@@ -73,10 +73,14 @@ export class WorldBuilder extends Model {
 
         for (let x = 0; x < Voxels.sizeX; x++) {
             for (let y = 0; y < Voxels.sizeY; y++) {
-                for (let z = minHeight+1; z < minHeight+7; z++) {
+                for (let z = minHeight+1; z < minHeight+6; z++) {
                     if (!landMatrix[x][y][z]) {
                         waterMatrix[x][y][z] = 1;
                     }
+                }
+                const z = minHeight+6;
+                if (!landMatrix[x][y][z]) {
+                    waterMatrix[x][y][z] = 0.3;
                 }
             }
         }

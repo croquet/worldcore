@@ -129,7 +129,6 @@ export class Water extends Model{
         for (let z = Voxels.sizeZ-2; z > 0; z--) {
             this.layers[z].flow(this.layers[z+1], this.layers[z-1]);
         }
-        // console.log(this.totalVolume);
         this.future(100).tick();
     }
 
@@ -155,7 +154,6 @@ class WaterLayer extends Actor {
         this.outFlow = new Map();   // How much water flowed out of each voxel to the sides on the last tick (4-array)
         this.inFall = new Map();    // How much water fell into each voxel from above on the last tick
         this.outFall = new Map();   // How much water fell out of each voxel on the last tick
-        this.cliff = new Map();     // If the side of a water voxel should taper to 0 or not
     }
 
     clear() {
@@ -165,7 +163,6 @@ class WaterLayer extends Actor {
         this.outFlow.clear();
         this.inFall.clear();
         this.outFall.clear();
-        this.cliff.clear();
     }
 
     setVolume(key, volume) {
@@ -181,7 +178,6 @@ class WaterLayer extends Actor {
     getOutFlow(key) { return this.outFlow.get(key) || [0,0,0,0]; }
     getInFall(key) { return this.inFall.get(key) || 0; }
     getOutFall(key) { return this.outFall.get(key) || 0; }
-    getCliff(key) { return this.cliff.get(key) || [1,1,1,1]; }
 
     get totalVolume() {
         let sum = 0;
@@ -193,15 +189,14 @@ class WaterLayer extends Actor {
 
     flow(above, below) {
 
-        const minFlow = 0.0001;  // Side flows below this value are rounded to zero
-        const minVolume = 0.0001; // Volumes below this value are rounded to zero
-        const viscosity = 0.5;  // Value 0-1 that determines how quickly water flows. Higher is faster.
+        const minFlow = 0.0005;  // Side flows below this value are rounded to zero
+        const minVolume = 0.0005; // Volumes below this value are rounded to zero
+        const viscosity = 0.6;  // Value 0-1 that determines how quickly water flows. Higher is faster.
 
         below.inFall.clear();
         this.outFall.clear();
         this.inFlow.clear();
         this.outFlow.clear();
-        this.cliff.clear();
 
         if (this.active.size === 0) return;
 
@@ -366,20 +361,6 @@ class WaterLayer extends Actor {
             }
         });
 
-        // Find cliffs. These are voxels where the volume should taper to 0 at the sides becuase the water is falling off an edge.
-
-        this.active.forEach( (volume, key) => {
-            volume = this.getVolume(key);
-            const xyz = Voxels.unpackKey(key);
-            const cliff = [1,1,1,1];
-            for (let a = 0; a < 4; a++ ) {
-                const sideXYZ = Voxels.adjacent(...xyz, a);
-                const sideKey = Voxels.packKey(...sideXYZ);
-                if (this.getOutFall(sideKey)) cliff[a] = 0;
-            }
-            this.cliff.set(key, cliff);
-        });
-
         this.active = new Set([...nextActive].filter( key => this.getVolume(key))) // Remove active entries with zero volume
         this.say("rebuild");
     }
@@ -390,6 +371,19 @@ WaterLayer.register('WaterLayer');
 //------------------------------------------------------------------------------------------
 //-- WaterLayerPawn ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// In order to properly draw the inner water mesh, we need to change how the zOffsets are handled.
+// Right now we only set zOffsets for polygons. Lines default to 0. But what should really happen is:
+//
+// Water = 6
+// Terrain = 5
+// Terrain Lines = 4
+// Inner Water = 3
+// Inner Terrain = 2
+// Inner Terrain Lines = 1
+// Voxel Cursor = 0
+//
+// This requires a big material reorg and verification that we can set zOffset of lines
 
 const cornerSums = Array.from(Array(Voxels.sizeX+1), () => new Array(Voxels.sizeY+1));
 const cornerCounts = Array.from(Array(Voxels.sizeX+1), () => new Array(Voxels.sizeY+1));
@@ -450,15 +444,22 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Visible) {
 
         this.mesh = new Triangles();
         const material = CachedObject("waterMaterial", this.buildMaterial);
-        const drawCall = new DrawCall(this.mesh, material);
-        this.setDrawCall(drawCall);
+        this.drawCall = new DrawCall(this.mesh, material);
+        this.setDrawCall(this.drawCall);
         this.buildMesh();
         this.listenOnce("rebuild", this.buildMesh);
         this.subscribe("hud", "topLayer", this.onTopLayer);
     }
 
     onTopLayer(topLayer) {
-        this.draw.isHidden = this.actor.z >= topLayer;
+        if (this.actor.z < topLayer) {
+            this.setDrawCall(this.drawCall);
+            this.draw.isHidden = false;
+        } else if (this.actor.z === topLayer) {
+            this.draw.isHidden = true;
+        } else {
+            this.draw.isHidden = true;
+        }
     }
 
     buildMaterial() {
@@ -470,9 +471,8 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Visible) {
 
     buildMesh() {
         if (!this.actor.volume) return;
-        clearCornerGrid();
 
-        this.mesh.clear();
+        clearCornerGrid();
         this.actor.volume.forEach( (v,key) =>  {
 
             const xyz = Voxels.unpackKey(key);
@@ -492,6 +492,7 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Visible) {
 
         const c = [0, 0, 0.8, 0.2];
 
+        this.mesh.clear();
         this.actor.volume.forEach( (v,key) =>  {
 
             const xyz = Voxels.unpackKey(key);
@@ -504,13 +505,6 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Visible) {
             if (seIsValid(xyz)) se = cornerSums[x+1][y] / cornerCounts[x+1][y];
             if (neIsValid(xyz)) ne = cornerSums[x+1][y+1] / cornerCounts[x+1][y+1];
             if (nwIsValid(xyz)) nw = cornerSums[x][y+1] / cornerCounts[x][y+1];
-
-            const cliff = this.actor.getCliff(key);
-
-            sw = sw * cliff[2] * cliff[3];
-            se = se * cliff[1] * cliff[2];
-            ne = ne * cliff[0] * cliff[1];
-            nw = nw * cliff[3] * cliff[0];
 
             const v0 = Voxels.toWorldXYZ(...v3_add(xyz, [0.5,0.5,v]));
             const v1 = Voxels.toWorldXYZ(...v3_add(xyz, [0,0,sw]));
@@ -527,6 +521,8 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Visible) {
             this.mesh.addFace([v0, v1, v2, v3, v4, v1], [c0, c1, c2, c3, c4, c1], [[0.5,0.5], [0,0], [1,0], [1,1], [0,1], [0,0]]);
         });
         this.mesh.load();
+        this.mesh.clear();
+
     }
 }
 
