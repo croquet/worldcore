@@ -7,14 +7,15 @@ import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
 import { AM_VoxelSmoothed, PM_LayeredInstancedVisible } from "./Components";
 
-export class Plants extends Model {
+export class Props extends Model {
     init() {
         super.init();
-        this.beWellKnownAs("Plants");
-        this.plants = new Map();
+        this.beWellKnownAs("Props");
+        this.props = new Map();
         this.subscribe("surfaces", "newLevel", this.onNewLevel);
         this.subscribe("surfaces", "changed", this.onChanged);
         this.subscribe("editor", "spawnTree", this.onSpawnTree);
+        this.subscribe("editor", "spawnRoad", this.onSpawnRoad);
     }
 
     destroy() {
@@ -35,20 +36,20 @@ export class Plants extends Model {
     }
 
     has(key) {
-        return this.plants.has(key);
+        return this.props.has(key);
     }
 
     get(key) {
-        return this.plants.get(key);
+        return this.props.get(key);
     }
 
     set(key, plant) {
         this.destroyOne(key);
-        this.plants.set(key, plant);
+        this.props.set(key, plant);
     }
 
     delete(key) {
-        this.plants.delete(key);
+        this.props.delete(key);
     }
 
     destroyOne(key) {
@@ -56,7 +57,7 @@ export class Plants extends Model {
     }
 
     destroyAll() {
-        const doomed = new Map(this.plants);
+        const doomed = new Map(this.props);
         doomed.forEach(plant => plant.destroy());
     }
 
@@ -64,29 +65,36 @@ export class Plants extends Model {
         TreeActor.create({xyz});
     }
 
+    onSpawnRoad(xyz) {
+        RoadActor.create({xyz});
+    }
+
 }
-Plants.register("Plants");
+Props.register("Props");
 
 //------------------------------------------------------------------------------------------
-//-- Plant ---------------------------------------------------------------------------------
+//-- Prop ----------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class PlantActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral) {
-    get pawn() {return PlantPawn};
+class PropActor extends mix(Actor).with(AM_VoxelSmoothed) {
+
+    get pawn() {return PropPawn};
+
     init(options) {
         super.init(options);
-        const plants = this.wellKnownModel("Plants");
-        if (this.key) plants.set(this.key, this);
+        const props = this.wellKnownModel("Props");
+        if (this.key) props.set(this.key, this);
     }
 
     destroy() {
         super.destroy();
-        const plants = this.wellKnownModel("Plants");
-        if (this.key) plants.delete(this.key);
+        const props = this.wellKnownModel("Props");
+        if (this.key) props.delete(this.key);
     }
 }
+PropActor.register('PropActor');
 
-class PlantPawn extends mix(Pawn).with(PM_Spatial, PM_LayeredInstancedVisible) {
+class PropPawn extends mix(Pawn).with(PM_Spatial, PM_LayeredInstancedVisible) {
     constructor(...args) {
         super(...args);
         this.subscribe("hud", "topLayer", this.refresh);
@@ -115,7 +123,7 @@ class TreeBehavior extends Behavior {
 }
 TreeBehavior.register('TreeBehavior');
 
-export class TreeActor extends PlantActor {
+export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
     get pawn() {return TreePawn};
     get size() {return this._size || 0.2}
     get maxSize() {return this._maxSize || 1};
@@ -165,7 +173,7 @@ export class TreeActor extends PlantActor {
 }
 TreeActor.register("TreeActor");
 
-class TreePawn extends PlantPawn {
+class TreePawn extends PropPawn {
     constructor(...args) {
         super(...args);
         this.setDrawCall(CachedObject("pineTreeDrawCall", () => this.buildDraw()));
@@ -242,3 +250,75 @@ export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         return log;
     }
 }
+
+//------------------------------------------------------------------------------------------
+//-- Road ----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class RoadActor extends PropActor {
+    get pawn() {return RoadPawn};
+
+    init(options) {
+        super.init(options);
+        console.log("new road actor!");
+        this.exits = [false,false,false,false, false,false,false,false, false, false];
+        // this.connect();
+    }
+
+    connect() {
+        const paths = this.wellKnownModel("Paths");
+        const props = this.wellKnownModel("Props");
+        const waypoint = paths.waypoints.get(this.key);
+        if (!waypoint) return; // error here
+
+        waypoint.exits.forEach((exit, n) =>  {
+            if (!exit) return;
+            const prop = props.get(exit);
+            this.exits[n] = prop instanceof RoadActor;
+        });
+        console.log(this.exits);
+    }
+
+    validate() {
+        const surface = this.wellKnownModel('Surfaces').get(this.key);
+        if (!surface || !surface.hasFloor()) this.destroy();
+    }
+
+}
+RoadActor.register("RoadActor");
+
+class RoadPawn extends PropPawn {
+    constructor(...args) {
+        super(...args);
+        this.setDrawCall(CachedObject("roadDrawCall", () => this.buildDraw()));
+    }
+
+    buildDraw() {
+        const mesh = CachedObject("raodMesh", this.buildMesh);
+        const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
+        const draw = new InstancedDrawCall(mesh, material);
+        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        return draw;
+    }
+
+    buildMaterial() {
+        const material = new Material();
+        material.pass = 'instanced';
+        material.texture.loadFromURL(paper);
+        return material;
+    }
+
+    buildMesh() {
+        const trunk = Cylinder(0.5, 10, 7, [0.7, 0.5, 0.3, 1]);
+        const top = Cone(2, 0.1, 15, 8, [0.4, 0.8, 0.4, 1]);
+        top.destroy();
+        trunk.transform(m4_rotationX(toRad(90)));
+        trunk.transform(m4_translation([0,0,4.5]));
+        trunk.load();
+        trunk.clear();
+        return trunk;
+    }
+
+}
+
+

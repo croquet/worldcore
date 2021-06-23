@@ -1,4 +1,4 @@
-import { AM_Smoothed, RegisterMixin, v3_sub, v3_add, v3_floor, PM_Smoothed, PM_InstancedVisible, m4_identity } from "@croquet/worldcore";
+import { AM_Smoothed, RegisterMixin, v3_sub, v3_add, v3_floor, PM_Smoothed, PM_InstancedVisible, m4_identity, m4_translation } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "./Globals";
 
@@ -88,7 +88,7 @@ export const PM_VoxelSmoothed = superclass => class extends PM_Smoothed(supercla
 };
 
 
-
+const limbo = m4_translation([Voxels.scaleX * Voxels.sizeX / 2, Voxels.scaleY * Voxels.sizeY/2, 1000 * Voxels.scaleZ])
 
 export const PM_LayeredInstancedVisible = superclass => class extends PM_InstancedVisible(superclass) {
 
@@ -98,7 +98,7 @@ export const PM_LayeredInstancedVisible = superclass => class extends PM_Instanc
             if (this.actor.xyz[2] <= GetTopLayer()) {
                 this.draw.instances.set(this.actor.id, this.global);
             } else {
-                this.draw.instances.set(this.actor.id, m4_identity());
+                this.draw.instances.set(this.actor.id, limbo);
             }
         }
     }

@@ -14,8 +14,10 @@ import waterOnIcon from "../assets/waterOnIcon.png";
 import waterOffIcon from "../assets/waterOffIcon.png";
 import sourceOnIcon from "../assets/sourceOnIcon.png";
 import sourceOffIcon from "../assets/sourceOffIcon.png";
-import sinkOnIcon from "../assets/sinkOnIcon.png";
-import sinkOffIcon from "../assets/sinkOffIcon.png";
+// import sinkOnIcon from "../assets/sinkOnIcon.png";
+// import sinkOffIcon from "../assets/sinkOffIcon.png";
+import roadOnIcon from "../assets/roadOnIcon.png";
+import roadOffIcon from "../assets/roadOffIcon.png";
 
 import walkOnIcon from "../assets/walkOnIcon.png";
 import walkOffIcon from "../assets/walkOffIcon.png";
@@ -61,6 +63,12 @@ export class HUD extends Widget {
         waterToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: waterOffIcon}));
         waterToggle.onToggleOn = () => this.publish("hud", "editMode", "water");
 
+        const roadToggle = new ToggleWidget(this, {local: [80,140], size:[50,50]})
+        this.setToggleDefaults(roadToggle);
+        roadToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: roadOnIcon}));
+        roadToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: roadOffIcon}));
+        roadToggle.onToggleOn = () => this.publish("hud", "editMode", "road");
+
         // const sourceToggle = new ToggleWidget(this, {local: [80,140], size:[50,50]})
         // this.setToggleDefaults(sourceToggle);
         // sourceToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sourceOnIcon}));
@@ -73,7 +81,7 @@ export class HUD extends Widget {
         // sinkToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sinkOffIcon}));
         // sinkToggle.onToggleOn = () => this.publish("hud", "editMode", "sink");
 
-        const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle, treeToggle, waterToggle);
+        const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle, treeToggle, waterToggle, roadToggle);
 
         const walktoggle= new ToggleWidget(this, {anchor: [1,0], pivot: [1,0], local: [-70,20], size: [40,40]})
         this.setToggleDefaults(walktoggle);

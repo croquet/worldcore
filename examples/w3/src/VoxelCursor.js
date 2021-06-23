@@ -60,6 +60,7 @@ export class VoxelCursor extends NamedView {
                 xyz = PickFillSurface(this.xy, GetTopLayer()).xyz;
                 break;
             case 'spawn':
+            case 'road':
                 xyz = PickFloorSurface(this.xy, GetTopLayer()).xyz;
                 break;
             case 'tree':

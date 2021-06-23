@@ -13,12 +13,13 @@ import { Editor } from "./src/Editor";
 import { HUD } from "./src/HUD";
 import { GodView } from "./src/GodView";
 import { PathRender, RouteRender } from "./src/Debug";
-import { Plants } from "./src/Plants";
+import { Props } from "./src/Props";
 import { Animals } from "./src/Animals";
 import { RubbleManager } from "./src/Rubble";
 import { Stress } from "./src/Stress";
 import { Water } from "./src/Water";
 import { WorldBuilder } from "./src/WorldBuilder";
+import { RoadRender } from "./src/RoadRender";
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -42,7 +43,7 @@ class MyModelRoot extends ModelRoot {
         this.surfaces = this.addManager(Surfaces.create());
         this.stress = this.addManager(Stress.create());
         this.paths = this.addManager(Paths.create());
-        this.plants = this.addManager(Plants.create());
+        this.props = this.addManager(Props.create());
         this.animals = this.addManager(Animals.create());
         this.rubbleManager = this.addManager(RubbleManager.create());
         this.worldBuilder = this.addManager(WorldBuilder.create());
@@ -92,6 +93,7 @@ class MyViewRoot extends ViewRoot {
         this.input = this.addManager(new InputManager(this.model));
         this.render = this.addManager(new RenderManager(this.model));
         this.voxelRender = this.addManager(new VoxelRender(this.model));
+        this.roadRender = this.addManager(new RoadRender(this.model));
         this.ui = this.addManager(new UIManager(this.model));
         this.godView = this.addManager(new GodView(this.model));
         this.editor = this.addManager((new Editor(this.model)));

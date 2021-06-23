@@ -7,9 +7,7 @@ export class Editor extends NamedView {
     constructor(model) {
         super("Editor", model);
         this.mode = 'dig';
-        // this.subscribe("ui", "pointerDown", this.onPointerDown);
         this.subscribe("ui", "tap", this.onTap);
-        // this.subscribe("ui", "pointerMove", this.onPointerMove);
         this.subscribe("hud", "editMode", this.onEditMode);
     }
 
@@ -29,6 +27,9 @@ export class Editor extends NamedView {
             case 'tree':
                 this.doTree(data.xy);
                 break;
+            case 'road':
+                this.doRoad(data.xy);
+                break;
             case 'water':
                 this.doWater(data.xy);
                 break;
@@ -42,20 +43,6 @@ export class Editor extends NamedView {
         }
 
     }
-
-    // onPointerMove(data) {
-    //     if (this.mode === 'spawn') {
-    //         const pick = PickFloorSurface(data.xy, GetTopLayer());
-    //         const xyz = pick.xyz;
-    //         if (xyz) {
-    //             this.end = Voxels.packKey(...xyz);
-    //             const paths = this.wellKnownModel("Paths");
-    //             const path = paths.findPath(this.start, this.end);
-    //             const routeRender = GetNamedView("RouteRender");
-    //             if (routeRender) routeRender.setRoute(path);
-    //         }
-    //     }
-    // }
 
     onEditMode(mode) {
         this.mode = mode;
@@ -86,6 +73,13 @@ export class Editor extends NamedView {
         const xyz = pick.xyz;
         if (!xyz || !Voxels.canEdit(...xyz)) return
         this.publish("editor", "spawnTree", xyz);
+    }
+
+    doRoad(xy) {
+        const pick = PickFloorSurface(xy, GetTopLayer());
+        const xyz = pick.xyz;
+        if (!xyz || !Voxels.canEdit(...xyz)) return
+        this.publish("editor", "spawnRoad", xyz);
     }
 
     doWater(xy) {

@@ -1,6 +1,6 @@
 import { Model } from "@croquet/croquet";
 import { PerlinNoise } from "@croquet/worldcore";
-import { TreeActor } from "./Plants";
+import { TreeActor } from "./Props";
 import { Voxels } from "./Voxels";
 
 
@@ -16,7 +16,7 @@ export class WorldBuilder extends Model {
         const voxels = this.wellKnownModel('Voxels');
         const surfaces = this.wellKnownModel("Surfaces");
         const water = this.wellKnownModel('Water');
-        const plants = this.wellKnownModel('Plants');
+        const props = this.wellKnownModel('Props');
 
         const landMatrix = Array.from(Array(Voxels.sizeX), ()=>Array.from(Array(Voxels.sizeY), ()=>Array.from(Array(Voxels.sizeZ), ()=>0)));
 
