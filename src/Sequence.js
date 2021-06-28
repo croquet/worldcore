@@ -1,48 +1,48 @@
-import { View } from "@croquet/croquet";
-import { GetNamedView, NamedView } from "./NamedView";
+// import { View } from "@croquet/croquet";
+// import { GetNamedView, NamedView } from "./NamedView";
 
-class ViewSequenceManager extends NamedView {
-    constructor() {
-        super("ViewSequenceManager");
-        this.active = new Set();
-    }
+// class ViewSequenceManager extends NamedView {
+//     constructor() {
+//         super("ViewSequenceManager");
+//         this.active = new Set();
+//     }
 
-    destroy() {
-        super.destroy();
-    }
+//     destroy() {
+//         super.destroy();
+//     }
 
-    update(time, viewDelta) {
-    }
-}
+//     update(time, viewDelta) {
+//     }
+// }
 
-class ViewSequence extends View {
-    constructor() {
-    }
+// class ViewSequence extends View {
+//     constructor() {
+//     }
 
-    destroy() {
-        super.disconnect();
-    }
+//     destroy() {
+//         super.disconnect();
+//     }
 
-    start() {
-        const sm = GetNamedView("ViewSequenceManager");
-        sm.active.add(this);
-    }
+//     start() {
+//         const sm = GetNamedView("ViewSequenceManager");
+//         sm.active.add(this);
+//     }
 
-    stop() {
-        const sm = GetNamedView("ViewSequenceManager");
-        sm.active.remove(this);
-    }
+//     stop() {
+//         const sm = GetNamedView("ViewSequenceManager");
+//         sm.active.remove(this);
+//     }
 
-    get isRunning() {
-        const sm = GetNamedView("ViewSequenceManager");
-        return sm.active.has(this);
-    }
+//     get isRunning() {
+//         const sm = GetNamedView("ViewSequenceManager");
+//         return sm.active.has(this);
+//     }
 
-    addKeyFrame(kf) {
+//     addKeyFrame(kf) {
 
-    }
+//     }
 
-}
+// }
 
 // Sequence types
 // forward

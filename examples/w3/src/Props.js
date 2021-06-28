@@ -1,7 +1,7 @@
 import { Model } from "@croquet/croquet";
 import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, AM_Smoothed, PM_Smoothed, Material, PM_InstancedVisible, GetNamedView, v3_add,
     Cylinder, Cone, m4_translation, CachedObject, q_axisAngle, TAU, InstancedDrawCall, m4_rotationX, toRad, v3_scale,
-    Behavior, AM_Behavioral
+    Behavior, AM_Behavioral, GetViewRoot, viewRoot
  } from "@croquet/worldcore";
 import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
@@ -183,7 +183,8 @@ class TreePawn extends PropPawn {
         const mesh = CachedObject("pineTreeMesh", this.buildMesh);
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        viewRoot.render.scene.addDrawCall(draw);
         return draw;
     }
 
@@ -232,7 +233,8 @@ export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         const mesh = CachedObject("timberMesh", this.buildMesh);
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        viewRoot.render.scene.addDrawCall(draw);
         return draw;
     }
 
@@ -297,7 +299,8 @@ class RoadPawn extends PropPawn {
         const mesh = CachedObject("raodMesh", this.buildMesh);
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        viewRoot.render.scene.addDrawCall(draw);
         return draw;
     }
 

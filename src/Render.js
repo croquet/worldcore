@@ -2,6 +2,7 @@ import { View } from "@croquet/croquet";
 import { LoadImage } from "./ViewAssetCache";
 import { m4_identity, m4_invert, m4_perspective, m4_transpose, v3_transform, v3_sub, v3_normalize, v3_cross, m4_multiply, v4_transform, v3_scale, m4_getTranslation, TAU, v2_rotate, v2_scale, v3_opposite, m4_toNormal4, v3_multiply, toRad } from "./Vector";
 import { GetNamedView } from "./NamedView";
+import { viewRoot, ViewRoot } from "./ViewRoot";
 
 //------------------------------------------------------------------------------------------
 // Rendering Globals
@@ -70,7 +71,8 @@ class RenderTarget {
         if (parameters.height) this.height = parameters.height;
         if (parameters.autoResize) {
             this.scale = parameters.autoResize;
-            const model = GetNamedView("ViewRoot").model;
+            // const model = GetNamedView("ViewRoot").model;
+            const model = viewRoot.model;
             this.view = new View(model);
             this.view.subscribe("input", "resize", () => this.resizeToWindow());
         }

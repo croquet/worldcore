@@ -2,6 +2,8 @@ import { MainDisplay, Scene, Camera, Lights, GeometryBuffer, Framebuffer, Shared
 import { BasicShader, DecalShader, TranslucentShader, InstancedShader, GeometryShader, InstancedGeometryShader, TranslucentGeometryShader, PassthruShader, BlendShader, AOShader, InstancedDecalShader } from "./Shaders";
 import { NamedView, GetNamedView } from "./NamedView";
 import {toRad, m4_identity, m4_multiply } from "./Vector";
+import { viewRoot, ViewRoot } from "./ViewRoot";
+import { ViewService, GetViewService } from "./Service";
 
 
 //------------------------------------------------------------------------------------------
@@ -20,7 +22,7 @@ export const PM_Visible = superclass => class extends superclass {
 
     destroy() {
         super.destroy();
-        if (this.draw) GetNamedView('RenderManager').scene.removeDrawCall(this.draw);
+        if (this.draw) GetViewService('RenderManager').scene.removeDrawCall(this.draw);
     }
 
     refresh() {
@@ -30,7 +32,7 @@ export const PM_Visible = superclass => class extends superclass {
 
     setDrawCall(draw) {
         if (this.draw === draw) return;
-        const scene = GetNamedView('RenderManager').scene;
+        const scene = GetViewService('RenderManager').scene;
         if (this.draw) scene.removeDrawCall(this.draw);
         this.draw = draw;
         if (this.draw) {
@@ -63,7 +65,9 @@ export const PM_InstancedVisible = superclass => class extends superclass {
     }
 
     setDrawCall(draw) {
-        const scene = GetNamedView('ViewRoot').render.scene;
+        // const scene = GetViewService('ViewRoot').render.scene;
+        const scene = GetViewService('RenderManager').scene;
+
         this.draw = draw;
         if (this.draw) {
             this.draw.instances.set(this.actor.id, this.global);
@@ -82,7 +86,7 @@ export const PM_InstancedVisible = superclass => class extends superclass {
 export const PM_Camera = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        const render = GetNamedView("RenderManager");
+        const render = GetViewService("RenderManager");
         if (this.isMyPlayerPawn && render) {
             render.camera.setLocation(this.lookGlobal);
             render.camera.setProjection(toRad(60), 1.0, 10000.0);
@@ -91,7 +95,7 @@ export const PM_Camera = superclass => class extends superclass {
 
     refresh() {
         super.refresh();
-        const render = GetNamedView("RenderManager");
+        const render = GetViewService("RenderManager");
         if (!this.isMyPlayerPawn && render) return;
 
         render.camera.setLocation(this.lookGlobal);
@@ -105,9 +109,9 @@ export const PM_Camera = superclass => class extends superclass {
 
 // The top render interface that controls the execution of draw passes.
 
-export class RenderManager extends NamedView {
-    constructor(model) {
-        super("RenderManager", model);
+export class RenderManager extends ViewService {
+    constructor() {
+        super("RenderManager");
         SetGLPipeline(this);
         this.display = new MainDisplay();
         this.buildBuffers();

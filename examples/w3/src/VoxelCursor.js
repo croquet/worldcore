@@ -1,12 +1,13 @@
-import { NamedView, GetNamedView, v3_divide, Cube, Triangles, Material, DrawCall, m4_translation, v3_multiply, Lines, Cone, m4_rotationX, toRad } from "@croquet/worldcore";
+import { NamedView, GetNamedView, v3_divide, Cube, Triangles, Material, DrawCall, m4_translation, v3_multiply, Lines, Cone, m4_rotationX, toRad, GetViewRoot, viewRoot, ViewService } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { PickFloorSurface, PickDigVoxel, PickFillSurface, PickPlantSurface } from "./VoxelRaycast";
 import { GetTopLayer } from "./Globals";
 
-export class VoxelCursor extends NamedView {
-    constructor(model) {
-        super("VoxelCursor", model);
-        this.viewRoot =  GetNamedView("ViewRoot");
+export class VoxelCursor extends ViewService {
+    constructor() {
+        super("VoxelCursor");
+        // this.viewRoot =  GetNamedView("ViewRoot");
+        // this.viewRoot =  GetViewRoot();
         this.xy = [0,0];
         this.mode = 'dig';
 
@@ -29,8 +30,8 @@ export class VoxelCursor extends NamedView {
         this.doubleCall = new DrawCall(this.double, this.material);
         this.doubleCall.isHidden = false;
 
-        this.viewRoot.render.scene.addDrawCall(this.drawCall);
-        this.viewRoot.render.scene.addDrawCall(this.doubleCall);
+        viewRoot.render.scene.addDrawCall(this.drawCall);
+        viewRoot.render.scene.addDrawCall(this.doubleCall);
 
         this.subscribe("ui", "pointerMove", this.onPointerMove);
         this.subscribe("hud", "editMode", this.onEditMode);

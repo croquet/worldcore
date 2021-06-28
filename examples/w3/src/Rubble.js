@@ -1,6 +1,6 @@
 import { Model } from "@croquet/croquet";
 import { mix, Actor, Pawn, AM_Smoothed, PM_Smoothed, Material, PM_InstancedVisible, GetNamedView, v3_add,
-    CachedObject, InstancedDrawCall, AM_Behavioral, DestroyBehavior, SequenceBehavior, Cube } from "@croquet/worldcore";
+    CachedObject, InstancedDrawCall, AM_Behavioral, DestroyBehavior, SequenceBehavior, Cube, GetViewRoot, viewRoot } from "@croquet/worldcore";
     import { Voxels } from "./Voxels";
 import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
@@ -53,7 +53,8 @@ export class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         const mesh = CachedObject("rubbleMesh"+this.actor.type, () => this.buildMesh());
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        viewRoot.render.scene.addDrawCall(draw);
+        // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
         return draw;
     }
 

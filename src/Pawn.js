@@ -1,17 +1,18 @@
 /* eslint-disable new-cap */
 import { View } from "@croquet/croquet";
 import { NamedView, GetNamedView } from "./NamedView";
+import { ViewService } from "./Service";
+import { viewRoot } from "./ViewRoot";
 
 //------------------------------------------------------------------------------------------
 //-- PawnManager ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// const pawnRegistry = new Map();
 let pm; // Local pointer for pawns
 
-export class PawnManager extends NamedView {
-    constructor(model) {
-        super("PawnManager", model);
+export class PawnManager extends ViewService {
+    constructor() {
+        super("PawnManager");
         pm = this;
         this.pawns = new Map();
         this.dynamic = new Set();
@@ -29,7 +30,8 @@ export class PawnManager extends NamedView {
     }
 
     rebuild() {
-        const viewRoot = GetNamedView("ViewRoot");
+        // const viewRoot = GetNamedView("ViewRoot");
+        // const viewRoot = GetViewRoot();
         const actorManager = viewRoot.model.wellKnownModel("ActorManager");
         actorManager.actors.forEach(actor => this.rebuildPawn(actor));
         this.pawns.forEach(pawn => pawn.link());
@@ -80,6 +82,79 @@ export class PawnManager extends NamedView {
         this.dynamic.forEach(pawn => pawn.update(time, delta));
     }
 }
+
+// export class PawnManager extends NamedView {
+//     constructor(model) {
+//         super("PawnManager", model);
+//         pm = this;
+//         this.pawns = new Map();
+//         this.dynamic = new Set();
+//         this.rebuild();
+//         // Spawning pawns is an immediate subscription because pawns subscribe to actor messages in their
+//         // constructors. This guarantees the pawn will be around if the new actor immediately sends a message.
+//         this.subscribe("actor", {event: "createActor", handling: "immediate"}, this.spawnPawn);
+//     }
+
+//     destroy() {
+//         const doomed = new Map(this.pawns);
+//         doomed.forEach(pawn => pawn.destroy());
+//         this.detach(); // de-register as a view
+//         pm = null;
+//     }
+
+//     rebuild() {
+//         // const viewRoot = GetNamedView("ViewRoot");
+//         // const viewRoot = ViewRoot.getViewRoot();
+//         const actorManager = viewRoot.model.wellKnownModel("ActorManager");
+//         actorManager.actors.forEach(actor => this.rebuildPawn(actor));
+//         this.pawns.forEach(pawn => pawn.link());
+//     }
+
+//     rebuildPawn(actor) {
+//         this.spawnPawn(actor);
+//     }
+
+//     // spawnPawn(actor) {
+//     //     const type = pawnRegistry.get(actor.pawn);
+//     //     if (!type) {
+//     //         console.log("Unknown pawn type!");
+//     //         return;
+//     //     }
+//     //     new (type)(actor);
+//     // }
+
+//     spawnPawn(actor) {
+//         new actor.pawn(actor);
+//     }
+
+//     add(pawn) {
+//         this.pawns.set(pawn.actor.id, pawn);
+//     }
+
+//     has(id) {
+//         return this.pawns.has(id);
+//     }
+
+//     get(id) {
+//         return this.pawns.get(id);
+//     }
+
+//     delete(pawn) {
+//         this.pawns.delete(pawn.actor.id);
+//     }
+
+//     addDynamic(pawn) {
+//         this.dynamic.add(pawn);
+//     }
+
+//     deleteDynamic(pawn) {
+//         this.dynamic.delete(pawn);
+//     }
+
+//     update(time, delta) {
+//         this.dynamic.forEach(pawn => pawn.update(time, delta));
+//     }
+// }
 
 //------------------------------------------------------------------------------------------
 //-- Pawn ----------------------------------------------------------------------------------

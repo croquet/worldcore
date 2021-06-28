@@ -4,6 +4,7 @@ import { LoadFont, LoadImage} from "./ViewAssetCache";
 import { NamedView } from "./NamedView";
 import QRCode from "../lib/qr/qrcode";
 import { GetViewTime } from "./ViewRoot";
+import { ViewService } from "./Service";
 
 let ui;             // The UI manager
 
@@ -55,10 +56,10 @@ function isLetterOrDigit(c) {
 //
 // Takes the device's pixel ratio into account. This can be over-ridden using SetScale.
 
-export class UIManager extends NamedView {
+export class UIManager extends ViewService {
 
-    constructor(model) {
-        super('UIManager', model);
+    constructor() {
+        super('UIManager');
 
         ui = this; // Global pointer for widgets to use.
 

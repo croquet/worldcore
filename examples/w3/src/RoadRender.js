@@ -1,5 +1,5 @@
 import { View} from "@croquet/croquet";
-import { Triangles, GetNamedView, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, NamedView, UnitCube, m4_translation } from "@croquet/worldcore";
+import { Triangles, GetNamedView, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, NamedView, UnitCube, m4_translation, GetViewRoot, viewRoot, ViewService } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "./Globals";
 
@@ -12,13 +12,14 @@ import paper from "../assets/paper.jpg";
 // Top level class that manages the exterior and interior terrain meshes and their
 // corresponding draw calls.
 
-export class RoadRender extends NamedView {
-    constructor(model) {
-        super("RoadRender", model);
-        const render = GetNamedView("ViewRoot").render;
+export class RoadRender extends ViewService {
+    constructor() {
+        super("RoadRender");
+        // const render = GetNamedView("ViewRoot").render;
+        const render = viewRoot.render;
         console.log("Road render start");
         this.layers = [];
-        for (let z = 0; z < Voxels.sizeZ; z++) this.layers[z] = new RoadLayer(model, z);
+        for (let z = 0; z < Voxels.sizeZ; z++) this.layers[z] = new RoadLayer(this.model, z);
     }
 
     destroy() {
@@ -50,7 +51,8 @@ class RoadLayer extends View {
         this.triangles.transform(m4_translation([0,0,this.z * Voxels.scaleZ]));
         this.triangles.load();
 
-        const render = GetNamedView("ViewRoot").render;
+        // const render = GetNamedView("ViewRoot").render;
+        const render = viewRoot.render;
 
         this.material = new Material();
         this.drawCall = new DrawCall(this.triangles, this.material);
@@ -59,7 +61,8 @@ class RoadLayer extends View {
 
     destroy() {
         super.destroy();
-        const render = GetNamedView("ViewRoot").render;
+        // const render = GetNamedView("ViewRoot").render;
+        const render = viewRoot.render;
         render.scene.removeDrawCall(this.drawCall);
         this.triangles.destroy();
     }

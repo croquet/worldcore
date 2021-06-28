@@ -1,4 +1,5 @@
 import { View } from "@croquet/croquet";
+import { viewRoot } from "./ViewRoot";
 
 const namedViews = new Map();
 
@@ -9,6 +10,8 @@ export function ClearNamedViews() {
 export function GetNamedView(name) {
     return namedViews.get(name);
 }
+
+// Obsolete ... switch over to View Services
 
 export class NamedView extends View {
     constructor(name, model) {
@@ -40,6 +43,10 @@ export class NamedView extends View {
 
 // This lets a view get directly to a well-known model.
 
-export function GetNamedModel(name) {
-    return GetNamedView("ViewRoot").model.wellKnownModel(name);
-}
+// export function GetNamedModel(name) {
+//     return GetNamedView("ViewRoot").model.wellKnownModel(name);
+// }
+
+// export function GetNamedModel(name) {
+//     return viewRoot.model.wellKnownModel(name);
+// }

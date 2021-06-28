@@ -1,4 +1,4 @@
-import { DrawCall, Material, GetNamedView, Lines, GetNamedModel, v3_add, NamedView } from "@croquet/worldcore";
+import { DrawCall, Material, GetNamedView, Lines, GetNamedModel, v3_add, NamedView, GetViewRoot, viewRoot } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
@@ -16,7 +16,8 @@ export class PathRender extends NamedView {
         this.material.pass = 'translucent';
         this.drawCall = new DrawCall(this.mesh, this.material);
 
-        const render = GetNamedView("ViewRoot").render;
+        // const render = GetNamedView("ViewRoot").render;
+        const render = viewRoot.render;
         render.scene.addDrawCall(this.drawCall);
 
         this.buildMesh();
@@ -27,7 +28,8 @@ export class PathRender extends NamedView {
 
     destroy() {
         super.destroy();
-        const render = GetNamedView("ViewRoot").render;
+        // const render = GetNamedView("ViewRoot").render;
+        const render = viewRoot.render;
         if (render) render.scene.removeDrawCall(this.drawCall);
         this.mesh.destroy();
         this.material.destroy();
@@ -35,7 +37,8 @@ export class PathRender extends NamedView {
 
     buildMesh() {
         this.mesh.clear();
-        const paths = GetNamedModel("Paths");
+        // const paths = GetNamedModel("Paths");
+        const paths = viewRoot.model.paths;
         const color = [0,0,1,1];
         paths.waypoints.forEach( w => {
             const v0 = Voxels.toWorldXYZ(...v3_add(w.xyz, [0.5, 0.5, 1]));
@@ -68,14 +71,16 @@ export class RouteRender extends NamedView {
         this.material.pass = 'translucent';
         this.drawCall = new DrawCall(this.mesh, this.material);
 
-        const render = GetNamedView("ViewRoot").render;
+        // const render = GetNamedView("ViewRoot").render;
+        const render = viewRoot.render;
         render.scene.addDrawCall(this.drawCall);
 
     }
 
     destroy() {
         super.destroy();
-        const render = GetNamedView("ViewRoot").render;
+        // const render = GetNamedView("ViewRoot").render;
+        const render = viewRoot.render;
         if (render) render.scene.removeDrawCall(this.drawCall);
         this.mesh.destroy();
         this.material.destroy();

@@ -90,17 +90,30 @@ class MyViewRoot extends ViewRoot {
     }
 
     createManagers() {
-        this.input = this.addManager(new InputManager(this.model));
-        this.render = this.addManager(new RenderManager(this.model));
-        this.voxelRender = this.addManager(new VoxelRender(this.model));
-        this.roadRender = this.addManager(new RoadRender(this.model));
-        this.ui = this.addManager(new UIManager(this.model));
-        this.godView = this.addManager(new GodView(this.model));
-        this.editor = this.addManager((new Editor(this.model)));
+        // this.input = this.addManager(new InputManager(this.model));
+        // this.render = this.addManager(new RenderManager(this.model));
+        // this.voxelRender = this.addManager(new VoxelRender(this.model));
+        // this.roadRender = this.addManager(new RoadRender(this.model));
+        // this.ui = this.addManager(new UIManager(this.model));
+        // this.godView = this.addManager(new GodView(this.model));
+        // this.editor = this.addManager((new Editor(this.model)));
         // this.pathRender = this.addManager(new PathRender(this.model));
         // this.routeRender = this.addManager(new RouteRender(this.model));
-        this.pawnManager = this.addManager(new PawnManager(this.model));
-        this.voxelCursor = this.addManager(new VoxelCursor(this.model)); // Add this after the pawn manager to prevent GL error with water & cursor transparencies?
+        // this.pawnManager = this.addManager(new PawnManager(this.model));
+        // this.voxelCursor = this.addManager(new VoxelCursor(this.model)); // Add this after the pawn manager to prevent GL error with water & cursor transparencies?
+    }
+
+    createServices() {
+        this.input = this.addService(InputManager);
+        this.render = this.addService(RenderManager);
+        this.voxelRender = this.addService(VoxelRender);
+        this.roadRender = this.addService(RoadRender);
+        this.ui = this.addService(UIManager);
+        this.godView = this.addService(GodView);
+        this.editor = this.addService(Editor);
+        this.voxelCursor = this.addService(VoxelCursor);
+        this.pawnManager = this.addService(PawnManager);
+
     }
 
 }

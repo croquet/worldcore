@@ -1,11 +1,11 @@
-import { GetNamedView, NamedView } from "@croquet/worldcore";
+import { GetNamedView, NamedView, ViewService } from "@croquet/worldcore";
 import { GetTopLayer } from "./Globals";
 import { PickFillSurface, PickFloorSurface, PickDigVoxel, PickPlantSurface } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 
-export class Editor extends NamedView {
-    constructor(model) {
-        super("Editor", model);
+export class Editor extends ViewService {
+    constructor() {
+        super("Editor");
         this.mode = 'dig';
         this.subscribe("ui", "tap", this.onTap);
         this.subscribe("hud", "editMode", this.onEditMode);

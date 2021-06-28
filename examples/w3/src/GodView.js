@@ -1,5 +1,5 @@
 import { GetNamedView, NamedView, m4_scalingRotationTranslation, m4_translation, q_axisAngle, v3_scale, v3_add, v3_multiply, q_multiply,
-    toRad, TAU, KeyDown, v3_transform, m4_rotationZ, m4_multiply, toDeg, DepthTexture } from "@croquet/worldcore";
+    toRad, TAU, KeyDown, v3_transform, m4_rotationZ, m4_multiply, toDeg, DepthTexture, GetViewRoot, viewRoot, ViewService, GetViewService } from "@croquet/worldcore";
 import { GetTopLayer } from "./Globals";
 import { PickGrabSurface  } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
@@ -9,11 +9,12 @@ let pitch = toRad(45);
 let yaw = toRad(0);
 let fov = toRad(60);
 
-export class GodView extends NamedView {
-    constructor(model) {
-        super("GodView", model);
+export class GodView extends ViewService {
+    constructor() {
+        super("GodView");
 
-        this.camera = GetNamedView('ViewRoot').render.camera;
+        // this.camera = GetNamedView('ViewRoot').render.camera;
+        this.camera = viewRoot.render.camera;
         this.updateCamera();
 
         this.subscribe("ui", 'pointerDown', this.onPointerDown);
@@ -138,7 +139,7 @@ export class GodView extends NamedView {
     update(time, delta) {
         const animals = this.wellKnownModel("Animals");
         if (this.firstPerson && animals.vip) {
-            const pm = GetNamedView("PawnManager");
+            const pm = GetViewService("PawnManager");
             const pawn = pm.get(animals.vip.id);
             const p = q_axisAngle([1,0,0], toRad(90));
             const r = q_multiply(p,pawn.rotation);

@@ -1,5 +1,6 @@
 import { v2_sub, v2_add, v2_scale, v2_magnitude, TAU, toRad, toDeg } from "./Vector";
 import { NamedView } from "./NamedView";
+import { ViewService } from "./Service";
 
 // Need to add doubletap
 
@@ -42,9 +43,9 @@ export function KeyDown(key) {
 // Supports adding chord events to report when multiple buttons are pressed simultaneously.
 //----------------------------------------------------------------------------------------------------
 
-export class InputManager extends NamedView {
-    constructor(model) {
-        super("InputMananger", model);
+export class InputManager extends ViewService {
+    constructor() {
+        super("InputMananger");
 
         console.log("Starting input manager");
         this.listeners = [];
