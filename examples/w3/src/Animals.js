@@ -1,7 +1,7 @@
 import { Model, Constants } from "@croquet/croquet";
 import { mix, Actor, Pawn, AM_Smoothed, PM_Smoothed, Material,
     AM_Behavioral, DestroyBehavior, SequenceBehavior, Behavior, PM_Visible, PM_InstancedVisible, CachedObject, UnitCube, m4_translation, m4_scaling,
-    InstancedDrawCall, GetNamedView, LoopBehavior, SucceedBehavior, v2_sub, v2_scale, v2_magnitude, q_axisAngle, v2_normalize, SelectorBehavior, ParallelSelectorBehavior, CompositeBehavior, DrawCall, m4_identity, ViewRoot, viewRoot
+    InstancedDrawCall, GetNamedView, LoopBehavior, SucceedBehavior, v2_sub, v2_scale, v2_magnitude, q_axisAngle, v2_normalize, SelectorBehavior, ParallelSelectorBehavior, CompositeBehavior, DrawCall, m4_identity, ViewRoot, ModelService, GetViewRoot
  } from "@croquet/worldcore";
 import { Voxels, AM_Voxel } from "./Voxels";
 import { AM_VoxelSmoothed, PM_VoxelSmoothed, PM_LayeredInstancedVisible} from "./Components";
@@ -9,10 +9,9 @@ import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
 import { GetTopLayer } from "./Globals";
 
-export class Animals extends Model {
+export class Animals extends ModelService {
     init() {
-        super.init();
-        this.beWellKnownAs("Animals");
+        super.init("Animals");
         this.animals = new Set();
         this.subscribe("surfaces", "newLevel", this.onNewLevel);
         this.subscribe("surfaces", "changed", this.onChanged);
@@ -393,7 +392,7 @@ class PersonPawn extends mix(AnimalPawn).with(PM_LayeredInstancedVisible) {
         const draw = new InstancedDrawCall(mesh, material);
         // const draw = new DrawCall(mesh, material);
         // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        viewRoot.render.scene.addDrawCall(draw);
+        GetViewRoot().render.scene.addDrawCall(draw);
         return draw;
     }
 

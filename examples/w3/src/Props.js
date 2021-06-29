@@ -1,16 +1,15 @@
 import { Model } from "@croquet/croquet";
 import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, AM_Smoothed, PM_Smoothed, Material, PM_InstancedVisible, GetNamedView, v3_add,
     Cylinder, Cone, m4_translation, CachedObject, q_axisAngle, TAU, InstancedDrawCall, m4_rotationX, toRad, v3_scale,
-    Behavior, AM_Behavioral, GetViewRoot, viewRoot
+    Behavior, AM_Behavioral, GetViewRoot, viewRoot, ModelService
  } from "@croquet/worldcore";
 import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
 import { AM_VoxelSmoothed, PM_LayeredInstancedVisible } from "./Components";
 
-export class Props extends Model {
+export class Props extends ModelService {
     init() {
-        super.init();
-        this.beWellKnownAs("Props");
+        super.init("Props");
         this.props = new Map();
         this.subscribe("surfaces", "newLevel", this.onNewLevel);
         this.subscribe("surfaces", "changed", this.onChanged);
@@ -184,7 +183,7 @@ class TreePawn extends PropPawn {
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
         // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        viewRoot.render.scene.addDrawCall(draw);
+        GetViewRoot().render.scene.addDrawCall(draw);
         return draw;
     }
 
@@ -234,7 +233,7 @@ export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
         // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        viewRoot.render.scene.addDrawCall(draw);
+        GetViewRoot().render.scene.addDrawCall(draw);
         return draw;
     }
 
@@ -300,7 +299,7 @@ class RoadPawn extends PropPawn {
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
         // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        viewRoot.render.scene.addDrawCall(draw);
+        GetViewRoot().render.scene.addDrawCall(draw);
         return draw;
     }
 

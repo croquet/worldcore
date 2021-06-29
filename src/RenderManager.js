@@ -3,7 +3,7 @@ import { BasicShader, DecalShader, TranslucentShader, InstancedShader, GeometryS
 import { NamedView, GetNamedView } from "./NamedView";
 import {toRad, m4_identity, m4_multiply } from "./Vector";
 import { viewRoot, ViewRoot } from "./ViewRoot";
-import { ViewService, GetViewService } from "./Service";
+import { ViewService, GetViewService } from "./Root";
 
 
 //------------------------------------------------------------------------------------------

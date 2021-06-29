@@ -1,8 +1,8 @@
 /* eslint-disable new-cap */
 import { View } from "@croquet/croquet";
 import { NamedView, GetNamedView } from "./NamedView";
-import { ViewService } from "./Service";
-import { viewRoot } from "./ViewRoot";
+import { ViewService, WCView, GetViewRoot } from "./Root";
+// import { viewRoot } from "./ViewRoot";
 
 //------------------------------------------------------------------------------------------
 //-- PawnManager ---------------------------------------------------------------------------
@@ -32,7 +32,7 @@ export class PawnManager extends ViewService {
     rebuild() {
         // const viewRoot = GetNamedView("ViewRoot");
         // const viewRoot = GetViewRoot();
-        const actorManager = viewRoot.model.wellKnownModel("ActorManager");
+        const actorManager = GetViewRoot().model.wellKnownModel("ActorManager");
         actorManager.actors.forEach(actor => this.rebuildPawn(actor));
         this.pawns.forEach(pawn => pawn.link());
     }

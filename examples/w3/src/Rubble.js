@@ -1,15 +1,14 @@
 import { Model } from "@croquet/croquet";
 import { mix, Actor, Pawn, AM_Smoothed, PM_Smoothed, Material, PM_InstancedVisible, GetNamedView, v3_add,
-    CachedObject, InstancedDrawCall, AM_Behavioral, DestroyBehavior, SequenceBehavior, Cube, GetViewRoot, viewRoot } from "@croquet/worldcore";
+    CachedObject, InstancedDrawCall, AM_Behavioral, DestroyBehavior, SequenceBehavior, Cube, GetViewRoot, viewRoot, ModelService } from "@croquet/worldcore";
     import { Voxels } from "./Voxels";
 import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
 import { SideColor } from "./VoxelRender";
 
-export class RubbleManager extends Model {
+export class Rubble extends ModelService {
     init() {
-        super.init();
-        this.beWellKnownAs("RubbleManager");
+        super.init('Rubble');
         this.subscribe("voxels", "changed", this.onVoxelChange);
     }
 
@@ -25,7 +24,7 @@ export class RubbleManager extends Model {
         RubbleActor.create({type: old, translation: Voxels.toWorldXYZ(...v3_add(xyz, [0.75, 0.75, 0.5]))});
     }
 }
-RubbleManager.register('RubbleManager');
+Rubble.register('Rubble');
 
 //------------------------------------------------------------------------------------------
 //-- Rubble --------------------------------------------------------------------------------
@@ -53,7 +52,7 @@ export class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         const mesh = CachedObject("rubbleMesh"+this.actor.type, () => this.buildMesh());
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        viewRoot.render.scene.addDrawCall(draw);
+        GetViewRoot().render.scene.addDrawCall(draw);
         // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
         return draw;
     }

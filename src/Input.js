@@ -1,6 +1,6 @@
 import { v2_sub, v2_add, v2_scale, v2_magnitude, TAU, toRad, toDeg } from "./Vector";
 import { NamedView } from "./NamedView";
-import { ViewService } from "./Service";
+import { ViewService } from "./Root";
 
 // Need to add doubletap
 

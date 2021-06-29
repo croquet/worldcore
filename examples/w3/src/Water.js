@@ -1,6 +1,6 @@
 import { Model } from "@croquet/croquet";
 import { Actor, Pawn, mix, PM_Dynamic, PM_Spatial, PM_InstancedVisible, PM_Visible, CachedObject, UnitCube, DrawCall, GetNamedView,
-    GetNamedModel, Triangles, Material, v3_add, m4_identity, GetViewRoot, viewRoot } from "@croquet/worldcore";
+    GetNamedModel, Triangles, Material, v3_add, m4_identity, GetViewRoot, viewRoot, ModelService } from "@croquet/worldcore";
 import { AM_VoxelSmoothed } from "./Components";
 import { Voxels } from "./Voxels";
 import paper from "../assets/paper.jpg";
@@ -9,12 +9,10 @@ import paper from "../assets/paper.jpg";
 //-- Water ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class Water extends Model{
+export class Water extends ModelService {
 
     init() {
-        super.init();
-        console.log("Starting water!");
-        this.beWellKnownAs('Water');
+        super.init('Water');
 
         this.clear();
 
@@ -575,7 +573,7 @@ class WaterSourcePawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         const material = this.buildMaterial();
         const draw = new DrawCall(mesh, material);
         // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        viewRoot.render.scene.addDrawCall(draw);
+        this.viewRoot.render.scene.addDrawCall(draw);
         return draw;
     }
 

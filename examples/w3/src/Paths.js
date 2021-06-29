@@ -1,5 +1,5 @@
 import { Model, Constants } from "@croquet/croquet";
-import { PriorityQueue } from "@croquet/worldcore";
+import { ModelService, PriorityQueue } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 
 Constants.path = {
@@ -31,13 +31,12 @@ const deepWaterWeight = Constants.path.deepWaterWeight;
 
 // Holds the nav mesh and automatically updates whenever the surfaces are changed.
 
-export class Paths extends Model {
+export class Paths extends ModelService {
 
     static types() { return { "W3:Waypoint": Waypoint }; }
 
     init() {
-        super.init();
-        this.beWellKnownAs("Paths");
+        super.init("Paths");
         this.subscribe("surfaces", "newLevel", this.onNewLevel);
         this.subscribe("surfaces", "changed", this.onChanged);
     }

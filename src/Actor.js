@@ -1,14 +1,14 @@
 import { Model } from "@croquet/croquet";
 import { Pawn } from "./Pawn";
+import { ModelService } from "./Root";
 
 //------------------------------------------------------------------------------------------
 //-- ActorManager --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class ActorManager extends Model {
+export class ActorManager extends ModelService {
     init() {
-        super.init();
-        this.beWellKnownAs('ActorManager');
+        super.init('ActorManager');
         this.actors = new Map();
     }
 

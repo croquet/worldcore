@@ -1,5 +1,5 @@
 import { Model } from "@croquet/croquet";
-import { v3_add, v3_multiply, rayTriangleIntersect } from "@croquet/worldcore";
+import { v3_add, v3_multiply, rayTriangleIntersect, ModelService } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 
 
@@ -10,15 +10,14 @@ import { Voxels } from "./Voxels";
 // The surface data is parked outside the model so it doesn't get snapshotted. Instead it is
 // reconstructed from scratch if someone tries to access it when it doesn't exist.
 
-export class Surfaces extends Model {
+export class Surfaces extends ModelService {
 
     static types() {
         return { "W3:Surface": Surface };
     }
 
     init() {
-        super.init();
-        this.beWellKnownAs("Surfaces");
+        super.init('Surfaces');
         this.subscribe("voxels", "newLevel", this.rebuildAll);
         this.subscribe("voxels", "changed", this.rebuildLocal);
     }

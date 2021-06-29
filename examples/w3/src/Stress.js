@@ -1,12 +1,12 @@
 import { Model } from "@croquet/croquet";
+import { ModelService } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 
 const max = 10000;
 
-export class Stress extends Model{
+export class Stress extends ModelService {
     init() {
-        super.init();
-        this.beWellKnownAs('Stress');
+        super.init('Stress');
         this.voxels = this.wellKnownModel("Voxels");
         this.collapsing = new Set();
         this.subscribe("voxels", "newLevel", this.onNewLevel);

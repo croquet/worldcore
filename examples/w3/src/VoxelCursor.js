@@ -30,8 +30,8 @@ export class VoxelCursor extends ViewService {
         this.doubleCall = new DrawCall(this.double, this.material);
         this.doubleCall.isHidden = false;
 
-        viewRoot.render.scene.addDrawCall(this.drawCall);
-        viewRoot.render.scene.addDrawCall(this.doubleCall);
+        GetViewRoot().render.scene.addDrawCall(this.drawCall);
+        GetViewRoot().render.scene.addDrawCall(this.doubleCall);
 
         this.subscribe("ui", "pointerMove", this.onPointerMove);
         this.subscribe("hud", "editMode", this.onEditMode);

@@ -2,8 +2,8 @@
 //
 // Croquet Studios, 2021
 
-import { Session, App} from "@croquet/croquet";
-import { ModelRoot, ViewRoot, UIManager, ActorManager, RenderManager, PawnManager, PlayerManager, InputManager, v3_normalize } from "@croquet/worldcore";
+import { Session, App, Island} from "@croquet/croquet";
+import { ModelRoot, ViewRoot, UIManager, ActorManager, RenderManager, PawnManager, PlayerManager, InputManager, v3_normalize, GetModelService } from "@croquet/worldcore";
 import { Voxels } from "./src/Voxels";
 import { Surfaces } from "./src/Surfaces";
 import { Paths } from "./src/Paths";
@@ -15,7 +15,7 @@ import { GodView } from "./src/GodView";
 import { PathRender, RouteRender } from "./src/Debug";
 import { Props } from "./src/Props";
 import { Animals } from "./src/Animals";
-import { RubbleManager } from "./src/Rubble";
+import { Rubble } from "./src/Rubble";
 import { Stress } from "./src/Stress";
 import { Water } from "./src/Water";
 import { WorldBuilder } from "./src/WorldBuilder";
@@ -30,23 +30,22 @@ class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start Model!!!");
 
-        // this.voxels.generate();
         this.worldBuilder.build();
 
     }
 
-    createManagers() {
-        // this.playerManager = this.addManager(PlayerManager.create());
-        this.actorManager = this.addManager(ActorManager.create());
-        this.voxels = this.addManager(Voxels.create());
-        this.water = this.addManager(Water.create());
-        this.surfaces = this.addManager(Surfaces.create());
-        this.stress = this.addManager(Stress.create());
-        this.paths = this.addManager(Paths.create());
-        this.props = this.addManager(Props.create());
-        this.animals = this.addManager(Animals.create());
-        this.rubbleManager = this.addManager(RubbleManager.create());
-        this.worldBuilder = this.addManager(WorldBuilder.create());
+    createServices() {
+        super.createServices();
+        // this.actorManager = this.addService(ActorManager);
+        this.voxels = this.addService(Voxels);
+        this.water = this.addService(Water);
+        this.surfaces = this.addService(Surfaces);
+        this.stress = this.addService(Stress);
+        this.paths = this.addService(Paths);
+        this.props = this.addService(Props);
+        this.animals = this.addService(Animals);
+        this.rubble = this.addService(Rubble);
+        this.worldBuilder = this.addService(WorldBuilder);
     }
 }
 MyModelRoot.register("MyModelRoot");
@@ -112,8 +111,8 @@ class MyViewRoot extends ViewRoot {
         this.godView = this.addService(GodView);
         this.editor = this.addService(Editor);
         this.voxelCursor = this.addService(VoxelCursor);
-        this.pawnManager = this.addService(PawnManager);
-
+        super.createServices();
+        // this.pawnManager = this.addService(PawnManager);
     }
 
 }

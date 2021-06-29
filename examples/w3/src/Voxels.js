@@ -1,5 +1,5 @@
 import { Model } from "@croquet/croquet";
-import { PerlinNoise, v3_add, v3_sub, v3_min, v3_max, v3_scale, v3_floor, rayTriangleIntersect, GetNamedModel, RegisterMixin } from "@croquet/worldcore";
+import { PerlinNoise, v3_add, v3_sub, v3_min, v3_max, v3_scale, v3_floor, rayTriangleIntersect, GetNamedModel, RegisterMixin, ModelService } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- VoxelColumn ---------------------------------------------------------------------------
@@ -65,7 +65,7 @@ export class VoxelColumn {
 //-- Voxels --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class Voxels extends Model {
+export class Voxels extends ModelService {
 
     //-- Snapshot Types --
 
@@ -255,8 +255,7 @@ export class Voxels extends Model {
     //-- Class Methods --
 
     init() {
-        super.init();
-        this.beWellKnownAs('Voxels');
+        super.init('Voxels');
         this.voxels = Array.from(Array(Voxels.sizeX), ()=>Array.from(Array(Voxels.sizeY), ()=>new VoxelColumn()));
         // this.subscribe("hud", "newLevel", () => this.generate());
         this.subscribe("editor", "setVoxel", data => this.set(...data.xyz, data.type));

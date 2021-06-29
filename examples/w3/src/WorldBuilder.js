@@ -1,13 +1,13 @@
 import { Model } from "@croquet/croquet";
-import { PerlinNoise } from "@croquet/worldcore";
+import { ModelService, PerlinNoise } from "@croquet/worldcore";
 import { TreeActor } from "./Props";
 import { Voxels } from "./Voxels";
 
 
-export class WorldBuilder extends Model {
+export class WorldBuilder extends ModelService {
 
-    init(...args) {
-        super.init(...args);
+    init() {
+        super.init('WorldBuilder');
         this.subscribe("hud", "reset", this.build);
     }
 
