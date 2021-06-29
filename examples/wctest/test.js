@@ -4,12 +4,9 @@
 
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
-    PM_InstancedVisible, GetNamedView, AM_Smoothed, PM_Smoothed,
-    ActorManager, RenderManager, PM_Visible, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, VerticalWidget, ImageWidget,
-    ToggleWidget, ToggleSet, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, BehaviorManager, SequenceBehavior, ParallelSequenceBehavior, ParallelSelectorBehavior, SelectorBehavior, ShowBehaviorRegistry, Shuffle, RandomSequenceBehavior, InvertBehavior, LoopBehavior, ParallelPrimaryBehavior, DelayBehavior, RandomSelectorBehavior, DestroyBehavior  } from "@croquet/worldcore";
+    AM_Smoothed, PM_Smoothed, RenderManager, PM_Visible, Material, DrawCall, Triangles, CachedObject, q_multiply, q_normalize, q_identity,
+    Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
-import llama from "./assets/llama.jpg";
-
 
 //------------------------------------------------------------------------------------------
 // MoveActor
@@ -22,16 +19,6 @@ class MoveActor extends mix(Actor).with(AM_Avatar) {
     init() {
         super.init({translation: [0,0,-5]});
         this.child = ChildActor.create({parent: this, translation: [0,1.1,0]});
-        this.subscribe("input", "qDown",  this.test);
-        this.subscribe("input", "wDown",  this.test2);
-    }
-
-    test() {
-        this.child.set({parent: null});
-    }
-
-    test2() {
-        this.child.set({parent: this});
     }
 
 }
@@ -41,26 +28,22 @@ MoveActor.register('MoveActor');
 // MovePawn
 //------------------------------------------------------------------------------------------
 
-class MovePawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible) {
+class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible) {
     constructor(...args) {
         super(...args);
-        this.setDrawCall(CachedObject("moveDrawCall", () => this.buildDraw()));
+        this.setDrawCall(this.buildDraw());
         this.subscribe("hud", "joy", this.joy);
     }
 
     buildDraw() {
-        const mesh = CachedObject("moveMesh", () => this.buildMesh());
-        const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
-        const draw = new InstancedDrawCall(mesh, material);
-
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-
+        const mesh = this.buildMesh();
+        const material = CachedObject("paperMaterial", this.buildMaterial);
+        const draw = new DrawCall(mesh, material);
         return draw;
     }
 
     buildMesh() {
         const mesh = Sphere(0.5, 4, [1, 1, 1, 1]);
-
         mesh.load();
         mesh.clear();
         return mesh;
@@ -68,7 +51,6 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible) {
 
     buildMaterial() {
         const material = new Material();
-        material.pass = 'instanced';
         material.texture.loadFromURL(paper);
         return material;
     }
@@ -81,10 +63,7 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_InstancedVisible) {
         q = q_normalize(q);
         this.setSpin(q);
     }
-
-
 }
-// MovePawn.register('MovePawn');
 
 
 //------------------------------------------------------------------------------------------
@@ -108,54 +87,32 @@ class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
     init(options) {
         super.init(options);
-
         this.startBehavior(SpinBehavior);
-
-        this.subscribe("input", "1Down",  this.test1);
-        this.subscribe("input", "2Down",  this.test2);
     }
-
-    test1() {
-        // console.log("1");
-        // this.set({translation: [0,1.1,0]});
-        // console.log(this.translation);
-    }
-
-    test2() {
-        // this.set({translation: [0,1.5,0]});
-        // console.log(this.translation);
-    }
-
-
 
 }
 ChildActor.register('ChildActor');
 
-// console.log(ChildActor.types());
 
 //------------------------------------------------------------------------------------------
 // ChildPawn
 //------------------------------------------------------------------------------------------
 
-class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
+class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
     constructor(...args) {
         super(...args);
-        this.setDrawCall(CachedObject("childDrawCall", () => this.buildDraw()));
+        this.setDrawCall(this.buildDraw());
     }
 
     buildDraw() {
-        const mesh = CachedObject("childMesh", () => this.buildMesh());
-        const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
-        const draw = new InstancedDrawCall(mesh, material);
-
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-
+        const mesh = this.buildMesh();
+        const material = CachedObject("paperMaterial", this.buildMaterial);
+        const draw = new DrawCall(mesh, material);
         return draw;
     }
 
     buildMesh() {
         const mesh = Cylinder(0.4, 0.75, 16, [1,1,1,1]);
-
         mesh.load();
         mesh.clear();
         return mesh;
@@ -163,13 +120,11 @@ class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
 
     buildMaterial() {
         const material = new Material();
-        material.pass = 'instanced';
         material.texture.loadFromURL(paper);
         return material;
     }
 
 }
-// ChildPawn.register('ChildPawn');
 
 //------------------------------------------------------------------------------------------
 // FloorActor
@@ -205,7 +160,6 @@ class FloorPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         this.setDrawCall(new DrawCall(this.mesh, this.material));
     }
 }
-// FloorPawn.register('FloorPawn');
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -216,19 +170,9 @@ class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start Model!!!");
         FloorActor.create();
-        this.move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
-        this.subscribe("input", "tap", this.onTap);
+        MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
     }
 
-    onTap(event) {
-        // console.log("tap!");
-    }
-
-    createManagers() {
-        this.playerManager = this.addManager(PlayerManager.create());
-        this.actorManager = this.addManager(ActorManager.create());
-        // this.behaviorManager = this.addManager(BehaviorManager.create());
-    }
 }
 MyModelRoot.register("MyModelRoot");
 
@@ -241,17 +185,14 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
 
-        this.ui.setScale(1);
-
         this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
         this.render.lights.setAmbientColor([0.8, 0.8, 0.8]);
         this.render.lights.setDirectionalColor([0.7, 0.7, 0.7]);
         this.render.lights.setDirectionalAim([0.2,-1,0.1]);
 
-        const cameraMatrix = m4_scalingRotationTranslation([1,1,1], q_axisAngle([1,0,0], toRad(0)), [0,0,5]);
+        const cameraMatrix = m4_scalingRotationTranslation([1,1,1], q_axisAngle([1,0,0], toRad(0)), [0,0,0]);
         this.render.camera.setLocation(cameraMatrix);
         this.render.camera.setProjection(toRad(60), 1.0, 10000.0);
-
 
         const ao = this.render.aoShader;
         if (ao) {
@@ -261,31 +202,15 @@ class MyViewRoot extends ViewRoot {
         }
 
         this.HUD = new Widget(this.ui.root, {autoSize: [1,1]});
-        this.vertical = new VerticalWidget(this.HUD, {local: [20,120], size: [200,300], margin: 10})
-
-
-        this.button0 = new ToggleWidget();
-        this.button1 = new ToggleWidget();
-        this.image = new ImageWidget(null, {url: llama});
-        // this.joyC = new JoystickWidget(null);
-
-        this.toggleSet = new ToggleSet(this.button0, this.button1);
-
-        this.vertical.addSlot(this.button1);
-        this.vertical.addSlot(this.image);
-        this.vertical.addSlot(this.button0);
-
-        this.box = new Widget(this.HUD, {anchor: [0,1], pivot: [0,1], local: [20,-20], size: [400,150]})
-
-        this.joy0 = new JoystickWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200]});
-        this.joy0.onChange = xy => {this.publish("hud", "joy", xy)};
+        this.joy = new JoystickWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200] });
+        this.joy.onChange = xy => {this.publish("hud", "joy", xy)};
     }
 
-    createManagers() {
-        this.input = this.addManager(new InputManager(this.model));
-        this.render = this.addManager(new RenderManager(this.model));
-        this.ui = this.addManager(new UIManager(this.model));
-        this.pawnManager = this.addManager(new PawnManager(this.model));
+    createServices() {
+        this.input = this.addService(InputManager);
+        this.render = this.addService(RenderManager);
+        this.ui = this.addService(UIManager);
+        super.createServices();
     }
 
 }
