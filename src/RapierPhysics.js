@@ -1,5 +1,6 @@
 import { Model } from "@croquet/croquet";
 import { RegisterMixin } from "./Mixins";
+import { ModelService } from "./Root";
 import { q_identity, v3_magnitude, v3_multiply, v3_sub, v3_zero } from "./Vector";
 
 let RAPIER;
@@ -22,7 +23,7 @@ export function RapierVersion() {
 
 // Maintains a list of players connected to the session.
 
-export class RapierPhysicsManager extends Model {
+export class RapierPhysicsManager extends ModelService {
 
     static types() {
         if (!RAPIER) return {};
@@ -36,9 +37,9 @@ export class RapierPhysicsManager extends Model {
     }
 
     init(options = {}) {
-        super.init();
+        super.init('RapierPhysicsManager');
         console.log("Starting rapier physics!");
-        this.beWellKnownAs('RapierPhysicsManager');
+
 
         const gravity = options.gravity || [0.0, -9.8, 0.0];
         const timeStep = options.timeStep || 50; // In ms
@@ -188,7 +189,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         rbd.translation = new RAPIER.Vector3(...this.translation);
         rbd.rotation = new RAPIER.Quaternion(...this.rotation);
 
-        const physicsManager =  this.wellKnownModel('RapierPhysicsManager');
+        const physicsManager =  this.service('RapierPhysicsManager');
 
         this.rigidBody = physicsManager.world.createRigidBody(rbd);
         this.rigidBody.world = physicsManager.world; // We save a ref to the world in the rb so it can rebuild itself from its handle.
@@ -231,7 +232,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
             this.ignore("smoothed_moveTo");
             this.ignore("smoothed_rotateTo");
         }
-        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        const physicsManager = this.service('RapierPhysicsManager');
         physicsManager.rigidBodies[this.rigidBody.handle] = null;
         physicsManager.world.removeRigidBody(this.rigidBody);
 
@@ -253,7 +254,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         cd.translation = new RAPIER.Vector3(...translation);
         cd.rotation = new RAPIER.Quaternion(...rotation);
 
-        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        const physicsManager = this.service('RapierPhysicsManager');
         const c = physicsManager.world.createCollider(cd, this.rigidBody.handle);
         c.world = physicsManager.world;
         this.collider = c;
@@ -275,7 +276,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         cd.translation = new RAPIER.Vector3(...translation);
         cd.rotation = new RAPIER.Quaternion(...rotation);
 
-        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        const physicsManager = this.service('RapierPhysicsManager');
         const c = physicsManager.world.createCollider(cd, this.rigidBody.handle);
 
         c.world = physicsManager.world;
@@ -298,7 +299,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         cd.translation = new RAPIER.Vector3(...translation);
         cd.rotation = new RAPIER.Quaternion(...rotation);
 
-        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        const physicsManager = this.service('RapierPhysicsManager');
         const c = physicsManager.world.createCollider(cd, this.rigidBody.handle);
         c.world = physicsManager.world;
         this.collider = c;
@@ -320,7 +321,7 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         cd.translation = new RAPIER.Vector3(...translation);
         cd.rotation = new RAPIER.Quaternion(...rotation);
 
-        const physicsManager = this.wellKnownModel('RapierPhysicsManager');
+        const physicsManager = this.service('RapierPhysicsManager');
         const c = physicsManager.world.createCollider(cd, this.rigidBody.handle);
         c.world = physicsManager.world;
         this.collider = c;

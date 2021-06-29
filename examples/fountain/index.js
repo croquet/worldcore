@@ -7,7 +7,6 @@ import { ModelRoot, ViewRoot, InputManager, UIManager, AudioManager, ActorManage
     toRad, LoadRapier,m4_scalingRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, TextWidget, GetViewFPS, RapierVersion } from "@croquet/worldcore";
 import { LevelActor } from "./src/Level";
 import { CubeSprayActor, CylinderSprayActor, ConeSprayActor, BallSprayActor } from "./src/Fountain";
-import { Sphere } from "../../src/Render";
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
@@ -24,7 +23,6 @@ class MyModelRoot extends ModelRoot {
         this.subscribe("hud", "shoot", this.shoot);
         this.subscribe("hud", "pause", this.pause);
         this.subscribe("hud", "disable", this.disable);
-        // this.subscribe("test", "ping", this.ignore);
         this.subscribe("input", "dDown", this.test);
 
     }
@@ -47,12 +45,9 @@ class MyModelRoot extends ModelRoot {
         this.disabled = d;
     }
 
-    // ignore() {}
-
-    createManagers() {
-        this.playerManager = this.addManager(PlayerManager.create());
-        this.physicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 15}));
-        this.actorManager = this.addManager(ActorManager.create());
+    createServices() {
+        super.createServices()
+        this.physicsManager = this.addService(RapierPhysicsManager, {gravity: [0,-9.8, 0], timeStep: 15});
     }
 
     seedColors() {
@@ -103,6 +98,8 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
 
+        this.input.addChord("cheat", ['q', 't']);
+
         this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
 
         this.render.lights.setAmbientColor([0.8, 0.8, 0.8]);
@@ -131,15 +128,11 @@ class MyViewRoot extends ViewRoot {
 
     }
 
-    createManagers() {
-        // this.webInput = this.addManager(new InputManager(this.model));
-        this.input = this.addManager(new InputManager(this.model));
-        this.render = this.addManager(new RenderManager(this.model));
-        this.ui = this.addManager(new UIManager(this.model));
-        // this.audio = this.addManager(new AudioManager());
-        this.pawnManager = this.addManager(new PawnManager(this.model));
-
-        this.input.addChord("cheat", ['q', 't']);
+    createServices() {
+        this.input = this.addService(InputManager);
+        this.render = this.addService(RenderManager);
+        this.ui = this.addService(UIManager);
+        super.createServices();
     }
 
     addHud() {
@@ -170,29 +163,12 @@ class MyViewRoot extends ViewRoot {
         this.cheatText.set({visible: this.cheatMode});
     }
 
-    // reportLatency(latency) {
-    //     console.log(latency);
-    // }
-
-    // postFPS() {
-    //     console.log(Math.round(GetViewFPS()));
-    //     this.future(500).postFPS();
-    // }
-
-    // update(time) {
-    //     super.update(time);
-    //     console.log(Math.round(GetViewFPS()));
-    // }
-
-
 
 }
 
 async function go() {
     await LoadRapier();
     App.makeWidgetDock();
-    // const session = await Session.join(`fountain-${App.autoSession()}`, MyModelRoot, MyViewRoot, {tps: 30});
-    // const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30, debug: "snapshot"});
 
     const session = await Session.join({
         appId: 'io.croquet.fountain',
@@ -203,14 +179,7 @@ async function go() {
         view: MyViewRoot,
         tps: 30,
     });
-    //setInterval(ping, 500, session)
-    //const session = await Session.join(`fountain`, MyModelRoot, MyViewRoot, {tps: 30});
-}
 
-function ping(session) {
-    if (!session.view) return;
-    session.view.publish("test", "ping");
-    session.view.reportLatency(session.latency);
 }
 
 go();

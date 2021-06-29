@@ -1,4 +1,4 @@
-import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, PM_Visible, Triangles, Material, DrawCall, AM_RapierPhysics, q_axisAngle } from "@croquet/worldcore";
+import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, PM_Visible, Triangles, Material, DrawCall, AM_RapierPhysics } from "@croquet/worldcore";
 import { FountainActor } from "./Fountain";
 import paper from "../assets/paper.jpg";
 
@@ -63,7 +63,7 @@ LevelActor.register('LevelActor');
 class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
     constructor(...args) {
         super(...args);
-
+        console.log("Building level pawn");
         const c = [0.5, 0.5, 0.5, 1];
 
         this.ground = new Triangles();
@@ -77,13 +77,11 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         this.ground.clear();
 
         this.material = new Material();
-        this.material.pass = 'opaque';
         this.material.texture.loadFromURL(paper);
 
-        this.draw = new DrawCall(this.ground, this.material);
+        const draw = new DrawCall(this.ground, this.material);
 
-        this.setDrawCall(this.draw);
-
+        this.setDrawCall(draw);
     }
 
     destroy() {
@@ -93,4 +91,3 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
     }
 
 }
-// LevelPawn.register('LevelPawn');

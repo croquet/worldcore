@@ -1,5 +1,5 @@
 import { Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale, UnitCube, Material, InstancedDrawCall, AM_RapierPhysics,
-    sphericalRandom, CachedObject, AM_Spatial, PM_Spatial, PM_Visible, DrawCall, v3_transform, v3_add, m4_rotationQ, m4_rotationY, m4_rotationX, m4_translation, Cylinder, Cone, Cube, Sphere, toRad } from "@croquet/worldcore";
+    sphericalRandom, CachedObject, AM_Spatial, PM_Spatial, PM_Visible, DrawCall, v3_add, m4_rotationQ, Cylinder, Cone, Cube, Sphere, toRad, viewRoot } from "@croquet/worldcore";
 import paper from "../assets/paper.jpg";
 
 //------------------------------------------------------------------------------------------
@@ -42,13 +42,13 @@ class CubeSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
 
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        viewRoot.render.scene.addDrawCall(draw);
 
         return draw;
     }
 
     buildMesh() {
-        const modelRoot = GetNamedView('ViewRoot').model;
+        const modelRoot = viewRoot.model;
         const color = modelRoot.colors[this.actor.index];
         const mesh = Cube(1,1,1, color);
 
@@ -65,7 +65,6 @@ class CubeSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
     }
 
 }
-// CubeSprayPawn.register('CubeSprayPawn');
 
 //------------------------------------------------------------------------------------------
 // CylinderSprayActor
@@ -108,13 +107,13 @@ class CylinderSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
 
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        viewRoot.render.scene.addDrawCall(draw);
 
         return draw;
     }
 
     buildMesh() {
-        const modelRoot = GetNamedView('ViewRoot').model;
+        const modelRoot = viewRoot.model;
         const color = modelRoot.colors[this.actor.index];
         const mesh = Cylinder(0.5, 1, 12, color);
 
@@ -131,7 +130,6 @@ class CylinderSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
     }
 
 }
-// CylinderSprayPawn.register('CylinderSprayPawn');
 
 //------------------------------------------------------------------------------------------
 // BallSprayActor
@@ -173,13 +171,13 @@ class BallSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
 
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        viewRoot.render.scene.addDrawCall(draw);
 
         return draw;
     }
 
     buildMesh() {
-        const modelRoot = GetNamedView('ViewRoot').model;
+        const modelRoot = viewRoot.model;
         const color = modelRoot.colors[this.actor.index];
         const mesh = Sphere(0.5, 4, color);
 
@@ -196,7 +194,6 @@ class BallSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
     }
 
 }
-// BallSprayPawn.register('BallSprayPawn');
 
 //------------------------------------------------------------------------------------------
 // ConeSprayActor
@@ -240,7 +237,7 @@ class ConeSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
 
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        viewRoot.render.scene.addDrawCall(draw);
 
         return draw;
     }
@@ -248,7 +245,7 @@ class ConeSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
     buildMesh() {
 
 
-        const modelRoot = GetNamedView('ViewRoot').model;
+        const modelRoot = viewRoot.model;
         const color = modelRoot.colors[this.actor.index];
 
         const mesh = Cone(0.5, 0.01, 1, 12, color);
@@ -267,7 +264,6 @@ class ConeSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
     }
 
 }
-// ConeSprayPawn.register('ConeSprayPawn');
 
 //------------------------------------------------------------------------------------------
 // FountainActor
@@ -340,7 +336,7 @@ export class FountainPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         const mesh = this.buildMesh();
         const material = this.buildMaterial();
         const draw = new DrawCall(mesh, material);
-        GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
+        viewRoot.render.scene.addDrawCall(draw);
         return draw;
     }
 
@@ -358,5 +354,4 @@ export class FountainPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         return material;
     }
 }
-// FountainPawn.register('FountainPawn');
 
