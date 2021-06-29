@@ -16,7 +16,7 @@ export class RoadRender extends ViewService {
     constructor() {
         super("RoadRender");
         // const render = GetNamedView("ViewRoot").render;
-        const render = GetViewRoot().render;
+        const render = viewRoot.render;
         console.log("Road render start");
         this.layers = [];
         for (let z = 0; z < Voxels.sizeZ; z++) this.layers[z] = new RoadLayer(this.model, z);
@@ -52,7 +52,7 @@ class RoadLayer extends View {
         this.triangles.load();
 
         // const render = GetNamedView("ViewRoot").render;
-        const render = GetViewRoot().render;
+        const render = viewRoot.render;
 
         this.material = new Material();
         this.drawCall = new DrawCall(this.triangles, this.material);
@@ -62,7 +62,7 @@ class RoadLayer extends View {
     destroy() {
         super.destroy();
         // const render = GetNamedView("ViewRoot").render;
-        const render = GetViewRoot().render;
+        const render = viewRoot.render;
         render.scene.removeDrawCall(this.drawCall);
         this.triangles.destroy();
     }

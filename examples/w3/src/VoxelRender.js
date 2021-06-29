@@ -1,4 +1,4 @@
-import { Triangles, GetNamedView, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, ViewService, GetViewRoot } from "@croquet/worldcore";
+import { Triangles, GetNamedView, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, ViewService, GetViewRoot, viewRoot } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "./Globals";
 
@@ -26,7 +26,7 @@ import stripe from "../assets/stripe50.png";
 export class VoxelRender extends ViewService {
     constructor() {
         super("VoxelRender");
-        const render = GetViewRoot().render;
+        const render = viewRoot.render;
 
         this.exteriorMaterial = new Material();
         this.exteriorMaterial.texture.loadFromURL(paper);
@@ -53,7 +53,7 @@ export class VoxelRender extends ViewService {
     destroy() {
         super.detach();
         // const render = GetNamedView("ViewRoot").render;
-        const render = GetViewRoot().render;
+        const render = viewRoot.render;
 
         this.exteriorMaterial.destroy();
         this.exteriorMesh.destroy();
@@ -127,7 +127,7 @@ class ExteriorMesh {
     rebuild() {
         this.clear();
         // const surfaces = GetNamedView("ViewRoot").model.surfaces;
-        const surfaces = GetViewRoot().model.surfaces;
+        const surfaces = viewRoot.model.surfaces;
         surfaces.surfaces.forEach((surface,key) => this.addKey(key));
     }
 
@@ -192,7 +192,7 @@ class InteriorMesh {
     rebuild() {
         this.clear();
         // const surfaces = GetNamedView("ViewRoot").model.surfaces;
-        const surfaces = GetViewRoot().model.surfaces;
+        const surfaces = viewRoot.model.surfaces;
         surfaces.surfaces.forEach((surface,key) => this.addKey(key));
     }
 
@@ -263,7 +263,7 @@ class Layer {
 
     rebuild() {
         // const surfaces = GetNamedView("ViewRoot").model.surfaces;
-        const surfaces = GetViewRoot().model.surfaces;
+        const surfaces = viewRoot.model.surfaces;
         this._triangles.clear();
         this._lines.clear();
 
@@ -321,7 +321,7 @@ class InteriorLayer extends Layer {
 
     rebuild() {
         // const surfaces = GetNamedView("ViewRoot").model.surfaces;
-        const surfaces = GetViewRoot().model.surfaces;
+        const surfaces = viewRoot.model.surfaces;
         this._triangles.clear();
         this._lines.clear();
 
@@ -342,7 +342,7 @@ class InteriorLayer extends Layer {
 
     rebuildInterior() {
         // const voxels = GetNamedView("ViewRoot").model.voxels;
-        const voxels = GetViewRoot().model.voxels;
+        const voxels = viewRoot.model.voxels;
         this.hasInterior = false;
         for (let x = 0; x < Voxels.sizeX; x++) {
             for (let y = 0; y < Voxels.sizeY; y++) {

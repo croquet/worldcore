@@ -71,7 +71,7 @@ class RenderTarget {
         if (parameters.height) this.height = parameters.height;
         if (parameters.autoResize) {
             this.scale = parameters.autoResize;
-            const model = GetViewRoot().model;
+            const model = viewRoot.model;
             this.view = new View(model);
             this.view.subscribe("input", "resize", () => this.resizeToWindow());
         }

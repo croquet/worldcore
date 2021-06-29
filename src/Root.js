@@ -4,12 +4,15 @@ import { PawnManager} from "./Pawn";
 import { ClearObjectCache } from "./ObjectCache";
 
 //------------------------------------------------------------------------------------------
-//-- WCModel -------------------------------------------------------------------------------
+//-- WorldCoreModel ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Extends the model base class with WorldCore-specific methods.
 
 export class WorldCoreModel extends Model {
 
     service(name) { return this.wellKnownModel(name) }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -58,15 +61,32 @@ export class ModelService extends Model {
 ModelService.register('ModelService');
 
 //------------------------------------------------------------------------------------------
+//-- WorldCoreView -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Extends the view base class with WorldCore-specific methods.
+
+export class WorldCoreView extends View {
+
+    modelService(name) { return this.wellKnownModel(name) }
+    service(name) { return viewServices.get(name) }
+    get time() {return time1}
+    get delta()  {return time1 - time0}
+
+}
+
+//------------------------------------------------------------------------------------------
 //-- ViewRoot ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// viewRoot is a special public global variable that stores the viewRoot.
 
 export let viewRoot;
 let time0 = 0;
 let time1 = 0;
 const viewServices = new Map();
 
-export class ViewRoot extends View {
+export class ViewRoot extends WorldCoreView {
 
     constructor(model) {
         super(model);
@@ -107,7 +127,7 @@ export class ViewRoot extends View {
 //-- ViewService ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class ViewService extends View {
+export class ViewService extends WorldCoreView {
 
     constructor(name) {
         super(viewRoot.model);
@@ -124,9 +144,3 @@ export class ViewService extends View {
     }
 
 }
-
-export function GetViewRoot() { return viewRoot}
-export function GetViewService(name) { return viewServices.get(name) }
-export function GetModelService(name) { return viewRoot.wellKnownModel(name) }
-export function GetViewTime() { return time1 }
-export function  GetViewDelta() { return time1 - time0 }

@@ -22,7 +22,7 @@ export const PM_Visible = superclass => class extends superclass {
 
     destroy() {
         super.destroy();
-        if (this.draw) GetViewService('RenderManager').scene.removeDrawCall(this.draw);
+        if (this.draw) this.service('RenderManager').scene.removeDrawCall(this.draw);
     }
 
     refresh() {
@@ -32,7 +32,7 @@ export const PM_Visible = superclass => class extends superclass {
 
     setDrawCall(draw) {
         if (this.draw === draw) return;
-        const scene = GetViewService('RenderManager').scene;
+        const scene = this.service('RenderManager').scene;
         if (this.draw) scene.removeDrawCall(this.draw);
         this.draw = draw;
         if (this.draw) {
@@ -66,7 +66,7 @@ export const PM_InstancedVisible = superclass => class extends superclass {
 
     setDrawCall(draw) {
         // const scene = GetViewService('ViewRoot').render.scene;
-        const scene = GetViewService('RenderManager').scene;
+        const scene = this.service('RenderManager').scene;
 
         this.draw = draw;
         if (this.draw) {
@@ -86,7 +86,7 @@ export const PM_InstancedVisible = superclass => class extends superclass {
 export const PM_Camera = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        const render = GetViewService("RenderManager");
+        const render = this.service("RenderManager");
         if (this.isMyPlayerPawn && render) {
             render.camera.setLocation(this.lookGlobal);
             render.camera.setProjection(toRad(60), 1.0, 10000.0);
@@ -95,7 +95,7 @@ export const PM_Camera = superclass => class extends superclass {
 
     refresh() {
         super.refresh();
-        const render = GetViewService("RenderManager");
+        const render = this.service("RenderManager");
         if (!this.isMyPlayerPawn && render) return;
 
         render.camera.setLocation(this.lookGlobal);

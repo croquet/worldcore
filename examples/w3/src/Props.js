@@ -183,7 +183,7 @@ class TreePawn extends PropPawn {
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
         // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        GetViewRoot().render.scene.addDrawCall(draw);
+        viewRoot.render.scene.addDrawCall(draw);
         return draw;
     }
 
@@ -233,7 +233,7 @@ export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
         // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        GetViewRoot().render.scene.addDrawCall(draw);
+        viewRoot.render.scene.addDrawCall(draw);
         return draw;
     }
 
@@ -299,7 +299,7 @@ class RoadPawn extends PropPawn {
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
         // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        GetViewRoot().render.scene.addDrawCall(draw);
+        viewRoot.render.scene.addDrawCall(draw);
         return draw;
     }
 

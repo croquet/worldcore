@@ -4,7 +4,7 @@ import { LoadFont, LoadImage} from "./ViewAssetCache";
 import { NamedView } from "./NamedView";
 import QRCode from "../lib/qr/qrcode";
 // import { GetViewTime } from "./ViewRoot";
-import { ViewService, viewRoot, WCView } from "./Root";
+import { ViewService, viewRoot, WCView, WorldCoreView } from "./Root";
 
 let ui;             // The UI manager
 
@@ -213,7 +213,7 @@ export class UIManager extends ViewService {
 
 // The base widget class.
 
-export class Widget extends View {
+export class Widget extends WorldCoreView {
     constructor(parent, options) {
         super(ui.model);
         this.set(options);
@@ -1407,7 +1407,7 @@ export class SliderWidget extends ControlWidget {
     constructor(...args) {
         super(...args);
         // this.lastChangeTime = GetViewTime();
-        this.lastChangeTime = this.viewTime;
+        this.lastChangeTime = this.time;
     }
 
     get throttle() { return this._throttle || 0}; // MS between control updates
@@ -1497,13 +1497,13 @@ export class SliderWidget extends ControlWidget {
 
     change(p) {
         // this.lastChangeTime = GetViewTime();
-        this.lastChangeTime = this.viewTime;
+        this.lastChangeTime = this.time;
         this.lastChangeCache = null;
         this.onChange(p);
     }
 
     throttledChange(p) {
-        if (this.viewTime < this.lastChangeTime + this.throttle) {
+        if (this.time < this.lastChangeTime + this.throttle) {
             this.lastChangeCache = p;
         } else {
             this.change(p);
@@ -1512,7 +1512,7 @@ export class SliderWidget extends ControlWidget {
 
     update() {
         super.update();
-        if (this.lastChangeCache && this.viewTime >= this.lastChangeTime + this.throttle) this.change(this.lastChangeCache);
+        if (this.lastChangeCache && this.time >= this.lastChangeTime + this.throttle) this.change(this.lastChangeCache);
     }
 
     onChange(percent) {
@@ -1545,7 +1545,7 @@ export class JoystickWidget extends ControlWidget {
 
     constructor(...args) {
         super(...args);
-        this.lastChangeTime = this.viewTime;
+        this.lastChangeTime = this.time;
         this.deadRadius = 0.1;
         this.xy = [0,0];
     }
@@ -1626,13 +1626,13 @@ export class JoystickWidget extends ControlWidget {
     }
 
     change(xy) {
-        this.lastChangeTime = this.viewTime;
+        this.lastChangeTime = this.time;
         this.lastChangeCache = null;
         this.onChange(xy);
     }
 
     throttledChange(xy) {
-        if (this.viewTime < this.lastChangeTime + this.throttle) {
+        if (this.time < this.lastChangeTime + this.throttle) {
             this.lastChangeCache = xy;
         } else {
             this.change(xy);
@@ -1641,7 +1641,7 @@ export class JoystickWidget extends ControlWidget {
 
     update() {
         super.update();
-        if (this.lastChangeCache && this.viewTime >= this.lastChangeTime + this.throttle) this.change(this.lastChangeCache);
+        if (this.lastChangeCache && this.time >= this.lastChangeTime + this.throttle) this.change(this.lastChangeCache);
     }
 
     onChange(xy) {
