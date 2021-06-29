@@ -1,6 +1,7 @@
 import { NamedView, GetNamedView } from "./NamedView";
 import * as THREE from 'three';
 import { FBXLoader } from "../lib/three/FBXLoader.js"; // This external dependency on a third Party FBX loader isn't great ...
+import { ViewService } from "./Root";
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible Mixin --------------------------------------------------------------------
@@ -37,7 +38,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
     }
 
     setRenderObject(renderObject) {
-        const render = GetNamedView("ThreeRenderManager");
+        const render = this.service("ThreeRenderManager");
         this.renderObject = renderObject;
         this.renderObject.matrixAutoUpdate = false;
         this.renderObject.matrix.fromArray(this.global);
@@ -100,9 +101,9 @@ export const PM_ThreeCamera = superclass => class extends superclass {
 
 // The top render interface that controls the execution of draw passes.
 
-export class ThreeRenderManager extends NamedView {
-    constructor(model) {
-        super("ThreeRenderManager", model);
+export class ThreeRenderManager extends ViewService {
+    constructor() {
+        super("ThreeRenderManager");
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);

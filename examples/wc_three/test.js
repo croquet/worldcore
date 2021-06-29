@@ -3,21 +3,12 @@
 // Croquet Studios, 2021
 
 import { Session, App } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, InputManager, UIManager, ActorManager, PawnManager, PlayerManager, Widget, JoystickWidget, ThreeRenderManager, Actor, Pawn, mix,
-    AM_Avatar, PM_Avatar, PM_ThreeVisible, AM_Spatial, PM_Spatial, toRad, q_identity, q_multiply, q_axisAngle, q_normalize, v3_normalize,
-    AM_Smoothed, PM_Smoothed, GetNamedView, PM_ThreeCamera, PM_Player, AM_Player } from "@croquet/worldcore";
-import paper from "./assets/paper.jpg";
+import { ModelRoot, ViewRoot, InputManager, UIManager, Widget, JoystickWidget, ThreeRenderManager, Actor, Pawn, mix,
+    PM_ThreeVisible, AM_Spatial, PM_Spatial, toRad, q_identity, q_multiply, q_axisAngle, q_normalize, v3_normalize,
+    AM_Smoothed, PM_Smoothed, PM_ThreeCamera, PM_Player, AM_Player } from "@croquet/worldcore";
 import slimeTexture from "./assets/slime_texture.png";
 import slimeModel from "./assets/slime_mesh.fbx";
-
-
-
 import * as THREE from 'three';
-
-// const assetManager = new THREE.LoadingManager();
-
-
-
 
 
 //------------------------------------------------------------------------------------------
@@ -203,13 +194,8 @@ class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
         console.log("Starting model ...");
-        this.level = LevelActor.create();
-        this.move = MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
-    }
-
-    createManagers() {
-        this.playerManager = this.addManager(PlayerManager.create());
-        this.actorManager = this.addManager(ActorManager.create());
+        LevelActor.create();
+        MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
     }
 }
 MyModelRoot.register("MyModelRoot");
@@ -223,19 +209,16 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
 
-        this.ui.setScale(1);
-
         this.HUD = new Widget(this.ui.root, {autoSize: [1,1]});
-        this.joy = new JoystickWidget(this.HUD, {local: [50,50], size:[300,300]});
+        this.joy = new JoystickWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size:[200,200]});
         this.joy.onChange = xy => { this.publish("hud", "joy", xy); };
-
     }
 
-    createManagers() {
-        this.webInput = this.addManager(new InputManager(this.model));
-        this.render = this.addManager(new ThreeRenderManager(this.model));
-        this.ui = this.addManager(new UIManager(this.model));
-        this.pawnManager = this.addManager(new PawnManager(this.model));
+    createServices() {
+        this.webInput = this.addService(InputManager);
+        this.render = this.addService(ThreeRenderManager);
+        this.ui = this.addService(UIManager);
+        super.createServices();
     }
 
 }
