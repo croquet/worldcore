@@ -1,4 +1,3 @@
-import { NamedView, GetNamedView } from "./NamedView";
 import * as THREE from 'three';
 import { FBXLoader } from "../lib/three/FBXLoader.js"; // This external dependency on a third Party FBX loader isn't great ...
 import { ViewService } from "./Root";
@@ -78,7 +77,7 @@ export const PM_ThreeCamera = superclass => class extends superclass {
         super(...args);
 
         if (this.isMyPlayerPawn) {
-             const render = GetNamedView("ThreeRenderManager");
+             const render = this.service("ThreeRenderManager");
             render.camera.matrix.fromArray(this.lookGlobal);
             render.camera.matrixAutoUpdate = false;
             render.camera.matrixWorldNeedsUpdate = true;
@@ -88,7 +87,7 @@ export const PM_ThreeCamera = superclass => class extends superclass {
     refresh() {
         super.refresh();
         if (!this.isMyPlayerPawn) return;
-        const render = GetNamedView("ThreeRenderManager");
+        const render = this.service("ThreeRenderManager");
         render.camera.matrix.fromArray(this.lookGlobal);
         render.camera.matrixWorldNeedsUpdate = true;
     }
