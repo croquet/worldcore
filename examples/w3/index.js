@@ -2,8 +2,8 @@
 //
 // Croquet Studios, 2021
 
-import { Session, App, Island} from "@croquet/croquet";
-import { ModelRoot, ViewRoot, UIManager, ActorManager, RenderManager, PawnManager, PlayerManager, InputManager, v3_normalize, GetModelService } from "@croquet/worldcore";
+import { Session, App } from "@croquet/croquet";
+import { ModelRoot, ViewRoot, UIManager, RenderManager, InputManager, v3_normalize } from "@croquet/worldcore";
 import { Voxels } from "./src/Voxels";
 import { Surfaces } from "./src/Surfaces";
 import { Paths } from "./src/Paths";
@@ -28,7 +28,7 @@ import { RoadRender } from "./src/RoadRender";
 class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!!");
+        console.log("Start Model!");
 
         this.worldBuilder.build();
 
@@ -36,7 +36,6 @@ class MyModelRoot extends ModelRoot {
 
     createServices() {
         super.createServices();
-        // this.actorManager = this.addService(ActorManager);
         this.voxels = this.addService(Voxels);
         this.water = this.addService(Water);
         this.surfaces = this.addService(Surfaces);
@@ -88,20 +87,6 @@ class MyViewRoot extends ViewRoot {
 
     }
 
-    createManagers() {
-        // this.input = this.addManager(new InputManager(this.model));
-        // this.render = this.addManager(new RenderManager(this.model));
-        // this.voxelRender = this.addManager(new VoxelRender(this.model));
-        // this.roadRender = this.addManager(new RoadRender(this.model));
-        // this.ui = this.addManager(new UIManager(this.model));
-        // this.godView = this.addManager(new GodView(this.model));
-        // this.editor = this.addManager((new Editor(this.model)));
-        // this.pathRender = this.addManager(new PathRender(this.model));
-        // this.routeRender = this.addManager(new RouteRender(this.model));
-        // this.pawnManager = this.addManager(new PawnManager(this.model));
-        // this.voxelCursor = this.addManager(new VoxelCursor(this.model)); // Add this after the pawn manager to prevent GL error with water & cursor transparencies?
-    }
-
     createServices() {
         this.input = this.addService(InputManager);
         this.render = this.addService(RenderManager);
@@ -112,7 +97,6 @@ class MyViewRoot extends ViewRoot {
         this.editor = this.addService(Editor);
         this.voxelCursor = this.addService(VoxelCursor);
         super.createServices();
-        // this.pawnManager = this.addService(PawnManager);
     }
 
 }

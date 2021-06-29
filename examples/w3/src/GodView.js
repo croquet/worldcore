@@ -13,8 +13,7 @@ export class GodView extends ViewService {
     constructor() {
         super("GodView");
 
-        // this.camera = GetNamedView('ViewRoot').render.camera;
-        this.camera = viewRoot.render.camera;
+        this.camera = this.service("RenderManager").camera;
         this.updateCamera();
 
         this.subscribe("ui", 'pointerDown', this.onPointerDown);
@@ -137,9 +136,9 @@ export class GodView extends ViewService {
     }
 
     update(time, delta) {
-        const animals = this.wellKnownModel("Animals");
+        const animals = this.modelService("Animals");
         if (this.firstPerson && animals.vip) {
-            const pm = GetViewService("PawnManager");
+            const pm = this.service("PawnManager");
             const pawn = pm.get(animals.vip.id);
             const p = q_axisAngle([1,0,0], toRad(90));
             const r = q_multiply(p,pawn.rotation);

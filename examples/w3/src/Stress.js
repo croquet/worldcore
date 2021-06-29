@@ -1,4 +1,3 @@
-import { Model } from "@croquet/croquet";
 import { ModelService } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 
@@ -7,7 +6,7 @@ const max = 10000;
 export class Stress extends ModelService {
     init() {
         super.init('Stress');
-        this.voxels = this.wellKnownModel("Voxels");
+        this.voxels = this.service("Voxels");
         this.collapsing = new Set();
         this.subscribe("voxels", "newLevel", this.onNewLevel);
         this.subscribe("voxels", "changed", this.onChanged);
@@ -24,12 +23,10 @@ export class Stress extends ModelService {
     }
 
     onNewLevel() {
-        const voxels = this.wellKnownModel("Voxels");
-
         this.stress = new Map();
-        voxels.forEach( (t,x,y,z) => { // Set all unsupported solid voxels to max
+        this.voxels.forEach( (t,x,y,z) => { // Set all unsupported solid voxels to max
             if (!t) return; // Air voxel
-            if (voxels.get(x,y,z-1)) return; // Supported solid voxel
+            if (this.voxels.get(x,y,z-1)) return; // Supported solid voxel
             const key = Voxels.packKey(x,y,z);
             this.stress.set(key, max);
         })

@@ -1,10 +1,7 @@
-import { View } from "@croquet/croquet";
-import { v2_sub, v2_multiply, v2_add, v2_scale, v4_scale, v2_normalize, v2_magnitude } from "./Vector";
+import { v2_sub, v2_multiply, v2_add, v2_scale, v4_scale, v2_magnitude } from "./Vector";
 import { LoadFont, LoadImage} from "./ViewAssetCache";
-import { NamedView } from "./NamedView";
 import QRCode from "../lib/qr/qrcode";
-// import { GetViewTime } from "./ViewRoot";
-import { ViewService, viewRoot, WCView, WorldCoreView } from "./Root";
+import { ViewService, WorldCoreView } from "./Root";
 
 let ui;             // The UI manager
 

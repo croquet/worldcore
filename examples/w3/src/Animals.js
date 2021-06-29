@@ -1,13 +1,14 @@
-import { Model, Constants } from "@croquet/croquet";
-import { mix, Actor, Pawn, AM_Smoothed, PM_Smoothed, Material,
-    AM_Behavioral, DestroyBehavior, SequenceBehavior, Behavior, PM_Visible, PM_InstancedVisible, CachedObject, UnitCube, m4_translation, m4_scaling,
-    InstancedDrawCall, GetNamedView, LoopBehavior, SucceedBehavior, v2_sub, v2_scale, v2_magnitude, q_axisAngle, v2_normalize, SelectorBehavior, ParallelSelectorBehavior, CompositeBehavior, DrawCall, m4_identity, ViewRoot, ModelService, GetViewRoot, viewRoot
- } from "@croquet/worldcore";
-import { Voxels, AM_Voxel } from "./Voxels";
+import { Constants } from "@croquet/croquet";
+import { mix, Actor, Pawn, Material, AM_Behavioral, Behavior, CachedObject, UnitCube, m4_translation, m4_scaling,
+    InstancedDrawCall, v2_sub, v2_scale, v2_magnitude, q_axisAngle, CompositeBehavior, ModelService } from "@croquet/worldcore";
+import { Voxels } from "./Voxels";
 import { AM_VoxelSmoothed, PM_VoxelSmoothed, PM_LayeredInstancedVisible} from "./Components";
 import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
-import { GetTopLayer } from "./Globals";
+
+//------------------------------------------------------------------------------------------
+//-- Animals -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
 export class Animals extends ModelService {
     init() {
@@ -41,21 +42,22 @@ export class Animals extends ModelService {
             if (this.animals.size < 500) PersonActor.create({xyz});
         }
 
-
     }
 
 }
 Animals.register("Animals");
 
 //------------------------------------------------------------------------------------------
-//-- Animal --------------------------------------------------------------------------------
+//-- AnimalActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class AnimalActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral) {
+
     get pawn() {return AnimalPawn}
+
     init(options) {
         super.init(options);
-        const animals = this.wellKnownModel("Animals");
+        const animals = this.service("Animals");
         animals.animals.add(this);
         if (!animals.vip) animals.vip = this;
         this.publish("animals", "countChanged", animals.animals.size);
@@ -63,7 +65,7 @@ class AnimalActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral) {
 
     destroy() {
         super.destroy();
-        const animals = this.wellKnownModel("Animals");
+        const animals = this.service("Animals");
         animals.animals.delete(this);
         if (this === animals.vip) {
             delete animals.vip;
@@ -73,6 +75,10 @@ class AnimalActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral) {
     }
 }
 AnimalActor.register('AnimalActor');
+
+//------------------------------------------------------------------------------------------
+//-- AnimalPawn-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
 class AnimalPawn extends mix(Pawn).with(PM_VoxelSmoothed) {
 }
@@ -86,9 +92,9 @@ class AnimalPawn extends mix(Pawn).with(PM_VoxelSmoothed) {
 
 class TestTerrain extends Behavior {
     do() {
-        const voxels = this.wellKnownModel("Voxels");
-        const water = this.wellKnownModel("Water");
-        const surfaces = this.wellKnownModel("Surfaces");
+        const voxels = this.service("Voxels");
+        const water = this.service("Water");
+        const surfaces = this.service("Surfaces");
         if (voxels.get(...this.actor.xyz)) { // Buried
             this.actor.destroy();
         } else if (water.getVolume(...this.actor.xyz) > Constants.path.maxWaterDepth + this.actor.fraction[2] ) { // Drowned
@@ -154,8 +160,8 @@ class SeekBehavior extends Behavior {
     do() { this.seek(); }
 
     seek() {
-        const surfaces = this.wellKnownModel("Surfaces");
-        const paths = this.wellKnownModel('Paths');
+        const surfaces = this.service("Surfaces");
+        const paths = this.service('Paths');
         const key = surfaces.randomFloor();
         const path = paths.findPath(this.actor.key, key);
         if (path.length > 0) this.succeed(path);
@@ -181,7 +187,7 @@ class WalkTo extends Behavior {
             const xyz = Voxels.unpackKey(this.path[this.path.length-1]);
             this.set({xyz});
         } else {
-            const paths = this.wellKnownModel('Paths');
+            const paths = this.service('Paths');
             const start = this.actor.key;
             const end = Voxels.packKey(...this.xyz);
             const path = paths.findPath(start, end);
@@ -215,7 +221,7 @@ class WalkTo extends Behavior {
 
     do(delta) {
 
-        const water = this.wellKnownModel('Water');
+        const water = this.service('Water');
 
         let xyz = this.actor.xyz;
         let fraction = this.actor.fraction;
@@ -236,7 +242,7 @@ class WalkTo extends Behavior {
             } else { // Skip to next voxel
 
                 const nextKey = this.path[this.step+1];
-                const paths = this.wellKnownModel("Paths");
+                const paths = this.service("Paths");
                 if (!paths.hasExit(this.actor.key, nextKey)) { // Route no longer exists
                     this.fail();
                     return;
@@ -263,7 +269,6 @@ class WalkTo extends Behavior {
 
                 travel -= v2_magnitude(remaining);
                 remaining = v2_sub(this.exit, fraction);
-                // this.forward = v2_normalize(remaining);
 
                 const mag = v2_magnitude(remaining);
                 if (mag > 0)  this.forward = v2_scale(remaining, 1/mag);
@@ -277,23 +282,15 @@ class WalkTo extends Behavior {
             }
         }
 
-        // if (Number.isNaN(advance[0])) {
-        //     console.log("advance  " + advance);
-        // }
-
         fraction[0] = Math.min(1, Math.max(0, fraction[0] + advance[0]));
         fraction[1] = Math.min(1, Math.max(0, fraction[1] + advance[1]));
-
-        // if (Number.isNaN(fraction[0])) {
-        //     console.log("fraction  " + fraction);
-        // }
 
         this.reposition(xyz, fraction);
         this.rotateToFacing(this.forward);
     }
 
     reposition(xyz, fraction) {
-        const surfaces = this.wellKnownModel("Surfaces");
+        const surfaces = this.service("Surfaces");
         const surface = surfaces.get(Voxels.packKey(...xyz));
         if (surface) fraction[2] = surface.elevation(...fraction);
         this.actor.voxelMoveTo(xyz, fraction);
@@ -356,7 +353,7 @@ WalkTo.register("WalkTo");
 
 
 //------------------------------------------------------------------------------------------
-//-- Person --------------------------------------------------------------------------------
+//-- PersonActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class PersonActor extends AnimalActor {
@@ -369,7 +366,7 @@ class PersonActor extends AnimalActor {
     }
 
     setStartPostion() {
-        const surface = this.wellKnownModel('Surfaces').get(this.key);
+        const surface = this.service('Surfaces').get(this.key);
         const x = 0.5;
         const y = 0.5;
         const z = surface.rawElevation(x,y);
@@ -378,21 +375,21 @@ class PersonActor extends AnimalActor {
 }
 PersonActor.register('PersonActor');
 
+//------------------------------------------------------------------------------------------
+//-- PersonPawn ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
 class PersonPawn extends mix(AnimalPawn).with(PM_LayeredInstancedVisible) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(CachedObject("personDrawCall", () => this.buildDraw()));
-        // this.setDrawCall(this.buildDraw());
     }
 
     buildDraw() {
         const mesh = CachedObject("personMesh", this.buildMesh);
-        // const mesh = this.buildMesh();
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        // const draw = new DrawCall(mesh, material);
-        // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        viewRoot.render.scene.addDrawCall(draw);
+        this.service("RenderManager").scene.addDrawCall(draw);
         return draw;
     }
 
@@ -424,51 +421,5 @@ class PersonPawn extends mix(AnimalPawn).with(PM_LayeredInstancedVisible) {
         return mesh;
     }
 
-}
-
-class PersonPawn2 extends mix(AnimalPawn).with(PM_Visible) {
-    constructor(...args) {
-        super(...args);
-        // this.setDrawCall(CachedObject("personDrawCall", () => this.buildDraw()));
-        this.setDrawCall(this.buildDraw());
-    }
-
-    buildDraw() {
-        // const mesh = CachedObject("personMesh", this.buildMesh);
-        const mesh = this.buildMesh();
-        const material = CachedObject("paperMaterial", this.buildMaterial);
-        // const draw = new InstancedDrawCall(mesh, material);
-        const draw = new DrawCall(mesh, material);
-        // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        return draw;
-    }
-
-    buildMaterial() {
-        const material = new Material();
-        material.pass = 'opaque';
-        material.texture.loadFromURL(paper);
-        return material;
-    }
-
-    buildMesh() {
-        const mesh = UnitCube();
-        mesh.transform(m4_translation([0,0,0.5]));
-        mesh.transform(m4_scaling([0.6, 0.6, 2.2]));
-        mesh.transform(m4_translation([0,0,-0.2]));
-        mesh.load();
-        mesh.clear();
-        return mesh;
-    }
-
-    buildShinyMesh() {
-        const mesh = UnitCube();
-        mesh.setColor([1, 0,0,1]);
-        mesh.transform(m4_translation([0,0,0.5]));
-        mesh.transform(m4_scaling([0.6, 0.6, 2.2]));
-        mesh.transform(m4_translation([0,0,-0.2]));
-        mesh.load();
-        mesh.clear();
-        return mesh;
-    }
 
 }

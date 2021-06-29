@@ -1,5 +1,4 @@
-import { Model } from "@croquet/croquet";
-import { v3_add, v3_multiply, rayTriangleIntersect, ModelService } from "@croquet/worldcore";
+import { v3_add, rayTriangleIntersect, ModelService } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 
 
@@ -61,7 +60,7 @@ export class Surfaces extends ModelService {
     }
 
     buildAll() {
-        const voxels = this.wellKnownModel("Voxels");
+        const voxels = this.service("Voxels");
 
         this.surfaces = new Map();
         const surfaces = this.surfaces;
@@ -112,7 +111,7 @@ export class Surfaces extends ModelService {
     }
 
     buildLocal(xyz) {
-        const voxels = this.wellKnownModel("modelRoot").voxels;
+        const voxels = this.service("Voxels");
         const surfaces = this.surfaces;
 
         const remove = new Set();

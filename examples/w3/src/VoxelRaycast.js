@@ -1,4 +1,4 @@
-import { GetNamedModel, GetNamedView, GetViewRoot, viewRoot, v3_divide } from "@croquet/worldcore";
+import { viewRoot, v3_divide } from "@croquet/worldcore";
 import { IntersectVoxelBase } from "./Surfaces";
 import { Voxels } from "./Voxels";
 
@@ -12,8 +12,6 @@ import { Voxels } from "./Voxels";
 // xyz = undefined means no voxel was found.
 
 export function PickVoxel(xy, topLayer = Voxels.sizeZ) {
-    // const viewRoot = GetNamedView("ViewRoot");
-    // const viewRoot = GetViewRoot();
     const camera = viewRoot.render.camera;
     const voxels = viewRoot.model.voxels;
 
@@ -45,10 +43,7 @@ export function PickVoxel(xy, topLayer = Voxels.sizeZ) {
 // xyz = undefined means no surface was found.
 
 export function PickSurface(xy, topLayer = Voxels.sizeZ) {
-    // const viewRoot = GetNamedView("ViewRoot");
-    // const viewRoot = GetViewRoot();
     const camera = viewRoot.render.camera;
-
     const surfaces = viewRoot.model.surfaces;
 
     const start = v3_divide(camera.location, Voxels.scale);
@@ -86,17 +81,9 @@ export function PickDigVoxel(xy, topLayer = Voxels.sizeZ) {
     const pick = PickSurface(xy, topLayer);
     if (!pick.xyz) return null;
     const xyz = Voxels.adjacent(...pick.xyz, pick.direction);
-    // const viewRoot = GetNamedView("ViewRoot");
-    // const viewRoot = GetViewRoot();
     const voxels = viewRoot.model.voxels;
     const surfaces = viewRoot.model.surfaces;
     if (!voxels.get(...xyz)) return null;
-    // if (pick.direction === Voxels.below) {
-    //     const above = Voxels.adjacent(...xyz, Voxels.above);
-    //     const aboveKey = Voxels.packKey(...above);
-    //     const aboveSurface = surfaces.get(aboveKey);
-    //     if (aboveSurface && aboveSurface.hidesBelow()) return null;
-    // }
     return xyz;
 }
 
@@ -108,10 +95,7 @@ export function PickDigVoxel(xy, topLayer = Voxels.sizeZ) {
 
 export function PickFillSurface(xy, topLayer = Voxels.sizeZ) {
 
-    // const viewRoot = GetNamedView("ViewRoot");
-    // const viewRoot = GetViewRoot();
     const camera = viewRoot.render.camera;
-
     const surfaces = viewRoot.model.surfaces;
     const voxels = viewRoot.model.voxels;
 
@@ -165,10 +149,7 @@ export function PickFillSurface(xy, topLayer = Voxels.sizeZ) {
 
 export function PickGrabSurface(xy, topLayer = Voxels.sizeZ) {
 
-    // const viewRoot = GetNamedView("ViewRoot");
-    // const viewRoot = GetViewRoot();
     const camera = viewRoot.render.camera;
-
     const surfaces = viewRoot.model.surfaces;
     const voxels = viewRoot.model.voxels;
 
@@ -229,7 +210,6 @@ export function PickPlantSurface(xy, topLayer = Voxels.sizeZ) {
         const below = Voxels.adjacent(...pick.xyz, Voxels.below);
         const voxels = viewRoot.model.voxels;
         if (voxels.get(...below) != Voxels.dirt) pick.xyz = null;
-        // if (GetNamedModel("Voxels").get(...below) != Voxels.dirt) pick.xyz = null;
     }
     return pick;
 }

@@ -1,5 +1,5 @@
 import { View} from "@croquet/croquet";
-import { Triangles, GetNamedView, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, NamedView, UnitCube, m4_translation, GetViewRoot, viewRoot, ViewService, WCView } from "@croquet/worldcore";
+import { Triangles, GetNamedView, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, NamedView, UnitCube, m4_translation, GetViewRoot, viewRoot, ViewService, WCView, WorldCoreView } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "./Globals";
 
@@ -15,8 +15,7 @@ import paper from "../assets/paper.jpg";
 export class RoadRender extends ViewService {
     constructor() {
         super("RoadRender");
-        // const render = GetNamedView("ViewRoot").render;
-        const render = viewRoot.render;
+        const render = this.service("RenderManager");
         console.log("Road render start");
         this.layers = [];
         for (let z = 0; z < Voxels.sizeZ; z++) this.layers[z] = new RoadLayer(this.model, z);
@@ -42,7 +41,7 @@ export class RoadRender extends ViewService {
 //-- RoadLayer -------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 
-class RoadLayer extends View {
+class RoadLayer extends WorldCoreView {
     constructor(model,z) {
         super(model);
         this.z = z;
@@ -51,8 +50,7 @@ class RoadLayer extends View {
         this.triangles.transform(m4_translation([0,0,this.z * Voxels.scaleZ]));
         this.triangles.load();
 
-        // const render = GetNamedView("ViewRoot").render;
-        const render = viewRoot.render;
+        const render = this.service("RenderManager");
 
         this.material = new Material();
         this.drawCall = new DrawCall(this.triangles, this.material);
@@ -61,8 +59,7 @@ class RoadLayer extends View {
 
     destroy() {
         super.destroy();
-        // const render = GetNamedView("ViewRoot").render;
-        const render = viewRoot.render;
+        const render = this.service("RenderManager");
         render.scene.removeDrawCall(this.drawCall);
         this.triangles.destroy();
     }

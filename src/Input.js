@@ -47,18 +47,12 @@ export class InputManager extends ViewService {
     constructor() {
         super("InputMananger");
 
-        console.log("Starting input manager");
         this.listeners = [];
 
         this.presses = new Map();
         this.lastDown = {};
         this.penultimateDown = {};
-        // this.doubleXY = null;
 
-        // this.lastClick = 0;
-        // this.penultimateClick = 0;
-
-        // document.documentElement.style.touchAction = "none";
         document.body.style.touchAction = "none";
 
         this.addListener(document, 'contextmenu', e => e.preventDefault());
@@ -387,158 +381,6 @@ export class InputManager extends ViewService {
         const y = event.deltaY;
         this.publish("input", "wheel", y);
     }
-
-    // onMouseDown(event) {
-    //     event.preventDefault(); // Required to prevent focus changes that break text input widget focus hack.
-    //     let key = "mouse" + event.button;
-    //     if (KeyDown('Control') && key === 'mouse0') key = 'mouse2';
-    //     if (KeyDown(key)) return;
-    //     const pX = event.clientX;
-    //     const pY = event.clientY;
-    //     keys.add(key);
-    //     this.publish("input", key + "Down", [pX, pY]);
-    //     this.onChordDown(key);
-    //     if (event.timeStamp - this.lastClick < DOUBLE_DURATION) {
-    //         if (event.timeStamp - this.penultimateClick < TRIPLE_DURATION) {
-    //             this.publish("input", key + "Triple", [pX, pY]);
-    //         } else {
-    //             this.publish("input", key + "Double", [pX, pY]);
-    //         }
-    //     }
-    //     this.penultimateClick = this.lastClick;
-    //     this.lastClick = event.timeStamp;
-    // }
-
-    // onMouseUp(event) {
-    //     event.preventDefault();
-    //     let key = "mouse" + event.button;
-    //     if (KeyDown('Control') && key === 'mouse0') key = 'mouse2';
-    //     if (!KeyDown(key)) return;
-    //     const pX = event.clientX;
-    //     const pY = event.clientY;
-    //     this.publish("input", key + "Up", [pX, pY]);
-    //     keys.delete(key);
-    //     this.onChordUp(key);
-    // }
-
-
-
-    // onMouseMove(event) {
-    //     const pX = event.clientX;
-    //     const pY = event.clientY;
-    //     const dX = event.movementX;
-    //     const dY = event.movementY;
-    //     this.publish("input", "mouseXY", [pX, pY]);
-    //     this.publish("input", "mouseDelta", [dX, dY]);
-    // }
-
-    // onTouchStart(event) {
-    //     // event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
-    //     for (const touch of event.changedTouches) {
-    //         const id = touch.identifier;
-    //         const x = touch.clientX;
-    //         const y = touch.clientY;
-    //         const time = event.timeStamp;
-    //         this.addTouch({id, time, start: [x,y], current: [x,y]});
-    //         if (this.touchCount === 1) this.publish("input", "touchDown", [x,y]);
-    //     }
-    //     if (!this.inDouble && this.touchCount > 1) {
-    //         this.inDouble = true;
-    //         const t0 = this.touches[0];
-    //         const t1 = this.touches[1];
-    //         t0.doubleStart = t0.current;
-    //         t1.doubleStart = t1.current;
-    //         const mid = v2_scale(v2_add(t0.doubleStart, t1.doubleStart), 0.5);
-    //         this.publish("input", "doubleStart", mid);
-    //     }
-    // }
-
-    // onTouchEnd(event) {
-    //     //event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
-    //     for (const touch of event.changedTouches) {
-    //         const id = touch.identifier;
-    //         const start = this.getTouch(id);
-    //         this.removeTouch(id);
-
-    //         if (!this.touchCount && start) { // Single touch ended
-    //             const x = touch.clientX;
-    //             const y = touch.clientY;
-    //             const duration = event.timeStamp - start.time;
-    //             const dx = x - start.start[0];
-    //             const dy = y - start.start[1];
-    //             const distanceX = Math.abs(dx);
-    //             const distanceY = Math.abs(dy);
-    //             if (duration < TAP_DURATION && distanceX < TAP_DISTANCE && distanceY < TAP_DISTANCE) this.publish("input", "touchTap", [x,y]);
-    //             if (duration < SWIPE_DURATION && distanceX > SWIPE_DISTANCE) this.publish("input", "touchSwipeX", dx);
-    //             if (duration < SWIPE_DURATION && distanceY > SWIPE_DISTANCE) this.publish("input", "touchSwipeY", dy);
-    //             this.publish("input", "touchUp", [x,y]);
-    //         }
-    //     }
-    //     if (this.inDouble) {
-    //         if (this.touchCount > 1) { // Restart double context with new midpoints
-    //             const t0 = this.touches[0];
-    //             const t1 = this.touches[1];
-    //             t0.doubleStart = t0.current;
-    //             t1.doubleStart = t1.current;
-    //             const mid = v2_scale(v2_add(t0.doubleStart, t1.doubleStart), 0.5);
-    //             this.publish("input", "doubleEnd");
-    //             this.publish("input", "doubleStart", mid);
-    //         } else { // End double context
-    //             this.inDouble = false;
-    //             this.publish("input", "doubleEnd");
-    //         }
-    //     }
-
-    // }
-
-    // onTouchMove(event) {
-    //     event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
-    //     for (const touch of event.changedTouches) {     // Update the current position of all touches
-    //         const id = touch.identifier;
-    //         const t = this.getTouch(id);
-    //         if (!t) continue;
-    //         const x = touch.clientX;
-    //         const y = touch.clientY;
-    //         t.current = [x,y];
-    //     }
-    //     if (this.touchCount === 1) { // Drag event
-    //         const t = this.touches[0];
-    //         const dx = t.current[0] - t.start[0];
-    //         const dy = t.current[1] - t.start[1];
-    //         if (Math.abs(dx) > TAP_DISTANCE || Math.abs(dy) > TAP_DISTANCE) this.publish("input", "touchXY", t.current); // Only publish drag events that exceed the tap distance
-
-    //     } else if (this.touchCount > 1) { // Double touch event
-    //         const t0 = this.touches[0];
-    //         const t1 = this.touches[1];
-
-    //         const xy = v2_scale(v2_add(t0.current, t1.current), 0.5);
-
-    //         const delta0 = v2_sub(t1.doubleStart, t0.doubleStart);
-    //         const delta1 = v2_sub(t1.current, t0.current);
-
-    //         const gap0 = v2_magnitude(delta0);
-    //         const gap1 = v2_magnitude(delta1);
-    //         let zoom = 1;
-    //         if (gap0 > 0) zoom = gap1 / gap0;
-
-    //         const angle0 = Math.atan2(delta0[0], delta0[1]);
-    //         const angle1 = Math.atan2(delta1[0], delta1[1]);
-    //         let dial = (angle1 - angle0 + TAU) % TAU;
-    //         if (dial > Math.PI) dial -= TAU;
-
-    //         this.publish("input", "doubleChanged", {xy, zoom, dial});
-    //     }
-
-    // }
-
-    // onTouchCancel(event) {
-    //     event.preventDefault(); // This suppresses the extra mouse events that touch automatically adds
-    //     this.touches = [];
-    // }
-
-    // validDouble() {
-    //     return this.touch0 && this.touch1;
-    // }
 
     onOrientation(event) {
         const alpha = event.alpha; // yaw

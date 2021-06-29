@@ -28,10 +28,10 @@ export class ActorManager extends ModelService {
         this.actors.delete(actor.id);
     }
 
-    destroyAll() {
-        const doomed = new Map(this.actors);
-        doomed.forEach(actor => actor.destroy());
-    }
+    // destroyAll() {
+    //     const doomed = new Map(this.actors);
+    //     doomed.forEach(actor => actor.destroy());
+    // }
 
 }
 ActorManager.register("ActorManager");
@@ -46,7 +46,7 @@ export class Actor extends WorldCoreModel {
     init(options) {
         super.init();
         this.set(options);
-        this.wellKnownModel('ActorManager').add(this);
+        this.service('ActorManager').add(this);
         this.publish("actor", "createActor", this);
     }
 
@@ -55,7 +55,7 @@ export class Actor extends WorldCoreModel {
     destroy() {
         this.doomed = true; // About to be destroyed. This is used to prevent creating new future messages.
         this.say("destroyActor");
-        this.wellKnownModel('ActorManager').delete(this);
+        this.service('ActorManager').delete(this);
         super.destroy();
     }
 

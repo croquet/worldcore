@@ -1,4 +1,4 @@
-import { NamedView, GetNamedView, v3_divide, Cube, Triangles, Material, DrawCall, m4_translation, v3_multiply, Lines, Cone, m4_rotationX, toRad, GetViewRoot, viewRoot, ViewService } from "@croquet/worldcore";
+import { Cube, Triangles, Material, DrawCall, m4_translation, v3_multiply, ViewService } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { PickFloorSurface, PickDigVoxel, PickFillSurface, PickPlantSurface } from "./VoxelRaycast";
 import { GetTopLayer } from "./Globals";
@@ -6,15 +6,11 @@ import { GetTopLayer } from "./Globals";
 export class VoxelCursor extends ViewService {
     constructor() {
         super("VoxelCursor");
-        // this.viewRoot =  GetNamedView("ViewRoot");
-        // this.viewRoot =  GetViewRoot();
         this.xy = [0,0];
         this.mode = 'dig';
 
         this.mesh = Cube(Voxels.scaleX, Voxels.scaleY, Voxels.scaleZ, [0.2, 0.2, 0, 0.2]);
         this.double = Cube(Voxels.scaleX, Voxels.scaleY, 2*Voxels.scaleZ, [0.2, 0.2, 0, 0.2]);
-        // this.mesh = Cube(Voxels.scaleX, Voxels.scaleY, Voxels.scaleZ, [1, 0, 0, 1]);
-        // this.mesh = this.buildCube();
         this.mesh.transform(m4_translation([Voxels.scaleX/2, Voxels.scaleY/2, Voxels.scaleZ/2]));
         this.double.transform(m4_translation([Voxels.scaleX/2, Voxels.scaleY/2, Voxels.scaleZ]));
         this.mesh.load();
@@ -30,8 +26,8 @@ export class VoxelCursor extends ViewService {
         this.doubleCall = new DrawCall(this.double, this.material);
         this.doubleCall.isHidden = false;
 
-        viewRoot.render.scene.addDrawCall(this.drawCall);
-        viewRoot.render.scene.addDrawCall(this.doubleCall);
+        this.service("RenderManager").scene.addDrawCall(this.drawCall);
+        this.service("RenderManager").scene.addDrawCall(this.doubleCall);
 
         this.subscribe("ui", "pointerMove", this.onPointerMove);
         this.subscribe("hud", "editMode", this.onEditMode);
@@ -80,7 +76,7 @@ export class VoxelCursor extends ViewService {
         let call = this.drawCall;
 
         if (xyz && Voxels.canEdit(...xyz)) { // If the picked voxel is hidden by surfaces above it, draw the double-height cursor
-            const surfaces = this.wellKnownModel('Surfaces');
+            const surfaces = this.modelService('Surfaces');
             const above = Voxels.adjacent(...xyz, Voxels.above);
             const aboveKey = Voxels.packKey(...above);
             const aboveSurface = surfaces.get(aboveKey);
@@ -90,27 +86,6 @@ export class VoxelCursor extends ViewService {
             call.transform.set(m4_translation(translation));
         }
 
-    }
-
-    // digXYZ() {
-    //     const surfaces = this.wellKnownModel('Surfaces');
-    //     const xyz = PickDigVoxel(this.xy, GetTopLayer());
-    //     if (!xyz) return xyz;
-    //     const above = Voxels.adjacent(...xyz, Voxels.above);
-    //     const aboveKey = Voxels.packKey(...above);
-    //     const aboveSurface = surfaces.get(aboveKey);
-    //     if (aboveSurface && aboveSurface.hidesBelow()) {};
-    //     return xyz;
-    // }
-
-    buildCube() {
-        const lines = new Triangles();
-        const x = Voxels.scaleX;
-        const y = Voxels.scaleY;
-        const z = Voxels.scaleZ;
-        const c = [1,1,1,1];
-        lines.addFace([[0,0,z],[x,0,z],[x,y,z],[0,y,z]],[c,c,c,c]);
-        return lines;
     }
 
 }

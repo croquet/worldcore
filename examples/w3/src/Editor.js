@@ -1,4 +1,4 @@
-import { GetNamedView, NamedView, ViewService } from "@croquet/worldcore";
+import { ViewService } from "@croquet/worldcore";
 import { GetTopLayer } from "./Globals";
 import { PickFillSurface, PickFloorSurface, PickDigVoxel, PickPlantSurface } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";

@@ -13,10 +13,10 @@ export class WorldBuilder extends ModelService {
 
     build() {
         console.log("Building new world ... ");
-        const voxels = this.wellKnownModel('Voxels');
-        const surfaces = this.wellKnownModel("Surfaces");
-        const water = this.wellKnownModel('Water');
-        const props = this.wellKnownModel('Props');
+        const voxels = this.service('Voxels');
+        const surfaces = this.service("Surfaces");
+        const water = this.service('Water');
+        const props = this.service('Props');
 
         const landMatrix = Array.from(Array(Voxels.sizeX), ()=>Array.from(Array(Voxels.sizeY), ()=>Array.from(Array(Voxels.sizeZ), ()=>0)));
 

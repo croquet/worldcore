@@ -53,7 +53,7 @@ export class HUD extends Widget {
         spawnToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: spawnOffIcon}));
         spawnToggle.onToggleOn = () => this.publish("hud", "editMode", "spawn");
 
-        const animals = this.wellKnownModel("Animals");
+        const animals = this.modelService("Animals");
         const counterBackground = new EmptyWidget(this, {local: [140,80], size: [100,50]} );
         this.spawnCounter = new TextWidget(counterBackground, {autoSize: [1,1], point: 20, color: [1,1,1], alignX: 'left', alignY: 'middle', text: animals.animals.size.toString()})
 

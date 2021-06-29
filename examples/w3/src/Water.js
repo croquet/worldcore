@@ -1,6 +1,5 @@
-import { Model } from "@croquet/croquet";
-import { Actor, Pawn, mix, PM_Dynamic, PM_Spatial, PM_InstancedVisible, PM_Visible, CachedObject, UnitCube, DrawCall, GetNamedView,
-    GetNamedModel, Triangles, Material, v3_add, m4_identity, GetViewRoot, viewRoot, ModelService } from "@croquet/worldcore";
+import { Actor, Pawn, mix, PM_Spatial, PM_Visible, CachedObject, UnitCube, DrawCall, Triangles, Material, v3_add,
+    ModelService } from "@croquet/worldcore";
 import { AM_VoxelSmoothed } from "./Components";
 import { Voxels } from "./Voxels";
 import paper from "../assets/paper.jpg";
@@ -199,7 +198,7 @@ class WaterLayer extends Actor {
         if (this.active.size === 0) return;
 
         const nextActive = new Set();
-        const voxels = this.wellKnownModel("modelRoot").voxels;
+        const voxels = this.service("Voxels");
 
         // Fall into the voxel below
 
@@ -438,7 +437,7 @@ class WaterLayerPawn extends mix(Pawn).with(PM_Visible) {
     constructor(...args) {
         super(...args);
 
-        voxels = this.wellKnownModel("Voxels");
+        voxels = this.modelService("Voxels");
 
         this.mesh = new Triangles();
         const material = CachedObject("waterMaterial", this.buildMaterial);
@@ -536,6 +535,7 @@ function ScaleColor(c, v) {
 //------------------------------------------------------------------------------------------
 
 class WaterSourceActor extends mix(Actor).with(AM_VoxelSmoothed) {
+
     get pawn() {return WaterSourcePawn}
     get flow() { return this._flow || 0} // Voxels / second
 
@@ -546,13 +546,12 @@ class WaterSourceActor extends mix(Actor).with(AM_VoxelSmoothed) {
     }
 
     tick(delta) {
-        console.log("source tick");
-        const voxels = this.wellKnownModel("Voxels");
+        const voxels = this.service("Voxels");
         if (voxels.get(...this.xyz)) {
             this.destroy();
             return;
         }
-        const water = this.wellKnownModel("Water");
+        const water = this.service("Water");
         const flow = delta * this.flow / 1000;
         const volume = Math.max(0, Math.min(1, water.getVolume(...this.xyz) + flow));
         water.setVolume(...this.xyz, volume);
@@ -572,8 +571,7 @@ class WaterSourcePawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         const mesh = this.buildMesh();
         const material = this.buildMaterial();
         const draw = new DrawCall(mesh, material);
-        // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        this.viewRoot.render.scene.addDrawCall(draw);
+        this.service("RenderManager").scene.addDrawCall(draw);
         return draw;
     }
 
@@ -613,6 +611,3 @@ function Opposite(side) {
     }
 }
 
-// Waterfalls -- Rethink the whole strategy
-// Water affects pathing
-// Characters can drown

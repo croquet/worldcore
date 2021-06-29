@@ -37,6 +37,7 @@ export class Paths extends ModelService {
 
     init() {
         super.init("Paths");
+
         this.subscribe("surfaces", "newLevel", this.onNewLevel);
         this.subscribe("surfaces", "changed", this.onChanged);
     }
@@ -54,7 +55,7 @@ export class Paths extends ModelService {
     buildAll() {
         this.waypoints = new Map();
         const waypoints = this.waypoints;
-        const surfaces = this.wellKnownModel("Surfaces");
+        const surfaces = this.service("Surfaces");
         surfaces.surfaces.forEach((surface,key) => {
             if (surface.hasFloor()) {
                 const w = new Waypoint();
@@ -68,7 +69,7 @@ export class Paths extends ModelService {
     buildLocal(remove) {
         const changed = Voxels.expandKeySet(remove);
         const waypoints = this.waypoints;
-        const surfaces = this.wellKnownModel("Surfaces");
+        const surfaces = this.service("Surfaces");
         const added = new Set();
         changed.forEach(key => {
             waypoints.delete(key);
@@ -92,7 +93,7 @@ export class Paths extends ModelService {
     }
 
     findPath(startKey, endKey) {
-        const water = this.wellKnownModel('Water');
+        const water = this.service('Water');
         const path = [];
 
         if (!this.waypoints.has(startKey)) return path;  // Invalid start waypoint

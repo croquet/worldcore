@@ -47,7 +47,7 @@ ModelRoot.register("ModelRoot");
 // A model service is a named singleton that's created by the root model. Do not instantiate
 // model services directly.
 
-export class ModelService extends Model {
+export class ModelService extends WorldCoreModel {
 
     init(name) {
         super.init();

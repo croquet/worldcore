@@ -1,11 +1,15 @@
 import { Model } from "@croquet/croquet";
-import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, AM_Smoothed, PM_Smoothed, Material, PM_InstancedVisible, GetNamedView, v3_add,
+import { mix, Actor, Pawn, PM_Spatial, AM_Smoothed, PM_Smoothed, Material, PM_InstancedVisible, v3_add,
     Cylinder, Cone, m4_translation, CachedObject, q_axisAngle, TAU, InstancedDrawCall, m4_rotationX, toRad, v3_scale,
-    Behavior, AM_Behavioral, GetViewRoot, viewRoot, ModelService
+    Behavior, AM_Behavioral, viewRoot, ModelService
  } from "@croquet/worldcore";
 import { FallBehavior } from "./SharedBehaviors"
 import paper from "../assets/paper.jpg";
 import { AM_VoxelSmoothed, PM_LayeredInstancedVisible } from "./Components";
+
+//------------------------------------------------------------------------------------------
+//-- Props ---------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
 export class Props extends ModelService {
     init() {
@@ -72,7 +76,7 @@ export class Props extends ModelService {
 Props.register("Props");
 
 //------------------------------------------------------------------------------------------
-//-- Prop ----------------------------------------------------------------------------------
+//-- PropActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class PropActor extends mix(Actor).with(AM_VoxelSmoothed) {
@@ -81,17 +85,21 @@ class PropActor extends mix(Actor).with(AM_VoxelSmoothed) {
 
     init(options) {
         super.init(options);
-        const props = this.wellKnownModel("Props");
+        const props = this.service("Props");
         if (this.key) props.set(this.key, this);
     }
 
     destroy() {
         super.destroy();
-        const props = this.wellKnownModel("Props");
+        const props = this.service("Props");
         if (this.key) props.delete(this.key);
     }
 }
 PropActor.register('PropActor');
+
+//------------------------------------------------------------------------------------------
+//-- PropPawn ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
 class PropPawn extends mix(Pawn).with(PM_Spatial, PM_LayeredInstancedVisible) {
     constructor(...args) {
@@ -101,7 +109,7 @@ class PropPawn extends mix(Pawn).with(PM_Spatial, PM_LayeredInstancedVisible) {
 }
 
 //------------------------------------------------------------------------------------------
-//-- Tree ----------------------------------------------------------------------------------
+//-- TreeBehaviors -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class TreeBehavior extends Behavior {
@@ -122,6 +130,10 @@ class TreeBehavior extends Behavior {
 }
 TreeBehavior.register('TreeBehavior');
 
+//------------------------------------------------------------------------------------------
+//-- TreeActor -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
 export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
     get pawn() {return TreePawn};
     get size() {return this._size || 0.2}
@@ -135,7 +147,7 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
 
     randomizePosition() {
         if (!this._maxSize) this._maxSize = 1 - 0.6 * this.random();
-        const surface = this.wellKnownModel('Surfaces').get(this.key);
+        const surface = this.service('Surfaces').get(this.key);
         let x = 0.2 + 0.6 * this.random();
         let y = 0.2 + 0.6 * this.random();
         let z = surface.rawElevation(x,y);
@@ -156,7 +168,7 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
     }
 
     validate() {
-        const surface = this.wellKnownModel('Surfaces').get(this.key);
+        const surface = this.service('Surfaces').get(this.key);
         if (!surface || surface.rawElevation(this.fraction[0], this.fraction[1]) !== this.fraction[2]) this.harvest();
     }
 
@@ -172,6 +184,10 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
 }
 TreeActor.register("TreeActor");
 
+//------------------------------------------------------------------------------------------
+//-- TreePawn ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
 class TreePawn extends PropPawn {
     constructor(...args) {
         super(...args);
@@ -182,8 +198,7 @@ class TreePawn extends PropPawn {
         const mesh = CachedObject("pineTreeMesh", this.buildMesh);
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        viewRoot.render.scene.addDrawCall(draw);
+        this.service("RenderManager").scene.addDrawCall(draw);
         return draw;
     }
 
@@ -232,8 +247,7 @@ export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         const mesh = CachedObject("timberMesh", this.buildMesh);
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        viewRoot.render.scene.addDrawCall(draw);
+        this.service("RenderManager").scene.addDrawCall(draw);
         return draw;
     }
 
@@ -267,8 +281,8 @@ export class RoadActor extends PropActor {
     }
 
     connect() {
-        const paths = this.wellKnownModel("Paths");
-        const props = this.wellKnownModel("Props");
+        const paths = this.service("Paths");
+        const props = this.service("Props");
         const waypoint = paths.waypoints.get(this.key);
         if (!waypoint) return; // error here
 
@@ -281,7 +295,7 @@ export class RoadActor extends PropActor {
     }
 
     validate() {
-        const surface = this.wellKnownModel('Surfaces').get(this.key);
+        const surface = this.service('Surfaces').get(this.key);
         if (!surface || !surface.hasFloor()) this.destroy();
     }
 
@@ -298,8 +312,7 @@ class RoadPawn extends PropPawn {
         const mesh = CachedObject("raodMesh", this.buildMesh);
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        // GetNamedView('ViewRoot').render.scene.addDrawCall(draw);
-        viewRoot.render.scene.addDrawCall(draw);
+        this.service("RenderManager").scene.addDrawCall(draw);
         return draw;
     }
 

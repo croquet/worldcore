@@ -1,4 +1,4 @@
-import { Triangles, GetNamedView, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, ViewService, GetViewRoot, viewRoot } from "@croquet/worldcore";
+import { Triangles, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, ViewService, viewRoot } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "./Globals";
 
@@ -26,7 +26,7 @@ import stripe from "../assets/stripe50.png";
 export class VoxelRender extends ViewService {
     constructor() {
         super("VoxelRender");
-        const render = viewRoot.render;
+        const render = this.service("RenderManager");
 
         this.exteriorMaterial = new Material();
         this.exteriorMaterial.texture.loadFromURL(paper);
@@ -43,17 +43,13 @@ export class VoxelRender extends ViewService {
 
         this.rebuildAll();
 
-        // this.subscribe("surfaces", "newLevel", () => this.rebuildAll());
-        // this.subscribe("surfaces", "changed", data => this.rebuildLocal(data.add, data.remove));
-
         this.subscribe("surfaces", "newLevel", this.rebuildAll);
         this.subscribe("surfaces", "changed", this.rebuildLocal);
     }
 
     destroy() {
         super.detach();
-        // const render = GetNamedView("ViewRoot").render;
-        const render = viewRoot.render;
+        const render = this.service("RenderManager");
 
         this.exteriorMaterial.destroy();
         this.exteriorMesh.destroy();
@@ -126,7 +122,6 @@ class ExteriorMesh {
 
     rebuild() {
         this.clear();
-        // const surfaces = GetNamedView("ViewRoot").model.surfaces;
         const surfaces = viewRoot.model.surfaces;
         surfaces.surfaces.forEach((surface,key) => this.addKey(key));
     }
@@ -137,8 +132,6 @@ class ExteriorMesh {
     }
 
     draw() {
-        // const top = GetNamedView("ViewRoot").topLayer;
-        // const top = Voxels.sizeZ;
         const top = GetTopLayer();
         if (top < Voxels.sizeZ) this.bottomLayers[top].draw();
         for (let i = top-1; i >= 0; i--) {
@@ -191,7 +184,6 @@ class InteriorMesh {
 
     rebuild() {
         this.clear();
-        // const surfaces = GetNamedView("ViewRoot").model.surfaces;
         const surfaces = viewRoot.model.surfaces;
         surfaces.surfaces.forEach((surface,key) => this.addKey(key));
     }
@@ -262,7 +254,6 @@ class Layer {
     }
 
     rebuild() {
-        // const surfaces = GetNamedView("ViewRoot").model.surfaces;
         const surfaces = viewRoot.model.surfaces;
         this._triangles.clear();
         this._lines.clear();
@@ -320,7 +311,6 @@ class InteriorLayer extends Layer {
     }
 
     rebuild() {
-        // const surfaces = GetNamedView("ViewRoot").model.surfaces;
         const surfaces = viewRoot.model.surfaces;
         this._triangles.clear();
         this._lines.clear();
@@ -341,7 +331,6 @@ class InteriorLayer extends Layer {
     }
 
     rebuildInterior() {
-        // const voxels = GetNamedView("ViewRoot").model.voxels;
         const voxels = viewRoot.model.voxels;
         this.hasInterior = false;
         for (let x = 0; x < Voxels.sizeX; x++) {
@@ -745,252 +734,3 @@ function BuildMeshZ(triangles, lines, xyz, corners, tColor, lColor) {
     if (lines) lines.addFace(vertices, lColors, coordinates);
 }
 
-// The old layer code managed a set of tiles that then would get merged to form the layer mesh.
-// However the mesh generation code is efficient enough that it's actually faster to generate
-// the layers from scratch instead of merging their submeshes.
-//
-// Keeping this around in case we need to revert.
-
-// class Layer {
-//     constructor(z) {
-//         this.z = z;
-//         this.tiles = new Map();
-//         this._triangles = new Triangles();
-//         this._lines = new Lines();
-//         this.isChanged = false;
-//     }
-
-//     destroy() {
-//         this.clear();
-//         this._triangles.destroy();
-//         this._lines.destroy();
-//     }
-
-//     isEmpty() {
-//         return this.tiles.size === 0;
-//     }
-
-//     markChanged() {
-//         this.isChanged = true;
-//     }
-
-//     clear() {
-//         this.tiles.forEach(tile=>tile.destroy);
-//         this.tiles.clear();
-//         this.markChanged();
-//     }
-
-//     tileID(id) {
-//         const xyz = Voxels.unpackID(id);
-//         const x = xyz[0] >> 4;            // Divide by 8
-//         const y = xyz[1] >> 4;            // Divide by 8
-//         return (x << 4 | y);
-//     }
-
-//     addID(id) {
-//         const tileID = this.tileID(id);
-//         if (!this.tiles.has(tileID)) this.tiles.set(tileID, this.newTile());
-//         this.tiles.get(tileID).addID(id);
-//         this.markChanged();
-//     }
-
-//     removeID(id) {
-//         const tileID = this.tileID(id);
-//         this.markChanged();
-//         if (!this.tiles.has(tileID)) return;
-//         const tile = this.tiles.get(tileID);
-//         tile.removeID(id);
-//         if (tile.isEmpty()) {
-//             tile.destroy();
-//             this.tiles.delete(tileID);
-//         }
-//     }
-
-//     get triangles() {
-//         if (this.isChanged) this.rebuild();
-//         return this._triangles;
-//     }
-
-//     get lines() {
-//         if (this.isChanged) this.rebuild();
-//         return this._lines;
-//     }
-
-//     rebuild() {
-//         this._triangles.clear();
-//         this._lines.clear();
-//         this.tiles.forEach(tile=>{
-//             this._triangles.merge(tile.triangles);
-//             this._lines.merge(tile.lines);
-//         });
-//         this.isChanged = false;
-//         this._triangles.load();
-//         this._lines.load();
-//         this._triangles.clear();
-//         this._lines.clear();
-//     }
-
-//     draw() {
-//         if (this.isEmpty()) return;
-//         this.triangles.draw();
-//         this.lines.draw();
-//     }
-
-// }
-
-// class TopLayer extends Layer {
-//     newTile() { return new TopTile(); }
-// }
-
-// class MiddleLayer extends Layer {
-//     newTile() { return new MiddleTile(); }
-// }
-
-// class BottomLayer extends Layer {
-//     newTile() { return new BottomTile(); }
-// }
-
-// class InteriorLayer extends Layer {
-//     constructor(z) {
-//         super(z);
-//         this.rebuildInterior();
-//     }
-
-//     newTile() { return new InteriorTile(); }
-
-//     isEmpty() {
-//         return (this.tiles.size === 0 && !this.hasInterior);
-//     }
-
-//     rebuild() {
-//         this._triangles.clear();
-//         this._lines.clear();
-//         this.rebuildInterior();
-//         this.tiles.forEach(tile=>{
-//             this._triangles.merge(tile.triangles);
-//             this._lines.merge(tile.lines);
-//         });
-//         this.isChanged = false;
-//         this._triangles.load();
-//         this._lines.load();
-//         this._triangles.clear();
-//         this._lines.clear();
-//     }
-
-//     rebuildInterior() {
-//         this.hasInterior = false;
-//         const voxels = GetNamedView("viewRoot").model.voxels;
-//         for (let x = 0; x < Voxels.sizeX; x++) {
-//             for (let y = 0; y < Voxels.sizeY; y++) {
-//                 const type = voxels.get(x, y, this.z);
-//                 if (!type) continue;
-//                 let belowType = type;
-//                 if (this.z > 0) belowType = voxels.get(x, y, this.z-1);
-//                 if (!belowType) continue;
-//                 const ic = InteriorColor(belowType);
-//                 const lic = LineInteriorColor(belowType);
-//                 BuildMeshZ(this._triangles, this._lines, [x,y,this.z], [[0,0,0], [1,0,0], [1,1,0], [0,1,0]], ic, lic);
-//                 this.hasInterior = true;
-//             }
-//         }
-//     }
-// }
-
-//--------------------------------------------------------------------------------
-//-- Tile ------------------------------------------------------------------------
-//--------------------------------------------------------------------------------
-
-// Tiles are little square grids of raw geometry. They know how to build themselves
-// from surface information.
-
-// class Tile {
-
-//     constructor() {
-//         this.ids = new Set();
-//         this._triangles = new Triangles();
-//         this._lines = new Lines();
-//         this.isChanged = false;
-//     }
-
-//     destroy() {
-//         this.clear();
-//         this._triangles.destroy();
-//         this._lines.destroy();
-//     }
-
-//     isEmpty() {
-//         return this.ids.size === 0;
-//     }
-
-//     markChanged() {
-//         this.isChanged = true;
-//     }
-
-//     clear() {
-//         this.ids.clear();
-//         this.markChanged();
-//     }
-
-//     addID(id) {
-//         this.ids.add(id);
-//         this.markChanged();
-//     }
-
-//     removeID(id) {
-//         this.ids.delete(id);
-//         this.markChanged();
-//     }
-
-//     get triangles() {
-//         if (this.isChanged) this.rebuild();
-//         return this._triangles;
-//     }
-
-//     get lines() {
-//         if (this.isChanged) this.rebuild();
-//         return this._lines;
-//     }
-
-//     rebuild() {
-//         const surfaces = GetNamedView("viewRoot").model.surfaces;
-//         this._triangles.clear();
-//         this._lines.clear();
-//         this.ids.forEach(id=>this.buildGeometry(surfaces.get(id)));
-//         this.isChanged = false;
-//     }
-
-// }
-
-// class TopTile extends Tile {
-
-//     buildGeometry(surface) {
-//         BuildCeiling(this._triangles, this._lines, surface);
-//     }
-// }
-
-// class MiddleTile extends Tile {
-
-//     buildGeometry(surface) {
-//         BuildNorthWall(this._triangles, this._lines, surface);
-//         BuildEastWall(this._triangles, this._lines, surface);
-//         BuildSouthWall(this._triangles, this._lines, surface);
-//         BuildWestWall(this._triangles, this._lines, surface);
-//         BuildFloorMiddle(this._triangles, this._lines, surface);
-//     }
-// }
-
-// class BottomTile extends Tile {
-
-//     buildGeometry(surface) {
-//         BuildFloorBottom(this._triangles, this._lines, surface);
-//     }
-
-// }
-
-// class InteriorTile extends Tile {
-
-//     buildGeometry(surface) {
-//         BuildFloorInterior(this._triangles, this._lines, surface);
-//     }
-
-// }
