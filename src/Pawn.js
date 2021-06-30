@@ -1,5 +1,5 @@
 /* eslint-disable new-cap */
-import { ViewService, viewRoot, WorldCoreView } from "./Root";
+import { ViewService, WorldcoreView } from "./Root";
 
 //------------------------------------------------------------------------------------------
 //-- PawnManager ---------------------------------------------------------------------------
@@ -74,7 +74,7 @@ export class PawnManager extends ViewService {
 //-- Pawn ----------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class Pawn extends WorldCoreView {
+export class Pawn extends WorldcoreView {
 
     constructor(actor) {
         super(actor);

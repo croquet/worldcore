@@ -1,5 +1,5 @@
 import { View} from "@croquet/croquet";
-import { Triangles, GetNamedView, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, NamedView, UnitCube, m4_translation, GetViewRoot, viewRoot, ViewService, WCView, WorldCoreView } from "@croquet/worldcore";
+import { Triangles, GetNamedView, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, NamedView, UnitCube, m4_translation, GetViewRoot, viewRoot, ViewService, WCView, WorldcoreView } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "./Globals";
 
@@ -41,7 +41,7 @@ export class RoadRender extends ViewService {
 //-- RoadLayer -------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 
-class RoadLayer extends WorldCoreView {
+class RoadLayer extends WorldcoreView {
     constructor(model,z) {
         super(model);
         this.z = z;

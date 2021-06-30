@@ -1,6 +1,5 @@
-import { Model } from "@croquet/croquet";
 import { Pawn } from "./Pawn";
-import { ModelService, WorldCoreModel } from "./Root";
+import { ModelService, WorldcoreModel } from "./Root";
 
 //------------------------------------------------------------------------------------------
 //-- ActorManager --------------------------------------------------------------------------
@@ -40,7 +39,7 @@ ActorManager.register("ActorManager");
 //-- Actor ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class Actor extends WorldCoreModel {
+export class Actor extends WorldcoreModel {
     get pawn() {return Pawn}
 
     init(options) {

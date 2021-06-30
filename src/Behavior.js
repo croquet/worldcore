@@ -1,5 +1,5 @@
 import { RegisterMixin } from "./Mixins";
-import { WorldCoreModel } from "./Root";
+import { WorldcoreModel } from "./Root";
 import { Shuffle } from "./Utilities";
 
 //------------------------------------------------------------------------------------------
@@ -28,7 +28,7 @@ RegisterMixin(AM_Behavioral);
 //-- Behavior ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class Behavior extends WorldCoreModel {
+export class Behavior extends WorldcoreModel {
     init(options) {
         super.init();
         this.set(options);

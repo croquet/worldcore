@@ -1,7 +1,7 @@
 import { v2_sub, v2_multiply, v2_add, v2_scale, v4_scale, v2_magnitude } from "./Vector";
 import { LoadFont, LoadImage} from "./ViewAssetCache";
 import QRCode from "../lib/qr/qrcode";
-import { ViewService, WorldCoreView } from "./Root";
+import { ViewService, WorldcoreView } from "./Root";
 
 let ui;             // The UI manager
 
@@ -210,7 +210,7 @@ export class UIManager extends ViewService {
 
 // The base widget class.
 
-export class Widget extends WorldCoreView {
+export class Widget extends WorldcoreView {
     constructor(parent, options) {
         super(ui.model);
         this.set(options);

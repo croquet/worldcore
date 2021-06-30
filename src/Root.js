@@ -4,22 +4,23 @@ import { PawnManager} from "./Pawn";
 import { ClearObjectCache } from "./ObjectCache";
 
 //------------------------------------------------------------------------------------------
-//-- WorldCoreModel ------------------------------------------------------------------------
+//-- WorldcoreModel ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 // Extends the model base class with WorldCore-specific methods.
 
-export class WorldCoreModel extends Model {
+export class WorldcoreModel extends Model {
 
     service(name) { return this.wellKnownModel(name) }
 
 }
+WorldcoreModel.register("WorldcoreModel");
 
 //------------------------------------------------------------------------------------------
 //-- ModelRoot -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class ModelRoot extends Model {
+export class ModelRoot extends WorldcoreModel {
     init() {
         super.init();
         this.beWellKnownAs("ModelRoot");
@@ -47,7 +48,7 @@ ModelRoot.register("ModelRoot");
 // A model service is a named singleton that's created by the root model. Do not instantiate
 // model services directly.
 
-export class ModelService extends WorldCoreModel {
+export class ModelService extends WorldcoreModel {
 
     init(name) {
         super.init();
@@ -61,15 +62,15 @@ export class ModelService extends WorldCoreModel {
 ModelService.register('ModelService');
 
 //------------------------------------------------------------------------------------------
-//-- WorldCoreView -------------------------------------------------------------------------
+//-- WorldcoreView -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 // Extends the view base class with WorldCore-specific methods.
 
-export class WorldCoreView extends View {
+export class WorldcoreView extends View {
 
-    modelService(name) { return this.wellKnownModel(name) }
     service(name) { return viewServices.get(name) }
+    modelService(name) { return this.wellKnownModel(name) }
     get time() {return time1}
     get delta()  {return time1 - time0}
 
@@ -86,7 +87,7 @@ let time0 = 0;
 let time1 = 0;
 const viewServices = new Map();
 
-export class ViewRoot extends WorldCoreView {
+export class ViewRoot extends WorldcoreView {
 
     constructor(model) {
         super(model);
@@ -127,7 +128,7 @@ export class ViewRoot extends WorldCoreView {
 //-- ViewService ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class ViewService extends WorldCoreView {
+export class ViewService extends WorldcoreView {
 
     constructor(name) {
         super(viewRoot.model);
