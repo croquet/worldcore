@@ -145,16 +145,16 @@ export const PM_Tree = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
         this.listen("_parent", this.onChangeParent);
-
-        if (this.actor.parent) {
-            const parent = GetPawn(this.actor.parent.id);
-            parent.addChild(this.actor.id);
-        }
     }
 
-    link() {
-        super.link();
-        if (this.actor.children) this.actor.children.forEach(child => this.addChild(child.id));
+    get parent() {
+        if (this.actor.parent && !this._parent) this._parent = GetPawn(this.actor.parent.id);
+        return this._parent;
+    }
+
+    get children() {
+        if (this.actor.children && !this._children) this.actor.children.forEach(child => { this.addChild(child.id); })
+        return this._children;
     }
 
     onChangeParent(d) {
@@ -169,16 +169,16 @@ export const PM_Tree = superclass => class extends superclass {
     addChild(id) {
         const child = GetPawn(id);
         if (!child) return;
-        if (!this.children) this.children = new Set();
-        this.children.add(child);
-        child.parent = this;
+        if (!this._children) this._children = new Set();
+        this._children.add(child);
+        child._parent = this;
     }
 
     removeChild(id) {
         const child = GetPawn(id);
         if (!child) return;
-        if (this.children) this.children.delete(child);
-        child.parent = null;
+        if (this._children) this._children.delete(child);
+        child._parent = null;
     }
 };
 

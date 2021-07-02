@@ -13,9 +13,13 @@ export class PawnManager extends ViewService {
         pm = this;
         this.pawns = new Map();
         this.dynamic = new Set();
-        this.rebuild();
+
+        const actorManager = this.modelService("ActorManager");
+        actorManager.actors.forEach(actor => this.spawnPawn(actor));
+
         // Spawning pawns is an immediate subscription because pawns subscribe to actor messages in their
         // constructors. This guarantees the pawn will be around if the new actor immediately sends a message.
+
         this.subscribe("actor", {event: "createActor", handling: "immediate"}, this.spawnPawn);
     }
 
@@ -24,17 +28,6 @@ export class PawnManager extends ViewService {
         doomed.forEach(pawn => pawn.destroy());
         this.detach(); // de-register as a view
         pm = null;
-    }
-
-    rebuild() {
-        // const actorManager = viewRoot.model.wellKnownModel("ActorManager");
-        const actorManager = this.modelService("ActorManager");
-        actorManager.actors.forEach(actor => this.rebuildPawn(actor));
-        this.pawns.forEach(pawn => pawn.link());
-    }
-
-    rebuildPawn(actor) {
-        this.spawnPawn(actor);
     }
 
     spawnPawn(actor) {
@@ -86,10 +79,6 @@ export class Pawn extends WorldcoreView {
     get actor() {return this._actor};
     get pawnManager() { return pm};
 
-    // Link is called on start-up after all pre-existing pawns are re-instatiated. This is where pawn-pawn pointers can be rebuilt.
-
-    link() {}
-
     // Updates the pawn visuals (if there are any). Mixins that handle rendering should overload it. Mixins that handle transforms should call it
     // at most once per frame.
 
@@ -115,15 +104,6 @@ export class Pawn extends WorldcoreView {
     listenOnce(event, callback) {
         this.subscribe(this.actor.id, {event, handling: "oncePerFrame"}, callback);
     }
-
-    // If the actor is owned by a particular view, returns it viewId.
-    get userId() { return this.actor.userId;}
-
-    // Returns true if the actor is owned by my view.
-    get isMine() {
-        return this.userId === this.viewId;
-    }
-
 
 }
 
