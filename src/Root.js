@@ -25,12 +25,11 @@ export class ModelRoot extends WorldcoreModel {
         super.init();
         this.beWellKnownAs("ModelRoot");
         this.services = new Set();
+        this.actorManager = this.addService(ActorManager);
         this.createServices();
     }
 
-    createServices() {
-        this.actorManager = this.addService(ActorManager);
-    }
+    createServices() {}
 
     addService(service, options) {
         const s = service.create(options);
@@ -98,11 +97,10 @@ export class ViewRoot extends WorldcoreView {
         viewServices.clear();
         ClearObjectCache();
         this.createServices();
-    }
-
-    createServices() {
         this.pawnManager = this.addService(PawnManager);
     }
+
+    createServices() {}
 
     detach() {
         viewServices.forEach(s => s.destroy());

@@ -49,8 +49,6 @@ export class Actor extends WorldcoreModel {
         this.publish("actor", "createActor", this);
     }
 
-    // get userId() { return this._userId; }
-
     destroy() {
         this.doomed = true; // About to be destroyed. This is used to prevent creating new future messages.
         this.say("destroyActor");

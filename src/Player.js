@@ -1,58 +1,47 @@
-import { Model } from "@croquet/croquet";
-import { NamedView } from "./NamedView";
+import { Actor } from "./Actor";
 import { RegisterMixin } from "./Mixins";
+import { ModelService } from "./Root";
 
 //------------------------------------------------------------------------------------------
 //-- PlayerManager -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Maintains a list of players connected to the session.
+// Maintains a list of player connected to the session. Your player manager should override the
+// createPlayer() method.
 
-export class PlayerManager extends Model {
+export class PlayerManager extends ModelService {
 
     init() {
-        super.init();
-        this.beWellKnownAs('PlayerManager');
+        super.init('PlayerManager');
         this.players = new Map();
-        this.subscribe(this.sessionId, "view-join", this.join);
-        this.subscribe(this.sessionId, "view-exit", this.exit);
+        this.subscribe(this.sessionId, "view-join", this.onJoin);
+        this.subscribe(this.sessionId, "view-exit", this.onExit);
     }
 
-    destroy() {
-        super.destroy();
-        this.players = null;
-    }
-
-    join(viewId) {
-        if (!PlayerManager.playerType) return;
-        const player = PlayerManager.playerType.create({playerId: viewId});
+    onJoin(viewId) {
         if (this.players.has(viewId)) console.warn("PlayerManager received duplicate view-join for viewId " + viewId);
+        const player = this.createPlayer({playerId: viewId});
         this.players.set(viewId, player);
-        this.subscribe(player.id, "playerChanged", this.playerChanged);
-        this.listChanged();
+        this.publish("playerManager", "create", player);
     }
 
-    exit(viewId) {
-        if (!PlayerManager.playerType) return;
-        const player = this.players.get(viewId);
+    // This method can be overridden to create your specific actor type. Note that if you want to pass additional options
+    // you need to add them to the existing options object.
+
+    createPlayer(options) {
+        return Actor.create(options);
+    }
+
+    onExit(viewId) {
+        const player = this.player(viewId);
         if (!player) console.warn("PlayerManager received duplicate view-exit for viewId " + viewId);
-        this.unsubscribe(player.id, "playerChanged");
+        this.publish("playerManager", "destroy", player);
         player.destroy();
         this.players.delete(viewId);
-        this.listChanged();
     }
 
-    get count() {
-        return this.players.size;
-    }
-
-    listChanged() {
-        this.publish("playerManager", "listChanged");
-    }
-
-    playerChanged() {
-        this.publish("playerManager", "playerChanged");
-    }
+    get count() { return this.players.size }
+    player(viewId) { return this.players.get(viewId) }
 
 }
 PlayerManager.register("PlayerManager");
@@ -62,39 +51,24 @@ PlayerManager.register("PlayerManager");
 //-- Player --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// The player actor is automatically created whenever a player joins. You should only ever
-// declare one actor as the player actor.
+// A player actor is automatically created whenever a player joins. You should specify the player
+// actor class in the playerActor method of your PlayerManager. The playerId is the viewId
+// of the view that spawned the player actor.
 
 //-- Actor ---------------------------------------------------------------------------------
 
 export const AM_Player = superclass => class extends superclass {
 
-    static register(...args) {
-        super.register(...args);
-        if (PlayerManager.playerType) (console.warn("Multiple player actors declared!!"));
-        PlayerManager.playerType = this;
-    }
-
-    init(pawnType, options) {
-        if (options) { this.playerId = options.playerId; }   // The playerId of the player that owns this actor.
-        super.init(pawnType, options);
-    }
-
-    playerChanged() {
-        this.say("playerChanged");
-    }
+    get playerId() { return this._playerId }
 
 };
 RegisterMixin(AM_Player);
 
 //-- Pawn ----------------------------------------------------------------------------------
 
-// It's ok for there to be multiple pawns to be declared as player pawns. This way you can have a player
-// pawn with multiple sub-pawns that all can check if they belong to the local player.
-
 export const PM_Player = superclass => class extends superclass {
 
-    // Returns true if the pawn or any parent is owned by the local player.
+    // Returns true if this pawn or any of its parents is owned by the local player.
 
     get isMyPlayerPawn() {
         let p = this;

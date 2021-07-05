@@ -2,23 +2,21 @@
 //
 // Croquet Studios, 2021
 
-import { Session, App } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix,
-    AM_Smoothed, PM_Smoothed, RenderManager, PM_Visible, Material, DrawCall, Triangles, CachedObject, q_multiply, q_normalize, q_identity,
-    Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior } from "@croquet/worldcore";
+import { Session } from "@croquet/croquet";
+import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, RenderManager, PM_Visible, Material, DrawCall, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, AM_Player, PM_Player, PlayerManager } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 
 //------------------------------------------------------------------------------------------
 // MoveActor
 //------------------------------------------------------------------------------------------
 
-class MoveActor extends mix(Actor).with(AM_Avatar) {
+class MoveActor extends mix(Actor).with(AM_Avatar, AM_Player) {
 
     get pawn() {return MovePawn}
 
-    init() {
-        super.init({translation: [0,0,-5]});
-        this.child = ChildActor.create({parent: this, translation: [0,1.1,0]});
+    init(options = {}) {
+        super.init(options);
+        this.child = ChildActor.create({parent: this, translation: [0,1.5,0]});
     }
 
 }
@@ -28,11 +26,11 @@ MoveActor.register('MoveActor');
 // MovePawn
 //------------------------------------------------------------------------------------------
 
-class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible) {
+class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
-        this.subscribe("hud", "joy", this.joy);
+        if (this.isMyPlayerPawn) this.subscribe("hud", "joy", this.joy);
     }
 
     buildDraw() {
@@ -127,29 +125,26 @@ class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
 }
 
 //------------------------------------------------------------------------------------------
-// FloorActor
+// BackgroundActor
 //------------------------------------------------------------------------------------------
 
-class FloorActor extends mix(Actor).with(AM_Spatial) {
-    get pawn() {return FloorPawn}
-    init(options) {
-        super.init("FloorPawn", options);
-    }
+class BackgroundActor extends mix(Actor).with(AM_Spatial) {
+    get pawn() {return BackgroundPawn}
 }
-FloorActor.register('FloorActor');
+BackgroundActor.register('BackgroundActor');
 
 //------------------------------------------------------------------------------------------
-// FloorPawn
+// BackgroundPawn
 //------------------------------------------------------------------------------------------
 
-class FloorPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
+class BackgroundPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
     constructor(...args) {
         super(...args);
 
         const c =  [0.6,1,0.6,1];
 
         this.mesh = new Triangles();
-        this.mesh.addFace([[-10, -10, -10], [10, -10, -10], [10, 10, -10], [-10, 10, -10]], [c,c,c,c], [[0,0], [25,0], [25,25], [0,25]]);
+        this.mesh.addFace([[-20, -20, -10], [20, -20, -10], [20, 20, -10], [-20, 20, -10]], [c,c,c,c], [[0,0], [25,0], [25,25], [0,25]]);
         this.mesh.load();
         this.mesh.clear();
 
@@ -162,6 +157,20 @@ class FloorPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
 }
 
 //------------------------------------------------------------------------------------------
+// MyPlayerManager
+//------------------------------------------------------------------------------------------
+
+class MyPlayerManager extends PlayerManager {
+
+    createPlayer(options) {
+        options.translation = [0,0,-5];
+        return MoveActor.create(options);
+    }
+
+}
+MyPlayerManager.register("MyPlayerManager");
+
+//------------------------------------------------------------------------------------------
 // MyModelRoot
 //------------------------------------------------------------------------------------------
 
@@ -169,8 +178,11 @@ class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
         console.log("Start Model!!!");
-        FloorActor.create();
-        MoveActor.create({pitch: toRad(0), yaw: toRad(0)});
+        BackgroundActor.create();
+    }
+
+    createServices() {
+        this.players = this.addService(MyPlayerManager);
     }
 
 }
@@ -210,7 +222,6 @@ class MyViewRoot extends ViewRoot {
         this.input = this.addService(InputManager);
         this.render = this.addService(RenderManager);
         this.ui = this.addService(UIManager);
-        super.createServices();
     }
 
 }
