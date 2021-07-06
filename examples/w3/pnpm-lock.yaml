@@ -6,6 +6,7 @@ specifiers:
   fs-extra: ^10.0.0
   html-webpack-plugin: ^4.3.0
   inspectpack: ^4.5.2
+  node-fetch: ^2.6.1
   simple-git: ^2.40.0
   webpack: ^4.44.1
   webpack-cli: ^3.3.12
@@ -19,6 +20,7 @@ devDependencies:
   fs-extra: 10.0.0
   html-webpack-plugin: 4.5.2_webpack@4.46.0
   inspectpack: 4.7.1
+  node-fetch: 2.6.1
   simple-git: 2.40.0
   webpack: 4.46.0_webpack-cli@3.3.12
   webpack-cli: 3.3.12_webpack@4.46.0
@@ -2682,6 +2684,11 @@ packages:
     dependencies:
       lower-case: 2.0.2
       tslib: 2.2.0
+    dev: true
+
+  /node-fetch/2.6.1:
+    resolution: {integrity: sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==}
+    engines: {node: 4.x || >=6.0.0}
     dev: true
 
   /node-forge/0.10.0:

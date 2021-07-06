@@ -19,6 +19,7 @@
     "fs-extra": "^10.0.0",
     "html-webpack-plugin": "^4.3.0",
     "inspectpack": "^4.5.2",
+    "node-fetch": "^2.6.1",
     "simple-git": "^2.40.0",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12",
