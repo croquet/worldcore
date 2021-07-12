@@ -6,8 +6,8 @@ import { Voxels } from "./Voxels";
 //-- Surfaces ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// The surface data is parked outside the model so it doesn't get snapshotted. Instead it is
-// reconstructed from scratch if someone tries to access it when it doesn't exist.
+// Stores information about the exposed surfaces of the voxels. This is used both for rendering,
+// pathing, and collision detection.
 
 export class Surfaces extends ModelService {
 
@@ -164,7 +164,7 @@ Surfaces.register("Surfaces");
 
 // A surface is an air voxel adjacent to a solid voxel. It holds information
 // about the shape of its bounding surfaces. This can be used to create a render
-// model, or to calculate pathing.
+// model, or to calculate pathing/collision.
 
 // -- Shapes --
 //
@@ -331,77 +331,6 @@ export class Surface  {
         }
         return undefined;
     }
-
-    // Given an elevation z from 0-1, determines the amount of north/east/south/west open space that the
-    // surface offers from 0 to z. This is calculated entirely by the shape and facing, and doesn't take into account
-    // the geometry of the adjoining voxels. Used to determine water flow out of voxels.
-
-
-    // crossSection(z) {
-    //     let cs;
-
-    //     switch (this.shape) {
-    //         case 0:
-    //         case 1:
-    //         case 2:
-    //         case 4:
-    //             cs = [z,z,z,z];
-    //             break;
-    //         case 3:
-    //             cs = [0, z/2, z, z/2];
-    //             break;
-    //         case 5:
-    //         case 7:
-    //             cs = [z/2, z/2, z, z];
-    //             break;
-    //         case 6:
-    //             cs = [0, 0, z/2, z/2];
-    //             break;
-    //         case 8:
-    //             cs = [z/2, z/2, z/2, z/2];
-    //             break;
-    //         case 9:
-    //             cs = [z, z/2, Math.max(0, z/2 - 0.25), z/2];
-    //             break;
-    //         case 10:
-    //             cs = [z, z/2, 0, Math.max(0, z/2 - 0.25)];
-    //             break;
-    //         case 11:
-    //             cs = [z, Math.max(0, z/2 - 0.25),  0, z/2];
-    //             break;
-    //         default:
-    //             cs = [z,z,z,z];
-    //     }
-
-    //     // Rotate result
-    //     let t;
-    //     switch (this.facing) {
-    //         case 1:
-    //             t = cs[3];
-    //             cs[3] = cs[2];
-    //             cs[2] = cs[1];
-    //             cs[1] = cs[0];
-    //             cs[0] = t;
-    //             break;
-    //         case 2:
-    //             t = cs[3];
-    //             cs[3] = cs[1];
-    //             cs[1] = t;
-    //             t = cs[2];
-    //             cs[2] = cs[0];
-    //             cs[0] = t;
-    //             break;
-    //         case 3:
-    //             t = cs[0];
-    //             cs[0] = cs[1];
-    //             cs[1] = cs[2];
-    //             cs[2] = cs[3];
-    //             cs[0] = t;
-    //             break;
-    //         default:
-    //     }
-    //     return cs;
-    // }
 
     // Returns true if the voxel is sloping up in the designated direction
 
@@ -952,29 +881,7 @@ export class Surface  {
     }
 
     baseTriangles() {
-        switch (this.shape) {
-            case 2: // Flat
-            case 3: // Ramp
-            case 6: // Double ramp
-            case 7: // Half flat + shim
-            case 8: // Butterfly
-            case 9: // Cuban
-            case 10: // Ramp + left shim
-            case 11: // Ramp + right shim
-                // return [[[0,0,0], [1,0,0], [1,1,0]], [[0,0,0], [1,1,0], [0,1,0]]];
-            case 4: // Half floor
-            case 5: // Shim
-                // switch (this.facing) {
-                //     case 0: return [[[1,1,0], [0,1,0], [1,0,0]]];
-                //     case 1: return [[[1,0,0], [1,1,0], [0,0,0]]];
-                //     case 2: return [[[0,0,0], [1,0,0], [0,1,0]]];
-                //     case 3: return [[[0,1,0], [0,0,0], [1,1,0]]];
-                //     default: return null;
-                // }
-            default:
-                return [[[0,0,0], [1,0,0], [1,1,0]], [[0,0,0], [1,1,0], [0,1,0]]];
-        }
-        return null;
+        return [[[0,0,0], [1,0,0], [1,1,0]], [[0,0,0], [1,1,0], [0,1,0]]];
     }
 
     northTriangles() {

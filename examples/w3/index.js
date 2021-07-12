@@ -12,10 +12,10 @@ import { VoxelCursor } from "./src/VoxelCursor";
 import { Editor } from "./src/Editor";
 import { HUD } from "./src/HUD";
 import { GodView } from "./src/GodView";
-import { PathRender, RouteRender } from "./src/Debug";
+import { PathRender, RoadDebugRender, RouteRender } from "./src/Debug";
 import { Props } from "./src/Props";
 import { Animals } from "./src/Animals";
-import { Rubble } from "./src/Rubble";
+import { RubbleMananger } from "./src/Rubble";
 import { Stress } from "./src/Stress";
 import { Water } from "./src/Water";
 import { WorldBuilder } from "./src/WorldBuilder";
@@ -43,7 +43,7 @@ class MyModelRoot extends ModelRoot {
         this.paths = this.addService(Paths);
         this.props = this.addService(Props);
         this.animals = this.addService(Animals);
-        this.rubble = this.addService(Rubble);
+        this.rubble = this.addService(RubbleMananger);
         this.worldBuilder = this.addService(WorldBuilder);
     }
 }
@@ -91,11 +91,12 @@ class MyViewRoot extends ViewRoot {
         this.input = this.addService(InputManager);
         this.render = this.addService(RenderManager);
         this.voxelRender = this.addService(VoxelRender);
-        this.roadRender = this.addService(RoadRender);
+        // this.roadRender = this.addService(RoadRender);
         this.ui = this.addService(UIManager);
         this.godView = this.addService(GodView);
         this.editor = this.addService(Editor);
         this.voxelCursor = this.addService(VoxelCursor);
+        this.roadDebug = this.addService(RoadDebugRender);
         super.createServices();
     }
 

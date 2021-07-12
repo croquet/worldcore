@@ -1,12 +1,18 @@
 import { Model } from "@croquet/croquet";
 import { mix, Actor, Pawn, AM_Smoothed, PM_Smoothed, Material, PM_InstancedVisible, v3_add,
-    CachedObject, InstancedDrawCall, AM_Behavioral, Cube, ModelService } from "@croquet/worldcore";
+    CachedObject, InstancedDrawCall, AM_Behavioral, Cube, Cylinder, ModelService } from "@croquet/worldcore";
     import { Voxels } from "./Voxels";
-import { FallBehavior } from "./SharedBehaviors"
+import { FallBehavior } from "./Behaviors"
 import paper from "../assets/paper.jpg";
 import { SideColor } from "./VoxelRender";
 
-export class Rubble extends ModelService {
+//------------------------------------------------------------------------------------------
+//-- RubbleMananger ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Spawns rubble when a voxel is destroyed.
+
+export class RubbleMananger extends ModelService {
     init() {
         super.init('Rubble');
         this.subscribe("voxels", "changed", this.onVoxelChange);
@@ -24,13 +30,15 @@ export class Rubble extends ModelService {
         RubbleActor.create({type: old, translation: Voxels.toWorldXYZ(...v3_add(xyz, [0.75, 0.75, 0.5]))});
     }
 }
-Rubble.register('Rubble');
+RubbleMananger.register('RubbleMananger');
 
 //------------------------------------------------------------------------------------------
 //-- Rubble --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class RubbleActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
+// The debris from a destroyed voxel.
+
+class RubbleActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
     get pawn() {return RubblePawn}
     init(options) {
         super.init(options);
@@ -69,5 +77,49 @@ export class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         block.load();
         block.clear();
         return block;
+    }
+}
+
+//------------------------------------------------------------------------------------------
+//-- Timber --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Similar to rubble but the debris from a destroyed tree.
+
+export class TimberActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
+    get pawn() {return TimberPawn};
+    init(options) {
+        super.init(options);
+        this.startBehavior(FallBehavior, {tickRate:50});
+    }
+}
+TimberActor.register("TimberActor");
+
+export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
+    constructor(...args) {
+        super(...args);
+        this.setDrawCall(CachedObject("timberDrawCall", () => this.buildDraw()));
+    }
+
+    buildDraw() {
+        const mesh = CachedObject("timberMesh", this.buildMesh);
+        const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
+        const draw = new InstancedDrawCall(mesh, material);
+        this.service("RenderManager").scene.addDrawCall(draw);
+        return draw;
+    }
+
+    buildMaterial() {
+        const material = new Material();
+        material.pass = 'instanced';
+        material.texture.loadFromURL(paper);
+        return material;
+    }
+
+    buildMesh() {
+        const log = Cylinder(0.5, 5, 7, [0.7, 0.5, 0.3, 1]);
+        log.load();
+        log.clear();
+        return log;
     }
 }

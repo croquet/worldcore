@@ -1,8 +1,12 @@
-import { Model } from "@croquet/croquet";
 import { ModelService, PerlinNoise } from "@croquet/worldcore";
 import { TreeActor } from "./Props";
 import { Voxels } from "./Voxels";
 
+//------------------------------------------------------------------------------------------
+//-- WorldBuilder --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Generates a new world.
 
 export class WorldBuilder extends ModelService {
 
@@ -101,10 +105,6 @@ export class WorldBuilder extends ModelService {
             TreeActor.create({xyz, maxSize, size});
 
         }
-
-
-
-
 
     }
 }

@@ -149,6 +149,13 @@ export class Paths extends ModelService {
 }
 Paths.register("Paths");
 
+//------------------------------------------------------------------------------------------
+//-- Waypoint ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Storage for each individual waypoint. Holds the keys of the adjacent voxels that can be pathed to
+// and the cost of traversing that path.
+
 class Waypoint {
     constructor() {
         this.exits = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];

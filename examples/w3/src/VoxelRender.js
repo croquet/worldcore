@@ -5,6 +5,7 @@ import { GetTopLayer } from "./Globals";
 import paper from "../assets/paper.jpg";
 import stripe from "../assets/stripe50.png";
 
+// This is the special renderer to draw the voxel terrain.
 
 // There are four categories of terrain geometry:
 //

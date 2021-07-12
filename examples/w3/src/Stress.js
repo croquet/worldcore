@@ -3,6 +3,18 @@ import { Voxels } from "./Voxels";
 
 const max = 10000;
 
+//------------------------------------------------------------------------------------------
+//-- Stress --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Keeps track of all solid voxels that don't have a solid voxel underneath them. Their stress
+// is the horizontal manhattan distence to the nearest supported voxel.
+//
+// When a voxel's stress exceeds the max value of its material type, it is destroyed.
+//
+// This may cause a cascade of other collapses. The actual collapse is done in the tick so that
+// everything doesn't fall at once.
+
 export class Stress extends ModelService {
     init() {
         super.init('Stress');

@@ -1,5 +1,8 @@
-import { DrawCall, Material, GetNamedView, Lines, GetNamedModel, v3_add, NamedView, viewRoot, GetViewRoot, ViewService } from "@croquet/worldcore";
+import { DrawCall, Material, Lines, v3_add, viewRoot, ViewService } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
+import { RoadActor } from "./Props";
+
+// Special renderers to help debug data sctructures.
 
 //------------------------------------------------------------------------------------------
 //-- PathRender ----------------------------------------------------------------------------
@@ -8,7 +11,7 @@ import { Voxels } from "./Voxels";
 // Add to the root view to display the nav mesh.
 
 export class PathRender extends ViewService {
-    constructor(model) {
+    constructor() {
         super("PathRender");
 
         this.mesh = new Lines();
@@ -70,7 +73,6 @@ export class RouteRender extends ViewService {
 
         const render = viewRoot.render;
         render.scene.addDrawCall(this.drawCall);
-
     }
 
     destroy() {
@@ -97,4 +99,71 @@ export class RouteRender extends ViewService {
         this.mesh.clear();
     }
 
+}
+
+//------------------------------------------------------------------------------------------
+//-- RoadDebugRender -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Add to the root view to display the road mesh.
+
+export class RoadDebugRender extends ViewService {
+
+    constructor() {
+        super("RoadDebugRender");
+
+        this.mesh = new Lines();
+        this.material = new Material();
+        this.material.pass = 'translucent';
+        this.drawCall = new DrawCall(this.mesh, this.material);
+
+        const render = viewRoot.render;
+        render.scene.addDrawCall(this.drawCall);
+
+        this.buildMesh();
+        this.subscribe("road", {event: "changed", handling: "oncePerFrame" }, this.buildMesh);
+    }
+
+    destroy() {
+        super.destroy();
+        const render = viewRoot.render;
+        if (render) render.scene.removeDrawCall(this.drawCall);
+        this.mesh.destroy();
+        this.material.destroy();
+    }
+
+    buildMesh() {
+        this.mesh.clear();
+        const props = viewRoot.model.props;
+        const color = [0,1,1,1];
+        props.props.forEach( prop => {
+            if (!(prop instanceof RoadActor)) return;
+            const v0 = Voxels.toWorldXYZ(...v3_add(prop.xyz, [0.5, 0.5, 0]));
+            const v1 = v3_add(v0, [0, 0, 5]);
+            this.mesh.addDebugLine(v0, v1, color);
+
+            prop.sideExits.forEach((exit,n) => {
+                if (!exit ) return;
+                let v2;
+                switch(n) {
+                    case 0:
+                        v2 = v3_add(v1, [0,1,0]);
+                        break;
+                    case 1:
+                        v2 = v3_add(v1, [1,0,0]);
+                        break;
+                    case 2:
+                        v2 = v3_add(v1, [0,-1,0]);
+                        break;
+                    case 3:
+                        v2 = v3_add(v1, [-1,0,0]);
+                        break;
+                    default:
+                }
+                this.mesh.addDebugLine(v1, v2, color);
+            });
+        });
+        this.mesh.load();
+        this.mesh.clear();
+    }
 }

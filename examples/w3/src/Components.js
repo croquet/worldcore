@@ -7,7 +7,7 @@ import { GetTopLayer } from "./Globals";
 //------------------------------------------------------------------------------------------
 
 // VoxelSmoothed actors exist in a specific voxel in the world. They can be paired with either
-// AM_Spatial or AM_VoxelSmoothed pawns.
+// PM_Spatial or PM_VoxelSmoothed pawns.
 //
 // They hold an xyz value (the voxel coordinates) and a fraction (the offset within the voxel).
 // Their world translation is calcuated from these base values. You can also get the voxel key.
@@ -87,6 +87,12 @@ export const PM_VoxelSmoothed = superclass => class extends PM_Smoothed(supercla
 
 };
 
+//------------------------------------------------------------------------------------------
+//-- LayeredInstancedVisible ---------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// A variant of the normal InstancedVisible that works with VoxelSmoothed pawns. It hides pawns
+// above the top layer by setting their transforms to a point high above the world.
 
 const limbo = m4_translation([Voxels.scaleX * Voxels.sizeX / 2, Voxels.scaleY * Voxels.sizeY/2, 1000 * Voxels.scaleZ])
 

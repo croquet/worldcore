@@ -3,6 +3,12 @@ import { GetTopLayer } from "./Globals";
 import { PickFillSurface, PickFloorSurface, PickDigVoxel, PickPlantSurface } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 
+// Take ponter inputs and translate them into edit events based on the edit mode.
+
+//------------------------------------------------------------------------------------------
+//-- Editor --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
 export class Editor extends ViewService {
     constructor() {
         super("Editor");

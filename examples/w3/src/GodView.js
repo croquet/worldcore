@@ -4,6 +4,8 @@ import { GetTopLayer } from "./Globals";
 import { PickGrabSurface  } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 
+// Managees the camera and navigation pointer events.
+
 let translation = [Voxels.sizeX * Voxels.scaleX / 2, 0,(Voxels.sizeZ+10) * Voxels.scaleZ ];
 let pitch = toRad(45);
 let yaw = toRad(0);
@@ -96,7 +98,6 @@ export class GodView extends ViewService {
         this.firstPerson = fp;
         if (fp) {
             this.oldFOV = fov;
-            this.setFOV(toRad(80));
         } else {
             this.setFOV(this.oldFOV);
             this.updateCamera();
@@ -138,6 +139,7 @@ export class GodView extends ViewService {
     update(time, delta) {
         const animals = this.modelService("Animals");
         if (this.firstPerson && animals.vip) {
+            this.setFOV(toRad(80));
             const pm = this.service("PawnManager");
             const pawn = pm.get(animals.vip.id);
             const p = q_axisAngle([1,0,0], toRad(90));

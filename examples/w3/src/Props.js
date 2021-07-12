@@ -1,15 +1,15 @@
-import { Model } from "@croquet/croquet";
-import { mix, Actor, Pawn, PM_Spatial, AM_Smoothed, PM_Smoothed, Material, PM_InstancedVisible, v3_add,
+import { mix, Actor, Pawn, PM_Spatial, Material, v3_add,
     Cylinder, Cone, m4_translation, CachedObject, q_axisAngle, TAU, InstancedDrawCall, m4_rotationX, toRad, v3_scale,
-    Behavior, AM_Behavioral, viewRoot, ModelService
- } from "@croquet/worldcore";
-import { FallBehavior } from "./SharedBehaviors"
+    Behavior, AM_Behavioral, ModelService } from "@croquet/worldcore";
 import paper from "../assets/paper.jpg";
 import { AM_VoxelSmoothed, PM_LayeredInstancedVisible } from "./Components";
+import { TimberActor } from "./Rubble";
 
 //------------------------------------------------------------------------------------------
 //-- Props ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Holds all the large static objects in the world. Only one prop can exist in each voxel.
 
 export class Props extends ModelService {
     init() {
@@ -18,7 +18,7 @@ export class Props extends ModelService {
         this.subscribe("surfaces", "newLevel", this.onNewLevel);
         this.subscribe("surfaces", "changed", this.onChanged);
         this.subscribe("editor", "spawnTree", this.onSpawnTree);
-        this.subscribe("editor", "spawnRoad", this.onSpawnRoad);
+        // this.subscribe("editor", "spawnRoad", this.onSpawnRoad);
     }
 
     destroy() {
@@ -79,6 +79,9 @@ Props.register("Props");
 //-- PropActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Base class for all props. Props have a voxel xyz position as well as their normal position
+// in the world.
+
 class PropActor extends mix(Actor).with(AM_VoxelSmoothed) {
 
     get pawn() {return PropPawn};
@@ -101,6 +104,9 @@ PropActor.register('PropActor');
 //-- PropPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Prop pawns refresh when the top layer changes to hide themselves if they're above the
+// top layer.
+
 class PropPawn extends mix(Pawn).with(PM_Spatial, PM_LayeredInstancedVisible) {
     constructor(...args) {
         super(...args);
@@ -109,8 +115,10 @@ class PropPawn extends mix(Pawn).with(PM_Spatial, PM_LayeredInstancedVisible) {
 }
 
 //------------------------------------------------------------------------------------------
-//-- TreeBehaviors -------------------------------------------------------------------------
+//-- TreeBehavior --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Basic grown behavior. Stops when the tree reaches mix size.
 
 class TreeBehavior extends Behavior {
 
@@ -223,49 +231,6 @@ class TreePawn extends PropPawn {
     }
 
 }
-
-//------------------------------------------------------------------------------------------
-//-- Timber --------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-export class TimberActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
-    get pawn() {return TimberPawn};
-    init(options) {
-        super.init(options);
-        this.startBehavior(FallBehavior, {tickRate:50});
-    }
-}
-TimberActor.register("TimberActor");
-
-export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
-    constructor(...args) {
-        super(...args);
-        this.setDrawCall(CachedObject("timberDrawCall", () => this.buildDraw()));
-    }
-
-    buildDraw() {
-        const mesh = CachedObject("timberMesh", this.buildMesh);
-        const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
-        const draw = new InstancedDrawCall(mesh, material);
-        this.service("RenderManager").scene.addDrawCall(draw);
-        return draw;
-    }
-
-    buildMaterial() {
-        const material = new Material();
-        material.pass = 'instanced';
-        material.texture.loadFromURL(paper);
-        return material;
-    }
-
-    buildMesh() {
-        const log = Cylinder(0.5, 5, 7, [0.7, 0.5, 0.3, 1]);
-        log.load();
-        log.clear();
-        return log;
-    }
-}
-
 //------------------------------------------------------------------------------------------
 //-- Road ----------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -275,23 +240,91 @@ export class RoadActor extends PropActor {
 
     init(options) {
         super.init(options);
-        console.log("new road actor!");
-        this.exits = [false,false,false,false, false,false,false,false, false, false];
-        // this.connect();
+        // console.log("new road actor!");
+        this.sideExits = new Array(4).fill(null);
+        this.connect();
+        this.publish("road", "changed", this.xyz);
+    }
+
+    destroy() {
+        this.disconnect();
+        this.publish("road", "changed", this.xyz)
+        super.destroy();
+    }
+
+    disconnect() {
+        this.sideExits.forEach( (exit,n) => {
+            if (exit) exit.exits[opp(n)] = null;
+        });
     }
 
     connect() {
+        const surfaces = this.service("Surfaces");
         const paths = this.service("Paths");
         const props = this.service("Props");
+        const surface = surfaces.get(this.key);
         const waypoint = paths.waypoints.get(this.key);
         if (!waypoint) return; // error here
 
-        waypoint.exits.forEach((exit, n) =>  {
+        this.sideExits.fill(null);
+
+        const s = this.sideRoads(surface);
+        // console.log(s);
+        for (let n = 0; n < 4; n++) {
+            if (!s[n]) return;
+            const exit = waypoint.exits[n];
             if (!exit) return;
             const prop = props.get(exit);
-            this.exits[n] = prop instanceof RoadActor;
-        });
-        console.log(this.exits);
+            if (prop instanceof RoadActor) {
+                this.sideExits[n] = prop;
+                prop.sideExits[opp(n)] = this;
+            }
+        }
+
+        // this.supressCorners();
+    }
+
+    sideRoads(surface) {
+        let roads = [false, false, false, false];
+        switch (surface.shape) {
+            case 2:
+                roads = [true, true, true, true];
+                break;
+            case 3:
+                roads = [true, false, true, false];
+                break;
+            case 4:
+                roads = [true, true, false, false];
+                break;
+            case 7:
+                roads = [false, false, true, true];
+                break;
+            default:
+        }
+        rot4(roads, surface.facing);
+
+        return roads;
+    }
+
+    // Side roads suppress corner roads
+
+    supressCorners() {
+        if (this.exits[0]) {
+            this.exits[9] = null;
+            this.exits[6] = null;
+        }
+        if (this.exits[1]) {
+            this.exits[6] = null;
+            this.exits[7] = null;
+        }
+        if (this.exits[2]) {
+            this.exits[7] = null;
+            this.exits[8] = null;
+        }
+        if (this.exits[3]) {
+            this.exits[8] = null;
+            this.exits[9] = null;
+        }
     }
 
     validate() {
@@ -305,7 +338,7 @@ RoadActor.register("RoadActor");
 class RoadPawn extends PropPawn {
     constructor(...args) {
         super(...args);
-        this.setDrawCall(CachedObject("roadDrawCall", () => this.buildDraw()));
+        // this.setDrawCall(CachedObject("roadDrawCall", () => this.buildDraw()));
     }
 
     buildDraw() {
@@ -336,4 +369,51 @@ class RoadPawn extends PropPawn {
 
 }
 
+//------------------------------------------------------------------------------------------
+//-- Utilities -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
+// Given a voxel direction, returns the opposite.
+function opp(side) {
+    switch (side) {
+        case 0: return 2;
+        case 1: return 3;
+        case 2: return 0;
+        case 3: return 1;
+        case 4: return 5;
+        case 5: return 4;
+        case 6: return 8;
+        case 7: return 9;
+        case 8: return 6;
+        case 9: return 7;
+        default: return 0;
+    }
+}
+
+function rot4(a, n) {
+    const a0 = a[0];
+    const a1 = a[1];
+    const a2 = a[2];
+    const a3 = a[3];
+    switch (n) {
+        case 1:
+            a[0] = a3;
+            a[1] = a0;
+            a[2] = a1;
+            a[3] = a2;
+            break;
+        case 2:
+            a[0] = a2;
+            a[1] = a3;
+            a[2] = a0;
+            a[3] = a1;
+            break;
+        case 3:
+            a[0] = a1;
+            a[1] = a2;
+            a[2] = a3;
+            a[3] = a0;
+            break;
+        default:
+    }
+}

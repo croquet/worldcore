@@ -2,6 +2,9 @@ import { viewRoot, v3_divide } from "@croquet/worldcore";
 import { IntersectVoxelBase } from "./Surfaces";
 import { Voxels } from "./Voxels";
 
+// A collection of functions that project a ray from the screen to the terrain for picking a voxel.
+// Note that these are used both by the Editor and the Voxel Cursor.
+
 //------------------------------------------------------------------------------------------
 //-- PickVoxel -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -207,9 +210,17 @@ export function PickPlantSurface(xy, topLayer = Voxels.sizeZ) {
     const pick = PickFloorSurface(xy, topLayer);
     if (pick.direction != Voxels.below) pick.xyz = null;
     if (pick.xyz) {
+        const water = viewRoot.model.water;
+        if (water.getVolume(...pick.xyz) === 1) {
+            pick.xyz = null;
+            return pick;
+        }
         const below = Voxels.adjacent(...pick.xyz, Voxels.below);
         const voxels = viewRoot.model.voxels;
-        if (voxels.get(...below) != Voxels.dirt) pick.xyz = null;
+        if (voxels.get(...below) != Voxels.dirt) {
+            pick.xyz = null;
+            return pick;
+        }
     }
     return pick;
 }

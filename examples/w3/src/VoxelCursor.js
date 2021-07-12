@@ -1,7 +1,13 @@
-import { Cube, Triangles, Material, DrawCall, m4_translation, v3_multiply, ViewService } from "@croquet/worldcore";
+import { Cube, Material, DrawCall, m4_translation, v3_multiply, ViewService } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { PickFloorSurface, PickDigVoxel, PickFillSurface, PickPlantSurface } from "./VoxelRaycast";
 import { GetTopLayer } from "./Globals";
+
+//------------------------------------------------------------------------------------------
+//-- VoxelCursor ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Renders the cursor that shows which voxel you're currently editing.
 
 export class VoxelCursor extends ViewService {
     constructor() {

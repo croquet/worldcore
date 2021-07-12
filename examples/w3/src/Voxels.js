@@ -4,6 +4,9 @@ import { v3_add, v3_sub, v3_min, v3_max, v3_floor, ModelService } from "@croquet
 //-- VoxelColumn ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Each column of voxels is stored as a run-length-encoded array. We keep them compressed
+// all the time so they don't take up a huge block of memory.
+
 export class VoxelColumn {
     constructor() {
         this.c = new Uint8Array([Voxels.sizeZ]);
@@ -64,6 +67,8 @@ export class VoxelColumn {
 //-- Voxels --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// The voxels themselves are stored as a 2d array of compressed columns.
+
 export class Voxels extends ModelService {
 
     //-- Snapshot Types --
@@ -108,6 +113,7 @@ export class Voxels extends ModelService {
 
     //-- Helper Methods --
 
+    // True if coordinates are inside the voxel volume.
     static isValid(x, y, z) {
         if (x < 0) return false;
         if (x >= Voxels.sizeX) return false;
@@ -118,6 +124,7 @@ export class Voxels extends ModelService {
         return true;
     }
 
+    // The top and bottom layer of voxels can't be changed to keep edge conditions simple.
     static canEdit(x, y, z) {
         if (x < 0) return false;
         if (x >= Voxels.sizeX) return false;
@@ -128,6 +135,7 @@ export class Voxels extends ModelService {
         return true;
     }
 
+    // Converts xyz coordinations to/from a 30-bit key value.
     static packKey(x,y,z) {
         return (((x << 10) | y) << 10) | z;
     }
@@ -138,6 +146,7 @@ export class Voxels extends ModelService {
         return [x & 0x3FF, y & 0x3FF, key & 0x3FF];
     }
 
+    // Finds xyz coordinates of adjacent voxels
     static adjacent(x,y,z, direction) {
         const out = [x,y,z];
         switch (direction) {
@@ -256,7 +265,6 @@ export class Voxels extends ModelService {
     init() {
         super.init('Voxels');
         this.voxels = Array.from(Array(Voxels.sizeX), ()=>Array.from(Array(Voxels.sizeY), ()=>new VoxelColumn()));
-        // this.subscribe("hud", "newLevel", () => this.generate());
         this.subscribe("editor", "setVoxel", data => this.set(...data.xyz, data.type));
     }
 
@@ -270,16 +278,6 @@ export class Voxels extends ModelService {
         if (type === old || !column.set(z, type)) return false;
         this.publish("voxels", "changed", {xyz:[x, y, z], type, old});
         return true;
-    }
-
-    generate() {
-        for (let x = 0; x < Voxels.sizeX; x++) {
-            for (let y = 0; y < Voxels.sizeY; y++) {
-                this.voxels[x][y].compress([1,2,2,2, 2,2,2,3, 0,0,0,0, 0,0,0,0]);
-            }
-        }
-        this.voxels[2][2].compress([1,2,2,2, 2,2,2,2, 2,0,0,0, 0,0,0,0]);
-        this.publish("voxels", "newLevel");
     }
 
     load(matrix) {

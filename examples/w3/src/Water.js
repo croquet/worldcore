@@ -8,6 +8,12 @@ import paper from "../assets/paper.jpg";
 //-- Water ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Maintains a map of water volumes in the subset of voxels that have water in them. Updates
+// the water simulation every tick. The simulation keeps track of voxels that have changed
+// recently so it doesn't have to check each water voxel each update.
+
+// Water volumes are stored as layers to simplify both sim and rendering.
+
 export class Water extends ModelService {
 
     init() {
@@ -136,6 +142,9 @@ Water.register('Water');
 //-- WaterLayer ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Stores all the water volumes for a single z value. It also tracks flows in and out of each
+// voxel for every tick of the simulation.
+
 class WaterLayer extends Actor {
 
     get pawn() {return WaterLayerPawn}
@@ -144,7 +153,7 @@ class WaterLayer extends Actor {
     init(options) {
         super.init(options);
 
-        this.active = new Set();    // Voxels in this layer that should be tested for water flowing out
+        this.active = new Set();    // Voxels in this set should be tested for water flowing out
 
         this.volume = new Map();    // How much water is currently in the voxel
         this.inFlow = new Map();    // How much water flowed into each voxel from the sides on the last tick (4-array)
@@ -533,6 +542,8 @@ function ScaleColor(c, v) {
 //------------------------------------------------------------------------------------------
 //-- WaterSource ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// A water source raises or lowers the water volume of the voxel its in by a consant amount / second
 
 class WaterSourceActor extends mix(Actor).with(AM_VoxelSmoothed) {
 

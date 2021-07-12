@@ -23,7 +23,7 @@ import walkOnIcon from "../assets/walkOnIcon.png";
 import walkOffIcon from "../assets/walkOffIcon.png";
 import resetIcon from "../assets/resetIcon.png";
 
-
+// Manages all the UI controls.
 
 export class HUD extends Widget {
     constructor(...args) {
@@ -63,11 +63,11 @@ export class HUD extends Widget {
         waterToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: waterOffIcon}));
         waterToggle.onToggleOn = () => this.publish("hud", "editMode", "water");
 
-        // const roadToggle = new ToggleWidget(this, {local: [80,140], size:[50,50]})
-        // this.setToggleDefaults(roadToggle);
-        // roadToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: roadOnIcon}));
-        // roadToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: roadOffIcon}));
-        // roadToggle.onToggleOn = () => this.publish("hud", "editMode", "road");
+        const roadToggle = new ToggleWidget(this, {local: [80,140], size:[50,50]})
+        this.setToggleDefaults(roadToggle);
+        roadToggle.setLabelOn(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: roadOnIcon}));
+        roadToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: roadOffIcon}));
+        roadToggle.onToggleOn = () => this.publish("hud", "editMode", "road");
 
         // const sourceToggle = new ToggleWidget(this, {local: [80,140], size:[50,50]})
         // this.setToggleDefaults(sourceToggle);
@@ -81,7 +81,7 @@ export class HUD extends Widget {
         // sinkToggle.setLabelOff(new ImageWidget(null, {autoSize: [1,1], border: [5,5,5,5], url: sinkOffIcon}));
         // sinkToggle.onToggleOn = () => this.publish("hud", "editMode", "sink");
 
-        const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle, treeToggle, waterToggle);
+        const toggleSet = new ToggleSet(digToggle, fillToggle, spawnToggle, treeToggle, waterToggle, roadToggle);
 
         const walktoggle= new ToggleWidget(this, {anchor: [1,0], pivot: [1,0], local: [-70,20], size: [40,40]})
         this.setToggleDefaults(walktoggle);
