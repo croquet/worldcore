@@ -65,7 +65,7 @@ export function SetGLPipeline(pipeline) {
 class RenderTarget {
     constructor(parameters = {width: 1, height: 1}) {
         this.parameters = parameters;
-        this.background = [0, 0.5, 0.5, 1];
+        this.background = [0.5, 0.5, 0.5, 1];
         this.scale = 1;
         if (parameters.width) this.width = parameters.width;
         if (parameters.height) this.height = parameters.height;
@@ -674,11 +674,6 @@ export class Scene {
     }
 
     drawPass(pass) {
-        // if (pass === 'translucent') {
-        //     gl.polygonOffset(2, 0);
-        // } else {
-        //     gl.polygonOffset(1, 0);
-        // }
         const passList = this.passLists.get(pass);
         if (passList) passList.forEach(call => call.draw());
     }
@@ -741,7 +736,7 @@ export class InstancedDrawCall {
 // Right now scenes don't sort draw calls beyond grouping them by pass.
 
 export class DrawCall {
-    constructor(mesh, material) {
+    constructor(mesh, material = new Material()) {
         this.mesh = mesh;
         this.material = material;
         this.transform = new Transform();

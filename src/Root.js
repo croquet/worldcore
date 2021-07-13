@@ -1,7 +1,10 @@
-import { Model, View } from "@croquet/croquet";
+import { Model, View, Session } from "@croquet/croquet";
 import { ActorManager} from "./Actor";
 import { PawnManager} from "./Pawn";
 import { ClearObjectCache } from "./ObjectCache";
+
+let modelRootClass;
+let viewRootClass;
 
 //------------------------------------------------------------------------------------------
 //-- WorldcoreModel ------------------------------------------------------------------------
@@ -21,6 +24,12 @@ WorldcoreModel.register("WorldcoreModel");
 //------------------------------------------------------------------------------------------
 
 export class ModelRoot extends WorldcoreModel {
+
+    static register(name) {
+        super.register(name);
+        modelRootClass = this;
+    }
+
     init() {
         super.init();
         this.beWellKnownAs("ModelRoot");
@@ -88,6 +97,10 @@ const viewServices = new Map();
 
 export class ViewRoot extends WorldcoreView {
 
+    static register(name) {
+        viewRootClass = this;
+    }
+
     constructor(model) {
         super(model);
         this.model = model;
@@ -142,4 +155,18 @@ export class ViewService extends WorldcoreView {
         viewServices.delete(this.name);
     }
 
+}
+
+//------------------------------------------------------------------------------------------
+//-- StartWorldcore ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export async function StartWorldcore(options) {
+
+    if (!viewRootClass) console.error("Your Worldcore ViewRoot isn't registered!");
+
+    options.model = modelRootClass;
+    options.view = viewRootClass;
+
+    const session = await Session.join(options);
 }

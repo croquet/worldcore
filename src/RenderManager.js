@@ -119,7 +119,7 @@ export class RenderManager extends ViewService {
         this.setScene(new Scene());
         this.setCamera(new Camera());
         this.setLights(new Lights());
-        this.setBackground([0,0.3,0.5,1]);
+        this.setBackground([0,0,0,1]);
     }
 
     destroy() {
