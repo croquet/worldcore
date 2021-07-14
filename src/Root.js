@@ -27,8 +27,11 @@ export class ModelRoot extends WorldcoreModel {
 
     static register(name) {
         super.register(name);
+        if (modelRootClass) console.warn("Multiple Worldcore model roots registered!")
         modelRootClass = this;
     }
+
+    static viewRoot() { return ViewRoot };
 
     init() {
         super.init();
@@ -45,8 +48,10 @@ export class ModelRoot extends WorldcoreModel {
         this.services.add(s);
         return s;
     }
+
 }
-ModelRoot.register("ModelRoot");
+
+// The ModelRoot base class is not registered so we can catch if users register multiple child classes of it.
 
 
 //------------------------------------------------------------------------------------------
@@ -96,10 +101,6 @@ let time1 = 0;
 const viewServices = new Map();
 
 export class ViewRoot extends WorldcoreView {
-
-    static register(name) {
-        viewRootClass = this;
-    }
 
     constructor(model) {
         super(model);
@@ -163,10 +164,9 @@ export class ViewService extends WorldcoreView {
 
 export async function StartWorldcore(options) {
 
-    if (!viewRootClass) console.error("Your Worldcore ViewRoot isn't registered!");
-
     options.model = modelRootClass;
     options.view = viewRootClass;
+    options.view = modelRootClass.viewRoot();
 
     const session = await Session.join(options);
 }
