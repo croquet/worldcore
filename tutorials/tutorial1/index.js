@@ -6,7 +6,7 @@
 // assumes that you have familarity with the basics of the Croquet SDK, and understand the
 // general concepts behind Worldcore. For more inforamation, see croquet.io/sdk.
 //
-// This tutorial show to set up your root model and root view, and how to create a single
+// This tutorial shows how to set up your root model and root view, and how to create a single
 // static object in the world.
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, AM_Spatial, PM_Spatial, PM_Visible, RenderManager, DrawCall, Cube,
@@ -48,7 +48,7 @@ MyActor.register('MyActor');
 // construtor creates a polygon mesh, builds a drawcall with it, and registers the drawcall with the
 // renderer.
 //
-// The Visible mixin then does all the work of managing the draw call. It will update the transform if the
+// The Visible mixin does all the work of managing the draw call. It will update the transform if the
 // actor changes position, and it will remove the drawcall from the renderer if the actor is destroyed.
 
 
@@ -67,7 +67,7 @@ class MyPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
 //------------------------------------------------------------------------------------------
 
 // Here we define the top-level Worldcore model. This is the model that is spawned when the Croquet
-// session starts, and every actor and model service is contained by it. Your app can only have one
+// session starts, and every actor and model service is contained within it. Your app can only have one
 // model root. Your model root should also define a static viewRoot() method that returns the class type
 // of your viewRoot.
 //
@@ -76,8 +76,8 @@ class MyPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
 // we can pass in an initial translation and rotation. the translation is a vector in 3D space, and the
 // rotation is a quaternion that represents a rotation around an axis.
 //
-// Creating an actor also returns a pointer to it. You can save the pointer if want to refer to the actor later,
-// but its not required. The root maintains an internal list of all actors.
+// Creating an actor returns a pointer to it. You can save the pointer if want to refer to the actor later,
+// but it's not required. The model root maintains an internal list of all actors.
 //
 // (Try modifying the init rountine to create more actors with different initialization values.)
 
@@ -101,15 +101,14 @@ MyModelRoot.register("MyModelRoot");
 // session starts, and every pawn and view service is contained within it. Your app can only have one
 // view root, and its class type should be provided in the static viewRoot() method of your model root.
 //
-// Our view root is also very simple. It's extende with two view services: the input manager
+// Our view root is simple like our model root. It's extended with two view services: the input manager
 // and the webGL render manager. Both of these are optional. You only need the renderMananger if you're
 // using pawns with the Visible mixin. If your app doesn't render anything, or uses a different
 // renderer (like THREE.js), you can omit it.
 //
 // The InputManager catches DOM events and translates them into Croquet events that you can
-// subscribe to. It's not absolutely required for this tutorial, but the RenderManager does subscribe
-// to the resize event from the InputManager to automatically resize its buffers if the app window
-// changes size.
+// subscribe to. It's not absolutely required for this tutorial, but the RenderManager does use it
+// to respond to window resize events.
 
 class MyViewRoot extends ViewRoot {
 
@@ -120,7 +119,11 @@ class MyViewRoot extends ViewRoot {
 
 }
 
-// This has to be last.
+// Finally this is where we connect to our Worldcore session. This function accepts an options
+// object that will be passed to Croquet's session join.
+//
+// StartWorldcore() should always come at the end of your source file because it depends on your model root
+// having been registered.
 
 StartWorldcore({appId: 'io.croquet.appId', name: 'tutorial', password: 'password'});
 

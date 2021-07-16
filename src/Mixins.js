@@ -252,8 +252,8 @@ export const PM_Spatial = superclass => class extends PM_Tree(superclass) {
 
 constructor(...args) {
     super(...args);
-    this.listen("localChanged", this.localChanged);
-    this.listen("globalChanged", this.globalChanged);
+    this.listenOnce("localChanged", this.localChanged);
+    this.listenOnce("globalChanged", this.globalChanged);
 }
 
 localChanged() {}
@@ -341,13 +341,15 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     addChild(id) {
         super.addChild(id);
         const child = GetPawn(id);
-        if (child) child.refreshTug();
+        if (child) {
+            child.refreshTug();
+        }
     }
 
     removeChild(id) {
-        super.removeChild(id);
         const child = GetPawn(id);
         if (child) child.refreshTug();
+        super.removeChild(id);
     }
 
     localChanged() {
@@ -403,6 +405,8 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         if (this.isRotating) this.interpolateRotation(tug);
         if (this.isMoving) this.interpolateTranslation(tug);
         if (changed) this.localChanged();
+        this.localChanged(); // Fix!
+        this._global = null;  // Fix! (This is temporary. The smmothed mixin needs to be rewritted.)
         if (this.needRefresh) this.refresh();
         this.needRefresh = false;
         if (this.children) this.children.forEach(child => child.update(time, delta));
@@ -424,6 +428,8 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     }
 
 };
+
+// Need a variety of Smoothed that doesn't use model-to-view events for continuously moving actors.
 
 
 //------------------------------------------------------------------------------------------
