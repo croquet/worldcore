@@ -10,7 +10,7 @@
 // input events.
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, PM_Visible, RenderManager, DrawCall, Cube,
-    v3_normalize, q_axisAngle, toRad, InputManager, q_multiply,  } from "@croquet/worldcore";
+    v3_normalize, q_axisAngle, toRad, InputManager, q_multiply, AM_Spatial, PM_Spatial,  } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- MyActor -------------------------------------------------------------------------------
@@ -28,16 +28,18 @@ class MyActor extends mix(Actor).with(AM_Smoothed) {
     }
 
     tick() {
-        const q = q_axisAngle(v3_normalize([-1,1,-1]), toRad(4));
+        const q = q_axisAngle(v3_normalize([-1,1,-1]), toRad(40));
         const rotation = q_multiply(this.rotation, q );
         this.rotateTo(rotation);
-        this.future(50).tick();
+        // this.set({rotation});
+        this.future(500).tick();
     }
 
     spawnChild() {
         if (this.children && this.children.size > 0) return;
-        MyChildActor.create({parent: this, translation: [1.5,0,0], scale: 0.5} );
+        MyChildActor.create({parent: this, translation: [1.5,0,0], scale: [0.5, 0.5, 0.5]} );
     }
+
 
 }
 MyActor.register('MyActor');
@@ -48,7 +50,7 @@ MyActor.register('MyActor');
 
 class MyChildActor extends mix(Actor).with(AM_Smoothed) {
 
-    get pawn() {return MyPawn}
+    get pawn() {return MyChildPawn}
 
     init(options) {
         super.init(options);
@@ -70,6 +72,37 @@ class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
         mesh.clear();   // However once a mesh is loaded it can be cleared so its not taking up memory.
         this.setDrawCall(new DrawCall(mesh));
     }
+
+    // update(time, delta) {
+    //     console.log(this.isRotating);
+    //     super.update(time, delta);
+    // }
+
+}
+
+class MyChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
+    constructor(...args) {
+        super(...args);
+        const mesh = Cube(1,1,1);
+        mesh.load();    // Meshes need to be loaded to buffer them onto the graphics card
+        mesh.clear();   // However once a mesh is loaded it can be cleared so its not taking up memory.
+        this.setDrawCall(new DrawCall(mesh));
+
+        // this.listenOnce("rotateTo", () => {
+        //     console.log("xxx");
+        // });
+    }
+
+    update(time, delta) {
+        super.update(time, delta);
+        // console.log(this.global);
+    }
+
+    // interpolateRotation(tug) {
+    //     // console.log("interp");
+    //     super.interpolateRotation(tug);
+
+    // }
 
 }
 

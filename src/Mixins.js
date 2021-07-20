@@ -202,23 +202,8 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
         super.init(...args);
     }
 
-    get translation() { return this._translation || v3_zero() };
-    get rotation() { return this._rotation || q_identity() };
-    get scale() { return this._scale || v3_unit() };
-
-    addChild(child) {
-        super.addChild(child);
-        if (child) child.globalChanged();
-    }
-
-    removeChild(child) {
-        super.removeChild(child);
-        if (child) child.globalChanged();
-    }
-
     localChanged() {
         this.$local = null;
-        this.say("localChanged");
         this.globalChanged();
     }
 
@@ -243,8 +228,12 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
         return this.$global;
     }
 
-};
+    get translation() { return this._translation || v3_zero() };
+    get rotation() { return this._rotation || q_identity() };
+    get scale() { return this._scale || v3_unit() };
+}
 RegisterMixin(AM_Spatial);
+
 
 //-- Pawn ----------------------------------------------------------------------------------
 
@@ -252,19 +241,17 @@ export const PM_Spatial = superclass => class extends PM_Tree(superclass) {
 
 constructor(...args) {
     super(...args);
-    this.listenOnce("localChanged", this.localChanged);
-    this.listenOnce("globalChanged", this.globalChanged);
+    this.listenOnce("globalChanged", this.onGlobalChanged);
 }
 
-localChanged() {}
-globalChanged() { this.refresh(); }
+onGlobalChanged() { this.refresh()}
 
 get scale() { return this.actor.scale; }
 get translation() { return this.actor.translation; }
 get rotation() { return this.actor.rotation; }
 get local() { return this.actor.local; }
 get global() { return this.actor.global; }
-get lookGlobal() { return this.global; } // Allows objects to have an offset camera position
+// get lookGlobal() { return this.global; } // Allows objects to have an offset camera position
 
 };
 
@@ -284,19 +271,16 @@ export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
     moveTo(v) {
         this._translation = v;
-        this.say("moveTo", v);
         this.localChanged();
     }
 
     rotateTo(q) {
         this._rotation = q;
-        this.say("rotateTo", q);
         this.localChanged();
     }
 
     scaleTo(v) {
         this._scale = v;
-        this.say("scaleTo", v);
         this.localChanged();
     }
 
@@ -312,74 +296,43 @@ RegisterMixin(AM_Smoothed);
 // When the difference between actor and pawn scale/rotation/translation drops below an epsilon,
 // interpolation is paused
 
+const scaleEpsilon = 0.0001;
+const rotationEpsilon = 0.000001;
+const translationEpsilon = 0.0001;
+
 const DynamicSpatial = superclass => PM_Dynamic(PM_Spatial(superclass)); // Merge dynamic and spatial base mixins
 
 export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass) {
+
     constructor(...args) {
         super(...args);
 
+        this.tug = 0.2;
         this._scale = this.actor.scale;
         this._rotation = this.actor.rotation;
         this._translation = this.actor.translation;
-        this.needRefresh = true;
 
-        this.setTug(0.2);
-
-        this.scaleEpsilon = 0.0001;
-        this.rotationEpsilon = 0.000001;
-        this.translationEpsilon = 0.0001;
-
-        this.listenOnce("_scale", d => {this._scale = d.v; this.localChanged();});
-        this.listenOnce("_rotation", d => {this._rotation = d.v; this.localChanged();});
-        this.listenOnce("_translation", d => {this._translation = d.v; this.localChanged();});
-
-        this.listenOnce("moveTo", () => this.isMoving = true);
-        this.listenOnce("rotateTo", () => this.isRotating = true);
-        this.listenOnce("scaleTo", () => this.isScaling = true);
+        this.listenOnce("_scale", this.onSetScale);
+        this.listenOnce("_rotation", this.onSetRotation);
+        this.listenOnce("_translation", this.onSetTranslation);
     }
 
-    addChild(id) {
-        super.addChild(id);
-        const child = GetPawn(id);
-        if (child) {
-            child.refreshTug();
-        }
-    }
-
-    removeChild(id) {
-        const child = GetPawn(id);
-        if (child) child.refreshTug();
-        super.removeChild(id);
-    }
-
-    localChanged() {
-        this._local = null;
-        this.globalChanged();
-    }
-
-    globalChanged() {
-        this._global = null;
-        this.needRefresh = true;
-        if (this.children) this.children.forEach(child => child.globalChanged());
-    }
-
-    setTug(t) {
-        this.defaultTug = t;
-        this.refreshTug();
-    }
-
-    refreshTug() {
-        if (this.parent && this.parent.tug) {
-            this._tug = this.parent.tug;
-        } else {
-            this._tug = this.defaultTug;
-        }
-    }
+    onSetScale(d) { this._scale = d.v; this._local = null; this._global = null; }
+    onSetRotation(d) { this._rotation = d.v;  this._local = null; this._global = null; }
+    onSetTranslation(d) { this._translation = d.v;  this._local = null; this._global = null; }
 
     get scale() { return this._scale; }
     get translation() { return this._translation; }
     get rotation() { return this._rotation; }
-    get tug() { return this._tug; }
+    set tug(t) {this._tug = t}
+    get tug() {
+        if (this.parent) return parent.tug;
+        return this._tug;
+    }
+
+    onGlobalChanged() {
+        this._global = null;
+    }
 
     get local() {
         if (!this._local) this._local = m4_scalingRotationTranslation(this._scale, this._rotation, this._translation);
@@ -399,37 +352,41 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     update(time, delta) {
         super.update(time, delta);
         let tug = this.tug;
-        if (this.delta) tug = Math.min(1, tug * this.delta / 15);
-        const changed = (this.isMoving || this.isRotating || this.isScaling);
-        if (this.isScaling) this.interpolateScale(tug);
-        if (this.isRotating) this.interpolateRotation(tug);
-        if (this.isMoving) this.interpolateTranslation(tug);
-        if (changed) this.localChanged();
-        this.localChanged(); // Fix!
-        this._global = null;  // Fix! (This is temporary. The smmothed mixin needs to be rewritted.)
-        if (this.needRefresh) this.refresh();
-        this.needRefresh = false;
-        if (this.children) this.children.forEach(child => child.update(time, delta));
+        if (delta) tug = Math.min(1, tug * delta / 15);
+
+        if (!v3_equals(this._scale, this.actor.scale, scaleEpsilon)) {
+            this._scale = v3_lerp(this._scale, this.actor.scale, tug);
+            this._local = null;
+            this._global = null;
+        }
+
+        if (!q_equals(this._rotation, this.actor.rotation, rotationEpsilon)) {
+            this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
+            this._local = null;
+            this._global = null;
+        }
+
+        if (!v3_equals(this._translation, this.actor.translation, translationEpsilon)) {
+            this._translation = v3_lerp(this._translation, this.actor.translation, tug);
+            this._local = null;
+            this._global = null;
+        }
+
+        // if (this.parent) console.log(this._global); // The child gets refreshed and sets its global before the parent does
+
+        if (!this._global) {
+            if (this.children) this.children.forEach(child => child._global = null); // This makes it happen even on start-up!
+            this.refresh();
+
+        }
+
+        // this._global = null; // Why does it stutter without these? It only happens if a child is spawned while running.
+        // this.refresh();
+
     }
 
-    interpolateScale(tug) {
-        this._scale = v3_lerp(this._scale, this.actor.scale, tug);
-        this.isScaling = !v3_equals(this._scale, this.actor.scale, this.scaleEpsilon);
-    }
+}
 
-    interpolateRotation(tug) {
-        this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-        this.isRotating = !q_equals(this._rotation, this.actor.rotation, this.rotationEpsilon);
-    }
-
-    interpolateTranslation(tug) {
-        this._translation = v3_lerp(this._translation, this.actor.translation, tug);
-        this.isMoving = !v3_equals(this._translation, this.actor.translation, this.translationEpsilon);
-    }
-
-};
-
-// Need a variety of Smoothed that doesn't use model-to-view events for continuously moving actors.
 
 
 //------------------------------------------------------------------------------------------

@@ -36,6 +36,7 @@ export class PawnManager extends ViewService {
 
     add(pawn) {
         this.pawns.set(pawn.actor.id, pawn);
+
     }
 
     has(id) {
@@ -48,20 +49,26 @@ export class PawnManager extends ViewService {
 
     delete(pawn) {
         this.pawns.delete(pawn.actor.id);
+
     }
 
     addDynamic(pawn) {
         this.dynamic.add(pawn);
+        console.log(this.dynamic);
     }
 
     deleteDynamic(pawn) {
         this.dynamic.delete(pawn);
+        console.log(this.dynamic);
     }
+
 
     update(time, delta) {
         this.dynamic.forEach(pawn => pawn.update(time, delta));
     }
 }
+
+
 
 //------------------------------------------------------------------------------------------
 //-- Pawn ----------------------------------------------------------------------------------
@@ -95,6 +102,10 @@ export class Pawn extends WorldcoreView {
 
     listen(event, callback) {
         this.subscribe(this.actor.id, event, callback);
+    }
+
+    listenImmediate(event, callback) {
+        this.subscribe(this.actor.id,{event, handling: "immediate"}, callback);
     }
 
     ignore(event) {
