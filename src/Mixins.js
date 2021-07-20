@@ -144,6 +144,10 @@ export const PM_Tree = superclass => class extends superclass {
 
     constructor(...args) {
         super(...args);
+        if (this.actor.parent) {
+            const parent = GetPawn(this.actor.parent.id);
+            parent.addChild(this.actor.id);
+        }
         this.listen("_parent", this.onChangeParent);
     }
 
@@ -372,17 +376,18 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
             this._global = null;
         }
 
-        // if (this.parent) console.log(this._global); // The child gets refreshed and sets its global before the parent does
-
         if (!this._global) {
             if (this.children) this.children.forEach(child => child._global = null); // This makes it happen even on start-up!
-            this.refresh();
-
+            this.refresh(); // Replace with message!
         }
 
-        // this._global = null; // Why does it stutter without these? It only happens if a child is spawned while running.
-        // this.refresh();
+    }
 
+    postUpdate(time, delta) {
+        super.postUpdate(time, delta);
+        if (this.children) {
+            this.children.forEach(child => child.fullUpdate(time, delta));
+        }
     }
 
 }

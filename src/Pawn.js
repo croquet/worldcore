@@ -17,7 +17,7 @@ export class PawnManager extends ViewService {
         const actorManager = this.modelService("ActorManager");
         actorManager.actors.forEach(actor => this.spawnPawn(actor));
 
-        // Spawning pawns is an immediate subscription because pawns subscribe to actor messages in their
+        // Spawning pawns is an immediate subscription because pawns often subscribe to actor messages in their
         // constructors. This guarantees the pawn will be around if the new actor immediately sends a message.
 
         this.subscribe("actor", {event: "createActor", handling: "immediate"}, this.spawnPawn);
@@ -54,17 +54,18 @@ export class PawnManager extends ViewService {
 
     addDynamic(pawn) {
         this.dynamic.add(pawn);
-        console.log(this.dynamic);
     }
 
     deleteDynamic(pawn) {
         this.dynamic.delete(pawn);
-        console.log(this.dynamic);
     }
 
 
     update(time, delta) {
-        this.dynamic.forEach(pawn => pawn.update(time, delta));
+        this.dynamic.forEach( pawn => {
+            if (pawn.parent) return; // Child pawns get updated in their parent's postUpdate
+            pawn.fullUpdate(time, delta);
+        });
     }
 }
 
@@ -89,7 +90,7 @@ export class Pawn extends WorldcoreView {
     // Updates the pawn visuals (if there are any). Mixins that handle rendering should overload it. Mixins that handle transforms should call it
     // at most once per frame.
 
-    refresh() {}
+    refresh() {} // Replace with a message!
 
     destroy() {
         pm.delete(this);
@@ -122,7 +123,8 @@ export class Pawn extends WorldcoreView {
 //-- PM_Dynamic ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Dynamic pawns get their update called every frame
+// Dynamic pawns get their update called every frame. Most stuff should go in update, but if there are operations
+// that need to occur before or after everything else, you can overload pre- and post- update.
 
 export const PM_Dynamic = superclass => class extends superclass {
     constructor(...args) {
@@ -135,9 +137,14 @@ export const PM_Dynamic = superclass => class extends superclass {
         super.destroy();
     }
 
-    update(time, delta) {
-        if (this.parent) return;
-        this.lastFrameTime = time;
+    preUpdate(time, delta) {} // Called immediately before the main update
+    update(time, delta) {}
+    postUpdate(time, delta){} // Called immediately after the main update.
+
+    fullUpdate(time, delta) {
+        this.preUpdate(time, delta);
+        this.update(time, delta);
+        this.postUpdate(time, delta);
     }
 
 }

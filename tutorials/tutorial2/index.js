@@ -28,11 +28,10 @@ class MyActor extends mix(Actor).with(AM_Smoothed) {
     }
 
     tick() {
-        const q = q_axisAngle(v3_normalize([-1,1,-1]), toRad(40));
+        const q = q_axisAngle(v3_normalize([-1,1,-1]), toRad(4));
         const rotation = q_multiply(this.rotation, q );
         this.rotateTo(rotation);
-        // this.set({rotation});
-        this.future(500).tick();
+        this.future(50).tick();
     }
 
     spawnChild() {
@@ -50,7 +49,7 @@ MyActor.register('MyActor');
 
 class MyChildActor extends mix(Actor).with(AM_Smoothed) {
 
-    get pawn() {return MyChildPawn}
+    get pawn() {return MyPawn}
 
     init(options) {
         super.init(options);
@@ -73,38 +72,33 @@ class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
         this.setDrawCall(new DrawCall(mesh));
     }
 
-    // update(time, delta) {
-    //     console.log(this.isRotating);
-    //     super.update(time, delta);
-    // }
-
 }
 
-class MyChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
-    constructor(...args) {
-        super(...args);
-        const mesh = Cube(1,1,1);
-        mesh.load();    // Meshes need to be loaded to buffer them onto the graphics card
-        mesh.clear();   // However once a mesh is loaded it can be cleared so its not taking up memory.
-        this.setDrawCall(new DrawCall(mesh));
+// class MyChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
+//     constructor(...args) {
+//         super(...args);
+//         const mesh = Cube(1,1,1);
+//         mesh.load();    // Meshes need to be loaded to buffer them onto the graphics card
+//         mesh.clear();   // However once a mesh is loaded it can be cleared so its not taking up memory.
+//         this.setDrawCall(new DrawCall(mesh));
 
-        // this.listenOnce("rotateTo", () => {
-        //     console.log("xxx");
-        // });
-    }
+//         // this.listenOnce("rotateTo", () => {
+//         //     console.log("xxx");
+//         // });
+//     }
 
-    update(time, delta) {
-        super.update(time, delta);
-        // console.log(this.global);
-    }
+//     update(time, delta) {
+//         super.update(time, delta);
+//         // console.log("child update");
+//     }
 
-    // interpolateRotation(tug) {
-    //     // console.log("interp");
-    //     super.interpolateRotation(tug);
+//     // interpolateRotation(tug) {
+//     //     // console.log("interp");
+//     //     super.interpolateRotation(tug);
 
-    // }
+//     // }
 
-}
+// }
 
 //------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------

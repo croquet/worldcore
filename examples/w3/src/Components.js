@@ -62,15 +62,16 @@ export const AM_VoxelSmoothed = superclass => class extends AM_Smoothed(supercla
     voxelMoveTo(xyz, fraction) {
         this._xyz = xyz;
         this._fraction = fraction;
-        const v = Voxels.toWorldXYZ(v3_add(this.xyz, this.fraction));
-        this.say("moveTo", v);
+        // const v = Voxels.toWorldXYZ(v3_add(this.xyz, this.fraction));
+        // // this.say("moveTo", v);
         this.localChanged();
     }
 
     moveTo(v) {
         this.extractVoxelInfo(v);
-        this.say("moveTo", v);
-        this.localChanged();
+        super.moveTo(v);
+        // this.say("moveTo", v);
+        // this.localChanged();
     }
 
 };
@@ -81,8 +82,8 @@ RegisterMixin(AM_VoxelSmoothed);
 export const PM_VoxelSmoothed = superclass => class extends PM_Smoothed(superclass) {
     constructor(...args) {
         super(...args);
-        this.listenOnce("_xyz", d => {this._translation = this.actor.translation; this.localChanged();});
-        this.listenOnce("_fraction", d => {this._translation = this.actor.translation; this.localChanged();});
+        this.listenOnce("_xyz", d => {this._translation = this.actor.translation; this._local = null; this._global = null;});
+        this.listenOnce("_fraction", d => {this._translation = this.actor.translation; this._local = null; this._global = null;});
     }
 
 };
