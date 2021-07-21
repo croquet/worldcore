@@ -330,7 +330,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     get rotation() { return this._rotation; }
     set tug(t) {this._tug = t}
     get tug() {
-        if (this.parent) return parent.tug;
+        if (this.parent) return this.parent.tug;
         return this._tug;
     }
 
@@ -355,6 +355,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 
     update(time, delta) {
         super.update(time, delta);
+
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
 

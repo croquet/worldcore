@@ -55,10 +55,15 @@ MyActor.register('MyActor');
 class MyPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
     constructor(...args) {
         super(...args);
-        const mesh = Cube(1,1,1);
-        mesh.load();    // Meshes need to be loaded to buffer them onto the graphics card
-        mesh.clear();   // However once a mesh is loaded it can be cleared so its not taking up memory.
-        this.setDrawCall(new DrawCall(mesh));
+        this.mesh = Cube(1,1,1);
+        this.mesh.load();    // Meshes need to be loaded to buffer them onto the graphics card
+        this.mesh.clear();   // However once a mesh is loaded it can be cleared so its not taking up memory.
+        this.setDrawCall(new DrawCall(this.mesh));
+    }
+
+    destroy() {
+        super.destroy();
+        this.mesh.destroy(); // Meshes in the WebGL renderer can be reused, so we need to explicitly destroy them when we're done with them.
     }
 }
 
