@@ -248,7 +248,7 @@ constructor(...args) {
     this.listenOnce("globalChanged", this.onGlobalChanged);
 }
 
-onGlobalChanged() { this.refresh()}
+onGlobalChanged() { this.say("viewGlobalChanged"); }
 
 get scale() { return this.actor.scale; }
 get translation() { return this.actor.translation; }
@@ -377,17 +377,15 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         }
 
         if (!this._global) {
-            if (this.children) this.children.forEach(child => child._global = null); // This makes it happen even on start-up!
-            this.refresh(); // Replace with message!
+            if (this.children) this.children.forEach(child => child._global = null); // If our global changes, so do the globals of our children
+            this.say("viewGlobalChanged");
         }
 
     }
 
     postUpdate(time, delta) {
         super.postUpdate(time, delta);
-        if (this.children) {
-            this.children.forEach(child => child.fullUpdate(time, delta));
-        }
+        if (this.children) this.children.forEach(child => child.fullUpdate(time, delta));
     }
 
 }

@@ -99,8 +99,7 @@ const limbo = m4_translation([Voxels.scaleX * Voxels.sizeX / 2, Voxels.scaleY * 
 
 export const PM_LayeredInstancedVisible = superclass => class extends PM_InstancedVisible(superclass) {
 
-    refresh() {
-        super.refresh();
+    refreshDrawTransform() {
         if (this.draw) {
             if (this.actor.xyz[2] <= GetTopLayer()) {
                 this.draw.instances.set(this.actor.id, this.global);

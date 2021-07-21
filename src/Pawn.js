@@ -87,11 +87,6 @@ export class Pawn extends WorldcoreView {
     get actor() {return this._actor};
     get pawnManager() { return pm};
 
-    // Updates the pawn visuals (if there are any). Mixins that handle rendering should overload it. Mixins that handle transforms should call it
-    // at most once per frame.
-
-    refresh() {} // Replace with a message!
-
     destroy() {
         pm.delete(this);
         this.detach(); // Calling View clean-up.

@@ -1,9 +1,7 @@
 import { MainDisplay, Scene, Camera, Lights, GeometryBuffer, Framebuffer, SharedStencilFramebuffer, GetGLVersion, SetGLCamera, SetGLPipeline, StartStencilCapture, EndStencil, StartStencilApply } from "./Render";
 import { BasicShader, DecalShader, TranslucentShader, InstancedShader, GeometryShader, InstancedGeometryShader, TranslucentGeometryShader, PassthruShader, BlendShader, AOShader, InstancedDecalShader } from "./Shaders";
-import { NamedView, GetNamedView } from "./NamedView";
-import {toRad, m4_identity, m4_multiply } from "./Vector";
-import { viewRoot, ViewRoot } from "./ViewRoot";
-import { ViewService, GetViewService } from "./Root";
+import {toRad, m4_identity } from "./Vector";
+import { ViewService } from "./Root";
 
 
 //------------------------------------------------------------------------------------------
@@ -20,14 +18,18 @@ import { ViewService, GetViewService } from "./Root";
 
 export const PM_Visible = superclass => class extends superclass {
 
+    constructor(...args) {
+        super(...args);
+        this.listen("viewGlobalChanged", this.refreshDrawTransform);
+    }
+
     destroy() {
         super.destroy();
         if (this.draw) this.service('RenderManager').scene.removeDrawCall(this.draw);
     }
 
-    refresh() {
-        super.refresh();
-        if (this.draw && this.global) this.draw.transform.set(this.global);
+    refreshDrawTransform() {
+        if (this.draw) this.draw.transform.set(this.global);
     }
 
     setDrawCall(draw) {
@@ -54,18 +56,21 @@ export const PM_Visible = superclass => class extends superclass {
 
 export const PM_InstancedVisible = superclass => class extends superclass {
 
+    constructor(...args) {
+        super(...args);
+        this.listen("viewGlobalChanged", this.refreshDrawTransform);
+    }
+
     destroy() {
         super.destroy();
         if (this.draw) this.draw.instances.delete(this.actor.id);
     }
 
-    refresh() {
-        super.refresh();
+    refreshDrawTransform() {
         if (this.draw) this.draw.instances.set(this.actor.id, this.global);
     }
 
     setDrawCall(draw) {
-        // const scene = GetViewService('ViewRoot').render.scene;
         const scene = this.service('RenderManager').scene;
 
         this.draw = draw;
@@ -73,8 +78,6 @@ export const PM_InstancedVisible = superclass => class extends superclass {
             this.draw.instances.set(this.actor.id, this.global);
             scene.addDrawCall(this.draw);
         }
-
-        // if (this.draw) scene.addDrawCall(this.draw);
     }
 
 }
@@ -83,7 +86,10 @@ export const PM_InstancedVisible = superclass => class extends superclass {
 //-- Camera Mixin --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+
+
 export const PM_Camera = superclass => class extends superclass {
+
     constructor(...args) {
         super(...args);
         const render = this.service("RenderManager");
@@ -91,13 +97,12 @@ export const PM_Camera = superclass => class extends superclass {
             render.camera.setLocation(this.lookGlobal);
             render.camera.setProjection(toRad(60), 1.0, 10000.0);
         }
+        this.listen("lookGlobalChanged", this.refreshCameraTransform);
     }
 
-    refresh() {
-        super.refresh();
+    refreshCameraTransform() {
         const render = this.service("RenderManager");
-        if (!this.isMyPlayerPawn && render) return;
-
+        if (!this.isMyPlayerPawn || !render) return;
         render.camera.setLocation(this.lookGlobal);
     }
 

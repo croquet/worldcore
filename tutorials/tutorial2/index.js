@@ -22,6 +22,10 @@ class MyActor extends mix(Actor).with(AM_Smoothed) {
 
     init(options) {
         super.init(options);
+
+        // TransformActor.create({parent: this, translation: [1.5,0,0] });
+        // MyChildActor.create({parent: this, translation: [1.5,0,0], scale: [0.5, 0.5, 0.5]} );
+
         this.spawnChild();
         this.subscribe("input", "sDown", this.spawnChild)
         this.tick();
@@ -42,6 +46,30 @@ class MyActor extends mix(Actor).with(AM_Smoothed) {
 
 }
 MyActor.register('MyActor');
+
+class TransformActor extends mix(Actor).with(AM_Smoothed)  {
+
+    get pawn() {return MyPawn}
+
+    init(options) {
+        super.init(options);
+        MyChildActor.create({parent: this, translation: [1.5,0,0], scale: [0.5, 0.5, 0.5]} );
+        this.tick();
+    }
+
+    tick() {
+        const q = q_axisAngle(v3_normalize([1,1,-1]), toRad(8));
+        const rotation = q_multiply(this.rotation, q );
+        console.log(this.global);
+        this.rotateTo(rotation);
+
+        this.future(50).tick();
+    }
+}
+TransformActor.register('TransformActor');
+
+class TransformPawn extends mix(Pawn).with(PM_Smoothed) {
+}
 
 //------------------------------------------------------------------------------------------
 //-- MyChildActor --------------------------------------------------------------------------
@@ -73,32 +101,6 @@ class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
     }
 
 }
-
-// class MyChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
-//     constructor(...args) {
-//         super(...args);
-//         const mesh = Cube(1,1,1);
-//         mesh.load();    // Meshes need to be loaded to buffer them onto the graphics card
-//         mesh.clear();   // However once a mesh is loaded it can be cleared so its not taking up memory.
-//         this.setDrawCall(new DrawCall(mesh));
-
-//         // this.listenOnce("rotateTo", () => {
-//         //     console.log("xxx");
-//         // });
-//     }
-
-//     update(time, delta) {
-//         super.update(time, delta);
-//         // console.log("child update");
-//     }
-
-//     // interpolateRotation(tug) {
-//     //     // console.log("interp");
-//     //     super.interpolateRotation(tug);
-
-//     // }
-
-// }
 
 //------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------

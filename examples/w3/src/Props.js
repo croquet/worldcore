@@ -110,7 +110,7 @@ PropActor.register('PropActor');
 class PropPawn extends mix(Pawn).with(PM_Spatial, PM_LayeredInstancedVisible) {
     constructor(...args) {
         super(...args);
-        this.subscribe("hud", "topLayer", this.refresh);
+        this.subscribe("hud", "topLayer", () => this.say("viewGlobalChanged"));
     }
 }
 
@@ -165,7 +165,6 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
             z = surface.rawElevation(x,y);
             if (z === undefined) console.warn("Illegal tree position! " + [x,y]);
         }
-        // z -= 0.1; // Stick into ground. Causes validation problem.
 
         this.set({
             fraction:[x,y,z],
