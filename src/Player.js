@@ -6,7 +6,7 @@ import { ModelService } from "./Root";
 //-- PlayerManager -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Maintains a list of player connected to the session. Your player manager should override the
+// Maintains a list of players connected to the session. Your player manager should override the
 // createPlayer() method.
 
 export class PlayerManager extends ModelService {

@@ -411,39 +411,49 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 
 export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
 
-    init(...args) {
-        this.listen("avatar_moveTo", this.onMoveTo);
-        this.listen("avatar_rotateTo", this.onRotateTo);
-        this.listen("avatar_setVelocity", this.onSetVelocity);
-        this.listen("avatar_setSpin", this.onSetSpin);
-        super.init(...args);
-        this.avatar_tickStep = 15;
-        this.future(0).tick(0);
-    }
-
     get spin() { return this._spin || q_identity() };
     get velocity() { return this._velocity || v3_unit() };
 
-    onMoveTo(v) {
-        this.moveTo(v);
+    init(...args) {
+        this.listen("avatarMoveTo", this.moveTo);
+        this.listen("avatarRotateTo", this.rotateTo);
+        this.listen("avatarSetVelocity", this.onSetVelocity);
+        this.listen("avatarSetSpin", this.onSetSpin);
+        super.init(...args);
+        this.avatar_tickStep = 14;
+        this.future(0).tick(0);
     }
 
-    onRotateTo(q) {
-        this.rotateTo(q);
+    // onMoveTo(v) {
+    //     this.moveTo(v);
+    // }
+
+    // onRotateTo(q) {
+    //     this.rotateTo(q);
+    // }
+
+    // onSetVelocity(v) { // Faster version that doesn't use generic set syntax
+    //     const o = this.velocity;
+    //     this._velocity = v;
+    //     this.say("_velocity", {o: o, v: v});
+    //     this.isMoving = !v3_isZero(this.velocity);
+    // }
+
+    // onSetSpin(q) { // Faster version that doesn't use generic set syntax
+    //     const o = this.spin;
+    //     this._spin = q;
+    //     this.say("_spin", {o: o, v: q});
+    //     this.isRotating = !q_isZero(this.spin);
+    // }
+
+    onSetVelocity(v) {
+        this.set({velocity: v});
+        this.isMoving = !v3_isZero(v);
     }
 
-    onSetVelocity(v) { // Faster version that doesn't use generic set syntax
-        const o = this.velocity;
-        this._velocity = v;
-        this.say("_velocity", {o: o, v: v});
-        this.isMoving = !v3_isZero(this.velocity);
-    }
-
-    onSetSpin(q) { // Faster version that doesn't use generic set syntax
-        const o = this.spin;
-        this._spin = q;
-        this.say("_spin", {o: o, v: q});
-        this.isRotating = !q_isZero(this.spin);
+    onSetSpin(q) {
+        this.set({spin: q});
+        this.isRotating = !q_isZero(q);
     }
 
     tick(delta) {
@@ -470,13 +480,12 @@ RegisterMixin(AM_Avatar);
 export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
     constructor(...args) {
         super(...args);
-        this.setTug(0.05);    // Bias the tug even more toward the pawn's immediate position.
 
         this.moveThrottle = 15;    // MS between throttled moveTo events
-        this.lastMoveTime = this.lastFrameTime;
+        this.lastMoveTime = this.time;
 
         this.rotateThrottle = 50;  // MS between throttled rotateTo events
-        this.lastRotateTime = this.lastFrameTime;
+        this.lastRotateTime = this.time;
 
         this.velocity = v3_zero();
         this.spin = q_identity();
@@ -486,21 +495,21 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
     moveTo(v) {
         this._translation = v;
-        this.lastMoveTime = this.lastFrameTime;
+        this.lastMoveTime = this.time;
         this.lastMoveCache = null;
-        this.say("avatar_moveTo", v);
+        this.say("avatarMoveTo", v);
     }
 
     // No matter how often throttledMoveTo is called, it will only send a message to the reflector once per throttle interval.
 
     throttledMoveTo(v) {
-        if (this.lastFrameTime < this.lastMoveTime + this.moveThrottle) {
+        if (this.time < this.lastMoveTime + this.moveThrottle) {
             this._translation = v;
             this.lastMoveCache = v;
         } else {
-            this.lastMoveTime = this.lastFrameTime;
+            this.lastMoveTime = this.time;
             this.lastMoveCache = null;
-            this.say("avatar_moveTo", v);
+            this.say("avatarMoveTo", v);
         }
     }
 
@@ -508,15 +517,15 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
     rotateTo(q) {
         this._rotation = q;
-        this.lastRotateTime = this.lastFrameTime;
+        this.lastRotateTime = this.time;
         this.lastRotateCache = null;
-        this.say("avatar_rotateTo", q);
+        this.say("avatarRotateTo", q);
     }
 
     // No matter how often throttleRotateTo is called, it will only send a message to the reflector once per throttle interval.
 
     throttledRotateTo(q) {
-        if (this.lastFrameTime < this.lastRotateTime + this.rotateThrottle) {
+        if (this.time < this.lastRotateTime + this.rotateThrottle) {
             this._rotation = q;
             this.lastRotateCache = q;
         } else {
@@ -527,33 +536,36 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
     setVelocity(v) {
         this.velocity = v;
         this.isMoving = this.isMoving || !v3_isZero(this.velocity);
-        this.say("avatar_setVelocity", this.velocity);
+        this.say("avatarSetVelocity", this.velocity);
     }
 
     setSpin(q) {
         this.spin = q;
         this.isRotating = this.isRotating || !q_isZero(this.spin);
-        this.say("avatar_setSpin", this.spin);
+        this.say("avatarSetSpin", this.spin);
     }
 
     update(time, delta) {
 
         if (this.isRotating) {
             this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), delta));
-            this.localChanged();
+            this._local = null;
+            this._global = null;
         }
         if (this.isMoving)  {
             const relative = v3_scale(this.velocity, delta);
             const move = v3_transform(relative, m4_rotationQ(this.rotation));
             this._translation = v3_add(this._translation, move);
-            this.localChanged();
+            this._local = null;
+            this._global = null;
         }
+
         super.update(time, delta);
 
         // If a throttled move sequence ends, send the final cached value
 
-        if (this.lastMoveCache && this.lastFrameTime > this.lastMoveTime + this.moveThrottle) this.moveTo(this.lastMoveCache);
-        if (this.lastRotateCache && this.lastFrameTime > this.lastRotateTime + this.rotateThrottle) this.rotateTo(this.lastRotateCache);
+        if (this.lastMoveCache && this.time > this.lastMoveTime + this.moveThrottle) this.moveTo(this.lastMoveCache);
+        if (this.lastRotateCache && this.time > this.lastRotateTime + this.rotateThrottle) this.rotateTo(this.lastRotateCache);
 
     }
 
@@ -598,7 +610,7 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
         this._lookYaw = this.actor.lookYaw;
 
         this.lookThrottle = 15;  // MS between throttled lookTo events
-        this.lastlookTime = this.lastFrameTime;
+        this.lastlookTime = this.time;
 
         this.lookOffset = [0,1,0]; // Vector displacing the camera from the avatar origin.
     }
@@ -608,7 +620,7 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
 
     lookTo(pitch, yaw) {
         this.setLookAngles(pitch, yaw);
-        this.lastLookTime = this.lastFrameTime;
+        this.lastLookTime = this.time;
         this.lastLookCache = null;
         this.say("avatar_lookTo", [pitch, yaw]);
     }
@@ -616,7 +628,7 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
     throttledLookTo(pitch, yaw) {
         pitch = Math.min(Math.PI/2, Math.max(-Math.PI/2, pitch));
         yaw = clampRad(yaw);
-        if (this.lastFrameTime < this.lastLookTime + this.lookThrottle) {
+        if (this.time < this.lastLookTime + this.lookThrottle) {
             this.setLookAngles(pitch, yaw);
             this.lastLookCache = {pitch, yaw};
         } else {
@@ -648,7 +660,7 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
     update(time, delta) {
         super.update(time, delta);
 
-        if (this.lastLookCache && this.lastFrameTime > this.lastLookTime + this.lookThrottle) {
+        if (this.lastLookCache && this.time > this.lastLookTime + this.lookThrottle) {
             this.lookTo(this.lastLookCache.pitch, this.lastLookCache.yaw);
         }
 
