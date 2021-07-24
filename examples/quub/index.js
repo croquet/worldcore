@@ -98,9 +98,14 @@ MyModelRoot.register("MyModelRoot");
 
 let topLayer = Voxels.sizeZ;
 
+export function SetTopLayer(n) { topLayer = n }
+export function GetTopLayer(n) { return topLayer }
+
 class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
+
+        this.hud = new HUD(this.ui.root);
 
         this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
         this.render.lights.setAmbientColor([0.8, 0.8, 0.8]);
@@ -117,15 +122,13 @@ class MyViewRoot extends ViewRoot {
 
     }
 
-    createManagers() {
-        this.webInput = this.addManager(new InputManager(this.model));
-        this.render = this.addManager(new RenderManager(this.model));
-        this.terrainRender = this.addManager(new TerrainRender(this.model));
-        this.voxelCursor = this.addManager(new VoxelCursor(this.model));
-        this.ui = this.addManager(new UIManager(this.model));
-        this.hud = this.addManager(new HUD(this.ui.root));
-        this.godView = this.addManager(new GodView(this.model));
-        this.pawnManager = this.addManager(new PawnManager(this.model));
+    createServices() {
+        this.webInput = this.addService(InputManager);
+        this.render = this.addService(RenderManager);
+        this.terrainRender = this.addService(TerrainRender);
+        this.voxelCursor = this.addService(VoxelCursor);
+        this.ui = this.addService(UIManager);
+        this.godView = this.addService(GodView);
     }
 
     setTopLayer(top) {

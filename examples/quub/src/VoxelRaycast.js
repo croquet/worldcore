@@ -1,5 +1,6 @@
-import { GetNamedView, v3_divide, v2_add, v2_sub, v2_multiply, v3_sub, v3_normalize } from "@croquet/worldcore";
+import { GetNamedView, v3_divide, v2_add, v2_sub, v2_multiply, v3_sub, v3_normalize, GetViewService, GetModelService } from "@croquet/worldcore";
 import { Voxels } from './Voxels';
+import { GetTopLayer } from "../index";
 
 // export function PickEmptyVoxel(xy) {
 //     const pick = PickVoxel(xy);
@@ -95,8 +96,9 @@ import { Voxels } from './Voxels';
 // xyz = null means no voxel was selected.
 
 export function PickBase(xy) {
-    const viewRoot =  GetNamedView("ViewRoot");
-    const camera = viewRoot.render.camera;
+    // const viewRoot =  GetNamedView("ViewRoot");
+    const render = GetViewService("RenderManager");
+    const camera = render.camera;
 
     const start = v3_divide(camera.location, Voxels.scale);
     const aim = v3_divide(camera.viewLookRay(...xy), Voxels.scale);
@@ -111,10 +113,11 @@ export function PickBase(xy) {
 }
 
 export function PickSolidVoxel(xy) {
-    const viewRoot =  GetNamedView("ViewRoot");
-    const camera = viewRoot.render.camera;
-    const topLayer = viewRoot.topLayer;
-    const voxels = viewRoot.model.voxels;
+    // const viewRoot =  GetNamedView("ViewRoot");
+    const render = GetViewService("RenderManager");
+    const camera = render.camera;
+    const topLayer = GetTopLayer();
+    const voxels = GetModelService("Voxels");
 
     const start = v3_divide(camera.location, Voxels.scale);
     const aim = v3_divide(camera.viewLookRay(...xy), Voxels.scale);
@@ -132,10 +135,13 @@ export function PickSolidVoxel(xy) {
 }
 
 export function PickEmptyVoxel(xy) {
-    const viewRoot =  GetNamedView("ViewRoot");
-    const camera = viewRoot.render.camera;
-    const surfaces = viewRoot.model.surfaces;
-    const topLayer = viewRoot.topLayer;
+    // const viewRoot =  GetNamedView("ViewRoot");
+    const render = GetViewService("RenderManager");
+    const surfaces = GetModelService("Surfaces");
+    const camera = render.camera;
+    // const surfaces = viewRoot.model.surfaces;
+    // const topLayer = viewRoot.topLayer;
+    const topLayer = GetTopLayer();
 
     const start = v3_divide(camera.location, Voxels.scale);
     const aim = v3_divide(camera.viewLookRay(...xy), Voxels.scale);
@@ -162,66 +168,67 @@ export function PickEmptyVoxel(xy) {
     return null;
 }
 
-export function PickVoxel(xy) {
-    let xyz;
-    let intersect;
-    let direction;
-    let isSolid;
+// export function PickVoxel(xy) {
+//     let xyz;
+//     let intersect;
+//     let direction;
+//     let isSolid;
 
-    const viewRoot =  GetNamedView("ViewRoot");
-    const camera = viewRoot.render.camera;
-    const start = v3_divide(camera.location, Voxels.scale);
-    const aim = v3_divide(camera.viewLookRay(...xy), Voxels.scale);
+//     // const viewRoot =  GetNamedView("ViewRoot");
+//     const render = GetViewService("RenderManager");
+//     const camera = render.camera;
+//     const start = v3_divide(camera.location, Voxels.scale);
+//     const aim = v3_divide(camera.viewLookRay(...xy), Voxels.scale);
 
-    const voxels = viewRoot.model.voxels;
-    const surfaces = viewRoot.model.surfaces;
-    const topLayer = viewRoot.topLayer;
+//     const voxels = viewRoot.model.voxels;
+//     const surfaces = viewRoot.model.surfaces;
+//     const topLayer = viewRoot.topLayer;
 
-    const raycast = FilteredVoxelRaycast(start, aim);
+//     const raycast = FilteredVoxelRaycast(start, aim);
 
-    xyz = raycast.find(rc => {
-        if ( rc[2] > topLayer) return false;
-        const id = Voxels.packID(...rc);
-        const surface = surfaces.get(id);
+//     xyz = raycast.find(rc => {
+//         if ( rc[2] > topLayer) return false;
+//         const id = Voxels.packID(...rc);
+//         const surface = surfaces.get(id);
 
-        if ( rc[2] === topLayer) {
-            if (surface) {
-                intersect = surface.intersectBase(start, aim);
-                isSolid = false;
-            } else {
-                if (!voxels.get(...Voxels.adjacent(...rc, Voxels.below))) return false;
-                intersect = Voxels.intersectBase(...rc, start, aim);
-                isSolid = true;
-            }
-            if (intersect) {
-                direction = Voxels.below;
-                return true;
-            }
-        }
+//         if ( rc[2] === topLayer) {
+//             if (surface) {
+//                 intersect = surface.intersectBase(start, aim);
+//                 isSolid = false;
+//             } else {
+//                 if (!voxels.get(...Voxels.adjacent(...rc, Voxels.below))) return false;
+//                 intersect = Voxels.intersectBase(...rc, start, aim);
+//                 isSolid = true;
+//             }
+//             if (intersect) {
+//                 direction = Voxels.below;
+//                 return true;
+//             }
+//         }
 
-        if (!surface) return false;
-        isSolid = false;
+//         if (!surface) return false;
+//         isSolid = false;
 
-        for (direction = 5; direction >=0; direction--) {
-            intersect = surface.intersect(start, aim, direction);
-            if (intersect) return true;
-        }
-        return false;
-    });
+//         for (direction = 5; direction >=0; direction--) {
+//             intersect = surface.intersect(start, aim, direction);
+//             if (intersect) return true;
+//         }
+//         return false;
+//     });
 
-    const length = raycast.length;
-    if (length > 1) {
-        const last = raycast[length-1];
-        if (!xyz && last[2] === 0) {
-            xyz = last;
-            intersect = Voxels.intersectBase(...last, start, aim);
-            direction = Voxels.below;
-            isSolid = false;
-        }
-    }
+//     const length = raycast.length;
+//     if (length > 1) {
+//         const last = raycast[length-1];
+//         if (!xyz && last[2] === 0) {
+//             xyz = last;
+//             intersect = Voxels.intersectBase(...last, start, aim);
+//             direction = Voxels.below;
+//             isSolid = false;
+//         }
+//     }
 
-    return {xyz, intersect, direction, isSolid};
-}
+//     return {xyz, intersect, direction, isSolid};
+// }
 
 //------------------------------------------------------------------------------------------
 //-- FilteredVoxelRaycast ------------------------------------------------------------------

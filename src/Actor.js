@@ -27,11 +27,6 @@ export class ActorManager extends ModelService {
         this.actors.delete(actor.id);
     }
 
-    // destroyAll() {
-    //     const doomed = new Map(this.actors);
-    //     doomed.forEach(actor => actor.destroy());
-    // }
-
 }
 ActorManager.register("ActorManager");
 

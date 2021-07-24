@@ -1,11 +1,11 @@
-import { GetNamedView, DrawCall, Material, v3_multiply, m4_translation, NamedView, Triangles, GetNamedModel, v3_floor, UnitCube } from "@croquet/worldcore";
+import { DrawCall, Material, v3_multiply, m4_translation, Triangles, GetNamedModel, v3_floor, UnitCube, ViewService } from "@croquet/worldcore";
 import { PickEmptyVoxel, PickSolidVoxel, PickBase } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 import { Colors } from "./Colors";
 
-export class VoxelCursor extends NamedView {
-    constructor(model) {
-        super("VoxelCursor", model);
+export class VoxelCursor extends ViewService {
+    constructor() {
+        super("VoxelCursor");
 
         this.mesh = this.buildCube();
         this.setColor(12);
@@ -22,7 +22,8 @@ export class VoxelCursor extends NamedView {
         this.call = new DrawCall(this.mesh, this.material);
         this.call.isHidden = true;
 
-        const render = GetNamedView("ViewRoot").render;
+        // const render = GetNamedView("ViewRoot").render;
+        const render = this.service("RenderManager");
         if (!noShow) render.scene.addDrawCall(this.call);
 
         this.subscribe("hud", "editColor", this.setColor);
@@ -58,7 +59,8 @@ export class VoxelCursor extends NamedView {
 
     destroy() {
         super.destroy();
-        GetNamedView("ViewRoot").render.scene.removeDrawCall(this.call);
+        const render = this.service("RenderManager");
+        render.scene.removeDrawCall(this.call);
         this.mesh.destroy();
         this.material.destroy();
     }

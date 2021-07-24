@@ -1,5 +1,5 @@
 import { m4_scalingRotationTranslation, v3_scale, v3_add, v3_multiply,
-    q_axisAngle, toRad, GetNamedView, TAU, q_multiply, KeyDown, m4_translation, m4_rotationZ, m4_multiply, v3_transform, NamedView } from "@croquet/worldcore";
+    q_axisAngle, toRad, TAU, q_multiply, KeyDown, m4_translation, m4_rotationZ, m4_multiply, v3_transform, ViewService } from "@croquet/worldcore";
 import { PickEmptyVoxel, PickBase } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 
@@ -8,11 +8,11 @@ let pitch = toRad(45);
 let yaw = toRad(315);
 let fov = toRad(20);
 
-export class GodView extends NamedView {
-    constructor(model) {
-        super("GodView", model);
+export class GodView extends ViewService {
+    constructor() {
+        super("GodView");
 
-        const render = GetNamedView('RenderManager');
+        const render = this.service('RenderManager');
         this.camera = render.camera;
         this.camera.setProjection(fov, 1.0, 10000.0)
         this.camera.setFOV(fov);

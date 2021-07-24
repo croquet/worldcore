@@ -50,9 +50,7 @@ export class ModelRoot extends WorldcoreModel {
     }
 
 }
-
 // The ModelRoot base class is not registered so we can catch if users register multiple child classes of it.
-
 
 //------------------------------------------------------------------------------------------
 //-- ModelService --------------------------------------------------------------------------
@@ -73,6 +71,8 @@ export class ModelService extends WorldcoreModel {
 
 }
 ModelService.register('ModelService');
+
+export function GetModelService(name) { return viewRoot.wellKnownModel(name) }
 
 //------------------------------------------------------------------------------------------
 //-- WorldcoreView -------------------------------------------------------------------------
@@ -157,6 +157,8 @@ export class ViewService extends WorldcoreView {
     }
 
 }
+
+export function GetViewService(name) { return viewServices.get(name) }
 
 //------------------------------------------------------------------------------------------
 //-- StartWorldcore ------------------------------------------------------------------------

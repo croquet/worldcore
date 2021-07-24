@@ -1,7 +1,8 @@
-import { SliderWidget, GetNamedView, ToggleWidget, ToggleSet, ImageWidget, ButtonWidget, TextWidget, BoxWidget, GetNamedModel, Widget } from "@croquet/worldcore";
+import { SliderWidget, ToggleWidget, ToggleSet, ImageWidget, ButtonWidget, TextWidget, BoxWidget, GetNamedModel, Widget } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { Colors } from "./Colors";
 import stripeIcon from "../assets/horizontalStripe50.png";
+import { GetTopLayer, SetTopLayer } from "../index";
 
 let editColor = 1;
 
@@ -14,7 +15,7 @@ export class HUD extends Widget {
 
     buildGameScreen() {
 
-        const viewRoot = GetNamedView('ViewRoot');
+        // const viewRoot = GetNamedView('ViewRoot');
 
         const whiteToggle = new ToggleWidget(this, {local: [10,10], size:[30,30]});
         this.setColorDefaults(whiteToggle, 1);
@@ -149,9 +150,9 @@ export class HUD extends Widget {
             local: [-10,0],
             size: [20,250],
             step: Voxels.sizeZ,
-            percent: 1 - (viewRoot.topLayer-1) / (Voxels.sizeZ-1)
+            percent: 1 - (GetTopLayer-1) / (Voxels.sizeZ-1)
         });
-        cutawaySlider.onChange = p => viewRoot.setTopLayer(Math.round(1 + (1-p) * (Voxels.sizeZ-1)));
+        cutawaySlider.onChange = p => SetTopLayer(Math.round(1 + (1-p) * (Voxels.sizeZ-1)));
     }
 
     setColorDefaults(toggle, color) {
