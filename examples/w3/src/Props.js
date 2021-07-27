@@ -18,7 +18,7 @@ export class Props extends ModelService {
         this.subscribe("surfaces", "newLevel", this.onNewLevel);
         this.subscribe("surfaces", "changed", this.onChanged);
         this.subscribe("editor", "spawnTree", this.onSpawnTree);
-        // this.subscribe("editor", "spawnRoad", this.onSpawnRoad);
+        this.subscribe("editor", "spawnRoad", this.onSpawnRoad);
     }
 
     destroy() {
@@ -246,7 +246,6 @@ export class RoadActor extends PropActor {
     }
 
     destroy() {
-        this.disconnect();
         this.publish("road", "changed", this.xyz)
         super.destroy();
     }

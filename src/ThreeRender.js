@@ -10,6 +10,11 @@ import { ViewService } from "./Root";
 
 export const PM_ThreeVisible = superclass => class extends superclass {
 
+    constructor(...args) {
+        super(...args);
+        this.listen("viewGlobalChanged", this.refreshDrawTransform);
+    }
+
     destroy() {
         super.destroy();
         this.disposeRenderObject(this.renderObject);
@@ -28,8 +33,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
         if (object.parent) object.parent.remove(object);
     }
 
-    refresh() {
-        super.refresh();
+    refreshDrawTransform() {
         if(this.renderObject){
             this.renderObject.matrix.fromArray(this.global);
             this.renderObject.matrixWorldNeedsUpdate = true;
@@ -82,10 +86,11 @@ export const PM_ThreeCamera = superclass => class extends superclass {
             render.camera.matrixAutoUpdate = false;
             render.camera.matrixWorldNeedsUpdate = true;
         }
+
+        this.listen("lookGlobalChanged", this.refreshCameraTransform);
     }
 
-    refresh() {
-        super.refresh();
+    refreshCameraTransform() {
         if (!this.isMyPlayerPawn) return;
         const render = this.service("ThreeRenderManager");
         render.camera.matrix.fromArray(this.lookGlobal);
