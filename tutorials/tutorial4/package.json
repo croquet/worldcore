@@ -11,7 +11,9 @@
   "author": "Croquet Studios",
   "license": "ISC",
   "dependencies": {
-    "@croquet/worldcore": "file:../.."
+    "@croquet/worldcore": "file:../..",
+    "three": "^0.130.1",
+    "three-fbx-loader": "^1.0.3"
   },
   "devDependencies": {
     "file-loader": "^6.0.0",

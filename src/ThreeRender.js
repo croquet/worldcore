@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { FBXLoader } from "../lib/three/FBXLoader.js"; // This external dependency on a third Party FBX loader isn't great ...
 import { ViewService } from "./Root";
 
 //------------------------------------------------------------------------------------------
@@ -49,25 +48,6 @@ export const PM_ThreeVisible = superclass => class extends superclass {
         render.scene.add(this.renderObject);
 
         this.pawn3D = this.renderObject; // Legacy support for object highlighting in Verizon demo. Delete when we don't need to support it.
-    }
-
-    // Loads a single texture. Returns a promise. The resolve callback receives the pointer to the texture.
-
-    loadTexture(url) {
-        return new Promise((resolve, reject) => {
-            const textureLoader = new THREE.TextureLoader();
-            return textureLoader.load(url, resolve, undefined, reject);
-        });
-    }
-
-        // Loads a single FBX model. Returns a promise. The resolve callback receives the pointer to the model.
-    // The loader creates a top level group with the other models stored under it.
-
-    loadFBXModel(url) {
-        return new Promise((resolve, reject) => {
-            const fbxLoader = new FBXLoader();
-            return fbxLoader.load(url, resolve, undefined, reject);
-        });
     }
 
 };
@@ -120,7 +100,7 @@ export class ThreeRenderManager extends ViewService {
         this.resize();
         this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas });
         this.renderer.shadowMap.enabled = true;
-        this.setBackground([0.5, 0.5, 0.7, 1]);
+        this.setBackground([0, 0, 0, 1]);
 
         THREE.Cache.enabled = true;
 
@@ -151,26 +131,26 @@ export class ThreeRenderManager extends ViewService {
     // Loads multiple textures. Returns a promise. This can be used to prime the cache with a bunch
     // of textures in parallel.
 
-    loadTextureCache(urls) {
-        return new Promise((resolve, reject) => {
-            const loadManager = new THREE.LoadingManager(resolve, undefined, reject);
-            const textureLoader = new THREE.TextureLoader(loadManager);
-            urls.forEach(url => textureLoader.load(url, resolve, undefined, reject));
-        });
-    }
+    // loadTextureCache(urls) {
+    //     return new Promise((resolve, reject) => {
+    //         const loadManager = new THREE.LoadingManager(resolve, undefined, reject);
+    //         const textureLoader = new THREE.TextureLoader(loadManager);
+    //         urls.forEach(url => textureLoader.load(url, resolve, undefined, reject));
+    //     });
+    // }
 
 
 
-    // Loads multiple FBX models. Returns a promise. This can be used to prime the cache with a bunch
-    // of models in parallel.
+    // // Loads multiple FBX models. Returns a promise. This can be used to prime the cache with a bunch
+    // // of models in parallel.
 
-    loadFBXModels(urls) {
-        return new Promise((resolve, reject) => {
-            const loadManager = new THREE.LoadingManager(resolve, undefined, reject);
-            const fbxLoader = new FBXLoader(loadManager);
-            urls.forEach(url => fbxLoader.load(url))
-        });
-    }
+    // loadFBXModels(urls) {
+    //     return new Promise((resolve, reject) => {
+    //         const loadManager = new THREE.LoadingManager(resolve, undefined, reject);
+    //         const fbxLoader = new FBXLoader(loadManager);
+    //         urls.forEach(url => fbxLoader.load(url))
+    //     });
+    // }
 
 
 

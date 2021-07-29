@@ -7,13 +7,20 @@
 // general concepts behind Worldcore. For more inforamation, see croquet.io/sdk.
 //
 
-import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, PM_Visible, RenderManager, DrawCall, Cube, q_axisAngle, InputManager, q_multiply,
+import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, q_axisAngle, InputManager, q_multiply,
     UIManager, Widget, JoystickWidget, AM_Avatar, PM_Avatar, q_identity, q_normalize, PlayerManager, AM_Player, PM_Player, PM_ThreeVisible,
-    ThreeRenderManager } from "@croquet/worldcore";
+    ThreeRenderManager, AM_Spatial, PM_Spatial } from "@croquet/worldcore";
+
+import * as THREE from 'three';
+import * as FBXLoader from 'three-fbx-loader'
 
 import slimeTexture from "./assets/slime_texture.png";
 import slimeModel from "./assets/slime_mesh.fbx";
-import * as THREE from 'three';
+
+import pawn_txt from "./assets/avatarGreyScale_baseColor.png";
+import pawn_fbx from "./assets/avatar_low.fbx";
+
+
 
 //------------------------------------------------------------------------------------------
 //-- MyAvatar ------------------------------------------------------------------------------
@@ -41,12 +48,9 @@ class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_ThreeVisible) {
             texture = t;
             return this.loadFBXModel(slimeModel);
         }).then(m => {
-            model = m;
-
-            model.children[0].material.map = texture;
-            model.children[0].material.color = new THREE.Color(0.5, 0.1, 0.1);
-            model.children[0].castShadow = true;
-            model.children[0].receiveShadow = true;
+            model = m.children[0];
+            model.material.map = texture;
+            model.material.color = new THREE.Color(0.1, 0.8, 0.1);
             this.setRenderObject(model);
         }).catch( () => console.error("Slime not loaded!") );
 
@@ -68,6 +72,61 @@ class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_ThreeVisible) {
         this.setSpin(q);
     }
 
+    loadTexture(url) {
+        return new Promise((resolve, reject) => {
+            const textureLoader = new THREE.TextureLoader();
+            return textureLoader.load(url, resolve, undefined, reject);
+        });
+    }
+
+    loadFBXModel(url) {
+        return new Promise((resolve, reject) => {
+            const fbxLoader = new FBXLoader();
+            return fbxLoader.load(url, resolve, undefined, reject);
+        });
+    }
+
+
+}
+
+//------------------------------------------------------------------------------------------
+// LevelActor
+//------------------------------------------------------------------------------------------
+
+class LevelActor extends mix(Actor).with(AM_Spatial) {
+    get pawn() {return LevelPawn}
+}
+LevelActor.register('LevelActor');
+
+//------------------------------------------------------------------------------------------
+// LevelPawn
+//------------------------------------------------------------------------------------------
+
+class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+    constructor(...args) {
+        super(...args);
+
+        const render = this.service("ThreeRenderManager");
+        render.setBackground([0.45, 0.8, 0.8, 1.0]);
+
+        const group = new THREE.Group();
+
+        const ambient = new THREE.AmbientLight( 0xffffff, 1 );
+        group.add(ambient);
+
+        const sun = new THREE.DirectionalLight( 0xffffff, 0.85 );
+        sun.position.set(0, 10, 0);
+        sun.target.position.set(0, 0, 0);
+        sun.castShadow = true;
+
+        sun.shadow.mapSize.width = 1024;
+        sun.shadow.mapSize.height = 1024;
+
+        group.add(sun);
+        group.add(sun.target);
+
+        this.setRenderObject(group);
+    }
 }
 
 //------------------------------------------------------------------------------------------
@@ -77,7 +136,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_ThreeVisible) {
 class MyPlayerManager extends PlayerManager {
 
     createPlayer(options) {
-        options.translation = [0,0,-4];
+        options.translation = [0,0,-5];
         return MyAvatar.create(options);
     }
 
@@ -91,6 +150,12 @@ MyPlayerManager.register("MyPlayerManager");
 class MyModelRoot extends ModelRoot {
 
     static viewRoot() { return MyViewRoot };
+
+    init(...args) {
+        super.init(...args);
+        console.log("new model!!");
+        this.level = LevelActor.create();
+    }
 
     createServices() {
         this.addService(MyPlayerManager);
