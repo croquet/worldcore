@@ -5,16 +5,12 @@ specifiers:
   file-loader: ^6.0.0
   html-webpack-plugin: ^4.3.0
   inspectpack: ^4.5.2
-  three: ^0.130.1
-  three-fbx-loader: ^1.0.3
   webpack: ^4.44.1
   webpack-cli: ^3.3.12
   webpack-dev-server: ^3.11.0
 
 dependencies:
   '@croquet/worldcore': link:../..
-  three: 0.130.1
-  three-fbx-loader: 1.0.3
 
 devDependencies:
   file-loader: 6.2.0_webpack@4.46.0
@@ -2831,6 +2827,7 @@ packages:
 
   /pako/1.0.11:
     resolution: {integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==}
+    dev: true
 
   /parallel-transform/1.2.0:
     resolution: {integrity: sha512-P2vSmIu38uIlvdcU7fDkyrxj33gTUy/ABO5ZUbGowxNCopBq/OoD42bP4UmMrJoPyk4Uqf0mu3mtWBhHCZD8yg==}
@@ -3700,21 +3697,6 @@ packages:
       source-map: 0.6.1
       source-map-support: 0.5.19
     dev: true
-
-  /three-fbx-loader/1.0.3:
-    resolution: {integrity: sha512-CQZ0IkwqX+ZbIca225mfKCq1feH8XJOf2zqMcC2bugvq20S7alHGsG9QEELbyN9zSL0EvkBXADVDO2lupF0E+A==}
-    dependencies:
-      pako: 1.0.11
-      three: 0.89.0
-    dev: false
-
-  /three/0.130.1:
-    resolution: {integrity: sha512-OSPPKcGvFSiGkG3jFrwwC76PBV/ZSrGxpBbg28bW8s9GU8r/y2spNGtEXHEb/CVqo0Ctf5Lx2rVaxQZB6OasaA==}
-    dev: false
-
-  /three/0.89.0:
-    resolution: {integrity: sha1-RELYGaYWiHG40ss3rRKiQxDBcPU=}
-    dev: false
 
   /through2/2.0.5:
     resolution: {integrity: sha512-/mrRod8xqpA+IHSLyGCQ2s8SPHiCDEeQJSep1jqLYeEUClOFG2Qsh+4FU6G9VeqpZnGW/Su8LQGc4YKni5rYSQ==}

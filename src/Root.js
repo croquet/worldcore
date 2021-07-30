@@ -117,6 +117,7 @@ export class ViewRoot extends WorldcoreView {
     createServices() {}
 
     detach() {
+        console.log("Destroy services");
         viewServices.forEach(s => s.destroy());
         viewServices.clear();
         super.detach();

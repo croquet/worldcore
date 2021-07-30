@@ -16,20 +16,8 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 
     destroy() {
         super.destroy();
-        this.disposeRenderObject(this.renderObject);
-    }
-
-    disposeRenderObject(object) { // Recursively destroys render objects
-        if (!object) return;
-        const doomed = [];
-        object.children.forEach(child => doomed.push(child));
-        doomed.forEach(child => this.disposeRenderObject(child));
-        if (object.geometry && object.material) {
-            object.geometry.dispose();
-            const materials = [].concat(object.material);
-            materials.forEach(material => material.dispose());
-        }
-        if (object.parent) object.parent.remove(object);
+        const render = this.service("ThreeRenderManager");
+        render.scene.remove(this.renderObject);
     }
 
     refreshDrawTransform() {
@@ -46,8 +34,6 @@ export const PM_ThreeVisible = superclass => class extends superclass {
         this.renderObject.matrix.fromArray(this.global);
         this.renderObject.matrixWorldNeedsUpdate = true;
         render.scene.add(this.renderObject);
-
-        this.pawn3D = this.renderObject; // Legacy support for object highlighting in Verizon demo. Delete when we don't need to support it.
     }
 
 };
@@ -97,61 +83,27 @@ export class ThreeRenderManager extends ViewService {
         this.canvas.style.cssText = "position: absolute; left: 0; top: 0; z-index: 0";
         document.body.insertBefore(this.canvas, null);
 
-        this.resize();
         this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas });
         this.renderer.shadowMap.enabled = true;
-        this.setBackground([0, 0, 0, 1]);
 
-        THREE.Cache.enabled = true;
-
+        this.resize();
         this.subscribe("input", "resize", () => this.resize());
     }
 
     destroy() {
         super.destroy();
         this.renderer.dispose();
-        this.scene.dispose();
         this.canvas.remove();
-        THREE.Cache.clear();
     }
 
     resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(window.innerWidth, window.innerHeight)
     }
 
     update() {
         this.renderer.render(this.scene, this.camera);
     }
-
-    setBackground(bg) {
-        this.renderer.setClearColor(new THREE.Color(bg[0], bg[1], bg[2]), bg[3]);
-    }
-
-    // Loads multiple textures. Returns a promise. This can be used to prime the cache with a bunch
-    // of textures in parallel.
-
-    // loadTextureCache(urls) {
-    //     return new Promise((resolve, reject) => {
-    //         const loadManager = new THREE.LoadingManager(resolve, undefined, reject);
-    //         const textureLoader = new THREE.TextureLoader(loadManager);
-    //         urls.forEach(url => textureLoader.load(url, resolve, undefined, reject));
-    //     });
-    // }
-
-
-
-    // // Loads multiple FBX models. Returns a promise. This can be used to prime the cache with a bunch
-    // // of models in parallel.
-
-    // loadFBXModels(urls) {
-    //     return new Promise((resolve, reject) => {
-    //         const loadManager = new THREE.LoadingManager(resolve, undefined, reject);
-    //         const fbxLoader = new FBXLoader(loadManager);
-    //         urls.forEach(url => fbxLoader.load(url))
-    //     });
-    // }
-
-
 
 }

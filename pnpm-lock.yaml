@@ -4,13 +4,13 @@ specifiers:
   '@croquet/croquet': ^0.3.3
   '@dimforge/rapier3d': 0.4.1
   resonance-audio: 1.0.0
-  three: 0.108.0
+  three: ^0.131.0
 
 dependencies:
   '@croquet/croquet': 0.3.3
   '@dimforge/rapier3d': 0.4.1
   resonance-audio: 1.0.0
-  three: 0.108.0
+  three: 0.131.0
 
 packages:
 
@@ -65,8 +65,8 @@ packages:
     resolution: {integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==}
     dev: false
 
-  /three/0.108.0:
-    resolution: {integrity: sha512-d1ysIXwi8qTlbmMwrTxi5pYiiYIflEr0e48krP0LAY8ndS8c6fkLHn6NvRT+o76/Fs9PBLxFViuI62iGVWwwlg==}
+  /three/0.131.0:
+    resolution: {integrity: sha512-s05qedtr8qDG7L7MiUpFNboGWSd2xzKeSRd5iQEOjun5DD5ptRQlNsA6wKTbVCdOGbQuUH4kVXerTeznDlBjkw==}
     dev: false
 
   /toastify-js/1.9.1:

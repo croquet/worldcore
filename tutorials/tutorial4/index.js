@@ -12,15 +12,6 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, q_axisAngle, Inp
     ThreeRenderManager, AM_Spatial, PM_Spatial } from "@croquet/worldcore";
 
 import * as THREE from 'three';
-import * as FBXLoader from 'three-fbx-loader'
-
-import slimeTexture from "./assets/slime_texture.png";
-import slimeModel from "./assets/slime_mesh.fbx";
-
-import pawn_txt from "./assets/avatarGreyScale_baseColor.png";
-import pawn_fbx from "./assets/avatar_low.fbx";
-
-
 
 //------------------------------------------------------------------------------------------
 //-- MyAvatar ------------------------------------------------------------------------------
@@ -41,18 +32,12 @@ class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
-        let texture;
-        let model;
-
-        this.loadTexture(slimeTexture).then(t => {
-            texture = t;
-            return this.loadFBXModel(slimeModel);
-        }).then(m => {
-            model = m.children[0];
-            model.material.map = texture;
-            model.material.color = new THREE.Color(0.1, 0.8, 0.1);
-            this.setRenderObject(model);
-        }).catch( () => console.error("Slime not loaded!") );
+        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        this.material = new THREE.MeshStandardMaterial( {color: 0x008800 } );
+        const cube = new THREE.Mesh( this.geometry, this.material );
+        cube.castShadow = true;
+        cube.receiveShadow = true;
+        this.setRenderObject(cube);
 
         if (this.isMyPlayerPawn) {
             this.subscribe("hud", "joy", this.joy);
@@ -61,6 +46,8 @@ class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_ThreeVisible) {
 
     destroy() {
         super.destroy();
+        this.geometry.dispose();
+        this.material.dispose();
     }
 
     joy(xy) {
@@ -71,21 +58,6 @@ class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_ThreeVisible) {
         q = q_normalize(q);
         this.setSpin(q);
     }
-
-    loadTexture(url) {
-        return new Promise((resolve, reject) => {
-            const textureLoader = new THREE.TextureLoader();
-            return textureLoader.load(url, resolve, undefined, reject);
-        });
-    }
-
-    loadFBXModel(url) {
-        return new Promise((resolve, reject) => {
-            const fbxLoader = new FBXLoader();
-            return fbxLoader.load(url, resolve, undefined, reject);
-        });
-    }
-
 
 }
 
@@ -106,26 +78,35 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
-        const render = this.service("ThreeRenderManager");
-        render.setBackground([0.45, 0.8, 0.8, 1.0]);
+        this.geometry = new THREE.PlaneGeometry(100, 100);
+        this.material = new THREE.MeshStandardMaterial( {color: 0x002200 } );
+        const floor = new THREE.Mesh( this.geometry, this.material );
 
-        const group = new THREE.Group();
+        floor.castShadow = true;
+        floor.receiveShadow = true;
+        floor.rotation.set(-Math.PI/2, 0, 0);
+        floor.position.set(0,-0.5, 0);
 
         const ambient = new THREE.AmbientLight( 0xffffff, 1 );
-        group.add(ambient);
 
         const sun = new THREE.DirectionalLight( 0xffffff, 0.85 );
-        sun.position.set(0, 10, 0);
-        sun.target.position.set(0, 0, 0);
+        sun.position.set(10, 10, 10);
+        // sun.target.position.set(0, 0, 0);
         sun.castShadow = true;
 
-        sun.shadow.mapSize.width = 1024;
-        sun.shadow.mapSize.height = 1024;
-
+        const group = new THREE.Group();
+        group.add(floor);
+        group.add(ambient);
         group.add(sun);
-        group.add(sun.target);
 
         this.setRenderObject(group);
+    }
+
+    destroy() {
+        super.destroy();
+        this.geometry.dispose();
+        this.material.dispose();
+
     }
 }
 
@@ -136,7 +117,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 class MyPlayerManager extends PlayerManager {
 
     createPlayer(options) {
-        options.translation = [0,0,-5];
+        options.translation = [0,0, -5];
         return MyAvatar.create(options);
     }
 
@@ -153,7 +134,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("new model!!");
+        console.log("new model!!!");
         this.level = LevelActor.create();
     }
 
@@ -173,16 +154,16 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
 
-
         const HUD = new Widget(this.service("UIManager").root, {autoSize: [1,1]});
 
         const joy = new JoystickWidget(HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [150, 150] });
         joy.onChange = xy => {this.publish("hud", "joy", xy)};
+
     }
 
     createServices() {
         this.addService(InputManager);
-        this.addService(ThreeRenderManager);
+        this.render = this.addService(ThreeRenderManager);
         this.addService(UIManager);
     }
 
