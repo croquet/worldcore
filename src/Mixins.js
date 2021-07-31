@@ -255,7 +255,7 @@ get translation() { return this.actor.translation; }
 get rotation() { return this.actor.rotation; }
 get local() { return this.actor.local; }
 get global() { return this.actor.global; }
-// get lookGlobal() { return this.global; } // Allows objects to have an offset camera position
+get lookGlobal() { return this.global; } // Allows objects to have an offset camera position
 
 };
 
@@ -402,7 +402,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 // transform is averaged with the official model-side values.
 //
 // If you're using player-controlled avatars, you'll probably want to set:
-//      * Session tps to >60 with no cheat beats
+//      * Session tps to 60 with no cheat beats
 //      * AM_Avatar tick frequecy to <16
 //
 // This will create the smoothest/fastest response.
@@ -420,31 +420,9 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
         this.listen("avatarSetVelocity", this.onSetVelocity);
         this.listen("avatarSetSpin", this.onSetSpin);
         super.init(...args);
-        this.avatar_tickStep = 14;
+        this.avatar_tickStep = 15;
         this.future(0).tick(0);
     }
-
-    // onMoveTo(v) {
-    //     this.moveTo(v);
-    // }
-
-    // onRotateTo(q) {
-    //     this.rotateTo(q);
-    // }
-
-    // onSetVelocity(v) { // Faster version that doesn't use generic set syntax
-    //     const o = this.velocity;
-    //     this._velocity = v;
-    //     this.say("_velocity", {o: o, v: v});
-    //     this.isMoving = !v3_isZero(this.velocity);
-    // }
-
-    // onSetSpin(q) { // Faster version that doesn't use generic set syntax
-    //     const o = this.spin;
-    //     this._spin = q;
-    //     this.say("_spin", {o: o, v: q});
-    //     this.isRotating = !q_isZero(this.spin);
-    // }
 
     onSetVelocity(v) {
         this.set({velocity: v});
@@ -470,12 +448,6 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
 RegisterMixin(AM_Avatar);
 
 //-- Pawn ----------------------------------------------------------------------------------
-
-// Tug is set even lower so that heartbeat stutters on the actor side will not affect pawn
-// motion. However this means the pawn will take longer to "settle" into its final position.
-//
-// It's possible to have different tug values depending on whether the avatar is controlled
-// locally or not.
 
 export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
     constructor(...args) {
@@ -584,8 +556,9 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 export const AM_MouselookAvatar = superclass => class extends AM_Avatar(superclass) {
 
     init(...args) {
-        this.listen("avatar_lookTo", this.onLookTo);
+        this.listen("avatarLookTo", this.onLookTo);
         super.init(...args);
+        this.set({rotation: q_euler(0, this.lookYaw, 0)});
     }
 
     get lookPitch() { return this._lookPitch || 0 };
@@ -609,10 +582,10 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
         this._lookPitch = this.actor.lookPitch;
         this._lookYaw = this.actor.lookYaw;
 
-        this.lookThrottle = 15;  // MS between throttled lookTo events
+        this.lookThrottle = 50;  // MS between throttled lookTo events
         this.lastlookTime = this.time;
 
-        this.lookOffset = [0,1,0]; // Vector displacing the camera from the avatar origin.
+        this.lookOffset = [0,0,0]; // Vector displacing the camera from the avatar origin.
     }
 
     get lookPitch() { return this._lookPitch}
@@ -622,7 +595,8 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
         this.setLookAngles(pitch, yaw);
         this.lastLookTime = this.time;
         this.lastLookCache = null;
-        this.say("avatar_lookTo", [pitch, yaw]);
+        this.say("avatarLookTo", [pitch, yaw]);
+        this.say("lookGlobalChanged");
     }
 
     throttledLookTo(pitch, yaw) {

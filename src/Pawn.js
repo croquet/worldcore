@@ -24,7 +24,6 @@ export class PawnManager extends ViewService {
     }
 
     destroy() {
-        console.log("Pawn manager destroy");
         const doomed = new Map(this.pawns);
         doomed.forEach(pawn => pawn.destroy());
         pm = null;

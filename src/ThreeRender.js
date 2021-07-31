@@ -5,8 +5,6 @@ import { ViewService } from "./Root";
 //-- ThreeVisible Mixin --------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// This is the interface for a pawn to manage its Three.js render model.
-
 export const PM_ThreeVisible = superclass => class extends superclass {
 
     constructor(...args) {
@@ -17,7 +15,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
     destroy() {
         super.destroy();
         const render = this.service("ThreeRenderManager");
-        render.scene.remove(this.renderObject);
+        if (render && render.scene) render.scene.remove(this.renderObject);
     }
 
     refreshDrawTransform() {
@@ -33,7 +31,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
         this.renderObject.matrixAutoUpdate = false;
         this.renderObject.matrix.fromArray(this.global);
         this.renderObject.matrixWorldNeedsUpdate = true;
-        render.scene.add(this.renderObject);
+        if (render && render.scene) render.scene.add(this.renderObject);
     }
 
 };
@@ -47,17 +45,17 @@ export const PM_ThreeCamera = superclass => class extends superclass {
         super(...args);
 
         if (this.isMyPlayerPawn) {
-             const render = this.service("ThreeRenderManager");
+            const render = this.service("ThreeRenderManager");
             render.camera.matrix.fromArray(this.lookGlobal);
             render.camera.matrixAutoUpdate = false;
             render.camera.matrixWorldNeedsUpdate = true;
-        }
 
-        this.listen("lookGlobalChanged", this.refreshCameraTransform);
+            this.listen("lookGlobalChanged", this.refreshCameraTransform);
+            this.listen("viewGlobalChanged", this.refreshCameraTransform);
+        }
     }
 
     refreshCameraTransform() {
-        if (!this.isMyPlayerPawn) return;
         const render = this.service("ThreeRenderManager");
         render.camera.matrix.fromArray(this.lookGlobal);
         render.camera.matrixWorldNeedsUpdate = true;

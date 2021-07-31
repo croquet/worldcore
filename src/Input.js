@@ -331,6 +331,7 @@ export class InputManager extends ViewService {
             }
         } else {
             this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
+            this.publish("input", "pointerDelta", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.movementX, event.movementY]});
         }
         this.zoomUpdate();
     }
