@@ -119,6 +119,14 @@ export const AM_Tree = superclass => class extends superclass {
         super.destroy();
     }
 
+    // set(options) { // Use this to replace set say messages;
+    //     if (options.parent !== this.parent) {
+    //         if (this.parent) this.parent.removeChild(this);
+    //         if (options.parent) options.parent.addChild(this);
+    //     }
+    //     super.set(options);
+    // }
+
     get parent() { return this._parent; }
 
     onChangeParent(d) {
