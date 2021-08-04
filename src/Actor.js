@@ -51,15 +51,11 @@ export class Actor extends WorldcoreModel {
         super.destroy();
     }
 
-    set(options) {
+    set(options) { // We iterate through an object, which normally is forbidden. But the order of options doesn't affect determinism.
         for (const option in options) {
             const n = "_" + option;
             const v = options[option];
-            if (!deepEquals(this[n], v)) {
-                const o = this[n];
-                this[n] = v;
-                this.say(n, {o,v});
-            }
+            this[n] = v;
         }
     }
 
@@ -78,14 +74,3 @@ export class Actor extends WorldcoreModel {
 }
 Actor.register("Actor");
 
-
-function deepEquals(a, b) {
-    if (a === b) return true;
-    if (!a || !b) return false;
-    const al = a.length;
-    const bl = b.length;
-    if (!al || !bl) return false;
-    if (al !== bl) return false;
-    for (let i = 0; i < al; i++) if (a[i] !== b[i]) return false;
-    return true;
-}

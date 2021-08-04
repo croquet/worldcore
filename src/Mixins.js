@@ -108,31 +108,23 @@ class MixinFactory  {
 
 export const AM_Tree = superclass => class extends superclass {
 
-    init(...args) {
-        this.listen("_parent", this.onChangeParent);
-        super.init(...args);
-    }
-
     destroy() {
         new Set(this.children).forEach(child => child.destroy());
         this.set({parent: null});
         super.destroy();
     }
 
-    // set(options) { // Use this to replace set say messages;
-    //     if (options.parent !== this.parent) {
-    //         if (this.parent) this.parent.removeChild(this);
-    //         if (options.parent) options.parent.addChild(this);
-    //     }
-    //     super.set(options);
-    // }
+    set(options = {}) {
+        const old = this.parent;
+        super.set(options);
+        if ('parent' in options) {
+            if (old) old.removeChild(this);
+            if (this.parent) this.parent.addChild(this);
+            this.say("treeChangeParent", {old, parent: this.parent});
+        }
+    }
 
     get parent() { return this._parent; }
-
-    onChangeParent(d) {
-        if (d.o) d.o.removeChild(this);
-        if (d.v) d.v.addChild(this);
-    }
 
     addChild(c) { // This should never be called directly, use setParent instead
         if (!this.children) this.children = new Set();
@@ -156,7 +148,7 @@ export const PM_Tree = superclass => class extends superclass {
             const parent = GetPawn(this.actor.parent.id);
             parent.addChild(this.actor.id);
         }
-        this.listen("_parent", this.onChangeParent);
+        this.listen("treeChangeParent", this.onChangeParent);
     }
 
     get parent() {
@@ -170,11 +162,11 @@ export const PM_Tree = superclass => class extends superclass {
     }
 
     onChangeParent(d) {
-        if (d.o) {
-            GetPawn(d.o.id).removeChild(this.actor.id);
+        if (d.old) {
+            GetPawn(d.old.id).removeChild(this.actor.id);
         }
-        if (d.v) {
-            GetPawn(d.v.id).addChild(this.actor.id);
+        if (d.parent) {
+            GetPawn(d.parent.id).addChild(this.actor.id);
         }
     }
 
@@ -207,15 +199,32 @@ export const PM_Tree = superclass => class extends superclass {
 //-- Actor ---------------------------------------------------------------------------------
 
 export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
-    init(...args) {
-        this.listen("_scale", this.localChanged);
-        this.listen("_rotation", this.localChanged);
-        this.listen("_translation", this.localChanged);
-        super.init(...args);
+
+    set(options = {}) {
+        super.set(options);
+        if ('scale' in options ) this.scaleChanged();
+        if ('rotation' in options) this.rotationChanged();
+        if ('translation' in options ) this.translationChanged();
+    }
+
+    scaleChanged() {
+        this.say("scaleChanged", this.scale);
+        this.localChanged();
+    }
+
+    rotationChanged() {
+        this.say("rotationChanged", this.rotation);
+        this.localChanged();
+    }
+
+    translationChanged() {
+        this.say("translationChanged", this.translation);
+        this.localChanged();
     }
 
     localChanged() {
         this.$local = null;
+        this.say("localChanged");
         this.globalChanged();
     }
 
@@ -324,14 +333,14 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         this._rotation = this.actor.rotation;
         this._translation = this.actor.translation;
 
-        this.listenOnce("_scale", this.onSetScale);
-        this.listenOnce("_rotation", this.onSetRotation);
-        this.listenOnce("_translation", this.onSetTranslation);
+        this.listenOnce("scaleChanged", this.onSetScale);
+        this.listenOnce("rotationChanged", this.onSetRotation);
+        this.listenOnce("translationChanged", this.onSetTranslation);
     }
 
-    onSetScale(d) { this._scale = d.v; this._local = null; this._global = null; }
-    onSetRotation(d) { this._rotation = d.v;  this._local = null; this._global = null; }
-    onSetTranslation(d) { this._translation = d.v;  this._local = null; this._global = null; }
+    onSetScale() { this._scale = this.actor.scale; this._local = null; this._global = null; }
+    onSetRotation() { this._rotation = this.actor.rotation;  this._local = null; this._global = null; }
+    onSetTranslation() { this._translation = this.actor.translation;  this._local = null; this._global = null; }
 
     get scale() { return this._scale; }
     get translation() { return this._translation; }
