@@ -17,6 +17,7 @@ export class Animals extends ModelService {
         this.subscribe("surfaces", "newLevel", this.onNewLevel);
         this.subscribe("surfaces", "changed", this.onChanged);
         this.subscribe("editor", "spawnPerson", this.onSpawnPerson);
+        this.subscribe("hud", "firstPerson", this.onFirstPerson); // xxx hack for fp camera sync
     }
 
     destroy() {
@@ -41,6 +42,8 @@ export class Animals extends ModelService {
             if (this.animals.size < 500) PersonActor.create({xyz});
         }
     }
+
+    onFirstPerson(fp) { this.fp = fp}; // xxx hack for fp camera sync
 
 }
 Animals.register("Animals");

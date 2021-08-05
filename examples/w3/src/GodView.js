@@ -4,7 +4,7 @@ import { GetTopLayer } from "./Globals";
 import { PickGrabSurface  } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 
-// Managees the camera and navigation pointer events.
+// Manages the camera and navigation pointer events.
 
 let translation = [Voxels.sizeX * Voxels.scaleX / 2, 0,(Voxels.sizeZ+10) * Voxels.scaleZ ];
 let pitch = toRad(45);
@@ -25,7 +25,7 @@ export class GodView extends ViewService {
         this.subscribe("input", "zoomEnd", this.onZoomEnd);
         this.subscribe("input", "zoomUpdate", this.onZoomUpdate);
         this.subscribe("input", 'wheel', this.onWheel);
-        this.subscribe("hud", "firstPerson", this.onFirstPerson);
+        // this.subscribe("hud", "firstPerson", this.onFirstPerson); // xxx hack for fp camera sync
         this.subscribe("voxels", "newLevel", this.onNewLevel);
 
     }
@@ -105,7 +105,7 @@ export class GodView extends ViewService {
     }
 
     onNewLevel() {
-        this.firstPerson = false;
+        // this.firstPerson = false; // xxx hack for fp camera sync
         this.updateCamera();
     }
 
@@ -121,7 +121,9 @@ export class GodView extends ViewService {
     }
 
     updateCamera() {
-        if (this.firstPerson) return;
+        const animals = this.modelService("Animals");
+        // if (this.firstPerson) return; // xxx hack for fp camera sync
+        if (animals.fp) return;
         const p = q_axisAngle([1,0,0], pitch);
         const y = q_axisAngle([0,0,1], yaw);
         this.camera.setLocation(m4_scalingRotationTranslation(1, q_multiply(p,y), translation));
@@ -138,7 +140,8 @@ export class GodView extends ViewService {
 
     update(time, delta) {
         const animals = this.modelService("Animals");
-        if (this.firstPerson && animals.vip) {
+        if (animals.fp && animals.vip) {
+        // if (this.firstPerson && animals.vip) { // xxx hack for fp camera sync
             this.setFOV(toRad(80));
             const pm = this.service("PawnManager");
             const pawn = pm.get(animals.vip.id);
@@ -146,6 +149,9 @@ export class GodView extends ViewService {
             const r = q_multiply(p,pawn.rotation);
             const t = v3_add([0, 0, 2], pawn.translation);
             this.camera.setLocation(m4_scalingRotationTranslation(1, r, t));
+        }
+        else {
+            this.updateCamera();
         }
     }
 }
