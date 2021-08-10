@@ -83,7 +83,7 @@ export class Pawn extends WorldcoreView {
     }
 
     get actor() {return this._actor};
-    get pawnManager() { return pm};
+    // get pawnManager() { return pm};
 
     destroy() {
         pm.delete(this);

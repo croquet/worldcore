@@ -36,6 +36,7 @@ ActorManager.register("ActorManager");
 
 export class Actor extends WorldcoreModel {
     get pawn() {return Pawn}
+    get doomed() {return this._doomed} // About to be destroyed. This is used to prevent creating new future messages.
 
     init(options) {
         super.init();
@@ -45,7 +46,7 @@ export class Actor extends WorldcoreModel {
     }
 
     destroy() {
-        this.doomed = true; // About to be destroyed. This is used to prevent creating new future messages.
+        this._doomed = true; // About to be destroyed. This is used to prevent creating new future messages.
         this.say("destroyActor");
         this.service('ActorManager').delete(this);
         super.destroy();

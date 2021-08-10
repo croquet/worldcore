@@ -61,7 +61,7 @@ export class ModelRoot extends WorldcoreModel {
 
 export class ModelService extends WorldcoreModel {
 
-    init(name) {
+    init(name, options = {}) {
         super.init();
         this.name = name;
         if (!name) console.error("All services must have public names!");
@@ -114,9 +114,12 @@ export class ViewRoot extends WorldcoreView {
         this.pawnManager = this.addService(PawnManager);
     }
 
+    destroy() {}
+
     createServices() {}
 
     detach() {
+        this.destroy();
         viewServices.forEach(s => s.destroy());
         viewServices.clear();
         super.detach();
