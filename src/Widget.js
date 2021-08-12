@@ -14,16 +14,16 @@ let keyboardFocus;                  // The widget currently receiving input from
 
 // Widget attributes can be either values or arrays ... this compares arbitrary things.
 
-function deepEquals(a, b) {
-    if (a === b) return true;
-    if (!a || !b) return false;
-    const al = a.length;
-    const bl = b.length;
-    if (!al || !bl) return false;
-    if (al !== bl) return false;
-    for (let i = 0; i < al; i++) if (a[i] !== b[i]) return false;
-    return true;
-}
+// function deepEquals(a, b) {
+//     if (a === b) return true;
+//     if (!a || !b) return false;
+//     const al = a.length;
+//     const bl = b.length;
+//     if (!al || !bl) return false;
+//     if (al !== bl) return false;
+//     for (let i = 0; i < al; i++) if (a[i] !== b[i]) return false;
+//     return true;
+// }
 
 function canvasColor(r, g, b) {
     return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
@@ -278,39 +278,23 @@ export class Widget extends WorldcoreView {
 
     // Mark the whole canvas changed (used for hiding widgets)
     markCanvasChanged() {
-        // console.log("Mark canvas changed");
         if (this.canvasWidget) this.canvasWidget.markChanged();
     }
 
     set(options = {}) {
-        let changed = false;
         for (const option in options) {
             const n = "_" + option;
-            const v = options[option];
-            if (!deepEquals(this[n], v)) {
-                this[n] = v;
-                changed = true;
-                this.publish(this.id, option, v);
-            }
+            this[n] = options[option];
         }
-        if (changed) this.markChanged();
-
-        if ('visible' in options ) {
-            this.markCanvasChanged();
-            this.visiblityChanged();
-        }
-        if (options.scale ) this.markCanvasChanged();
-
+        this.markChanged();
+        if ('visible' in options || options.scale ) this.markCanvasChanged();
     }
 
     show() { this.set({visible: true}); }
     hide() { this.set({visible: false}); }
     toggleVisible() { this.set({visible: !this.isVisible}); }
 
-    visiblityChanged() {
-        if (this.children) this.children.forEach(child => child.visiblityChanged());
-    }
-
+    // get parent() {return this._parent; }
     get anchor() { return this._anchor || [0,0];}
     get pivot() { return this._pivot || [0,0];}
     get local() { return this._local || [0,0];}
@@ -1377,7 +1361,6 @@ export class SliderWidget extends ControlWidget {
 
     constructor(...args) {
         super(...args);
-        // this.lastChangeTime = GetViewTime();
         this.lastChangeTime = this.time;
     }
 

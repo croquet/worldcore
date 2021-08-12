@@ -221,11 +221,11 @@ class MyViewRoot extends ViewRoot {
 
         this.button0 = new ButtonWidget(this.HUD, {local: [20,20], size: [200,80]});
         this.button0.label.set({text: "Test 0", fontURL: kwark, font: 'serif'});
-        this.button0.onClick = () => { this.joy.set({scale: 2})};
+        this.button0.onClick = () => { this.joy.set({visible: false})};
 
         this.button1 = new ButtonWidget(this.HUD, {local: [20, 110], size: [200,80]});
         this.button1.label.set({text: "Test 1"});
-        this.button1.onClick = () => { this.joy.set({scale: 1})};
+        this.button1.onClick = () => { this.joy.set({visible: true})};
 
         this.image = new ImageWidget(this.HUD, {local: [20, 200], size: [200,80], url: llama});
 
