@@ -114,12 +114,9 @@ export class ViewRoot extends WorldcoreView {
         this.pawnManager = this.addService(PawnManager);
     }
 
-    destroy() {}
-
     createServices() {}
 
     detach() {
-        this.destroy();
         viewServices.forEach(s => s.destroy());
         viewServices.clear();
         super.detach();

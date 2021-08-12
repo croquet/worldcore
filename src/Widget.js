@@ -65,7 +65,7 @@ export class UIManager extends ViewService {
         this.global = [0,0];
 
         this.resize();
-        this.root = new CanvasWidget(this, {autoSize: [1,1]});
+        new CanvasWidget({parent: this, autoSize: [1,1]});
 
         // this.fakeText = document.createElement("input"); // This is a hack to trigger a virtual keyboard on a mobile device
         // this.fakeText.setAttribute("type", "text");
@@ -94,13 +94,21 @@ export class UIManager extends ViewService {
         ui = null;
     }
 
-    addChild(root) {
-        root.setParent(this);
+    addChild(child) {
+        this.root = child;
     }
 
     removeChild(child) {
-        if (this.root === child) this.root = null;
+        this.root = null;
     }
+
+    // addChild(root) {
+    //     root.setParent(this);
+    // }
+
+    // removeChild(child) {
+    //     if (this.root === child) this.root = null;
+    // }
 
     get isVisible() { return true; }
 
@@ -211,45 +219,27 @@ export class UIManager extends ViewService {
 // The base widget class.
 
 export class Widget extends WorldcoreView {
-    constructor(parent, options) {
+    constructor(options) {
         super(ui.model);
         this.set(options);
-        if (parent) parent.addChild(this);
-
         this.buildChildren();
     }
 
     destroy() {
         if (this.children) this.children.forEach(child => child.destroy());
-        if (this.parent) this.parent.removeChild(this);
+        if (this.parent) this.set({parent: null});
         this.detach();
     }
 
     addChild(child) {
-        if (!child || child.parent === this) return;
         if (!this.children) this.children = new Set();
-        if (child.parent) child.parent.removeChild(child);
         this.children.add(child);
-        child.setParent(this);
-        child.setCanvasWidget(this.canvasWidget);
         this.markChanged();
     }
 
     removeChild(child) {
-        if (!child) return;
         if (this.children) this.children.delete(child);
-        child.setParent(null);
         this.markChanged();
-    }
-
-    destroyChild(child) {
-        if (!child) return;
-        this.removeChild(child);
-        child.destroy();
-    }
-
-    setParent(p) {  // This should only be called by addChild & removeChild
-        this.parent = p;
     }
 
     setCanvasWidget(canvasWidget) {
@@ -282,19 +272,26 @@ export class Widget extends WorldcoreView {
     }
 
     set(options = {}) {
+        if (options.parent && options.parent.canvasWidget) this.setCanvasWidget(options.parent.canvasWidget);
+        const oldParent = this.parent;
         for (const option in options) {
             const n = "_" + option;
             this[n] = options[option];
         }
-        this.markChanged();
+
+        if ('parent' in options ) {
+            if (oldParent) oldParent.removeChild(this);
+            if (this.parent) this.parent.addChild(this);
+        }
         if ('visible' in options || options.scale ) this.markCanvasChanged();
+        this.markChanged();
     }
 
     show() { this.set({visible: true}); }
     hide() { this.set({visible: false}); }
     toggleVisible() { this.set({visible: !this.isVisible}); }
 
-    // get parent() {return this._parent; }
+    get parent() {return this._parent; }
     get anchor() { return this._anchor || [0,0];}
     get pivot() { return this._pivot || [0,0];}
     get local() { return this._local || [0,0];}
@@ -525,27 +522,27 @@ export class CanvasWidget extends ElementWidget {
 //-- IFrameWidget ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class IFrameWidget extends ElementWidget {
-    constructor(...args) {
-        super(...args);
-        this.element = document.createElement("iframe");
-        this.element.style.cssText = "position: absolute; left: 0; top: 0; border: 0;";
-        document.body.insertBefore(this.element, null);
-    }
+// export class IFrameWidget extends ElementWidget {
+//     constructor(...args) {
+//         super(...args);
+//         this.element = document.createElement("iframe");
+//         this.element.style.cssText = "position: absolute; left: 0; top: 0; border: 0;";
+//         document.body.insertBefore(this.element, null);
+//     }
 
-    get source() { return this._source || ""; }
+//     get source() { return this._source || ""; }
 
-    update() {
-        if (this.isChanged) this.draw();
-        this.isChanged = false;
-    }
+//     update() {
+//         if (this.isChanged) this.draw();
+//         this.isChanged = false;
+//     }
 
-    draw() {
-        super.draw();
-        this.element.src = this.source;
-    }
+//     draw() {
+//         super.draw();
+//         this.element.src = this.source;
+//     }
 
-}
+// }
 
 //------------------------------------------------------------------------------------------
 //-- LayoutWidget --------------------------------------------------------------------------
@@ -574,14 +571,13 @@ export class LayoutWidget extends Widget {
 
     addSlot(w,n) {
         n = n || this.slots.length;
-        this.addChild(w);
-        w.set({bubbleChanges: true});
+        w.set({parent: this, bubbleChanges: true});
         this.slots.splice(n,0,w);
         this.markChanged();
     }
 
     removeSlot(n) {
-        if (this.slots[n]) this.removeChild(this.slots[n]);
+        if (this.slots[n]) this.slots[n].set({parent: null});
         this.slots.splice(n,1);
         this.markChanged();
     }
@@ -1014,28 +1010,25 @@ export class TextWidget extends Widget {
 // If the widget has an irregular shape, you'll need to provide an overlay that matches the control shape.
 
 export class ControlWidget extends Widget {
-    constructor(...args) {
-        super(...args);
-        this.isHovered = false;
-        this.isPressed = false;
+
+    get dim() {return this._dim;}
+    get isDisabled() { return this._disabled;}
+
+    set(options = {}) {
+        const oldDim = this.dim;
+        super.set(options);
+        if (options.dim) { if (oldDim) oldDim.destroy(); options.dim.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
     }
 
     buildChildren() {
         super.buildChildren();
-        this.setDim(new BoxWidget(this, {autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.6, bubbleChanges: true}));
+        if (!this.dim) this.set({ dim: new BoxWidget({color: [0.8,0.8,0.8], opacity: 0.6})});
+        // this.setDim(new BoxWidget(this, {autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.6, bubbleChanges: true}));
     }
 
     enable() { this.set({ disabled: false }); }
     disable() { this.set({ disabled: true }); }
     toggleDisabled() { this.set({ disabled: !this.disabled }); }
-
-    get isDisabled() { return this._disabled;}
-
-    setDim(w) {
-        if (this.dim && this.dim !== w) this.destroyChild(this.dim);
-        this.dim = w;
-        this.addChild(w);
-    }
 
     pointerMove(event) {
         const inside = this.inside(event.xy);
@@ -1054,7 +1047,7 @@ export class ControlWidget extends Widget {
     }
 
     pointerDown(event) {
-        if (this.invisible || this.isDisabled || !this.inside(event.xy)) return false;
+        if (!this.isVisible || this.isDisabled || !this.inside(event.xy)) return false;
         pressedControls.set(event.id, this);
         this.isPressed = true;
         this.markChanged();
@@ -1067,7 +1060,7 @@ export class ControlWidget extends Widget {
         this.isPressed = false;
         this.markChanged();
         this.onRelease(event.xy);
-        if (this.inside(event.xy)) this.onClick(event.xy);
+        if (this.inside(event.xy)) this.doClick(event.xy);
     }
 
     onHover() {}
@@ -1075,7 +1068,7 @@ export class ControlWidget extends Widget {
     onPress(xy) {}
     onRelease(xy) {}
     onDrag(xy) {}
-    onClick(xy) {} // Release while pressed and pointer is inside
+    doClick(xy) {} // Release while pressed and pointer is inside
 
 }
 
@@ -1086,44 +1079,44 @@ export class ControlWidget extends Widget {
 // Controls that can receive keyboard focus. Only one widget at a time can have focus.
 // Focus widgets also can receive double and triple clicks.
 
-export class FocusWidget extends ControlWidget {
+// export class FocusWidget extends ControlWidget {
 
-    pointerDown(event) {
-        const result = super.pointerDown(event);
-        result ? this.focus() : this.blur();
-        return result;
-    }
+//     pointerDown(event) {
+//         const result = super.pointerDown(event);
+//         result ? this.focus() : this.blur();
+//         return result;
+//     }
 
-    doubleDown(event) {
-        if (this.invisible || this.isDisabled || !this.inside(event.xy)) return;
-        this.onDoubleDown(event.xy);
-    }
+//     doubleDown(event) {
+//         if (!this.isVisible || this.isDisabled || !this.inside(event.xy)) return;
+//         this.onDoubleDown(event.xy);
+//     }
 
-    tripleDown(event) {
-        if (this.invisible || this.isDisabled || !this.inside(event.xy)) return;
-        this.onTripleDown(event.xy);
-    }
+//     tripleDown(event) {
+//         if (!this.isVisible || this.isDisabled || !this.inside(event.xy)) return;
+//         this.onTripleDown(event.xy);
+//     }
 
-    get isFocused() {return this === keyboardFocus};
+//     get isFocused() {return this === keyboardFocus};
 
-    focus() {
-        if (this.isFocused) return;
-        if (keyboardFocus) keyboardFocus.blur();
-        keyboardFocus = this;
-        this.onFocus();
-    }
+//     focus() {
+//         if (this.isFocused) return;
+//         if (keyboardFocus) keyboardFocus.blur();
+//         keyboardFocus = this;
+//         this.onFocus();
+//     }
 
-    blur() {
-        if (keyboardFocus !== this) return;
-        keyboardFocus = null;
-        this.onBlur();
-    }
+//     blur() {
+//         if (keyboardFocus !== this) return;
+//         keyboardFocus = null;
+//         this.onBlur();
+//     }
 
-    onFocus() {}
-    onBlur() {}
-    onDoubleDown() {}
-    onTripleDown() {}
-}
+//     onFocus() {}
+//     onBlur() {}
+//     onDoubleDown() {}
+//     onTripleDown() {}
+// }
 
 
 //------------------------------------------------------------------------------------------
@@ -1136,36 +1129,32 @@ export class FocusWidget extends ControlWidget {
 
 export class ButtonWidget extends ControlWidget {
 
+    get normal() {return this._normal;}
+    get hilite() {return this._hilite;}
+    get pressed() {return this._pressed;}
+    get label() {return this._label;}
+    get onClick() {return this._onClick || (()=>{})};
+
+    set(options = {}) {
+        const oldNormal = this.normal;
+        const oldHilite = this.hilite;
+        const oldPressed = this.pressed;
+        const oldLabel = this.label;
+
+        super.set(options);
+
+        if (options.normal) { if (oldNormal) oldNormal.destroy(); options.normal.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+        if (options.hilite) { if (oldHilite) oldHilite.destroy(); options.hilite.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+        if (options.pressed) {if (oldPressed) oldPressed.destroy(); options.pressed.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+        if (options.label) { if (oldLabel) oldLabel.destroy(); options.label.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+    }
+
     buildChildren() {
         super.buildChildren();
-        this.setNormal(new BoxWidget(this, {autoSize: [1,1], color: [0.5,0.5,0.5], bubbleChanges: true}));
-        this.setHilite(new BoxWidget(this, {autoSize: [1,1], color: [0.65,0.65,0.65], bubbleChanges: true}));
-        this.setPressed(new BoxWidget(this, {autoSize: [1,1], color: [0.35,0.35,0.35], bubbleChanges: true}));
-        this.setLabel(new TextWidget(this, {autoSize: [1,1]}));
-    }
-
-    setNormal(w) {
-        if (this.normal && this.normal !== w) this.destroyChild(this.normal);
-        this.normal = w;
-        this.addChild(w);
-    }
-
-    setHilite(w) {
-        if (this.hilite && this.hilite !== w) this.destroyChild(this.hilite);
-        this.hilite = w;
-        this.addChild(w);
-    }
-
-    setPressed(w) {
-        if (this.pressed && this.presed !== w) this.destroyChild(this.pressed);
-        this.pressed = w;
-        this.addChild(w);
-    }
-
-    setLabel(w) {
-        if (this.label && this.label !== w) this.destroyChild(this.label);
-        this.label = w;
-        this.addChild(w);
+        if (!this.normal) this.set({ normal: new BoxWidget({color: [0.5,0.5,0.5]})});
+        if (!this.hilite) this.set({ hilite: new BoxWidget({color: [0.65,0.65,0.65]})});
+        if (!this.pressed) this.set({ pressed: new BoxWidget({color: [0.35,0.35,0.35]})});
+        if (!this.label) this.set({ label: new TextWidget({text: "Button"})});
     }
 
     updateChildren() {
@@ -1176,6 +1165,8 @@ export class ButtonWidget extends ControlWidget {
         if (this.label) this.label.update();
         if (this.isDisabled) this.dim.update();
     }
+
+    doClick() { this.onClick(); }
 }
 
 //------------------------------------------------------------------------------------------
@@ -1191,6 +1182,17 @@ export class ToggleWidget extends ControlWidget {
         if (!this._state) this._state = false; // Prevent toggleOff when an undefined state is set to false.
     }
 
+    get normalOn() {return this._normalOn;}
+    get normalOff() {return this._normalOff;}
+    get hiliteOn() {return this._hiliteOn;}
+    get hiliteOff() {return this._hiliteOff;}
+    get pressedOn() {return this._pressedOn;}
+    get pressedOff() {return this._pressedOff;}
+    get labelOn() {return this._labelOn;}
+    get labelOff() {return this._labelOff;}
+    get onToggleOn() {return this._onToggleOn || (()=>{})};
+    get onToggleOff() {return this._onToggleOff || (()=>{})};
+
     destroy() {
         super.destroy();
         if (this.toggleSet) this.toggleSet.remove(this);
@@ -1198,14 +1200,16 @@ export class ToggleWidget extends ControlWidget {
 
     buildChildren() {
         super.buildChildren();
-        this.setNormalOn(new BoxWidget(this, {autoSize: [1,1], color: [0.5,0.5,0.7], bubbleChanges: true}));
-        this.setNormalOff(new BoxWidget(this, {autoSize: [1,1], color: [0.5, 0.5, 0.5], bubbleChanges: true}));
-        this.setHiliteOn(new BoxWidget(this, {autoSize: [1,1], color: [0.6, 0.6, 0.8], bubbleChanges: true}));
-        this.setHiliteOff(new BoxWidget(this, {autoSize: [1,1], color: [0.6, 0.6, 0.6], bubbleChanges: true}));
-        this.setPressedOn(new BoxWidget(this, {autoSize: [1,1], color: [0.4, 0.4, 0.6], bubbleChanges: true}));
-        this.setPressedOff(new BoxWidget(this, {autoSize: [1,1], color: [0.4, 0.4, 0.4], bubbleChanges: true}));
-        this.setLabelOn(new TextWidget(this, {autoSize: [1,1], text: "On", bubbleChanges: true}));
-        this.setLabelOff(new TextWidget(this, {autoSize: [1,1], text: "Off", bubbleChanges: true}));
+
+        if (!this.normalOn) this.set({normalOn: new BoxWidget({color: [0.5,0.5,0.7]})});
+        if (!this.normalOff) this.set({normalOff: new BoxWidget({color: [0.5, 0.5, 0.5]})});
+        if (!this.hiliteOn) this.set({hiliteOn: new BoxWidget({color: [0.6, 0.6, 0.8]})});
+        if (!this.hiliteOff) this.set({hiliteOff: new BoxWidget({color: [0.6, 0.6, 0.6]})});
+        if (!this.pressedOn) this.set({pressedOn: new BoxWidget({color: [0.4, 0.4, 0.6]})});
+        if (!this.pressedOff) this.set({pressedOff: new BoxWidget({color: [0.4, 0.4, 0.4]})});
+        if (!this.LabelOn) this.set({labelOn: new TextWidget({text: "On"})});
+        if (!this.LabelOff) this.set({labelOff: new TextWidget({text: "Off"})});
+
     }
 
     get isOn() { return this._state; }
@@ -1213,62 +1217,33 @@ export class ToggleWidget extends ControlWidget {
     get toggleSet() { return this._toggleSet; }
 
     set(options = {}) {
+        const oldNormalOn = this.normalOn;
+        const oldNormalOff = this.normalOff;
+        const oldHiliteOn = this.hiliteOn;
+        const oldHiliteOff = this.hiliteOff;
+        const oldPressedOn = this.pressedOn;
+        const oldPressedOff = this.pressedOff;
+        const oldLabelOn = this.labelOn;
+        const oldLabelOff = this.labelOff;
         const oldState = this.state;
         const oldToggleSet = this.toggleSet;
+
         super.set(options);
+
+        if (options.normalOn) { if (oldNormalOn) oldNormalOn.destroy(); options.normalOn.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+        if (options.normalOff) { if (oldNormalOff) oldNormalOff.destroy(); options.normalOff.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+        if (options.hiliteOn) { if (oldHiliteOn) oldHiliteOn.destroy(); options.hiliteOn.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+        if (options.hiliteOff) { if (oldHiliteOff) oldHiliteOff.destroy(); options.hiliteOff.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+        if (options.pressedOn) {if (oldPressedOn) oldPressedOn.destroy(); options.pressedOn.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+        if (options.pressedOff) {if (oldPressedOff) oldPressedOff.destroy(); options.pressedOff.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+        if (options.labelOn) { if (oldLabelOn) oldLabelOn.destroy(); options.labelOn.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+        if (options.labelOff) { if (oldLabelOff) oldLabelOff.destroy(); options.labelOff.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+
         if ('toggleSet' in options && oldToggleSet !== this.toggleSet) {
             if (oldToggleSet) oldToggleSet.remove(this);
             if (this.toggleSet) this.toggleSet.add(this);
         }
         if ('state' in options && oldState !== this.state) this.stateChanged();
-    }
-
-    setNormalOn(w) {
-        if (this.normalOn && this.normalOn !== w) this.destroyChild(this.normalOn);
-        this.normalOn = w;
-        this.addChild(w);
-    }
-
-    setNormalOff(w) {
-        if (this.normalOff && this.normalOff !== w) this.destroyChild(this.normalOff);
-        this.normalOff = w;
-        this.addChild(w);
-    }
-
-    setHiliteOn(w) {
-        if (this.hiliteOn && this.hiliteOn !== w) this.destroyChild(this.hiliteOn);
-        this.hiliteOn = w;
-        this.addChild(w);
-    }
-
-    setHiliteOff(w) {
-        if (this.hiliteOff && this.hiliteOff !== w) this.destroyChild(this.hiliteOff);
-        this.hiliteOff = w;
-        this.addChild(w);
-    }
-
-    setPressedOn(w) {
-        if (this.pressedOn && this.presedOn !== w) this.destroyChild(this.pressedOn);
-        this.pressedOn = w;
-        this.addChild(w);
-    }
-
-    setPressedOff(w) {
-        if (this.pressedOff && this.presedOff !== w) this.destroyChild(this.pressedOff);
-        this.pressedOff = w;
-        this.addChild(w);
-    }
-
-    setLabelOn(w) {
-        if (this.labelOn && this.labelOn !== w) this.destroyChild(this.labelOn);
-        this.labelOn = w;
-        this.addChild(w);
-    }
-
-    setLabelOff(w) {
-        if (this.labelOff && this.labelOff !== w) this.destroyChild(this.labelOff);
-        this.labelOff = w;
-        this.addChild(w);
     }
 
     updateChildren() {
@@ -1290,7 +1265,7 @@ export class ToggleWidget extends ControlWidget {
         if (this.isDisabled) this.dim.update();
     }
 
-    onClick() {
+    doClick() {
         if (this.toggleSet) {
             this.toggleSet.pick(this);
         } else {
@@ -1305,11 +1280,6 @@ export class ToggleWidget extends ControlWidget {
             this.onToggleOff();
         }
     }
-
-    // Called when the toggle changes state either directly or indirectly.
-
-    onToggleOn() {};
-    onToggleOff() {};
 
 }
 
@@ -1364,36 +1334,32 @@ export class SliderWidget extends ControlWidget {
         this.lastChangeTime = this.time;
     }
 
-    get throttle() { return this._throttle || 0}; // MS between control updates
+    set(options = {}) {
+        const oldBar = this.bar;
+        const oldKnob = this.knob;
 
+        super.set(options);
+
+        if (options.bar) { if (oldBar) oldBar.destroy(); options.bar.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+        if (options.knob) { if (oldKnob) oldKnob.destroy(); options.knob.set({parent: this, bubbleChanges: true}); this.setKnobSize(); }
+    }
+
+    get bar() { return this._bar }
+    get knob() { return this._knob}
+    get throttle() { return this._throttle || 0}; // MS between control updates
     get isHorizontal() { return this.size[0] > this.size[1]; }
     get step() { return this._step || 0; }        // The number of descrete steps the slider has. (0=continuous)
-
     get percent() {
         const p = this._percent || 0;
         if (!this.step) return p;
         return Math.round(p * (this.step-1)) / (this.step-1);
     }
+    get onChange() {return this._onChange || ((p)=>{})};
 
     buildChildren() {
         super.buildChildren();
-        this.setBar(new BoxWidget(this, {color: [0.5,0.5,0.5]}));
-        this.setKnob(new BoxWidget(this, {color: [0.8,0.8,0.8], border:[2,2,2,2]}));
-    }
-
-    setBar(w) {
-        if (this.bar && this.bar !== w) this.destroyChild(this.bar);
-        this.bar = w;
-        this.bar.set({autoSize: [1,1], bubbleChanges: true})
-        this.addChild(w);
-    }
-
-    setKnob(w) {
-        if (this.knob && this.knob !== w) this.destroyChild(this.knob);
-        this.knob = w;
-        this.knob.set({bubbleChanges: true})
-        this.setKnobSize();
-        this.addChild(w);
+        if (!this.bar) this.set({bar: new BoxWidget({color: [0.5,0.5,0.5]})});
+        if (!this.knob) this.set({knob: new BoxWidget({color: [0.8,0.8,0.8], border:[2,2,2,2]})});
     }
 
     setKnobSize() {
@@ -1406,7 +1372,7 @@ export class SliderWidget extends ControlWidget {
     }
 
     updateChildren() {
-        this.setKnobSize();
+        this.refreshKnob();
         if (this.bar) this.bar.update();
         if (this.knob) this.knob.update();
         if (this.isDisabled) this.dim.update();
@@ -1450,7 +1416,6 @@ export class SliderWidget extends ControlWidget {
     }
 
     change(p) {
-        // this.lastChangeTime = GetViewTime();
         this.lastChangeTime = this.time;
         this.lastChangeCache = null;
         this.onChange(p);
@@ -1469,8 +1434,6 @@ export class SliderWidget extends ControlWidget {
         if (this.lastChangeCache && this.time >= this.lastChangeTime + this.throttle) this.change(this.lastChangeCache);
     }
 
-    onChange(percent) {
-    }
 
 }
 
@@ -1499,43 +1462,61 @@ export class JoystickWidget extends ControlWidget {
 
     constructor(...args) {
         super(...args);
+        this.gate = new Widget({parent: this, anchor: [0.5, 0.5], pivot: [0.5, 0.5], autoSize: [1, 1], border: [10,10,10,10], bubbleChanges: true});
+        this.knob.set({parent: this.gate});
         this.lastChangeTime = this.time;
-        this.deadRadius = 0.1;
+        // this.deadRadius = 0.1;
         this.xy = [0,0];
     }
 
-    get throttle() { return this._throttle || 0}; // MS between control updates
+    set(options = {}) {
+        const oldBackground = this.background;
+        const oldKnob = this.knob;
+        super.set(options);
+        if (options.background) { if (oldBackground) oldBackground.destroy(); options.background.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
+        if (options.knob) { if (oldKnob) oldKnob.destroy(); options.knob.set({parent: this.gate, anchor: [0.5, 0.5], pivot: [0.5,0.5], bubbleChanges: true}); }
+    }
+
+    get throttle() { return this._throttle || 0} // MS between control updates
+    get deadRadius() { return this._deadRadius || 0.1}
+    get background() { return this._background }
+    get knob() { return this._knob }
+    get onChange() {return this._onChange || (xy=>{})};
+    // get onChange(xy) { return (this._onChange || xy=> console.log(xy))}
 
     buildChildren() {
         super.buildChildren();
-        this.setBackground(new BoxWidget(this, {color: [0.5,0.5,0.5]}));
-        this.gate = new Widget(this.bg, {anchor: [0.5, 0.5], pivot: [0.5, 0.5], autoSize: [1, 1], border: [10,10,10,10], bubbleChanges: true})
-        this.setKnob(new BoxWidget(this.gate, {color: [0.8,0.8,0.8], size: [20,20]}));
+        if (!this.background) this.set({ background: new BoxWidget({color: [0.5,0.5,0.5]})});
+        if (!this.knob) this.set({knob: new BoxWidget({color: [0.8,0.8,0.8], size: [20,20]})})
+        // if (!this.background) this.set({ background: new BoxWidget({color: [0.5,0.5,0.5]})});
+        // this.setBackground(new BoxWidget(this, {color: [0.5,0.5,0.5]}));
+        // this.gate = new Widget(this.bg, {anchor: [0.5, 0.5], pivot: [0.5, 0.5], autoSize: [1, 1], border: [10,10,10,10], bubbleChanges: true})
+        // this.setKnob(new BoxWidget(this.gate, {color: [0.8,0.8,0.8], size: [20,20]}));
     }
 
-    setBackground(w) {
-        if (this.bg && this.bg !== w) {
-            this.bg.removeChild(this.gate);
-            this.destroyChild(this.bg);
-        }
-        this.bg = w;
-        this.bg.set({autoSize: [1,1], bubbleChanges: true})
-        this.addChild(w);
-        this.bg.addChild(this.gate);
-    }
+    // setBackground(w) {
+    //     if (this.bg && this.bg !== w) {
+    //         this.bg.removeChild(this.gate);
+    //         this.destroyChild(this.bg);
+    //     }
+    //     this.bg = w;
+    //     this.bg.set({autoSize: [1,1], bubbleChanges: true})
+    //     this.addChild(w);
+    //     this.bg.addChild(this.gate);
+    // }
 
-    setKnob(w) {
-        if (this.knob && this.knob !== w) {
-            this.gate.destroyChild(this.knob);
-        }
-        this.knob = w;
-        this.knob.set({anchor: [0.5, 0.5], pivot: [0.5, 0.5], bubbleChanges: true})
-        const size = this.knob.rawSize;
-        const x = size[0] / 2;
-        const y = size[1] / 2;
-        this.gate.set({border: [x,y,x,y]});
-        this.gate.addChild(this.knob);
-    }
+    // setKnob(w) {
+    //     if (this.knob && this.knob !== w) {
+    //         this.gate.destroyChild(this.knob);
+    //     }
+    //     this.knob = w;
+    //     this.knob.set({anchor: [0.5, 0.5], pivot: [0.5, 0.5], bubbleChanges: true})
+    //     const size = this.knob.rawSize;
+    //     const x = size[0] / 2;
+    //     const y = size[1] / 2;
+    //     this.gate.set({border: [x,y,x,y]});
+    //     this.gate.addChild(this.knob);
+    // }
 
     recenter() {
         this.knob.set({anchor: [0.5,0.5]});
@@ -1598,8 +1579,8 @@ export class JoystickWidget extends ControlWidget {
         if (this.lastChangeCache && this.time >= this.lastChangeTime + this.throttle) this.change(this.lastChangeCache);
     }
 
-    onChange(xy) {
-    }
+    // onChange(xy) {
+    // }
 
 }
 
@@ -1609,279 +1590,279 @@ export class JoystickWidget extends ControlWidget {
 
 // A single line of text that can be typed into.
 
-export class TextFieldWidget extends FocusWidget {
+// export class TextFieldWidget extends FocusWidget {
 
-    get leftSelect() { return this._leftSelect || 0; }
-    get rightSelect() { return this._rightSelect || 0; }
-    get hiliteSize() { return (this.rightOffset - this.leftOffset); }
-    get multipleSelected() { return this.leftSelect !== this.rightSelect; }
+//     get leftSelect() { return this._leftSelect || 0; }
+//     get rightSelect() { return this._rightSelect || 0; }
+//     get hiliteSize() { return (this.rightOffset - this.leftOffset); }
+//     get multipleSelected() { return this.leftSelect !== this.rightSelect; }
 
-    get leftOffset() { return this.text.findLetterOffset(this.leftSelect) / this.scale;}
-    get rightOffset() { return this.text.findLetterOffset(this.rightSelect) / this.scale;}
+//     get leftOffset() { return this.text.findLetterOffset(this.leftSelect) / this.scale;}
+//     get rightOffset() { return this.text.findLetterOffset(this.rightSelect) / this.scale;}
 
-    buildChildren() {
-        super.buildChildren();
-        this.background = new BoxWidget(this, {autoSize:[1,1], color: [1,1,1], bubbleChanges: true});
-        this.clip = new Widget(this.background, {autoSize:[1,1], border: [5,5,5,5], clip: true, bubbleChanges: true});
-        this.text = new TextWidget(this.clip, {autoSize:[0,1], local:[0,0], alignX:'left', wrap: false, text:""});
-        this.entry = new BoxWidget(this.text, {autoSize:[0,1], local:[this.leftOffset,0], size:[1,1], bubbleChanges: true, visible: this.isFocused && !this.multipleSelected});
-        this.hilite = new BoxWidget(this.text, {autoSize:[0,1], local:[this.leftOffset, 0], size:[this.hiliteSize,1], color: [1,0,0], opacity:0.2,
-            bubbleChanges: true, visible: this.isFocused && this.multipleSelected});
+//     buildChildren() {
+//         super.buildChildren();
+//         this.background = new BoxWidget(this, {autoSize:[1,1], color: [1,1,1], bubbleChanges: true});
+//         this.clip = new Widget(this.background, {autoSize:[1,1], border: [5,5,5,5], clip: true, bubbleChanges: true});
+//         this.text = new TextWidget(this.clip, {autoSize:[0,1], local:[0,0], alignX:'left', wrap: false, text:""});
+//         this.entry = new BoxWidget(this.text, {autoSize:[0,1], local:[this.leftOffset,0], size:[1,1], bubbleChanges: true, visible: this.isFocused && !this.multipleSelected});
+//         this.hilite = new BoxWidget(this.text, {autoSize:[0,1], local:[this.leftOffset, 0], size:[this.hiliteSize,1], color: [1,0,0], opacity:0.2,
+//             bubbleChanges: true, visible: this.isFocused && this.multipleSelected});
 
-        // Suppress redrawing the whole canvas when the entry cursor or the hilite is hidden.
-        this.entry.markCanvasChanged = () => {};
-        this.hilite.markCanvasChanged = () => {};
-    }
+//         // Suppress redrawing the whole canvas when the entry cursor or the hilite is hidden.
+//         this.entry.markCanvasChanged = () => {};
+//         this.hilite.markCanvasChanged = () => {};
+//     }
 
-    updateChildren() {
-        this.background.update();
-        if (this.isDisabled) this.dim.update();
-    }
+//     updateChildren() {
+//         this.background.update();
+//         if (this.isDisabled) this.dim.update();
+//     }
 
-    onHover() {
-        this.setCursor("text");
-    }
+//     onHover() {
+//         this.setCursor("text");
+//     }
 
-    onUnhover() {
-        this.setCursor("default");
-    }
+//     onUnhover() {
+//         this.setCursor("default");
+//     }
 
-    onFocus() {
-        ui.requestVirtualKeyboard(this.global);
-        this.blink();
-    }
+//     onFocus() {
+//         ui.requestVirtualKeyboard(this.global);
+//         this.blink();
+//     }
 
-    onBlur() {
-        ui.dismissVirtualKeyboard();
-        this.refreshHilite();
-    }
+//     onBlur() {
+//         ui.dismissVirtualKeyboard();
+//         this.refreshHilite();
+//     }
 
-    blink() {
-        if (!this.isFocused) return;
-        this.entryBlink = !this.entryBlink;
-        this.entry.set({local:[this.leftOffset,0], visible: this.entryBlink && !this.multipleSelected} );
-        this.future(530).blink();
-    }
+//     blink() {
+//         if (!this.isFocused) return;
+//         this.entryBlink = !this.entryBlink;
+//         this.entry.set({local:[this.leftOffset,0], visible: this.entryBlink && !this.multipleSelected} );
+//         this.future(530).blink();
+//     }
 
-    onPress(xy) {
-        const local = v2_sub(xy, this.text.global);
-        const select = this.text.findSelect(local[0]);
-        this.selectStart = select;
-        this.set({leftSelect: select, rightSelect: select});
-        this.refreshHilite();
-    }
+//     onPress(xy) {
+//         const local = v2_sub(xy, this.text.global);
+//         const select = this.text.findSelect(local[0]);
+//         this.selectStart = select;
+//         this.set({leftSelect: select, rightSelect: select});
+//         this.refreshHilite();
+//     }
 
-    // Still need to support dragging past the end of the widget. This is where it should go.
-    onDrag(xy) {
-        const local = v2_sub(xy, this.text.global);
-        const select = this.text.findSelect(local[0]);
-        if (this.selectStart < select) {
-            this.set({leftSelect: this.selectStart, rightSelect: select});
-        } else if (this.selectStart > select) {
-            this.set({leftSelect: select, rightSelect: this.selectStart});
-        } else {
-            this.set({leftSelect: select, rightSelect: select});
-        }
-        this.refreshHilite();
-    }
+//     // Still need to support dragging past the end of the widget. This is where it should go.
+//     onDrag(xy) {
+//         const local = v2_sub(xy, this.text.global);
+//         const select = this.text.findSelect(local[0]);
+//         if (this.selectStart < select) {
+//             this.set({leftSelect: this.selectStart, rightSelect: select});
+//         } else if (this.selectStart > select) {
+//             this.set({leftSelect: select, rightSelect: this.selectStart});
+//         } else {
+//             this.set({leftSelect: select, rightSelect: select});
+//         }
+//         this.refreshHilite();
+//     }
 
-    keyInput(input) {
-        const key = input.key;
-        const ctrl = input.ctrl || input.meta;
-        if (ctrl) {
+//     keyInput(input) {
+//         const key = input.key;
+//         const ctrl = input.ctrl || input.meta;
+//         if (ctrl) {
 
-            switch (key) {
-                case 'x':
-                    this.cut();
-                    break;
-                case 'c':
-                    this.copy();
-                    break;
-                case 'v':
-                    this.paste();
-                    break;
-                    default:
-            }
-        } else {
-            switch (key) {
-                case 'Enter':
-                    this.enter();
-                    break;
-                case 'Backspace':
-                    this.backspace();
-                    break;
-                case 'Delete':
-                    this.delete();
-                    break;
-                case 'ArrowLeft':
-                    this.cursorLeft();
-                    break;
-                case 'ArrowRight':
-                    this.cursorRight();
-                    break;
-                default:
-                    if (key.length === 1) this.insert(key);
-            }
-        }
-    }
+//             switch (key) {
+//                 case 'x':
+//                     this.cut();
+//                     break;
+//                 case 'c':
+//                     this.copy();
+//                     break;
+//                 case 'v':
+//                     this.paste();
+//                     break;
+//                     default:
+//             }
+//         } else {
+//             switch (key) {
+//                 case 'Enter':
+//                     this.enter();
+//                     break;
+//                 case 'Backspace':
+//                     this.backspace();
+//                     break;
+//                 case 'Delete':
+//                     this.delete();
+//                     break;
+//                 case 'ArrowLeft':
+//                     this.cursorLeft();
+//                     break;
+//                 case 'ArrowRight':
+//                     this.cursorRight();
+//                     break;
+//                 default:
+//                     if (key.length === 1) this.insert(key);
+//             }
+//         }
+//     }
 
-    insert(s) {
-        if (this.multipleSelected) this.deleteRange();
-        s = this.filter(s);
-        const t = this.text.text.slice(0, this.leftSelect) + s + this.text.text.slice(this.leftSelect);
-        const select = this.leftSelect + s.length;
-        this.set({leftSelect: select, rightSelect: select});
-        this.text.set({text: t});
-        this.insertLeft += s.length;
-        this.insertRight = this.insertLeft;
-        this.refreshHilite();
-    }
+//     insert(s) {
+//         if (this.multipleSelected) this.deleteRange();
+//         s = this.filter(s);
+//         const t = this.text.text.slice(0, this.leftSelect) + s + this.text.text.slice(this.leftSelect);
+//         const select = this.leftSelect + s.length;
+//         this.set({leftSelect: select, rightSelect: select});
+//         this.text.set({text: t});
+//         this.insertLeft += s.length;
+//         this.insertRight = this.insertLeft;
+//         this.refreshHilite();
+//     }
 
-    filter(s) {
-        return s.replace(/\n/g, ' '); // Filter out carriage returns
-    }
+//     filter(s) {
+//         return s.replace(/\n/g, ' '); // Filter out carriage returns
+//     }
 
-    delete() {
-        if (this.multipleSelected) {
-            this.deleteRange();
-        } else {
-            this.deleteOne();
-        }
-        this.refreshHilite();
-    }
+//     delete() {
+//         if (this.multipleSelected) {
+//             this.deleteRange();
+//         } else {
+//             this.deleteOne();
+//         }
+//         this.refreshHilite();
+//     }
 
-    backspace() {
-        if (this.multipleSelected) {
-            this.deleteRange();
-        } else {
-            this.backspaceOne();
-        }
-        this.refreshHilite();
-    }
+//     backspace() {
+//         if (this.multipleSelected) {
+//             this.deleteRange();
+//         } else {
+//             this.backspaceOne();
+//         }
+//         this.refreshHilite();
+//     }
 
-    deleteRange() {
-        const cut = Math.min(this.text.text.length, this.rightSelect);
-        const t = this.text.text.slice(0, this.leftSelect) + this.text.text.slice(cut);
-        this.set({rightSelect: this.leftSelect});
-        this.text.set({text: t});
-    }
+//     deleteRange() {
+//         const cut = Math.min(this.text.text.length, this.rightSelect);
+//         const t = this.text.text.slice(0, this.leftSelect) + this.text.text.slice(cut);
+//         this.set({rightSelect: this.leftSelect});
+//         this.text.set({text: t});
+//     }
 
 
-    deleteOne() {
-        const cut = Math.min(this.text.text.length, this.rightSelect + 1);
-        const t = this.text.text.slice(0, this.leftSelect) + this.text.text.slice(cut);
-        this.text.set({text: t});
-    }
+//     deleteOne() {
+//         const cut = Math.min(this.text.text.length, this.rightSelect + 1);
+//         const t = this.text.text.slice(0, this.leftSelect) + this.text.text.slice(cut);
+//         this.text.set({text: t});
+//     }
 
-    backspaceOne() {
-        const cut = Math.max(0, this.leftSelect - 1);
-        const t = this.text.text.slice(0, cut) + this.text.text.slice(this.rightSelect);
-        this.set({leftSelect: cut, rightSelect: cut});
-        this.text.set({text: t});
-    }
+//     backspaceOne() {
+//         const cut = Math.max(0, this.leftSelect - 1);
+//         const t = this.text.text.slice(0, cut) + this.text.text.slice(this.rightSelect);
+//         this.set({leftSelect: cut, rightSelect: cut});
+//         this.text.set({text: t});
+//     }
 
-    cursorLeft() {
-        const c = Math.max(0, this.leftSelect - 1);
-        this.set({leftSelect: c, rightSelect: c});
-        this.refreshHilite();
-    }
+//     cursorLeft() {
+//         const c = Math.max(0, this.leftSelect - 1);
+//         this.set({leftSelect: c, rightSelect: c});
+//         this.refreshHilite();
+//     }
 
-    cursorRight() {
-        const c = Math.min(this.text.text.length, this.leftSelect + 1);
-        this.set({leftSelect: c, rightSelect: c});
-        this.refreshHilite();
-    }
+//     cursorRight() {
+//         const c = Math.min(this.text.text.length, this.leftSelect + 1);
+//         this.set({leftSelect: c, rightSelect: c});
+//         this.refreshHilite();
+//     }
 
-    cut() {
-        if (!this.multipleSelected) return;
-        const t = this.text.text.slice(this.leftSelect, this.rightSelect);
-        this.deleteRange();
-        navigator.clipboard.writeText(t); // This is a promise, but we don't care if it finishes.
-    }
+//     cut() {
+//         if (!this.multipleSelected) return;
+//         const t = this.text.text.slice(this.leftSelect, this.rightSelect);
+//         this.deleteRange();
+//         navigator.clipboard.writeText(t); // This is a promise, but we don't care if it finishes.
+//     }
 
-    copy() {
-        if (!this.multipleSelected) return;
-        const t = this.text.text.slice(this.leftSelect, this.rightSelect);
-        navigator.clipboard.writeText(t); // This is a promise, but we don't care if it finishes.
-    }
+//     copy() {
+//         if (!this.multipleSelected) return;
+//         const t = this.text.text.slice(this.leftSelect, this.rightSelect);
+//         navigator.clipboard.writeText(t); // This is a promise, but we don't care if it finishes.
+//     }
 
-    paste() {
-        navigator.clipboard.readText().then(text => this.insert(text));
-    }
+//     paste() {
+//         navigator.clipboard.readText().then(text => this.insert(text));
+//     }
 
-    onDoubleDown(xy) {
-        const local = v2_sub(xy, this.text.global);
-        const select = this.text.findSelect(local[0]);
-        const t = this.text.text;
+//     onDoubleDown(xy) {
+//         const local = v2_sub(xy, this.text.global);
+//         const select = this.text.findSelect(local[0]);
+//         const t = this.text.text;
 
-        let left = select;
-        let right = select;
-        if (t.length > 0) {
-            const c = t[select];
-            if (isLetterOrDigit(c)) {
-                while (left > 0 && isLetterOrDigit(t[left-1])) left--;
-                while (right < t.length && isLetterOrDigit(t[right])) right++;
-            } else if (c === ' ') {
-                while (left > 0 && t[left-1] === ' ') left--;
-                while (right < t.length && t[right] === ' ') right++;
-            } else if (right < t.length) right++;
-        }
-        this.set({leftSelect: left, rightSelect: right});
-        this.refreshHilite();
-    }
+//         let left = select;
+//         let right = select;
+//         if (t.length > 0) {
+//             const c = t[select];
+//             if (isLetterOrDigit(c)) {
+//                 while (left > 0 && isLetterOrDigit(t[left-1])) left--;
+//                 while (right < t.length && isLetterOrDigit(t[right])) right++;
+//             } else if (c === ' ') {
+//                 while (left > 0 && t[left-1] === ' ') left--;
+//                 while (right < t.length && t[right] === ' ') right++;
+//             } else if (right < t.length) right++;
+//         }
+//         this.set({leftSelect: left, rightSelect: right});
+//         this.refreshHilite();
+//     }
 
-    onTripleDown(xy) {
-        this.selectAll();
-    }
+//     onTripleDown(xy) {
+//         this.selectAll();
+//     }
 
-    selectAll() {
-        this.set({leftSelect: 0, rightSelect: this.text.text.length});
-        this.refreshHilite();
-    }
+//     selectAll() {
+//         this.set({leftSelect: 0, rightSelect: this.text.text.length});
+//         this.refreshHilite();
+//     }
 
-    // Update the position of the entry cursor and the highlight.
+//     // Update the position of the entry cursor and the highlight.
 
-    refreshHilite() {
-        this.entry.set({local:[this.leftOffset,0], visible: this.isFocused && !this.multipleSelected} );
-        this.hilite.set({local:[this.leftOffset, 0], size:[this.hiliteSize,1], visible: this.isFocused && this.multipleSelected});
+//     refreshHilite() {
+//         this.entry.set({local:[this.leftOffset,0], visible: this.isFocused && !this.multipleSelected} );
+//         this.hilite.set({local:[this.leftOffset, 0], size:[this.hiliteSize,1], visible: this.isFocused && this.multipleSelected});
 
-        if (!this.multipleSelected) { // Make sure the cursor is always visible.
+//         if (!this.multipleSelected) { // Make sure the cursor is always visible.
 
-            let textLeft = this.text.local[0] * this.scale;
-            const textWidth = this.text.pixelWidth();
-            const textRight = textLeft + textWidth;
-            const clipRight = this.clip.size[0];
+//             let textLeft = this.text.local[0] * this.scale;
+//             const textWidth = this.text.pixelWidth();
+//             const textRight = textLeft + textWidth;
+//             const clipRight = this.clip.size[0];
 
-            if (textWidth < clipRight) {
-                textLeft = 0;
-            } else if (textRight < clipRight) {
-                textLeft = clipRight-textWidth;
-            }
+//             if (textWidth < clipRight) {
+//                 textLeft = 0;
+//             } else if (textRight < clipRight) {
+//                 textLeft = clipRight-textWidth;
+//             }
 
-            const selectOffset = this.leftOffset * this.scale;
-            const globalOffset = textLeft + selectOffset;
+//             const selectOffset = this.leftOffset * this.scale;
+//             const globalOffset = textLeft + selectOffset;
 
-            if (globalOffset < 0) {
-                textLeft = -selectOffset;
-            } else if (globalOffset > clipRight) {
-                textLeft = clipRight - 1 - selectOffset;
-            }
+//             if (globalOffset < 0) {
+//                 textLeft = -selectOffset;
+//             } else if (globalOffset > clipRight) {
+//                 textLeft = clipRight - 1 - selectOffset;
+//             }
 
-            textLeft /= this.scale;
-            this.text.set({local:[textLeft, 0]});
+//             textLeft /= this.scale;
+//             this.text.set({local:[textLeft, 0]});
 
-        }
-    }
+//         }
+//     }
 
-    enter() {
-        this.onEnter();
-        this.blur();
-    }
+//     enter() {
+//         this.onEnter();
+//         this.blur();
+//     }
 
-    onEnter() {
-    }
+//     onEnter() {
+//     }
 
-}
+// }
 
 // -----------------------------------------------------------------------------------------
 //-- PaneWidget ----------------------------------------------------------------------------
@@ -1962,7 +1943,7 @@ export class TextFieldWidget extends FocusWidget {
 //     }
 
 //     press(xy) {
-//         if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
+//         if (this.!isVisible || this.isDisabled || !this.inside(xy)) return false;
 //         this.parent.guard.show();
 //         if (this.parent.zIndex < layer) {
 //             layer += 10;
