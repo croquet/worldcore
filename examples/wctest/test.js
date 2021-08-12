@@ -3,8 +3,10 @@
 // Croquet Studios, 2021
 
 import { Session } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, RenderManager, PM_Visible, Material, DrawCall, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, AM_Player, PM_Player, PlayerManager } from "@croquet/worldcore";
+import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, RenderManager, PM_Visible, Material, DrawCall, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, AM_Player, PM_Player, PlayerManager, ButtonWidget, ImageWidget, QRWidget, ToggleSet, ToggleWidget } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
+import llama from "./assets/llama.jpg";
+import kwark from "./assets/kwark.otf";
 
 //------------------------------------------------------------------------------------------
 // MoveActor
@@ -216,6 +218,22 @@ class MyViewRoot extends ViewRoot {
         this.HUD = new Widget(this.ui.root, {autoSize: [1,1]});
         this.joy = new JoystickWidget(this.HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200] });
         this.joy.onChange = xy => {this.publish("hud", "joy", xy)};
+
+        this.button0 = new ButtonWidget(this.HUD, {local: [20,20], size: [200,80]});
+        this.button0.label.set({text: "Test 0", fontURL: kwark, font: 'serif'});
+        this.button0.onClick = () => { this.joy.set({scale: 2})};
+
+        this.button1 = new ButtonWidget(this.HUD, {local: [20, 110], size: [200,80]});
+        this.button1.label.set({text: "Test 1"});
+        this.button1.onClick = () => { this.joy.set({scale: 1})};
+
+        this.image = new ImageWidget(this.HUD, {local: [20, 200], size: [200,80], url: llama});
+
+        this.toggleSet = new ToggleSet();
+        this.toggle0 = new ToggleWidget(this.HUD, {local: [20, 290], size: [200,80]});
+        this.toggle0 = new ToggleWidget(this.HUD, {local: [20, 290], size: [200,80], toggleSet: this.toggleSet});
+        this.toggle1 = new ToggleWidget(this.HUD, {local: [20, 380], size: [200,80], toggleSet: this.toggleSet})
+
     }
 
     createServices() {

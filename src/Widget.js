@@ -217,9 +217,6 @@ export class Widget extends WorldcoreView {
         if (parent) parent.addChild(this);
 
         this.buildChildren();
-
-        this.subscribe(this.id, { event: "visible", handling: "immediate" }, visible => {if (!visible) this.markCanvasChanged(); this.visiblityChanged();} );
-        this.subscribe(this.id, { event: "scale", handling: "immediate" }, () => { this.markCanvasChanged();} );
     }
 
     destroy() {
@@ -285,7 +282,7 @@ export class Widget extends WorldcoreView {
         if (this.canvasWidget) this.canvasWidget.markChanged();
     }
 
-    set(options) {
+    set(options = {}) {
         let changed = false;
         for (const option in options) {
             const n = "_" + option;
@@ -297,6 +294,13 @@ export class Widget extends WorldcoreView {
             }
         }
         if (changed) this.markChanged();
+
+        if ('visible' in options ) {
+            this.markCanvasChanged();
+            this.visiblityChanged();
+        }
+        if (options.scale ) this.markCanvasChanged();
+
     }
 
     show() { this.set({visible: true}); }
@@ -313,7 +317,6 @@ export class Widget extends WorldcoreView {
     get autoSize() { return this._autoSize || [0,0];}
     get isClipped() { return this._clip; }  // Default to false
     get isVisible() { return this._visible === undefined || this._visible;} // Default to true
-    // get isVisible() { return this._visible } // Default to true
     get color() { return this._color || [0,0,0];}
     get bubbleChanges() { return this._bubbleChanges; } // Default to false
     get rawSize() { return this._size || [100,100];}
@@ -721,14 +724,14 @@ export class BoxWidget extends Widget {
 // Displays an image.
 
 export class ImageWidget extends Widget {
-    constructor(...args) {
-        super(...args);
-        if (this.url) this.loadFromURL(this.url);
-        this.subscribe(this.id, { event: "url", handling: "immediate" }, this.loadFromURL);
-    }
 
     get image() { return this._image; }     // A canvas
     get url() { return this._url; }
+
+    set(options = {}) {
+        super.set(options);
+        if (options.url ) this.loadFromURL(options.url);
+    }
 
     loadFromURL(url) {
         this._image = LoadImage(url, image => {
@@ -757,22 +760,21 @@ export class ImageWidget extends Widget {
 //------------------------------------------------------------------------------------------
 
 export class QRWidget extends ImageWidget {
-    constructor(...args) {
-        super(...args);
-        this._element = document.createElement('div');
-        if (this.text) this.makeFromText(this.text);
-        this.subscribe(this.id, { event: "text", handling: "immediate" }, this.makeFromText);
-    }
 
     get text() { return this._text; }
 
+    set(options = {}) {
+        super.set(options);
+        if (options.text) this.makeFromText(options.text);
+    }
+
     destroy() {
         super.destroy();
-        this._element.remove();
+        if (this._element) this._element.remove();
     }
 
     makeFromText(t) {
-        this._text = t;
+        if (!this._element) this._element = document.createElement('div');
         this.markChanged();
         const code = new QRCode(this._element, {
             text: t,
@@ -904,20 +906,12 @@ export class NineSliceWidget extends ImageWidget {
 
 export class TextWidget extends Widget {
 
-    constructor(...args) {
-        super(...args);
-        if (this.url) this.setFontByURL(this.url);
-        this.subscribe(this.id, { event: "url", handling: "immediate" }, this.setFontByURL);
-    }
-
-    setText(t) {this.set({text: t});}
-
     setFontByURL(url) {
         this._font = LoadFont(url, () => this.markChanged());
         this.markChanged();
     }
 
-    get url() { return this._url; }
+    get fontURL() { return this._fontURL; }
     get bubbleChanges() { return this._bubbleChanges === undefined || this._bubbleChanges;} // Override to default to true
     get text() { if (this._text !== undefined) return this._text; return "Text";}
     get font() { return this._font || "sans-serif";}
@@ -927,6 +921,11 @@ export class TextWidget extends Widget {
     get alignX() { return this._alignX || "center";}
     get alignY() { return this._alignY || "middle";}
     get wrap() { return this._wrap === undefined || this._wrap;} // Default to true
+
+    set(options = {}) {
+        super.set(options);
+        if (options.fontURL) this.setFontByURL(this.fontURL);
+    }
 
     // Breaks lines by word wrap or new line.
 
@@ -1205,13 +1204,7 @@ export class ToggleWidget extends ControlWidget {
 
     constructor(...args) {
         super(...args);
-
-        if (!this._state) this._state = false; // Prevent toggle change events when an undefined state is set to false.
-
-        // Handle state changes triggered by another widget in the set.
-        this.setChanged();
-        this.subscribe(this.id, { event: "state", handling: "immediate" }, this.stateChanged);
-        this.subscribe(this.id, { event: "toggleSet", handling: "immediate" }, this.setChanged);
+        if (!this._state) this._state = false; // Prevent toggleOff when an undefined state is set to false.
     }
 
     destroy() {
@@ -1232,7 +1225,19 @@ export class ToggleWidget extends ControlWidget {
     }
 
     get isOn() { return this._state; }
+    get state() { return this._state; }
     get toggleSet() { return this._toggleSet; }
+
+    set(options = {}) {
+        const oldState = this.state;
+        const oldToggleSet = this.toggleSet;
+        super.set(options);
+        if ('toggleSet' in options && oldToggleSet !== this.toggleSet) {
+            if (oldToggleSet) oldToggleSet.remove(this);
+            if (this.toggleSet) this.toggleSet.add(this);
+        }
+        if ('state' in options && oldState !== this.state) this.stateChanged();
+    }
 
     setNormalOn(w) {
         if (this.normalOn && this.normalOn !== w) this.destroyChild(this.normalOn);
@@ -1301,20 +1306,6 @@ export class ToggleWidget extends ControlWidget {
         if (this.isDisabled) this.dim.update();
     }
 
-    // drag(xy) {
-    //     const inside = this.inside(xy);
-    //     if (this.isPressed === inside) return;
-    //     this.isPressed = inside;
-    //     this.markChanged();
-    // }
-
-    // press(xy) {
-    //     if (this.invisible || this.isDisabled || !this.inside(xy)) return false;
-    //     this.isPressed = true;
-    //     this.focus();
-    //     return true;
-    // }
-
     onClick() {
         if (this.toggleSet) {
             this.toggleSet.pick(this);
@@ -1323,25 +1314,8 @@ export class ToggleWidget extends ControlWidget {
         }
     }
 
-    // release(xy) {
-    //     this.isPressed = false;
-    //     this.blur();
-    //     if (!this.inside(xy)) return;
-    //     if (this.toggleSet) {
-    //         this.toggleSet.pick(this);
-    //     } else {
-    //         this.set({state: !this.isOn});
-    //     }
-    // }
-
-    setChanged() {
-        if (this.oldSet) this.oldSet.remove(this);
-        if (this.toggleSet) this.toggleSet.add(this);
-        this.oldSet = this.toggleSet;
-    }
-
-    stateChanged(state) {
-        if (state) {
+    stateChanged() {
+        if (this.state) {
             this.onToggleOn();
         } else {
             this.onToggleOff();
@@ -1350,8 +1324,8 @@ export class ToggleWidget extends ControlWidget {
 
     // Called when the toggle changes state either directly or indirectly.
 
-    onToggleOn() {}
-    onToggleOff() {}
+    onToggleOn() {};
+    onToggleOff() {};
 
 }
 
@@ -1775,8 +1749,6 @@ export class TextFieldWidget extends FocusWidget {
         const select = this.leftSelect + s.length;
         this.set({leftSelect: select, rightSelect: select});
         this.text.set({text: t});
-
-        this.text.setText(t);
         this.insertLeft += s.length;
         this.insertRight = this.insertLeft;
         this.refreshHilite();
