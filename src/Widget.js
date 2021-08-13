@@ -1207,8 +1207,8 @@ export class ToggleWidget extends ControlWidget {
         if (!this.hiliteOff) this.set({hiliteOff: new BoxWidget({color: [0.6, 0.6, 0.6]})});
         if (!this.pressedOn) this.set({pressedOn: new BoxWidget({color: [0.4, 0.4, 0.6]})});
         if (!this.pressedOff) this.set({pressedOff: new BoxWidget({color: [0.4, 0.4, 0.4]})});
-        if (!this.LabelOn) this.set({labelOn: new TextWidget({text: "On"})});
-        if (!this.LabelOff) this.set({labelOff: new TextWidget({text: "Off"})});
+        if (!this.labelOn) this.set({labelOn: new TextWidget({text: "On"})});
+        if (!this.labelOff) this.set({labelOff: new TextWidget({text: "Off"})});
 
     }
 

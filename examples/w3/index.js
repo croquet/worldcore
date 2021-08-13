@@ -57,7 +57,7 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
 
-        this.HUD = new HUD(this.ui.root, {autoSize: [1,1], visible: true});
+        this.HUD = new HUD({parent:this.ui.root, autoSize: [1,1]});
 
         this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
         this.render.lights.setAmbientColor([0.6, 0.6, 0.6]);

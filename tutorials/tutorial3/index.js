@@ -10,7 +10,7 @@
 // respond to one user's input.
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, PM_Visible, RenderManager, DrawCall, Cube,
-    v3_normalize, q_axisAngle, toRad, InputManager, q_multiply, UIManager, Widget, ButtonWidget, JoystickWidget, AM_Avatar, PM_Avatar, q_identity, q_normalize, PlayerManager, AM_Player, PM_Player } from "@croquet/worldcore";
+    v3_normalize, q_axisAngle, toRad, InputManager, q_multiply, UIManager, Widget, ButtonWidget, JoystickWidget, AM_Avatar, PM_Avatar, q_identity, q_normalize, PlayerManager, AM_Player, PM_Player, TextWidget } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- MyAvatar ------------------------------------------------------------------------------
@@ -254,7 +254,8 @@ MyModelRoot.register("MyModelRoot");
 // InputManager events as the other parts of Worldcore.)
 //
 // First we create the HUD. This is an empty container widget that automatically scales to match
-// the size of the app window.
+// the size of the its parent. We attach it to the root of the widget tree in the UIManager. The
+// root widget is always an empty widget that completely fills the app window.
 //
 // Then we create two buttons anchored to the upper left corner. Their onClick methods are replaced
 // with publish calls to broadcast that they've been pressed.
@@ -268,18 +269,34 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
 
-        const HUD = new Widget(this.service("UIManager").root, {autoSize: [1,1]});
+        const uiRoot = this.service("UIManager").root;
+        const HUD = new Widget({parent: uiRoot, autoSize: [1,1]});
 
-        const button1 = new ButtonWidget(HUD, {local:[20,20], size: [150,70]});
-        button1.label.set({text: "Color"});
-        button1.onClick = () => button1.publish("hud", "color");
+        // We can create the whole widget at once with options passed to its constructor ...
 
-        const button2 = new ButtonWidget(HUD, {local:[20,100], size: [150,70]});
+        const button1 = new ButtonWidget({ //
+            parent: HUD,
+            local:[20,20],
+            size: [150,70],
+            label: new TextWidget({text: "Color"}),
+            onClick: () => this.publish("hud", "color")
+        });
+
+        // ... or we can modify the widget and its children later using "set"!
+
+        const button2 = new ButtonWidget({parent: HUD, local:[20,100], size: [150,70]});
+        button2.set({onClick: () => this.publish("hud", "toggle")});
         button2.label.set({text: "Toggle"});
-        button2.onClick = () => button2.publish("hud", "toggle");
 
-        const joy = new JoystickWidget(HUD, {anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [150, 150] });
-        joy.onChange = xy => {this.publish("hud", "joy", xy)};
+        const joy = new JoystickWidget({
+            parent: HUD,
+            anchor: [1,1],
+            pivot: [1,1],
+            local: [-20,-20],
+            size: [150, 150],
+            onChange: xy => this.publish("hud", "joy", xy)
+        });
+
     }
 
     createServices() {
