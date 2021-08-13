@@ -136,8 +136,8 @@ class MyViewRoot extends ViewRoot {
     }
 
     addHud() {
-        this.cheatText = new TextWidget(this.ui.root, {local: [10,10], size: [100,20], text: "Cheat On", point: 12, visible: false, alignX: 'left'});
-        this.disableText = new TextWidget(this.ui.root, {local: [10,30], size: [100,20], text: "Shots Disabled", point: 12, visible: false, alignX: 'left'});
+        this.cheatText = new TextWidget({parent: this.ui.root, local: [10,10], size: [100,20], text: "Cheat On", point: 12, visible: false, alignX: 'left'});
+        this.disableText = new TextWidget({parent: this.ui.root,local: [10,30], size: [100,20], text: "Shots Disabled", point: 12, visible: false, alignX: 'left'});
     }
 
     shoot() {
