@@ -217,12 +217,13 @@ class MyViewRoot extends ViewRoot {
 
         this.HUD = new Widget({parent: this.ui.root, autoSize: [1,1]});
         this.joy = new JoystickWidget({parent: this.HUD, anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200], onChange: xy => {this.publish("hud", "joy", xy)}});
+        // this.joy.set({knob: new BoxWidget({color: [0.9,0.2,0.2], size: [40,40]})})
 
         this.button0 = new ButtonWidget({
             parent: this.HUD,
             local: [20,20],
             size: [200,80],
-            label: new TextWidget({fontURL: kwark, text: "Test 0"}),
+            label: new TextWidget({fontURL: kwark, text: "Test 0", style: "italic"}),
             onClick: () => { this.joy.set({scale: 2})}
         });
 
@@ -230,7 +231,7 @@ class MyViewRoot extends ViewRoot {
             parent: this.HUD,
             local: [20,110],
             size: [200,80],
-            label: new TextWidget({fontURL: kwark, text: "Test 1"}),
+            label: new TextWidget({fontURL: kwark, text: "Test 1", style: "oblique"}),
             onClick: () => { this.joy.set({scale: 1})}
         });
 

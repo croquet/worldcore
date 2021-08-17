@@ -298,6 +298,7 @@ export class Widget extends WorldcoreView {
     get autoSize() { return this._autoSize || [0,0];}
     get isClipped() { return this._clip; }  // Default to false
     get isVisible() { return this._visible === undefined || this._visible;} // Default to true
+    get visible() { return this._visible === undefined || this._visible;} // Default to true
     get color() { return this._color || [0,0,0];}
     get bubbleChanges() { return this._bubbleChanges; } // Default to false
     get rawSize() { return this._size || [100,100];}
@@ -1013,6 +1014,7 @@ export class ControlWidget extends Widget {
 
     get dim() {return this._dim;}
     get isDisabled() { return this._disabled;}
+    get disabled() { return this._disabled;}
 
     set(options = {}) {
         const oldDim = this.dim;
@@ -1465,7 +1467,6 @@ export class JoystickWidget extends ControlWidget {
         this.gate = new Widget({parent: this, anchor: [0.5, 0.5], pivot: [0.5, 0.5], autoSize: [1, 1], border: [10,10,10,10], bubbleChanges: true});
         this.knob.set({parent: this.gate});
         this.lastChangeTime = this.time;
-        // this.deadRadius = 0.1;
         this.xy = [0,0];
     }
 
@@ -1474,7 +1475,14 @@ export class JoystickWidget extends ControlWidget {
         const oldKnob = this.knob;
         super.set(options);
         if (options.background) { if (oldBackground) oldBackground.destroy(); options.background.set({parent: this, autoSize: [1,1], bubbleChanges: true}); }
-        if (options.knob) { if (oldKnob) oldKnob.destroy(); options.knob.set({parent: this.gate, anchor: [0.5, 0.5], pivot: [0.5,0.5], bubbleChanges: true}); }
+        if (options.knob) {
+            if (oldKnob) oldKnob.destroy();
+            options.knob.set({parent: this.gate, anchor: [0.5, 0.5], pivot: [0.5,0.5], bubbleChanges: true});
+            const size = this.knob.rawSize;
+            const x = size[0] / 2;
+            const y = size[1] / 2;
+            if (this.gate) this.gate.set({border: [x,y,x,y]});
+        }
     }
 
     get throttle() { return this._throttle || 0} // MS between control updates
@@ -1482,41 +1490,12 @@ export class JoystickWidget extends ControlWidget {
     get background() { return this._background }
     get knob() { return this._knob }
     get onChange() {return this._onChange || (xy=>{})};
-    // get onChange(xy) { return (this._onChange || xy=> console.log(xy))}
 
     buildChildren() {
         super.buildChildren();
         if (!this.background) this.set({ background: new BoxWidget({color: [0.5,0.5,0.5]})});
         if (!this.knob) this.set({knob: new BoxWidget({color: [0.8,0.8,0.8], size: [20,20]})})
-        // if (!this.background) this.set({ background: new BoxWidget({color: [0.5,0.5,0.5]})});
-        // this.setBackground(new BoxWidget(this, {color: [0.5,0.5,0.5]}));
-        // this.gate = new Widget(this.bg, {anchor: [0.5, 0.5], pivot: [0.5, 0.5], autoSize: [1, 1], border: [10,10,10,10], bubbleChanges: true})
-        // this.setKnob(new BoxWidget(this.gate, {color: [0.8,0.8,0.8], size: [20,20]}));
     }
-
-    // setBackground(w) {
-    //     if (this.bg && this.bg !== w) {
-    //         this.bg.removeChild(this.gate);
-    //         this.destroyChild(this.bg);
-    //     }
-    //     this.bg = w;
-    //     this.bg.set({autoSize: [1,1], bubbleChanges: true})
-    //     this.addChild(w);
-    //     this.bg.addChild(this.gate);
-    // }
-
-    // setKnob(w) {
-    //     if (this.knob && this.knob !== w) {
-    //         this.gate.destroyChild(this.knob);
-    //     }
-    //     this.knob = w;
-    //     this.knob.set({anchor: [0.5, 0.5], pivot: [0.5, 0.5], bubbleChanges: true})
-    //     const size = this.knob.rawSize;
-    //     const x = size[0] / 2;
-    //     const y = size[1] / 2;
-    //     this.gate.set({border: [x,y,x,y]});
-    //     this.gate.addChild(this.knob);
-    // }
 
     recenter() {
         this.knob.set({anchor: [0.5,0.5]});
@@ -1578,9 +1557,6 @@ export class JoystickWidget extends ControlWidget {
         super.update();
         if (this.lastChangeCache && this.time >= this.lastChangeTime + this.throttle) this.change(this.lastChangeCache);
     }
-
-    // onChange(xy) {
-    // }
 
 }
 
