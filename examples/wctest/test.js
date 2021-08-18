@@ -3,10 +3,11 @@
 // Croquet Studios, 2021
 
 import { Session } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, RenderManager, PM_Visible, Material, DrawCall, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, AM_Player, PM_Player, PlayerManager, ButtonWidget, ImageWidget, QRWidget, ToggleSet, ToggleWidget, BoxWidget, VerticalWidget, TextWidget, SliderWidget } from "@croquet/worldcore";
+import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, RenderManager, PM_Visible, Material, DrawCall, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, AM_Player, PM_Player, PlayerManager, ButtonWidget, ImageWidget, QRWidget, ToggleSet, ToggleWidget, BoxWidget, VerticalWidget, TextWidget, SliderWidget, AudioManager, PM_AudioListener, AM_AudioSource, PM_AudioSource } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
+import photon from "./assets/photon.mp3";
 
 //------------------------------------------------------------------------------------------
 // MoveActor
@@ -18,7 +19,7 @@ class MoveActor extends mix(Actor).with(AM_Avatar, AM_Player) {
 
     init(options = {}) {
         super.init(options);
-        this.child = ChildActor.create({parent: this, translation: [0,1.5,0]});
+        this.child = ChildActor.create({parent: this, translation: [-5,1.5,0]});
     }
 
 }
@@ -81,13 +82,19 @@ class SpinBehavior extends Behavior {
 }
 SpinBehavior.register("SpinBehavior");
 
-class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
+class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral, AM_AudioSource) {
 
     get pawn() {return ChildPawn}
 
     init(options) {
         super.init(options);
         this.startBehavior(SpinBehavior);
+        this.subscribe("input", "dDown", this.test);
+    }
+
+    test() {
+        console.log("test!");
+        this.playSound(photon);
     }
 
 }
@@ -98,7 +105,7 @@ ChildActor.register('ChildActor');
 // ChildPawn
 //------------------------------------------------------------------------------------------
 
-class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
+class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible, PM_AudioSource) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
@@ -130,8 +137,18 @@ class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
 // BackgroundActor
 //------------------------------------------------------------------------------------------
 
-class BackgroundActor extends mix(Actor).with(AM_Spatial) {
+class BackgroundActor extends mix(Actor).with(AM_Spatial, AM_AudioSource) {
     get pawn() {return BackgroundPawn}
+
+    init(...args) {
+        super.init(...args);
+        // this.subscribe("input", "dDown", this.test);
+    }
+
+    test() {
+        console.log("test!");
+        this.playSound(photon);
+    }
 }
 BackgroundActor.register('BackgroundActor');
 
@@ -139,7 +156,7 @@ BackgroundActor.register('BackgroundActor');
 // BackgroundPawn
 //------------------------------------------------------------------------------------------
 
-class BackgroundPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
+class BackgroundPawn extends mix(Pawn).with(PM_Spatial, PM_Visible, PM_AudioSource, PM_AudioListener) {
     constructor(...args) {
         super(...args);
 
@@ -217,7 +234,6 @@ class MyViewRoot extends ViewRoot {
 
         this.HUD = new Widget({parent: this.ui.root, autoSize: [1,1]});
         this.joy = new JoystickWidget({parent: this.HUD, anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200], onChange: xy => {this.publish("hud", "joy", xy)}});
-        // this.joy.set({knob: new BoxWidget({color: [0.9,0.2,0.2], size: [40,40]})})
 
         this.button0 = new ButtonWidget({
             parent: this.HUD,
@@ -253,6 +269,7 @@ class MyViewRoot extends ViewRoot {
         this.input = this.addService(InputManager);
         this.render = this.addService(RenderManager);
         this.ui = this.addService(UIManager);
+        this.audio = this.addService(AudioManager);
     }
 
 }

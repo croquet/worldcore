@@ -19,4 +19,4 @@ export * from "./src/Render";
 export * from "./src/RenderManager";
 export * from "./src/RapierPhysics";
 export * from "./src/ThreeRender";
-// export * from "./src/Audio";
+export * from "./src/Audio";
