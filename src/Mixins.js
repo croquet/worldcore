@@ -1,7 +1,7 @@
 import { Constants } from "@croquet/croquet";
 import { PM_Dynamic, GetPawn } from "./Pawn";
-import { v3_zero, q_identity, v3_unit, m4_scalingRotationTranslation, m4_translation, m4_rotationX, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, v3_transform, q_euler, TAU, clampRad, q2_axisAngle } from  "./Vector";
+import { v3_zero, q_identity, v3_unit, m4_scaleRotationTranslation, m4_translation, m4_rotationX, m4_multiply, v3_lerp, v3_equals,
+    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, v3_transform, q_euler, TAU, clampRad, q_axisAngle } from  "./Vector";
 
 // Mixin
 //
@@ -235,7 +235,7 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
     }
 
     get local() {
-        if (!this.$local) this.$local = m4_scalingRotationTranslation(this.scale, this.rotation, this.translation);
+        if (!this.$local) this.$local = m4_scaleRotationTranslation(this.scale, this.rotation, this.translation);
         return this.$local;
     }
 
@@ -251,7 +251,7 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
 
     get translation() { return this._translation || v3_zero() };
     get rotation() { return this._rotation || q_identity() };
-    get scale() { return this._scale || v3_unit() };
+    get scale() { return this._scale || [1,1,1] };
 }
 RegisterMixin(AM_Spatial);
 
@@ -356,7 +356,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     }
 
     get local() {
-        if (!this._local) this._local = m4_scalingRotationTranslation(this._scale, this._rotation, this._translation);
+        if (!this._local) this._local = m4_scaleRotationTranslation(this._scale, this._rotation, this._translation);
         return this._local;
     }
 
@@ -429,7 +429,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
 
     get spin() { return this._spin || q_identity() };
-    get velocity() { return this._velocity || v3_unit() };
+    get velocity() { return this._velocity || v3_zero() };
 
     init(...args) {
         this.listen("avatarMoveTo", this.moveTo);
@@ -634,10 +634,10 @@ export const PM_MouselookAvatar = superclass => class extends PM_Avatar(supercla
     }
 
     get lookGlobal() {
-        const pitchRotation = q2_axisAngle([1,0,0], this.lookPitch);
-        const yawRotation = q2_axisAngle([0,1,0], this.lookYaw);
+        const pitchRotation = q_axisAngle([1,0,0], this.lookPitch);
+        const yawRotation = q_axisAngle([0,1,0], this.lookYaw);
 
-        const modelLocal =  m4_scalingRotationTranslation(this.scale, yawRotation, this.translation)
+        const modelLocal =  m4_scaleRotationTranslation(this.scale, yawRotation, this.translation)
         let modelGlobal = modelLocal;
         if (this.parent) modelGlobal = m4_multiply(modelLocal, this.parent.global);
 

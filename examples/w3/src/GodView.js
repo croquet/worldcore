@@ -1,4 +1,4 @@
-import { GetNamedView, NamedView, m4_scalingRotationTranslation, m4_translation, q_axisAngle, v3_scale, v3_add, v3_multiply, q_multiply,
+import { GetNamedView, NamedView, m4_scaleRotationTranslation, m4_translation, q_axisAngle, v3_scale, v3_add, v3_multiply, q_multiply,
     toRad, TAU, KeyDown, v3_transform, m4_rotationZ, m4_multiply, toDeg, DepthTexture, GetViewRoot, viewRoot, ViewService, GetViewService } from "@croquet/worldcore";
 import { GetTopLayer } from "./Globals";
 import { PickGrabSurface  } from "./VoxelRaycast";
@@ -126,7 +126,7 @@ export class GodView extends ViewService {
         if (animals.fp) return;
         const p = q_axisAngle([1,0,0], pitch);
         const y = q_axisAngle([0,0,1], yaw);
-        this.camera.setLocation(m4_scalingRotationTranslation(1, q_multiply(p,y), translation));
+        this.camera.setLocation(m4_scaleRotationTranslation(1, q_multiply(p,y), translation));
     }
 
     findSpin(pivot, angle) {
@@ -148,7 +148,7 @@ export class GodView extends ViewService {
             const p = q_axisAngle([1,0,0], toRad(90));
             const r = q_multiply(p,pawn.rotation);
             const t = v3_add([0, 0, 2], pawn.translation);
-            this.camera.setLocation(m4_scalingRotationTranslation(1, r, t));
+            this.camera.setLocation(m4_scaleRotationTranslation(1, r, t));
         }
         else {
             this.updateCamera();

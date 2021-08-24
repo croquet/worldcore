@@ -3,7 +3,7 @@
 // Croquet Studios, 2021
 
 import { Session } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scalingRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, RenderManager, PM_Visible, Material, DrawCall, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, AM_Player, PM_Player, PlayerManager, ButtonWidget, ImageWidget, QRWidget, ToggleSet, ToggleWidget, BoxWidget, VerticalWidget, TextWidget, SliderWidget, AudioManager, PM_AudioListener, AM_AudioSource, PM_AudioSource } from "@croquet/worldcore";
+import { ModelRoot, ViewRoot, UIManager, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, RenderManager, PM_Visible, Material, DrawCall, Triangles, CachedObject, q_multiply, q_normalize, q_identity, Sphere, v3_normalize, Cylinder, AM_Spatial, PM_Spatial,Widget, JoystickWidget, InputManager, AM_Avatar, PM_Avatar, AM_Behavioral, Behavior, AM_Player, PM_Player, PlayerManager, ButtonWidget, ImageWidget, QRWidget, ToggleSet, ToggleWidget, BoxWidget, VerticalWidget, TextWidget, SliderWidget, AudioManager, PM_AudioListener, AM_AudioSource, PM_AudioSource } from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
@@ -221,7 +221,7 @@ class MyViewRoot extends ViewRoot {
         this.render.lights.setDirectionalColor([0.7, 0.7, 0.7]);
         this.render.lights.setDirectionalAim([0.2,-1,0.1]);
 
-        const cameraMatrix = m4_scalingRotationTranslation([1,1,1], q_axisAngle([1,0,0], toRad(0)), [0,0,0]);
+        const cameraMatrix = m4_scaleRotationTranslation([1,1,1], q_axisAngle([1,0,0], toRad(0)), [0,0,0]);
         this.render.camera.setLocation(cameraMatrix);
         this.render.camera.setProjection(toRad(60), 1.0, 10000.0);
 

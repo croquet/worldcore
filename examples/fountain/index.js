@@ -4,7 +4,7 @@
 
 import { Session, App } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, InputManager, UIManager, AudioManager, ActorManager, RenderManager, PawnManager, PlayerManager, RapierPhysicsManager,
-    toRad, LoadRapier,m4_scalingRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, TextWidget, GetViewFPS, RapierVersion } from "@croquet/worldcore";
+    toRad, LoadRapier,m4_scaleRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, TextWidget, GetViewFPS, RapierVersion } from "@croquet/worldcore";
 import { LevelActor } from "./src/Level";
 import { CubeSprayActor, CylinderSprayActor, ConeSprayActor, BallSprayActor } from "./src/Fountain";
 
@@ -106,7 +106,7 @@ class MyViewRoot extends ViewRoot {
         this.render.lights.setDirectionalColor([0.7, 0.7, 0.7]);
         this.render.lights.setDirectionalAim([0.2,-1,0.1]);
 
-        this.render.camera.setLocation(m4_scalingRotationTranslation(1, q_axisAngle([1,0,0], toRad(-30)), [0,20,22]));
+        this.render.camera.setLocation(m4_scaleRotationTranslation(1, q_axisAngle([1,0,0], toRad(-30)), [0,20,22]));
         this.render.camera.setProjection(toRad(60), 1.0, 10000.0);
 
         const ao = this.render.aoShader;

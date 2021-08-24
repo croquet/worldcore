@@ -1,4 +1,4 @@
-import { v2_sub, v2_multiply, v2_add, v2_scale, v4_scale, v2_magnitude } from "./Vector";
+import { v2_sub, v2_multiply, v2_add, v2_scale, v2_magnitude } from "./Vector";
 import { LoadFont, LoadImage} from "./ViewAssetCache";
 import QRCode from "../lib/qr/qrcode";
 import { ViewService, WorldcoreView } from "./Root";
@@ -39,6 +39,10 @@ function isDigit(c) { // Returns true if the character is a digit.
 
 function isLetterOrDigit(c) {
     return isLetter(c) || isDigit(c);
+}
+
+function v4_scale(v,s) {
+    return [v[0] * s, v[1] * s, v[2] * s, v[3] * s];
 }
 
 

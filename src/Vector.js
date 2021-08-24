@@ -68,9 +68,9 @@ export function v2_zero() {
     return [0,0];
 }
 
-export function v2_unit() {
-    return [1,0];
-}
+// export function v2_unit() {
+//     return [1,0];
+// }
 
 export function v2_random() {
     const a = Math.random() * 2 * Math.PI;
@@ -114,14 +114,24 @@ export function v2_multiply(a,b) {
     return [a[0] * b[0], a[1] * b[1]];
 }
 
-//Clockwise in radians
-export function v2_rotate(v,a,c) {
+export function v2_divide(a,b) {
+    return [a[0] / b[0], a[1] / b[1]];
+}
+
+// Clockwise in radians
+// export function v2_rotate(v,a,c) {
+//     const sinA = Math.sin(a);
+//     const cosA = Math.cos(a);
+//     if (c) {
+//         const vc = v2_sub(v, c);
+//         return v2_add(c, [cosA*vc[0] - sinA*vc[1], sinA*vc[0] + cosA*vc[1]]);
+//     }
+//     return [cosA*v[0] - sinA*v[1], sinA*v[0] + cosA*v[1]];
+// }
+
+export function v2_rotate(v,a) {
     const sinA = Math.sin(a);
     const cosA = Math.cos(a);
-    if (c) {
-        const vc = v2_sub(v, c);
-        return v2_add(c, [cosA*vc[0] - sinA*vc[1], sinA*vc[0] + cosA*vc[1]]);
-    }
     return [cosA*v[0] - sinA*v[1], sinA*v[0] + cosA*v[1]];
 }
 
@@ -158,6 +168,14 @@ export function v2_equals(a,b,e = 0) { // e is an epsilon
     return (a[0] === b[0] && a[1] === b[1]);
 }
 
+export function v2_isZero(v) {
+    return !(v[0] || v[1] );
+}
+
+export function v2_manhattan(a, b) {
+    return Math.abs(a[0]-b[0]) + Math.abs(a[1]-b[1]);
+}
+
 export function v2_transform(v, m) {
     const x = v[0], y = v[1];
     return ([
@@ -174,14 +192,22 @@ export function v3_zero() {
     return [0,0,0];
 }
 
-export function v3_unit() {
-    return [1,1,1];
-}
+// export function v3_unit() {
+//     return [1,1,1];
+// }
+
+// export function v3_random() {
+//     const a = Math.random() * 2 * Math.PI;
+//     const b = Math.acos(2 * Math.random() - 1);
+//     return v3_rotateZ(v3_rotateY(v3_unit(),b),a);
+// }
 
 export function v3_random() {
-    const a = Math.random() * 2 * Math.PI;
-    const b = Math.acos(2 * Math.random() - 1);
-    return v3_rotateZ(v3_rotateY(v3_unit(),b),a);
+    const u = Math.random();
+    const v = Math.random();
+    const root = 2 * Math.sqrt(u - u * u);
+    const angle = TAU * v;
+    return [root * Math.cos(angle), root * Math.sin(angle), 1-2*u];
 }
 
 export function v3_magnitude(v) {
@@ -217,9 +243,9 @@ export function v3_scale(v,s) {
     return [v[0] * s, v[1] * s, v[2] * s];
 }
 
-export function v3_opposite(v) {
-    return [v[0] * -1, v[1] * -1, v[2] * -1];
-}
+// export function v3_opposite(v) {
+//     return [v[0] * -1, v[1] * -1, v[2] * -1];
+// }
 
 export function v3_multiply(a,b) {
     return [a[0] * b[0], a[1] * b[1], a[2] * b[2]];
@@ -325,81 +351,81 @@ export function v3_isZero(v) {
 //-- 4 Vectors -------------------------------------------------------------------
 //--------------------------------------------------------------------------------
 
-export function v4_zero() {
-    return [0,0,0,0];
-}
+// export function v4_zero() {
+//     return [0,0,0,0];
+// }
 
-export function v4_unit() {
-    return [1,0,0,0];
-}
+// // export function v4_unit() {
+// //     return [1,0,0,0];
+// // }
 
-export function v4_magnitude(v) {
-    return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3]);
-}
+// export function v4_magnitude(v) {
+//     return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3]);
+// }
 
-export function v4_sqrMag(v) { // Squared magnitude
-    return (v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3]);
-}
+// export function v4_sqrMag(v) { // Squared magnitude
+//     return (v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3]);
+// }
 
-export function v4_normalize(v) {
-    const m = 1/v4_magnitude(v);
-    return [v[0]*m, v[1]*m, v[2]*m, v[3]*m];
-}
+// export function v4_normalize(v) {
+//     const m = 1/v4_magnitude(v);
+//     return [v[0]*m, v[1]*m, v[2]*m, v[3]*m];
+// }
 
-export function v4_inverse(v) {
-    return [1/v[0], 1/v[1], 1/v[2], 1/v[3]];
-}
+// export function v4_inverse(v) {
+//     return [1/v[0], 1/v[1], 1/v[2], 1/v[3]];
+// }
 
-export function v4_ceil(v) {
-    return [Math.ceil(v[0]), Math.v3_ceil(v[1]), Math.v3_ceil(v[2]), Math.v3_ceil(v[3])];
-}
+// export function v4_ceil(v) {
+//     return [Math.ceil(v[0]), Math.v3_ceil(v[1]), Math.v3_ceil(v[2]), Math.v3_ceil(v[3])];
+// }
 
-export function v4_floor(v) {
-    return [Math.floor(v[0]), Math.floor(v[1]), Math.floor(v[2]), Math.floor(v[3])];
-}
+// export function v4_floor(v) {
+//     return [Math.floor(v[0]), Math.floor(v[1]), Math.floor(v[2]), Math.floor(v[3])];
+// }
 
-export function v4_scale(v,s) {
-    return [v[0] * s, v[1] * s, v[2] * s, v[3] * s];
-}
+// export function v4_scale(v,s) {
+//     return [v[0] * s, v[1] * s, v[2] * s, v[3] * s];
+// }
 
-export function v4_multiply(a,b) {
-    return [a[0] * b[0], a[1] * b[1], a[2] * b[2], a[3] * b[3]];
-}
+// export function v4_multiply(a,b) {
+//     return [a[0] * b[0], a[1] * b[1], a[2] * b[2], a[3] * b[3]];
+// }
 
-export function v4_add(a,b) {
-    return [a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]];
-}
+// export function v4_add(a,b) {
+//     return [a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]];
+// }
 
-export function v4_sub(a,b) {
-    return [a[0] - b[0], a[1] - b[1], a[2] - b[2], a[3] - b[3]];
-}
+// export function v4_sub(a,b) {
+//     return [a[0] - b[0], a[1] - b[1], a[2] - b[2], a[3] - b[3]];
+// }
 
-export function v4_dot(a,b) {
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]  + a[3] * b[3];
-}
+// export function v4_dot(a,b) {
+//     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]  + a[3] * b[3];
+// }
 
-export function v4_min(a,b) {
-    return [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.min(a[2], b[2]), Math.min(a[3], b[3])];
-}
+// export function v4_min(a,b) {
+//     return [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.min(a[2], b[2]), Math.min(a[3], b[3])];
+// }
 
-export function v4_max(a,b) {
-    return [Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])];
-}
+// export function v4_max(a,b) {
+//     return [Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])];
+// }
 
-export function v4_transform(v, m) {
-        const x = v[0], y = v[1], z = v[2], w = v[3];
-        return [
-            m[0] * x + m[4] * y + m[8] * z + m[12] * w,
-            m[1] * x + m[5] * y + m[9] * z + m[13] * w,
-            m[2] * x + m[6] * y + m[10] * z + m[14] * w,
-            m[3] * x + m[7] * y + m[11] * z + m[15] * w,
-        ];
-      }
+// export function v4_transform(v, m) {
+//         const x = v[0], y = v[1], z = v[2], w = v[3];
+//         return [
+//             m[0] * x + m[4] * y + m[8] * z + m[12] * w,
+//             m[1] * x + m[5] * y + m[9] * z + m[13] * w,
+//             m[2] * x + m[6] * y + m[10] * z + m[14] * w,
+//             m[3] * x + m[7] * y + m[11] * z + m[15] * w,
+//         ];
+//       }
 
-export function v4_equals(a,b,e = 0) { // e is an epsilon
-    if (e) return (e > Math.abs(a[0]-b[0]) && e > Math.abs(a[1]-b[1]) && e > Math.abs(a[2]-b[2]) && e > Math.abs(a[3]-b[3]));
-    return (a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]);
-}
+// export function v4_equals(a,b,e = 0) { // e is an epsilon
+//     if (e) return (e > Math.abs(a[0]-b[0]) && e > Math.abs(a[1]-b[1]) && e > Math.abs(a[2]-b[2]) && e > Math.abs(a[3]-b[3]));
+//     return (a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]);
+// }
 
 //--------------------------------------------------------------------------------
 //-- 2x2 Matrices ----------------------------------------------------------------
@@ -433,80 +459,80 @@ export function m2_rotation(angle) {
 //-- 3x3 Matrices ----------------------------------------------------------------
 //--------------------------------------------------------------------------------
 
-export function m3_zero() {
-    return [
-        0,0,0,
-        0,0,0,
-        0,0,0
-    ];
-}
+// export function m3_zero() {
+//     return [
+//         0,0,0,
+//         0,0,0,
+//         0,0,0
+//     ];
+// }
 
-export function m3_identity() {
-    return [
-        1,0,0,
-        0,1,0,
-        0,0,1
-    ];
-}
+// export function m3_identity() {
+//     return [
+//         1,0,0,
+//         0,1,0,
+//         0,0,1
+//     ];
+// }
 
-export function m3_transpose(m) {
-    return [
-        m[0], m[3], m[6],
-        m[1], m[4], m[7],
-        m[2], m[5], m[8]
-    ];
-}
+// export function m3_transpose(m) {
+//     return [
+//         m[0], m[3], m[6],
+//         m[1], m[4], m[7],
+//         m[2], m[5], m[8]
+//     ];
+// }
 
-export function m3_invert(m) {
-    const a00 = m[0], a01 = m[1], a02 = m[2];
-    const a10 = m[3], a11 = m[4], a12 = m[5];
-    const a20 = m[6], a21 = m[7], a22 = m[8];
+// export function m3_invert(m) {
+//     const a00 = m[0], a01 = m[1], a02 = m[2];
+//     const a10 = m[3], a11 = m[4], a12 = m[5];
+//     const a20 = m[6], a21 = m[7], a22 = m[8];
 
-    const b00 = a11 * a22 - a21 * a12;
-    const b10 = a01 * a22 - a21 * a02;
-    const b20 = a01 * a12 - a11 * a02;
+//     const b00 = a11 * a22 - a21 * a12;
+//     const b10 = a01 * a22 - a21 * a02;
+//     const b20 = a01 * a12 - a11 * a02;
 
-    const b01 = a10 * a22 - a20 * a12;
-    const b11 = a00 * a22 - a20 * a02;
-    const b21 = a00 * a12 - a10 * a02;
+//     const b01 = a10 * a22 - a20 * a12;
+//     const b11 = a00 * a22 - a20 * a02;
+//     const b21 = a00 * a12 - a10 * a02;
 
-    const b02 = a10 * a21 - a20 * a11;
-    const b12 = a00 * a21 - a20 * a01;
-    const b22 = a00 * a11 - a10 * a01;
+//     const b02 = a10 * a21 - a20 * a11;
+//     const b12 = a00 * a21 - a20 * a01;
+//     const b22 = a00 * a11 - a10 * a01;
 
-    // // Calculate the determinant
-    const d = a00 * b00 + a01 * -b01 + a02 * b02;
+//     // // Calculate the determinant
+//     const d = a00 * b00 + a01 * -b01 + a02 * b02;
 
-    return [
-        b00/d, -b10/d, b20/d,
-        -b01/d, b11/d, -b21/d,
-        b02/d, -b12/d, b22/d
-    ];
-}
+//     return [
+//         b00/d, -b10/d, b20/d,
+//         -b01/d, b11/d, -b21/d,
+//         b02/d, -b12/d, b22/d
+//     ];
+// }
 
-export function m3_multiply(a, b) {
-    const a00 = a[0], a01 = a[1], a02 = a[2];
-    const a10 = a[3], a11 = a[4], a12 = a[5];
-    const a20 = a[6], a21 = a[7], a22 = a[8];
+// export function m3_multiply(a, b) {
+//     const a00 = a[0], a01 = a[1], a02 = a[2];
+//     const a10 = a[3], a11 = a[4], a12 = a[5];
+//     const a20 = a[6], a21 = a[7], a22 = a[8];
 
-    const b00 = b[0], b01 = b[1], b02 = b[2];
-    const b10 = b[3], b11 = b[4], b12 = b[5];
-    const b20 = b[6], b21 = b[7], b22 = b[8];
+//     const b00 = b[0], b01 = b[1], b02 = b[2];
+//     const b10 = b[3], b11 = b[4], b12 = b[5];
+//     const b20 = b[6], b21 = b[7], b22 = b[8];
 
-    return [
-        b00 * a00 + b01 * a10 + b02 * a20,
-        b00 * a01 + b01 * a11 + b02 * a21,
-        b00 * a02 + b01 * a12 + b02 * a22,
+//     return [
+//         b00 * a00 + b01 * a10 + b02 * a20,
+//         b00 * a01 + b01 * a11 + b02 * a21,
+//         b00 * a02 + b01 * a12 + b02 * a22,
 
-        b10 * a00 + b11 * a10 + b12 * a20,
-        b10 * a01 + b11 * a11 + b12 * a21,
-        b10 * a02 + b11 * a12 + b12 * a22,
+//         b10 * a00 + b11 * a10 + b12 * a20,
+//         b10 * a01 + b11 * a11 + b12 * a21,
+//         b10 * a02 + b11 * a12 + b12 * a22,
 
-        b20 * a00 + b21 * a10 + b22 * a20,
-        b20 * a01 + b21 * a11 + b22 * a21,
-        b20 * a02 + b21 * a12 + b22 * a22
-    ];
-  }
+//         b20 * a00 + b21 * a10 + b22 * a20,
+//         b20 * a01 + b21 * a11 + b22 * a21,
+//         b20 * a02 + b21 * a12 + b22 * a22
+//     ];
+//   }
 
 
 
@@ -589,7 +615,7 @@ export function m4_getTranslation(m) {
 }
 
 // Accepts a scalar or a 3 vector
-export function m4_scaling(s) {
+export function m4_scale(s) {
     if (s instanceof Array) {
         return [
             s[0],0,0,0,
@@ -745,7 +771,7 @@ export function m4_getRotation(m) {
   }
 
 // Applied in that order. Scale can be either a 3-vector or a scaler. Rotation is a quaternion.
-export function m4_scalingRotationTranslation(s, q, v) {
+export function m4_scaleRotationTranslation(s, q, v) {
 
   const x = q[0], y = q[1], z = q[2], w = q[3];
   const x2 = x + x, y2 = y + y, z2 = z + z;
@@ -941,32 +967,32 @@ export function m4_toNormal4(m) {
 }
 
 // Extracts the scaling/rotation components and performs an inverse/transpose operation to generate a 3x3 normal transform matrix.
-export function m4_toNormal3(m) {
-    const a00 = m[0], a01 = m[1], a02 = m[2];
-    const a10 = m[4], a11 = m[5], a12 = m[6];
-    const a20 = m[8], a21 = m[9], a22 = m[10];
+// export function m4_toNormal3(m) {
+//     const a00 = m[0], a01 = m[1], a02 = m[2];
+//     const a10 = m[4], a11 = m[5], a12 = m[6];
+//     const a20 = m[8], a21 = m[9], a22 = m[10];
 
-    const b00 = a11 * a22 - a21 * a12;
-    const b10 = a01 * a22 - a21 * a02;
-    const b20 = a01 * a12 - a11 * a02;
+//     const b00 = a11 * a22 - a21 * a12;
+//     const b10 = a01 * a22 - a21 * a02;
+//     const b20 = a01 * a12 - a11 * a02;
 
-    const b01 = a10 * a22 - a20 * a12;
-    const b11 = a00 * a22 - a20 * a02;
-    const b21 = a00 * a12 - a10 * a02;
+//     const b01 = a10 * a22 - a20 * a12;
+//     const b11 = a00 * a22 - a20 * a02;
+//     const b21 = a00 * a12 - a10 * a02;
 
-    const b02 = a10 * a21 - a20 * a11;
-    const b12 = a00 * a21 - a20 * a01;
-    const b22 = a00 * a11 - a10 * a01;
+//     const b02 = a10 * a21 - a20 * a11;
+//     const b12 = a00 * a21 - a20 * a01;
+//     const b22 = a00 * a11 - a10 * a01;
 
-    // // Calculate the determinant
-    const d = a00 * b00 + a01 * -b01 + a02 * b02;
+//     // // Calculate the determinant
+//     const d = a00 * b00 + a01 * -b01 + a02 * b02;
 
-    return [
-        b00/d, -b01/d, b02/d,
-        -b10/d, b11/d, -b12/d,
-        b20/d, -b21/d, b22/d
-    ];
-}
+//     return [
+//         b00/d, -b01/d, b02/d,
+//         -b10/d, b11/d, -b12/d,
+//         b20/d, -b21/d, b22/d
+//     ];
+// }
 
 // generate ground plane matrix - no rotation out of the x/z plane
 // export function m4_grounded(m) {
@@ -1015,6 +1041,8 @@ export function q_normalize(q) {
 export function q_conjugate(q) {
     return [-q[0], -q[1], -q[2], q[3]];
 }
+
+export function q_invert(q) { return q_conjugate(q) }
 
 // Clockwise in radians looking along axis.
 // Axis should be normalized
@@ -1076,13 +1104,13 @@ export function q_roll(q) {
     return Math.asin(2*x*y + 2*z*w);
 }
 
-export function q_scale(q,s) {
-    return [q[0] * s, q[1] * s, q[2] * s, q[3] * s, q[4] * s];
-}
+// export function q_scale(q,s) {
+//     return [q[0] * s, q[1] * s, q[2] * s, q[3] * s, q[4] * s];
+// }
 
-export function q_add(a,b) {
-    return [a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]];
-}
+// export function q_add(a,b) {
+//     return [a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]];
+// }
 
 export function q_dot(a,b) {
     return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]  + a[3] * b[3];
@@ -1148,60 +1176,60 @@ export function q_isZero(q) {
 //-- Dual Quaternions ------------------------------------------------------------
 //--------------------------------------------------------------------------------
 
-export function q2_identity() {
-    return [0,0,0,1,0,0,0,0];
-}
+// export function q2_identity() {
+//     return [0,0,0,1,0,0,0,0];
+// }
 
-export function q2_magnitude(q) {
-    return Math.sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
-}
+// export function q2_magnitude(q) {
+//     return Math.sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+// }
 
-export function q2_rotation(q) {
-    return [...q,0,0,0,0];
-}
+// export function q2_rotation(q) {
+//     return [...q,0,0,0,0];
+// }
 
-export function q2_translation(t) {
-    return [0,0,0,1,...v3_scale(t,0.5),0];
-}
+// export function q2_translation(t) {
+//     return [0,0,0,1,...v3_scale(t,0.5),0];
+// }
 
-export function q2_axisAngle(axis, angle) {
-    return q2_rotation(q_axisAngle(axis,angle));
-}
+// export function q2_axisAngle(axis, angle) {
+//     return q2_rotation(q_axisAngle(axis,angle));
+// }
 
-export function q2_rotationTranslation(q,t) {
-    const ax = t[0] * 0.5, ay = t[1] * 0.5, az = t[2] * 0.5;
-    const bx = q[0], by = q[1], bz = q[2], bw = q[3];
-    return [bx,by,bz,bw, ax*bw+ay*bz-az*by, ay*bw+az*bx-ax*bz, az*bw+ax*by-ay*bx, -ax*bx-ay*by-az*bz];
-}
+// export function q2_rotationTranslation(q,t) {
+//     const ax = t[0] * 0.5, ay = t[1] * 0.5, az = t[2] * 0.5;
+//     const bx = q[0], by = q[1], bz = q[2], bw = q[3];
+//     return [bx,by,bz,bw, ax*bw+ay*bz-az*by, ay*bw+az*bx-ax*bz, az*bw+ax*by-ay*bx, -ax*bx-ay*by-az*bz];
+// }
 
-export function q2_axisAngleTranslation(axis, angle, t) {
-    return q2_rotationTranslation(q_axisAngle(axis,angle), t);
-}
+// export function q2_axisAngleTranslation(axis, angle, t) {
+//     return q2_rotationTranslation(q_axisAngle(axis,angle), t);
+// }
 
-export function q2_normalize(q2) {
-    const m = 1/q2_magnitude(q2);
-    const a0 = q2[0] * m, a1 = q2[1] * m, a2 = q2[2] * m, a3 = q2[3] * m;
-    const b0 = q2[4],  b1 = q2[5], b2 = q2[6], b3 = q2[7];
-    const dot = (a0 * b0) + (a1 * b1) + (a2 * b2) + (a3 * b3);
-    return [a0, a1, a2, a3, (b0-(a0*dot))*m, (b1-(a1*dot))*m, (b2-(a2*dot))*m, (b3-(a3*dot))*m];
+// export function q2_normalize(q2) {
+//     const m = 1/q2_magnitude(q2);
+//     const a0 = q2[0] * m, a1 = q2[1] * m, a2 = q2[2] * m, a3 = q2[3] * m;
+//     const b0 = q2[4],  b1 = q2[5], b2 = q2[6], b3 = q2[7];
+//     const dot = (a0 * b0) + (a1 * b1) + (a2 * b2) + (a3 * b3);
+//     return [a0, a1, a2, a3, (b0-(a0*dot))*m, (b1-(a1*dot))*m, (b2-(a2*dot))*m, (b3-(a3*dot))*m];
 
-}
+// }
 
 
-export function q2_multiply(a, b) {
-    const ax0 = a[0], ay0 = a[1], az0 = a[2], aw0 = a[3];
-    const ax1 = a[4], ay1 = a[5], az1 = a[6], aw1 = a[7];
-    const bx0 = b[0], by0 = b[1], bz0 = b[2], bw0 = b[3];
-    const bx1 = b[4], by1 = b[5], bz1 = b[6], bw1 = b[7];
-    return [
-        bx0 * aw0 + bw0 * ax0 + by0 * az0 - bz0 * ay0,
-        by0 * aw0 + bw0 * ay0 + bz0 * ax0 - bx0 * az0,
-        bz0 * aw0 + bw0 * az0 + bx0 * ay0 - by0 * ax0,
-        bw0 * aw0 - bx0 * ax0 - by0 * ay0 - bz0 * az0,
+// export function q2_multiply(a, b) {
+//     const ax0 = a[0], ay0 = a[1], az0 = a[2], aw0 = a[3];
+//     const ax1 = a[4], ay1 = a[5], az1 = a[6], aw1 = a[7];
+//     const bx0 = b[0], by0 = b[1], bz0 = b[2], bw0 = b[3];
+//     const bx1 = b[4], by1 = b[5], bz1 = b[6], bw1 = b[7];
+//     return [
+//         bx0 * aw0 + bw0 * ax0 + by0 * az0 - bz0 * ay0,
+//         by0 * aw0 + bw0 * ay0 + bz0 * ax0 - bx0 * az0,
+//         bz0 * aw0 + bw0 * az0 + bx0 * ay0 - by0 * ax0,
+//         bw0 * aw0 - bx0 * ax0 - by0 * ay0 - bz0 * az0,
 
-        bx0 * aw1 + bw0 * ax1 + by0 * az1 - bz0 * ay1 + bx1 * aw0 + bw1 * ax0 + by1 * az0 - bz1 * ay0,
-        by0 * aw1 + bw0 * ay1 + bz0 * ax1 - bx0 * az1 + by1 * aw0 + bw1 * ay0 + bz1 * ax0 - bx1 * az0,
-        bz0 * aw1 + bw0 * az1 + bx0 * ay1 - by0 * ax1 + bz1 * aw0 + bw1 * az0 + bx1 * ay0 - by1 * ax0,
-        bw0 * aw1 - bx0 * ax1 - by0 * ay1 - bz0 * az1 + bw1 * aw0 - bx1 * ax0 - by1 * ay0 - bz1 * az0
-    ];
-  }
+//         bx0 * aw1 + bw0 * ax1 + by0 * az1 - bz0 * ay1 + bx1 * aw0 + bw1 * ax0 + by1 * az0 - bz1 * ay0,
+//         by0 * aw1 + bw0 * ay1 + bz0 * ax1 - bx0 * az1 + by1 * aw0 + bw1 * ay0 + bz1 * ax0 - bx1 * az0,
+//         bz0 * aw1 + bw0 * az1 + bx0 * ay1 - by0 * ax1 + bz1 * aw0 + bw1 * az0 + bx1 * ay0 - by1 * ax0,
+//         bw0 * aw1 - bx0 * ax1 - by0 * ay1 - bz0 * az1 + bw1 * aw0 - bx1 * ax0 - by1 * ay0 - bz1 * az0
+//     ];
+//   }

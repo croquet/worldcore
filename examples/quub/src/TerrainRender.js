@@ -1,4 +1,4 @@
-import { Triangles, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, ViewService, m4_translation, GetViewService, GetModelService } from "@croquet/worldcore";
+import { Triangles, Lines, v3_add, v3_multiply, Material, DrawCall, ViewService, m4_translation, GetViewService, GetModelService } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "../index";
 import paper from "../assets/paper.jpg";
@@ -805,4 +805,20 @@ function BuildMeshZ(triangles, lines, xyz, corners, tColor, lColor) {
     });
     if (triangles) triangles.addFace(vertices, tColors, coordinates);
     if (lines) lines.addFace(vertices, lColors, coordinates);
+}
+
+function v4_sub(a,b) {
+    return [a[0] - b[0], a[1] - b[1], a[2] - b[2], a[3] - b[3]];
+}
+
+function v4_dot(a,b) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]  + a[3] * b[3];
+}
+
+function v4_min(a,b) {
+    return [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.min(a[2], b[2]), Math.min(a[3], b[3])];
+}
+
+function v4_max(a,b) {
+    return [Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])];
 }

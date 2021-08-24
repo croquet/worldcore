@@ -1,4 +1,4 @@
-import { m4_scalingRotationTranslation, v3_scale, v3_add, v3_multiply,
+import { m4_scaleRotationTranslation, v3_scale, v3_add, v3_multiply,
     q_axisAngle, toRad, TAU, q_multiply, KeyDown, m4_translation, m4_rotationZ, m4_multiply, v3_transform, ViewService } from "@croquet/worldcore";
 import { PickEmptyVoxel, PickBase } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
@@ -104,7 +104,7 @@ export class GodView extends ViewService {
     updateCamera() {
         const p = q_axisAngle([1,0,0], pitch);
         const y = q_axisAngle([0,0,1], yaw);
-        this.camera.setLocation(m4_scalingRotationTranslation(1, q_multiply(p,y), translation));
+        this.camera.setLocation(m4_scaleRotationTranslation(1, q_multiply(p,y), translation));
     }
 
     spinCamera(pivot, angle) {
@@ -115,7 +115,6 @@ export class GodView extends ViewService {
         translation = v3_transform(translation, m);
         yaw = (yaw + angle) % TAU;
     }
-
 
     update(time, delta) {
     }

@@ -1,5 +1,5 @@
 
-import { mix, Actor, Pawn, Material, AM_Behavioral, CachedObject, UnitCube, m4_translation, m4_scaling, InstancedDrawCall, ModelService } from "@croquet/worldcore";
+import { mix, Actor, Pawn, Material, AM_Behavioral, CachedObject, UnitCube, m4_translation, m4_scale, InstancedDrawCall, ModelService } from "@croquet/worldcore";
 import { AM_VoxelSmoothed, PM_VoxelSmoothed, PM_LayeredInstancedVisible} from "./Components";
 import { PersonBehavior } from "./Behaviors"
 import paper from "../assets/paper.jpg";
@@ -137,7 +137,7 @@ class PersonPawn extends mix(AnimalPawn).with(PM_LayeredInstancedVisible) {
     buildMesh() {
         const mesh = UnitCube();
         mesh.transform(m4_translation([0,0,0.5]));
-        mesh.transform(m4_scaling([0.6, 0.6, 2.2]));
+        mesh.transform(m4_scale([0.6, 0.6, 2.2]));
         mesh.transform(m4_translation([0,0,-0.2]));
         mesh.load();
         mesh.clear();
@@ -148,7 +148,7 @@ class PersonPawn extends mix(AnimalPawn).with(PM_LayeredInstancedVisible) {
         const mesh = UnitCube();
         mesh.setColor([1, 0,0,1]);
         mesh.transform(m4_translation([0,0,0.5]));
-        mesh.transform(m4_scaling([0.6, 0.6, 2.2]));
+        mesh.transform(m4_scale([0.6, 0.6, 2.2]));
         mesh.transform(m4_translation([0,0,-0.2]));
         mesh.load();
         mesh.clear();
