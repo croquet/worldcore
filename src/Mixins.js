@@ -428,8 +428,9 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 
 export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
 
-    get spin() { return this._spin || q_identity() };
-    get velocity() { return this._velocity || v3_zero() };
+    get spin() { return this._spin || q_identity() }
+    get velocity() { return this._velocity || v3_zero() }
+    get tickStep() {return this._tickStep || 15}
 
     init(...args) {
         this.listen("avatarMoveTo", this.moveTo);
@@ -437,7 +438,7 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
         this.listen("avatarSetVelocity", this.onSetVelocity);
         this.listen("avatarSetSpin", this.onSetSpin);
         super.init(...args);
-        this.avatar_tickStep = 15;
+        // this.avatar_tickStep = 15;
         this.future(0).tick(0);
     }
 
@@ -458,7 +459,7 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
             const move = v3_transform(relative, m4_rotationQ(this.rotation));
             this.moveTo(v3_add(this.translation, move));
         }
-        if (!this.doomed) this.future(this.avatar_tickStep).tick(this.avatar_tickStep);
+        if (!this.doomed) this.future(this.tickStep).tick(this.tickStep);
     }
 
 };
