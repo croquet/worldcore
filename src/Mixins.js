@@ -18,7 +18,7 @@ import { v3_zero, q_identity, v3_unit, m4_scaleRotationTranslation, m4_translati
 // -- View Mixins --
 //
 // Mixins are defined as functions that transform a class into an extended version
-// of itself. The "mix" and "with" operators are symantic suger to make the construction
+// of itself. The "mix" and "with" operators are semantic suger to make the construction
 // of the composite class look nice.
 //
 // Since you don't know what class a mixin will be added to, you should generally set them
