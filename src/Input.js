@@ -183,7 +183,7 @@ export class InputManager extends ViewService {
         return all;
     }
 
-    get isFullscreen() {
+    get inFullscreen() {
         return document.fullscreenElement;
     }
 
@@ -192,13 +192,13 @@ export class InputManager extends ViewService {
     }
 
     enterFullscreen() {
-        if (this.isFullscreen) return;
+        if (this.inFullscreen) return;
         if (!this.canFullscreen) return;
         document.documentElement.requestFullscreen();
     }
 
     exitFullscreen() {
-        if (!this.isFullscreen) return;
+        if (!this.inFullscreen) return;
         document.exitFullscreen();
     }
 
