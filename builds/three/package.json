@@ -1,0 +1,14 @@
+{
+  "name": "@croquet/worldcore",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "author": "Brian Upton",
+  "license": "ISC",
+  "scripts": {
+    "preinstall": "npx only-allow pnpm"
+  },
+  "dependencies": {
+    "three": "^0.131.0"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@croquet/worldcore",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "author": "Brian Upton",
+  "license": "ISC",
+  "scripts": {
+    "preinstall": "npx only-allow pnpm"
+  },
+  "dependencies": {
+    "@croquet/croquet": "^0.3.3",
+    "@dimforge/rapier3d": "0.4.1",
+    "resonance-audio": "1.0.0",
+    "three": "^0.131.0"
+  }
+}
