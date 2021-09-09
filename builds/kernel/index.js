@@ -7,4 +7,5 @@ export * from "../../src/Root";
 export * from "../../src/Utilities";
 export * from "../../src/Vector";
 export * from "../../src/ViewAssetCache";
+export * from "../../src/Input";
 
