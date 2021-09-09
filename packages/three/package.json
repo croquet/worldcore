@@ -1,5 +1,5 @@
 {
-  "name": "@croquet/worldcore/widget",
+  "name": "@croquet/worldcore-three",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
@@ -9,5 +9,6 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
+    "three": "^0.131.0"
   }
 }
