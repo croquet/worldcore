@@ -11,7 +11,8 @@
   "author": "Croquet Studios",
   "license": "ISC",
   "dependencies": {
-    "@croquet/worldcore": "file:../.."
+    "@croquet/worldcore-kernel": "link:..\\..\\packages\\kernel",
+    "@croquet/worldcore-webgl": "link:..\\..\\packages\\webgl"
   },
   "devDependencies": {
     "file-loader": "^6.0.0",
