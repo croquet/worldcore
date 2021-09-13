@@ -25,10 +25,6 @@ module.exports = {
             },
         ],
     },
-    // use Croquet loaded via <script>
-    externals: {
-        "@croquet/croquet": "Croquet",
-    },
     plugins: [
         new HtmlWebPackPlugin({
             template: 'index.html',   // input

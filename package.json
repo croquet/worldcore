@@ -9,7 +9,7 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
-    "@croquet/croquet": "^0.3.3",
+    "@croquet/croquet": "^1.0.4",
     "@dimforge/rapier3d": "0.4.1",
     "resonance-audio": "1.0.0",
     "three": "^0.131.0"

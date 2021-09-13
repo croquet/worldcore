@@ -1,0 +1,13 @@
+lockfileVersion: 5.3
+
+specifiers:
+  '@croquet/croquet': ^1.0.4
+
+dependencies:
+  '@croquet/croquet': 1.0.4
+
+packages:
+
+  /@croquet/croquet/1.0.4:
+    resolution: {integrity: sha512-A+OLXzzW5k489VgOuMvNeXXuxHkrtMQah5EJFzuMzpuB0Uf1cGqvpVFS8ucG+RINfyvpl9Py852Yql3i2mL/gw==}
+    dev: false

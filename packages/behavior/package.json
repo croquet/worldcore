@@ -7,7 +7,5 @@
   "license": "ISC",
   "scripts": {
     "preinstall": "npx only-allow pnpm"
-  },
-  "dependencies": {
   }
 }

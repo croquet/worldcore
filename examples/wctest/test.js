@@ -3,11 +3,14 @@
 // Croquet Studios, 2021
 
 import { Session } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager } from "@croquet/worldcore-kernel";
+import { ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize } from "@croquet/worldcore-kernel";
 import {RenderManager, PM_Visible, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
+import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
+import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
+
 import paper from "./assets/paper.jpg";
-// import llama from "./assets/llama.jpg";
-// import kwark from "./assets/kwark.otf";
+import llama from "./assets/llama.jpg";
+import kwark from "./assets/kwark.otf";
 
 //------------------------------------------------------------------------------------------
 // MoveActor
@@ -71,30 +74,30 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player) {
 // ChildActor
 //------------------------------------------------------------------------------------------
 
-// class SpinBehavior extends Behavior {
-//     do(delta) {
-//         const axis = v3_normalize([2,1,3]);
-//         let q = this.actor.rotation;
-//         q = q_multiply(q, q_axisAngle(axis, 0.13 * delta / 50));
-//         q = q_normalize(q);
-//         this.actor.rotateTo(q);
-//     }
-// }
-// SpinBehavior.register("SpinBehavior");
+class SpinBehavior extends Behavior {
+    do(delta) {
+        const axis = v3_normalize([2,1,3]);
+        let q = this.actor.rotation;
+        q = q_multiply(q, q_axisAngle(axis, 0.13 * delta / 50));
+        q = q_normalize(q);
+        this.actor.rotateTo(q);
+    }
+}
+SpinBehavior.register("SpinBehavior");
 
-class ChildActor extends mix(Actor).with(AM_Smoothed) {
+class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral ) {
 
     get pawn() {return ChildPawn}
 
-    // init(options) {
-    //     super.init(options);
-    //     // this.startBehavior(SpinBehavior);
-    //     this.subscribe("input", "dDown", this.test);
-    // }
+    init(options) {
+        super.init(options);
+        this.startBehavior(SpinBehavior);
+        this.subscribe("input", "dDown", this.test);
+    }
 
-    // test() {
-    //     console.log("test!");
-    // }
+    test() {
+        console.log("test!");
+    }
 
 }
 ChildActor.register('ChildActor');
@@ -231,35 +234,35 @@ class MyViewRoot extends ViewRoot {
             ao.falloff = 1;
         }
 
-        // this.HUD = new Widget({parent: this.ui.root, autoSize: [1,1]});
-        // this.joy = new JoystickWidget({parent: this.HUD, anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200], onChange: xy => {this.publish("hud", "joy", xy)}});
+        this.HUD = new Widget({parent: this.ui.root, autoSize: [1,1]});
+        this.joy = new JoystickWidget({parent: this.HUD, anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200], onChange: xy => {this.publish("hud", "joy", xy)}});
 
-        // this.button0 = new ButtonWidget({
-        //     parent: this.HUD,
-        //     local: [20,20],
-        //     size: [200,80],
-        //     label: new TextWidget({fontURL: kwark, text: "Test 0", style: "italic"}),
-        //     onClick: () => { this.joy.set({scale: 2})}
-        // });
+        this.button0 = new ButtonWidget({
+            parent: this.HUD,
+            local: [20,20],
+            size: [200,80],
+            label: new TextWidget({fontURL: kwark, text: "Test 0", style: "italic"}),
+            onClick: () => { this.joy.set({scale: 2})}
+        });
 
-        // this.button1 = new ButtonWidget({
-        //     parent: this.HUD,
-        //     local: [20,110],
-        //     size: [200,80],
-        //     label: new TextWidget({fontURL: kwark, text: "Test 1", style: "oblique"}),
-        //     onClick: () => { this.joy.set({scale: 1})}
-        // });
+        this.button1 = new ButtonWidget({
+            parent: this.HUD,
+            local: [20,110],
+            size: [200,80],
+            label: new TextWidget({fontURL: kwark, text: "Test 1", style: "oblique"}),
+            onClick: () => { this.joy.set({scale: 1})}
+        });
 
-        // this.slider = new SliderWidget({
-        //     parent: this.HUD,
-        //     anchor: [1,0],
-        //     pivot: [1,0],
-        //     local: [-20,20],
-        //     size: [20, 300],
-        //     onChange: p => {console.log(p)}
-        // })
+        this.slider = new SliderWidget({
+            parent: this.HUD,
+            anchor: [1,0],
+            pivot: [1,0],
+            local: [-20,20],
+            size: [20, 300],
+            onChange: p => {console.log(p)}
+        })
 
-        // this.image = new ImageWidget({parent: this.HUD, local: [20, 200], size: [200,80], url: llama});
+        this.image = new ImageWidget({parent: this.HUD, local: [20, 200], size: [200,80], url: llama});
 
 
     }
@@ -267,7 +270,7 @@ class MyViewRoot extends ViewRoot {
     createServices() {
         this.input = this.addService(InputManager);
         this.render = this.addService(RenderManager);
-        // this.ui = this.addService(UIManager);
+        this.ui = this.addService(UIManager);
     }
 
 }

@@ -1,8 +1,10 @@
 lockfileVersion: 5.3
 
 specifiers:
+  '@croquet/worldcore-behavior': link:..\..\packages\behavior
   '@croquet/worldcore-kernel': link:..\..\packages\kernel
   '@croquet/worldcore-webgl': link:..\..\packages\webgl
+  '@croquet/worldcore-widget': link:..\..\packages\widget
   file-loader: ^6.0.0
   html-webpack-plugin: ^4.3.0
   inspectpack: ^4.5.2
@@ -11,8 +13,10 @@ specifiers:
   webpack-dev-server: ^3.11.0
 
 dependencies:
+  '@croquet/worldcore-behavior': link:../../packages/behavior
   '@croquet/worldcore-kernel': link:../../packages/kernel
   '@croquet/worldcore-webgl': link:../../packages/webgl
+  '@croquet/worldcore-widget': link:../../packages/widget
 
 devDependencies:
   file-loader: 6.2.0_webpack@4.46.0
@@ -69,8 +73,8 @@ packages:
       source-map: 0.7.3
     dev: true
 
-  /@types/webpack/4.41.30:
-    resolution: {integrity: sha512-GUHyY+pfuQ6haAfzu4S14F+R5iGRwN6b2FRNJY7U0NilmFAqbsOfK6j1HwuLBAqwRIT+pVdNDJGJ6e8rpp0KHA==}
+  /@types/webpack/4.41.31:
+    resolution: {integrity: sha512-/i0J7sepXFIp1ZT7FjUGi1eXMCg8HCCzLJEQkKsOtbJFontsJLolBcDC+3qxn5pPwiCt1G0ZdRmYRzNBtvpuGQ==}
     dependencies:
       '@types/node': 16.9.1
       '@types/tapable': 1.0.8
@@ -1550,8 +1554,8 @@ packages:
     engines: {node: '>= 0.6'}
     dev: true
 
-  /fp-ts/2.11.1:
-    resolution: {integrity: sha512-CJOfs+Heq/erkE5mqH2mhpsxCKABGmcLyeEwPxtbTlkLkItGUs6bmk2WqjB2SgoVwNwzTE5iKjPQJiq06CPs5g==}
+  /fp-ts/2.11.2:
+    resolution: {integrity: sha512-G1rD89nmbbgTNRBKohjB3Qv4IxOHQ5KV3ZvYfpaQZyrGt+ZQUFrcnCqE567bcEdvwoAUKDQM7isOcv7xcM/qAQ==}
     dev: true
 
   /fragment-cache/0.2.1:
@@ -1858,7 +1862,7 @@ packages:
     dependencies:
       '@types/html-minifier-terser': 5.1.2
       '@types/tapable': 1.0.8
-      '@types/webpack': 4.41.30
+      '@types/webpack': 4.41.31
       html-minifier-terser: 5.1.1
       loader-utils: 1.4.0
       lodash: 4.17.21
@@ -2006,9 +2010,9 @@ packages:
     hasBin: true
     dependencies:
       chalk: 4.1.2
-      fp-ts: 2.11.1
-      io-ts: 2.2.16_fp-ts@2.11.1
-      io-ts-reporters: 1.2.2_fp-ts@2.11.1+io-ts@2.2.16
+      fp-ts: 2.11.2
+      io-ts: 2.2.16_fp-ts@2.11.2
+      io-ts-reporters: 1.2.2_fp-ts@2.11.2+io-ts@2.2.16
       pify: 5.0.0
       semver-compare: 1.0.0
       yargs: 16.2.0
@@ -2036,22 +2040,22 @@ packages:
     engines: {node: '>= 0.10'}
     dev: true
 
-  /io-ts-reporters/1.2.2_fp-ts@2.11.1+io-ts@2.2.16:
+  /io-ts-reporters/1.2.2_fp-ts@2.11.2+io-ts@2.2.16:
     resolution: {integrity: sha512-igASwWWkDY757OutNcM6zTtdJf/eTZYkoe2ymsX2qpm5bKZLo74FJYjsCtMQOEdY7dRHLLEulCyFQwdN69GBCg==}
     peerDependencies:
       fp-ts: ^2.0.2
       io-ts: ^2.0.0
     dependencies:
-      fp-ts: 2.11.1
-      io-ts: 2.2.16_fp-ts@2.11.1
+      fp-ts: 2.11.2
+      io-ts: 2.2.16_fp-ts@2.11.2
     dev: true
 
-  /io-ts/2.2.16_fp-ts@2.11.1:
+  /io-ts/2.2.16_fp-ts@2.11.2:
     resolution: {integrity: sha512-y5TTSa6VP6le0hhmIyN0dqEXkrZeJLeC5KApJq6VLci3UEKF80lZ+KuoUs02RhBxNWlrqSNxzfI7otLX1Euv8Q==}
     peerDependencies:
       fp-ts: ^2.5.0
     dependencies:
-      fp-ts: 2.11.1
+      fp-ts: 2.11.2
     dev: true
 
   /ip-regex/2.1.0:
