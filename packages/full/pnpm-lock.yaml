@@ -1,0 +1,19 @@
+lockfileVersion: 5.3
+
+specifiers:
+  '@croquet/worldcore-audio': link:..\audio
+  '@croquet/worldcore-behavior': link:..\behavior
+  '@croquet/worldcore-kernel': link:..\kernel
+  '@croquet/worldcore-rapier': link:..\rapier
+  '@croquet/worldcore-three': link:..\three
+  '@croquet/worldcore-webgl': link:..\webgl
+  '@croquet/worldcore-widget': link:..\widget
+
+dependencies:
+  '@croquet/worldcore-audio': link:../audio
+  '@croquet/worldcore-behavior': link:../behavior
+  '@croquet/worldcore-kernel': link:../kernel
+  '@croquet/worldcore-rapier': link:../rapier
+  '@croquet/worldcore-three': link:../three
+  '@croquet/worldcore-webgl': link:../webgl
+  '@croquet/worldcore-widget': link:../widget

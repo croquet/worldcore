@@ -1,0 +1,16 @@
+{
+  "0 debug pnpm:scope": {
+    "selected": 1
+  },
+  "1 error JSONError": {
+    "fileName": "D:\\GitHub\\worldcore\\packages\\full\\package.json",
+    "codeFrame": "\u001b[0m \u001b[90m 17 |\u001b[39m   }\u001b[33m,\u001b[39m\u001b[0m\n\u001b[0m \u001b[90m 18 |\u001b[39m\u001b[0m\n\u001b[0m\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 19 |\u001b[39m }\u001b[0m\n\u001b[0m \u001b[90m    |\u001b[39m \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\u001b[0m\n\u001b[0m \u001b[90m 20 |\u001b[39m\u001b[0m",
+    "code": "ERR_PNPM_JSON_PARSE",
+    "err": {
+      "name": "JSONError",
+      "message": "Unexpected token \"}\" (0x7D) in JSON at position 509 while parsing near \".....\\\\\\\\audio\\\"\\r\\n  },\\r\\n\\r\\n}\\r\\n\" in D:\\GitHub\\worldcore\\packages\\full\\package.json \n\n\u001b[0m \u001b[90m 17 |\u001b[39m   }\u001b[33m,\u001b[39m\u001b[0m\n\u001b[0m \u001b[90m 18 |\u001b[39m\u001b[0m\n\u001b[0m\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 19 |\u001b[39m }\u001b[0m\n\u001b[0m \u001b[90m    |\u001b[39m \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\u001b[0m\n\u001b[0m \u001b[90m 20 |\u001b[39m\u001b[0m\n",
+      "code": "ERR_PNPM_JSON_PARSE",
+      "stack": "JSONError: Unexpected token \"}\" (0x7D) in JSON at position 509 while parsing near \".....\\\\\\\\audio\\\"\\r\\n  },\\r\\n\\r\\n}\\r\\n\" in D:\\GitHub\\worldcore\\packages\\full\\package.json \n\n\u001b[0m \u001b[90m 17 |\u001b[39m   }\u001b[33m,\u001b[39m\u001b[0m\n\u001b[0m \u001b[90m 18 |\u001b[39m\u001b[0m\n\u001b[0m\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 19 |\u001b[39m }\u001b[0m\n\u001b[0m \u001b[90m    |\u001b[39m \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\u001b[0m\n\u001b[0m \u001b[90m 20 |\u001b[39m\u001b[0m\n\n    at Object.parseJson [as default] (C:\\Users\\Brian\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.7.6\\node_modules\\pnpm\\dist\\pnpm.cjs:3122:27)\n    at Object.readJsonFile (C:\\Users\\Brian\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.7.6\\node_modules\\pnpm\\dist\\pnpm.cjs:39686:37)\n    at async Object.tryReadProjectManifest (C:\\Users\\Brian\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.7.6\\node_modules\\pnpm\\dist\\pnpm.cjs:39747:32)\n    at async Object.tryReadProjectManifest (C:\\Users\\Brian\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.7.6\\node_modules\\pnpm\\dist\\pnpm.cjs:39965:60)\n    at async Object.handler [as default] (C:\\Users\\Brian\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.7.6\\node_modules\\pnpm\\dist\\pnpm.cjs:115326:48)\n    at async Timeout._onTimeout (C:\\Users\\Brian\\AppData\\Roaming\\npm\\pnpm-global\\5\\node_modules\\.pnpm\\pnpm@6.7.6\\node_modules\\pnpm\\dist\\pnpm.cjs:124507:24)"
+    }
+  }
+}

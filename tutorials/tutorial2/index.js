@@ -232,5 +232,10 @@ class MyViewRoot extends ViewRoot {
 
 }
 
-StartWorldcore({appId: 'io.croquet.appId', name: 'tutorial', password: 'password'});
+StartWorldcore({
+    appId: 'io.croquet.appId',
+    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
+    name: 'tutorial',
+    password: 'password'
+});
 

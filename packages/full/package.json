@@ -9,9 +9,13 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
-    "@croquet/croquet": "^0.3.3",
-    "@dimforge/rapier3d": "0.4.1",
-    "resonance-audio": "1.0.0",
-    "three": "^0.131.0"
+    "@croquet/worldcore-kernel": "link:..\\kernel",
+    "@croquet/worldcore-webgl": "link:..\\webgl",
+    "@croquet/worldcore-widget": "link:..\\widget",
+    "@croquet/worldcore-behavior": "link:..\\behavior",
+    "@croquet/worldcore-audio": "link:..\\audio",
+    "@croquet/worldcore-rapier": "link:..\\rapier",
+    "@croquet/worldcore-three": "link:..\\three"
   }
+
 }

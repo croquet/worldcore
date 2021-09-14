@@ -1,5 +1,5 @@
 {
-  "name": "@croquet/tutorial1",
+  "name": "@croquet/tutorial3",
   "version": "0.0.1",
   "description": "Worldcore Tutorial",
   "private": true,
@@ -11,7 +11,7 @@
   "author": "Croquet Studios",
   "license": "ISC",
   "dependencies": {
-    "@croquet/worldcore": "file:../.."
+    "@croquet/worldcore": "link:..\\..\\packages\\full"
   },
   "devDependencies": {
     "file-loader": "^6.0.0",
