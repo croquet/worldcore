@@ -141,27 +141,19 @@ class MyViewRoot extends ViewRoot {
 
 }
 
-
-// async function go() {
-//     // await LoadRapier();
-//     App.makeWidgetDock();
-//     const session = await Session.join(App.autoSession("q"), MyModelRoot, MyViewRoot, {
-//         appId: 'io.croquet.quub',
-//         tps: 0,
-//     });
-// }
-
-// go();
-
 async function go() {
 
     const session = await Session.join({
         appId: 'io.croquet.quub',
-        name: App.autoSession(),
+        apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
+        password: 'password',
+        name: 'test',
         model: MyModelRoot,
         view: MyViewRoot,
         tps: 0,
     });
 }
+
+
 
 go();
