@@ -1,4 +1,6 @@
-import { mix, Actor, Pawn, AM_Spatial, PM_Spatial, PM_Visible, Triangles, Material, DrawCall, AM_RapierPhysics } from "@croquet/worldcore";
+import { mix, Actor, Pawn, AM_Spatial, PM_Spatial } from "@croquet/worldcore-kernel";
+import { PM_Visible, Triangles, Material, DrawCall } from "@croquet/worldcore-webgl";
+import { AM_RapierPhysics } from "@croquet/worldcore-rapier";
 import { FountainActor } from "./Fountain";
 import paper from "../assets/paper.jpg";
 

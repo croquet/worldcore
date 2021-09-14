@@ -1,0 +1,13 @@
+lockfileVersion: 5.3
+
+specifiers:
+  '@dimforge/rapier3d': 0.4.1
+
+dependencies:
+  '@dimforge/rapier3d': 0.4.1
+
+packages:
+
+  /@dimforge/rapier3d/0.4.1:
+    resolution: {integrity: sha512-XptLyqPoFRZ+kfxFAigO3WWsNlTzL7yMUAPsDkny8C6HF9XLTC1KEh7u6ssNG9MIh58PomjqQtocW8zTyj4G2g==}
+    dev: false

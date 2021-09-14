@@ -3,8 +3,10 @@
 // Croquet Studios, 2020
 
 import { Session, App } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, InputManager, UIManager, AudioManager, ActorManager, RenderManager, PawnManager, PlayerManager, RapierPhysicsManager,
-    toRad, LoadRapier,m4_scaleRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, TextWidget, GetViewFPS, RapierVersion } from "@croquet/worldcore";
+import { ModelRoot, ViewRoot, InputManager, toRad, m4_scaleRotationTranslation, q_axisAngle, v3_scale, sphericalRandom } from "@croquet/worldcore-kernel";
+import { RenderManager } from "@croquet/worldcore-webgl";
+import { RapierPhysicsManager, LoadRapier, RapierVersion } from "@croquet/worldcore-rapier";
+import { UIManager, TextWidget } from "@croquet/worldcore-widget";
 import { LevelActor } from "./src/Level";
 import { CubeSprayActor, CylinderSprayActor, ConeSprayActor, BallSprayActor } from "./src/Fountain";
 
@@ -172,8 +174,8 @@ async function go() {
 
     const session = await Session.join({
         appId: 'io.croquet.fountain',
+        apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
         name: App.autoSession(),
-        // name: 'test',
         password: 'dummy-pass',
         model: MyModelRoot,
         view: MyViewRoot,

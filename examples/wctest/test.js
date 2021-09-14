@@ -7,10 +7,12 @@ import { ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, A
 import {RenderManager, PM_Visible, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
+import { AudioManager, PM_AudioListener, AM_AudioSource, PM_AudioSource } from "@croquet/worldcore-audio";
 
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
+import photon from "./assets/photon.mp3";
 
 //------------------------------------------------------------------------------------------
 // MoveActor
@@ -85,7 +87,7 @@ class SpinBehavior extends Behavior {
 }
 SpinBehavior.register("SpinBehavior");
 
-class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral ) {
+class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral, AM_AudioSource ) {
 
     get pawn() {return ChildPawn}
 
@@ -97,6 +99,7 @@ class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral ) {
 
     test() {
         console.log("test!");
+        this.playSound(photon);
     }
 
 }
@@ -107,7 +110,7 @@ ChildActor.register('ChildActor');
 // ChildPawn
 //------------------------------------------------------------------------------------------
 
-class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
+class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible, PM_AudioSource) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
@@ -158,7 +161,7 @@ BackgroundActor.register('BackgroundActor');
 // BackgroundPawn
 //------------------------------------------------------------------------------------------
 
-class BackgroundPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
+class BackgroundPawn extends mix(Pawn).with(PM_Spatial, PM_Visible, PM_AudioListener) {
     constructor(...args) {
         super(...args);
 
@@ -271,6 +274,7 @@ class MyViewRoot extends ViewRoot {
         this.input = this.addService(InputManager);
         this.render = this.addService(RenderManager);
         this.ui = this.addService(UIManager);
+        this.audio = this.addService(AudioManager);
     }
 
 }

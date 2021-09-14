@@ -13,7 +13,10 @@
   "author": "Croquet Studios",
   "license": "ISC",
   "dependencies": {
-    "@croquet/worldcore": "link:../.."
+    "@croquet/worldcore-kernel": "link:..\\..\\packages\\kernel",
+    "@croquet/worldcore-webgl": "link:..\\..\\packages\\webgl",
+    "@croquet/worldcore-rapier": "link:..\\..\\packages\\rapier",
+    "@croquet/worldcore-widget": "link:..\\..\\packages\\widget"
   },
   "devDependencies": {
     "file-loader": "^6.2.0",

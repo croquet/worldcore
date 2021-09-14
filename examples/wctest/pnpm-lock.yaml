@@ -1,6 +1,7 @@
 lockfileVersion: 5.3
 
 specifiers:
+  '@croquet/worldcore-audio': link:..\..\packages\audio
   '@croquet/worldcore-behavior': link:..\..\packages\behavior
   '@croquet/worldcore-kernel': link:..\..\packages\kernel
   '@croquet/worldcore-webgl': link:..\..\packages\webgl
@@ -13,6 +14,7 @@ specifiers:
   webpack-dev-server: ^3.11.0
 
 dependencies:
+  '@croquet/worldcore-audio': link:../../packages/audio
   '@croquet/worldcore-behavior': link:../../packages/behavior
   '@croquet/worldcore-kernel': link:../../packages/kernel
   '@croquet/worldcore-webgl': link:../../packages/webgl

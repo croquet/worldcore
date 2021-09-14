@@ -9,6 +9,6 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
-    "@dimforge/rapier3d": "0.4.1",
+    "@dimforge/rapier3d": "0.4.1"
   }
 }

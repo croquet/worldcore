@@ -1,5 +1,7 @@
-import { Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale, UnitCube, Material, InstancedDrawCall, AM_RapierPhysics,
-    sphericalRandom, CachedObject, AM_Spatial, PM_Spatial, PM_Visible, DrawCall, v3_add, m4_rotationQ, Cylinder, Cone, Cube, Sphere, toRad, viewRoot } from "@croquet/worldcore";
+import { Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, v3_scale, sphericalRandom, CachedObject, AM_Spatial, PM_Spatial, v3_add,
+    m4_rotationQ, viewRoot } from "@croquet/worldcore-kernel";
+import { PM_InstancedVisible, Material, InstancedDrawCall, PM_Visible, DrawCall, Cylinder, Cone, Cube, Sphere } from "@croquet/worldcore-webgl";
+import { AM_RapierPhysics } from "@croquet/worldcore-rapier";
 import paper from "../assets/paper.jpg";
 
 //------------------------------------------------------------------------------------------
