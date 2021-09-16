@@ -173,9 +173,12 @@ class StaticSound {
 export const PM_AudioListener = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        this.staticSounds = new Map();
-        this.listen("playSound", this.playStaticSoundForMyself);
-        this.listen("viewGlobalChanged", this.refreshListenerPosition);
+        if (this.isMyPlayerPawn) {
+            this.staticSounds = new Map();
+            this.listen("playSound", this.playStaticSoundForMyself);
+            this.listen("viewGlobalChanged", this.refreshListenerPosition);
+            this.listen("lookGlobalChanged", this.refreshListenerPosition);
+        }
     }
 
     destroy() {
