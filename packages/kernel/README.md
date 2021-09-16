@@ -1,4 +1,4 @@
-# Worldcore
+# Worldcore Kernel
 
 Worldcore is a 3D entity-management system for Croquet. It is modular, extensible, and cross-platform.
 
@@ -16,16 +16,8 @@ Core Features:
 * Player management
 * DOM event handler
 
-Optional Extensions:
+(**Note:** This the mininal installation that is *required* to run Worldcore. You will probably want to augment it with individual components from [here].)
 
-* Three.js rendering
-* Rapier realtime physics
-* Resonance spatial audio
-* Alternate webGL renderer
-* Alternate widget-based UI
-* Behavior tree AI scripting
-
-(**Note:** This the full installation of Worldcore. If you want to install individual components, go [here].)
 
 **Get Started ...**
 
