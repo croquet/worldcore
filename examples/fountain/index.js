@@ -3,7 +3,7 @@
 // Croquet Studios, 2020
 
 import { Session, App } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, InputManager, toRad, m4_scaleRotationTranslation, q_axisAngle, v3_scale, sphericalRandom } from "@croquet/worldcore-kernel";
+import { ModelRoot, ViewRoot, InputManager, toRad, m4_scaleRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, StartWorldcore } from "@croquet/worldcore-kernel";
 import { RenderManager } from "@croquet/worldcore-webgl";
 import { RapierPhysicsManager, LoadRapier, RapierVersion } from "@croquet/worldcore-rapier";
 import { UIManager, TextWidget } from "@croquet/worldcore-widget";
@@ -15,6 +15,9 @@ import { CubeSprayActor, CylinderSprayActor, ConeSprayActor, BallSprayActor } fr
 //------------------------------------------------------------------------------------------
 
 class MyModelRoot extends ModelRoot {
+
+    static viewRoot() { return MyViewRoot };
+
     init(...args) {
         super.init(...args);
         console.log("Starting model!");
@@ -168,20 +171,33 @@ class MyViewRoot extends ViewRoot {
 
 }
 
-async function go() {
-    await LoadRapier();
-    App.makeWidgetDock();
+App.makeWidgetDock();
+StartWorldcore({
+    appId: 'io.croquet.fountain',
+    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
+    name: App.autoSession(),
+    password: 'dummy-pass',
+    tps: 30
+});
 
-    const session = await Session.join({
-        appId: 'io.croquet.fountain',
-        apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
-        name: App.autoSession(),
-        password: 'dummy-pass',
-        model: MyModelRoot,
-        view: MyViewRoot,
-        tps: 30,
-    });
+// async function go() {
+//     // await LoadRapier();
+//     // App.makeWidgetDock();
 
-}
+//     console.log("goooo!")
 
-go();
+
+
+//     // const session = await Session.join({
+//     //     appId: 'io.croquet.fountain',
+//     //     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
+//     //     name: App.autoSession(),
+//     //     password: 'dummy-pass',
+//     //     model: MyModelRoot,
+//     //     view: MyViewRoot,
+//     //     tps: 30,
+//     // });
+
+// }
+
+// go();

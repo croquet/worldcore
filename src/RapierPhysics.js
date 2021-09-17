@@ -1,6 +1,6 @@
 import { Model } from "@croquet/croquet";
 import { RegisterMixin } from "./Mixins";
-import { ModelService } from "./Root";
+import { ModelService, AddAsyncStartup } from "./Root";
 import { q_identity, v3_magnitude, v3_multiply, v3_sub, v3_zero } from "./Vector";
 
 let RAPIER;
@@ -8,6 +8,7 @@ let RAPIER;
 export async function LoadRapier() {
     RAPIER = await import("@dimforge/rapier3d");
 }
+AddAsyncStartup(LoadRapier);
 
 export function setRapier(r) {
     RAPIER = r;

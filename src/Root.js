@@ -5,6 +5,12 @@ import { ClearObjectCache } from "./ObjectCache";
 
 let modelRootClass;
 let viewRootClass;
+let asyncStartUp = [];
+
+export function AddAsyncStartup(f) {
+    asyncStartUp.push(f);
+}
+
 
 //------------------------------------------------------------------------------------------
 //-- WorldcoreModel ------------------------------------------------------------------------
@@ -165,6 +171,13 @@ export function GetViewService(name) { return viewServices.get(name) }
 //------------------------------------------------------------------------------------------
 
 export async function StartWorldcore(options) {
+
+    console.log("Starting Worldcore");
+    console.log(asyncStartUp);
+    while (asyncStartUp.length) {
+        const f = asyncStartUp.pop();
+        await f();
+    }
 
     options.model = modelRootClass;
     options.view = viewRootClass;
