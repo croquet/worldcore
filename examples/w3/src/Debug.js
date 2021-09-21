@@ -1,4 +1,4 @@
-import { DrawCall, Material, Lines, v3_add, viewRoot, ViewService } from "@croquet/worldcore";
+import { DrawCall, Material, Lines, v3_add, viewRoot, ViewService } from "@croquet/worldcore-kernel";
 import { Voxels } from "./Voxels";
 import { RoadActor } from "./Props";
 

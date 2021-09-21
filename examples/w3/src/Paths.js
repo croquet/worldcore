@@ -1,5 +1,5 @@
-import { Model, Constants } from "@croquet/croquet";
-import { ModelService, PriorityQueue } from "@croquet/worldcore";
+// import {  } from "@croquet/croquet";
+import { Model, Constants, ModelService, PriorityQueue } from "@croquet/worldcore-kernel";
 import { Voxels } from "./Voxels";
 
 Constants.path = {

@@ -1,4 +1,8 @@
-import { ImageWidget, ToggleSet, ToggleWidget, Widget, SliderWidget, ButtonWidget, TextWidget, EmptyWidget, BoxWidget } from "@croquet/worldcore";
+// import { ImageWidget, ToggleSet, ToggleWidget, Widget, SliderWidget, ButtonWidget, TextWidget, EmptyWidget, BoxWidget } from "@croquet/worldcore";
+
+// import { m4_translation, v3_multiply, ViewService } from "@croquet/worldcore-kernel";
+import { ImageWidget, ToggleSet, ToggleWidget, Widget, SliderWidget, ButtonWidget, TextWidget, EmptyWidget, BoxWidget } from "@croquet/worldcore-widget"
+
 import { Voxels } from "./Voxels";
 import { GetTopLayer, SetTopLayer } from "./Globals";
 
@@ -135,7 +139,7 @@ export class HUD extends Widget {
             labelOff: new ImageWidget({border: [5,5,5,5], url: walkOffIcon}),
             anchor: [1,0],
             pivot: [1,0],
-            local: [-70,20],
+            local: [-20,20],
             size:[40,40],
             onToggleOn: () => this.publish("hud", "firstPerson", true),
             onToggleOff: () => this.publish("hud", "firstPerson", false)
@@ -143,9 +147,10 @@ export class HUD extends Widget {
 
         const resetButton = new ButtonWidget({
             parent: this,
+            visible: false,
             anchor: [1,0],
             pivot: [1,0],
-            local: [-20,20],
+            local: [-70,20],
             size: [40,40],
             label: new ImageWidget({border: [5,5,5,5], url: resetIcon}),
             onClick: () => this.publish("hud", "reset")

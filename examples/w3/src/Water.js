@@ -1,5 +1,6 @@
-import { Actor, Pawn, mix, PM_Spatial, PM_Visible, CachedObject, UnitCube, DrawCall, Triangles, Material, v3_add,
-    ModelService } from "@croquet/worldcore";
+import { Actor, Pawn, mix, PM_Spatial, CachedObject, v3_add, ModelService } from "@croquet/worldcore-kernel";
+import { UnitCube, DrawCall, Triangles, Material, PM_Visible } from "@croquet/worldcore-webgl"
+
 import { AM_VoxelSmoothed } from "./Components";
 import { Voxels } from "./Voxels";
 import paper from "../assets/paper.jpg";

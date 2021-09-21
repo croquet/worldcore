@@ -1,4 +1,4 @@
-import { ModelService } from "@croquet/worldcore";
+import { ModelService } from "@croquet/worldcore-kernel";
 import { Voxels } from "./Voxels";
 
 const max = 10000;

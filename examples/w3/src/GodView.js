@@ -1,5 +1,5 @@
 import { GetNamedView, NamedView, m4_scaleRotationTranslation, m4_translation, q_axisAngle, v3_scale, v3_add, v3_multiply, q_multiply,
-    toRad, TAU, KeyDown, v3_transform, m4_rotationZ, m4_multiply, toDeg, DepthTexture, GetViewRoot, viewRoot, ViewService, GetViewService } from "@croquet/worldcore";
+    toRad, TAU, KeyDown, v3_transform, m4_rotationZ, m4_multiply, toDeg, DepthTexture, GetViewRoot, viewRoot, ViewService, GetViewService } from "@croquet/worldcore-kernel";
 import { GetTopLayer } from "./Globals";
 import { PickGrabSurface  } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";

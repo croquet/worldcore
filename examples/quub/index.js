@@ -2,10 +2,10 @@
 //
 // Croquet Studios, 2020
 
-import { Session, App, Data } from "@croquet/croquet";
+// import { Session, App, Data } from "@croquet/croquet";
 import { ModelRoot, ViewRoot, InputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix,
     AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale, AM_Avatar, PM_Avatar,
-    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply, q_euler, m4_rotationQ, v3_transform, ToDeg, PM_Spatial, AM_Spatial, KeyDown, AM_MouselookAvatar, PM_MouselookAvatar, PM, q_lookAt, v3_rotate, v3_normalize } from "@croquet/worldcore";
+    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply, q_euler, m4_rotationQ, v3_transform, ToDeg, PM_Spatial, AM_Spatial, KeyDown, AM_MouselookAvatar, PM_MouselookAvatar, PM, q_lookAt, v3_rotate, v3_normalize, Session, App} from "@croquet/worldcore";
 import paper from "./assets/paper.jpg";
 import { Surfaces } from "./src/Surfaces";
 import { TerrainRender } from "./src/TerrainRender";

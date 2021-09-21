@@ -1,4 +1,4 @@
-import { viewRoot, v3_divide } from "@croquet/worldcore";
+import { viewRoot, v3_divide } from "@croquet/worldcore-kernel";
 import { IntersectVoxelBase } from "./Surfaces";
 import { Voxels } from "./Voxels";
 

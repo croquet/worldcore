@@ -2,8 +2,11 @@
 //
 // Croquet Studios, 2021
 
-import { Session, App } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, UIManager, RenderManager, InputManager, v3_normalize } from "@croquet/worldcore";
+import { Session, App, ModelRoot, ViewRoot, InputManager, v3_normalize } from "@croquet/worldcore-kernel";
+import {  RenderManager } from "@croquet/worldcore-webgl";
+import {  UIManager } from "@croquet/worldcore-widget";
+// import { Session, App } from "@croquet/croquet";
+// import { ModelRoot, ViewRoot, UIManager, RenderManager, InputManager, v3_normalize } from "@croquet/worldcore";
 import { Voxels } from "./src/Voxels";
 import { Surfaces } from "./src/Surfaces";
 import { Paths } from "./src/Paths";
@@ -96,7 +99,7 @@ class MyViewRoot extends ViewRoot {
         this.godView = this.addService(GodView);
         this.editor = this.addService(Editor);
         this.voxelCursor = this.addService(VoxelCursor);
-        this.roadDebug = this.addService(RoadDebugRender);
+        // this.roadDebug = this.addService(RoadDebugRender);
         super.createServices();
     }
 

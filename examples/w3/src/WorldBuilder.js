@@ -1,4 +1,4 @@
-import { ModelService, PerlinNoise } from "@croquet/worldcore";
+import { ModelService, PerlinNoise } from "@croquet/worldcore-kernel";
 import { TreeActor } from "./Props";
 import { Voxels } from "./Voxels";
 

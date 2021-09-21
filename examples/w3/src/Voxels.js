@@ -1,4 +1,4 @@
-import { v3_add, v3_sub, v3_min, v3_max, v3_floor, ModelService } from "@croquet/worldcore";
+import { v3_add, v3_sub, v3_min, v3_max, v3_floor, ModelService } from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
 //-- VoxelColumn ---------------------------------------------------------------------------

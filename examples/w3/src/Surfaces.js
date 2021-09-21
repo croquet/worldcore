@@ -1,4 +1,4 @@
-import { v3_add, rayTriangleIntersect, ModelService } from "@croquet/worldcore";
+import { v3_add, rayTriangleIntersect, ModelService } from "@croquet/worldcore-kernel";
 import { Voxels } from "./Voxels";
 
 

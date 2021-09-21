@@ -1,5 +1,7 @@
 
-import { mix, Actor, Pawn, Material, AM_Behavioral, CachedObject, UnitCube, m4_translation, m4_scale, InstancedDrawCall, ModelService } from "@croquet/worldcore";
+import { mix, Actor, Pawn, CachedObject, m4_translation, m4_scale, ModelService } from "@croquet/worldcore-kernel";
+import { AM_Behavioral } from "@croquet/worldcore-behavior";
+import { Material, UnitCube, InstancedDrawCall } from "@croquet/worldcore-webgl";
 import { AM_VoxelSmoothed, PM_VoxelSmoothed, PM_LayeredInstancedVisible} from "./Components";
 import { PersonBehavior } from "./Behaviors"
 import paper from "../assets/paper.jpg";

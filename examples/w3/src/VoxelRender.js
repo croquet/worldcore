@@ -1,4 +1,5 @@
-import { Triangles, Lines, v3_add, v3_multiply, Material, DrawCall, ViewService, viewRoot } from "@croquet/worldcore";
+import { v3_add, v3_multiply, ViewService, viewRoot } from "@croquet/worldcore-kernel";
+import { Material, DrawCall, Triangles, Lines } from "@croquet/worldcore-webgl"
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "./Globals";
 

@@ -1,5 +1,6 @@
-import { View} from "@croquet/croquet";
-import { Triangles, GetNamedView, Lines, v4_max, v4_sub, v3_add, v3_multiply, Material, DrawCall, NamedView, UnitCube, m4_translation, GetViewRoot, viewRoot, ViewService, WCView, WorldcoreView } from "@croquet/worldcore";
+import { m4_translation, ViewService, WorldcoreView } from "@croquet/worldcore-kernel";
+import { Triangles, Lines, Material, DrawCall, UnitCube  } from "@croquet/worldcore-webgl"
+
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "./Globals";
 

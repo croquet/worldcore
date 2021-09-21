@@ -1,7 +1,8 @@
-import { Model } from "@croquet/croquet";
-import { mix, Actor, Pawn, AM_Smoothed, PM_Smoothed, Material, PM_InstancedVisible, v3_add,
-    CachedObject, InstancedDrawCall, AM_Behavioral, Cube, Cylinder, ModelService } from "@croquet/worldcore";
-    import { Voxels } from "./Voxels";
+import { mix, Actor, Pawn, AM_Smoothed, PM_Smoothed, v3_add, CachedObject, ModelService } from "@croquet/worldcore-kernel";
+import { Material, PM_InstancedVisible, InstancedDrawCall, Cube, Cylinder } from "@croquet/worldcore-webgl"
+import { AM_Behavioral } from "@croquet/worldcore-behavior"
+
+import { Voxels } from "./Voxels";
 import { FallBehavior } from "./Behaviors"
 import paper from "../assets/paper.jpg";
 import { SideColor } from "./VoxelRender";

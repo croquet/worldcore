@@ -1,4 +1,5 @@
-import { AM_Smoothed, RegisterMixin, v3_sub, v3_add, v3_floor, PM_Smoothed, PM_InstancedVisible, m4_identity, m4_translation } from "@croquet/worldcore";
+import { AM_Smoothed, RegisterMixin, v3_sub, v3_add, v3_floor, PM_Smoothed,  m4_identity, m4_translation } from "@croquet/worldcore-kernel";
+import { PM_InstancedVisible } from "@croquet/worldcore-webgl";
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "./Globals";
 

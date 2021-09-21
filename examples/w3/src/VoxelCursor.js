@@ -1,4 +1,6 @@
-import { Cube, Material, DrawCall, m4_translation, v3_multiply, ViewService } from "@croquet/worldcore";
+// import { Cube, Material, DrawCall, m4_translation, v3_multiply, ViewService } from "@croquet/worldcore";
+import { m4_translation, v3_multiply, ViewService } from "@croquet/worldcore-kernel";
+import { Cube, Material, DrawCall } from "@croquet/worldcore-webgl"
 import { Voxels } from "./Voxels";
 import { PickFloorSurface, PickDigVoxel, PickFillSurface, PickPlantSurface } from "./VoxelRaycast";
 import { GetTopLayer } from "./Globals";

@@ -1,6 +1,7 @@
-import { mix, Actor, Pawn, PM_Spatial, Material, v3_add,
-    Cylinder, Cone, m4_translation, CachedObject, q_axisAngle, TAU, InstancedDrawCall, m4_rotationX, toRad, v3_scale,
-    Behavior, AM_Behavioral, ModelService } from "@croquet/worldcore";
+import { mix, Actor, Pawn, PM_Spatial, v3_add, m4_translation, CachedObject, q_axisAngle, TAU,  m4_rotationX, toRad, v3_scale,
+    ModelService } from "@croquet/worldcore-kernel";
+import { Material, Cylinder, Cone, InstancedDrawCall } from "@croquet/worldcore-webgl";
+import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
 import paper from "../assets/paper.jpg";
 import { AM_VoxelSmoothed, PM_LayeredInstancedVisible } from "./Components";
 import { TimberActor } from "./Rubble";

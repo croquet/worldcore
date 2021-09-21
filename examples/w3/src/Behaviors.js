@@ -1,5 +1,5 @@
-import { Constants } from "@croquet/croquet";
-import { Behavior, CompositeBehavior, q_axisAngle, q_multiply, v3_sub, v2_sub, v2_scale, v2_magnitude, sphericalRandom } from "@croquet/worldcore";
+import { Constants, q_multiply, v3_sub, v2_sub, v2_scale, v2_magnitude, sphericalRandom, q_axisAngle } from "@croquet/worldcore-kernel";
+import { Behavior, CompositeBehavior } from "@croquet/worldcore-behavior";
 import { Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { ViewService } from "@croquet/worldcore";
+import { ViewService } from "@croquet/worldcore-kernel";
 import { GetTopLayer } from "./Globals";
 import { PickFillSurface, PickFloorSurface, PickDigVoxel, PickPlantSurface } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
