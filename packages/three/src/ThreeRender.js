@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ViewService } from "./Root";
+import { ViewService } from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible Mixin --------------------------------------------------------------------

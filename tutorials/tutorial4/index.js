@@ -14,9 +14,9 @@
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PlayerManager,
     AM_Player, PM_Player, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, AM_MouselookAvatar,
-    PM_MouselookAvatar, PM_ThreeCamera, toRad } from "@croquet/worldcore";
+    PM_MouselookAvatar, PM_ThreeCamera, toRad, THREE } from "@croquet/worldcore";
 
-import * as THREE from 'three';
+// import {THREE} from '@croquet/worldcore-three';
 
 //------------------------------------------------------------------------------------------
 //-- MyAvatar ------------------------------------------------------------------------------
