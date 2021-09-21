@@ -1,3 +1,3 @@
 
-export * from "../../src/Behavior";
+export * from "./src/Behavior";
 

@@ -1,7 +1,8 @@
  import { ResonanceAudio } from "resonance-audio";
-import { m4_getTranslation, m4_getRotation, m4_rotationQ, v3_transform } from "./Vector";
-import { RegisterMixin } from "./Mixins";
-import { ViewService } from "./Root";
+ import { m4_getTranslation, m4_getRotation, m4_rotationQ, v3_transform, RegisterMixin, ViewService } from "@croquet/worldcore-kernel";
+// import { m4_getTranslation, m4_getRotation, m4_rotationQ, v3_transform } from "./Vector";
+// import { RegisterMixin } from "./Mixins";
+// import { ViewService } from "./Root";
 
 let audioContext;
 let audioResonance;

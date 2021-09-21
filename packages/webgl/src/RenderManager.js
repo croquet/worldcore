@@ -1,7 +1,9 @@
+import { toRad, m4_identity, ViewService } from "@croquet/worldcore-kernel";
+
 import { MainDisplay, Scene, Camera, Lights, GeometryBuffer, Framebuffer, SharedStencilFramebuffer, GetGLVersion, SetGLCamera, SetGLPipeline, StartStencilCapture, EndStencil, StartStencilApply } from "./Render";
 import { BasicShader, DecalShader, TranslucentShader, InstancedShader, GeometryShader, InstancedGeometryShader, TranslucentGeometryShader, PassthruShader, BlendShader, AOShader, InstancedDecalShader } from "./Shaders";
-import {toRad, m4_identity } from "./Vector";
-import { ViewService } from "./Root";
+// import {toRad, m4_identity } from "./Vector";
+// import { ViewService } from "./Root";
 
 
 //------------------------------------------------------------------------------------------

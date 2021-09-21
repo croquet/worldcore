@@ -1,7 +1,9 @@
-import { v2_sub, v2_multiply, v2_add, v2_scale, v2_magnitude } from "./Vector";
-import { LoadFont, LoadImage} from "./ViewAssetCache";
-import QRCode from "../lib/qr/qrcode";
-import { ViewService, WorldcoreView } from "./Root";
+import { v2_sub, v2_multiply, v2_add, v2_scale, v2_magnitude, LoadFont, LoadImage, ViewService, WorldcoreView } from "@croquet/worldcore-kernel";
+
+// import { v2_sub, v2_multiply, v2_add, v2_scale, v2_magnitude } from "./Vector";
+// import { LoadFont, LoadImage} from "./ViewAssetCache";
+// import QRCode from "../lib/qr/qrcode";
+// import { ViewService, WorldcoreView } from "./Root";
 
 let ui;             // The UI manager
 
@@ -744,35 +746,35 @@ export class ImageWidget extends Widget {
 //-- QRWidget ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class QRWidget extends ImageWidget {
+// export class QRWidget extends ImageWidget {
 
-    get text() { return this._text; }
+//     get text() { return this._text; }
 
-    set(options = {}) {
-        super.set(options);
-        if (options.text) this.makeFromText(options.text);
-    }
+//     set(options = {}) {
+//         super.set(options);
+//         if (options.text) this.makeFromText(options.text);
+//     }
 
-    destroy() {
-        super.destroy();
-        if (this._element) this._element.remove();
-    }
+//     destroy() {
+//         super.destroy();
+//         if (this._element) this._element.remove();
+//     }
 
-    makeFromText(t) {
-        if (!this._element) this._element = document.createElement('div');
-        this.markChanged();
-        const code = new QRCode(this._element, {
-            text: t,
-            width: 128,
-            height: 128,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.L   // L, M, Q, H
-        });
-        if (code) this.loadFromCanvas(code.getCanvas());
-    }
+//     makeFromText(t) {
+//         if (!this._element) this._element = document.createElement('div');
+//         this.markChanged();
+//         const code = new QRCode(this._element, {
+//             text: t,
+//             width: 128,
+//             height: 128,
+//             colorDark: "#000000",
+//             colorLight: "#ffffff",
+//             correctLevel: QRCode.CorrectLevel.L   // L, M, Q, H
+//         });
+//         if (code) this.loadFromCanvas(code.getCanvas());
+//     }
 
-}
+// }
 
 //------------------------------------------------------------------------------------------
 //-- NineSliceWidget -----------------------------------------------------------------------

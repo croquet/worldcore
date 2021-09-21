@@ -9,6 +9,7 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
+    "@croquet/worldcore-kernel": "link:..\\kernel",
     "resonance-audio": "1.0.0"
   }
 }

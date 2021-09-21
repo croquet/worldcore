@@ -1,6 +1,6 @@
-import { RegisterMixin } from "./Mixins";
-import { WorldcoreModel } from "./Root";
-import { Shuffle } from "./Utilities";
+import { RegisterMixin, WorldcoreModel, Shuffle } from "@croquet/worldcore-kernel";
+// import {  } from "@croquet/worldcore-kernel";
+// import { Shuffle } from "./Utilities";
 
 //------------------------------------------------------------------------------------------
 //-- Behavioral ----------------------------------------------------------------------------

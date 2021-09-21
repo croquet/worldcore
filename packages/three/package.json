@@ -9,6 +9,7 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
+    "@croquet/worldcore-kernel": "link:..\\kernel",
     "three": "^0.131.0"
   }
 }

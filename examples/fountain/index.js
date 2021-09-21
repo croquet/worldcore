@@ -2,8 +2,8 @@
 //
 // Croquet Studios, 2020
 
-import { Session, App } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, InputManager, toRad, m4_scaleRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, StartWorldcore } from "@croquet/worldcore-kernel";
+// import { Session, App } from "@croquet/croquet";
+import { App, ModelRoot, ViewRoot, InputManager, toRad, m4_scaleRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, StartWorldcore } from "@croquet/worldcore-kernel";
 import { RenderManager } from "@croquet/worldcore-webgl";
 import { RapierPhysicsManager, LoadRapier, RapierVersion } from "@croquet/worldcore-rapier";
 import { UIManager, TextWidget } from "@croquet/worldcore-widget";

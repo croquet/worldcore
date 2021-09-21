@@ -1,7 +1,9 @@
-import { Model } from "@croquet/croquet";
-import { RegisterMixin } from "./Mixins";
-import { ModelService, AddAsyncStartup } from "./Root";
-import { q_identity, v3_magnitude, v3_multiply, v3_sub, v3_zero } from "./Vector";
+// import { Model } from "@croquet/croquet";
+
+import { RegisterMixin, ModelService, AddAsyncStartup, q_identity, v3_magnitude, v3_multiply, v3_sub, v3_zero  } from "@croquet/worldcore-kernel";
+// import { RegisterMixin } from "./Mixins";
+// import { ModelService, AddAsyncStartup } from "./Root";
+// import { q_identity, v3_magnitude, v3_multiply, v3_sub, v3_zero } from "./Vector";
 
 let RAPIER;
 

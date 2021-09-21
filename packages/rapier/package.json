@@ -9,6 +9,7 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
+    "@croquet/worldcore-kernel": "link:..\\kernel",
     "@dimforge/rapier3d": "0.4.1"
   }
 }

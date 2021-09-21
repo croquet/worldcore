@@ -2,8 +2,7 @@
 //
 // Croquet Studios, 2021
 
-import { Session } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize } from "@croquet/worldcore-kernel";
+import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize } from "@croquet/worldcore-kernel";
 import {RenderManager, PM_Visible, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
@@ -150,10 +149,10 @@ class BackgroundActor extends mix(Actor).with(AM_Spatial) {
         // this.subscribe("input", "dDown", this.test);
     }
 
-    test() {
-        console.log("test!");
-        this.playSound(photon);
-    }
+    // test() {
+    //     console.log("test!");
+    //     this.playSound(photon);
+    // }
 }
 BackgroundActor.register('BackgroundActor');
 

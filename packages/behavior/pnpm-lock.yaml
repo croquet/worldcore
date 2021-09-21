@@ -1,0 +1,7 @@
+lockfileVersion: 5.3
+
+specifiers:
+  '@croquet/worldcore-kernel': link:..\kernel
+
+dependencies:
+  '@croquet/worldcore-kernel': link:../kernel

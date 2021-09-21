@@ -1,5 +1,6 @@
 import { Shader, TextureTable } from "./Render";
-import { m2_rotation, TAU, toRad } from "./Vector";
+// import { m2_rotation, TAU, toRad } from "./Vector";
+import { m2_rotation, TAU, toRad  } from "@croquet/worldcore-kernel";
 
 // Standard Universals
 //

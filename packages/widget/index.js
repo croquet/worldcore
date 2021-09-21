@@ -1,3 +1,3 @@
 
-export * from "../../src/Widget";
+export * from "./src/Widget";
 
