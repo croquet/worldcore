@@ -1,4 +1,4 @@
-import { Triangles, Lines, v3_add, v3_multiply, Material, DrawCall, ViewService, m4_translation, GetViewService, GetModelService } from "@croquet/worldcore";
+import { Triangles, Lines, v3_add, v3_multiply, Material, DrawCall, ViewService, GetModelService } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "../index";
 import paper from "../assets/paper.jpg";

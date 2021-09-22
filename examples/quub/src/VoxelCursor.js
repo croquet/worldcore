@@ -1,4 +1,4 @@
-import { DrawCall, Material, v3_multiply, m4_translation, Triangles, GetNamedModel, v3_floor, UnitCube, ViewService } from "@croquet/worldcore";
+import { DrawCall, Material, v3_multiply, m4_translation, Triangles, v3_floor, ViewService } from "@croquet/worldcore";
 import { PickEmptyVoxel, PickSolidVoxel, PickBase } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 import { Colors } from "./Colors";

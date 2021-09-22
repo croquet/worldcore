@@ -209,10 +209,6 @@ class MyModelRoot extends ModelRoot {
         BackgroundActor.create();
     }
 
-    createServices() {
-        this.players = this.addService(MyPlayerManager);
-    }
-
 }
 MyModelRoot.register("MyModelRoot");
 
@@ -279,15 +275,7 @@ class MyViewRoot extends ViewRoot {
 
         this.image = new ImageWidget({parent: this.HUD, local: [20, 200], size: [200,80], url: llama});
 
-
     }
-
-    // createServices() {
-    //     this.input = this.addService(InputManager);
-    //     this.render = this.addService(RenderManager);
-    //     this.ui = this.addService(UIManager);
-    //     this.audio = this.addService(AudioManager);
-    // }
 
 }
 
@@ -301,17 +289,3 @@ StartWorldcore({
     tps: 15,
 })
 
-// async function go() {
-
-//     const session = await Session.join({
-//         appId: 'io.croquet.wctest',
-//         apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
-//         password: 'password',
-//         name: 'test',
-//         model: MyModelRoot,
-//         view: MyViewRoot,
-//         tps: 15,
-//     });
-// }
-
-// go();

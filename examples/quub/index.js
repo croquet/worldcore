@@ -1,88 +1,29 @@
-// World Core Test
+// World Core Quub
 //
 // Croquet Studios, 2020
 
-// import { Session, App, Data } from "@croquet/croquet";
-import { ModelRoot, ViewRoot, InputManager, UIManager, AudioManager, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix,
-    AM_Smoothed, PM_Smoothed, PM_InstancedVisible, GetNamedView, v3_scale, AM_Avatar, PM_Avatar,
-    ActorManager, RenderManager, PM_Visible, UnitCube, Material, DrawCall, InstancedDrawCall, PawnManager, PlayerManager, RapierPhysicsManager, AM_RapierPhysics, LoadRapier, TAU, sphericalRandom, Triangles, CachedObject, q_multiply, q_euler, m4_rotationQ, v3_transform, ToDeg, PM_Spatial, AM_Spatial, KeyDown, AM_MouselookAvatar, PM_MouselookAvatar, PM, q_lookAt, v3_rotate, v3_normalize, Session, App} from "@croquet/worldcore";
-import paper from "./assets/paper.jpg";
+import { ModelRoot, ViewRoot, InputManager, UIManager, StartWorldcore, RenderManager, v3_normalize, App} from "@croquet/worldcore";
 import { Surfaces } from "./src/Surfaces";
 import { TerrainRender } from "./src/TerrainRender";
 import { Voxels } from "./src/Voxels";
-import { PickBase, PickEmptyVoxel, PickSolidVoxel } from "./src/VoxelRaycast";
 import { VoxelCursor } from "./src/VoxelCursor";
 import { HUD } from "./src/HUD";
 import { GodView } from "./src/GodView";
-
-
-// //------------------------------------------------------------------------------------------
-// // FloorActor
-// //------------------------------------------------------------------------------------------
-
-// class FloorActor extends mix(Actor).with(AM_Spatial) {
-//     init() {
-//         super.init("FloorPawn");
-//     }
-// }
-// FloorActor.register('FloorActor');
-
-// //------------------------------------------------------------------------------------------
-// // FloorPawn
-// //------------------------------------------------------------------------------------------
-
-// class FloorPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
-//     constructor(...args) {
-//         super(...args);
-
-//         const c =  [0.6,0.6,0.6,1];
-
-//         this.mesh = new Triangles();
-//         this.mesh.addFace([[-50, 0, -50], [-50, 0, 50], [50, 0, 50], [50, 0, -50]], [c,c,c,c], [[0,0], [25,0], [25,25], [0,25]]);
-//         this.mesh.load();
-//         this.mesh.clear();
-
-//         this.material = new Material();
-//         this.material.pass = 'opaque';
-//         this.material.texture.loadFromURL(paper);
-
-//         this.setDrawCall(new DrawCall(this.mesh, this.material));
-//     }
-// }
-// FloorPawn.register('FloorPawn');
 
 //------------------------------------------------------------------------------------------
 // MyModelRoot
 //------------------------------------------------------------------------------------------
 
 class MyModelRoot extends ModelRoot {
+
     init(_options, persistedData) {
         super.init(_options);
         console.log("Starting quub!!!");
 
         this.voxels = Voxels.create(persistedData);
-
-        // for testing:
-        // this.voxels.set(4,4,1,5);
-        // this.voxels.set(5,4,1,5);
-        // this.voxels.set(6,4,1,6);
-        // this.voxels.set(8,4,1,5);
-        // this.voxels.set(9,4,1,7);
-
         this.surfaces = Surfaces.create();
 
-        // console.log(this.surfaces);
-
-        // FloorActor.create();
-
         this.autoSave();    // will init the hash, but won't be uploaded
-    }
-
-
-    createManagers() {
-        this.playerManager = this.addManager(PlayerManager.create());
-        // this.phyicsManager = this.addManager(RapierPhysicsManager.create({gravity: [0,-9.8, 0], timeStep: 50}));
-        this.actorManager = this.addManager(ActorManager.create());
     }
 
     autoSave() {
@@ -102,17 +43,25 @@ export function SetTopLayer(n) { topLayer = n }
 export function GetTopLayer(n) { return topLayer }
 
 class MyViewRoot extends ViewRoot {
+
+    static viewServices() {
+        return [InputManager, RenderManager, TerrainRender, VoxelCursor, UIManager, GodView];
+    }
+
     constructor(model) {
         super(model);
 
-        this.hud = new HUD({parent: this.ui.root});
+        const ui = this.service("UIManager");
 
-        this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
-        this.render.lights.setAmbientColor([0.8, 0.8, 0.8]);
-        this.render.lights.setDirectionalColor([0.4, 0.4, 0.4]);
-        this.render.lights.setDirectionalAim(v3_normalize([0.1,0.2,-1]));
+        this.hud = new HUD({parent: ui.root});
 
-        const ao = this.render.aoShader;
+        const render = this.service("RenderManager");
+        render.setBackground([0.45, 0.8, 0.8, 1.0]);
+        render.lights.setAmbientColor([0.8, 0.8, 0.8]);
+        render.lights.setDirectionalColor([0.4, 0.4, 0.4]);
+        render.lights.setDirectionalAim(v3_normalize([0.1,0.2,-1]));
+
+        const ao = render.aoShader;
         if (ao) {
             ao.count = 16;
             ao.setRadius(0.4);
@@ -120,15 +69,6 @@ class MyViewRoot extends ViewRoot {
             ao.falloff = 0.7;
         }
 
-    }
-
-    createServices() {
-        this.webInput = this.addService(InputManager);
-        this.render = this.addService(RenderManager);
-        this.terrainRender = this.addService(TerrainRender);
-        this.voxelCursor = this.addService(VoxelCursor);
-        this.ui = this.addService(UIManager);
-        this.godView = this.addService(GodView);
     }
 
     setTopLayer(top) {
@@ -141,19 +81,12 @@ class MyViewRoot extends ViewRoot {
 
 }
 
-async function go() {
-
-    const session = await Session.join({
-        appId: 'io.croquet.quub',
-        apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
-        password: 'password',
-        name: App.autoSession(),
-        model: MyModelRoot,
-        view: MyViewRoot,
-        tps: 0,
-    });
-}
-
-
-
-go();
+StartWorldcore({
+    appId: 'io.croquet.quub',
+    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
+    name: App.autoSession(),
+    password: 'password',
+    model: MyModelRoot,
+    view: MyViewRoot,
+    tps: 0
+});

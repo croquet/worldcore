@@ -1,5 +1,5 @@
-// import { Model } from "@croquet/croquet";
-import { PerlinNoise, v3_add, v3_sub, v3_min, v3_max, v3_scale, v3_floor, rayTriangleIntersect, Model } from "@croquet/worldcore";
+
+import { v3_add, v3_sub, v3_min, v3_max, Model } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- VoxelColumn ---------------------------------------------------------------------------

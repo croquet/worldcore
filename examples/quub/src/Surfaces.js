@@ -1,5 +1,4 @@
-// import { Model } from "@croquet/croquet";
-import { v3_add, v3_multiply, rayTriangleIntersect, Model } from "@croquet/worldcore";
+import { v3_add,  rayTriangleIntersect, Model } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 
 
