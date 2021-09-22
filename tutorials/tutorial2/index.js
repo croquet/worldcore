@@ -21,7 +21,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, AM_Smoothed, PM_
 // actor's translation, roation, or scale, but they also tell the actor's pawn to smoothly
 // interpolate from its previous position to its new one.
 //
-// (You can alsos use the standard set operation with a Smoothed actor to pop it to its desired
+// (You can also use the standard set operation with a Smoothed actor to pop it to its desired
 // position if you need a quick transition.)
 //
 // This actor also includes a tick to animate it. The tick method uses Croquet's future method for scheduling.
@@ -119,7 +119,7 @@ class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
 // Note also the use of Croquet's Math.Random(). Because this code is being run in the model,
 // Math.random() will return the same value on every client.
 //
-// After the actor has changed its color, it lets its pawn know by publishing the "colorChanged"
+// After the actor has changed color, it lets its pawn know by publishing the "colorChanged"
 // message using the say method. The say method is the counterpart to listen. Using it means
 // the message only goes to the specific pawn associated with this particular actor.
 //
@@ -188,15 +188,13 @@ class OrbitPawn extends mix(Pawn).with(PM_Smoothed) {}
 // applying its own offset from the center.
 //
 // The model root also subscribes to the event that's published when the "d" key is pressed. Pressing the
-// "d" key destoys the child. That actor is completely deleted. It's removed from the actor hierarcy, its
+// "d" key destoys the child. That actor is completely deleted. It's removed from the scene hierarcy, its
 // pawn is destroyed, and all of its render resources are freed.
 //
 // If there isn't a child actor when you press the "d" key, it spawns a new one and attaches it to the
 // orbit.
 
 class MyModelRoot extends ModelRoot {
-
-    static viewRoot() { return MyViewRoot };
 
     init(...args) {
         super.init(...args);
@@ -225,17 +223,18 @@ MyModelRoot.register("MyModelRoot");
 
 class MyViewRoot extends ViewRoot {
 
-    createServices() {
-        this.addService(InputManager);
-        this.addService(RenderManager);
+    static viewServices() {
+        return [InputManager, RenderManager];
     }
 
 }
 
 StartWorldcore({
-    appId: 'io.croquet.appId',
+    appId: 'io.croquet.tutorial',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
     name: 'tutorial',
-    password: 'password'
+    password: 'password',
+    model: MyModelRoot,
+    view: MyViewRoot,
 });
 

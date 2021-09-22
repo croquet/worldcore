@@ -2,21 +2,19 @@
 //
 // Copyright Croquet Corporation, 2021
 //
-// This is the third in a series of tutorials illustrating how to build a Worldcore app. It
+// This is the fourth in a series of tutorials illustrating how to build a Worldcore app. It
 // assumes that you have familarity with the basics of the Croquet SDK, and understand the
 // general concepts behind Worldcore. For more inforamation, see croquet.io/sdk.
 //
 // This tuturial shows how to use THREE.js as your renderer, and how to create a first-person
 // avatar that is driven by mouselook.
 //
-// (Note that because this tutorial assmes the existence of a mouse for navigation control, it
+// (Note that because this tutorial assumes the existence of a mouse for navigation control, it
 // won't be fully functional on a touch device.)
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PlayerManager,
     AM_Player, PM_Player, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, AM_MouselookAvatar,
     PM_MouselookAvatar, PM_ThreeCamera, toRad, THREE } from "@croquet/worldcore";
-
-// import {THREE} from '@croquet/worldcore-three';
 
 //------------------------------------------------------------------------------------------
 //-- MyAvatar ------------------------------------------------------------------------------
@@ -228,15 +226,13 @@ MyPlayerManager.register("MyPlayerManager");
 
 class MyModelRoot extends ModelRoot {
 
-    static viewRoot() { return MyViewRoot };
+    static modelServices() {
+        return [MyPlayerManager];
+    }
 
     init(...args) {
         super.init(...args);
         this.level = LevelActor.create();
-    }
-
-    createServices() {
-        this.addService(MyPlayerManager);
     }
 
 }
@@ -264,17 +260,15 @@ MyModelRoot.register("MyModelRoot");
 
 class MyViewRoot extends ViewRoot {
 
-    constructor(model) {
-        super(model);
-
-        this.three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
-
-        this.subscribe("input", "click", () => {this.input.enterPointerLock()});
+    static viewServices() {
+        return [InputManager, ThreeRenderManager];
     }
 
-    createServices() {
-        this.input = this.addService(InputManager);
-        this.three = this.addService(ThreeRenderManager);
+    constructor(model) {
+        super(model);
+        const three = this.service("ThreeRenderManager");
+        three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
+        this.subscribe("input", "click", () => {this.service("InputManager").enterPointerLock()});
     }
 
 }
@@ -284,10 +278,11 @@ class MyViewRoot extends ViewRoot {
 // tps of the session makes it feel more responsive.
 
 StartWorldcore({
-    appId: 'io.croquet.appId',
+    appId: 'io.croquet.tutorial',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
     name: 'tutorial',
     password: 'password',
+    model: MyModelRoot,
+    view: MyViewRoot,
     tps:60
 });
-

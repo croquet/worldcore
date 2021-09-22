@@ -10,7 +10,8 @@
 // respond to one user's input.
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, PM_Visible, RenderManager, DrawCall, Cube,
-    v3_normalize, q_axisAngle, toRad, InputManager, q_multiply, UIManager, Widget, ButtonWidget, JoystickWidget, AM_Avatar, PM_Avatar, q_identity, q_normalize, PlayerManager, AM_Player, PM_Player, TextWidget } from "@croquet/worldcore";
+    v3_normalize, q_axisAngle, toRad, InputManager, q_multiply, UIManager, Widget, ButtonWidget, JoystickWidget, AM_Avatar, PM_Avatar, q_identity,
+    q_normalize, PlayerManager, AM_Player, PM_Player, TextWidget } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- MyAvatar ------------------------------------------------------------------------------
@@ -201,11 +202,11 @@ class OrbitPawn extends mix(Pawn).with(PM_Smoothed) {}
 
 // The player manager automatically spawns a player avatar whenever a new user joins the session.
 // It also automatically deletes that avatar when the player leaves. The player manager is a model-side
-// service that is owned by the model root.
+// service.
 //
-// You should overload the player manager's createPlayer() method with your own avatar-creation logic.
+// You can overload the player manager's createPlayer() method with your own avatar-creation logic.
 // This can be fairly complex. For example you could randomize where the avatar appears, or check
-// to make sure that the new avatar doesn't collide with existing ones. createPlayer should
+// to make sure that the new avatar doesn't collide with existing ones. You version of createPlayer should
 // always return a pointer to the new avatar.
 //
 // (Note that any initialization options must be appended to the existing options object. The player
@@ -233,10 +234,8 @@ MyPlayerManager.register("MyPlayerManager");
 
 class MyModelRoot extends ModelRoot {
 
-    static viewRoot() { return MyViewRoot };
-
-    createServices() {
-        this.addService(MyPlayerManager);
+    static modelServices() {
+        return [MyPlayerManager];
     }
 
 }
@@ -265,6 +264,10 @@ MyModelRoot.register("MyModelRoot");
 // is replaced with a publish call to broadcast its position.
 
 class MyViewRoot extends ViewRoot {
+
+    static viewServices() {
+        return [InputManager, RenderManager, UIManager];
+    }
 
     constructor(model) {
         super(model);
@@ -299,11 +302,7 @@ class MyViewRoot extends ViewRoot {
 
     }
 
-    createServices() {
-        this.addService(InputManager);
-        this.addService(RenderManager);
-        this.addService(UIManager);
-    }
+
 
 }
 
@@ -312,9 +311,12 @@ class MyViewRoot extends ViewRoot {
 // owns it.)
 
 StartWorldcore({
-    appId: 'io.croquet.appId',
+    appId: 'io.croquet.tutorial',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
     name: 'tutorial',
-    password: 'password'
+    password: 'password',
+    model: MyModelRoot,
+    view: MyViewRoot,
 });
+
 
