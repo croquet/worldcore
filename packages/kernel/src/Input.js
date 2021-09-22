@@ -44,7 +44,7 @@ export function KeyDown(key) {
 
 export class InputManager extends ViewService {
     constructor() {
-        super("InputMananger");
+        super("InputManager");
 
         this.listeners = [];
 

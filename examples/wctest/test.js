@@ -2,7 +2,7 @@
 //
 // Croquet Studios, 2021
 
-import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize } from "@croquet/worldcore-kernel";
+import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore } from "@croquet/worldcore-kernel";
 import {RenderManager, PM_Visible, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
@@ -198,6 +198,11 @@ MyPlayerManager.register("MyPlayerManager");
 //------------------------------------------------------------------------------------------
 
 class MyModelRoot extends ModelRoot {
+
+    static modelServices() {
+        return [ MyPlayerManager];
+    }
+
     init(...args) {
         super.init(...args);
         console.log("Start Model!!!");
@@ -217,26 +222,34 @@ MyModelRoot.register("MyModelRoot");
 
 
 class MyViewRoot extends ViewRoot {
+
+    static viewServices() {
+        return [ InputManager, {service:RenderManager}, UIManager, AudioManager];
+    }
+
     constructor(model) {
         super(model);
 
-        this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
-        this.render.lights.setAmbientColor([0.8, 0.8, 0.8]);
-        this.render.lights.setDirectionalColor([0.7, 0.7, 0.7]);
-        this.render.lights.setDirectionalAim([0.2,-1,0.1]);
+        const render = this.service("RenderManager");
+
+        render.setBackground([0.45, 0.8, 0.8, 1.0]);
+        render.lights.setAmbientColor([0.8, 0.8, 0.8]);
+        render.lights.setDirectionalColor([0.7, 0.7, 0.7]);
+        render.lights.setDirectionalAim([0.2,-1,0.1]);
 
         const cameraMatrix = m4_scaleRotationTranslation([1,1,1], q_axisAngle([1,0,0], toRad(0)), [0,0,0]);
-        this.render.camera.setLocation(cameraMatrix);
-        this.render.camera.setProjection(toRad(60), 1.0, 10000.0);
+        render.camera.setLocation(cameraMatrix);
+        render.camera.setProjection(toRad(60), 1.0, 10000.0);
 
-        const ao = this.render.aoShader;
+        const ao = render.aoShader;
         if (ao) {
             ao.setRadius(0.1);
             ao.density = 0.5;
             ao.falloff = 1;
         }
 
-        this.HUD = new Widget({parent: this.ui.root, autoSize: [1,1]});
+        const ui = this.service("UIManager");
+        this.HUD = new Widget({parent: ui.root, autoSize: [1,1]});
         this.joy = new JoystickWidget({parent: this.HUD, anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200], onChange: xy => {this.publish("hud", "joy", xy)}});
 
         this.button0 = new ButtonWidget({
@@ -269,26 +282,36 @@ class MyViewRoot extends ViewRoot {
 
     }
 
-    createServices() {
-        this.input = this.addService(InputManager);
-        this.render = this.addService(RenderManager);
-        this.ui = this.addService(UIManager);
-        this.audio = this.addService(AudioManager);
-    }
+    // createServices() {
+    //     this.input = this.addService(InputManager);
+    //     this.render = this.addService(RenderManager);
+    //     this.ui = this.addService(UIManager);
+    //     this.audio = this.addService(AudioManager);
+    // }
 
 }
 
-async function go() {
+StartWorldcore({
+    appId: 'io.croquet.wctest',
+    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
+    password: 'password',
+    name: 'test',
+    model: MyModelRoot,
+    view: MyViewRoot,
+    tps: 15,
+})
 
-    const session = await Session.join({
-        appId: 'io.croquet.wctest',
-        apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
-        password: 'password',
-        name: 'test',
-        model: MyModelRoot,
-        view: MyViewRoot,
-        tps: 15,
-    });
-}
+// async function go() {
 
-go();
+//     const session = await Session.join({
+//         appId: 'io.croquet.wctest',
+//         apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
+//         password: 'password',
+//         name: 'test',
+//         model: MyModelRoot,
+//         view: MyViewRoot,
+//         tps: 15,
+//     });
+// }
+
+// go();

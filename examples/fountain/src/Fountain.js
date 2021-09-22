@@ -1,6 +1,6 @@
 import { Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, v3_scale, sphericalRandom, CachedObject, AM_Spatial, PM_Spatial, v3_add,
     m4_rotationQ, viewRoot } from "@croquet/worldcore-kernel";
-import { PM_InstancedVisible, Material, InstancedDrawCall, PM_Visible, DrawCall, Cylinder, Cone, Cube, Sphere } from "@croquet/worldcore-webgl";
+import { PM_InstancedVisible, Material, InstancedDrawCall, PM_Visible, DrawCall, Cylinder, Cone, Cube, Sphere, RenderManager } from "@croquet/worldcore-webgl";
 import { AM_RapierPhysics } from "@croquet/worldcore-rapier";
 import paper from "../assets/paper.jpg";
 
@@ -43,8 +43,8 @@ class CubeSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
         const mesh = CachedObject("cubeMesh" + this.actor.index, () => this.buildMesh());
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-
-        viewRoot.render.scene.addDrawCall(draw);
+        const render = this.service("RenderManager");
+        render.scene.addDrawCall(draw);
 
         return draw;
     }
@@ -108,8 +108,8 @@ class CylinderSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         const mesh = CachedObject("cylinderMesh" + this.actor.index, () => this.buildMesh());
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-
-        viewRoot.render.scene.addDrawCall(draw);
+        const render = this.service("RenderManager");
+        render.scene.addDrawCall(draw);
 
         return draw;
     }
@@ -172,8 +172,8 @@ class BallSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
         const mesh = CachedObject("ballrMesh" + this.actor.index, () => this.buildMesh());
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-
-        viewRoot.render.scene.addDrawCall(draw);
+        const render = this.service("RenderManager");
+        render.scene.addDrawCall(draw);
 
         return draw;
     }
@@ -238,8 +238,8 @@ class ConeSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
         const mesh = CachedObject("coneMesh" + this.actor.index, () => this.buildMesh());
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-
-        viewRoot.render.scene.addDrawCall(draw);
+        const render = this.service("RenderManager");
+        render.scene.addDrawCall(draw);
 
         return draw;
     }
@@ -338,7 +338,8 @@ export class FountainPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         const mesh = this.buildMesh();
         const material = this.buildMaterial();
         const draw = new DrawCall(mesh, material);
-        viewRoot.render.scene.addDrawCall(draw);
+        const render = this.service("RenderManager");
+        render.scene.addDrawCall(draw);
         return draw;
     }
 

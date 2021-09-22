@@ -1,20 +1,6 @@
-// import { Model } from "@croquet/croquet";
-
-import { RegisterMixin, ModelService, AddAsyncStartup, q_identity, v3_magnitude, v3_multiply, v3_sub, v3_zero  } from "@croquet/worldcore-kernel";
-// import { RegisterMixin } from "./Mixins";
-// import { ModelService, AddAsyncStartup } from "./Root";
-// import { q_identity, v3_magnitude, v3_multiply, v3_sub, v3_zero } from "./Vector";
+import { RegisterMixin, ModelService, q_identity, v3_multiply, v3_zero  } from "@croquet/worldcore-kernel";
 
 let RAPIER;
-
-export async function LoadRapier() {
-    RAPIER = await import("@dimforge/rapier3d");
-}
-AddAsyncStartup(LoadRapier);
-
-export function setRapier(r) {
-    RAPIER = r;
-}
 
 export function RapierVersion() {
     return RAPIER.version();
@@ -27,6 +13,10 @@ export function RapierVersion() {
 // Maintains a list of players connected to the session.
 
 export class RapierPhysicsManager extends ModelService {
+
+    static async asyncStart() {
+        RAPIER = await import("@dimforge/rapier3d");
+    }
 
     static types() {
         if (!RAPIER) return {};

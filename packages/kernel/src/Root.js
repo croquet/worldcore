@@ -1,17 +1,7 @@
 import { Model, View, Session } from "@croquet/croquet";
-//import { Model, View, Session } from "@croquet/worldcore-kernel";
 import { ActorManager} from "./Actor";
 import { PawnManager} from "./Pawn";
 import { ClearObjectCache } from "./ObjectCache";
-
-let modelRootClass;
-let viewRootClass;
-let asyncStartUp = [];
-
-export function AddAsyncStartup(f) {
-    asyncStartUp.push(f);
-}
-
 
 //------------------------------------------------------------------------------------------
 //-- WorldcoreModel ------------------------------------------------------------------------
@@ -32,32 +22,26 @@ WorldcoreModel.register("WorldcoreModel");
 
 export class ModelRoot extends WorldcoreModel {
 
-    static register(name) {
-        super.register(name);
-        if (modelRootClass) console.warn("Multiple Worldcore model roots registered!")
-        modelRootClass = this;
-    }
-
-    static viewRoot() { return ViewRoot };
+    static modelServices() { return []; }
 
     init() {
         super.init();
         this.beWellKnownAs("ModelRoot");
         this.services = new Set();
-        this.actorManager = this.addService(ActorManager);
-        this.createServices();
-    }
+        this.services.add(ActorManager.create());
+        this.constructor.modelServices().forEach( service => {
+            let options;
+            if (service.service) { // Process extended service object
+                options = service.options;
+                service = service.service;
+            }
+            this.services.add(service.create(options));
+        });
 
-    createServices() {}
-
-    addService(service, options) {
-        const s = service.create(options);
-        this.services.add(s);
-        return s;
     }
 
 }
-// The ModelRoot base class is not registered so we can catch if users register multiple child classes of it.
+ModelRoot.register("ModelRoot");
 
 //------------------------------------------------------------------------------------------
 //-- ModelService --------------------------------------------------------------------------
@@ -67,6 +51,8 @@ export class ModelRoot extends WorldcoreModel {
 // model services directly.
 
 export class ModelService extends WorldcoreModel {
+
+    static async asyncStart() {}
 
     init(name, options = {}) {
         super.init();
@@ -109,6 +95,8 @@ const viewServices = new Map();
 
 export class ViewRoot extends WorldcoreView {
 
+    static viewServices() { return []; }
+
     constructor(model) {
         super(model);
         this.model = model;
@@ -117,21 +105,21 @@ export class ViewRoot extends WorldcoreView {
         time1 = 0;
         viewServices.clear();
         ClearObjectCache();
-        this.createServices();
-        this.pawnManager = this.addService(PawnManager);
+        this.constructor.viewServices().forEach( service => {
+            let options;
+            if (service.service) { // Process extended service object
+                options = service.options;
+                service = service.service;
+            }
+            new service(options);
+        });
+        new PawnManager();
     }
-
-    createServices() {}
 
     detach() {
         viewServices.forEach(s => s.destroy());
         viewServices.clear();
         super.detach();
-    }
-
-    addService(service, options) {
-        const s = new service(options);
-        return s;
     }
 
     update(time) {
@@ -148,6 +136,8 @@ export class ViewRoot extends WorldcoreView {
 //------------------------------------------------------------------------------------------
 
 export class ViewService extends WorldcoreView {
+
+    static async asyncStart() {}
 
     constructor(name) {
         super(viewRoot.model);
@@ -173,16 +163,15 @@ export function GetViewService(name) { return viewServices.get(name) }
 
 export async function StartWorldcore(options) {
 
-    console.log("Starting Worldcore");
-    console.log(asyncStartUp);
-    while (asyncStartUp.length) {
-        const f = asyncStartUp.pop();
-        await f();
-    }
+    options.model.modelServices().forEach( async service => {
+        if (service.service) service = service.service;
+        await service.asyncStart();
+    });
 
-    options.model = modelRootClass;
-    options.view = viewRootClass;
-    options.view = modelRootClass.viewRoot();
+    options.view.viewServices().forEach( async service => {
+        if (service.service) service = service.service;
+        await service.asyncStart();
+    });
 
     const session = await Session.join(options);
 }

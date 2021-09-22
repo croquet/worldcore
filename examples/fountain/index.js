@@ -2,7 +2,6 @@
 //
 // Croquet Studios, 2020
 
-// import { Session, App } from "@croquet/croquet";
 import { App, ModelRoot, ViewRoot, InputManager, toRad, m4_scaleRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, StartWorldcore } from "@croquet/worldcore-kernel";
 import { RenderManager } from "@croquet/worldcore-webgl";
 import { RapierPhysicsManager, LoadRapier, RapierVersion } from "@croquet/worldcore-rapier";
@@ -16,7 +15,9 @@ import { CubeSprayActor, CylinderSprayActor, ConeSprayActor, BallSprayActor } fr
 
 class MyModelRoot extends ModelRoot {
 
-    static viewRoot() { return MyViewRoot };
+    static modelServices() {
+        return [ {service: RapierPhysicsManager, options: {gravity: [0,-9.8, 0], timeStep: 15}}];
+    }
 
     init(...args) {
         super.init(...args);
@@ -38,21 +39,17 @@ class MyModelRoot extends ModelRoot {
     }
 
     pause(p) {
+        const physicsManager = this.service('RapierPhysicsManager');
         this.isPaused = p;
         if (p) {
-            this.physicsManager.pause();
+            physicsManager.pause();
         } else {
-            this.physicsManager.resume();
+            physicsManager.resume();
         }
     }
 
     disable(d) {
         this.disabled = d;
-    }
-
-    createServices() {
-        super.createServices()
-        this.physicsManager = this.addService(RapierPhysicsManager, {gravity: [0,-9.8, 0], timeStep: 15});
     }
 
     seedColors() {
@@ -100,21 +97,26 @@ MyModelRoot.register("MyModelRoot");
 //------------------------------------------------------------------------------------------
 
 class MyViewRoot extends ViewRoot {
+
+    static viewServices() {
+        return [ InputManager, RenderManager, UIManager];
+    }
+
     constructor(model) {
         super(model);
 
-        this.input.addChord("cheat", ['q', 't']);
+        const input = this.service("InputManager");
+        input.addChord("cheat", ['q', 't']);
 
-        this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
+        const render = this.service("RenderManager");
+        render.setBackground([0.45, 0.8, 0.8, 1.0]);
+        render.lights.setAmbientColor([0.8, 0.8, 0.8]);
+        render.lights.setDirectionalColor([0.7, 0.7, 0.7]);
+        render.lights.setDirectionalAim([0.2,-1,0.1]);
+        render.camera.setLocation(m4_scaleRotationTranslation(1, q_axisAngle([1,0,0], toRad(-30)), [0,20,22]));
+        render.camera.setProjection(toRad(60), 1.0, 10000.0);
 
-        this.render.lights.setAmbientColor([0.8, 0.8, 0.8]);
-        this.render.lights.setDirectionalColor([0.7, 0.7, 0.7]);
-        this.render.lights.setDirectionalAim([0.2,-1,0.1]);
-
-        this.render.camera.setLocation(m4_scaleRotationTranslation(1, q_axisAngle([1,0,0], toRad(-30)), [0,20,22]));
-        this.render.camera.setProjection(toRad(60), 1.0, 10000.0);
-
-        const ao = this.render.aoShader;
+        const ao = render.aoShader;
         if (ao) {
             ao.setRadius(0.4);
             ao.density = 0.9;
@@ -133,16 +135,10 @@ class MyViewRoot extends ViewRoot {
 
     }
 
-    createServices() {
-        this.input = this.addService(InputManager);
-        this.render = this.addService(RenderManager);
-        this.ui = this.addService(UIManager);
-        super.createServices();
-    }
-
     addHud() {
-        this.cheatText = new TextWidget({parent: this.ui.root, local: [10,10], size: [100,20], text: "Cheat On", point: 12, visible: false, alignX: 'left'});
-        this.disableText = new TextWidget({parent: this.ui.root,local: [10,30], size: [100,20], text: "Shots Disabled", point: 12, visible: false, alignX: 'left'});
+        const ui = this.service("UIManager");
+        this.cheatText = new TextWidget({parent: ui.root, local: [10,10], size: [100,20], text: "Cheat On", point: 12, visible: false, alignX: 'left'});
+        this.disableText = new TextWidget({parent: ui.root,local: [10,30], size: [100,20], text: "Shots Disabled", point: 12, visible: false, alignX: 'left'});
     }
 
     shoot() {
@@ -167,37 +163,15 @@ class MyViewRoot extends ViewRoot {
         this.cheatMode = !this.cheatMode;
         this.cheatText.set({visible: this.cheatMode});
     }
-
-
 }
 
 App.makeWidgetDock();
 StartWorldcore({
     appId: 'io.croquet.fountain',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
-    name: App.autoSession(),
-    password: 'dummy-pass',
-    tps: 30
-});
-
-// async function go() {
-//     // await LoadRapier();
-//     // App.makeWidgetDock();
-
-//     console.log("goooo!")
-
-
-
-//     // const session = await Session.join({
-//     //     appId: 'io.croquet.fountain',
-//     //     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
-//     //     name: App.autoSession(),
-//     //     password: 'dummy-pass',
-//     //     model: MyModelRoot,
-//     //     view: MyViewRoot,
-//     //     tps: 30,
-//     // });
-
-// }
-
-// go();
+    password: 'password',
+    name: 'test',
+    model: MyModelRoot,
+    view: MyViewRoot,
+    tps: 30,
+})
