@@ -1,4 +1,4 @@
-import { v3_add, v3_multiply, ViewService, viewRoot } from "@croquet/worldcore-kernel";
+import { v3_add, v3_multiply, ViewService, viewRoot, GetModelService } from "@croquet/worldcore-kernel";
 import { Material, DrawCall, Triangles, Lines } from "@croquet/worldcore-webgl"
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "./Globals";
@@ -124,7 +124,8 @@ class ExteriorMesh {
 
     rebuild() {
         this.clear();
-        const surfaces = viewRoot.model.surfaces;
+        // const surfaces = viewRoot.model.surfaces;
+        const surfaces = GetModelService("Surfaces");
         surfaces.surfaces.forEach((surface,key) => this.addKey(key));
     }
 
@@ -186,7 +187,8 @@ class InteriorMesh {
 
     rebuild() {
         this.clear();
-        const surfaces = viewRoot.model.surfaces;
+        // const surfaces = viewRoot.model.surfaces;
+        const surfaces = GetModelService("Surfaces");
         surfaces.surfaces.forEach((surface,key) => this.addKey(key));
     }
 
@@ -256,7 +258,8 @@ class Layer {
     }
 
     rebuild() {
-        const surfaces = viewRoot.model.surfaces;
+        const surfaces = GetModelService("Surfaces");
+        // const surfaces = viewRoot.model.surfaces;
         this._triangles.clear();
         this._lines.clear();
 
@@ -313,7 +316,8 @@ class InteriorLayer extends Layer {
     }
 
     rebuild() {
-        const surfaces = viewRoot.model.surfaces;
+        const surfaces = GetModelService("Surfaces");
+        // const surfaces = viewRoot.model.surfaces;
         this._triangles.clear();
         this._lines.clear();
 
@@ -333,7 +337,8 @@ class InteriorLayer extends Layer {
     }
 
     rebuildInterior() {
-        const voxels = viewRoot.model.voxels;
+        // const voxels = viewRoot.model.voxels;
+        const voxels = GetModelService("Voxels");
         this.hasInterior = false;
         for (let x = 0; x < Voxels.sizeX; x++) {
             for (let y = 0; y < Voxels.sizeY; y++) {

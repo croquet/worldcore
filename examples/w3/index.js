@@ -2,11 +2,9 @@
 //
 // Croquet Studios, 2021
 
-import { Session, App, ModelRoot, ViewRoot, InputManager, v3_normalize } from "@croquet/worldcore-kernel";
+import { StartWorldcore, App, ModelRoot, ViewRoot, InputManager, v3_normalize } from "@croquet/worldcore-kernel";
 import {  RenderManager } from "@croquet/worldcore-webgl";
 import {  UIManager } from "@croquet/worldcore-widget";
-// import { Session, App } from "@croquet/croquet";
-// import { ModelRoot, ViewRoot, UIManager, RenderManager, InputManager, v3_normalize } from "@croquet/worldcore";
 import { Voxels } from "./src/Voxels";
 import { Surfaces } from "./src/Surfaces";
 import { Paths } from "./src/Paths";
@@ -29,26 +27,19 @@ import { RoadRender } from "./src/RoadRender";
 //------------------------------------------------------------------------------------------
 
 class MyModelRoot extends ModelRoot {
+
+    static modelServices() {
+        return [Voxels, Water, Surfaces, Stress, Paths, Props, Animals, RubbleMananger, WorldBuilder];
+    }
+
     init(...args) {
         super.init(...args);
         console.log("Start Model!");
 
-        this.worldBuilder.build();
+        this.service("WorldBuilder").build();
 
     }
 
-    createServices() {
-        super.createServices();
-        this.voxels = this.addService(Voxels);
-        this.water = this.addService(Water);
-        this.surfaces = this.addService(Surfaces);
-        this.stress = this.addService(Stress);
-        this.paths = this.addService(Paths);
-        this.props = this.addService(Props);
-        this.animals = this.addService(Animals);
-        this.rubble = this.addService(RubbleMananger);
-        this.worldBuilder = this.addService(WorldBuilder);
-    }
 }
 MyModelRoot.register("MyModelRoot");
 
@@ -57,17 +48,24 @@ MyModelRoot.register("MyModelRoot");
 //------------------------------------------------------------------------------------------
 
 class MyViewRoot extends ViewRoot {
+
+    static viewServices() {
+        return [InputManager, RenderManager, UIManager, VoxelRender, GodView, Editor, VoxelCursor];
+    }
+
     constructor(model) {
         super(model);
 
-        this.HUD = new HUD({parent:this.ui.root, autoSize: [1,1]});
+        const ui = this.service("UIManager");
+        this.HUD = new HUD({parent:ui.root, autoSize: [1,1]});
 
-        this.render.setBackground([0.45, 0.8, 0.8, 1.0]);
-        this.render.lights.setAmbientColor([0.6, 0.6, 0.6]);
-        this.render.lights.setDirectionalColor([0.3, 0.3, 0.3]);
-        this.render.lights.setDirectionalAim(v3_normalize([0.1,0.2,-1]));
+        const render = this.service("RenderManager");
+        render.setBackground([0.45, 0.8, 0.8, 1.0]);
+        render.lights.setAmbientColor([0.6, 0.6, 0.6]);
+        render.lights.setDirectionalColor([0.3, 0.3, 0.3]);
+        render.lights.setDirectionalAim(v3_normalize([0.1,0.2,-1]));
 
-        const ao = this.render.aoShader;
+        const ao = render.aoShader;
         if (ao) {
             ao.setRadius(0.1);
             ao.density = 0.5;
@@ -81,41 +79,25 @@ class MyViewRoot extends ViewRoot {
 
         this.subscribe("input", "fDown", () => {
             this.isFullScreen = !this.isFullScreen;
+            const input = this.service("InputManager");
             if (this.isFullScreen) {
-                this.input.enterFullscreen();
+                input.enterFullscreen();
             } else {
-                this.input.exitFullscreen();
+                input.exitFullscreen();
             }
         });
 
     }
 
-    createServices() {
-        this.input = this.addService(InputManager);
-        this.render = this.addService(RenderManager);
-        this.voxelRender = this.addService(VoxelRender);
-        // this.roadRender = this.addService(RoadRender);
-        this.ui = this.addService(UIManager);
-        this.godView = this.addService(GodView);
-        this.editor = this.addService(Editor);
-        this.voxelCursor = this.addService(VoxelCursor);
-        // this.roadDebug = this.addService(RoadDebugRender);
-        super.createServices();
-    }
-
 }
 
-async function go() {
-    App.makeWidgetDock();
-
-    const session = await Session.join({
-        appId: 'io.croquet.w3',
-        // name: 'w3',
-        name: App.autoSession(),
-        model: MyModelRoot,
-        view: MyViewRoot,
-        tps: 20,
-    });
-}
-
-go();
+App.makeWidgetDock();
+StartWorldcore({
+    appId: 'io.croquet.w3',
+    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
+    password: 'password',
+    name: 'test',
+    model: MyModelRoot,
+    view: MyViewRoot,
+    tps: 15,
+})
