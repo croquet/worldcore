@@ -1,4 +1,4 @@
-import { SliderWidget, ToggleWidget, ToggleSet, ImageWidget, ButtonWidget, TextWidget, BoxWidget, GetNamedModel, Widget } from "@croquet/worldcore";
+import { SliderWidget, ToggleWidget, ToggleSet, ImageWidget, BoxWidget, Widget } from "@croquet/worldcore";
 import { Voxels } from "./Voxels";
 import { Colors } from "./Colors";
 import stripeIcon from "../assets/horizontalStripe50.png";
