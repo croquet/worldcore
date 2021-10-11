@@ -10,6 +10,6 @@
   },
   "dependencies": {
     "@croquet/worldcore-kernel": "link:..\\kernel",
-    "@dimforge/rapier3d": "0.4.1"
+    "@dimforge/rapier3d": "0.7.6"
   }
 }

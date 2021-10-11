@@ -381,7 +381,7 @@ FailBehavior.register('FailBehavior');
 //
 // If the count is set to 0, it executes indefinitely.
 //
-// Note that if the child completely instantly and the count is high, you will probably overrun
+// Note that if the child completes instantly and the count is high, you will probably overrun
 // the call stack.
 
 export class LoopBehavior extends DecoratorBehavior {

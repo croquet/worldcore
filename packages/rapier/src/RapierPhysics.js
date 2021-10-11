@@ -168,13 +168,13 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         let rbStatus = 0;
         switch(type) {
             case 'dynamic':
-                rbStatus = RAPIER.BodyStatus.Dynamic;
+                rbStatus = RAPIER.RigidBodyType.Dynamic;
                 break;
             case 'static':
-                rbStatus = RAPIER.BodyStatus.Static;
+                rbStatus = RAPIER.RigidBodyType.Static;
                 break;
             case 'kinematic':
-                rbStatus = RAPIER.BodyStatus.Kinematic;
+                rbStatus = RAPIER.RigidBodyType.Kinematic;
                 break;
         }
 
@@ -188,12 +188,12 @@ export const AM_RapierPhysics = superclass => class extends superclass {
         this.rigidBody.world = physicsManager.world; // We save a ref to the world in the rb so it can rebuild itself from its handle.
         physicsManager.rigidBodies[this.rigidBody.handle] = this;
 
-        if (this.rigidBody.bodyStatus() === RAPIER.BodyStatus.Kinematic) {
-            this.listen("spatial_setTranslation", this.kinematicSetTranslation);
-            this.listen("spatial_setRotation", this.kinematicSetRotation);
-            this.listen("smoothed_moveTo", this.kinematicMoveTo);
-            this.listen("smoothed_rotateTo", this.kinematicRotateTo);
-        }
+        // if (this.rigidBody.bodyStatus() === RAPIER.BodyStatus.Kinematic) {
+        //     this.listen("spatial_setTranslation", this.kinematicSetTranslation);
+        //     this.listen("spatial_setRotation", this.kinematicSetRotation);
+        //     this.listen("smoothed_moveTo", this.kinematicMoveTo);
+        //     this.listen("smoothed_rotateTo", this.kinematicRotateTo);
+        // }
     }
 
     // Kinematic bodies are driven by the player, not the physics system, so we catch move events and pass them on to Rapier.
@@ -219,12 +219,12 @@ export const AM_RapierPhysics = superclass => class extends superclass {
 
         this.removeCollider();
 
-        if (this.rigidBody.bodyStatus() === RAPIER.BodyStatus.Kinematic) {
-            this.ignore("spatial_setTranslation");
-            this.ignore("spatial_setRotation");
-            this.ignore("smoothed_moveTo");
-            this.ignore("smoothed_rotateTo");
-        }
+        // if (this.rigidBody.bodyStatus() === RAPIER.BodyStatus.Kinematic) {
+        //     this.ignore("spatial_setTranslation");
+        //     this.ignore("spatial_setRotation");
+        //     this.ignore("smoothed_moveTo");
+        //     this.ignore("smoothed_rotateTo");
+        // }
         const physicsManager = this.service('RapierPhysicsManager');
         physicsManager.rigidBodies[this.rigidBody.handle] = null;
         physicsManager.world.removeRigidBody(this.rigidBody);

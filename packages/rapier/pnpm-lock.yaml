@@ -2,14 +2,14 @@ lockfileVersion: 5.3
 
 specifiers:
   '@croquet/worldcore-kernel': link:..\kernel
-  '@dimforge/rapier3d': 0.4.1
+  '@dimforge/rapier3d': 0.7.6
 
 dependencies:
   '@croquet/worldcore-kernel': link:../kernel
-  '@dimforge/rapier3d': 0.4.1
+  '@dimforge/rapier3d': 0.7.6
 
 packages:
 
-  /@dimforge/rapier3d/0.4.1:
-    resolution: {integrity: sha512-XptLyqPoFRZ+kfxFAigO3WWsNlTzL7yMUAPsDkny8C6HF9XLTC1KEh7u6ssNG9MIh58PomjqQtocW8zTyj4G2g==}
+  /@dimforge/rapier3d/0.7.6:
+    resolution: {integrity: sha512-mjQWpXgqlIe0MjXzvv2c/G7vsWvs2YsbNZWDghxraM07KAP2unu+Xg4TWdcsXxN3AoZDoLhKvJ0IecPzyU5Ukg==}
     dev: false
