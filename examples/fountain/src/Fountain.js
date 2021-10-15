@@ -1,5 +1,5 @@
 import { Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, v3_scale, sphericalRandom, CachedObject, AM_Spatial, PM_Spatial, v3_add,
-    m4_rotationQ, viewRoot } from "@croquet/worldcore-kernel";
+    m4_rotationQ, viewRoot, AM_Avatar, PM_Avatar, v3_isZero } from "@croquet/worldcore-kernel";
 import { PM_InstancedVisible, Material, InstancedDrawCall, PM_Visible, DrawCall, Cylinder, Cone, Cube, Sphere } from "@croquet/worldcore-webgl";
 import { AM_RapierPhysics, RAPIER } from "@croquet/worldcore-rapier";
 import paper from "../assets/paper.jpg";
@@ -261,15 +261,15 @@ class ConeSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
 // FountainActor
 //------------------------------------------------------------------------------------------
 
-export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
+export class FountainActor extends mix(Actor).with(AM_Avatar, AM_RapierPhysics) {
     get pawn() {return FountainPawn}
     init(options) {
         super.init(options);
         this.spray = [];
         this.spawnLimit = 300;
-        this.future(0).tick();
+        this.future(0).spraytick();
 
-        this.createRigidBody(RAPIER.RigidBodyDesc.newStatic());
+        this.createRigidBody(RAPIER.RigidBodyDesc.newKinematicPositionBased());
 
         let cd = RAPIER.ColliderDesc.cylinder(3, 1);
         cd.setRestitution(0.5);
@@ -284,7 +284,19 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
         this.isPaused = p;
     }
 
-    tick() {
+    tick(delta) {
+        super.tick(delta);
+        if(!v3_isZero(this.velocity)) {
+            const clamp = this.translation;
+            clamp[0] = Math.min(clamp[0], 10);
+            clamp[0] = Math.max(clamp[0], -10);
+            clamp[2] = Math.min(clamp[2], 10);
+            clamp[2] = Math.max(clamp[2], -10);
+            this.moveTo(clamp);
+        }
+    }
+
+    spraytick() {
         if (!this.isPaused) {
             if (this.spray.length >= this.spawnLimit) {
                 const doomed = this.spray.shift();
@@ -309,24 +321,23 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
 
             this.spray.push(p);
         }
-        this.future(250).tick();
+        this.future(250).spraytick();
     }
 
 }
 FountainActor.register('FountainActor');
 
-export class FountainPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
+export class FountainPawn extends mix(Pawn).with(PM_Avatar, PM_Visible) {
     constructor(...args) {
         super(...args);
-        this.buildDraw();
+        this.setDrawCall(this.buildDraw());
+        this.subscribe("hud", "joy", this.joy);
     }
 
     buildDraw() {
         const mesh = this.buildMesh();
         const material = this.buildMaterial();
         const draw = new DrawCall(mesh, material);
-        const render = this.service("RenderManager");
-        render.scene.addDrawCall(draw);
         return draw;
     }
 
@@ -342,6 +353,12 @@ export class FountainPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         material.pass = 'opaque';
         material.texture.loadFromURL(paper);
         return material;
+    }
+
+    joy(xy) {
+        const s = 0.01;
+        const v = [s * xy[0], 0, s * xy[1]];
+        this.setVelocity(v);
     }
 }
 

@@ -293,16 +293,19 @@ export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
     moveTo(v) {
         this._translation = v;
+        this.say("moveTo", v);
         this.localChanged();
     }
 
     rotateTo(q) {
         this._rotation = q;
+        this.say("rotateTo", q);
         this.localChanged();
     }
 
     scaleTo(v) {
         this._scale = v;
+        this.say("scaleTo", v);
         this.localChanged();
     }
 
@@ -526,13 +529,15 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
 
     setVelocity(v) {
         this.velocity = v;
-        this.isMoving = this.isMoving || !v3_isZero(this.velocity);
+        // this.isMoving = this.isMoving || !v3_isZero(this.velocity);
+        this.isMoving = !v3_isZero(this.velocity);
         this.say("avatarSetVelocity", this.velocity);
     }
 
     setSpin(q) {
         this.spin = q;
-        this.isRotating = this.isRotating || !q_isZero(this.spin);
+        // this.isRotating = this.isRotating || !q_isZero(this.spin);
+        this.isRotating = !q_isZero(this.spin);
         this.say("avatarSetSpin", this.spin);
     }
 
@@ -542,6 +547,7 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
             this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), delta));
             this._local = null;
             this._global = null;
+            this.isRotating = !q_isZero(this.spin);
         }
         if (this.isMoving)  {
             const relative = v3_scale(this.velocity, delta);
@@ -549,6 +555,7 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
             this._translation = v3_add(this._translation, move);
             this._local = null;
             this._global = null;
+            this.isMoving= !v3_isZero(this.velocity);
         }
 
         super.update(time, delta);

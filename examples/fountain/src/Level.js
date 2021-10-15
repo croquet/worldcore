@@ -57,7 +57,6 @@ LevelActor.register('LevelActor');
 class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
     constructor(...args) {
         super(...args);
-        console.log("Building level pawn");
         const c = [0.5, 0.5, 0.5, 1];
 
         this.ground = new Triangles();

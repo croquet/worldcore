@@ -5,7 +5,7 @@
 import { App, ModelRoot, ViewRoot, InputManager, toRad, m4_scaleRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, StartWorldcore } from "@croquet/worldcore-kernel";
 import { RenderManager } from "@croquet/worldcore-webgl";
 import { RapierPhysicsManager, LoadRapier, RapierVersion, RAPIER } from "@croquet/worldcore-rapier";
-import { UIManager, TextWidget } from "@croquet/worldcore-widget";
+import { UIManager, TextWidget, JoystickWidget } from "@croquet/worldcore-widget";
 import { LevelActor } from "./src/Level";
 import { CubeSprayActor, CylinderSprayActor, ConeSprayActor, BallSprayActor } from "./src/Fountain";
 
@@ -140,7 +140,16 @@ class MyViewRoot extends ViewRoot {
     addHud() {
         const ui = this.service("UIManager");
         this.cheatText = new TextWidget({parent: ui.root, local: [10,10], size: [100,20], text: "Cheat On", point: 12, visible: false, alignX: 'left'});
-        this.disableText = new TextWidget({parent: ui.root,local: [10,30], size: [100,20], text: "Shots Disabled", point: 12, visible: false, alignX: 'left'});
+        this.disableText = new TextWidget({parent: ui.root, local: [10,30], size: [100,20], text: "Shots Disabled", point: 12, visible: false, alignX: 'left'});
+        this.joystick = new JoystickWidget({
+            parent: ui.root,
+            local: [-20,-20],
+            size: [100,100],
+            pivot: [1,1],
+            anchor: [1,1],
+            visible: false,
+            throttle: 20,
+            onChange: xy => {this.publish("hud", "joy", xy)}});
     }
 
     shoot() {
@@ -164,6 +173,7 @@ class MyViewRoot extends ViewRoot {
     cheat() {
         this.cheatMode = !this.cheatMode;
         this.cheatText.set({visible: this.cheatMode});
+        this.joystick.set({visible: this.cheatMode});
     }
 }
 
