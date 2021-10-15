@@ -1,6 +1,6 @@
 import { mix, Actor, Pawn, AM_Spatial, PM_Spatial } from "@croquet/worldcore-kernel";
 import { PM_Visible, Triangles, Material, DrawCall } from "@croquet/worldcore-webgl";
-import { AM_RapierPhysics } from "@croquet/worldcore-rapier";
+import { AM_RapierPhysics, RAPIER } from "@croquet/worldcore-rapier";
 import { FountainActor } from "./Fountain";
 import paper from "../assets/paper.jpg";
 
@@ -10,46 +10,38 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
 
         super.init({translation: [0,0,0], scale: [1,1,1]});
 
-        this.addRigidBody({type: 'static'});
-        this.addBoxCollider({
-            translation: [0,-4,0],
-            size: [75,4,75],
-            friction: 1,
-            density: 1,
-            restitution: 0.5
-        });
+        const rbd = RAPIER.RigidBodyDesc.newStatic();
+        this.createRigidBody(rbd);
 
-        this.addBoxCollider({
-            translation: [16,0,0],
-            size: [1,40,40],
-            friction: 1,
-            density: 1,
-            restitution: 0.5
-        });
+        let cd = RAPIER.ColliderDesc.cuboid(75,4,75);
+        cd.setTranslation(0,-4,0);
+        cd.setRestitution(0.5);
+        cd.setFriction(1);
+        this.createCollider(cd);
 
-        this.addBoxCollider({
-            translation: [-16,0,0],
-            size: [1,40,40],
-            friction: 1,
-            density: 1,
-            restitution: 0.5
-        });
+        cd = RAPIER.ColliderDesc.cuboid(1,40,40);
+        cd.setTranslation(16,0,0);
+        cd.setRestitution(0.5);
+        cd.setFriction(1);
+        this.createCollider(cd);
 
-        this.addBoxCollider({
-            translation: [0,0,-16],
-            size: [40,40,1],
-            friction: 1,
-            density: 1,
-            restitution: 0.5
-        });
+        cd = RAPIER.ColliderDesc.cuboid(1,40,40);
+        cd.setTranslation(-16,0,0);
+        cd.setRestitution(0.5);
+        cd.setFriction(1);
+        this.createCollider(cd);
 
-        this.addBoxCollider({
-            translation: [0,0,20],
-            size: [40,40,1],
-            friction: 1,
-            density: 1,
-            restitution: 0.5
-        });
+        cd = RAPIER.ColliderDesc.cuboid(40,40,1);
+        cd.setTranslation(0,0,20);
+        cd.setRestitution(0.5);
+        cd.setFriction(1);
+        this.createCollider(cd);
+
+        cd = RAPIER.ColliderDesc.cuboid(40,40,1);
+        cd.setTranslation(0,0,-16);
+        cd.setRestitution(0.5);
+        cd.setFriction(1);
+        this.createCollider(cd);
 
         this.fountain = FountainActor.create({translation: [0,0,0]});
 

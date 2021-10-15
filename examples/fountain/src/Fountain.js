@@ -1,7 +1,7 @@
 import { Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, v3_scale, sphericalRandom, CachedObject, AM_Spatial, PM_Spatial, v3_add,
     m4_rotationQ, viewRoot } from "@croquet/worldcore-kernel";
-import { PM_InstancedVisible, Material, InstancedDrawCall, PM_Visible, DrawCall, Cylinder, Cone, Cube, Sphere, RenderManager } from "@croquet/worldcore-webgl";
-import { AM_RapierPhysics } from "@croquet/worldcore-rapier";
+import { PM_InstancedVisible, Material, InstancedDrawCall, PM_Visible, DrawCall, Cylinder, Cone, Cube, Sphere } from "@croquet/worldcore-webgl";
+import { AM_RapierPhysics, RAPIER } from "@croquet/worldcore-rapier";
 import paper from "../assets/paper.jpg";
 
 //------------------------------------------------------------------------------------------
@@ -12,18 +12,14 @@ export class CubeSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysic
     get pawn() {return CubeSprayPawn}
     init(options) {
         this.index = Math.floor(Math.random() * 10);
-
         super.init(options);
 
-        this.addRigidBody({type: 'dynamic'});
+        this.createRigidBody(RAPIER.RigidBodyDesc.newDynamic());
 
-        this.addBoxCollider({
-            size: [0.5, 0.5, 0.5],
-            density: 1,
-            friction: 1,
-            restitution: 0.5
-        });
-
+        let cd = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
+        cd.setRestitution(0.5);
+        cd.setFriction(1);
+        this.createCollider(cd);
     }
 
 }
@@ -79,15 +75,13 @@ export class CylinderSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPh
 
         super.init(options);
 
-        this.addRigidBody({type: 'dynamic'});
+        this.createRigidBody(RAPIER.RigidBodyDesc.newDynamic());
 
-        this.addCylinderCollider({
-            radius: 0.5,
-            halfHeight: 0.5,
-            density: 1.5,
-            friction: 1,
-            restitution: 0.5
-        });
+        let cd = RAPIER.ColliderDesc.cylinder(0.5, 0.5);
+        cd.setRestitution(0.5);
+        cd.setFriction(1);
+        cd.setDensity(1.5);
+        this.createCollider(cd);
 
     }
 
@@ -144,14 +138,13 @@ export class BallSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysic
 
         super.init(options);
 
-        this.addRigidBody({type: 'dynamic'});
+        this.createRigidBody(RAPIER.RigidBodyDesc.newDynamic());
 
-        this.addBallCollider({
-            radius: 0.5,
-            density: 2,
-            friction: 1,
-            restitution: 0.5
-        });
+        let cd = RAPIER.ColliderDesc.ball(0.5);
+        cd.setRestitution(0.5);
+        cd.setFriction(1);
+        cd.setDensity(2);
+        this.createCollider(cd);
 
     }
 
@@ -208,15 +201,13 @@ export class ConeSprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysic
 
         super.init(options);
 
-        this.addRigidBody({type: 'dynamic'});
+        this.createRigidBody(RAPIER.RigidBodyDesc.newDynamic());
 
-        this.addConeCollider({
-            radius: 0.5,
-            halfHeight: 0.5,
-            density: 3,
-            friction: 1,
-            restitution: 0.5
-        });
+        let cd = RAPIER.ColliderDesc.cone(0.5, 0.5);
+        cd.setRestitution(0.5);
+        cd.setFriction(1);
+        cd.setDensity(3);
+        this.createCollider(cd);
 
 
     }
@@ -252,7 +243,6 @@ class ConeSprayPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
 
         const mesh = Cone(0.5, 0.01, 1, 12, color);
 
-        // mesh.setColor(color);
         mesh.load();
         mesh.clear();
         return mesh;
@@ -276,18 +266,16 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
     init(options) {
         super.init(options);
         this.spray = [];
-        this.spawnLimit = 200;
+        this.spawnLimit = 300;
         this.future(0).tick();
 
-        this.addRigidBody({type: 'static'});
+        this.createRigidBody(RAPIER.RigidBodyDesc.newStatic());
 
-        this.addCylinderCollider({
-            radius: 1,
-            halfHeight: 3,
-            density: 1,
-            friction: 1,
-            restitution: 0.5
-        });
+        let cd = RAPIER.ColliderDesc.cylinder(3, 1);
+        cd.setRestitution(0.5);
+        cd.setFriction(1);
+        cd.setDensity(1.5);
+        this.createCollider(cd);
 
         this.subscribe("hud", "pause", this.pause);
     }
@@ -315,11 +303,10 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
                 p = ConeSprayActor.create({translation: origin});
             }
             const spin = v3_scale(sphericalRandom(),Math.random() * 0.5);
-            const rotationMatrix = m4_rotationQ(this.rotation);
-            //const force = v3_transform([0, 18 + 5 * Math.random(), 0], rotationMatrix);
             const force = [0, 17.5 + 5 * Math.random(), 0];
-            p.applyTorqueImpulse(spin);
-            p.applyImpulse(force);
+            p.rigidBody.applyTorqueImpulse(new RAPIER.Vector3(...spin), true);
+            p.rigidBody.applyImpulse(new RAPIER.Vector3(...force), true);
+
             this.spray.push(p);
         }
         this.future(250).tick();

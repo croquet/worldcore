@@ -4,7 +4,7 @@
 
 import { App, ModelRoot, ViewRoot, InputManager, toRad, m4_scaleRotationTranslation, q_axisAngle, v3_scale, sphericalRandom, StartWorldcore } from "@croquet/worldcore-kernel";
 import { RenderManager } from "@croquet/worldcore-webgl";
-import { RapierPhysicsManager, LoadRapier, RapierVersion } from "@croquet/worldcore-rapier";
+import { RapierPhysicsManager, LoadRapier, RapierVersion, RAPIER } from "@croquet/worldcore-rapier";
 import { UIManager, TextWidget } from "@croquet/worldcore-widget";
 import { LevelActor } from "./src/Level";
 import { CubeSprayActor, CylinderSprayActor, ConeSprayActor, BallSprayActor } from "./src/Fountain";
@@ -70,6 +70,7 @@ class MyModelRoot extends ModelRoot {
         }
         let p;
         const r = Math.random();
+        // p = ConeSprayActor.create({translation: [0, 17, 19]});
         if (r < 0.5) {
             p = CubeSprayActor.create({translation: [0, 17, 19]});
         } else if (r < 0.7) {
@@ -81,8 +82,9 @@ class MyModelRoot extends ModelRoot {
         }
 
         const spin = v3_scale(sphericalRandom(),Math.random() * 1.5);
-        p.applyTorqueImpulse(spin);
-        p.applyImpulse([0, 0, -16]);
+        p.rigidBody.applyTorqueImpulse(new RAPIER.Vector3(...spin), true);
+        p.rigidBody.applyImpulse(new RAPIER.Vector3(0, 0, -16), true);
+
         this.shots.push(p);
     }
 
@@ -171,6 +173,7 @@ StartWorldcore({
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
     password: 'password',
     name: App.autoSession(),
+    // name: "name",
     model: MyModelRoot,
     view: MyViewRoot,
     tps: 30,
