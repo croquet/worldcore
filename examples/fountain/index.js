@@ -21,7 +21,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Starting model!");
+        console.log("Starting model!!");
         this.seedColors();
         this.level = LevelActor.create();
         this.shots = [];
