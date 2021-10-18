@@ -11,6 +11,17 @@ const simpleGit = require("simple-git");
 const APP = argv[2];
 if (!APP) { console.error("Usage: node deploy.js <APP>"); exit(1); }
 
+function execAndLog(...args) {
+    try {
+        const stdout = execSync(...args);
+        console.log(stdout.toString());
+    } catch (err) {
+        if (err.stdout) console.log(err.stdout.toString());
+        if (err.stderr) console.error(err.stderr.toString());
+        throw err;
+    }
+}
+
 async function deploy() {
     const SRC = __dirname;
     const WORLDCORE = path.join(SRC, '../..');
@@ -34,15 +45,15 @@ async function deploy() {
     }
 
     console.log(`Updating worldcore...`);
-    console.log(execSync(`pnpm i`, {cwd: WORLDCORE}).toString());
+    execAndLog(`pnpm i`, {cwd: WORLDCORE});
 
     console.log(`Updating ${APP}...`);
-    console.log(execSync("pnpm i", {cwd: SRC}).toString());
+    execAndLog("pnpm i", {cwd: SRC});
 
     // build into croquet.io/dev/
     await fsx.emptyDir(TARGET);
     console.log(`Building ${APP}...`);
-    console.log(execSync(`pnpm run build-dev -- --output-path ${TARGET}`, {cwd: SRC}).toString());
+    execAndLog(`pnpm run build-dev -- --output-path ${TARGET}`, {cwd: SRC});
 
     // commit to git
     const git = simpleGit({ baseDir: TARGET });
