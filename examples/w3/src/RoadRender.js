@@ -1,17 +1,12 @@
 import { m4_translation, ViewService, WorldcoreView } from "@croquet/worldcore-kernel";
-import { Triangles, Lines, Material, DrawCall, UnitCube  } from "@croquet/worldcore-webgl"
-
+import { Triangles, Material, DrawCall, UnitCube  } from "@croquet/worldcore-webgl"
 import { Voxels } from "./Voxels";
-import { GetTopLayer } from "./Globals";
 
 import paper from "../assets/paper.jpg";
 
 //--------------------------------------------------------------------------------
 //-- RoadRender ------------------------------------------------------------------
 //--------------------------------------------------------------------------------
-
-// Top level class that manages the exterior and interior terrain meshes and their
-// corresponding draw calls.
 
 export class RoadRender extends ViewService {
     constructor() {
@@ -29,7 +24,6 @@ export class RoadRender extends ViewService {
 
     add(key) {
         const xyz = Voxels.unpackKey(key);
-
     }
 
     remove(key) {

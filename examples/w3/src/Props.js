@@ -341,7 +341,7 @@ class RoadPawn extends PropPawn {
     }
 
     buildDraw() {
-        const mesh = CachedObject("raodMesh", this.buildMesh);
+        const mesh = CachedObject("roadMesh", this.buildMesh);
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
         this.service("RenderManager").scene.addDrawCall(draw);

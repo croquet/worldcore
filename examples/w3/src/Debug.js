@@ -1,4 +1,5 @@
-import { DrawCall, Material, Lines, v3_add, viewRoot, ViewService } from "@croquet/worldcore-kernel";
+import {v3_add, viewRoot, ViewService } from "@croquet/worldcore-kernel";
+import {DrawCall, Material, Lines} from "@croquet/worldcore-webgl"
 import { Voxels } from "./Voxels";
 import { RoadActor } from "./Props";
 
@@ -19,7 +20,7 @@ export class PathRender extends ViewService {
         this.material.pass = 'translucent';
         this.drawCall = new DrawCall(this.mesh, this.material);
 
-        const render = viewRoot.render;
+        const render = this.service("RenderManager");
         render.scene.addDrawCall(this.drawCall);
 
         this.buildMesh();
@@ -30,7 +31,7 @@ export class PathRender extends ViewService {
 
     destroy() {
         super.destroy();
-        const render = viewRoot.render;
+        const render = this.service("RenderManager");
         if (render) render.scene.removeDrawCall(this.drawCall);
         this.mesh.destroy();
         this.material.destroy();
@@ -38,7 +39,7 @@ export class PathRender extends ViewService {
 
     buildMesh() {
         this.mesh.clear();
-        const paths = viewRoot.model.paths;
+        const paths = this.modelService("Paths");
         const color = [0,0,1,1];
         paths.waypoints.forEach( w => {
             const v0 = Voxels.toWorldXYZ(...v3_add(w.xyz, [0.5, 0.5, 1]));
@@ -61,6 +62,8 @@ export class PathRender extends ViewService {
 
 // Add to the root view to display a path in the nav mesh.
 
+// Not updates to viewRoot
+
 export class RouteRender extends ViewService {
 
     constructor(model) {
@@ -77,7 +80,7 @@ export class RouteRender extends ViewService {
 
     destroy() {
         super.destroy();
-        const render = viewRoot.render;
+        const render = this.service("RenderManager");
         if (render) render.scene.removeDrawCall(this.drawCall);
         this.mesh.destroy();
         this.material.destroy();
@@ -117,7 +120,7 @@ export class RoadDebugRender extends ViewService {
         this.material.pass = 'translucent';
         this.drawCall = new DrawCall(this.mesh, this.material);
 
-        const render = viewRoot.render;
+        const render = this.service("RenderManager");
         render.scene.addDrawCall(this.drawCall);
 
         this.buildMesh();
@@ -126,7 +129,7 @@ export class RoadDebugRender extends ViewService {
 
     destroy() {
         super.destroy();
-        const render = viewRoot.render;
+        const render = this.service("RenderManager");
         if (render) render.scene.removeDrawCall(this.drawCall);
         this.mesh.destroy();
         this.material.destroy();
@@ -134,7 +137,7 @@ export class RoadDebugRender extends ViewService {
 
     buildMesh() {
         this.mesh.clear();
-        const props = viewRoot.model.props;
+        const props = this.modelService("Props");
         const color = [0,1,1,1];
         props.props.forEach( prop => {
             if (!(prop instanceof RoadActor)) return;
