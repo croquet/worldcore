@@ -61,13 +61,19 @@ async function deploy() {
 
     // commit to git
     const git = simpleGit({ baseDir: TARGET });
+    console.log(`git add -A -- ${TARGET}`);
     await git.add(['-A', TARGET]);
-    const { commit } = await git.commit(`[${APP}] deploy to croquet.io/dev/${APP}`, [TARGET]);
-    if (!commit) {
-        console.warn("Nothing committed?!");
-    } else {
-        console.log(await git.show(["--stat"]));
-        console.log(`You still need to "git push" in ${WONDERLAND}\nto deploy to https://croquet.io/dev/${APP}`);
+    console.log(`git commit -- ${TARGET}`);
+    try {
+        const { commit } = await git.commit(`[${APP}] deploy to croquet.io/dev/${APP}`, [TARGET]);
+        if (!commit) {
+            console.warn("Nothing committed?!");
+        } else {
+            console.log(await git.show(["--stat"]));
+            console.log(`You still need to "git push" in ${WONDERLAND}\nto deploy to https://croquet.io/dev/${APP}`);
+        }
+    } catch (err) {
+        console.error(err.message);
     }
 }
 
