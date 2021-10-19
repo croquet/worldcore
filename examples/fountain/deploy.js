@@ -44,8 +44,12 @@ async function deploy() {
         exit(1);
     }
 
-    console.log(`Updating worldcore...`);
-    execAndLog(`pnpm i`, {cwd: WORLDCORE});
+    console.log(`Updating worldcore packages...`);
+    const dirs = await fsx.readdir(path.join(WORLDCORE, 'packages'));
+    for (const dir of dirs) {
+        console.log(`Updating ${path.join('packages', dir)}`);
+        execAndLog(`pnpm i`, {cwd: path.join(WORLDCORE, 'packages', dir)});
+    }
 
     console.log(`Updating ${APP}...`);
     execAndLog("pnpm i", {cwd: SRC});
