@@ -1,10 +1,24 @@
 {
   "name": "@croquet/worldcore",
-  "version": "0.0.1",
-  "description": "",
+  "version": "1.0.0",
+  "description": "3D World Engine for Croquet (full install)",
+  "keywords": [
+    "croquet",
+    "worldcore",
+    "full",
+    "realtime",
+    "3d",
+    "game",
+    "engine",
+    "game-engine",
+    "multiplayer",
+    "virtual-reality",
+    "augmented-reality",
+    "online"
+  ],
   "main": "index.js",
-  "author": "Brian Upton",
-  "license": "ISC",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm"
   },

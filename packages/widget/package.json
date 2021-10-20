@@ -1,10 +1,20 @@
 {
   "name": "@croquet/worldcore-widget",
-  "version": "0.0.1",
-  "description": "",
+  "version": "1.0.0",
+  "description": "Widget Component for Croquet Worldcore",
+  "keywords": [
+    "croquet",
+    "worldcore",
+    "3d",
+    "game-engine",
+    "multiplayer",
+    "user-interface",
+    "ui",
+    "widget"
+  ],
   "main": "index.js",
-  "author": "Brian Upton",
-  "license": "ISC",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm"
   },

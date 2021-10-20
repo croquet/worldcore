@@ -1,10 +1,19 @@
 {
   "name": "@croquet/worldcore-audio",
-  "version": "0.0.1",
-  "description": "",
+  "version": "1.0.0",
+  "description": "Positional Audio Component for Croquet Worldcore",
+  "keywords": [
+    "croquet",
+    "worldcore",
+    "3d",
+    "game-engine",
+    "multiplayer",
+    "audio",
+    "resonance"
+  ],
   "main": "index.js",
-  "author": "Brian Upton",
-  "license": "ISC",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm"
   },

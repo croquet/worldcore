@@ -1,10 +1,21 @@
 {
   "name": "@croquet/worldcore-behavior",
-  "version": "0.0.1",
-  "description": "",
+  "version": "1.0.0",
+  "description": "Behavior Tree Component for Croquet Worldcore",
+  "keywords": [
+    "croquet",
+    "worldcore",
+    "3d",
+    "game-engine",
+    "multiplayer",
+    "artificial-intelligence",
+    "ai",
+    "behavior",
+    "behavior-tree"
+  ],
   "main": "index.js",
-  "author": "Brian Upton",
-  "license": "ISC",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm"
   },

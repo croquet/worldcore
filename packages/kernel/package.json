@@ -1,10 +1,21 @@
 {
   "name": "@croquet/worldcore-kernel",
   "version": "1.0.0",
-  "description": "NPM description goes here.",
+  "description": "3D World Engine for Croquet (minimal install)",
   "keywords": [
     "croquet",
-    "realtime"
+    "worldcore",
+    "kernel",
+    "minimal",
+    "realtime",
+    "3d",
+    "game",
+    "engine",
+    "game-engine",
+    "multiplayer",
+    "virtual-reality",
+    "augmented-reality",
+    "online"
   ],
   "main": "index.js",
   "author": "Croquet Corporation",
