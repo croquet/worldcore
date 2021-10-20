@@ -44,8 +44,12 @@ async function deploy() {
         exit(1);
     }
 
-    console.log(`Updating worldcore...`);
-    execAndLog(`pnpm i`, {cwd: WORLDCORE});
+    console.log(`Updating worldcore packages...`);
+    const dirs = await fsx.readdir(path.join(WORLDCORE, 'packages'));
+    for (const dir of dirs) {
+        console.log(`Updating ${path.join('packages', dir)}`);
+        execAndLog(`pnpm i`, {cwd: path.join(WORLDCORE, 'packages', dir)});
+    }
 
     console.log(`Updating ${APP}...`);
     execAndLog("pnpm i", {cwd: SRC});
@@ -57,13 +61,19 @@ async function deploy() {
 
     // commit to git
     const git = simpleGit({ baseDir: TARGET });
+    console.log(`git add -A -- ${TARGET}`);
     await git.add(['-A', TARGET]);
-    const { commit } = await git.commit(`[${APP}] deploy to croquet.io/dev/${APP}`, [TARGET]);
-    if (!commit) {
-        console.warn("Nothing committed?!");
-    } else {
-        console.log(await git.show(["--stat"]));
-        console.log(`You still need to "git push" in ${WONDERLAND}\nto deploy to https://croquet.io/dev/${APP}`);
+    console.log(`git commit -- ${TARGET}`);
+    try {
+        const { commit } = await git.commit(`[${APP}] deploy to croquet.io/dev/${APP}`, [TARGET]);
+        if (!commit) {
+            console.warn("Nothing committed?!");
+        } else {
+            console.log(await git.show(["--stat"]));
+            console.log(`You still need to "git push" in ${WONDERLAND}\nto deploy to https://croquet.io/dev/${APP}`);
+        }
+    } catch (err) {
+        console.error(err.message);
     }
 }
 
