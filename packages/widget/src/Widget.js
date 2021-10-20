@@ -917,6 +917,12 @@ export class TextWidget extends Widget {
     // Breaks lines by word wrap or new line.
 
     get lines() {
+
+        this.cc.textAlign = this.alignX;
+        this.cc.textBaseline = this.alignY;
+        this.cc.font = this.style + " " + this.point + "px " + this.font;
+        this.cc.fillStyle = canvasColor(...this.color);
+
         if (!this.wrap) return this.text.split('\n');
         const spaceWidth = this.cc.measureText(' ').width;
         const sizeX = this.size[0];
@@ -948,13 +954,21 @@ export class TextWidget extends Widget {
         return out;
     }
 
+    get lineHeight() {
+        return this.point + this.lineSpacing;
+    }
+
+    get textHeight() {
+        return this.lines.length * this.lineHeight;
+    }
+
     draw() {
         const lineHeight = (this.point + this.lineSpacing);
 
-        this.cc.textAlign = this.alignX;
-        this.cc.textBaseline = this.alignY;
-        this.cc.font = this.style + " " + this.point + "px " + this.font;
-        this.cc.fillStyle = canvasColor(...this.color);
+        // this.cc.textAlign = this.alignX;
+        // this.cc.textBaseline = this.alignY;
+        // this.cc.font = this.style + " " + this.point + "px " + this.font;
+        // this.cc.fillStyle = canvasColor(...this.color);
 
         const lines = this.lines;
 
@@ -974,7 +988,10 @@ export class TextWidget extends Widget {
         }
         xy = v2_add(this.origin, xy);
 
-        lines.forEach((line,i) => this.cc.fillText(line, xy[0], xy[1] + (i * lineHeight) - yOffset));
+        lines.forEach((line,i) => {
+            const o = (i * lineHeight) - yOffset;
+            this.cc.fillText(line, xy[0], xy[1] + o);
+        });
     }
 
     pixelWidth() { // Returns the full width of the text in pixels given the current font.
@@ -1006,6 +1023,22 @@ export class TextWidget extends Widget {
     }
 
 }
+
+//------------------------------------------------------------------------------------------
+//-- ControlWidget -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Consumes pointer events, but lets you interact with its children.
+
+export class PanelWidget extends  Widget {
+
+    pointerDown(event) {
+        if (!this.isVisible) return false;
+        if (this.children) this.children.forEach(child => child.pointerDown(event));
+        return true;
+    }
+}
+
 
 //------------------------------------------------------------------------------------------
 //-- ControlWidget -------------------------------------------------------------------------

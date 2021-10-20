@@ -1,10 +1,14 @@
 {
   "name": "@croquet/worldcore-kernel",
-  "version": "0.0.1",
-  "description": "",
+  "version": "1.0.0",
+  "description": "NPM description goes here.",
+  "keywords": [
+    "croquet",
+    "realtime"
+  ],
   "main": "index.js",
-  "author": "Brian Upton",
-  "license": "ISC",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
   "scripts": {
     "preinstall": "npx only-allow pnpm"
   },

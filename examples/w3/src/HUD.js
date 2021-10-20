@@ -1,7 +1,7 @@
 // import { ImageWidget, ToggleSet, ToggleWidget, Widget, SliderWidget, ButtonWidget, TextWidget, EmptyWidget, BoxWidget } from "@croquet/worldcore";
 
 // import { m4_translation, v3_multiply, ViewService } from "@croquet/worldcore-kernel";
-import { ImageWidget, ToggleSet, ToggleWidget, Widget, SliderWidget, ButtonWidget, TextWidget, EmptyWidget, BoxWidget } from "@croquet/worldcore-widget"
+import { ImageWidget, ToggleSet, ToggleWidget, Widget, SliderWidget, ButtonWidget, TextWidget, EmptyWidget, BoxWidget, ControlWidget, PanelWidget, HorizontalWidget } from "@croquet/worldcore-widget"
 
 import { Voxels } from "./Voxels";
 import { GetTopLayer, SetTopLayer } from "./Globals";
@@ -25,7 +25,11 @@ import roadOffIcon from "../assets/roadOffIcon.png";
 
 import walkOnIcon from "../assets/walkOnIcon.png";
 import walkOffIcon from "../assets/walkOffIcon.png";
+import helpOnIcon from "../assets/helpOnIcon.png";
+import helpOffIcon from "../assets/helpOffIcon.png";
 import resetIcon from "../assets/resetIcon.png";
+
+import kwark from "../assets/kwark.otf";
 
 // Manages all the UI controls.
 
@@ -143,6 +147,31 @@ export class HUD extends Widget {
             text: animals.animals.size.toString()
         })
 
+        this.helpPanel = new HelpPanel({
+            parent: this,
+            pivot: [0.5, 0.5],
+            anchor: [0.5, 0.5],
+            visible: true
+        })
+
+        const helpToggle = new ToggleWidget({
+            parent: this,
+            normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
+            normalOff: new BoxWidget({color: [0.5, 0.5, 0.5]}),
+            hiliteOn: new BoxWidget({color: [0.5, 0.5, 0.5]}),
+            hiliteOff: new BoxWidget({color: [0.6, 0.6, 0.6]}),
+            pressedOn: new BoxWidget({color: [0.3, 0.3, 0.3]}),
+            pressedOff: new BoxWidget({color: [0.4, 0.4, 0.4]}),
+            labelOn: new ImageWidget({border: [5,5,5,5], url: helpOnIcon}),
+            labelOff: new ImageWidget({border: [5,5,5,5], url: helpOffIcon}),
+            anchor: [1,0],
+            pivot: [1,0],
+            local: [-20,20],
+            size:[40,40],
+            onToggleOn: () => this.helpPanel.show(),
+            onToggleOff: () => this.helpPanel.hide()
+        });
+
         const walkToggle = new ToggleWidget({
             parent: this,
             normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
@@ -155,7 +184,7 @@ export class HUD extends Widget {
             labelOff: new ImageWidget({border: [5,5,5,5], url: walkOffIcon}),
             anchor: [1,0],
             pivot: [1,0],
-            local: [-20,20],
+            local: [-70,20],
             size:[40,40],
             onToggleOn: () => this.publish("hud", "firstPerson", true),
             onToggleOff: () => this.publish("hud", "firstPerson", false)
@@ -194,6 +223,83 @@ export class HUD extends Widget {
         this.spawnCounter.set({text: n.toString()})
     }
 
+}
+
+class HelpPanel extends PanelWidget {
+    constructor(options) {
+        super(options);
+        this.set({
+            size: [300,400]
+        })
+
+        const frame = new BoxWidget({
+            parent: this,
+            color: [0.2, 0.2, 0.2],
+            autoSize: [1,1]
+        })
+
+        const panel = new BoxWidget({
+            parent: frame,
+            color: [0.8, 0.8, 0.8],
+            border: [2,2,2,2],
+            autoSize: [1,1]
+        })
+
+        const title = new TextWidget({
+            parent: panel,
+            pivot: [0.5,0],
+            anchor: [0.5,0],
+            local: [0,20],
+            size: [300,50],
+            point: 44,
+            fontURL: kwark,
+            text: "Wide Wide World"
+        });
+
+        const horizontal = new HorizontalWidget({
+            parent: panel,
+            autoSize: [1,1],
+            border: [10,80,10,10]
+        })
+
+        const background = new BoxWidget({
+            parent: horizontal,
+            color: [1,1,1],
+            size: [200,200],
+            local: [10,80],
+        });
+
+        const clip = new Widget({
+            parent: background,
+            autoSize: [1,1],
+            border: [5,5,5,5],
+            clip: true
+        });
+
+        const text = new TextWidget({
+            parent: clip,
+            color: [0,0,0],
+            autoSize: [1,1],
+            point: 14,
+            alignX: "left",
+            alignY: "top",
+            text: "blah blah blah. Lots of stuff to say. blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say.blah blah blah. Lots of stuff to say. this is the end."
+        })
+
+        const slider = new SliderWidget({
+            parent: horizontal,
+            width: 20,
+            size: [20, 20],
+            onChange: p => {
+                const textHeight = text.textHeight;
+                const offset = p*(textHeight - clip.size[1]);
+                text.set({local:[0,-offset]});
+            }
+        })
+
+        horizontal.addSlot(background);
+        horizontal.addSlot(slider);
+    }
 }
 
 
