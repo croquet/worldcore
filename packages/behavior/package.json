@@ -16,6 +16,13 @@
   "main": "index.js",
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
+  "homepage": "https://croquet.io/docs/worldcore/",
+  "bugs": "https://github.com/croquet/worldcore/issues",
+  "repository": {
+    "type": "git",
+    "url": "github:croquet/worldcore",
+    "directory": "packages/behavior"
+  },
   "scripts": {
     "preinstall": "npx only-allow pnpm"
   },
