@@ -20,6 +20,7 @@ export class RapierPhysicsManager extends ModelService {
     }
 
     static types() {
+        if (!RAPIER) return {};
         return {
             "RAPIER.World": {
                 cls: RAPIER.World,
