@@ -10,13 +10,6 @@
   },
   "author": "Croquet Studios",
   "license": "ISC",
-  "dependencies": {
-    "@croquet/worldcore-kernel": "link:..\\..\\packages\\kernel",
-    "@croquet/worldcore-webgl": "link:..\\..\\packages\\webgl",
-    "@croquet/worldcore-widget": "link:..\\..\\packages\\widget",
-    "@croquet/worldcore-behavior": "link:..\\..\\packages\\behavior",
-    "@croquet/worldcore-audio": "link:..\\..\\packages\\audio"
-  },
   "devDependencies": {
     "file-loader": "^6.0.0",
     "html-webpack-plugin": "^4.3.0",
@@ -24,5 +17,12 @@
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0"
+  },
+  "dependencies": {
+    "@croquet/worldcore-audio": "^1.0.0",
+    "@croquet/worldcore-behavior": "^1.0.0",
+    "@croquet/worldcore-kernel": "^1.0.0",
+    "@croquet/worldcore-webgl": "^1.0.0",
+    "@croquet/worldcore-widget": "^1.0.0"
   }
 }
