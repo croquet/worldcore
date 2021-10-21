@@ -7,7 +7,7 @@ import { ClearObjectCache } from "./ObjectCache";
 //-- WorldcoreModel ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Extends the model base class with WorldCore-specific methods.
+// Extends the model base class with Worldcore-specific methods.
 
 export class WorldcoreModel extends Model {
 
@@ -71,7 +71,7 @@ export function GetModelService(name) { return viewRoot.wellKnownModel(name) }
 //-- WorldcoreView -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Extends the view base class with WorldCore-specific methods.
+// Extends the view base class with Worldcore-specific methods.
 
 export class WorldcoreView extends View {
 
