@@ -1,14 +1,25 @@
 lockfileVersion: 5.3
 
 specifiers:
-  '@croquet/worldcore-kernel': link:..\kernel
+  '@croquet/worldcore-kernel': ^1.0.0
   '@dimforge/rapier3d': 0.7.6
 
 dependencies:
-  '@croquet/worldcore-kernel': link:../kernel
+  '@croquet/worldcore-kernel': 1.0.0
   '@dimforge/rapier3d': 0.7.6
 
 packages:
+
+  /@croquet/croquet/1.0.4:
+    resolution: {integrity: sha512-A+OLXzzW5k489VgOuMvNeXXuxHkrtMQah5EJFzuMzpuB0Uf1cGqvpVFS8ucG+RINfyvpl9Py852Yql3i2mL/gw==}
+    dev: false
+
+  /@croquet/worldcore-kernel/1.0.0:
+    resolution: {integrity: sha512-qFWQbvpC6lOxe4wiNC/3I3DBgue2YaovRUNuM8A5yfFyIixG8M8JM+Dts+ayj2WPpLABqtyreZWhbOWHgoBGdg==}
+    requiresBuild: true
+    dependencies:
+      '@croquet/croquet': 1.0.4
+    dev: false
 
   /@dimforge/rapier3d/0.7.6:
     resolution: {integrity: sha512-mjQWpXgqlIe0MjXzvv2c/G7vsWvs2YsbNZWDghxraM07KAP2unu+Xg4TWdcsXxN3AoZDoLhKvJ0IecPzyU5Ukg==}

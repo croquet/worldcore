@@ -1,14 +1,25 @@
 lockfileVersion: 5.3
 
 specifiers:
-  '@croquet/worldcore-kernel': link:..\kernel
+  '@croquet/worldcore-kernel': ^1.0.0
   three: ^0.131.0
 
 dependencies:
-  '@croquet/worldcore-kernel': link:../kernel
+  '@croquet/worldcore-kernel': 1.0.0
   three: 0.131.3
 
 packages:
+
+  /@croquet/croquet/1.0.4:
+    resolution: {integrity: sha512-A+OLXzzW5k489VgOuMvNeXXuxHkrtMQah5EJFzuMzpuB0Uf1cGqvpVFS8ucG+RINfyvpl9Py852Yql3i2mL/gw==}
+    dev: false
+
+  /@croquet/worldcore-kernel/1.0.0:
+    resolution: {integrity: sha512-qFWQbvpC6lOxe4wiNC/3I3DBgue2YaovRUNuM8A5yfFyIixG8M8JM+Dts+ayj2WPpLABqtyreZWhbOWHgoBGdg==}
+    requiresBuild: true
+    dependencies:
+      '@croquet/croquet': 1.0.4
+    dev: false
 
   /three/0.131.3:
     resolution: {integrity: sha512-VkZAv8ZTJqiE/fyEmoWLxcNHImpVcjqW7RO0GzMu3tRpwO0KUvK9pjTmJzJcAbc51BOeB2G38zh80yjHTbP8gQ==}

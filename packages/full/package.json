@@ -30,13 +30,12 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "link:..\\kernel",
-    "@croquet/worldcore-webgl": "link:..\\webgl",
-    "@croquet/worldcore-widget": "link:..\\widget",
-    "@croquet/worldcore-behavior": "link:..\\behavior",
-    "@croquet/worldcore-audio": "link:..\\audio",
-    "@croquet/worldcore-rapier": "link:..\\rapier",
-    "@croquet/worldcore-three": "link:..\\three"
+    "@croquet/worldcore-audio": "^1.0.0",
+    "@croquet/worldcore-behavior": "^1.0.0",
+    "@croquet/worldcore-kernel": "^1.0.0",
+    "@croquet/worldcore-rapier": "^1.0.0",
+    "@croquet/worldcore-three": "^1.0.0",
+    "@croquet/worldcore-webgl": "^1.0.0",
+    "@croquet/worldcore-widget": "^1.0.0"
   }
-
 }
