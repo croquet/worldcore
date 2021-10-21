@@ -13,4 +13,4 @@ This package contains the **behavior component** for Worldcore. It extends the W
 **Get Started ...**
 
 * Get a free developer key at [croquet.io/keys](https://croquet.io/keys/)
-* Read the documentation at [croquet.io/docs/worldcore/behavior](https://croquet.io/docs/croquet/worldcore/behavior) and [croquet.io/docs/worldcore](https://croquet.io/docs/croquet/worldcore)
+* Read the documentation at [croquet.io/docs/worldcore/behavior](https://croquet.io/docs/worldcore/behavior/) and [croquet.io/docs/worldcore](https://croquet.io/docs/worldcore/)

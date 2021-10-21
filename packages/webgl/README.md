@@ -15,4 +15,4 @@ This package contains the **webgl component** for Worldcore. It extends the Worl
 **Get Started ...**
 
 * Get a free developer key at [croquet.io/keys](https://croquet.io/keys/)
-* Read the documentation at [croquet.io/docs/worldcore/webgl](https://croquet.io/docs/croquet/worldcore/webgl) and [croquet.io/docs/worldcore](https://croquet.io/docs/croquet/worldcore)
+* Read the documentation at [croquet.io/docs/worldcore/webgl](https://croquet.io/docs/worldcore/webgl/) and [croquet.io/docs/worldcore](https://croquet.io/docs/worldcore/)

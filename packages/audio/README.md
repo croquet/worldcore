@@ -13,4 +13,4 @@ This package contains the **audio component** for Worldcore. It extends the Worl
 **Get Started ...**
 
 * Get a free developer key at [croquet.io/keys](https://croquet.io/keys/)
-* Read the documentation at [croquet.io/docs/worldcore/audio](https://croquet.io/docs/croquet/worldcore/audio) and [croquet.io/docs/worldcore](https://croquet.io/docs/croquet/worldcore)
+* Read the documentation at [croquet.io/docs/worldcore/audio](https://croquet.io/docs/worldcore/audio/) and [croquet.io/docs/worldcore](https://croquet.io/docs/worldcore/)

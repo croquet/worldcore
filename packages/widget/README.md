@@ -15,4 +15,4 @@ This package contains the **widget component** for Worldcore. It extends the Wor
 **Get Started ...**
 
 * Get a free developer key at [croquet.io/keys](https://croquet.io/keys/)
-* Read the documentation at [croquet.io/docs/worldcore/widget](https://croquet.io/docs/croquet/worldcore/widget) and [croquet.io/docs/worldcore](https://croquet.io/docs/croquet/worldcore)
+* Read the documentation at [croquet.io/docs/worldcore/widget](https://croquet.io/docs/worldcore/widget/) and [croquet.io/docs/worldcore](https://croquet.io/docs/worldcore/)
