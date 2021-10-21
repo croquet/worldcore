@@ -17,7 +17,7 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.(png|svg|jpg|gif|mp3)$/,
+                test: /\.(png|svg|jpg|gif|mp3|otf)$/,
                 loader: 'file-loader',
                 options: {
                     name: '[contenthash:8].[ext]',
