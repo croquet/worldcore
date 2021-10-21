@@ -1,5 +1,3 @@
-// import { ImageWidget, ToggleSet, ToggleWidget, Widget, SliderWidget, ButtonWidget, TextWidget, EmptyWidget, BoxWidget } from "@croquet/worldcore";
-
 // import { m4_translation, v3_multiply, ViewService } from "@croquet/worldcore-kernel";
 import { ImageWidget, ToggleSet, ToggleWidget, Widget, SliderWidget, ButtonWidget, TextWidget, EmptyWidget, BoxWidget, ControlWidget, PanelWidget, HorizontalWidget } from "@croquet/worldcore-widget"
 
@@ -147,12 +145,7 @@ export class HUD extends Widget {
             text: animals.animals.size.toString()
         })
 
-        this.helpPanel = new HelpPanel({
-            parent: this,
-            pivot: [0.5, 0.5],
-            anchor: [0.5, 0.5],
-            visible: false
-        })
+
 
         const helpToggle = new ToggleWidget({
             parent: this,
@@ -172,7 +165,7 @@ export class HUD extends Widget {
             onToggleOff: () => this.helpPanel.hide()
         });
 
-        const walkToggle = new ToggleWidget({
+        this.walkToggle = new ToggleWidget({
             parent: this,
             normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
             normalOff: new BoxWidget({color: [0.5, 0.5, 0.5]}),
@@ -186,9 +179,18 @@ export class HUD extends Widget {
             pivot: [1,0],
             local: [-70,20],
             size:[40,40],
+            visible: animals.animals.size>0,
             onToggleOn: () => this.publish("hud", "firstPerson", true),
             onToggleOff: () => this.publish("hud", "firstPerson", false)
         });
+
+        this.helpPanel = new HelpPanel({
+            parent: this,
+            pivot: [0, 0],
+            anchor: [0, 0],
+            local: [20,20],
+            visible: false
+        })
 
         const resetButton = new ButtonWidget({
             parent: this,
@@ -221,6 +223,7 @@ export class HUD extends Widget {
 
     onCountChanged(n) {
         this.spawnCounter.set({text: n.toString()})
+        this.walkToggle.set({visible: n>0});
     }
 
 }
@@ -229,7 +232,7 @@ class HelpPanel extends PanelWidget {
     constructor(options) {
         super(options);
         this.set({
-            size: [300,400]
+            size: [230,280]
         })
 
         const frame = new BoxWidget({
@@ -249,9 +252,9 @@ class HelpPanel extends PanelWidget {
             parent: panel,
             pivot: [0.5,0],
             anchor: [0.5,0],
-            local: [0,20],
-            size: [300,50],
-            point: 44,
+            local: [0,0],
+            size: [150,50],
+            point: 24,
             fontURL: kwark,
             text: "Wide Wide World"
         });
@@ -259,13 +262,12 @@ class HelpPanel extends PanelWidget {
         const horizontal = new HorizontalWidget({
             parent: panel,
             autoSize: [1,1],
-            border: [10,80,10,10]
+            border: [10,50,10,10]
         })
 
         const background = new BoxWidget({
             parent: horizontal,
             color: [1,1,1],
-            size: [200,200],
             local: [10,80],
         });
 
