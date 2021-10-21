@@ -10,7 +10,7 @@ You can use it to build multiuser webapps with hundreds or thousands of dynamic 
 
 This package contains the **webgl component** for Worldcore. It extends the Worldcore kernel with a lightweight webGL renderer. Use it to render Worldcore objects in 3D.
 
-(**Note:** the webGL renderer is not a full-feature rendering engine. It's best used for testing, or for drawing simple geomtric shapes.)
+(**Note:** the webGL renderer is not a full-feature rendering engine. It's best used for testing, or for drawing simple geometric shapes.)
 
 **Get Started ...**
 
