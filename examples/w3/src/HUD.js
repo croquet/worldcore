@@ -37,7 +37,7 @@ export class HUD extends Widget {
 
         const toggleSet = new ToggleSet();
 
-        const digToggle = new ToggleWidget({
+        this.digToggle = new ToggleWidget({
             parent: this,
             normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
             normalOff: new BoxWidget({color: [0.5, 0.5, 0.5]}),
@@ -54,7 +54,7 @@ export class HUD extends Widget {
             state: true
         });
 
-        const fillToggle = new ToggleWidget({
+        this.fillToggle = new ToggleWidget({
             parent: this,
             normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
             normalOff: new BoxWidget({color: [0.5, 0.5, 0.5]}),
@@ -70,7 +70,7 @@ export class HUD extends Widget {
             onToggleOn: () => this.publish("hud", "editMode", "fill")
         });
 
-        const treeToggle = new ToggleWidget({
+        this.treeToggle = new ToggleWidget({
             parent: this,
             normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
             normalOff: new BoxWidget({color: [0.5, 0.5, 0.5]}),
@@ -86,7 +86,7 @@ export class HUD extends Widget {
             onToggleOn: () => this.publish("hud", "editMode", "tree")
         });
 
-        const spawnToggle = new ToggleWidget({
+        this.spawnToggle = new ToggleWidget({
             parent: this,
             normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
             normalOff: new BoxWidget({color: [0.5, 0.5, 0.5]}),
@@ -102,7 +102,7 @@ export class HUD extends Widget {
             onToggleOn: () => this.publish("hud", "editMode", "spawn")
         });
 
-        const waterToggle = new ToggleWidget({
+        this.waterToggle = new ToggleWidget({
             parent: this,
             normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
             normalOff: new BoxWidget({color: [0.5, 0.5, 0.5]}),
@@ -145,8 +145,6 @@ export class HUD extends Widget {
             text: animals.animals.size.toString()
         })
 
-
-
         const helpToggle = new ToggleWidget({
             parent: this,
             normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
@@ -161,8 +159,8 @@ export class HUD extends Widget {
             pivot: [1,0],
             local: [-20,20],
             size:[40,40],
-            onToggleOn: () => this.helpPanel.show(),
-            onToggleOff: () => this.helpPanel.hide()
+            onToggleOn: () => this.helpOn(),
+            onToggleOff: () => this.helpOff()
         });
 
         this.walkToggle = new ToggleWidget({
@@ -186,9 +184,9 @@ export class HUD extends Widget {
 
         this.helpPanel = new HelpPanel({
             parent: this,
-            pivot: [0, 0],
-            anchor: [0, 0],
-            local: [20,20],
+            pivot: [1,0],
+            anchor: [1,0],
+            local: [-60,20],
             visible: false
         })
 
@@ -203,7 +201,7 @@ export class HUD extends Widget {
             onClick: () => this.publish("hud", "reset")
         })
 
-        const cutawaySlider = new SliderWidget({
+        this.cutawaySlider = new SliderWidget({
             parent: this,
             pivot: [1,1],
             anchor: [1,1],
@@ -221,6 +219,29 @@ export class HUD extends Widget {
         this.subscribe("animals", { event: "countChanged", handling: "oncePerFrame" }, this.onCountChanged)
     }
 
+    helpOn() {
+        this.helpPanel.show();
+        this.cutawaySlider.hide()
+        this.digToggle.hide();
+        this.fillToggle.hide();
+        this.treeToggle.hide();
+        this.spawnToggle.hide();
+        this.waterToggle.hide();
+        this.spawnCounter.hide();
+    }
+
+    helpOff() {
+        this.helpPanel.hide();
+        this.cutawaySlider.show()
+        this.digToggle.show();
+        this.fillToggle.show();
+        this.treeToggle.show();
+        this.spawnToggle.show();
+        this.waterToggle.show();
+        this.spawnCounter.show();
+    }
+
+
     onCountChanged(n) {
         this.spawnCounter.set({text: n.toString()})
         this.walkToggle.set({visible: n>0});
@@ -232,7 +253,7 @@ class HelpPanel extends PanelWidget {
     constructor(options) {
         super(options);
         this.set({
-            size: [230,280]
+            size: [240,280]
         })
 
         const frame = new BoxWidget({
