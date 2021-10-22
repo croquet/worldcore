@@ -227,10 +227,12 @@ export class HUD extends Widget {
         this.treeToggle.hide();
         this.spawnToggle.hide();
         this.waterToggle.hide();
+        this.walkToggle.hide();
         this.spawnCounter.hide();
     }
 
     helpOff() {
+        const animals = this.modelService("Animals");
         this.helpPanel.hide();
         this.cutawaySlider.show()
         this.digToggle.show();
@@ -238,6 +240,7 @@ export class HUD extends Widget {
         this.treeToggle.show();
         this.spawnToggle.show();
         this.waterToggle.show();
+        this.walkToggle.set({visible: animals.animals.size>0});
         this.spawnCounter.show();
     }
 
