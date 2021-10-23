@@ -118,21 +118,21 @@ export class HUD extends Widget {
             onToggleOn: () => this.publish("hud", "editMode", "water")
         });
 
-        // const roadToggle = new ToggleWidget({
-        //     parent: this,
-        //     normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
-        //     normalOff: new BoxWidget({color: [0.5, 0.5, 0.5]}),
-        //     hiliteOn: new BoxWidget({color: [0.5, 0.5, 0.5]}),
-        //     hiliteOff: new BoxWidget({color: [0.6, 0.6, 0.6]}),
-        //     pressedOn: new BoxWidget({color: [0.3, 0.3, 0.3]}),
-        //     pressedOff: new BoxWidget({color: [0.4, 0.4, 0.4]}),
-        //     labelOn: new ImageWidget({border: [5,5,5,5], url: roadOnIcon}),
-        //     labelOff: new ImageWidget({border: [5,5,5,5], url: roadOffIcon}),
-        //     local: [80,140],
-        //     size:[50,50],
-        //     toggleSet: toggleSet,
-        //     onToggleOn: () => this.publish("hud", "editMode", "road")
-        // });
+        this.roadToggle = new ToggleWidget({
+            parent: this,
+            normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
+            normalOff: new BoxWidget({color: [0.5, 0.5, 0.5]}),
+            hiliteOn: new BoxWidget({color: [0.5, 0.5, 0.5]}),
+            hiliteOff: new BoxWidget({color: [0.6, 0.6, 0.6]}),
+            pressedOn: new BoxWidget({color: [0.3, 0.3, 0.3]}),
+            pressedOff: new BoxWidget({color: [0.4, 0.4, 0.4]}),
+            labelOn: new ImageWidget({border: [5,5,5,5], url: roadOnIcon}),
+            labelOff: new ImageWidget({border: [5,5,5,5], url: roadOffIcon}),
+            local: [80,140],
+            size:[50,50],
+            toggleSet: toggleSet,
+            onToggleOn: () => this.publish("hud", "editMode", "road")
+        });
 
         const animals = this.modelService("Animals");
         const counterBackground = new EmptyWidget({parent: this, local: [140,80], size: [100,50]} );

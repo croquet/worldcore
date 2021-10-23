@@ -124,7 +124,8 @@ export class RoadDebugRender extends ViewService {
         render.scene.addDrawCall(this.drawCall);
 
         this.buildMesh();
-        this.subscribe("road", {event: "changed", handling: "oncePerFrame" }, this.buildMesh);
+        this.subscribe("road", "add", this.buildMesh);
+        this.subscribe("road", "delete", this.buildMesh);
     }
 
     destroy() {

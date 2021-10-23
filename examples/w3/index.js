@@ -50,8 +50,8 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        // return [InputManager, RenderManager, UIManager, VoxelRender, GodView, Editor, VoxelCursor, RoadDebugRender, RoadRender];
-        return [InputManager, RenderManager, UIManager, VoxelRender, GodView, Editor, VoxelCursor];
+        return [InputManager, RenderManager, UIManager, VoxelRender, GodView, Editor, VoxelCursor, RoadDebugRender, RoadRender];
+        // return [InputManager, RenderManager, UIManager, VoxelRender, GodView, Editor, VoxelCursor];
     }
 
     constructor(model) {
@@ -97,8 +97,8 @@ StartWorldcore({
     appId: 'io.croquet.w3',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
     password: 'password',
-    // name: 'test',
-    name: App.autoSession(),
+    name: 'test',
+    // name: App.autoSession(),
     model: MyModelRoot,
     view: MyViewRoot,
     tps: 15,
