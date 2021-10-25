@@ -38,19 +38,19 @@ Clone the Worldcore repo
 
 * Execute these commands one-by-one to get Worldcore (we do not show the output here, only the commands)
 
-      > cd worldcore/examples/wctest
+      > cd worldcore/tutorials/tutorial1
       > pnpm i
       > pnpm start
 
   This command will not stop until you press ctrl-c. It will continually rebuild files as you edit them.
 
-* Open http://localhost:1234/ in a web browser to see the "wctest" example app
+* Open http://localhost:1234/ in a web browser to see the "tutorial1" example app
 
 ## Modify and test Worldcore packages
 
-To test a locally modified Worldcore package, you need to modify an example's packages to not use the released version on npm, but the version you modified locally. E.g. for `wctest`:
+To test a locally modified Worldcore package, you need to modify an example's packages to not use the released version on npm, but the version you modified locally. E.g. for `tutorial1`:
 
-    cd examples/wctest
+    cd tutorials/tutorial1
     pnpm i ../../packages/kernel
 
-will cause `wctest` to use your locally modified `@croquet/worldcore-kernel` instead.
+will cause `tutorial1` to use your locally modified `@croquet/worldcore-kernel` instead.
