@@ -22,9 +22,6 @@
     "url": "github:croquet/worldcore",
     "directory": "packages/rapier"
   },
-  "scripts": {
-    "preinstall": "npx only-allow pnpm"
-  },
   "dependencies": {
     "@croquet/worldcore-kernel": "^1.0.0",
     "@dimforge/rapier3d": "0.7.6"

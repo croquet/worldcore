@@ -23,9 +23,6 @@
     "url": "github:croquet/worldcore",
     "directory": "packages/behavior"
   },
-  "scripts": {
-    "preinstall": "npx only-allow pnpm"
-  },
   "dependencies": {
     "@croquet/worldcore-kernel": "^1.0.0"
   }

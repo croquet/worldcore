@@ -22,9 +22,6 @@
     "url": "github:croquet/worldcore",
     "directory": "packages/three"
   },
-  "scripts": {
-    "preinstall": "npx only-allow pnpm"
-  },
   "dependencies": {
     "@croquet/worldcore-kernel": "^1.0.0",
     "three": "^0.131.0"
