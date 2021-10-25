@@ -28,6 +28,6 @@
     "directory": "packages/kernel"
   },
   "dependencies": {
-    "@croquet/croquet": "^1.0.4"
+    "@croquet/croquet": "^1.0.5"
   }
 }
