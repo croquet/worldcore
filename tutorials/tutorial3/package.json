@@ -10,7 +10,7 @@
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@croquet/worldcore": "^1.0.0"
+    "@croquet/worldcore": "^1.0.2"
   },
   "devDependencies": {
     "file-loader": "^6.0.0",

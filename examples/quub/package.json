@@ -11,7 +11,7 @@
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@croquet/worldcore": "link:..\\..\\packages\\full"
+    "@croquet/worldcore": "^1.0.2"
   },
   "devDependencies": {
     "file-loader": "^6.0.0",
