@@ -34,7 +34,7 @@ module.exports = {
             template: 'index.html',   // input
             filename: 'index.html',   // output filename in dist/
             templateParameters: async () => {
-                const response = await fetch('https://croquet.io/sdk/croquet-latest-pre.txt');
+                const response = await fetch('https://croquet.io/lib/croquet-latest-pre.txt');
                 if (!response.ok) throw Error(`${response.status} ${response.statusText} ${response.url}`);
                 const body = await response.text();
                 return { 'latest_pre': body.trim() };
