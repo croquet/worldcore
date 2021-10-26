@@ -4,7 +4,6 @@
   "description": "Wide Wide World",
   "private": true,
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
     "start": "webpack-dev-server --mode development --devtool source-map --watch",
     "build": "webpack --mode production",
     "deploy": "node deploy.js w3"

@@ -4,7 +4,6 @@
   "description": "White Board",
   "private": true,
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
     "start": "webpack-dev-server --mode development --devtool source-map --watch",
     "build-prod": "webpack --mode production",
     "build-dev": "webpack --mode development",

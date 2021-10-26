@@ -4,7 +4,6 @@
   "description": "Maze Wars",
   "private": true,
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
     "start": "webpack-dev-server --mode development --devtool source-map --watch",
     "build": "webpack --mode production"
   },
