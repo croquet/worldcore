@@ -8,8 +8,8 @@
     "start": "webpack-dev-server --mode development --devtool source-map --watch",
     "build": "webpack --mode production"
   },
-  "author": "Croquet Studios",
-  "license": "ISC",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
   "devDependencies": {
     "file-loader": "^6.0.0",
     "html-webpack-plugin": "^4.3.0",

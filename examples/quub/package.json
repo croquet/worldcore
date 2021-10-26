@@ -9,8 +9,8 @@
     "build": "webpack --mode production",
     "build-dev": "webpack --mode development"
   },
-  "author": "Croquet Studios",
-  "license": "ISC",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
   "dependencies": {
     "@croquet/worldcore": "link:..\\..\\packages\\full"
   },

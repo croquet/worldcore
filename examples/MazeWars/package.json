@@ -9,7 +9,7 @@
     "build": "webpack --mode production"
   },
   "author": "Croquet Corporation",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "dependencies": {
     "@croquet/worldcore": "file:../.."
   },

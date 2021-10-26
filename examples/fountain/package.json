@@ -10,8 +10,8 @@
     "build-dev": "webpack --mode development",
     "deploy": "node deploy.js fountain"
   },
-  "author": "Croquet Studios",
-  "license": "ISC",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
   "dependencies": {
     "@croquet/worldcore-kernel": "link:..\\..\\packages\\kernel",
     "@croquet/worldcore-webgl": "link:..\\..\\packages\\webgl",

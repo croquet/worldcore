@@ -9,8 +9,8 @@
     "build": "webpack --mode production",
     "deploy": "node deploy.js w3"
   },
-  "author": "Croquet Studios",
-  "license": "ISC",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
   "dependencies": {
     "@croquet/worldcore-kernel": "link:..\\..\\packages\\kernel",
     "@croquet/worldcore-webgl": "link:..\\..\\packages\\webgl",
