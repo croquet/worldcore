@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-behavior",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Behavior Tree Component for Croquet Worldcore",
   "keywords": [
     "croquet",
@@ -23,10 +23,7 @@
     "url": "github:croquet/worldcore",
     "directory": "packages/behavior"
   },
-  "scripts": {
-    "preinstall": "npx only-allow pnpm"
-  },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^1.0.0"
+    "@croquet/worldcore-kernel": "^1.0.1"
   }
 }

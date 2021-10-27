@@ -1,17 +1,16 @@
 {
-  "name": "@croquet/tutorial2",
+  "name": "@croquet/worldcore-tutorial2",
   "version": "0.0.1",
   "description": "Worldcore Tutorial",
   "private": true,
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
     "start": "webpack-dev-server --mode development --devtool source-map --watch",
     "build": "webpack --mode production"
   },
-  "author": "Croquet Studios",
-  "license": "ISC",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
   "dependencies": {
-    "@croquet/worldcore": "^1.0.0"
+    "@croquet/worldcore": "^1.0.2"
   },
   "devDependencies": {
     "file-loader": "^6.0.0",

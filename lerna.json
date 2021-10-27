@@ -1,0 +1,8 @@
+{
+  "packages": [
+    "packages/*",
+    "tutorials/*",
+    "examples/*"
+  ],
+  "version": "independent"
+}

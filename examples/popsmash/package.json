@@ -4,12 +4,11 @@
   "description": "Pop Smash!",
   "private": true,
   "scripts": {
-    "preinstall": "npx only-allow pnpm",
     "start": "webpack-dev-server --mode development --devtool source-map --watch",
     "build": "webpack --mode production"
   },
-  "author": "Croquet Studios",
-  "license": "ISC",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
   "dependencies": {
     "@croquet/worldcore": "file:../.."
   },

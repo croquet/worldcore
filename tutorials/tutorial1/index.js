@@ -134,5 +134,3 @@ StartWorldcore({
     model: MyModelRoot,
     view: MyViewRoot,
 });
-
-
