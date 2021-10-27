@@ -308,9 +308,10 @@ export class Surface  {
             case 3:
                 return yy;
             case 4:
+                if (xx + yy < 1) return (xx + yy) - 1; // Adding for road stamping
                 return 0;
             case 5:
-                if (xx + yy < 1) return 0;
+                // if (xx + yy < 1) return 0; // Removed for road stamping
                 return (xx + yy) - 1;
             case 6:
                 if (xx + yy <= 1) return xx + yy;
@@ -928,6 +929,30 @@ export class Surface  {
         return null;
     }
 
+
+    // Returns a 4 array with flags showing if the side of the shape is level.
+    // Used for stuff like road exits.
+    levelSides() {
+        let out = [false, false, false, false];
+        switch (this.shape) {
+            case 2:
+                out = [true, true, true, true];
+                break;
+            case 3:
+                out = [true, false, true, false];
+                break;
+            case 4:
+                out = [true, true, false, false];
+                break;
+            case 7:
+                out = [false, false, true, true];
+                break;
+            default:
+        }
+        rot4(out, this.facing);
+        return out;
+    }
+
 }
 
 export function VoxelBaseTriangles(xyz) {
@@ -947,4 +972,34 @@ export function IntersectVoxelBase(xyz, start, aim) {
         if (intersect) return intersect;
     }
     return null;
+}
+
+// Rotates the values of a 4 array clockwise
+
+function rot4(a, n) {
+    const a0 = a[0];
+    const a1 = a[1];
+    const a2 = a[2];
+    const a3 = a[3];
+    switch (n) {
+        case 1:
+            a[0] = a3;
+            a[1] = a0;
+            a[2] = a1;
+            a[3] = a2;
+            break;
+        case 2:
+            a[0] = a2;
+            a[1] = a3;
+            a[2] = a0;
+            a[3] = a1;
+            break;
+        case 3:
+            a[0] = a1;
+            a[1] = a2;
+            a[2] = a3;
+            a[3] = a0;
+            break;
+        default:
+    }
 }

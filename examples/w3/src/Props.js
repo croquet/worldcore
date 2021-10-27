@@ -5,6 +5,7 @@ import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
 import paper from "../assets/paper.jpg";
 import { AM_VoxelSmoothed, PM_LayeredInstancedVisible } from "./Components";
 import { TimberActor } from "./Rubble";
+import { Surface } from "./Surfaces";
 
 //------------------------------------------------------------------------------------------
 //-- Props ---------------------------------------------------------------------------------
@@ -238,53 +239,108 @@ export class RoadActor extends PropActor {
 
     init(options) {
         super.init(options);
+        this.exits = [0,0,0,0,0,0,0,0,0,0];
+        this.findExits();
+        this.rebuildAdjacent(this.exits);
         this.publish("road", "add", this.xyz);
     }
 
     destroy() {
+        const oldExits = this.exits;
+        this.exits = [0,0,0,0,0,0,0,0,0,0];
+        this.rebuildAdjacent(oldExits);
         this.publish("road", "delete", this.xyz)
         super.destroy();
     }
+
+    change() {
+        this.publish("road", "change", this.xyz);
+    }
+
+    get exitCount() {
+        let count = 0;
+        this.exits.forEach(e => {if(e) count++});
+        return count;
+    }
+
+    // Returns the exits in ccw order, starting with noon
+    get ccwExits() {
+        return [
+            this.exits[0],
+            this.exits[9],
+            this.exits[3],
+            this.exits[8],
+            this.exits[2],
+            this.exits[7],
+            this.exits[1],
+            this.exits[6]
+        ];
+    }
+
+    validate() { // Need to test validity
+        this.destroy();
+    }
+
+    rebuildAdjacent(exits) {
+        const props = this.service("Props");
+        exits.forEach((key, n) => {
+            if (!key) return;
+            const adjacent = props.get(key);
+            adjacent.findExits();
+            adjacent.cullExits();
+            adjacent.change();
+        });
+        this.cullExits();
+    }
+
+    // Find legal exits to adjacent roads
+    findExits() {
+        const paths = this.service("Paths");
+        const props = this.service("Props");
+        const surfaces = this.service("Surfaces");
+
+        this.exits.fill(0);
+
+        // Constrain by surface shape
+
+        const surface = surfaces.get(this.key);
+        const shape = surface.shape;
+        const levelSides = surface.levelSides();
+
+        // Set exits to point to adjacent roads
+
+        const waypoint = paths.waypoints.get(this.key);
+        const pathExits = waypoint.exits;
+        pathExits.forEach( (key,n) => {
+            if (!key) return;
+            if (shape !== 2 && !levelSides[n]) return; // Road must be level
+            const prop = props.get(key);
+            if (!prop || !(prop instanceof RoadActor)) return;
+            this.exits[n] = key;
+        })
+
+        // Eliminate corner exits next to side exits
+
+        if (this.exits[0]) { this.exits[9] = 0; this.exits[6] = 0; };
+        if (this.exits[1]) { this.exits[6] = 0; this.exits[7] = 0; };
+        if (this.exits[2]) { this.exits[7] = 0; this.exits[8] = 0; };
+        if (this.exits[3]) { this.exits[8] = 0; this.exits[9] = 0; };
+
+    }
+
+    // Eliminate exits that are not reciprocated
+    cullExits() {
+        const props = this.service("Props");
+        this.exits.forEach((key, n) => {
+            if (!key) return;
+            const prop = props.get(key);
+            if (!prop.exits[opp(n)]) this.exits[n] = 0;
+        });
+    }
+
+
 }
 RoadActor.register("RoadActor");
-
-//------------------------------------------------------------------------------------------
-
-// class RoadPawn extends PropPawn {
-//     constructor(...args) {
-//         super(...args);
-//         const roadRender = this.service("RoadRender");
-//         roadRender.addKey(this.actor.xyz);
-
-//     }
-
-//     // buildDraw() {
-//     //     const mesh = CachedObject("roadMesh", this.buildMesh);
-//     //     const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
-//     //     const draw = new InstancedDrawCall(mesh, material);
-//     //     this.service("RenderManager").scene.addDrawCall(draw);
-//     //     return draw;
-//     // }
-
-//     // buildMaterial() {
-//     //     const material = new Material();
-//     //     material.pass = 'instanced';
-//     //     material.texture.loadFromURL(paper);
-//     //     return material;
-//     // }
-
-//     // buildMesh() {
-//     //     const trunk = Cylinder(0.5, 10, 7, [0.7, 0.5, 0.3, 1]);
-//     //     const top = Cone(2, 0.1, 15, 8, [0.4, 0.8, 0.4, 1]);
-//     //     top.destroy();
-//     //     trunk.transform(m4_rotationX(toRad(90)));
-//     //     trunk.transform(m4_translation([0,0,4.5]));
-//     //     trunk.load();
-//     //     trunk.clear();
-//     //     return trunk;
-//     // }
-
-// }
 
 //------------------------------------------------------------------------------------------
 //-- Utilities -----------------------------------------------------------------------------
@@ -306,6 +362,8 @@ function opp(side) {
         default: return 0;
     }
 }
+
+// Rotates the values of a 4 array clockwise
 
 function rot4(a, n) {
     const a0 = a[0];

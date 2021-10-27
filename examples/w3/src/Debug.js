@@ -146,26 +146,38 @@ export class RoadDebugRender extends ViewService {
             const v1 = v3_add(v0, [0, 0, 5]);
             this.mesh.addDebugLine(v0, v1, color);
 
-            // prop.sideExits.forEach((exit,n) => {
-            //     if (!exit ) return;
-            //     let v2;
-            //     switch(n) {
-            //         case 0:
-            //             v2 = v3_add(v1, [0,1,0]);
-            //             break;
-            //         case 1:
-            //             v2 = v3_add(v1, [1,0,0]);
-            //             break;
-            //         case 2:
-            //             v2 = v3_add(v1, [0,-1,0]);
-            //             break;
-            //         case 3:
-            //             v2 = v3_add(v1, [-1,0,0]);
-            //             break;
-            //         default:
-            //     }
-            //     this.mesh.addDebugLine(v1, v2, color);
-            // });
+            prop.exits.forEach((exit,n) => {
+                if (!exit ) return;
+                let v2;
+                switch(n) {
+                    case 0:
+                        v2 = v3_add(v1, [0,1,0]);
+                        break;
+                    case 1:
+                        v2 = v3_add(v1, [1,0,0]);
+                        break;
+                    case 2:
+                        v2 = v3_add(v1, [0,-1,0]);
+                        break;
+                    case 3:
+                        v2 = v3_add(v1, [-1,0,0]);
+                        break;
+                    case 6:
+                        v2 = v3_add(v1, [1,1,0]);
+                        break;
+                    case 7:
+                        v2 = v3_add(v1, [1,-1,0]);
+                        break;
+                    case 8:
+                        v2 = v3_add(v1, [-1,-1,0]);
+                        break;
+                    case 9:
+                        v2 = v3_add(v1, [-1,1,0]);
+                        break;
+                    default:
+                }
+                this.mesh.addDebugLine(v1, v2, color);
+            });
         });
         this.mesh.load();
         this.mesh.clear();
