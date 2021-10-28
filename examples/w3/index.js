@@ -34,7 +34,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!");
+        console.log("Start Model!!!!!!!");
 
         this.service("WorldBuilder").build();
 

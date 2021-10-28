@@ -107,10 +107,16 @@ class RoadLayer extends WorldcoreView {
                 case 1:
                     this.build1(prop);
                     break;
+                case 2:
+                case 3:
+                case 4:
+                    this.build234(prop);
+                    break;
                 default:
                     this.build0(prop);
             }
         })
+
         this.triangles.load();
     }
 
@@ -147,8 +153,10 @@ class RoadLayer extends WorldcoreView {
             const p = v2_rotate(rotor, angle*i);
             perimeter.push([center[0] + p[0], center[1] + p[1], center[2]]);
         }
+        perimeter.push([center[0] - OCTAGON_SIDE  * 0.5, center[1] - 0.5*OCTAGON_SIDE, center[2]]);
         perimeter.push([center[0] - OCTAGON_SIDE * 0.5, center[1] - 0.5, center[2]]);
         perimeter.push([center[0] + OCTAGON_SIDE * 0.5, center[1] - 0.5, center[2]]);
+        perimeter.push([center[0] + OCTAGON_SIDE * 0.5, center[1] - 0.5*OCTAGON_SIDE, center[2]]);
         perimeter.push([...perimeter[1]]);
 
         rotate(perimeter, toRad(45) * (side+4), center);
@@ -156,27 +164,38 @@ class RoadLayer extends WorldcoreView {
         this.addVertices(perimeter, xyz);
     }
 
-    build4(prop) {
+    buildTest(prop) {
         const xyz = prop.xyz;
-        const center = v3_add(xyz, [0.5, 0.5, 0]);
+        const center =  [0.5, 0.5, 0];
 
         const perimeter = [];
         perimeter.push([...center])
+        const arc0 = arc4();
+        arc0.forEach(v=> { perimeter.push([v[0], v[1], center[2]]); });
 
-        const arc = arc1();
-
-        arc.forEach(v=> { clip(v); perimeter.push([v[0] + xyz[0], v[1] + xyz[1], xyz[2]]); });
-        rotate(arc, toRad(90), [0.5,0.5]);
-        arc.forEach(v=> { clip(v); perimeter.push([v[0] + xyz[0], v[1] + xyz[1], xyz[2]]); });
-        rotate(arc, toRad(90), [0.5,0.5]);
-        arc.forEach(v=> { clip(v); perimeter.push([v[0] + xyz[0], v[1] + xyz[1], xyz[2]]); });
-        rotate(arc, toRad(90), [0.5,0.5]);
-        arc.forEach(v=> { clip(v); perimeter.push([v[0] + xyz[0], v[1] + xyz[1], xyz[2]]); });
+        const arc1 = arc4();
+        rotate(arc1, 4 * toRad(45), [0.5,0.5]);
+        arc1.forEach(v=> { perimeter.push([v[0], v[1], center[2]]); });
         perimeter.push([...perimeter[1]]);
 
-        rotate(perimeter, toRad(0), center);
+        this.addVertices(perimeter, xyz);
+    }
 
-        this.addVertices(perimeter);
+    build234(prop) {
+        const xyz = prop.xyz;
+        const center =  [0.5, 0.5, 0];
+        const gaps = prop.exitGaps;
+
+        const perimeter = [];
+        perimeter.push([...center])
+        gaps.forEach(gap => {
+            const arc = findArc(gap.size);
+            rotate(arc, gap.start*toRad(45), [0.5,0.5]);
+            arc.forEach(v=> { perimeter.push([v[0],v[1], center[2]]); });
+        })
+        perimeter.push([...perimeter[1]]);
+
+        this.addVertices(perimeter, xyz);
     }
 
     addVertices(vertices, xyz) {
@@ -184,20 +203,22 @@ class RoadLayer extends WorldcoreView {
         const uvs = [];
         const colors = [];
         vertices.forEach( v => {
+            uvs.push([v[0], v[1]]);
             v[0] = xyz[0] + Math.min(0.9999, Math.max(0.0001, v[0]));
             v[1] = xyz[1] + Math.min(0.9999, Math.max(0.0001, v[1]));
             v[2] = xyz[2];
-            uvs.push([v[0], v[1]]);
             colors.push(roadColor);
             const elevation = surfaces.elevation(v);
             v[2] += elevation;
 
         });
+
         vertices.forEach( v => {
             v[0] *= Voxels.scaleX;
             v[1] *= Voxels.scaleY;
             v[2] *= Voxels.scaleZ;
         });
+
         this.triangles.addFace(vertices, colors, uvs);
 
     }
@@ -209,20 +230,20 @@ class RoadLayer extends WorldcoreView {
 const OCTAGON_INSET = (1 - 1/Math.tan(toRad(67.5))) / 2;
 const OCTAGON_SIDE = 1 - 2 * OCTAGON_INSET;
 
-function octagon() {
-    const a = OCTAGON_INSET;
-    const b = 1-OCTAGON_INSET;
-    return [
-        [a, 1], [b, 1],
-        [1, b], [1, a],
-        [b, 0], [a, 0],
-        [0, a], [0, b]
-    ];
-}
+// function octagon() {
+//     const a = OCTAGON_INSET;
+//     const b = 1-OCTAGON_INSET;
+//     return [
+//         [a, 1], [b, 1],
+//         [1, b], [1, a],
+//         [b, 0], [a, 0],
+//         [0, a], [0, b]
+//     ];
+// }
 
-function frac(x) {
-    return x - Math.floor(x);
-}
+// function frac(x) {
+//     return x - Math.floor(x);
+// }
 
 function clip(v) {
     v[0] = Math.min(0.9999, Math.max(0.0001, v[0]));
@@ -238,57 +259,69 @@ function rotate(xyzs, angle, center) {
     });
 }
 
-function arc1 () {
-    const rotor = [0, OCTAGON_INSET]
+function findArc(gapSize) {
+    switch(gapSize) {
+        case 2: return arc2();
+        case 3: return arc3();
+        case 4: return arc4();
+        case 5: return arc5();
+        case 6: return arc6();
+        default:
+    }
+    return [];
+}
+
+function arc2 () {
+    const rotor = [OCTAGON_INSET, 0];
     const out = [];
     const steps = 16;
     const angle = toRad(90) / (steps-1);
     for (let i = 0; i < steps; i++) {
-        out.push(v2_rotate(rotor, -i * angle));
+        const p = v2_rotate(rotor, -i * angle);
+        out.push([p[0], p[1]+1]);
     }
-    // out.forEach(v => {
-    //     v[0] = Math.max(0, Math.min(1, v[0]))
-    //     v[1] = Math.max(0, Math.min(1, v[1]))
-    // })
     return out;
 }
 
-function arc2 () {
-    const rotor = [0, 1]
+function arc3 () {
+    const rotor = [1, 0];
     const out = [];
     const steps = 16;
     const angle = toRad(45) / (steps-1);
     for (let i = 0; i < steps; i++) {
         const p = v2_rotate(rotor, -i * angle);
-        out.push([p[0], p[1]-(OCTAGON_INSET + OCTAGON_SIDE)]);
+        out.push([p[0]-(OCTAGON_INSET + OCTAGON_SIDE), p[1]+1]);
     }
     return out;
 }
-function arc3() {
-    return [[0, OCTAGON_INSET], [1, OCTAGON_INSET]]
+
+function arc4() {
+    return [[OCTAGON_INSET, 1], [OCTAGON_INSET, 0]]
 }
 
-function arc4 () {
-    const rotor = [0, -2*(OCTAGON_INSET + OCTAGON_SIDE)]
+function arc5 () {
+    const rotor = [-(1+OCTAGON_SIDE), 0];
     const out = [];
     const steps = 16;
     const angle = toRad(45) / (steps-1);
     for (let i = 0; i < steps; i++) {
         const p = v2_rotate(rotor, i * angle);
-        out.push([p[0], p[1]+(2*OCTAGON_SIDE + 3*OCTAGON_INSET)]);
+        // out.push([...p]);
+        out.push([p[0]+(OCTAGON_INSET+OCTAGON_SIDE+1), p[1]+1]);
     }
     return out;
 }
 
-function arc5 () {
-    const rotor = [0, -(OCTAGON_INSET + OCTAGON_SIDE)]
+function arc6 () {
+    const rotor = [-(OCTAGON_INSET+ OCTAGON_SIDE), 0];
     const out = [];
     const steps = 16;
     const angle = toRad(90) / (steps-1);
     for (let i = 0; i < steps; i++) {
         const p = v2_rotate(rotor, i * angle);
-        out.push([p[0], p[1] + (OCTAGON_SIDE + 2*OCTAGON_INSET)]);
+        out.push([p[0]+((2*OCTAGON_INSET+ OCTAGON_SIDE)), p[1]+1]);
     }
     return out;
 }
+
 

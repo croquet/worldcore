@@ -277,6 +277,22 @@ export class RoadActor extends PropActor {
         ];
     }
 
+    get exitGaps() {
+        const ccw = this.ccwExits;
+        let first = 0;
+        while(!ccw[first]) {first++};
+        const out = [];
+        let n0 = first;
+        do {
+            let n1 = n0+1;
+            while(!ccw[n1%8]) {n1++};
+            const size = n1-n0;
+            out.push({start: n0, size});
+            n0 = n1%8;
+        } while(n0 !== first)
+        return out;
+    }
+
     validate() { // Need to test validity
         this.destroy();
     }
