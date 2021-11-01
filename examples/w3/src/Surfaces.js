@@ -932,7 +932,7 @@ export class Surface  {
 
     // Returns a 4 array with flags showing if the side of the shape is level.
     // Used for stuff like road exits.
-    levelSides() {
+    flatSides() {
         let out = [false, false, false, false];
         switch (this.shape) {
             case 2:
@@ -946,6 +946,33 @@ export class Surface  {
                 break;
             case 7:
                 out = [false, false, true, true];
+                break;
+            case 9:
+                out = [true, false, false, false];
+                break;
+            default:
+        }
+        rot4(out, this.facing);
+        return out;
+    }
+
+    flatCorners() {
+        let out = [false, false, false, false];
+        switch (this.shape) {
+            case 2:
+                out = [true, true, true, true];
+                break;
+            case 4:
+                out = [true, false, false, false];
+                break;
+            case 6:
+                out = [true, false, false, false];
+                break;
+            case 7:
+                out = [false, false, true, false];
+                break;
+            case 8:
+                out = [true, false, true, false];
                 break;
             default:
         }

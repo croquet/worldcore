@@ -34,7 +34,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!!!!!!");
+        console.log("Start Model");
 
         this.service("WorldBuilder").build();
 
@@ -50,8 +50,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, RenderManager, UIManager, VoxelRender, GodView, Editor, VoxelCursor, RoadDebugRender, RoadRender];
-        // return [InputManager, RenderManager, UIManager, VoxelRender, GodView, Editor, VoxelCursor];
+        return [InputManager, RenderManager, UIManager, VoxelRender, GodView, Editor, VoxelCursor, RoadRender];
     }
 
     constructor(model) {
@@ -71,6 +70,7 @@ class MyViewRoot extends ViewRoot {
             ao.setRadius(0.1);
             ao.density = 0.5;
             ao.falloff = 1;
+            ao.bias = 0.001;
         }
 
         this.subscribe("input", "qDown", () => {

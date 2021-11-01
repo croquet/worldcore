@@ -5,7 +5,8 @@ import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
 import paper from "../assets/paper.jpg";
 import { AM_VoxelSmoothed, PM_LayeredInstancedVisible } from "./Components";
 import { TimberActor } from "./Rubble";
-import { Surface } from "./Surfaces";
+import { Surface, VoxelBaseTriangles } from "./Surfaces";
+import { Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
 //-- Props ---------------------------------------------------------------------------------
@@ -60,11 +61,17 @@ export class Props extends ModelService {
     }
 
     onSpawnTree(xyz) {
+        const key = Voxels.packKey(...xyz);
+        const prop = this.props.get(key);
+        if (prop instanceof TreeActor) return;
         TreeActor.create({xyz});
     }
 
     onSpawnRoad(xyz) {
-        RoadActor.create({xyz});
+        const key = Voxels.packKey(...xyz);
+        const prop = this.props.get(key);
+        if (prop instanceof RoadActor) return;
+        RoadActor.create({xyz})
     }
 
 }
@@ -239,27 +246,88 @@ export class RoadActor extends PropActor {
 
     init(options) {
         super.init(options);
-        this.exits = [0,0,0,0,0,0,0,0,0,0];
-        this.findExits();
-        this.rebuildAdjacent(this.exits);
+        this.exits = [0,0,0,0,0, 0,0,0,0,0];
+        this.rebuild();
+        // this.findExits();
+        // this.rebuildAdjacent(this.exits);
         this.publish("road", "add", this.xyz);
+        this.mirror();
+    }
+
+    // Creates corresponding road above or below if necessary.
+    mirror() {
+        const props = this.service("Props");
+        const paths = this.service("Paths");
+
+        const below = Voxels.adjacent(...this.xyz, Voxels.below);
+        const belowKey = Voxels.packKey(...below);
+        const belowProp = props.get(belowKey);
+        const belowWaypoint = paths.waypoints.get(belowKey);
+
+        if (belowWaypoint && (!belowProp || !(belowProp instanceof RoadActor))) {
+            RoadActor.create({xyz: below});
+        }
+
+        const above = Voxels.adjacent(...this.xyz, Voxels.above);
+        const aboveKey = Voxels.packKey(...above);
+        const aboveProp = props.get(aboveKey);
+        const aboveWaypoint = paths.waypoints.get(aboveKey);
+
+        if (aboveWaypoint && (!aboveProp || !(aboveProp instanceof RoadActor))) {
+            RoadActor.create({xyz: above});
+        }
+
     }
 
     destroy() {
-        const oldExits = this.exits;
-        this.exits = [0,0,0,0,0,0,0,0,0,0];
-        this.rebuildAdjacent(oldExits);
-        this.publish("road", "delete", this.xyz)
         super.destroy();
+        this.exits = [0,0,0,0,0,0,0,0,0,0];
+        this.rebuildAdjacent();
+        this.publish("road", "delete", this.xyz)
+
     }
 
     change() {
         this.publish("road", "change", this.xyz);
     }
 
+    rebuild() {
+        this.findExits();
+        this.rebuildAdjacent();
+        this.cullExits();
+    }
+
+    rebuildAdjacent() {
+        this.adjacentRoads.forEach( road => road.findExits());
+        this.adjacentRoads.forEach( road => road.cullExits());
+        this.adjacentRoads.forEach( road => road.change());
+    }
+
+    get adjacentRoads() {
+        const out = []
+        const paths = this.service("Paths");
+        const props = this.service("Props");
+        const waypoint = paths.waypoints.get(this.key);
+        if (!waypoint) return out;
+        waypoint.exits.forEach( (key,n) => {
+            if (!key) return;
+            const prop = props.get(key);
+            if (!prop || !(prop instanceof RoadActor)) return;
+            out.push(prop);
+        })
+        return out;
+    }
+
     get exitCount() {
         let count = 0;
         this.exits.forEach(e => {if(e) count++});
+        return count;
+    }
+
+    // Returns the exits not counting above/below
+    get drawExitCount() {
+        let count = 0;
+        this.ccwExits.forEach(e => {if(e) count++});
         return count;
     }
 
@@ -294,19 +362,14 @@ export class RoadActor extends PropActor {
     }
 
     validate() { // Need to test validity
-        this.destroy();
-    }
-
-    rebuildAdjacent(exits) {
-        const props = this.service("Props");
-        exits.forEach((key, n) => {
-            if (!key) return;
-            const adjacent = props.get(key);
-            adjacent.findExits();
-            adjacent.cullExits();
-            adjacent.change();
-        });
-        this.cullExits();
+        const surface = this.service('Surfaces').get(this.key);
+        if (!surface || !surface.hasFloor()) {
+            this.destroy();
+        } else {
+            this.rebuild();
+            this.mirror();
+            this.publish("road", "change", this.xyz);
+        }
     }
 
     // Find legal exits to adjacent roads
@@ -320,16 +383,22 @@ export class RoadActor extends PropActor {
         // Constrain by surface shape
 
         const surface = surfaces.get(this.key);
-        const shape = surface.shape;
-        const levelSides = surface.levelSides();
+        if (!surface) return;
+        const flatSides = surface.flatSides();
+        const flatCorners = surface.flatCorners();
 
         // Set exits to point to adjacent roads
 
         const waypoint = paths.waypoints.get(this.key);
+        if (!waypoint) return;
         const pathExits = waypoint.exits;
         pathExits.forEach( (key,n) => {
             if (!key) return;
-            if (shape !== 2 && !levelSides[n]) return; // Road must be level
+            if (n<4) { // sides
+                if (!flatSides[n]) return;
+            } else if (n>5) { // corners
+                if (!flatCorners[n-6]) return;
+            }
             const prop = props.get(key);
             if (!prop || !(prop instanceof RoadActor)) return;
             this.exits[n] = key;

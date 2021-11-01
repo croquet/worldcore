@@ -50,13 +50,13 @@ Bootstrap links in your local repo:
 
 * Execute these commands one-by-one (we do not show the output here, only the commands)
 
-      > cd worldcore/examples/wctest
+      > cd worldcore/tutorial/tutorial1
       > npm i
       > npm start
 
   This command will not stop until you press ctrl-c. It will continually rebuild files as you edit them.
 
-* Open http://localhost:1234/ in a web browser to see the "wctest" example app
+* Open http://localhost:1234/ in a web browser to see the "tutorial1" example app
 
 ## Modify and test Worldcore packages
 

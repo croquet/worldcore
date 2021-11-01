@@ -5,6 +5,7 @@ import { RoadActor } from "./Props";
 
 import paper from "../assets/paper.jpg";
 import { straightThroughStringTask } from "simple-git/src/lib/tasks/task";
+import { GetTopLayer } from "./Globals";
 
 const roadColor = [0.6, 0.6, 0.6, 1];
 
@@ -50,6 +51,10 @@ export class RoadRender extends ViewService {
         this.layers[xyz[2]].change(xyz);
     }
 
+    update() {
+        // this.layers.forEach(layer => layer.refresh());
+    }
+
 }
 
 
@@ -63,6 +68,8 @@ class RoadLayer extends WorldcoreView {
         this.z = z;
         this.keys = new Set();
 
+        const topLayer = GetTopLayer();
+
         this.triangles = new Triangles();
         this.triangles.load();
 
@@ -71,8 +78,11 @@ class RoadLayer extends WorldcoreView {
         this.material.zOffset = -1;
         this.material.texture.loadFromURL(paper);
         this.drawCall = new DrawCall(this.triangles, this.material);
+        this.drawCall.isHidden = this.z >= topLayer;
         render.scene.addDrawCall(this.drawCall);
+        this.subscribe("hud", "topLayer", this.onTopLayer);
         this.build();
+        // this.dirty = true;
     }
 
     destroy() {
@@ -86,16 +96,30 @@ class RoadLayer extends WorldcoreView {
         const key = Voxels.packKey(...xyz);
         this.keys.add(key);
         this.build();
+        // this.dirty = true;
     }
 
     delete(xyz) {
+        console.log("road delete");
         const key = Voxels.packKey(...xyz);
         this.keys.delete(key);
-        this.build();
+        this.build()
+        // this.dirty = true;
     }
 
     change(xyz) {
-        this.build();
+        this.build()
+        // this.dirty = true;
+    }
+
+    refresh() {
+        if (!this.dirty) return;
+        // this.build();
+        this.dirty = false;
+    }
+
+    onTopLayer(topLayer) {
+        this.drawCall.isHidden = this.z >= topLayer;
     }
 
     build() {
@@ -103,7 +127,9 @@ class RoadLayer extends WorldcoreView {
         const props = this.modelService("Props");
         this.keys.forEach( key => {
             const prop = props.get(key);
-            switch(prop.exitCount) {
+            if (!prop || !(prop instanceof RoadActor)) return;
+            if (prop.exits[Voxels.above]) return; // In an above/below pair, only draw the top.
+            switch(prop.drawExitCount) {
                 case 1:
                     this.build1(prop);
                     break;
@@ -115,6 +141,9 @@ class RoadLayer extends WorldcoreView {
                 default:
                     this.build0(prop);
             }
+
+            if (prop.exits[Voxels.southWest]) this.buildCorner00(prop);
+            if (prop.exits[Voxels.southEast]) this.buildCorner01(prop);
         })
 
         this.triangles.load();
@@ -153,10 +182,10 @@ class RoadLayer extends WorldcoreView {
             const p = v2_rotate(rotor, angle*i);
             perimeter.push([center[0] + p[0], center[1] + p[1], center[2]]);
         }
-        perimeter.push([center[0] - OCTAGON_SIDE  * 0.5, center[1] - 0.5*OCTAGON_SIDE, center[2]]);
-        perimeter.push([center[0] - OCTAGON_SIDE * 0.5, center[1] - 0.5, center[2]]);
-        perimeter.push([center[0] + OCTAGON_SIDE * 0.5, center[1] - 0.5, center[2]]);
-        perimeter.push([center[0] + OCTAGON_SIDE * 0.5, center[1] - 0.5*OCTAGON_SIDE, center[2]]);
+        perimeter.push([center[0] - 0.5*OCTAGON_SIDE, center[1] - 0.5*OCTAGON_SIDE, center[2]]);
+        perimeter.push([center[0] - 0.5*OCTAGON_SIDE, center[1] - 0.5, center[2]]);
+        perimeter.push([center[0] + 0.5*OCTAGON_SIDE, center[1] - 0.5, center[2]]);
+        perimeter.push([center[0] + 0.5*OCTAGON_SIDE, center[1] - 0.5*OCTAGON_SIDE, center[2]]);
         perimeter.push([...perimeter[1]]);
 
         rotate(perimeter, toRad(45) * (side+4), center);
@@ -198,6 +227,52 @@ class RoadLayer extends WorldcoreView {
         this.addVertices(perimeter, xyz);
     }
 
+    buildCorner00(prop) {
+        const xyz = prop.xyz;
+
+        let face = [
+            [0, -OCTAGON_INSET, 0],
+            [OCTAGON_INSET, 0, 0],
+            [0, OCTAGON_INSET, 0],
+            [-OCTAGON_INSET, 0, 0]
+        ];
+
+        this.addFlatVertices(face, xyz);
+    }
+
+    buildCorner01(prop) {
+        const xyz = prop.xyz;
+
+        let face = [
+            [1, OCTAGON_INSET, 0],
+            [1-OCTAGON_INSET, 0, 0],
+            [1,-OCTAGON_INSET, 0],
+            [1+OCTAGON_INSET, 0, 0]
+        ];
+
+        this.addFlatVertices(face, xyz);
+    }
+
+    addFlatVertices(vertices, xyz) {
+        const uvs = [];
+        const colors = [];
+        vertices.forEach( v => {
+            uvs.push([v[0], v[1]]);
+            v[0] += xyz[0];
+            v[1] += xyz[1];
+            v[2] += xyz[2];
+            colors.push(roadColor);
+        });
+
+        vertices.forEach( v => {
+            v[0] *= Voxels.scaleX;
+            v[1] *= Voxels.scaleY;
+            v[2] *= Voxels.scaleZ;
+        });
+
+        this.triangles.addFace(vertices, colors, uvs);
+    }
+
     addVertices(vertices, xyz) {
         const surfaces = this.modelService("Surfaces");
         const uvs = [];
@@ -229,26 +304,6 @@ class RoadLayer extends WorldcoreView {
 
 const OCTAGON_INSET = (1 - 1/Math.tan(toRad(67.5))) / 2;
 const OCTAGON_SIDE = 1 - 2 * OCTAGON_INSET;
-
-// function octagon() {
-//     const a = OCTAGON_INSET;
-//     const b = 1-OCTAGON_INSET;
-//     return [
-//         [a, 1], [b, 1],
-//         [1, b], [1, a],
-//         [b, 0], [a, 0],
-//         [0, a], [0, b]
-//     ];
-// }
-
-// function frac(x) {
-//     return x - Math.floor(x);
-// }
-
-function clip(v) {
-    v[0] = Math.min(0.9999, Math.max(0.0001, v[0]));
-    v[1] = Math.min(0.9999, Math.max(0.0001, v[1]));
-}
 
 function rotate(xyzs, angle, center) {
     xyzs.forEach( xyz => {

@@ -162,6 +162,12 @@ export class RoadDebugRender extends ViewService {
                     case 3:
                         v2 = v3_add(v1, [-1,0,0]);
                         break;
+                    case 4:
+                        v2 = v3_add(v1, [0,0,-1]);
+                        break;
+                    case 5:
+                        v2 = v3_add(v1, [0,0,-1]);
+                        break;
                     case 6:
                         v2 = v3_add(v1, [1,1,0]);
                         break;

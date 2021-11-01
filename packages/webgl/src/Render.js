@@ -1018,32 +1018,34 @@ export class Triangles extends Mesh {
         const triCount = vertices.length - 2;
         if (triCount < 1) return;
 
-        if (!normals) {
-            normals = [];
-            const n = this.findNormal(vertices[0], vertices[1], vertices[2]);
-            for (let i = 0; i < vertices.length; i++) normals.push(n);
-        }
+        // if (!normals) {
+        //     normals = [];
+        //     const n = this.findNormal(vertices[0], vertices[1], vertices[2]);
+        //     for (let i = 0; i < vertices.length; i++) normals.push(n);
+        // }
 
         for (let i = 0; i < triCount; i++) {
+
+            let n = this.findNormal(vertices[0], vertices[i+1], vertices[i+2]);
 
             //-- Vertex A--
 
             this.vertices.push(...vertices[0]);
-            if (normals) this.normals.push(...normals[0]);
+            if (normals) { this.normals.push(...normals[0]); } else { this.normals.push(...n) };
             if (colors) this.colors.push(...colors[0]);
             if (coordinates) this.coordinates.push(...coordinates[0]);
 
             //-- Vertex B --
 
             this.vertices.push(...vertices[i+1]);
-            if (normals) this.normals.push(...normals[i+1]);
+            if (normals) { this.normals.push(...normals[i+1]) } else { this.normals.push(...n) };
             if (colors) this.colors.push(...colors[i+1]);
             if (coordinates) this.coordinates.push(...coordinates[i+1]);
 
             //-- Vertex C --
 
             this.vertices.push(...vertices[i+2]);
-            if (normals) this.normals.push(...normals[i+2]);
+            if (normals) { this.normals.push(...normals[i+2]) } else { this.normals.push(...n) };
             if (colors) this.colors.push(...colors[i+2]);
             if (coordinates) this.coordinates.push(...coordinates[i+2]);
         }
