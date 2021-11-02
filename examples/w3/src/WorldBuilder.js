@@ -1,5 +1,5 @@
 import { ModelService, PerlinNoise } from "@croquet/worldcore-kernel";
-import { TreeActor } from "./Props";
+import { RoadActor, TreeActor } from "./Props";
 import { Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
@@ -100,6 +100,7 @@ export class WorldBuilder extends ModelService {
             if (landMatrix[x][y][z-1] !== Voxels.dirt) continue; // Only plant trees in dirt
             // if (water.getVolumeByKey(key)) continue; // Don't plant trees in water
             if (z < minHeight+7) continue; // Don't plant trees under water
+            if (props.get(key)) continue; // Don't plant trees on other trees
             const maxSize = 1 - 0.6 * this.random();
             const size = maxSize - 0.1;
             TreeActor.create({xyz, maxSize, size});

@@ -254,13 +254,11 @@ export class RoadActor extends PropActor {
         super.init(options);
         this.exits = [0,0,0,0,0, 0,0,0,0,0];
         this.rebuild();
-        // this.findExits();
-        // this.rebuildAdjacent(this.exits);
         this.publish("road", "add", this.xyz);
         this.mirror();
     }
 
-    // Creates corresponding road above or below if necessary.
+    // Creates corresponding road above or below if surface has a center exit.
     mirror() {
         const props = this.service("Props");
         const paths = this.service("Paths");
@@ -304,9 +302,10 @@ export class RoadActor extends PropActor {
     }
 
     rebuildAdjacent() {
-        this.adjacentRoads.forEach( road => road.findExits());
-        this.adjacentRoads.forEach( road => road.cullExits());
-        this.adjacentRoads.forEach( road => road.change());
+        const adj = this.adjacentRoads;
+        adj.forEach( road => road.findExits());
+        adj.forEach( road => road.cullExits());
+        adj.forEach( road => road.change());
     }
 
     get adjacentRoads() {
@@ -351,6 +350,7 @@ export class RoadActor extends PropActor {
         ];
     }
 
+    // Gaps between exits in ccw order
     get exitGaps() {
         const ccw = this.ccwExits;
         let first = 0;
@@ -367,7 +367,7 @@ export class RoadActor extends PropActor {
         return out;
     }
 
-    validate() { // Need to test validity
+    validate() {
         const surface = this.service('Surfaces').get(this.key);
         if (!surface || !surface.hasFloor()) {
             this.destroy();
@@ -451,35 +451,5 @@ function opp(side) {
         case 8: return 6;
         case 9: return 7;
         default: return 0;
-    }
-}
-
-// Rotates the values of a 4 array clockwise
-
-function rot4(a, n) {
-    const a0 = a[0];
-    const a1 = a[1];
-    const a2 = a[2];
-    const a3 = a[3];
-    switch (n) {
-        case 1:
-            a[0] = a3;
-            a[1] = a0;
-            a[2] = a1;
-            a[3] = a2;
-            break;
-        case 2:
-            a[0] = a2;
-            a[1] = a3;
-            a[2] = a0;
-            a[3] = a1;
-            break;
-        case 3:
-            a[0] = a1;
-            a[1] = a2;
-            a[2] = a3;
-            a[3] = a0;
-            break;
-        default:
     }
 }

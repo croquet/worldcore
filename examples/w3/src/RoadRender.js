@@ -1,10 +1,9 @@
 import { TAU, toRad, v3_add, v2_rotate, viewRoot, ViewService, WorldcoreView } from "@croquet/worldcore-kernel";
-import { Triangles, Material, DrawCall, UnitCube  } from "@croquet/worldcore-webgl"
+import { Triangles, Material, DrawCall  } from "@croquet/worldcore-webgl"
 import { Voxels } from "./Voxels";
 import { RoadActor } from "./Props";
 
 import paper from "../assets/paper.jpg";
-import { straightThroughStringTask } from "simple-git/src/lib/tasks/task";
 import { GetTopLayer } from "./Globals";
 
 const roadColor = [0.6, 0.6, 0.6, 1];
@@ -17,13 +16,16 @@ export class RoadRender extends ViewService {
     constructor() {
         super("RoadRender");
         const render = this.service("RenderManager");
-        console.log("Road render start");
         this.layers = [];
-        for (let z = 0; z < Voxels.sizeZ; z++) this.layers[z] = new RoadLayer(z);
-        this.rebuild();
+        for (let z = 0; z < Voxels.sizeZ; z++) {
+            this.layers[z] = new RoadLayer(z);
+            this.layers[z].allLayers = this;
+        }
+        this.relink();
         this.subscribe("road", "add", this.add)
         this.subscribe("road", "delete", this.delete)
         this.subscribe("road", "change", this.change)
+        this.dirty = true;
     }
 
     destroy() {
@@ -31,7 +33,7 @@ export class RoadRender extends ViewService {
         this.layers.forEach(layer => layer.destroy);
     }
 
-    rebuild() {
+    relink() {
         const props = this.modelService("Props");
         props.props.forEach( prop => {
             if (!(prop instanceof RoadActor)) return;
@@ -52,7 +54,8 @@ export class RoadRender extends ViewService {
     }
 
     update() {
-        // this.layers.forEach(layer => layer.refresh());
+        if (!this.dirty) return;
+        this.layers.forEach(layer => layer.refresh());
     }
 
 }
@@ -82,7 +85,6 @@ class RoadLayer extends WorldcoreView {
         render.scene.addDrawCall(this.drawCall);
         this.subscribe("hud", "topLayer", this.onTopLayer);
         this.build();
-        // this.dirty = true;
     }
 
     destroy() {
@@ -95,26 +97,23 @@ class RoadLayer extends WorldcoreView {
     add(xyz) {
         const key = Voxels.packKey(...xyz);
         this.keys.add(key);
-        this.build();
-        // this.dirty = true;
+        this.change();
     }
 
     delete(xyz) {
-        console.log("road delete");
         const key = Voxels.packKey(...xyz);
         this.keys.delete(key);
-        this.build()
-        // this.dirty = true;
+        this.change();
     }
 
-    change(xyz) {
-        this.build()
-        // this.dirty = true;
+    change() {
+        this.allLayers.dirty = true;
+        this.dirty = true;
     }
 
     refresh() {
         if (!this.dirty) return;
-        // this.build();
+        this.build();
         this.dirty = false;
     }
 
