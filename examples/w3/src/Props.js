@@ -45,6 +45,12 @@ export class Props extends ModelService {
         return this.props.get(key);
     }
 
+    getRoad(key) {
+        const road = this.props.get(key);
+        if (road instanceof RoadActor) return road;
+        return undefined;
+    }
+
     add(key, prop) {
         const previous = this.props.get(key);
         if (previous) previous.destroy();

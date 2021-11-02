@@ -1,6 +1,7 @@
 import { Constants, q_multiply, v3_sub, v2_sub, v2_scale, v2_magnitude, sphericalRandom, q_axisAngle } from "@croquet/worldcore-kernel";
 import { Behavior, CompositeBehavior } from "@croquet/worldcore-behavior";
 import { Voxels } from "./Voxels";
+import { RoadActor } from "./Props";
 
 //------------------------------------------------------------------------------------------
 //-- FallBehavior --------------------------------------------------------------------------
@@ -212,6 +213,7 @@ class WalkToBehavior extends Behavior {
     do(delta) {
 
         const water = this.service('Water');
+        const props = this.service('Props');
 
         let xyz = this.actor.xyz;
         let fraction = this.actor.fraction;
@@ -219,6 +221,7 @@ class WalkToBehavior extends Behavior {
         let freedom = 1;
         const depth = water.getVolume(...xyz) - fraction[2];
         if (depth > Constants.path.deepWaterDepth) freedom /= Constants.path.deepWaterWeight;
+        if (props.getRoad(this.actor.key)) freedom *= Constants.path.roadSpeed;
 
         let travel = freedom * this.speed * delta / 1000;
         let remaining = v2_sub(this.exit, fraction); // remaing distance to exit

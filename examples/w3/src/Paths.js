@@ -1,6 +1,7 @@
 // import {  } from "@croquet/croquet";
 import { Model, Constants, ModelService, PriorityQueue } from "@croquet/worldcore-kernel";
 import { Voxels } from "./Voxels";
+import { RoadActor } from "./Props";
 
 Constants.path = {
     slopeEffort: 1.2,   // Multiplier to discourage walking uphill
@@ -11,7 +12,9 @@ Constants.path = {
     centerWeight: 0.1,
     maxWaterDepth: 0.6,
     deepWaterDepth: 0.2,
-    deepWaterWeight: 2
+    deepWaterWeight: 2,
+    roadWeight: 0.01,
+    roadSpeed: 2
 };
 
 const slopeEffort = Constants.path.slopeEffort;
@@ -23,6 +26,7 @@ const centerWeight = Constants.path.centerWeight;
 const maxWaterDepth = Constants.path.maxWaterDepth;
 const deepWaterDepth = Constants.path.deepWaterDepth;
 const deepWaterWeight = Constants.path.deepWaterWeight;
+const roadWeight = Constants.path.roadWeight;
 
 
 //------------------------------------------------------------------------------------------
@@ -94,6 +98,7 @@ export class Paths extends ModelService {
 
     findPath(startKey, endKey) {
         const water = this.service('Water');
+        const props = this.service('Props');
         const path = [];
 
         if (!this.waypoints.has(startKey)) return path;  // Invalid start waypoint
@@ -114,15 +119,17 @@ export class Paths extends ModelService {
             if (currentKey === endKey) break;
             const current = visited.get(currentKey);
             const currentWaypoint = this.waypoints.get(currentKey);
+            const currentRoad = props.getRoad(currentKey);
             for (let i = 0; i < 10; i++) {
                 const exitKey = currentWaypoint.exits[i];
-                const exitWater = water.getVolumeByKey(exitKey);
                 if (!exitKey) continue; // No exit in that direction;
+                const exitWater = water.getVolumeByKey(exitKey);
                 if (exitWater > maxWaterDepth) continue; // Don't walk into water that could drown you
                 if (!visited.has(exitKey)) visited.set(exitKey, {}); // First time visited
                 const exit = visited.get(exitKey);
                 let addedCost = currentWaypoint.weights[i];
                 if (exitWater > deepWaterDepth) addedCost *= deepWaterWeight;
+                if (currentRoad && currentRoad.exits[i]) addedCost *= roadWeight;
                 const cost = current.cost + addedCost;
                 if (exit.from && exit.cost <= cost) continue; // A better route to this exit already exists
                 exit.from = currentKey;
