@@ -34,15 +34,15 @@ async function deploy() {
     }
 
     console.log(`Updating worldcore...`);
-    console.log(execSync(`pnpm i`, {cwd: WORLDCORE}).toString());
+    console.log(execSync(`npm ci`, {cwd: WORLDCORE}).toString());
 
     console.log(`Updating ${APP}...`);
-    console.log(execSync("pnpm i", {cwd: SRC}).toString());
+    console.log(execSync("npm ci", {cwd: SRC}).toString());
 
     // build into croquet.io/dev/
     await fsx.emptyDir(TARGET);
     console.log(`Building ${APP}...`);
-    console.log(execSync(`pnpm run build -- --output-path ${TARGET}`, {cwd: SRC}).toString());
+    console.log(execSync(`npm run build -- --output-path ${TARGET}`, {cwd: SRC}).toString());
 
     // commit to git
     const git = simpleGit({ baseDir: TARGET });
