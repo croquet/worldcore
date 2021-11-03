@@ -115,8 +115,8 @@ export const PM_Camera = superclass => class extends superclass {
 // The top render interface that controls the execution of draw passes.
 
 export class RenderManager extends ViewService {
-    constructor() {
-        super("RenderManager");
+    constructor(name) {
+        super(name ||"RenderManager");
         SetGLPipeline(this);
         this.display = new MainDisplay();
         this.buildBuffers();

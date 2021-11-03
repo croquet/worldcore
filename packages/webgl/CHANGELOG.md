@@ -10,3 +10,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Pending
 Corrected normals in AddFace for nonplanar faces.
+RenderManager allows inheritance

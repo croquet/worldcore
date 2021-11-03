@@ -30,8 +30,8 @@ export class RapierPhysicsManager extends ModelService {
         };
     }
 
-    init(options = {}) {
-        super.init('RapierPhysicsManager');
+    init(options = {}, name) {
+        super.init(name || 'RapierPhysicsManager');
 
         const gravity = options.gravity || [0.0, -9.8, 0.0];
         const timeStep = options.timeStep || 50; // In ms

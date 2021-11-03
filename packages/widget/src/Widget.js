@@ -61,8 +61,8 @@ function v4_scale(v,s) {
 
 export class UIManager extends ViewService {
 
-    constructor() {
-        super('UIManager');
+    constructor(name) {
+        super(name ||'UIManager');
 
         ui = this; // Global pointer for widgets to use.
 

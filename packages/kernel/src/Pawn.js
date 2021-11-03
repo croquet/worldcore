@@ -8,8 +8,8 @@ import { ViewService, WorldcoreView } from "./Root";
 let pm; // Local pointer for pawns
 
 export class PawnManager extends ViewService {
-    constructor() {
-        super("PawnManager");
+    constructor(name) {
+        super(name || "PawnManager");
         pm = this;
         this.pawns = new Map();
         this.dynamic = new Set();

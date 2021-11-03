@@ -6,8 +6,8 @@ import { ModelService, WorldcoreModel } from "./Root";
 //------------------------------------------------------------------------------------------
 
 export class ActorManager extends ModelService {
-    init() {
-        super.init('ActorManager');
+    init(name) {
+        super.init(name || 'ActorManager');
         this.actors = new Map();
     }
 

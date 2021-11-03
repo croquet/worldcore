@@ -14,8 +14,8 @@ let audioResonance;
 // The manager maintains pools of spatial and static sounds and reuses them.
 
 export class AudioManager extends ViewService {
-    constructor() {
-        super("AudioManager");
+    constructor(name) {
+        super(name || "AudioManager");
 
         audioContext = new AudioContext();
         audioResonance = new ResonanceAudio(audioContext);

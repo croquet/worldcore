@@ -11,8 +11,8 @@ import { ModelService } from "./Root";
 
 export class PlayerManager extends ModelService {
 
-    init() {
-        super.init('PlayerManager');
+    init(name) {
+        super.init(name ||'PlayerManager');
         this.players = new Map();
         this.subscribe(this.sessionId, "view-join", this.onJoin);
         this.subscribe(this.sessionId, "view-exit", this.onExit);

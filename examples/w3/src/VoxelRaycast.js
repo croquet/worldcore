@@ -135,7 +135,7 @@ export function PickFillSurface(xy, topLayer = Voxels.sizeZ) {
                 intersect = surface.intersect(start, aim, direction);
                 if (intersect) {
                     let hasAdjacent = false;
-                    voxels.forAdjacent(...rc, type => hasAdjacent = hasAdjacent || type);
+                    voxels.forAdjacent(...rc, type => hasAdjacent = hasAdjacent || type > Voxels.solid);
                     return hasAdjacent;;
                 }
             }
