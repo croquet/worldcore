@@ -13,13 +13,8 @@ if (!APP) { console.error("Usage: node deploy.js <APP>"); exit(1); }
 
 async function deploy() {
     const SRC = __dirname;
-    const WORLDCORE = path.join(SRC, '../..');
     const WONDERLAND = path.join(SRC, '../../../wonderland');
     const TARGET = path.join(WONDERLAND, `servers/croquet-io-dev/${APP}`);
-
-    // verify WORLDCORE dir
-    try { await fsx.access(WORLDCORE); }
-    catch (error) { console.error(`Expected Worldcore at ${WORLDCORE}\n${error.message}`); exit(1); }
 
     // verify WONDERLAND dir
     try { await fsx.access(WONDERLAND, fsx.constants.W_OK) }
@@ -32,12 +27,6 @@ async function deploy() {
         console.error(`Repo has modified files:\n${status.modified.join('\n')}\nABORTING`);
         exit(1);
     }
-
-    console.log(`Updating worldcore...`);
-    console.log(execSync(`npm ci`, {cwd: WORLDCORE}).toString());
-
-    console.log(`Updating ${APP}...`);
-    console.log(execSync("npm ci", {cwd: SRC}).toString());
 
     // build into croquet.io/dev/
     await fsx.emptyDir(TARGET);
