@@ -217,7 +217,7 @@ class WaterLayer extends Actor {
             if (!volume) return;
             const xyz = Voxels.unpackKey(key);
             const belowXYZ = Voxels.adjacent(...xyz, Voxels.below);
-            if (voxels.get(...belowXYZ)) return; // Voxel below is solid.
+            if (voxels.get(...belowXYZ) > Voxels.solid) return; // Voxel below is solid.
             const belowKey = Voxels.packKey(...belowXYZ);
             const belowVolume = below.getVolume(belowKey);
             if (belowVolume === 1) return // Voxel below is full.
@@ -259,7 +259,7 @@ class WaterLayer extends Actor {
             for (let a = 0; a < 4; a++) {
                 const sideXYZ = Voxels.adjacent(...xyz, a);
                 const sideKey = Voxels.packKey(...sideXYZ);
-                if (!Voxels.isValid(...sideXYZ) || voxels.get(...sideXYZ)) continue; // Side voxel is solid
+                if (!Voxels.isValid(...sideXYZ) || voxels.get(...sideXYZ) > Voxels.solid) continue; // Side voxel is solid
                 const sideVolume = this.getVolume(sideKey);
                 if (sideVolume < volume) { // We should flow into it.
                     sides.push(a);
@@ -338,7 +338,7 @@ class WaterLayer extends Actor {
 
             const xyz = Voxels.unpackKey(key);
             const belowXYZ = Voxels.adjacent(...xyz, Voxels.below);
-            if (voxels.get(...belowXYZ)) return; // Voxel below is solid.
+            if (voxels.get(...belowXYZ) > Voxels.solid) return; // Voxel below is solid.
             const belowKey = Voxels.packKey(...belowXYZ);
             const belowVolume = below.getVolume(belowKey);
             if (belowVolume === 1) return // Voxel below is full.
@@ -409,7 +409,7 @@ function neIsValid(xyz) {
     const y = xyz[1];
     const z = xyz[2];
     if (!Voxels.isValid(x+1,y,z) || !Voxels.isValid(x,y+1,z)) return true;
-    if (voxels.get(x+1,y,z) && voxels.get(x,y+1,z)) return false;
+    if (voxels.get(x+1,y,z) > Voxels.solid && voxels.get(x,y+1,z) > Voxels.solid) return false;
     return true;
 }
 
@@ -418,7 +418,7 @@ function nwIsValid(xyz) {
     const y = xyz[1];
     const z = xyz[2];
     if (!Voxels.isValid(x-1,y,z) || !Voxels.isValid(x,y+1,z)) return true;
-    if (voxels.get(x-1,y,z) && voxels.get(x,y+1,z)) return false;
+    if (voxels.get(x-1,y,z) > Voxels.solid && voxels.get(x,y+1,z) > Voxels.solid) return false;
     return true;
 }
 
@@ -427,7 +427,7 @@ function swIsValid(xyz) {
     const y = xyz[1];
     const z = xyz[2];
     if (!Voxels.isValid(x-1,y,z) || !Voxels.isValid(x,y-1,z)) return true;
-    if (voxels.get(x-1,y,z) && voxels.get(x,y-1,z)) return false;
+    if (voxels.get(x-1,y,z) > Voxels.solid && voxels.get(x,y-1,z) > Voxels.solid) return false;
     return true;
 }
 
@@ -436,7 +436,7 @@ function seIsValid(xyz) {
     const y = xyz[1];
     const z = xyz[2];
     if (!Voxels.isValid(x+1,y,z) || !Voxels.isValid(x,y-1,z)) return true;
-    if (voxels.get(x+1,y,z) && voxels.get(x,y-1,z)) return false;
+    if (voxels.get(x+1,y,z) > Voxels.solid && voxels.get(x,y-1,z) > Voxels.solid) return false;
     return true;
 }
 
@@ -559,7 +559,7 @@ class WaterSourceActor extends mix(Actor).with(AM_VoxelSmoothed) {
 
     tick(delta) {
         const voxels = this.service("Voxels");
-        if (voxels.get(...this.xyz)) {
+        if (voxels.get(...this.xyz) > Voxels.solid) {
             this.destroy();
             return;
         }

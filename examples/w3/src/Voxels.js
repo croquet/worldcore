@@ -105,11 +105,13 @@ export class Voxels extends ModelService {
     //-- Voxel Types --
 
     static get air()    { return 0; }
-    static get lava()   { return 1; }
-    static get rock()   { return 2; }
-    static get dirt()   { return 3; }
-    static get sand()   { return 4; }
-    static get clay()   { return 5; }
+    static get base()   { return 1; }
+    static get solid()  { return 2; }
+    static get lava()   { return 3; }
+    static get rock()   { return 4; }
+    static get dirt()   { return 5; }
+    static get sand()   { return 6; }
+    static get clay()   { return 7; }
 
     //-- Helper Methods --
 

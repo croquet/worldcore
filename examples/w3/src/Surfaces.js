@@ -68,9 +68,9 @@ export class Surfaces extends ModelService {
         // Find air voxels adjacent to solid voxels
         const primary = new Set();
         voxels.forEach((type, x, y, z)=> {
-            if (type) return;
+            if (type>Voxels.solid) return;
             voxels.forAdjacent(x, y, z, t => {
-                if (t) primary.add(Voxels.packKey(x, y, z));
+                if (t>Voxels.solid) primary.add(Voxels.packKey(x, y, z));
             });
         });
 
@@ -78,7 +78,7 @@ export class Surfaces extends ModelService {
         const secondary = new Set(primary);
         primary.forEach(key => {
             voxels.forAdjacent(...Voxels.unpackKey(key), (t, x, y, z) => {
-                if (!t) secondary.add(Voxels.packKey(x, y, z));
+                if (t<Voxels.solid) secondary.add(Voxels.packKey(x, y, z));
             });
         });
 
@@ -120,7 +120,7 @@ export class Surfaces extends ModelService {
             const key = Voxels.packKey(x, y, z);
             this.surfaces.delete(key);
             remove.add(key);
-            if (!type) check.add(key);
+            if (type<Voxels.solid) check.add(key);
         });
 
         check.forEach(key => {
@@ -396,25 +396,25 @@ export class Surface  {
         if (ramp0) {
             const side = Voxels.adjacent(...this.xyz,Voxels.north);
             const sideAbove = Voxels.adjacent(...side, Voxels.above);
-            if (Voxels.isValid(...sideAbove) && voxels.get(...sideAbove)) ramp0 = false;
+            if (Voxels.isValid(...sideAbove) && voxels.get(...sideAbove) > Voxels.solid) ramp0 = false;
         }
 
         if (ramp1) {
             const side = Voxels.adjacent(...this.xyz,Voxels.east);
             const sideAbove = Voxels.adjacent(...side, Voxels.above);
-            if (Voxels.isValid(...sideAbove) && voxels.get(...sideAbove)) ramp1 = false;
+            if (Voxels.isValid(...sideAbove) && voxels.get(...sideAbove) > Voxels.solid) ramp1 = false;
         }
 
         if (ramp2) {
             const side = Voxels.adjacent(...this.xyz,Voxels.south);
             const sideAbove = Voxels.adjacent(...side, Voxels.above);
-            if (Voxels.isValid(...sideAbove) && voxels.get(...sideAbove)) ramp2 = false;
+            if (Voxels.isValid(...sideAbove) && voxels.get(...sideAbove) > Voxels.solid) ramp2 = false;
         }
 
         if (ramp3) {
             const side = Voxels.adjacent(...this.xyz,Voxels.west);
             const sideAbove = Voxels.adjacent(...side, Voxels.above);
-            if (Voxels.isValid(...sideAbove) && voxels.get(...sideAbove)) ramp3 = false;
+            if (Voxels.isValid(...sideAbove) && voxels.get(...sideAbove) > Voxels.solid) ramp3 = false;
         }
 
         // No double ramps in tight spaces -- the diagonal voxel adjacent to the base corner of a double ramp must be empty.
@@ -422,28 +422,28 @@ export class Surface  {
         if (ramp0 && ramp1) {
             const south = Voxels.adjacent(...this.xyz,Voxels.south);
             const sw = Voxels.adjacent(...south, Voxels.west);
-            if (Voxels.isValid(...sw) && voxels.get(...sw)) {
+            if (Voxels.isValid(...sw) && voxels.get(...sw) > Voxels.solid) {
                 ramp0 = false;
                 ramp1 = false;
             }
         } else if ((ramp1 && ramp2)) {
             const north = Voxels.adjacent(...this.xyz,Voxels.north);
             const nw = Voxels.adjacent(...north, Voxels.west);
-            if (Voxels.isValid(...nw) && voxels.get(...nw)) {
+            if (Voxels.isValid(...nw) && voxels.get(...nw) > Voxels.solid) {
                 ramp1 = false;
                 ramp2 = false;
             }
         } else if ((ramp2 && ramp3)) {
             const north = Voxels.adjacent(...this.xyz,Voxels.north);
             const ne = Voxels.adjacent(...north, Voxels.east);
-            if (Voxels.isValid(...ne) && voxels.get(...ne)) {
+            if (Voxels.isValid(...ne) && voxels.get(...ne) > Voxels.solid) {
                 ramp2 = false;
                 ramp3 = false;
             }
         } else if ((ramp3 && ramp0)) {
             const south = Voxels.adjacent(...this.xyz,Voxels.south);
             const se = Voxels.adjacent(...south, Voxels.east);
-            if (Voxels.isValid(...se) && voxels.get(...se)) {
+            if (Voxels.isValid(...se) && voxels.get(...se) > Voxels.solid) {
                 ramp3 = false;
                 ramp0 = false;
             }

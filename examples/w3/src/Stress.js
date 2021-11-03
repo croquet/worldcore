@@ -38,7 +38,7 @@ export class Stress extends ModelService {
         this.stress = new Map();
         this.voxels.forEach( (t,x,y,z) => { // Set all unsupported solid voxels to max
             if (!t) return; // Air voxel
-            if (this.voxels.get(x,y,z-1)) return; // Supported solid voxel
+            if (this.voxels.get(x,y,z-1) > Voxels.solid) return; // Supported solid voxel
             const key = Voxels.packKey(x,y,z);
             this.stress.set(key, max);
         })
@@ -93,7 +93,7 @@ export class Stress extends ModelService {
     updateStress(x,y,z) {
         const old = this.get(x,y,z);
         let s = 0;
-        if (!this.voxels.get(x,y,z-1)) { // This voxel is unsupported
+        if (this.voxels.get(x,y,z-1) < Voxels.solid) { // This voxel is unsupported
             s = Math.min(max,this.minAdjacent(x,y,z) + 1);
         }
         if (s === old) return; // We don't need to do anything if the stress doesn't change
@@ -116,7 +116,7 @@ export class Stress extends ModelService {
     updateAdjacentStress(x,y,z) {
         for (let a = 0; a < 5; a++) {
             const adjacent = Voxels.adjacent(x,y,z,a);
-            if (Voxels.isValid(...adjacent) && this.voxels.get(...adjacent)) this.updateStress(...adjacent);
+            if (Voxels.isValid(...adjacent) && this.voxels.get(...adjacent)>Voxels.solid) this.updateStress(...adjacent);
         }
     }
 
@@ -127,7 +127,7 @@ export class Stress extends ModelService {
 
     // Returns max if the voxel is air or invalid.
     get(x, y, z) {
-        if (!Voxels.isValid(x,y,z) || !this.voxels.get(x,y,z)) return max;
+        if (!Voxels.isValid(x,y,z) || this.voxels.get(x,y,z)<Voxels.solid) return max;
         const key = Voxels.packKey(x,y,z);
         return this.stress.get(key) || 0;
     }

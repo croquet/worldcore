@@ -43,7 +43,7 @@ export class FallBehavior extends Behavior {
         const bottom = Math.max(0, v1[2]);
         if (z < bottom) return undefined; // Don't collide if moving up.
         do {
-            if (voxels.get(x,y,z)) return [x,y,z];
+            if (voxels.get(x,y,z)>Voxels.solid) return [x,y,z];
         } while (z-- > bottom);
         return undefined;
     }

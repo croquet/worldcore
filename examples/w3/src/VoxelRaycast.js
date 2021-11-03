@@ -27,7 +27,7 @@ export function PickVoxel(xy, topLayer = Voxels.sizeZ) {
 
     let xyz =  raycast.find(rc => {
         if ( rc[2] >= topLayer) return false;
-        return (voxels.get(...rc));
+        return (voxels.get(...rc) > Voxels.solid);
     });
 
     return xyz;
@@ -93,7 +93,7 @@ export function PickDigVoxel(xy, topLayer = Voxels.sizeZ) {
     // const camera = GetViewService("RenderManager").camera;
     const voxels = GetModelService("Voxels");
     const surfaces = GetModelService("Surfaces");
-    if (!voxels.get(...xyz)) return null;
+    if (voxels.get(...xyz) < Voxels.solid) return null;
     return xyz;
 }
 
@@ -124,8 +124,8 @@ export function PickFillSurface(xy, topLayer = Voxels.sizeZ) {
     let xyz = raycast.find(rc => {
         const voxel = voxels.get(...rc);
 
-        if (rc[2] < topLayer) blocked = blocked || voxel;
-        if (voxel) return false;
+        if (rc[2] < topLayer) blocked = blocked || voxel > Voxels.solid;
+        if (voxel > Voxels.solid) return false;
 
         if (rc[2] < topLayer) {
             const key = Voxels.packKey(...rc);
@@ -141,7 +141,7 @@ export function PickFillSurface(xy, topLayer = Voxels.sizeZ) {
             }
         } else if (rc[2] === topLayer) {
             const below = Voxels.adjacent(...rc, Voxels.below);
-            if (voxels.get(...below)) {
+            if (voxels.get(...below) > Voxels.solid) {
                 direction = Voxels.below;
                 intersect = IntersectVoxelBase(rc, start, aim);
                 if (intersect) return true;
@@ -189,7 +189,7 @@ export function PickGrabSurface(xy, topLayer = Voxels.sizeZ) {
             }
         } else if (rc[2] === topLayer) {
             const below = Voxels.adjacent(...rc, Voxels.below);
-            if (voxels.get(...below)) {
+            if (voxels.get(...below) > Voxels.solid) {
                 direction = Voxels.below;
                 intersect = IntersectVoxelBase(rc, start, aim);
                 if (intersect) return true;

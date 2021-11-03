@@ -343,10 +343,10 @@ class InteriorLayer extends Layer {
         for (let x = 0; x < Voxels.sizeX; x++) {
             for (let y = 0; y < Voxels.sizeY; y++) {
                 const type = voxels.get(x, y, this.z);
-                if (!type) continue;
+                if (type < Voxels.solid) continue;
                 let belowType = type;
                 if (this.z > 0) belowType = voxels.get(x, y, this.z-1);
-                if (!belowType) continue;
+                if (belowType < Voxels.solid) continue;
                 const ic = InteriorColor(belowType);
                 const lic = LineInteriorColor(belowType);
                 BuildMeshZ(this._triangles, this._lines, [x,y,this.z], [[0,0,0], [1,0,0], [1,1,0], [0,1,0]], ic, lic);
