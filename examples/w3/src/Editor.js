@@ -36,6 +36,9 @@ export class Editor extends ViewService {
             case 'road':
                 this.doRoad(data.xy);
                 break;
+            case 'clear':
+                this.doClear(data.xy);
+                break;
             case 'water':
                 this.doWater(data.xy);
                 break;
@@ -86,6 +89,13 @@ export class Editor extends ViewService {
         const xyz = pick.xyz;
         if (!xyz || !Voxels.canEdit(...xyz)) return
         this.publish("editor", "spawnRoad", xyz);
+    }
+
+    doClear(xy) {
+        const pick = PickFloorSurface(xy, GetTopLayer());
+        const xyz = pick.xyz;
+        if (!xyz || !Voxels.canEdit(...xyz)) return
+        this.publish("editor", "clearProp", xyz);
     }
 
     doWater(xy) {

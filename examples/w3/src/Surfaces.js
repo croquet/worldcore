@@ -950,6 +950,12 @@ export class Surface  {
             case 9:
                 out = [true, false, false, false];
                 break;
+            case 10:
+                out = [true, false, false, false];
+                break;
+            case 11:
+                out = [true, false, false, false];
+                break;
             default:
         }
         rot4(out, this.facing);

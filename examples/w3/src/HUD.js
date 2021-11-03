@@ -14,12 +14,12 @@ import treeOnIcon from "../assets/treeOnIcon.png";
 import treeOffIcon from "../assets/treeOffIcon.png";
 import waterOnIcon from "../assets/waterOnIcon.png";
 import waterOffIcon from "../assets/waterOffIcon.png";
-import sourceOnIcon from "../assets/sourceOnIcon.png";
-import sourceOffIcon from "../assets/sourceOffIcon.png";
 // import sinkOnIcon from "../assets/sinkOnIcon.png";
 // import sinkOffIcon from "../assets/sinkOffIcon.png";
 import roadOnIcon from "../assets/roadOnIcon.png";
 import roadOffIcon from "../assets/roadOffIcon.png";
+import clearOnIcon from "../assets/clearOnIcon.png";
+import clearOffIcon from "../assets/clearOffIcon.png";
 
 import walkOnIcon from "../assets/walkOnIcon.png";
 import walkOffIcon from "../assets/walkOffIcon.png";
@@ -80,7 +80,7 @@ export class HUD extends Widget {
             pressedOff: new BoxWidget({color: [0.4, 0.4, 0.4]}),
             labelOn: new ImageWidget({border: [5,5,5,5], url: treeOnIcon}),
             labelOff: new ImageWidget({border: [5,5,5,5], url: treeOffIcon}),
-            local: [20,80],
+            local: [20,140],
             size:[50,50],
             toggleSet: toggleSet,
             onToggleOn: () => this.publish("hud", "editMode", "tree")
@@ -112,7 +112,7 @@ export class HUD extends Widget {
             pressedOff: new BoxWidget({color: [0.4, 0.4, 0.4]}),
             labelOn: new ImageWidget({border: [5,5,5,5], url: waterOnIcon}),
             labelOff: new ImageWidget({border: [5,5,5,5], url: waterOffIcon}),
-            local: [20,140],
+            local: [20,80],
             size:[50,50],
             toggleSet: toggleSet,
             onToggleOn: () => this.publish("hud", "editMode", "water")
@@ -132,6 +132,22 @@ export class HUD extends Widget {
             size:[50,50],
             toggleSet: toggleSet,
             onToggleOn: () => this.publish("hud", "editMode", "road")
+        });
+
+        this.clearToggle = new ToggleWidget({
+            parent: this,
+            normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
+            normalOff: new BoxWidget({color: [0.5, 0.5, 0.5]}),
+            hiliteOn: new BoxWidget({color: [0.5, 0.5, 0.5]}),
+            hiliteOff: new BoxWidget({color: [0.6, 0.6, 0.6]}),
+            pressedOn: new BoxWidget({color: [0.3, 0.3, 0.3]}),
+            pressedOff: new BoxWidget({color: [0.4, 0.4, 0.4]}),
+            labelOn: new ImageWidget({border: [5,5,5,5], url: clearOnIcon}),
+            labelOff: new ImageWidget({border: [5,5,5,5], url: clearOffIcon}),
+            local: [20,200],
+            size:[50,50],
+            toggleSet: toggleSet,
+            onToggleOn: () => this.publish("hud", "editMode", "clear")
         });
 
         const animals = this.modelService("Animals");

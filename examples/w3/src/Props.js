@@ -22,6 +22,7 @@ export class Props extends ModelService {
         this.subscribe("surfaces", "changed", this.onChanged);
         this.subscribe("editor", "spawnTree", this.onSpawnTree);
         this.subscribe("editor", "spawnRoad", this.onSpawnRoad);
+        this.subscribe("editor", "clearProp", this.onClearProp);
     }
 
     destroy() {
@@ -78,6 +79,13 @@ export class Props extends ModelService {
         const prop = this.props.get(key);
         if (prop instanceof RoadActor) return;
         RoadActor.create({xyz})
+    }
+
+    onClearProp(xyz) {
+        const key = Voxels.packKey(...xyz);
+        const prop = this.props.get(key);
+        if (!prop) return;
+        prop.destroy();
     }
 
 }
