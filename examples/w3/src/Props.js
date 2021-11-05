@@ -1,11 +1,10 @@
 import { mix, Actor, Pawn, PM_Spatial, v3_add, m4_translation, CachedObject, q_axisAngle, TAU,  m4_rotationX, toRad, v3_scale,
     ModelService } from "@croquet/worldcore-kernel";
-import { Material, Cylinder, Cone, InstancedDrawCall } from "@croquet/worldcore-webgl";
+import { Material, Cylinder, Cone, InstancedDrawCall, UnitCube, PM_Visible, DrawCall } from "@croquet/worldcore-webgl";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
 import paper from "../assets/paper.jpg";
 import { AM_VoxelSmoothed, PM_LayeredInstancedVisible } from "./Components";
 import { TimberActor } from "./Rubble";
-import { Surface, VoxelBaseTriangles } from "./Surfaces";
 import { Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
@@ -22,6 +21,7 @@ export class Props extends ModelService {
         this.subscribe("surfaces", "changed", this.onChanged);
         this.subscribe("editor", "spawnTree", this.onSpawnTree);
         this.subscribe("editor", "spawnRoad", this.onSpawnRoad);
+        this.subscribe("editor", "spawnBuilding", this.onSpawnBuilding);
         this.subscribe("editor", "clearProp", this.onClearProp);
     }
 
@@ -81,6 +81,13 @@ export class Props extends ModelService {
         RoadActor.create({xyz})
     }
 
+    onSpawnBuilding(xyz) {
+        const key = Voxels.packKey(...xyz);
+        const prop = this.props.get(key);
+        if (prop instanceof BuildingActor) return;
+        BuildingActor.create({xyz})
+    }
+
     onClearProp(xyz) {
         const key = Voxels.packKey(...xyz);
         const prop = this.props.get(key);
@@ -125,7 +132,7 @@ PropActor.register('PropActor');
 // Prop pawns refresh when the top layer changes to hide themselves if they're above the
 // top layer.
 
-class PropPawn extends mix(Pawn).with(PM_Spatial, PM_LayeredInstancedVisible) {
+class PropPawn extends mix(Pawn).with(PM_Spatial) {
     constructor(...args) {
         super(...args);
         this.subscribe("hud", "topLayer", () => this.say("viewGlobalChanged"));
@@ -217,7 +224,7 @@ TreeActor.register("TreeActor");
 //-- TreePawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TreePawn extends PropPawn {
+class TreePawn extends mix(PropPawn).with(PM_LayeredInstancedVisible) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(CachedObject("pineTreeDrawCall", () => this.buildDraw()));
@@ -252,6 +259,7 @@ class TreePawn extends PropPawn {
     }
 
 }
+
 //------------------------------------------------------------------------------------------
 //-- Road ----------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -440,6 +448,69 @@ export class RoadActor extends PropActor {
 
 }
 RoadActor.register("RoadActor");
+
+//------------------------------------------------------------------------------------------
+//-- BuildingActor -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class BuildingActor extends PropActor {
+
+    get pawn() {return BuildingPawn};
+
+    init(options) {
+        super.init(options);
+        const voxels = this.service("Voxels");
+        const type = voxels.get(...this.xyz);
+        voxels.set(...this.xyz, Voxels.air);
+    }
+
+    destroy() {
+        super.destroy();
+        const voxels = this.service("Voxels");
+        const type = voxels.get(...this.xyz);
+        console.log(type);
+        voxels.set(...this.xyz, Voxels.air);
+    }
+
+}
+BuildingActor.register("BuildingActor");
+
+//------------------------------------------------------------------------------------------
+//-- BuildingPawn --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class BuildingPawn extends mix(PropPawn).with(PM_Visible) {
+
+    constructor(...args) {
+        super(...args);
+        this.drawCall = this.buildDraw();
+        this.setDrawCall(this.drawCall);
+    }
+
+    buildDraw() {
+        const mesh = this.buildMesh();
+        const material = this.buildMaterial();
+        const draw = new DrawCall(mesh, material);
+        this.service("RenderManager").scene.addDrawCall(draw);
+        return draw;
+    }
+
+    buildMaterial() {
+        const material = new Material();
+        material.pass = 'opaque';
+        material.texture.loadFromURL(paper);
+        return material;
+    }
+
+    buildMesh() {
+        const out = UnitCube();
+        out.transform(m4_translation([0,0,0.5]));
+        out.load();
+        out.clear();
+        return out;
+    }
+
+}
 
 //------------------------------------------------------------------------------------------
 //-- Utilities -----------------------------------------------------------------------------

@@ -105,8 +105,8 @@ export class Voxels extends ModelService {
     //-- Voxel Types --
 
     static get air()    { return 0; }
-    static get base()   { return 1; }
-    static get solid()  { return 2; }
+    static get base()   { return 1; } // Acts like air, but doesn't smooth terrain
+    static get solid()  { return 2; } // Unused -- dividing line between air and ground.
     static get lava()   { return 3; }
     static get rock()   { return 4; }
     static get dirt()   { return 5; }

@@ -67,6 +67,7 @@ export class VoxelCursor extends ViewService {
             case 'spawn':
             case 'road':
             case 'clear':
+            case 'build':
                 xyz = PickFloorSurface(this.xy, GetTopLayer()).xyz;
                 break;
             case 'tree':
