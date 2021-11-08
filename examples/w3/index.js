@@ -102,4 +102,5 @@ StartWorldcore({
     model: MyModelRoot,
     view: MyViewRoot,
     tps: 15,
+    // debug: "session"
 })

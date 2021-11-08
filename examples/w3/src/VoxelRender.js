@@ -401,7 +401,7 @@ function LineInteriorColor(type) {
 function BuildCeiling(triangles, lines, surface) {
     if (!surface) return;
     const type = surface.faces[Voxels.above];
-    if (!type) return;
+    if (type < Voxels.solid) return;
     const sc = SideColor(type);
     const lsc = LineSideColor(type);
     BuildMeshZ(triangles, lines, surface.xyz, [[0,0,1], [0,1,1], [1,1,1], [1,0,1]], sc, lsc);
@@ -410,7 +410,7 @@ function BuildCeiling(triangles, lines, surface) {
 function BuildNorthWall(triangles, lines, surface) {
     if (!surface) return;
     const type = surface.faces[Voxels.north];
-    if (!type) return;
+    if (type < Voxels.solid) return;
     const sc = SideColor(type);
     const lsc = LineSideColor(type);
     switch (surface.sides[Voxels.north]) {
@@ -430,7 +430,7 @@ function BuildNorthWall(triangles, lines, surface) {
 function BuildEastWall(triangles, lines, surface) {
     if (!surface) return;
     const type = surface.faces[Voxels.east];
-    if (!type) return;
+    if (type < Voxels.solid) return;
     const sc = SideColor(type);
     const lsc = LineSideColor(type);
     switch (surface.sides[Voxels.east]) {
@@ -450,7 +450,7 @@ function BuildEastWall(triangles, lines, surface) {
 function BuildSouthWall(triangles, lines, surface) {
     if (!surface) return;
     const type = surface.faces[Voxels.south];
-    if (!type) return;
+    if (type < Voxels.solid) return;
     const sc = SideColor(type);
     const lsc = LineSideColor(type);
     switch (surface.sides[Voxels.south]) {
@@ -470,7 +470,7 @@ function BuildSouthWall(triangles, lines, surface) {
 function BuildWestWall(triangles, lines, surface) {
     if (!surface) return;
     const type = surface.faces[Voxels.west];
-    if (!type) return;
+    if (type < Voxels.solid) return;
     const sc = SideColor(type);
     const lsc = LineSideColor(type);
     switch (surface.sides[Voxels.west]) {
@@ -490,7 +490,7 @@ function BuildWestWall(triangles, lines, surface) {
 function BuildFloorMiddle(triangles, lines, surface) {
     if (!surface) return;
     const type = surface.faces[Voxels.below];
-    if (!type) return;
+    if (type < Voxels.solid) return;
     const tc = TopColor(type);
     const ltc = LineTopColor(type);
     switch (surface.shape) {
@@ -607,7 +607,7 @@ function BuildFloorMiddle(triangles, lines, surface) {
 function BuildFloorBottom(triangles, lines, surface) {
     if (!surface) return;
     const type = surface.faces[Voxels.below];
-    if (!type) return;
+    if (type < Voxels.solid) return;
     const tc = TopColor(type);
     const ltc = LineTopColor(type);
     switch (surface.shape) {

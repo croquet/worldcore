@@ -1,5 +1,7 @@
 import { mix, Actor, Pawn, PM_Spatial, v3_add, m4_translation, CachedObject, q_axisAngle, TAU,  m4_rotationX, toRad, v3_scale,
-    ModelService } from "@croquet/worldcore-kernel";
+    ModelService,
+    m4_scaleRotationTranslation,
+    q_identity} from "@croquet/worldcore-kernel";
 import { Material, Cylinder, Cone, InstancedDrawCall, UnitCube, PM_Visible, DrawCall } from "@croquet/worldcore-webgl";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
 import paper from "../assets/paper.jpg";
@@ -52,6 +54,12 @@ export class Props extends ModelService {
         return undefined;
     }
 
+    getBuilding(key) {
+        const building = this.props.get(key);
+        if (building instanceof BuildingActor) return building;
+        return undefined;
+    }
+
     add(key, prop) {
         const previous = this.props.get(key);
         if (previous) previous.destroy();
@@ -83,8 +91,15 @@ export class Props extends ModelService {
 
     onSpawnBuilding(xyz) {
         const key = Voxels.packKey(...xyz);
-        const prop = this.props.get(key);
-        if (prop instanceof BuildingActor) return;
+        if (this.getBuilding(key)) return;
+
+        const voxels = this.service("Voxels");
+        const below = Voxels.adjacent(...xyz, Voxels.below);
+        const belowKey = Voxels.packKey(...below);
+        const belowBuilding = this.getBuilding(belowKey);
+        const belowVoxel = voxels.get(...below);
+        if (belowVoxel < Voxels.solid && !belowBuilding) return;
+
         BuildingActor.create({xyz})
     }
 
@@ -461,7 +476,7 @@ export class BuildingActor extends PropActor {
         super.init(options);
         const voxels = this.service("Voxels");
         const type = voxels.get(...this.xyz);
-        voxels.set(...this.xyz, Voxels.air);
+        voxels.set(...this.xyz, Voxels.base);
     }
 
     destroy() {
@@ -470,6 +485,13 @@ export class BuildingActor extends PropActor {
         const type = voxels.get(...this.xyz);
         console.log(type);
         voxels.set(...this.xyz, Voxels.air);
+    }
+
+    validate() {
+        const surface = this.service('Surfaces').get(this.key);
+        if (!surface || !surface.shape === 2) {
+            this.destroy();
+        }
     }
 
 }
@@ -504,7 +526,8 @@ class BuildingPawn extends mix(PropPawn).with(PM_Visible) {
 
     buildMesh() {
         const out = UnitCube();
-        out.transform(m4_translation([0,0,0.5]));
+        const t = m4_scaleRotationTranslation([Voxels.scaleX, Voxels.scaleY, Voxels.scaleZ], q_identity(), [0,0,Voxels.scaleZ/2])
+        out.transform(t);
         out.load();
         out.clear();
         return out;

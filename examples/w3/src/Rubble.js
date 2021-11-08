@@ -23,7 +23,7 @@ export class RubbleMananger extends ModelService {
         const xyz = data.xyz;
         const type = data.type;
         const old = data.old;
-        if (type || !old) return; // only spawn rubble if a solid voxel becomes air.
+        if (type > Voxels.solid || old < Voxels.solid) return; // only spawn rubble if a solid voxel becomes air.
 
         RubbleActor.create({type: old, translation: Voxels.toWorldXYZ(...v3_add(xyz, [0.25, 0.25, 0.5]))});
         RubbleActor.create({type: old, translation: Voxels.toWorldXYZ(...v3_add(xyz, [0.25, 0.75, 0.5]))});

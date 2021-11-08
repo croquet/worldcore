@@ -100,7 +100,7 @@ export class Surfaces extends ModelService {
         secondary.forEach(key => {
             let surface = this.get(key);
             if (!surface) surface = new Surface(key);
-            surface.findShims();
+            surface.findShims(voxels);
             surface.liftFloors();
             this.set(key, surface);
         });
@@ -141,7 +141,7 @@ export class Surfaces extends ModelService {
         check.forEach(key => {
             let surface = this.get(key);
             if (!surface) surface = new Surface(key);
-            surface.findShims();
+            surface.findShims(voxels);
             surface.liftFloors();
             this.set(key, surface);
         });
@@ -364,19 +364,27 @@ export class Surface  {
     findFaces(voxels) {
         this.shape = 0;
         voxels.forAdjacent(...this.xyz, (type, x, y, z, d) => this.faces[d] = type );
-        if (this.faces[0] || this.faces[1] || this.faces[2] || this.faces[3] || this.faces[4]) this.shape = 1;
-        if (this.faces[5]) this.shape = 2;
+        if (this.faces[0] > Voxels.solid ||
+            this.faces[1] > Voxels.solid||
+            this.faces[2] > Voxels.solid||
+            this.faces[3] > Voxels.solid||
+            this.faces[4] > Voxels.solid) this.shape = 1;
+        if (this.faces[5] > Voxels.solid) this.shape = 2;
     }
 
     // Finds the default ramps from the base face information
 
     findRamps(voxels) {
 
+        // No ramps in base voxels
+
+        if(voxels.get(...this.xyz) === Voxels.base) return;
+
         const faces = this.faces;
 
         // No floor or low ceiling = no ramps
 
-        if (faces[Voxels.above] || !faces[Voxels.below]) return;
+        if (faces[Voxels.above] > Voxels.solid || faces[Voxels.below] < Voxels.solid) return;
 
         // No lava ramps.
 
@@ -386,10 +394,10 @@ export class Surface  {
 
         let ramp0 = false, ramp1 = false, ramp2 = false, ramp3 = false;
 
-        if (faces[0] && !faces[2]) ramp0 = true;
-        if (faces[1] && !faces[3]) ramp1 = true;
-        if (faces[2] && !faces[0]) ramp2 = true;
-        if (faces[3] && !faces[1]) ramp3 = true;
+        if (faces[0] > Voxels.solid && faces[2] < Voxels.solid) ramp0 = true;
+        if (faces[1] > Voxels.solid && faces[3] < Voxels.solid) ramp1 = true;
+        if (faces[2] > Voxels.solid && faces[0] < Voxels.solid) ramp2 = true;
+        if (faces[3] > Voxels.solid && faces[1] < Voxels.solid) ramp3 = true;
 
         // No ramps to nowhere -- ramps must lead up to empty voxels
 
@@ -571,29 +579,33 @@ export class Surface  {
     // Extrude adjacent ramps into this voxel to create smooth terrain.
     // This uses the previously calculated side data.
 
-    findShims() {
+    findShims(voxels) {
+
+        // No shims in base voxels
+
+        if(voxels.get(...this.xyz) === Voxels.base) return;
 
         const sides = this.sides;
         const faces = this.faces;
 
-        if (!faces[Voxels.below]) return;
-        if (faces[Voxels.above]) return;
+        if (faces[Voxels.below] < Voxels.solid) return;
+        if (faces[Voxels.above] > Voxels.solid) return;
 
         const left0 = sides[0] === 2;
         const right0 = sides[1] === 1;
-        const shim0 = (left0 && right0) || (left0 && faces[1]) || (faces[0] && right0);
+        const shim0 = (left0 && right0) || (left0 && faces[1] > Voxels.solid) || (faces[0] > Voxels.solid && right0);
 
         const left1 = sides[1] === 2;
         const right1 = sides[2] === 1;
-        const shim1 = (left1 && right1) || (left1 && faces[2]) || (faces[1] && right1);
+        const shim1 = (left1 && right1) || (left1 && faces[2] > Voxels.solid) || (faces[1]> Voxels.solid && right1);
 
         const left2 = sides[2] === 2;
         const right2 = sides[3] === 1;
-        const shim2 = (left2 && right2) || (left2 && faces[3]) || (faces[2] && right2);
+        const shim2 = (left2 && right2) || (left2 && faces[3] > Voxels.solid) || (faces[2]> Voxels.solid && right2);
 
         const left3 = sides[3] === 2;
         const right3 = sides[0] === 1;
-        const shim3 = (left3 && right3) || (left3 && faces[0]) || (faces[3] && right3);
+        const shim3 = (left3 && right3) || (left3 && faces[0] > Voxels.solid) || (faces[3] > Voxels.solid && right3);
 
         // Delete hidden triangular faces
 

@@ -163,15 +163,17 @@ export function GetViewService(name) { return viewServices.get(name) }
 
 export async function StartWorldcore(options) {
 
-    options.model.modelServices().forEach( async service => {
+    await Promise.all(options.model.modelServices().map(service => {
         if (service.service) service = service.service;
-        await service.asyncStart();
-    });
+        return service.asyncStart();
+    }));
 
-    options.view.viewServices().forEach( async service => {
+    await Promise.all(options.view.viewServices().map(service => {
         if (service.service) service = service.service;
-        await service.asyncStart();
-    });
+        return service.asyncStart();
+    }));
 
     const session = await Session.join(options);
+
+    return session;
 }
