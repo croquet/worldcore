@@ -50,7 +50,8 @@ export class Surfaces extends ModelService {
         const z = Math.floor(xyz[2]);
         const key = Voxels.packKey(x,y,z);
         const s = this.surfaces.get(key);
-        if (!s) return undefined;
+        // if (!s) return undefined;
+        if (!s) return 0;
         return s.elevation(xyz[0] - x, xyz[1] - y);
     }
 
@@ -216,61 +217,61 @@ export class Surface  {
     // Returns undefined if there is no surface at this position.
     // (Note that this may cause issues with objects on diagonal seam of shapes 4,5,6)
 
-    rawElevation(x,y) {
+    // rawElevation(x,y) {
 
-        // rotate to facing 0
-        let xx = x;
-        let yy = y;
-        switch (this.facing) {
-            case 1:
-                xx = 1-y;
-                yy = x;
-                break;
-            case 2:
-                xx = 1-x;
-                yy = 1-y;
-                break;
-            case 3:
-                xx = y;
-                yy = 1-x;
-                break;
-            default:
-        }
+    //     // rotate to facing 0
+    //     let xx = x;
+    //     let yy = y;
+    //     switch (this.facing) {
+    //         case 1:
+    //             xx = 1-y;
+    //             yy = x;
+    //             break;
+    //         case 2:
+    //             xx = 1-x;
+    //             yy = 1-y;
+    //             break;
+    //         case 3:
+    //             xx = y;
+    //             yy = 1-x;
+    //             break;
+    //         default:
+    //     }
 
-        // find elevation based on shape
-        switch (this.shape) {
-            case 0:
-            case 1:
-                return undefined;
-            case 2:
-                return 0;
-            case 3:
-                return yy;
-            case 4:
-                if (xx + yy < 1) return undefined;
-                return 0;
-            case 5:
-                if (xx + yy < 1) return undefined;
-                return (xx + yy) - 1;
-            case 6:
-                if (xx + yy <= 1) return xx + yy;
-                return undefined;
-            case 7:
-                if (xx + yy < 1) return 0;
-                return (xx + yy) - 1;
-            case 8:
-                if (xx + yy < 1) return 1 - (xx + yy);
-                return (xx + yy) - 1;
-            case 9:
-                return Math.max(0, 1 - (xx + yy), xx - yy);
-            case 10:
-                return Math.max(yy, 1 - (xx + yy));
-            case 11:
-                return Math.max(yy, xx - yy);
-            default:
-        }
-        return undefined;
-    }
+    //     // find elevation based on shape
+    //     switch (this.shape) {
+    //         case 0:
+    //         case 1:
+    //             return undefined;
+    //         case 2:
+    //             return 0;
+    //         case 3:
+    //             return yy;
+    //         case 4:
+    //             if (xx + yy < 1) return undefined;
+    //             return 0;
+    //         case 5:
+    //             if (xx + yy < 1) return undefined;
+    //             return (xx + yy) - 1;
+    //         case 6:
+    //             if (xx + yy <= 1) return xx + yy;
+    //             return undefined;
+    //         case 7:
+    //             if (xx + yy < 1) return 0;
+    //             return (xx + yy) - 1;
+    //         case 8:
+    //             if (xx + yy < 1) return 1 - (xx + yy);
+    //             return (xx + yy) - 1;
+    //         case 9:
+    //             return Math.max(0, 1 - (xx + yy), xx - yy);
+    //         case 10:
+    //             return Math.max(yy, 1 - (xx + yy));
+    //         case 11:
+    //             return Math.max(yy, xx - yy);
+    //         default:
+    //     }
+    //     return undefined;
+    // }
 
     // Returns the elevation in voxel coordiates (0 to 1).
     // Returns undefined if there is no floor.
@@ -302,7 +303,8 @@ export class Surface  {
             case 0:
             case 1:
                 //return 0;
-                return undefined;
+                //return undefined;
+                return 0; // remove xxx
             case 2:
                 return 0;
             case 3:
@@ -330,7 +332,8 @@ export class Surface  {
                 return Math.max(yy, xx - yy);
             default:
         }
-        return undefined;
+        return 0;
+        // return undefined;
     }
 
     // Returns true if the voxel is sloping up in the designated direction

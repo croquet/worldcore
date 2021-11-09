@@ -19,7 +19,7 @@ export class Animals extends ModelService {
         this.subscribe("surfaces", "newLevel", this.onNewLevel);
         this.subscribe("surfaces", "changed", this.onChanged);
         this.subscribe("editor", "spawnPerson", this.onSpawnPerson);
-        this.subscribe("hud", "firstPerson", this.onFirstPerson); // xxx hack for fp camera sync
+        // this.subscribe("hud", "firstPerson", this.onFirstPerson); // xxx hack for fp camera sync
     }
 
     destroy() {
@@ -45,7 +45,13 @@ export class Animals extends ModelService {
         }
     }
 
-    onFirstPerson(fp) { this.fp = fp}; // xxx hack for fp camera sync
+    // onFirstPerson(fp) { this.fp = fp}; // xxx hack for fp camera sync
+
+    get first() {
+        let out = undefined;
+        if (this.animals.size > 0) out = [...this.animals][0];
+        return out;
+    }
 
 }
 Animals.register("Animals");
@@ -64,7 +70,7 @@ class AnimalActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral) {
         super.init(options);
         const animals = this.service("Animals");
         animals.animals.add(this);
-        if (!animals.vip) animals.vip = this;
+        // if (!animals.vip) animals.vip = this;
         this.publish("animals", "countChanged", animals.animals.size);
     }
 
@@ -72,10 +78,10 @@ class AnimalActor extends mix(Actor).with(AM_VoxelSmoothed, AM_Behavioral) {
         super.destroy();
         const animals = this.service("Animals");
         animals.animals.delete(this);
-        if (this === animals.vip) {
-            delete animals.vip;
-            if (animals.animals.size > 0) animals.vip = [...animals.animals][0];
-        }
+        // if (this === animals.vip) {
+        //     delete animals.vip;
+        //     if (animals.animals.size > 0) animals.vip = [...animals.animals][0];
+        // }
         this.publish("animals", "countChanged", animals.animals.size);
     }
 }
@@ -105,7 +111,8 @@ class PersonActor extends AnimalActor {
         const surface = this.service('Surfaces').get(this.key);
         const x = 0.5;
         const y = 0.5;
-        const z = surface.rawElevation(x,y);
+        // const z = surface.rawElevation(x,y);
+        const z = surface.elevation(x,y);
         this.set({fraction: [x,y,z]});
     }
 }

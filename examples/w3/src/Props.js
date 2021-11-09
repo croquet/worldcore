@@ -203,11 +203,13 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
         const surface = this.service('Surfaces').get(this.key);
         let x = 0.2 + 0.6 * this.random();
         let y = 0.2 + 0.6 * this.random();
-        let z = surface.rawElevation(x,y);
+//        let z = surface.rawElevation(x,y);
+        let z = surface.elevation(x,y);
         if (z === undefined) { // Handle placing tree on half floor or shim
             x = 1-x;
             y = 1-y;
-            z = surface.rawElevation(x,y);
+//            z = surface.rawElevation(x,y);
+            z = surface.elevation(x,y);
             if (z === undefined) console.warn("Illegal tree position! " + [x,y]);
         }
 
@@ -221,7 +223,8 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
 
     validate() {
         const surface = this.service('Surfaces').get(this.key);
-        if (!surface || surface.rawElevation(this.fraction[0], this.fraction[1]) !== this.fraction[2]) this.destroy();
+//        if (!surface || surface.rawElevation(this.fraction[0], this.fraction[1]) !== this.fraction[2]) this.destroy();
+        if (!surface || surface.elevation(this.fraction[0], this.fraction[1]) !== this.fraction[2]) this.destroy();
     }
 
     harvest() {

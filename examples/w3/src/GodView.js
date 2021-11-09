@@ -25,7 +25,7 @@ export class GodView extends ViewService {
         this.subscribe("input", "zoomEnd", this.onZoomEnd);
         this.subscribe("input", "zoomUpdate", this.onZoomUpdate);
         this.subscribe("input", 'wheel', this.onWheel);
-        // this.subscribe("hud", "firstPerson", this.onFirstPerson); // xxx hack for fp camera sync
+        this.subscribe("hud", "firstPerson", this.onFirstPerson); // xxx hack for fp camera sync
         this.subscribe("voxels", "newLevel", this.onNewLevel);
 
     }
@@ -140,11 +140,12 @@ export class GodView extends ViewService {
 
     update(time, delta) {
         const animals = this.modelService("Animals");
-        if (animals.fp && animals.vip) {
-        // if (this.firstPerson && animals.vip) { // xxx hack for fp camera sync
+        // if (animals.fp && animals.vip) {
+        // console.log(animals.first);
+        if (this.firstPerson && animals.first) {
             this.setFOV(toRad(80));
             const pm = this.service("PawnManager");
-            const pawn = pm.get(animals.vip.id);
+            const pawn = pm.get(animals.first.id);
             const p = q_axisAngle([1,0,0], toRad(90));
             const r = q_multiply(p,pawn.rotation);
             const t = v3_add([0, 0, 2], pawn.translation);
