@@ -24,6 +24,6 @@
   },
   "dependencies": {
     "@croquet/worldcore-kernel": "^1.0.1",
-    "three": "^0.131.0"
+    "three": "^0.134.0"
   }
 }
