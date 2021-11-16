@@ -10,14 +10,13 @@ module.exports = {
         chunkFilename: 'chunk-[name]-[contenthash:8].js',
     },
     devServer: {
-        disableHostCheck: true,
-        contentBase: path.join(__dirname, 'dist'),
+        hot: false,
         port: 1234
     },
     module: {
         rules: [
             {
-                test: /\.(png|svg|jpg|gif|mp3|otf)$/,
+                test: /\.(png|svg|jpg|gif|mp3|otf|fbx)$/,
                 loader: 'file-loader',
                 options: {
                     name: '[contenthash:8].[ext]',

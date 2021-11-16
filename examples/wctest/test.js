@@ -6,12 +6,10 @@ import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTrans
 import {RenderManager, PM_Visible, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
-import { AudioManager, PM_AudioListener, AM_AudioSource, PM_AudioSource } from "@croquet/worldcore-audio";
 
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
-import photon from "./assets/photon.mp3";
 
 //------------------------------------------------------------------------------------------
 // MoveActor
@@ -86,7 +84,7 @@ class SpinBehavior extends Behavior {
 }
 SpinBehavior.register("SpinBehavior");
 
-class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral, AM_AudioSource ) {
+class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
     get pawn() {return ChildPawn}
 
@@ -109,7 +107,7 @@ ChildActor.register('ChildActor');
 // ChildPawn
 //------------------------------------------------------------------------------------------
 
-class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible, PM_AudioSource) {
+class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
@@ -146,13 +144,8 @@ class BackgroundActor extends mix(Actor).with(AM_Spatial) {
 
     init(...args) {
         super.init(...args);
-        // this.subscribe("input", "dDown", this.test);
     }
 
-    // test() {
-    //     console.log("test!");
-    //     this.playSound(photon);
-    // }
 }
 BackgroundActor.register('BackgroundActor');
 
@@ -160,7 +153,7 @@ BackgroundActor.register('BackgroundActor');
 // BackgroundPawn
 //------------------------------------------------------------------------------------------
 
-class BackgroundPawn extends mix(Pawn).with(PM_Spatial, PM_Visible, PM_AudioListener) {
+class BackgroundPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
     constructor(...args) {
         super(...args);
 
@@ -220,7 +213,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [ InputManager, {service:RenderManager}, UIManager, AudioManager];
+        return [ InputManager, RenderManager, UIManager];
     }
 
     constructor(model) {

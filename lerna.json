@@ -2,7 +2,8 @@
   "packages": [
     "packages/*",
     "tutorials/*",
-    "examples/*"
+    "examples/*",
+    "demos/*"
   ],
   "version": "independent"
 }
