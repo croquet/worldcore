@@ -21,6 +21,7 @@ export class PlayerManager extends ModelService {
     onJoin(viewId) {
         if (this.players.has(viewId)) console.warn("PlayerManager received duplicate view-join for viewId " + viewId);
         const player = this.createPlayer({playerId: viewId});
+        if (!player) return;
         this.players.set(viewId, player);
         this.publish("playerManager", "create", player);
     }
@@ -29,12 +30,12 @@ export class PlayerManager extends ModelService {
     // you need to add them to the existing options object.
 
     createPlayer(options) {
-        return Actor.create(options);
+        return null;
     }
 
     onExit(viewId) {
         const player = this.player(viewId);
-        if (!player) console.warn("PlayerManager received duplicate view-exit for viewId " + viewId);
+        if (!player) return;
         this.publish("playerManager", "destroy", player);
         player.destroy();
         this.players.delete(viewId);

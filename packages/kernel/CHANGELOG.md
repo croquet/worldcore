@@ -13,4 +13,5 @@ ActorManager allows inheritance
 InputManager allows inheritance
 PawnManager allows inheritance
 PlayerManager allows inheritance
+PlayerManager allows null return for CreatePlayer()
 Fixed bug with initialization of async services
