@@ -2,7 +2,7 @@
 //
 // Croquet Studios, 2021
 
-import { ModelRoot, ViewRoot, q_axisAngle, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, toRad } from "@croquet/worldcore-kernel";
+import { ModelRoot, ViewRoot, q_axisAngle, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, toRad, sphericalRandom, TAU } from "@croquet/worldcore-kernel";
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 import { ThreeRenderManager, PM_ThreeVisible, THREE } from "@croquet/worldcore-three";
 
@@ -26,6 +26,11 @@ FrameActor.register('FrameActor');
 //------------------------------------------------------------------------------------------
 
 class FramePawn extends mix(Pawn).with(PM_Smoothed) {
+
+    constructor(...args) {
+        super(...args);
+        this.tug = 0.01;
+    }
 }
 
 //------------------------------------------------------------------------------------------
@@ -70,6 +75,9 @@ class EarthPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
             this.model.castShadow = true;
             this.model.receiveShadow = true;
         });
+
+        console.log("Earth");
+        console.log(this.tug);
     }
 
     destroy() { // When the pawn is destroyed, we dispose of our Three.js objects.
@@ -84,10 +92,44 @@ class EarthPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 }
 
 //------------------------------------------------------------------------------------------
+// TiltActor
+//------------------------------------------------------------------------------------------
+
+class TiltActor extends mix(Actor).with(AM_Avatar, AM_Player) {
+
+    get pawn() { return TiltPawn }
+
+    init(options = {}) {
+        options.rotation = q_axisAngle([0,0,1], toRad(-60));
+        super.init(options);
+        this.rotateThrottle = 200;
+    }
+
+}
+TiltActor.register('TiltActor');
+
+class TiltPawn extends mix(Pawn).with(PM_Avatar, PM_Player) {
+
+    constructor(...args) {
+        super(...args);
+        if (this.isMyPlayerPawn) this.subscribe("hud", "angle", this.onChangeAngle);
+    }
+
+    onChangeAngle(a) {
+        const angle = (2*a-1) * Math.PI/2;
+        const q = q_axisAngle([0,0,1], angle);
+        this.throttledRotateTo(q);
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
 // AxisActor
 //------------------------------------------------------------------------------------------
 
-class AxisActor extends mix(FrameActor).with(AM_Player) {
+class AxisActor extends mix(Actor).with(AM_Avatar, AM_Player) {
+
+    get pawn() { return AxisPawn }
 
     init(options = {}) {
         super.init(options);
@@ -102,23 +144,27 @@ class AxisActor extends mix(FrameActor).with(AM_Player) {
 }
 AxisActor.register('AxisActor');
 
+class AxisPawn extends mix(Pawn).with(PM_Avatar, PM_Player) {
+
+    constructor(...args) {
+        super(...args);
+    }
+
+}
+
 //------------------------------------------------------------------------------------------
 // OrbitActor
 //------------------------------------------------------------------------------------------
 
-class OrbitActor extends mix(FrameActor).with(AM_Player) {
+class OrbitActor extends mix(Actor).with(AM_Avatar, AM_Player) {
 
     get pawn() {return OrbitPawn}
 
     init(options = {}) {
+        options.translation = [0,0,200];
         super.init(options);
-        this.listen("radius", this.onChangeRadius)
     }
 
-    onChangeRadius(r) {
-        const radius = 120 + r * 100;
-        this.moveTo([0,0,radius]);
-    }
 }
 OrbitActor.register('OrbitActor');
 
@@ -126,15 +172,17 @@ OrbitActor.register('OrbitActor');
 // OrbitPawn
 //------------------------------------------------------------------------------------------
 
-class OrbitPawn extends mix(FramePawn).with(PM_Player) {
+class OrbitPawn extends mix(Pawn).with(PM_Avatar, PM_Player) {
 
     constructor(...args) {
         super(...args);
+        this.moveThrottle = 200;
         if (this.isMyPlayerPawn) this.subscribe("hud", "radius", this.onChangeRadius);
     }
 
     onChangeRadius(r) {
-        this.say("radius", r);
+        const radius = 120 + r * 100;
+        this.throttledMoveTo([0,0,radius]);
     }
 
 }
@@ -148,6 +196,15 @@ class SatelliteActor extends mix(Actor).with(AM_Smoothed, AM_Player) {
 
     init(options = {}) {
         super.init(options);
+        this.axis = sphericalRandom();
+        this.future(0).tick(0)
+    }
+
+    tick(delta) {
+        const axis = v3_normalize([1,2,3]);
+        const spin = q_axisAngle(this.axis, delta/1000 * toRad(45));
+        this.rotateTo(q_multiply(this.rotation, spin));
+        this.future(50).tick(50);
     }
 
 }
@@ -193,12 +250,11 @@ class MyPlayerManager extends PlayerManager {
     createPlayer(options) {
         const root = this.service("ModelRoot");
         options.parent = root.center;
-        // options.translation = [0, 0, 120];
-        options.rotation = q_axisAngle([0,1,0], toRad(45));
-        const axis = AxisActor.create(options);
+        const tilt = TiltActor.create(options);
+        const axis = AxisActor.create({parent: tilt});
         const orbit = OrbitActor.create({parent: axis, translation: [0, 0, 200]});
         const satellite = SatelliteActor.create({parent: orbit});
-        return orbit;
+        return tilt;
     }
 
 }
@@ -218,7 +274,7 @@ class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start Model!!!");
         this.center = FrameActor.create();
-        EarthActor.create({parent: this.center});
+        const earth = EarthActor.create({parent: this.center});
     }
 
 }
@@ -265,15 +321,22 @@ class MyViewRoot extends ViewRoot {
         const ui = this.service("UIManager");
         this.HUD = new Widget({parent: ui.root, autoSize: [1,1]});
 
-        this.slider = new SliderWidget({
+        this.rSlider = new SliderWidget({
             parent: this.HUD,
             anchor: [1,0],
             pivot: [1,0],
             local: [-20,20],
             size: [20, 300],
-            // step: 10,
-            throttle: 20,
             onChange: p => this.publish("hud", "radius", p)
+        })
+
+        this.aSlider = new SliderWidget({
+            parent: this.HUD,
+            anchor: [0,0],
+            pivot: [0,0],
+            local: [20,20],
+            size: [20, 300],
+            onChange: p => this.publish("hud", "angle", p)
         })
 
 
@@ -289,7 +352,7 @@ StartWorldcore({
     name: 'test',
     model: MyModelRoot,
     view: MyViewRoot,
-    tps: 15,
+    tps: 60,
 });
 
 
