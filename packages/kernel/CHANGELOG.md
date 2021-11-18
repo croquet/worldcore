@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Pending
 ActorManager allows inheritance
 InputManager allows inheritance
+InputManager has AddAllListeners() method
 PawnManager allows inheritance
 PlayerManager allows inheritance
 PlayerManager allows null return for CreatePlayer()

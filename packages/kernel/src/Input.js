@@ -53,24 +53,7 @@ export class InputManager extends ViewService {
         this.penultimateDown = {};
 
         document.body.style.touchAction = "none";
-
-        this.addListener(document, 'contextmenu', e => e.preventDefault());
-        this.addListener(window, 'resize', e => this.onResize(e));
-        this.addListener(window, 'focus', e => this.onFocus(e));
-        this.addListener(window, 'blur', e => this.onBlur(e));
-        this.addListener(window, 'deviceorientation', e => this.onOrientation(e));
-        this.addListener(document, 'click', e => this.onClick(e));
-        this.addListener(document, 'pointerlockchange', e => this.onPointerLock(e));
-
-        this.addListener(document, 'pointerdown', e => this.onPointerDown(e));
-        this.addListener(document, 'pointerup', e => this.onPointerUp(e));
-        this.addListener(document, 'pointercancel', e => this.onPointerUp(e));
-        this.addListener(document, 'pointermove', e => this.onPointerMove(e));
-
-        this.addListener(document, 'wheel', e => this.onWheel(e));
-
-        this.addListener(document,'keydown', e => this.onKeyDown(e));
-        this.addListener(document,'keyup', e => this.onKeyUp(e));
+        this.addAllListeners();
 
     }
 
@@ -97,6 +80,24 @@ export class InputManager extends ViewService {
     removeAllListeners() {
         this.listeners.forEach(listener => listener.element.removeEventListener(listener.type, listener.callback, {passive: false}));
         this.listeners = [];
+    }
+
+    // adds all the default input manager listeners
+    addAllListeners() {
+        this.addListener(document, 'contextmenu', e => e.preventDefault());
+        this.addListener(window, 'resize', e => this.onResize(e));
+        this.addListener(window, 'focus', e => this.onFocus(e));
+        this.addListener(window, 'blur', e => this.onBlur(e));
+        this.addListener(window, 'deviceorientation', e => this.onOrientation(e));
+        this.addListener(document, 'click', e => this.onClick(e));
+        this.addListener(document, 'pointerlockchange', e => this.onPointerLock(e));
+        this.addListener(document, 'pointerdown', e => this.onPointerDown(e));
+        this.addListener(document, 'pointerup', e => this.onPointerUp(e));
+        this.addListener(document, 'pointercancel', e => this.onPointerUp(e));
+        this.addListener(document, 'pointermove', e => this.onPointerMove(e));
+        this.addListener(document, 'wheel', e => this.onWheel(e));
+        this.addListener(document,'keydown', e => this.onKeyDown(e));
+        this.addListener(document,'keyup', e => this.onKeyUp(e));
     }
 
     // If you want the input handler to report a chord event, you need to add the chord and give it an event name.
