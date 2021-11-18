@@ -1,0 +1,31 @@
+{
+  "name": "@croquet/fountain",
+  "version": "0.0.1",
+  "description": "Fountain Demo",
+  "private": true,
+  "scripts": {
+    "start": "webpack-dev-server --mode development --devtool source-map --watch",
+    "build": "webpack --mode production"
+  },
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "file-loader": "^6.2.0",
+    "fs-extra": "^10.0.0",
+    "html-webpack-plugin": "^4.5.2",
+    "node-fetch": "^2.6.1",
+    "simple-git": "^2.40.0",
+    "webpack": "^4.46.0",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.2"
+  },
+  "dependencies": {
+    "@croquet/worldcore-audio": "^1.0.1",
+    "@croquet/worldcore-behavior": "^1.0.1",
+    "@croquet/worldcore-kernel": "^1.0.1",
+    "@croquet/worldcore-three": "^1.0.1",
+    "@croquet/worldcore-webgl": "^1.0.1",
+    "@croquet/worldcore-widget": "^1.0.1",
+    "three": "^0.134.0"
+  }
+}

@@ -1,4 +1,4 @@
-// Satellite Demo
+// Fountain Demo
 //
 // Croquet Studios, 2021
 
