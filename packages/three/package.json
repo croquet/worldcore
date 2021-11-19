@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-three",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Three.js Component for Croquet Worldcore",
   "keywords": [
     "croquet",

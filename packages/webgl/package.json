@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-webgl",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "WebGL Renderer Component for Croquet Worldcore",
   "keywords": [
     "croquet",
