@@ -23,7 +23,7 @@
     "directory": "packages/rapier"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^1.0.1",
+    "@croquet/worldcore-kernel": "^1.0.3",
     "@dimforge/rapier3d": "0.7.6"
   }
 }

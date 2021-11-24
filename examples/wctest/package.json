@@ -1,6 +1,6 @@
 {
   "name": "@croquet/wctest",
-  "version": "0.0.1",
+  "version": "1.0.3",
   "description": "Worldcore Testbed",
   "private": true,
   "scripts": {
@@ -18,9 +18,9 @@
     "webpack-dev-server": "^3.11.0"
   },
   "dependencies": {
-    "@croquet/worldcore-behavior": "^1.0.1",
-    "@croquet/worldcore-kernel": "^1.0.1",
-    "@croquet/worldcore-webgl": "^1.0.1",
-    "@croquet/worldcore-widget": "^1.0.1"
+    "@croquet/worldcore-behavior": "^1.0.3",
+    "@croquet/worldcore-kernel": "^1.0.3",
+    "@croquet/worldcore-webgl": "^1.0.3",
+    "@croquet/worldcore-widget": "^1.0.3"
   }
 }

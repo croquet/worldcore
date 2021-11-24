@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-three",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Three.js Component for Croquet Worldcore",
   "keywords": [
     "croquet",
@@ -23,7 +23,7 @@
     "directory": "packages/three"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^1.0.1",
+    "@croquet/worldcore-kernel": "^1.0.3",
     "three": "^0.134.0"
   }
 }

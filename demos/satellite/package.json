@@ -1,6 +1,6 @@
 {
   "name": "@croquet/satellite",
-  "version": "0.0.1",
+  "version": "1.0.3",
   "description": "Satellite Demo",
   "private": true,
   "scripts": {
@@ -17,9 +17,9 @@
     "webpack-dev-server": "^3.11.2"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^1.0.1",
-    "@croquet/worldcore-three": "^1.0.1",
-    "@croquet/worldcore-widget": "^1.0.1",
+    "@croquet/worldcore-kernel": "^1.0.3",
+    "@croquet/worldcore-three": "^1.0.3",
+    "@croquet/worldcore-widget": "^1.0.3",
     "three": "^0.134.0"
   }
 }

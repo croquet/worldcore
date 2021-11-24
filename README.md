@@ -93,3 +93,27 @@ But if you bootstrap the repo using [`lerna`](https://lerna.js.org):
     worldcore-widget@ -> ../../../../packages/widget
 
 Now when you modify something in e.g. `packages/widget` and rebuild `wctest`, it will use your version of the packages, rather than the released versions.
+
+## Publish Worldcore packages
+
+We use `lerna` with "fixed" versioning, meaning each package will have the same version.
+
+1. For each modified package:
+
+   * update `CHANGELOG.md` with the next release version
+
+2. commit everything (the next step needs a clean repo)
+
+3. bump the version (e.g. to `1.0.3`)
+
+        lerna version 1.0.3 --no-push
+
+   This will update all packages to the same version, as well as their dependencies
+   (including in demos, examples, and tutorials).
+
+   We use `--no-push` to get a chance to roll back if needed
+   (undo the version commit and delete the tag).
+
+4. publish to npm
+
+       lerna publish from-package
