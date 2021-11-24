@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-rapier",
-  "version": "1.0.3",
+  "version": "1.0.2",
   "description": "Rapier Physics Component for Croquet Worldcore",
   "keywords": [
     "croquet",
