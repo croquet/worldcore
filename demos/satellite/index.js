@@ -385,7 +385,7 @@ class MyViewRoot extends ViewRoot {
 // High tick rate so the rotation is smooth.
 
 StartWorldcore({
-    appId: 'io.croquet.wctest',
+    appId: 'io.croquet.satellite',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
     password: 'password',
     name: App.autoSession(),
