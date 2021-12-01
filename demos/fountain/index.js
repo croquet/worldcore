@@ -2,13 +2,13 @@
 //
 // Croquet Studios, 2021
 
-import { App, ModelRoot, ViewRoot, q_axisAngle, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, q_multiply, InputManager, AM_Spatial, PM_Spatial, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, ModelService, StartWorldcore, toRad, sphericalRandom, TAU, v3_add, v3_scale, viewRoot } from "@croquet/worldcore-kernel";
-import { UIManager, Widget, SliderWidget } from "@croquet/worldcore-widget";
+import { App, ModelRoot, ViewRoot, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, InputManager, AM_Spatial, PM_Spatial, ModelService, StartWorldcore, toRad, sphericalRandom, v3_add, v3_scale, viewRoot } from "@croquet/worldcore-kernel";
+import { UIManager, Widget } from "@croquet/worldcore-widget";
 import { RapierPhysicsManager, AM_RapierPhysics, RAPIER } from "@croquet/worldcore-rapier";
 import { ThreeRenderManager, PM_ThreeVisible, THREE } from "@croquet/worldcore-three";
 
 //------------------------------------------------------------------------------------------
-// FountainActor
+// -- FountainActor ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
@@ -29,14 +29,18 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
     }
 
     sprayTick() {
-        const r = Math.random();
         const origin = v3_add(this.translation, [0,3,0]);
 
         let p;
-        if (r < 1.5) {
+        const r = Math.random();
+        if (r < 0.5) {
             p = CubeSprayActor.create({translation: origin});
-        } else {
+        } else if (r < 0.7) {
             p = SphereSprayActor.create({translation: origin});
+        } else if (r < 0.9) {
+            p = CylinderSprayActor.create({translation: origin});
+        } else {
+            p = ConeSprayActor.create({translation: origin});
         }
 
         const spin = v3_scale(sphericalRandom(),Math.random() * 0.5);
@@ -46,12 +50,11 @@ export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics)
 
         this.future(250).sprayTick();
     }
-
 }
 FountainActor.register('FountainActor');
 
 //------------------------------------------------------------------------------------------
-// FountainPawn
+// -- FountainPawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class FountainPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
@@ -65,13 +68,17 @@ class FountainPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         cube.castShadow = true;
         cube.receiveShadow = true;
         this.setRenderObject(cube);
-
     }
 
+    destroy() {
+        super.destroy();
+        this.geometry.dispose();
+        this.material.dispose();
+    }
 }
 
 //------------------------------------------------------------------------------------------
-// SprayActor
+// -- SprayActor --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class SprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
@@ -86,7 +93,7 @@ export class SprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
 SprayActor.register('SprayActor');
 
 //------------------------------------------------------------------------------------------
-// SprayPawn
+// -- SprayPawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
@@ -100,13 +107,12 @@ class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
             const color = new THREE.Color(...modelRoot.colors[i])
             viewRoot.materials[i] = new THREE.MeshStandardMaterial({color});
         }
-
     }
 
 }
 
 //------------------------------------------------------------------------------------------
-// CubeSprayActor
+// -- CubeSprayActor -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class CubeSprayActor extends SprayActor {
@@ -122,12 +128,11 @@ export class CubeSprayActor extends SprayActor {
         cd.setFriction(1);
         this.createCollider(cd);
     }
-
 }
 CubeSprayActor.register('CubeSprayActor');
 
 //------------------------------------------------------------------------------------------
-// CubeSprayPawn
+// -- CubeSprayPawn ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class CubeSprayPawn extends SprayPawn {
@@ -135,18 +140,99 @@ class CubeSprayPawn extends SprayPawn {
         super(...args);
         const i = this.actor.index;
 
-        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        const cube = new THREE.Mesh( this.geometry,  viewRoot.materials[i] );
-        cube.castShadow = true;
-        cube.receiveShadow = true;
-        this.setRenderObject(cube);
-
+        if (!viewRoot.cube) viewRoot.cube = new THREE.BoxGeometry( 1, 1, 1 );
+        const mesh = new THREE.Mesh( viewRoot.cube,  viewRoot.materials[i] );
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        this.setRenderObject(mesh);
     }
-
 }
 
 //------------------------------------------------------------------------------------------
-// SphereSprayActor
+// -- CylinderSprayActor -------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class CylinderSprayActor extends SprayActor {
+
+    get pawn() {return CylinderSprayPawn}
+
+    init(options) {
+        super.init(options);
+
+        this.createRigidBody(RAPIER.RigidBodyDesc.newDynamic());
+        let cd = RAPIER.ColliderDesc.cylinder(0.5, 0.5);
+        cd.setRestitution(0.5);
+        cd.setFriction(1);
+        cd.setDensity(1.5);
+        this.createCollider(cd);
+    }
+}
+CylinderSprayActor.register('CylinderSprayActor');
+
+//------------------------------------------------------------------------------------------
+// -- CylinderSprayPawn --------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class CylinderSprayPawn extends SprayPawn {
+    constructor(...args) {
+        super(...args);
+        const i = this.actor.index;
+
+        if (!viewRoot.cylinder) viewRoot.cylinder = new THREE.CylinderGeometry( 0.5, 0.5, 1, 16 );
+        const mesh = new THREE.Mesh( viewRoot.cylinder,  viewRoot.materials[i] );
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        this.setRenderObject(mesh);
+    }
+}
+
+//------------------------------------------------------------------------------------------
+// -- ConeSprayActor -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class ConeSprayActor extends SprayActor {
+
+    get pawn() {return ConeSprayPawn}
+
+    init(options) {
+        super.init(options);
+
+        this.createRigidBody(RAPIER.RigidBodyDesc.newDynamic());
+        let cd = RAPIER.ColliderDesc.cone(0.5, 0.5);
+        cd.setRestitution(0.5);
+        cd.setFriction(1);
+        cd.setDensity(3);
+        this.createCollider(cd);
+    }
+}
+ConeSprayActor.register('ConeSprayActor');
+
+//------------------------------------------------------------------------------------------
+// -- ConeSprayPawn ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class ConeSprayPawn extends SprayPawn {
+    constructor(...args) {
+        super(...args);
+        const i = this.actor.index;
+
+        if (!viewRoot.cone) viewRoot.cone = new THREE.CylinderGeometry( 0, 0.5, 1, 16 );
+        // this.geometry = new THREE.CylinderGeometry( 0, 0.5, 1, 16 );
+        const cube = new THREE.Mesh( viewRoot.cone,  viewRoot.materials[i] );
+        cube.castShadow = true;
+        cube.receiveShadow = true;
+        this.setRenderObject(cube);
+    }
+
+    // destroy() {
+    //     super.destroy();
+    //     if (viewRoot.cone) viewRoot.cone.dispose();
+    //     viewRoot.cylinder = null;
+    // }
+}
+
+//------------------------------------------------------------------------------------------
+// -- SphereSprayActor ---------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class SphereSprayActor extends SprayActor {
@@ -163,12 +249,11 @@ export class SphereSprayActor extends SprayActor {
         cd.setDensity(2);
         this.createCollider(cd);
     }
-
 }
 SphereSprayActor.register('SphereSprayActor');
 
 //------------------------------------------------------------------------------------------
-// SphereSprayPawn
+// -- SphereSprayPawn ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class SphereSprayPawn extends SprayPawn {
@@ -176,15 +261,19 @@ class SphereSprayPawn extends SprayPawn {
         super(...args);
         const i = this.actor.index;
 
-        this.geometry = new THREE.SphereGeometry(0.5);
-        const cube = new THREE.Mesh( this.geometry,  viewRoot.materials[i] );
-        cube.castShadow = true;
-        cube.receiveShadow = true;
-        this.setRenderObject(cube);
-
+        if (!viewRoot.sphere) viewRoot.sphere = new THREE.SphereGeometry(0.5);
+        // this.geometry = new THREE.SphereGeometry(0.5);
+        const mesh = new THREE.Mesh( viewRoot.sphere,  viewRoot.materials[i] );
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        this.setRenderObject(mesh);
     }
-
 }
+
+//------------------------------------------------------------------------------------------
+// -- LevelActor ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
 export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
 
     get pawn() {return LevelPawn};
@@ -225,15 +314,13 @@ export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
         cd.setRestitution(0.5);
         cd.setFriction(1);
         this.createCollider(cd);
-
-    }
-
-    destroy() {
-        super.destroy();
-        // this.fountain.destroy();
     }
 }
 LevelActor.register('LevelActor');
+
+//------------------------------------------------------------------------------------------
+// -- LevelPawn ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
 class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
@@ -244,55 +331,56 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         const floorColor = new THREE.Color(0.4, 0.8, 0.2);
         const wallColor = new THREE.Color(0.7,0.7, 0.7);
 
-        const geometry = new THREE.BoxGeometry( 40, 1, 40 );
-        geometry.translate(0,-0.5,0)
-        const floorMaterial = new THREE.MeshStandardMaterial( {color: floorColor} );
-        const wallMaterial = new THREE.MeshStandardMaterial( {color: wallColor} );
-        const floor = new THREE.Mesh( geometry, floorMaterial );
+        this.floorGeometry = new THREE.BoxGeometry( 40, 1, 40 );
+        this.floorGeometry.translate(0,-0.5,0)
+        this.floorMaterial = new THREE.MeshStandardMaterial( {color: floorColor} );
+        this.wallMaterial = new THREE.MeshStandardMaterial( {color: wallColor} );
+        const floor = new THREE.Mesh( this.floorGeometry, this.floorMaterial );
         floor.receiveShadow = true;
         level.add(floor);
 
-        const wallGeo0 = new THREE.BoxGeometry( 40, 5, 1 );
-        const wallGeo1 = new THREE.BoxGeometry( 40, 5, 1 );
-        const wallGeo2 = new THREE.BoxGeometry( 1, 5, 40 );
-        const wallGeo3 = new THREE.BoxGeometry( 1, 5, 40 );
+        this.wallGeometry0 = new THREE.BoxGeometry( 40, 5, 1 );
+        this.wallGeometry1 = new THREE.BoxGeometry( 40, 5, 1 );
+        this.wallGeometry2 = new THREE.BoxGeometry( 1, 5, 40 );
+        this.wallGeometry3 = new THREE.BoxGeometry( 1, 5, 40 );
 
-        wallGeo0.translate(0,0,19.5)
-        wallGeo1.translate(0,0,-19.5)
-        wallGeo2.translate(19.5,0,0)
-        wallGeo3.translate(-19.5,0, 0)
+        this.wallGeometry0.translate(0,0,19.5)
+        this.wallGeometry1.translate(0,0,-19.5)
+        this.wallGeometry2.translate(19.5,0,0)
+        this.wallGeometry3.translate(-19.5,0, 0)
 
-        const wall0 = new THREE.Mesh( wallGeo0, wallMaterial );
-        // wall0.castShadow = true;
+        const wall0 = new THREE.Mesh( this.wallGeometry0, this.wallMaterial );
+        wall0.castShadow = true;
         wall0.receiveShadow = true;
         level.add(wall0);
 
-        const wall1 = new THREE.Mesh( wallGeo1, wallMaterial );
-        // wall0.castShadow = true;
+        const wall1 = new THREE.Mesh( this.wallGeometry1, this.wallMaterial );
+        wall1.castShadow = true;
         wall1.receiveShadow = true;
         level.add(wall1);
 
-        const wall2 = new THREE.Mesh( wallGeo2, wallMaterial );
+        const wall2 = new THREE.Mesh( this.wallGeometry2, this.wallMaterial );
         wall2.castShadow = true;
         wall2.receiveShadow = true;
         level.add(wall2);
 
-        const wall3 = new THREE.Mesh( wallGeo3, wallMaterial );
-        // wall0.castShadow = true;
+        const wall3 = new THREE.Mesh( this.wallGeometry3, this.wallMaterial );
+        wall0.castShadow = true;
         wall3.receiveShadow = true;
         level.add(wall3);
 
         this.setRenderObject(level);
-        ;
-
-
-
     }
 
     destroy() {
         super.destroy();
-        // this.ground.destroy();
-        // this.material.destroy();
+        this.floorGeometry.dispose();
+        this.wallGeometry0.dispose();
+        this.wallGeometry1.dispose();
+        this.wallGeometry2.dispose();
+        this.wallGeometry3.dispose();
+        this.wallMaterial.dispose();
+        this.floorMaterial.dispose();
     }
 
 }
@@ -323,9 +411,6 @@ SprayManager.register("SprayManager");
 // -- MyModelRoot --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// The root of the scene graph and the earth itself are the only thing created in the model
-// at start up.
-
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
@@ -352,9 +437,22 @@ class MyModelRoot extends ModelRoot {
     }
 
     shoot() {
-        const p = SphereSprayActor.create({translation: [0, 17, 19]});
-        // const spin = v3_scale(sphericalRandom(),Math.random() * 1.5);
-        // p.rigidBody.applyTorqueImpulse(new RAPIER.Vector3(...spin), true);
+        const origin = [0, 17, 19];
+
+        let p;
+        const r = Math.random();
+        if (r < 0.5) {
+            p = CubeSprayActor.create({translation: origin});
+        } else if (r < 0.7) {
+            p = SphereSprayActor.create({translation: origin});
+        } else if (r < 0.9) {
+            p = CylinderSprayActor.create({translation: origin});
+        } else {
+            p = ConeSprayActor.create({translation: origin});
+        }
+
+        const spin = v3_scale(sphericalRandom(),Math.random() * 1.5);
+        p.rigidBody.applyTorqueImpulse(new RAPIER.Vector3(...spin), true);
         p.rigidBody.applyImpulse(new RAPIER.Vector3(0, 0, -16), true);
     }
 
@@ -364,9 +462,6 @@ MyModelRoot.register("MyModelRoot");
 //------------------------------------------------------------------------------------------
 // -- MyViewRoot ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-// We create the three.js lighting and camera right in the view root. We also create the two
-// sliders that control the orbit of the local satellite.
 
 class MyViewRoot extends ViewRoot {
 
@@ -404,13 +499,21 @@ class MyViewRoot extends ViewRoot {
         const ui = this.service("UIManager");
         this.HUD = new Widget({parent: ui.root, autoSize: [1,1]});
     }
+
+    destroy() {
+        super.destroy();
+        if (this.materials) this.materials.forEach( m => m.dispose());
+        if (this.cube) this.cube.dispose();
+        if (this.sphere) this.sphere.dispose();
+        if (this.cone) this.cone.dispose();
+        if (this.cylinder) this.cylinder.dispose();
+
+    }
 }
 
 //------------------------------------------------------------------------------------------
 // -- Start --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-// High tick rate so the rotation is smooth.
 
 App.makeWidgetDock();
 StartWorldcore({
