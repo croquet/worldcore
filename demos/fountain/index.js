@@ -425,7 +425,7 @@ class SprayManager extends ModelService {
     }
 
     add(spray) {
-        while (this.all.length >= 500) {
+        while (this.all.length >= 250) {
             const doomed = this.all.shift();
             doomed.destroy();
         }
