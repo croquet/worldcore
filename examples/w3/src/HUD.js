@@ -262,6 +262,9 @@ export class HUD extends Widget {
         this.spawnToggle.hide();
         this.waterToggle.hide();
         this.walkToggle.hide();
+        this.roadToggle.hide();
+        this.clearToggle.hide();
+        this.spawnCounter.hide();
         this.spawnCounter.hide();
     }
 
@@ -272,8 +275,11 @@ export class HUD extends Widget {
         this.digToggle.show();
         this.fillToggle.show();
         this.treeToggle.show();
-        this.spawnToggle.show();
         this.waterToggle.show();
+        this.spawnToggle.show();
+        this.roadToggle.show();
+        this.clearToggle.show();
+        this.spawnCounter.show();
         this.walkToggle.set({visible: animals.animals.size>0});
         this.spawnCounter.show();
     }
