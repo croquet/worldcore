@@ -3,13 +3,16 @@
 // Croquet Studios, 2021
 
 import { App, ModelRoot, ViewRoot, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, InputManager, AM_Spatial, PM_Spatial, ModelService, StartWorldcore, toRad, sphericalRandom, v3_add, v3_scale, viewRoot } from "@croquet/worldcore-kernel";
-import { UIManager, Widget } from "@croquet/worldcore-widget";
 import { RapierPhysicsManager, AM_RapierPhysics, RAPIER } from "@croquet/worldcore-rapier";
 import { ThreeRenderManager, PM_ThreeVisible, THREE } from "@croquet/worldcore-three";
 
 //------------------------------------------------------------------------------------------
 // -- FountainActor ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// It has a collider for the nozzle geometry. And it has a tick that runs every 250
+// milliseconds that spawns geometric objects and fires them into the air. The fountain
+// randomly picks what shape to spawn.
 
 export class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
 
@@ -57,6 +60,8 @@ FountainActor.register('FountainActor');
 // -- FountainPawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Create the visuals for the nozzle.
+
 class FountainPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
@@ -70,7 +75,7 @@ class FountainPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.setRenderObject(cube);
     }
 
-    destroy() {
+    destroy() { // We should destroy three.js geometries and materials when we're done.
         super.destroy();
         this.geometry.dispose();
         this.material.dispose();
@@ -78,8 +83,11 @@ class FountainPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 }
 
 //------------------------------------------------------------------------------------------
-// -- SprayActor --------------------------------------------------------------------------
+// -- SprayActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// A base class for all the actors in the spray. It randomly picks an index color, and
+// registers the actor with the spray manager.
 
 export class SprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierPhysics) {
 
@@ -95,6 +103,9 @@ SprayActor.register('SprayActor');
 //------------------------------------------------------------------------------------------
 // -- SprayPawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// A base class for all the pawns in the spray. It lazily creates the materials that are used
+// for each color.
 
 class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(...args) {
@@ -114,6 +125,8 @@ class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 //------------------------------------------------------------------------------------------
 // -- CubeSprayActor -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Creates a dynamic cube collider.
 
 export class CubeSprayActor extends SprayActor {
 
@@ -135,6 +148,8 @@ CubeSprayActor.register('CubeSprayActor');
 // -- CubeSprayPawn ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Creates the 3D cube model.
+
 class CubeSprayPawn extends SprayPawn {
     constructor(...args) {
         super(...args);
@@ -151,6 +166,8 @@ class CubeSprayPawn extends SprayPawn {
 //------------------------------------------------------------------------------------------
 // -- CylinderSprayActor -------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Creates a dynamic cylinder collider.
 
 export class CylinderSprayActor extends SprayActor {
 
@@ -173,6 +190,8 @@ CylinderSprayActor.register('CylinderSprayActor');
 // -- CylinderSprayPawn --------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Creates the 3D cylinder model.
+
 class CylinderSprayPawn extends SprayPawn {
     constructor(...args) {
         super(...args);
@@ -189,6 +208,8 @@ class CylinderSprayPawn extends SprayPawn {
 //------------------------------------------------------------------------------------------
 // -- ConeSprayActor -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Creates a dynamic cone collider.
 
 export class ConeSprayActor extends SprayActor {
 
@@ -211,6 +232,8 @@ ConeSprayActor.register('ConeSprayActor');
 // -- ConeSprayPawn ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Creates the 3D cone model.
+
 class ConeSprayPawn extends SprayPawn {
     constructor(...args) {
         super(...args);
@@ -224,16 +247,13 @@ class ConeSprayPawn extends SprayPawn {
         this.setRenderObject(cube);
     }
 
-    // destroy() {
-    //     super.destroy();
-    //     if (viewRoot.cone) viewRoot.cone.dispose();
-    //     viewRoot.cylinder = null;
-    // }
 }
 
 //------------------------------------------------------------------------------------------
 // -- SphereSprayActor ---------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Creates a dynamic sphere collider.
 
 export class SphereSprayActor extends SprayActor {
 
@@ -256,6 +276,8 @@ SphereSprayActor.register('SphereSprayActor');
 // -- SphereSprayPawn ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Creates the 3D sphere model.
+
 class SphereSprayPawn extends SprayPawn {
     constructor(...args) {
         super(...args);
@@ -273,6 +295,8 @@ class SphereSprayPawn extends SprayPawn {
 //------------------------------------------------------------------------------------------
 // -- LevelActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Creates all the colliders for the floor and walls.
 
 export class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierPhysics) {
 
@@ -321,6 +345,8 @@ LevelActor.register('LevelActor');
 //------------------------------------------------------------------------------------------
 // -- LevelPawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Creates all the 3D models for the floor and walls.
 
 class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
@@ -372,7 +398,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         this.setRenderObject(level);
     }
 
-    destroy() {
+    destroy() { // We should destroy the three.js geometries and materials when we're done.
         super.destroy();
         this.floorGeometry.dispose();
         this.wallGeometry0.dispose();
@@ -388,6 +414,8 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 //------------------------------------------------------------------------------------------
 // -- SprayManager -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Keeps track of all the spray object and deletes the oldest when the maximum number is reached.
 
 class SprayManager extends ModelService {
 
@@ -411,6 +439,10 @@ SprayManager.register("SprayManager");
 // -- MyModelRoot --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Create the model-side services: the spray manager, and the Rapier physics engine.
+// Creates the static level and the fountain.
+// Spawns a random spray actor on a click or space bar press.
+
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
@@ -429,11 +461,16 @@ class MyModelRoot extends ModelRoot {
             this.colors.push([0.9-r, 0.9-g, 0.9-b]);
         }
 
-        const level = LevelActor.create({translation: [0,-0,0]});
-        const fountain = FountainActor.create();
+        this.level = LevelActor.create({translation: [0,-0,0]});
+        this.fountain = FountainActor.create();
 
         this.subscribe("input", "click", this.shoot);
         this.subscribe("input", " Down", this.shoot);
+    }
+
+    destroy() {
+        this.level.destroy();
+        this.fountain.destroy();
     }
 
     shoot() {
@@ -463,10 +500,13 @@ MyModelRoot.register("MyModelRoot");
 // -- MyViewRoot ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Create the view-side services: the input manager and the three.js render manager.
+// Sets up the three.js camera and lighting.
+
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, UIManager];
+        return [InputManager, ThreeRenderManager];
     }
 
     constructor(model) {
@@ -496,11 +536,9 @@ class MyViewRoot extends ViewRoot {
         threeRenderManager.renderer.shadowMap.enabled = true;
         threeRenderManager.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-        const ui = this.service("UIManager");
-        this.HUD = new Widget({parent: ui.root, autoSize: [1,1]});
     }
 
-    destroy() {
+    destroy() { // We should destroy three.js geometries and materials when we're done.
         super.destroy();
         if (this.materials) this.materials.forEach( m => m.dispose());
         if (this.cube) this.cube.dispose();
