@@ -1,0 +1,25 @@
+{
+  "name": "@croquet/quub_demo",
+  "version": "1.0.3",
+  "description": "Quub",
+  "private": true,
+  "scripts": {
+    "start": "webpack-dev-server --mode development --devtool source-map --watch",
+    "build": "webpack --mode production",
+    "build-dev": "webpack --mode development"
+  },
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@croquet/worldcore": "^1.0.3"
+  },
+  "devDependencies": {
+    "file-loader": "^6.0.0",
+    "html-webpack-plugin": "^4.3.0",
+    "inspectpack": "^4.5.2",
+    "node-fetch": "^2.6.1",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
+  }
+}
