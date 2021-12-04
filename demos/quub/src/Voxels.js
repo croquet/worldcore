@@ -148,10 +148,10 @@ export class Voxels extends Model {
     static get west() { return 3; }
     static get above() { return 4; }
     static get below() { return 5; }
-    static get northEast() { return 6; }
-    static get southEast() { return 7; }
-    static get southWest() { return 8; }
-    static get northWest() { return 9; }
+    // static get northEast() { return 6; }
+    // static get southEast() { return 7; }
+    // static get southWest() { return 8; }
+    // static get northWest() { return 9; }
 
     //-- Voxel Types --
 
@@ -216,22 +216,6 @@ export class Voxels extends Model {
                 break;
             case 5: // Below
                 out[2]--;
-                break;
-            case 6: // NorthEast
-                out[0]++;
-                out[1]++;
-                break;
-            case 7: // SouthEast
-                out[0]++;
-                out[1]--;
-                break;
-            case 8: // SouthWest
-                out[0]--;
-                out[1]--;
-                break;
-            case 9: // NorthWest
-                out[0]--;
-                out[1]++;
                 break;
                 default:
         }
@@ -367,15 +351,6 @@ export class Voxels extends Model {
     }
 
     // Executes a callback for every horizontally adjacent voxel. Callback arguments are (type, x, y, z, direction)
-
-    // forHorizontallyAdjacent(x, y, z, callback) {
-    //     const x0 = x-1, x1 = x+1;
-    //     const y0 = y-1, y1 = y+1;
-    //     if (x0 >= 0) callback(this.get(x0, y, z), x0, y, z, 3);             // West
-    //     if (x1 < Voxels.sizeX) callback(this.get(x1, y, z), x1, y, z, 1);   // East
-    //     if (y0 >= 0) callback(this.get(x, y0, z), x, y0, z, 2);             // South
-    //     if (y1 < Voxels.sizeY) callback(this.get(x, y1, z), x, y1, z, 0);   // North
-    // }
 
     // Executes a callback for every voxel in a box around xyz.
     // Offset is subtracted from xyz to find start, and size is dimensions of box
