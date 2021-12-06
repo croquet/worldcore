@@ -2,7 +2,7 @@
 //
 // Croquet Studios, 2021
 
-import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore } from "@croquet/worldcore-kernel";
+import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable } from "@croquet/worldcore-kernel";
 import {RenderManager, PM_Visible, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
@@ -31,11 +31,13 @@ MoveActor.register('MoveActor');
 // MovePawn
 //------------------------------------------------------------------------------------------
 
-class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player) {
+class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player, PM_Focusable) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
         if (this.isMyPlayerPawn) this.subscribe("hud", "joy", this.joy);
+        this.subscribe("input", "dDown", this.focus)
+
     }
 
     buildDraw() {
@@ -66,6 +68,14 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player) {
         q = q_normalize(q);
         this.setSpin(q);
     }
+
+    onFocus() {
+        console.log("Move Focus");
+    }
+
+    onBlur() {
+        console.log("Move Blur");
+    }
 }
 
 
@@ -91,12 +101,6 @@ class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
     init(options) {
         super.init(options);
         this.startBehavior(SpinBehavior);
-        this.subscribe("input", "dDown", this.test);
-    }
-
-    test() {
-        console.log("test!");
-        this.playSound(photon);
     }
 
 }
@@ -107,10 +111,11 @@ ChildActor.register('ChildActor');
 // ChildPawn
 //------------------------------------------------------------------------------------------
 
-class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
+class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible, PM_Focusable) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
+        this.subscribe("input", "sDown", this.focus)
     }
 
     buildDraw() {
@@ -131,6 +136,14 @@ class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
         const material = new Material();
         material.texture.loadFromURL(paper);
         return material;
+    }
+
+    onFocus() {
+        console.log("Child Focus");
+    }
+
+    onBlur() {
+        console.log("Child Blur");
     }
 
 }
@@ -213,7 +226,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [ InputManager, RenderManager, UIManager];
+        return [ InputManager, RenderManager, UIManager, FocusManager];
     }
 
     constructor(model) {
