@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-audio",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Positional Audio Component for Croquet Worldcore",
   "keywords": [
     "croquet",
@@ -22,7 +22,7 @@
     "directory": "packages/audio"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^1.0.3",
+    "@croquet/worldcore-kernel": "^1.0.4",
     "resonance-audio": "1.0.0"
   }
 }

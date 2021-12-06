@@ -1,6 +1,6 @@
 {
   "name": "@croquet/quub_demo",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Quub",
   "private": true,
   "scripts": {
@@ -11,7 +11,7 @@
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@croquet/worldcore": "^1.0.3"
+    "@croquet/worldcore": "^1.0.4"
   },
   "devDependencies": {
     "file-loader": "^6.0.0",
