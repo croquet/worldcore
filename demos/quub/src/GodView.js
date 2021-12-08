@@ -1,7 +1,9 @@
-import { m4_scaleRotationTranslation, v3_scale, v3_add, v3_multiply,
-    q_axisAngle, toRad, TAU, q_multiply, KeyDown, m4_translation, m4_rotationZ, m4_multiply, v3_transform, ViewService } from "@croquet/worldcore";
+import { m4_scaleRotationTranslation, v3_scale, v3_add, v3_multiply, q_axisAngle, toRad, TAU, q_multiply, KeyDown, m4_translation, m4_rotationZ, m4_multiply, v3_transform, ViewService } from "@croquet/worldcore-kernel";
 import { PickEmptyVoxel, PickBase } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
+
+// The GodView controls the camera navigation. We store the camera position in global outside the view so if we
+// briefly disconnect and reconnect, the camera comes back in the same position.
 
 let translation = [0,0, (Voxels.sizeZ + 10) * Voxels.scaleZ ];
 let pitch = toRad(45);
@@ -19,19 +21,9 @@ export class GodView extends ViewService {
         this.updateCamera();
 
         this.subscribe("input", 'wheel', this.wheelZoom);
-
-        // this.subscribe("input", 'mouse2Down', this.startDrag);
-        // this.subscribe("input", 'mouse2Up', this.endDrag);
-        // this.subscribe("ui", 'mouseXY', this.drag);
-
         this.subscribe("ui", 'pointerDown', this.startDrag);
         this.subscribe("ui", 'pointerUp', this.endDrag);
         this.subscribe("ui", 'pointerMove', this.drag);
-
-        // this.subscribe("ui", 'touchDown', this.startDrag);
-        // this.subscribe("ui", 'touchUp', this.endDrag);
-        // this.subscribe("ui", 'touchXY', this.drag);
-
         this.subscribe("input", 'doubleStart',this.doubleStart);
         this.subscribe("input", 'doubleChanged', this.doubleChanged);
     }

@@ -1,18 +1,20 @@
-import { Triangles, Lines, v3_add, v3_multiply, Material, DrawCall, ViewService, GetModelService } from "@croquet/worldcore";
+import { v3_add, v3_multiply, ViewService, GetModelService } from "@croquet/worldcore-kernel";
+import { Triangles, Lines, Material, DrawCall} from "@croquet/worldcore-webgl";
 import { Voxels } from "./Voxels";
 import { GetTopLayer } from "../index";
 import paper from "../assets/paper.jpg";
 import stripe from "../assets/stripe50.png";
 import { Colors } from "./Colors";
 
-// There are four categories of terrain geometry:
+// The terrain renderer builds the render model from the surfaces.
+
+// There are three categories of terrain geometry:
 //
 //  * Middle -- The walls of an air voxel (if there are adjacent solid voxels)
 //  * Bottom -- The floor of an air voxel at z = 0 (if there's a solid voxel below)
-//  * Interior -- The floor between two solid voxels
+//  * Interior -- The floor between two solid voxels (which is cross-hatched)
 //
-// The terrain is broken out like this so that we can easily render different slices through the terrain. The rules for when
-// to draw each category are contained in ExteriorMesh and InteriorMesh.
+// The terrain is broken out like this so that we can easily render different slices through the terrain.
 
 //--------------------------------------------------------------------------------
 //-- TerrainRender ---------------------------------------------------------------
@@ -25,7 +27,6 @@ export class TerrainRender extends ViewService {
     constructor() {
         super("TerrainRender");
         const render = this.service("RenderManager");
-        // const render = GetNamedView("ViewRoot").render;
 
         this.exteriorMaterial = new Material();
         this.exteriorMaterial.texture.loadFromURL(paper);
@@ -252,7 +253,6 @@ class Layer {
 
     rebuild() {
         const surfaces = GetModelService("Surfaces");
-        // const surfaces = GetNamedView("ViewRoot").model.surfaces;
         this._triangles.clear();
         this._lines.clear();
 
@@ -282,7 +282,6 @@ class MiddleLayer extends Layer {
         BuildEastWall(this._triangles, this._lines, surface);
         BuildSouthWall(this._triangles, this._lines, surface);
         BuildWestWall(this._triangles, this._lines, surface);
-        // BuildFloorMiddle(this._triangles, this._lines, surface);
     }
 }
 
@@ -304,7 +303,6 @@ class InteriorLayer extends Layer {
 
     rebuild() {
         const surfaces = GetModelService("Surfaces");
-        // const surfaces = GetNamedView("ViewRoot").model.surfaces;
         this._triangles.clear();
         this._lines.clear();
 
@@ -318,10 +316,6 @@ class InteriorLayer extends Layer {
         this._lines.clear();
         this.isChanged = false;
     }
-
-    // buildGeometry(surface) {
-    //     BuildFloorInterior(this._triangles, this._lines, surface);
-    // }
 
     rebuildInterior() {
         const voxels = GetModelService("Voxels");
@@ -345,8 +339,6 @@ class InteriorLayer extends Layer {
 //--------------------------------------------------------------------------------
 //-- BasePlate -----------------------------------------------------------------------
 //--------------------------------------------------------------------------------
-
-// Layers hold horizontal slices through the terrain.
 
 class BasePlate {
     constructor(z) {

@@ -11,7 +11,9 @@
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@croquet/worldcore": "^1.0.4"
+    "@croquet/worldcore-kernel": "^1.0.4",
+    "@croquet/worldcore-widget": "^1.0.4",
+    "@croquet/worldcore-webgl": "^1.0.4"
   },
   "devDependencies": {
     "file-loader": "^6.0.0",

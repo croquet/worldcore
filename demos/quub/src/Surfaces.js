@@ -1,12 +1,15 @@
-import { v3_add, rayTriangleIntersect, Model } from "@croquet/worldcore";
+import { v3_add, rayTriangleIntersect, WorldcoreModel } from "@croquet/worldcore-kernel";
 import { Voxels } from "./Voxels";
 
+// Surfaces is an intermediate data structure the represents the voxels in a form easier
+// for the renderer to interpret. Each surface holds the visible edges of a single voxel.
+// The surfaces automatically get recalculated when a voxel changes.
 
 //------------------------------------------------------------------------------------------
 //-- Surfaces ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class Surfaces extends Model {
+export class Surfaces extends WorldcoreModel {
 
     //-- Snapshot Types --
 
@@ -45,9 +48,8 @@ export class Surfaces extends Model {
 
     buildAll() {
         console.log("Building surfaces ....");
-        const voxels = this.wellKnownModel("Voxels");
+        const voxels = this.service("Voxels");
         this.surfaces = new Map();
-        // const surfaces = this.surfaces;
 
         // Find air voxels adjacent to solid voxels
         const primary = new Set();
@@ -114,23 +116,14 @@ Surfaces.register("Surfaces");
 //------------------------------------------------------------------------------------------
 
 // A surface is an air voxel adjacent to a solid voxel. It holds information
-// about the shape of its bounding surfaces. This can be used to create a render
-// model, or to calculate pathing.
+// about the shape of its bounding surfaces. This is used to create the render
+// model.
 
 // -- Shapes --
 //
 // 0 = null
 // 1 = sides/ceiling only
 // 2 = flat
-// 3 = ramp
-// 4 = half flat
-// 5 = shim
-// 6 = double ramp (ramp + ramp)
-// 7 = wedge (half flat + shim)
-// 8 = butterfly (shim + shim)
-// 9 = cuban (shim + shim)
-// 10 = left skew (ramp + left shim)
-// 11 = right skew (ramp + right shim)
 
 export class Surface  {
 

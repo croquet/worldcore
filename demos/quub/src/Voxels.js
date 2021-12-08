@@ -1,5 +1,7 @@
 
-import { v3_add, v3_sub, v3_min, v3_max, Model } from "@croquet/worldcore";
+import { v3_add, v3_sub, v3_min, v3_max, Model } from "@croquet/worldcore-kernel";
+
+// The voxel database. Voxel are stored as run-length compressed columns to save snapshot size.
 
 //------------------------------------------------------------------------------------------
 //-- VoxelColumn ---------------------------------------------------------------------------
@@ -66,57 +68,6 @@ export class VoxelColumn   {
 }
 
 //------------------------------------------------------------------------------------------
-//-- RawVoxels -----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// export class RawVoxels {
-//     constructor() {
-//         this.voxels = Array.from(Array(Voxels.sizeX), ()=>Array.from(Array(Voxels.sizeY), ()=>Array.from(Array(Voxels.sizeZ), ()=>0)));
-//     }
-
-//     get(x, y, z) {
-//         return this.voxels[x][y][z];
-//     }
-
-//     set(x, y, z, type) {
-//         this.voxels[x][y][z] = type;
-//     }
-
-//     generate() {
-//         const perlin = new PerlinNoise();
-//         for (let x = 0; x < Voxels.sizeX; x++) {
-//             for (let y = 0; y < Voxels.sizeY; y++) {
-//                 let height = 12;
-//                 height += 16 * perlin.signedNoise2D(x * 0.025, y * 0.025);
-//                 height += 12 * perlin.signedNoise2D(x * 0.05, y * 0.05);
-//                 height += 6 * perlin.signedNoise2D(x * 0.1, y * 0.1);
-//                 height += 3 * perlin.signedNoise2D(x * 0.2, y * 0.2);
-//                 height += 1 * perlin.signedNoise2D(x * 0.4, y * 0.4);
-//                 height = Math.floor(Math.min(height, 63));
-
-//                 const rockHeight = height;
-//                 this.voxels[x][y][0] = Voxels.lava;
-//                 for (let z = 1; z < rockHeight; z++) {
-//                     this.voxels[x][y][z] = Voxels.rock;
-//                 }
-
-//                 const dirtHeight = height + 6;
-//                 for (let z = rockHeight; z < dirtHeight; z++) {
-//                     this.voxels[x][y][z] = Voxels.dirt;
-//                 }
-
-//                 for (let z = dirtHeight; z < Voxels.sizeZ; z++) {
-//                     this.voxels[x][y][z] = Voxels.air;
-//                 }
-
-//             }
-//         }
-
-//     }
-
-// }
-
-//------------------------------------------------------------------------------------------
 //-- Voxels --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -148,21 +99,6 @@ export class Voxels extends Model {
     static get west() { return 3; }
     static get above() { return 4; }
     static get below() { return 5; }
-    // static get northEast() { return 6; }
-    // static get southEast() { return 7; }
-    // static get southWest() { return 8; }
-    // static get northWest() { return 9; }
-
-    //-- Voxel Types --
-
-    // static get air()    { return 0; }
-
-
-    // static get lava()   { return 1; }
-    // static get rock()   { return 2; }
-    // static get sand()   { return 3; }
-    // static get clay()   { return 4; }
-    // static get dirt()   { return 5; }
 
     //-- Helper Methods --
 
@@ -185,6 +121,8 @@ export class Voxels extends Model {
         if (z >= Voxels.sizeZ-1) return false;
         return true;
     }
+
+    // Id are packed voxel coordinates that can be used as unique identifiers.
 
     static packID(x,y,z) {
         return (((x << 10) | y) << 10) | z;
@@ -240,16 +178,6 @@ export class Voxels extends Model {
     static baseTriangles(x,y,z) {
         return [[[x,y,z], [x+1,y,z], [x+1,y+1,z]], [[x,y,z], [x+1,y+1,z], [x,y+1,z]]];
     }
-
-    // static intersectBase(x, y, z, start, aim) {
-    //     const triangles = Voxels.baseTriangles(x,y,z);
-    //     if (!triangles) return null;
-    //     for (let i = 0; i < triangles.length; i++) {
-    //         const intersect = rayTriangleIntersect(start, aim, triangles[i]);
-    //         if (intersect) return intersect;
-    //     }
-    //     return null;
-    // }
 
     static toWorldXYZ(x,y,z) {
         return [x * Voxels.scaleX, y * Voxels.scaleY, z * Voxels.scaleZ];

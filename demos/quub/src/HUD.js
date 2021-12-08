@@ -1,8 +1,10 @@
-import { SliderWidget, ToggleWidget, ToggleSet, ImageWidget, BoxWidget, Widget } from "@croquet/worldcore";
+import { SliderWidget, ToggleWidget, ToggleSet, ImageWidget, BoxWidget, Widget } from "@croquet/worldcore-widget";
 import { Voxels } from "./Voxels";
 import { Colors } from "./Colors";
 import stripeIcon from "../assets/horizontalStripe50.png";
 import { GetTopLayer, SetTopLayer } from "../index";
+
+// The HUD controls the on-screen UI.
 
 let editColor = 1;
 

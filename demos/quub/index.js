@@ -2,7 +2,9 @@
 //
 // Croquet Studios, 2020
 
-import { ModelRoot, ViewRoot, InputManager, UIManager, StartWorldcore, RenderManager, v3_normalize, App} from "@croquet/worldcore";
+import { ModelRoot, ViewRoot, InputManager, StartWorldcore, v3_normalize, App} from "@croquet/worldcore-kernel";
+import { RenderManager } from "@croquet/worldcore-webgl";
+import { UIManager } from "@croquet/worldcore-widget";
 import { Surfaces } from "./src/Surfaces";
 import { TerrainRender } from "./src/TerrainRender";
 import { Voxels } from "./src/Voxels";
@@ -18,7 +20,6 @@ class MyModelRoot extends ModelRoot {
 
     init(_options, persistedData) {
         super.init(_options);
-        console.log("Starting quub!!!");
 
         this.voxels = Voxels.create(persistedData);
         this.surfaces = Surfaces.create();
@@ -88,5 +89,5 @@ StartWorldcore({
     password: 'password',
     model: MyModelRoot,
     view: MyViewRoot,
-    tps: 0
+    tps: 0 // No heartbeat ticks
 });

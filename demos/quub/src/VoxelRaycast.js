@@ -1,6 +1,9 @@
-import { v3_divide, GetViewService, GetModelService } from "@croquet/worldcore";
+import { v3_divide, GetViewService, GetModelService } from "@croquet/worldcore-kernel";
 import { Voxels } from './Voxels';
 import { GetTopLayer } from "../index";
+
+// Voxel raycast is a collection of functions that shoot a ray through voxel space and check to see
+// if it hits a solid voxel.
 
 //------------------------------------------------------------------------------------------
 //-- PickVoxel -----------------------------------------------------------------------------
@@ -37,7 +40,6 @@ export function PickBase(xy) {
 }
 
 export function PickSolidVoxel(xy) {
-    // const viewRoot =  GetNamedView("ViewRoot");
     const render = GetViewService("RenderManager");
     const camera = render.camera;
     const topLayer = GetTopLayer();
@@ -59,12 +61,9 @@ export function PickSolidVoxel(xy) {
 }
 
 export function PickEmptyVoxel(xy) {
-    // const viewRoot =  GetNamedView("ViewRoot");
     const render = GetViewService("RenderManager");
     const surfaces = GetModelService("Surfaces");
     const camera = render.camera;
-    // const surfaces = viewRoot.model.surfaces;
-    // const topLayer = viewRoot.topLayer;
     const topLayer = GetTopLayer();
 
     const start = v3_divide(camera.location, Voxels.scale);

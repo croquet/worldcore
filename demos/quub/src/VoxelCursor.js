@@ -1,7 +1,13 @@
-import { DrawCall, Material, v3_multiply, m4_translation, Triangles, v3_floor, ViewService } from "@croquet/worldcore";
+import { v3_multiply, m4_translation, v3_floor, ViewService } from "@croquet/worldcore-kernel";
+import { DrawCall, Material, Triangles } from "@croquet/worldcore-webgl";
 import { PickEmptyVoxel, PickSolidVoxel, PickBase } from "./VoxelRaycast";
 import { Voxels } from "./Voxels";
 import { Colors } from "./Colors";
+
+// The voxel cursor tracks the mouse to show where you're editing. (It's not shown on touch devices.)
+// It also listens for clicks and initiates edit commands.
+//
+// (Note that the cursor also listens for drag or rotate event so it can hide itself when the camera is moving.)
 
 export class VoxelCursor extends ViewService {
     constructor() {
@@ -15,22 +21,15 @@ export class VoxelCursor extends ViewService {
         this.material.zOffset = 0;
         this.isHidden = false;
 
-        const noShow = 'ontouchstart' in document.documentElement;
-
-        // const noShow = GetNamedView('Input').hasTouch; // Dont show the cursor on touch devices
+        const noShow = 'ontouchstart' in document.documentElement; // Don't show the cursor on touch devices
 
         this.call = new DrawCall(this.mesh, this.material);
         this.call.isHidden = true;
 
-        // const render = GetNamedView("ViewRoot").render;
         const render = this.service("RenderManager");
         if (!noShow) render.scene.addDrawCall(this.call);
 
         this.subscribe("hud", "editColor", this.setColor);
-        // this.subscribe("ui", "mouseXY", this.updateLocation);
-        // this.subscribe("ui", "mouse0Down", this.edit);
-        // this.subscribe("ui", "touchTap", this.tap);
-
         this.subscribe("ui", "pointerMove", this.onPointerMove);
         this.subscribe("ui", "pointerDown", this.onPointerDown);
         this.subscribe("ui", "tap",this.onPointerTap);
@@ -92,7 +91,6 @@ export class VoxelCursor extends ViewService {
     }
 
     updateLocation(xy) {
-        // console.log("UpdateLocation");
         if (!xy) return;
         this.xy = xy;
         if (this.color) {
@@ -143,13 +141,11 @@ export class VoxelCursor extends ViewService {
     }
 
     tap(xy) {
-        // console.log("Tap");
         this.updateLocation(xy);
         this.edit(xy);
     }
 
     edit(xy) {
-        // console.log("Edit");
         if (this.color) {
             this.fill(xy);
         } else {
