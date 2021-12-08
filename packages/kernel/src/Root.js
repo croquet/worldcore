@@ -117,7 +117,12 @@ export class ViewRoot extends WorldcoreView {
     }
 
     detach() {
-        viewServices.forEach(s => s.destroy());
+        const doomed = [];
+        viewServices.forEach(s => doomed.push(s));
+        while (doomed.length > 0) {
+            doomed.pop().destroy()
+        };
+
         viewServices.clear();
         super.detach();
     }
