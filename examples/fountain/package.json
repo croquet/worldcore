@@ -1,6 +1,6 @@
 {
   "name": "@croquet/fountain",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Fountain Demo",
   "private": true,
   "scripts": {
@@ -12,10 +12,10 @@
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@croquet/worldcore-kernel": "^1.0.4",
-    "@croquet/worldcore-rapier": "^1.0.4",
-    "@croquet/worldcore-webgl": "^1.0.4",
-    "@croquet/worldcore-widget": "^1.0.4"
+    "@croquet/worldcore-kernel": "^1.0.5",
+    "@croquet/worldcore-rapier": "^1.0.5",
+    "@croquet/worldcore-webgl": "^1.0.5",
+    "@croquet/worldcore-widget": "^1.0.5"
   },
   "devDependencies": {
     "file-loader": "^6.2.0",
