@@ -1,6 +1,6 @@
 {
   "name": "@croquet/fountain_demo",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Fountain Demo",
   "private": true,
   "scripts": {
@@ -22,7 +22,7 @@
   "dependencies": {
     "@croquet/worldcore-kernel": "^1.0.5",
     "@croquet/worldcore-rapier": "^1.0.5",
-    "@croquet/worldcore-three": "^1.0.5",
+    "@croquet/worldcore-three": "^1.0.6",
     "@croquet/worldcore-widget": "^1.0.5",
     "three": "^0.134.0"
   }
