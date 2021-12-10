@@ -70,18 +70,21 @@ export const PM_ThreeCamera = superclass => class extends superclass {
 // The top render interface that controls the execution of draw passes.
 
 export class ThreeRenderManager extends ViewService {
-    constructor(name) {
+    constructor(options = {}, name) {
         super(name || "ThreeRenderManager");
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
 
-        this.canvas = document.createElement("canvas");
-        this.canvas.id = "ThreeCanvas";
-        this.canvas.style.cssText = "position: absolute; left: 0; top: 0; z-index: 0";
-        document.body.insertBefore(this.canvas, null);
+        if (!options.canvas) {
+            this.canvas = document.createElement("canvas");
+            this.canvas.id = "ThreeCanvas";
+            this.canvas.style.cssText = "position: absolute; left: 0; top: 0; z-index: 0";
+            document.body.insertBefore(this.canvas, null);
+            options.canvas = this.canvas;
+        }
 
-        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas });
+        this.renderer = new THREE.WebGLRenderer(options);
         this.renderer.shadowMap.enabled = true;
 
         this.resize();
@@ -91,7 +94,7 @@ export class ThreeRenderManager extends ViewService {
     destroy() {
         super.destroy();
         this.renderer.dispose();
-        this.canvas.remove();
+        if (this.canvas) this.canvas.remove();
     }
 
     resize() {
