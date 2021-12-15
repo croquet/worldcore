@@ -230,13 +230,12 @@ class SatelliteActor extends mix(Actor).with(AM_Smoothed, AM_Player) {
     get pawn() {return SatellitePawn}
 
     init(options = {}) {
-        super.init(options);
-        this.axis = sphericalRandom();
-
         const r = 1 - Math.random() * 0.5;
         const g = 1 - Math.random() * 0.5;
         const b = 1 - Math.random() * 0.5;
         this.color = [r,g,b];
+        super.init(options);
+        this.axis = sphericalRandom();
 
         this.future(0).tick(0)
     }
