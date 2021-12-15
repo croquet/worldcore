@@ -1,6 +1,6 @@
 {
   "name": "@croquet/satellite",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Satellite Demo",
   "private": true,
   "scripts": {
