@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@croquet/worldcore-kernel": "^1.0.5",
-    "@croquet/worldcore-three": "^1.0.6",
+    "@croquet/worldcore-three": "^1.0.7",
     "@croquet/worldcore-widget": "^1.0.5",
     "three": "^0.134.0"
   }

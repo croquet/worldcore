@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ViewService } from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
@@ -87,6 +89,11 @@ export class ThreeRenderManager extends ViewService {
         this.renderer = new THREE.WebGLRenderer(options);
         this.renderer.shadowMap.enabled = true;
 
+        this.composer = new EffectComposer( this.renderer );
+
+        this.renderPass = new RenderPass( this.scene, this.camera );
+        this.composer.addPass( this.renderPass );
+
         this.resize();
         this.subscribe("input", "resize", () => this.resize());
     }
@@ -100,11 +107,12 @@ export class ThreeRenderManager extends ViewService {
     resize() {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight)
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.composer.setSize(window.innerWidth, window.innerHeight)
     }
 
     update() {
-        this.renderer.render(this.scene, this.camera);
+        this.composer.render();
     }
 
 }

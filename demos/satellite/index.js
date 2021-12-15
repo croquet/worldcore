@@ -2,14 +2,16 @@
 //
 // Croquet Studios, 2021
 
-import { App, ModelRoot, ViewRoot, q_axisAngle, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, q_multiply, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, StartWorldcore, toRad, sphericalRandom, TAU } from "@croquet/worldcore-kernel";
+import { App, ModelRoot, ViewRoot, q_axisAngle, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, q_multiply, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, StartWorldcore, toRad, sphericalRandom, TAU, viewRoot } from "@croquet/worldcore-kernel";
 import { UIManager, Widget, SliderWidget } from "@croquet/worldcore-widget";
 import { ThreeRenderManager, PM_ThreeVisible, THREE } from "@croquet/worldcore-three";
 
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
+import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 
 import earth_fbx from "./assets/earth_fbx.fbx";
 import earth_txt from "./assets/earth_txt.jpg";
+
 
 //------------------------------------------------------------------------------------------
 // -- FrameActor ---------------------------------------------------------------------------
@@ -59,6 +61,8 @@ class EarthActor extends mix(Actor).with(AM_Smoothed) {
 }
 EarthActor.register('EarthActor');
 
+let e;
+
 //------------------------------------------------------------------------------------------
 // -- EarthPawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -85,6 +89,7 @@ class EarthPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
             this.model.children[0].receiveShadow = true;
             this.model.castShadow = true;
             this.model.receiveShadow = true;
+            e = this.model;
         });
 
     }
@@ -227,6 +232,12 @@ class SatelliteActor extends mix(Actor).with(AM_Smoothed, AM_Player) {
     init(options = {}) {
         super.init(options);
         this.axis = sphericalRandom();
+
+        const r = 1 - Math.random() * 0.5;
+        const g = 1 - Math.random() * 0.5;
+        const b = 1 - Math.random() * 0.5;
+        this.color = [r,g,b];
+
         this.future(0).tick(0)
     }
 
@@ -243,7 +254,7 @@ SatelliteActor.register('SatelliteActor');
 // -- SatellitePawn ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// The satellite's pawn. It createa a three.js render model and colors it red if it belongs
+// The satellite's pawn. It creates a a three.js render model and colors it red if it belongs
 // to the local player.
 
 class SatellitePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Player) {
@@ -251,8 +262,8 @@ class SatellitePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Play
     constructor(...args) {
         super(...args);
 
-        let color = new THREE.Color(1,1,1);
-        if (this.isMyPlayerPawn) color = new THREE.Color(1,0,0);
+        let color = new THREE.Color(...this.actor.color);
+        // if (this.isMyPlayerPawn)  color = new THREE.Color(1,0,0);
 
         this.geometry = new THREE.BoxGeometry( 15, 15, 15 );
         this.material = new THREE.MeshStandardMaterial({color});
@@ -260,12 +271,18 @@ class SatellitePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Play
         cube.castShadow = true;
         cube.receiveShadow = true;
         this.setRenderObject(cube);
+
+        if (this.isMyPlayerPawn) this.future(1).hilite(cube);
     }
 
     destroy() { // When the pawn is destroyed, we dispose of our Three.js objects.
         super.destroy();
         this.geometry.dispose();
         this.material.dispose();
+    }
+
+    hilite(cube) { // Delay until the outline renderer is set up.
+        viewRoot.outlinePass.selectedObjects = [cube];
     }
 }
 
@@ -331,6 +348,11 @@ class MyViewRoot extends ViewRoot {
         super(model);
 
         const threeRenderManager = this.service("ThreeRenderManager");
+
+        this.outlinePass = new OutlinePass( new THREE.Vector2( window.innerWidth, window.innerHeight ), threeRenderManager.scene, threeRenderManager.camera );
+        this.outlinePass.edgeStrength = 4;
+        threeRenderManager.composer.addPass( this.outlinePass );
+
         threeRenderManager.renderer.setClearColor(new THREE.Color(0.0, 0.0, 0.0));
         threeRenderManager.camera.position.set(0,0,500);
 
@@ -375,7 +397,9 @@ class MyViewRoot extends ViewRoot {
             percent: 0.5,
             onChange: p => this.publish("hud", "angle", p)
         })
+
     }
+
 }
 
 //------------------------------------------------------------------------------------------
