@@ -73,10 +73,10 @@ export class PerlinNoise  {
     }
 
     generateHashTable() {
-        const table = [];
-        const q = new PriorityQueue((a, b) => a.key < b.key);
-        for (let n = 0; n < 256; n++) q.push({key: Math.random(), value: n});
-        while (!q.isEmpty) table.push(q.pop().value);
+        const permutation = [];
+        for (let n = 0; n < 256; n++) permutation.push({key: Math.random(), value: n});
+        permutation.sort((a, b) => a.key - b.key);
+        const table = permutation.map(a => a.value);
         const table2 = table.concat(table);
         return table2;
     }
