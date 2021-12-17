@@ -1,0 +1,25 @@
+{
+  "name": "@croquet/worldcore-scripting",
+  "version": "1.0.5",
+  "description": "Dynamic Scripting Component for Croquet Worldcore",
+  "keywords": [
+    "croquet",
+    "worldcore",
+    "3d",
+    "scripting",
+    "javascript"
+  ],
+  "main": "index.js",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
+  "homepage": "https://croquet.io/docs/worldcore/",
+  "bugs": "https://github.com/croquet/worldcore/issues",
+  "repository": {
+    "type": "git",
+    "url": "github:croquet/worldcore",
+    "directory": "packages/scripting"
+  },
+  "dependencies": {
+    "@croquet/worldcore-kernel": "^1.0.5"
+  }
+}
