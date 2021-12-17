@@ -36,8 +36,6 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player, PM_Focus
         super(...args);
         this.setDrawCall(this.buildDraw());
         if (this.isMyPlayerPawn) this.subscribe("hud", "joy", this.joy);
-        this.subscribe("input", "dDown", this.focus)
-
     }
 
     buildDraw() {
@@ -69,13 +67,6 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player, PM_Focus
         this.setSpin(q);
     }
 
-    onFocus() {
-        console.log("Move Focus");
-    }
-
-    onBlur() {
-        console.log("Move Blur");
-    }
 }
 
 
@@ -115,7 +106,6 @@ class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible, PM_Focusable) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
-        this.subscribe("input", "sDown", this.focus)
     }
 
     buildDraw() {
@@ -136,14 +126,6 @@ class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible, PM_Focusable) {
         const material = new Material();
         material.texture.loadFromURL(paper);
         return material;
-    }
-
-    onFocus() {
-        console.log("Child Focus");
-    }
-
-    onBlur() {
-        console.log("Child Blur");
     }
 
 }
@@ -213,6 +195,7 @@ class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start Model!!!");
         BackgroundActor.create();
+
     }
 
 }
@@ -226,7 +209,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [ InputManager, RenderManager, UIManager, FocusManager];
+        return [ InputManager, RenderManager, UIManager];
     }
 
     constructor(model) {
@@ -281,14 +264,6 @@ class MyViewRoot extends ViewRoot {
 
         this.image = new ImageWidget({parent: this.HUD, local: [20, 200], size: [200,80], url: llama});
 
-        this.subscribe("input", "keyDown", this.test);
-
-
-
-    }
-
-    test() {
-        console.log("test");
     }
 
 }

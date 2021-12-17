@@ -17,10 +17,7 @@ export class PawnManager extends ViewService {
         const actorManager = this.modelService("ActorManager");
         actorManager.actors.forEach(actor => this.spawnPawn(actor));
 
-        // Spawning pawns is an immediate subscription because pawns often subscribe to actor messages in their
-        // constructors. This guarantees the pawn will be around if the new actor immediately sends a message.
-
-        this.subscribe("actor", {event: "createActor", handling: "immediate"}, this.spawnPawn);
+        this.subscribe("actor", "createActor", this.spawnPawn);
     }
 
     destroy() {
@@ -83,7 +80,6 @@ export class Pawn extends WorldcoreView {
     }
 
     get actor() {return this._actor};
-    // get pawnManager() { return pm};
 
     destroy() {
         pm.delete(this);
