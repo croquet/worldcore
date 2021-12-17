@@ -104,12 +104,13 @@ We use `lerna` with "fixed" versioning, meaning each package will have the same 
 
 2. commit everything (the next step needs a clean repo)
 
-3. bump the version (e.g. to `1.0.3`)
+3. bump the version
 
-        lerna version 1.0.3 --no-push
+        lerna version --no-push
 
-   This will update all packages to the same version, as well as their dependencies
-   (including in demos, examples, and tutorials).
+   This will allow you to select the next version number,
+   and update all packages to that version, as well as their dependencies
+   (which includes demos, examples, and tutorials, as listed in `lerna.json`).
 
    We use `--no-push` to get a chance to roll back if needed
    (undo the version commit and delete the tag).
