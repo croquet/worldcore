@@ -407,6 +407,7 @@ class MyViewRoot extends ViewRoot {
 
 // High tick rate so the rotation is smooth.
 
+App.makeWidgetDock();
 StartWorldcore({
     appId: 'io.croquet.satellite',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',

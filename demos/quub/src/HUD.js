@@ -77,7 +77,7 @@ export class HUD extends Widget {
         const purpleToggle1 = new ToggleWidget({parent: this, local: [45,220], size:[30,30]});
         this.setColorDefaults(purpleToggle1, 20);
 
-        const purpleToggle2 = new ToggleWidget({local: [80,220], size:[30,30]});
+        const purpleToggle2 = new ToggleWidget({parent: this, local: [80,220], size:[30,30]});
         this.setColorDefaults(purpleToggle2, 21);
 
 

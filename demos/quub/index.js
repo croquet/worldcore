@@ -82,6 +82,7 @@ class MyViewRoot extends ViewRoot {
 
 }
 
+App.makeWidgetDock();
 StartWorldcore({
     appId: 'io.croquet.quub',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',

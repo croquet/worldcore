@@ -281,6 +281,14 @@ class MyViewRoot extends ViewRoot {
 
         this.image = new ImageWidget({parent: this.HUD, local: [20, 200], size: [200,80], url: llama});
 
+        this.subscribe("input", "keyDown", this.test);
+
+
+
+    }
+
+    test() {
+        console.log("test");
     }
 
 }
