@@ -1,0 +1,29 @@
+{
+  "name": "@croquet/car_demo",
+  "version": "1.0.7",
+  "description": "Car Demo",
+  "private": true,
+  "scripts": {
+    "start": "webpack-dev-server --mode development --devtool source-map --watch",
+    "build": "webpack --mode production"
+  },
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "file-loader": "^6.2.0",
+    "fs-extra": "^10.0.0",
+    "html-webpack-plugin": "^4.5.2",
+    "node-fetch": "^2.6.1",
+    "simple-git": "^2.40.0",
+    "webpack": "^4.46.0",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.2"
+  },
+  "dependencies": {
+    "@croquet/worldcore-kernel": "^1.0.5",
+    "@croquet/worldcore-rapier": "^1.0.5",
+    "@croquet/worldcore-three": "^1.0.7",
+    "@croquet/worldcore-widget": "^1.0.5",
+    "three": "^0.134.0"
+  }
+}
