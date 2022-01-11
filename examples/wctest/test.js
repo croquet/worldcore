@@ -15,14 +15,28 @@ import kwark from "./assets/kwark.otf";
 // MoveActor
 //------------------------------------------------------------------------------------------
 
-class MoveActor extends mix(Actor).with(AM_Avatar, AM_Player) {
+class MoveActor extends mix(Actor).with(AM_Smoothed) {
 
     get pawn() {return MovePawn}
 
     init(options = {}) {
         super.init(options);
-        this.child = ChildActor.create({parent: this, translation: [0,1.5,0]});
+        this.child = ChildActor.create({zzz: 123, parent: this, translation: [0,1.5,0]});
+        // this.subscribe("input", "dDown", this.test0)
+        // this.subscribe("input", "sDown", this.test1)
     }
+
+    // test0() {
+    //     console.log("test0");
+    //     this.set({translation: [0,1,-5]});
+    //     console.log(this.global);
+    // }
+
+    // test1() {
+    //     console.log("test1");
+    //     this.set({translation: [0,0,-5]});
+    //     console.log(this.global);
+    // }
 
 }
 MoveActor.register('MoveActor');
@@ -31,11 +45,11 @@ MoveActor.register('MoveActor');
 // MovePawn
 //------------------------------------------------------------------------------------------
 
-class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player, PM_Focusable) {
+class MovePawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
-        if (this.isMyPlayerPawn) this.subscribe("hud", "joy", this.joy);
+        // if (this.isMyPlayerPawn) this.subscribe("hud", "joy", this.joy);
     }
 
     buildDraw() {
@@ -91,7 +105,22 @@ class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
     init(options) {
         super.init(options);
+        this.color = 45;
+
         this.startBehavior(SpinBehavior);
+
+        this.subscribe("input", "dDown", this.test0)
+        this.subscribe("input", "sDown", this.test1)
+    }
+
+    test0() {
+        console.log("test0");
+        this.color = 0
+    }
+
+    test1() {
+        console.log("test1");
+        this.color = 45
     }
 
 }
@@ -102,10 +131,15 @@ ChildActor.register('ChildActor');
 // ChildPawn
 //------------------------------------------------------------------------------------------
 
-class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible, PM_Focusable) {
+class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
+
+        this.defineSmoothedProperty("color", () => { console.log("onSetColor"); } );
+        // console.log(this.color);
+        // console.log(this.smoothed);
+        // console.log(Object.entries(this.smoothed))
     }
 
     buildDraw() {
@@ -137,9 +171,9 @@ class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible, PM_Focusable) {
 class BackgroundActor extends mix(Actor).with(AM_Spatial) {
     get pawn() {return BackgroundPawn}
 
-    init(...args) {
-        super.init(...args);
-    }
+    // init(...args) {
+    //     super.init(...args);
+    // }
 
 }
 BackgroundActor.register('BackgroundActor');
@@ -187,15 +221,15 @@ MyPlayerManager.register("MyPlayerManager");
 
 class MyModelRoot extends ModelRoot {
 
-    static modelServices() {
-        return [ MyPlayerManager];
-    }
+    // static modelServices() {
+    //     return [ MyPlayerManager];
+    // }
 
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!!");
+        console.log("Start Model!!!!");
         BackgroundActor.create();
-
+        MoveActor.create({translation: [0,0,-5]});
     }
 
 }

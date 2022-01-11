@@ -52,11 +52,17 @@ export class Actor extends WorldcoreModel {
         super.destroy();
     }
 
-    set(options) { // We iterate through an object, which normally is forbidden. But the order of options doesn't affect determinism.
-        for (const option in options) {
-            const n = "_" + option;
-            const v = options[option];
+    // Different implementations of javascript may store object properties in different orders, so we sort them
+    // so they are always processed alphabetically
+
+    set(options = {}, notify = true) {
+        const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
+        for (const option of sorted) {
+            const n = "_" + option[0];
+            const v = option[1];
+            const o = this[n];
             this[n] = v;
+            if (notify) this.say(n, {v, o}); // Publish a local message whenever a property changes with its old and new value.
         }
     }
 
