@@ -123,18 +123,7 @@ export const AM_Tree = superclass => class extends superclass {
     onChangeParent(d) {
         if (d.o) d.o.removeChild(this);
         if (d.v) d.v.addChild(this);
-        // this.say("treeChangeParent", {old: d.o, parent: d.v});
     }
-
-    // set(options = {}) {
-    //     const old = this.parent;
-    //     super.set(options);
-    //     if ('parent' in options) {
-    //         if (old) old.removeChild(this);
-    //         if (this.parent) this.parent.addChild(this);
-    //         this.say("treeChangeParent", {old, parent: this.parent});
-    //     }
-    // }
 
     get parent() { return this._parent; }
 
@@ -160,7 +149,6 @@ export const PM_Tree = superclass => class extends superclass {
             const parent = GetPawn(this.actor.parent.id);
             parent.addChild(this.actor.id);
         }
-        // this.listen("treeChangeParent", this.onChangeParent);
         this.listen("_parent", this.onChangeParent);
     }
 
@@ -182,15 +170,6 @@ export const PM_Tree = superclass => class extends superclass {
             GetPawn(d.v.id).addChild(this.actor.id);
         }
     }
-
-    // onChangeParent(d) {
-    //     if (d.old) {
-    //         GetPawn(d.old.id).removeChild(this.actor.id);
-    //     }
-    //     if (d.parent) {
-    //         GetPawn(d.parent.id).addChild(this.actor.id);
-    //     }
-    // }
 
     addChild(id) {
         const child = GetPawn(id);
@@ -229,31 +208,8 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
         super.init(options);
     }
 
-    // set(options = {}) {
-    //     super.set(options);
-    //     // if ('scale' in options ) this.scaleChanged();
-    //     // if ('rotation' in options) this.rotationChanged();
-    //     // if ('translation' in options ) this.translationChanged();
-    // }
-
-    // scaleChanged() {
-    //     // this.say("scaleChanged", this.scale);
-    //     this.localChanged();
-    // }
-
-    // rotationChanged() {
-    //     // this.say("rotationChanged", this.rotation);
-    //     this.localChanged();
-    // }
-
-    // translationChanged() {
-    //     // this.say("translationChanged", this.translation);
-    //     this.localChanged();
-    // }
-
     localChanged() {
         this.$local = null;
-        // this.say("localChanged");
         this.globalChanged();
     }
 
@@ -338,24 +294,22 @@ export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
     //     }
     // }
 
+    smoothSet(options) {
+        this.set(options, false);
+    }
+
     moveTo(v) {
         this.set({translation: v}, false)
-        // this._translation = v;
-        // this.say("moveTo", v);
         this.localChanged();
     }
 
     rotateTo(q) {
         this.set({rotation: q}, false)
-        // this._rotation = q;
-        // this.say("rotateTo", q);
         this.localChanged();
     }
 
     scaleTo(v) {
         this.set({scale: v}, false)
-        // this._scale = v;
-        // this.say("scaleTo", v);
         this.localChanged();
     }
 
@@ -371,9 +325,9 @@ RegisterMixin(AM_Smoothed);
 // When the difference between actor and pawn scale/rotation/translation drops below an epsilon,
 // interpolation is paused
 
-const scaleEpsilon = 0.0001;
-const rotationEpsilon = 0.000001;
-const translationEpsilon = 0.0001;
+// const scaleEpsilon = 0.0001;
+// const rotationEpsilon = 0.000001;
+// const translationEpsilon = 0.0001;
 
 const DynamicSpatial = superclass => PM_Dynamic(PM_Spatial(superclass)); // Merge dynamic and spatial base mixins
 
@@ -381,66 +335,33 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 
     constructor(...args) {
         super(...args);
-
         this.tug = 0.2;
-
-        // this._scale = this.actor.scale;
-        // this._rotation = this.actor.rotation;
-        // this._translation = this.actor.translation;
-
-        // this.listenOnce("scaleChanged", this.onSetScale);
-        // this.listenOnce("rotationChanged", this.onSetRotation);
-        // this.listenOnce("translationChanged", this.onSetTranslation);
-
-        // this.listenOnce("_scale", this.onSetScale);
-        // this.listenOnce("_rotation", this.onSetRotation);
-        // this.listenOnce("_translation", this.onSetTranslation);
-
-        // this.defineSmoothedProperty(
-        //     "scale",
-        //     () => { this._local = null; this._global = null; }
-        // );
-
-        this.defineSmoothedProperty( "scale", () => this.onLocalChanged );
-        this.defineSmoothedProperty( "translation",  () => this.onLocalChanged );
-        this.defineTransformComponent("rotation");
+        this.defineSmoothedPawnProperty( "scale", () => this.onLocalChanged() );
+        this.defineSmoothedPawnProperty( "translation",  () => this.onLocalChanged() );
+        this.defineSmoothedPawnProperty( "rotation",  () => this.onLocalChanged(), (a,b) => q_equals(a,b,0.000001), q_slerp );
     }
 
-    defineProperty(name, onSet) {
-        const ul = '_' + name;
-        this[ul] = this.actor[name];
-        if (onSet) onSet();
-        Object.defineProperty(this, name, { get: function() {return this[ul]} })
-        this.listenOnce(ul, () => {
-            this[ul] = this.actor[name];
-            if (onSet) onSet();
-        });
-    }
-
-    defineSmoothedProperty(name, onSet, equals, lerp) {
-        equals = equals || defaultEquals(this.actor[name]);
-        lerp = lerp || defaultLerp(this.actor[name]);
-        const ul = '_' + name;
-        this.defineProperty(name, onSet);
-        if (!this.smoothed) this.smoothed = {};
-        this.smoothed[name] = {ul, onSet, equals, lerp};
-    }
-
-    defineTransformComponent(name) {
-        this.defineProperty(name, () => { this._local = null; this._global = null; })
-    }
-
-    // onSetScale() { this._scale = this.actor.scale; this._local = null; this._global = null; }
-    // onSetRotation() { this._rotation = this.actor.rotation;  this._local = null; this._global = null; }
-    // onSetTranslation() { this._translation = this.actor.translation;  this._local = null; this._global = null; }
-
-    // get scale() { return this._scale; }
-    // get translation() { return this._translation; }
-    // get rotation() { return this._rotation; }
     set tug(t) {this._tug = t}
     get tug() {
         if (this.parent) return this.parent.tug;
         return this._tug;
+    }
+
+    // Creates a property in the pawn that will access a matching property in the actor.
+    // The property will interpolate every frame to track the actor value
+    // Interpolation stops when the pawn equals the actor (within an epsilon)
+    // If you set the property in the actor, it will immediately change in the pawn
+    // When the property changes (ether from set or update) it call the onSet method
+    // Handles both scalars and vectors automatically
+    // If you need custom equals or lerp functions, you can supply them.
+
+    defineSmoothedPawnProperty(name, onSet, equals, lerp) {
+        equals = equals || defaultEquals(this.actor[name]);
+        lerp = lerp || defaultLerp(this.actor[name]);
+        const ul = '_' + name;
+        this.definePawnProperty(name, onSet);
+        if (!this.smoothed) this.smoothed = {};
+        this.smoothed[name] = {ul, onSet, equals, lerp};
     }
 
     onLocalChanged() {
@@ -473,37 +394,19 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
 
-        // if (!v3_equals(this._scale, this.actor.scale, scaleEpsilon)) {
-        //     this._scale = v3_lerp(this._scale, this.actor.scale, tug);
-        //     this._local = null;
-        //     this._global = null;
-        // }
-
-        if (!q_equals(this._rotation, this.actor.rotation, rotationEpsilon)) {
-            this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-            this._local = null;
-            this._global = null;
-        }
-
-        // if (!v3_equals(this._translation, this.actor.translation, translationEpsilon)) {
-        //     this._translation = v3_lerp(this._translation, this.actor.translation, tug);
-        //     this._local = null;
-        //     this._global = null;
-        // }
-
-        if (this.smoothed) {
-            const all = Object.entries(this.smoothed);
-            for (const s of all) {
-                const name = s[0];
-                const ul = s[1].ul;
-                const onSet = s[1].onSet;
-                const equals = s[1].equals;
-                const lerp = s[1].lerp;
-                if (!equals(this[ul], this.actor[name])) {
-                    this[ul] = lerp(this[ul], this.actor[name], tug);
-                    onSet();
-                };
-            }
+        const all = Object.entries(this.smoothed);
+        for (const s of all) {
+            const name = s[0];
+            const ul = s[1].ul;
+            const onSet = s[1].onSet;
+            const equals = s[1].equals;
+            const lerp = s[1].lerp;
+            if (!equals(this[ul], this.actor[name])) {
+                const o = this[ul];
+                const v = lerp(o, this.actor[name], tug);
+                this[ul] = v;
+                if (onSet) onSet(v,o);
+            };
         }
 
         if (!this._global) {
@@ -519,6 +422,8 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     }
 
 }
+
+//-- Functions ----------------------------------------------------------------------------
 
 function defaultEquals(v) {
     if (v.constructor === Array) return defaultVectorEquals;
@@ -551,7 +456,7 @@ function defaultVectorLerp (a,b,t) {
 }
 
 //------------------------------------------------------------------------------------------
-//-- Predictive --------------------------------------------------------------------------------
+//-- Predictive ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------------------
@@ -570,7 +475,7 @@ function defaultVectorLerp (a,b,t) {
 
 //-- Actor ---------------------------------------------------------------------------------
 
-export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
+export const AM_Predictive = superclass => class extends AM_Smoothed(superclass) {
 
     get spin() { return this._spin || q_identity() }
     get velocity() { return this._velocity || v3_zero() }
@@ -582,8 +487,11 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
         this.listen("avatarSetVelocity", this.onSetVelocity);
         this.listen("avatarSetSpin", this.onSetSpin);
         super.init(...args);
-        // this.avatar_tickStep = 15;
         this.future(0).tick(0);
+    }
+
+    definePredictiveActorProperty() {
+        // Create subscription
     }
 
     onSetVelocity(v) {
@@ -607,11 +515,11 @@ export const AM_Avatar = superclass => class extends AM_Smoothed(superclass) {
     }
 
 };
-RegisterMixin(AM_Avatar);
+RegisterMixin(AM_Predictive);
 
 //-- Pawn ----------------------------------------------------------------------------------
 
-export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
+export const PM_Predictive = superclass => class extends PM_Smoothed(superclass) {
     constructor(...args) {
         super(...args);
 
@@ -625,7 +533,11 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
         this.spin = q_identity();
     }
 
+    definePredictivePawnProperty() {}
+
     // Instantly sends a move event to the reflector. If you're calling it repeatly, maybe use throttledMoveTo instead.
+
+
 
     moveTo(v) {
         this._translation = v;
@@ -708,6 +620,11 @@ export const PM_Avatar = superclass => class extends PM_Smoothed(superclass) {
     }
 
 };
+
+export const AM_Avatar = AM_Predictive;
+export const PM_Avatar = PM_Predictive;
+
+
 
 //------------------------------------------------------------------------------------------
 //-- MouselookAvatar -----------------------------------------------------------------------
