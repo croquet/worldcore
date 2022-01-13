@@ -279,6 +279,7 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
     }
 
     get translation() { return this._translation || v3_zero() };
+    set translation(v) { this.set({translation: v}) };
     get rotation() { return this._rotation || q_identity() };
     get scale() { return this._scale || [1,1,1] };
 }
@@ -382,6 +383,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         super(...args);
 
         this.tug = 0.2;
+
         // this._scale = this.actor.scale;
         // this._rotation = this.actor.rotation;
         // this._translation = this.actor.translation;
@@ -394,9 +396,14 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         // this.listenOnce("_rotation", this.onSetRotation);
         // this.listenOnce("_translation", this.onSetTranslation);
 
-        this.defineTransformComponent("scale");
+        // this.defineSmoothedProperty(
+        //     "scale",
+        //     () => { this._local = null; this._global = null; }
+        // );
+
+        this.defineSmoothedProperty( "scale", () => this.onLocalChanged );
+        this.defineSmoothedProperty( "translation",  () => this.onLocalChanged );
         this.defineTransformComponent("rotation");
-        this.defineTransformComponent("translation");
     }
 
     defineProperty(name, onSet) {
@@ -411,12 +418,12 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     }
 
     defineSmoothedProperty(name, onSet, equals, lerp) {
-        equals = equals || ((a,b) => { return 0.001 > (Math.abs(a-b)) });
-        lerp = lerp || ((a,b,t) => { return a + (b - a) * t });
+        equals = equals || defaultEquals(this.actor[name]);
+        lerp = lerp || defaultLerp(this.actor[name]);
         const ul = '_' + name;
         this.defineProperty(name, onSet);
         if (!this.smoothed) this.smoothed = {};
-        this.smoothed[name] = {ul, equals, lerp};
+        this.smoothed[name] = {ul, onSet, equals, lerp};
     }
 
     defineTransformComponent(name) {
@@ -434,6 +441,11 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     get tug() {
         if (this.parent) return this.parent.tug;
         return this._tug;
+    }
+
+    onLocalChanged() {
+        this._local = null;
+        this._global = null;
     }
 
     onGlobalChanged() {
@@ -461,11 +473,11 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
 
-        if (!v3_equals(this._scale, this.actor.scale, scaleEpsilon)) {
-            this._scale = v3_lerp(this._scale, this.actor.scale, tug);
-            this._local = null;
-            this._global = null;
-        }
+        // if (!v3_equals(this._scale, this.actor.scale, scaleEpsilon)) {
+        //     this._scale = v3_lerp(this._scale, this.actor.scale, tug);
+        //     this._local = null;
+        //     this._global = null;
+        // }
 
         if (!q_equals(this._rotation, this.actor.rotation, rotationEpsilon)) {
             this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
@@ -473,22 +485,23 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
             this._global = null;
         }
 
-        if (!v3_equals(this._translation, this.actor.translation, translationEpsilon)) {
-            this._translation = v3_lerp(this._translation, this.actor.translation, tug);
-            this._local = null;
-            this._global = null;
-        }
+        // if (!v3_equals(this._translation, this.actor.translation, translationEpsilon)) {
+        //     this._translation = v3_lerp(this._translation, this.actor.translation, tug);
+        //     this._local = null;
+        //     this._global = null;
+        // }
 
         if (this.smoothed) {
             const all = Object.entries(this.smoothed);
             for (const s of all) {
                 const name = s[0];
                 const ul = s[1].ul;
+                const onSet = s[1].onSet;
                 const equals = s[1].equals;
                 const lerp = s[1].lerp;
                 if (!equals(this[ul], this.actor[name])) {
                     this[ul] = lerp(this[ul], this.actor[name], tug);
-                    console.log(this[ul]);
+                    onSet();
                 };
             }
         }
@@ -506,6 +519,40 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     }
 
 }
+
+function defaultEquals(v) {
+    if (v.constructor === Array) return defaultVectorEquals;
+    return defaultScalarEquals;
+}
+
+function defaultScalarEquals (a,b) {
+    return 0.0001 > (Math.abs(a-b))
+}
+
+function defaultVectorEquals (a,b) {
+    let i = a.length;
+    while (i--) {
+        if (0.0001 < Math.abs(a[i] - b[i])) return false;
+    }
+    return true
+}
+
+function defaultLerp(v) {
+    if (v.constructor === Array) return defaultVectorLerp;
+    return defaultScalarLerp;
+}
+
+function defaultScalarLerp (a,b,t) {
+    return a + (b - a) * t;
+}
+
+function defaultVectorLerp (a,b,t) {
+    return a.map( (v, i) => {return v + (b[i]-v) * t} )
+}
+
+//------------------------------------------------------------------------------------------
+//-- Predictive --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------------------
 //-- Avatar --------------------------------------------------------------------------------

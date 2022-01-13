@@ -22,21 +22,19 @@ class MoveActor extends mix(Actor).with(AM_Smoothed) {
     init(options = {}) {
         super.init(options);
         this.child = ChildActor.create({zzz: 123, parent: this, translation: [0,1.5,0]});
-        // this.subscribe("input", "dDown", this.test0)
-        // this.subscribe("input", "sDown", this.test1)
+        this.subscribe("input", "dDown", this.test0)
+        this.subscribe("input", "sDown", this.test1)
     }
 
-    // test0() {
-    //     console.log("test0");
-    //     this.set({translation: [0,1,-5]});
-    //     console.log(this.global);
-    // }
+    test0() {
+        console.log("test0");
+        this.moveTo([1,0,-5]);
+    }
 
-    // test1() {
-    //     console.log("test1");
-    //     this.set({translation: [0,0,-5]});
-    //     console.log(this.global);
-    // }
+    test1() {
+        console.log("test1");
+        this.moveTo([0,0,-5]);
+    }
 
 }
 MoveActor.register('MoveActor');
@@ -105,23 +103,24 @@ class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
     init(options) {
         super.init(options);
-        this.color = 45;
+        // this.color = 45;
+        // this.xxx = [1,2,3];
 
         this.startBehavior(SpinBehavior);
 
-        this.subscribe("input", "dDown", this.test0)
-        this.subscribe("input", "sDown", this.test1)
+        // this.subscribe("input", "dDown", this.test0)
+        // this.subscribe("input", "sDown", this.test1)
     }
 
-    test0() {
-        console.log("test0");
-        this.color = 0
-    }
+    // test0() {
+    //     console.log("test0");
+    //     this.color = 0
+    // }
 
-    test1() {
-        console.log("test1");
-        this.color = 45
-    }
+    // test1() {
+    //     console.log("test1");
+    //     this.color = 45
+    // }
 
 }
 ChildActor.register('ChildActor');
@@ -136,7 +135,8 @@ class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
         super(...args);
         this.setDrawCall(this.buildDraw());
 
-        this.defineSmoothedProperty("color", () => { console.log("onSetColor"); } );
+        // this.defineSmoothedProperty("color", () => { console.log("onSetColor"); } );
+        // this.defineSmoothedProperty("xxx", () => { console.log("onSetXXX"); } );
         // console.log(this.color);
         // console.log(this.smoothed);
         // console.log(Object.entries(this.smoothed))
@@ -229,7 +229,7 @@ class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start Model!!!!");
         BackgroundActor.create();
-        MoveActor.create({translation: [0,0,-5]});
+        const mmm = MoveActor.create({translation: [0,0,-5]});
     }
 
 }
