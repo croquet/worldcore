@@ -86,7 +86,8 @@ export class Pawn extends WorldcoreView {
         this.detach(); // Calling View clean-up.
     }
 
-    say(event, data) {
+    say(event, data, throttle = 0) {
+        if (throttle) console.warn("Only dynamic pawns can throttle 'say'!");
         this.publish(this.actor.id, event, data);
     }
 
@@ -138,6 +139,8 @@ export const PM_Dynamic = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
         pm.addDynamic(this);
+        this._sayNext = {};
+        this._sayCache = {};
     }
 
     destroy() {
@@ -145,9 +148,28 @@ export const PM_Dynamic = superclass => class extends superclass {
         super.destroy();
     }
 
+    say(event, data, throttle = 0) {
+        if (this.time < this._sayNext[event]) {
+            this._sayCache[event] = data;
+        } else {
+            this._sayNext[event] = this.time + throttle;
+            this._sayCache[event] = null;
+            this.publish(this.actor.id, event, data);
+        }
+    }
+
     preUpdate(time, delta) {} // Called immediately before the main update
     update(time, delta) {}
-    postUpdate(time, delta){} // Called immediately after the main update.
+    postUpdate(time, delta){ // Called immediately after the main update.
+
+        for (const event in this._sayCache) { // Flushes expired cached events from throttled says
+            const data = this._sayCache[event];
+            if (data && time > this._sayNext[event]) {
+                this._sayCache[event] = null;
+                this.publish(this.actor.id, event, data);
+            }
+        }
+    }
 
     fullUpdate(time, delta) {
         this.preUpdate(time, delta);

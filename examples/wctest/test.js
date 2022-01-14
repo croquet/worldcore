@@ -15,7 +15,7 @@ import kwark from "./assets/kwark.otf";
 // MoveActor
 //------------------------------------------------------------------------------------------
 
-class MoveActor extends mix(Actor).with(AM_Smoothed) {
+class MoveActor extends mix(Actor).with(AM_Avatar, AM_Player) {
 
     get pawn() {return MovePawn}
 
@@ -43,11 +43,13 @@ MoveActor.register('MoveActor');
 // MovePawn
 //------------------------------------------------------------------------------------------
 
-class MovePawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
+class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
-        // if (this.isMyPlayerPawn) this.subscribe("hud", "joy", this.joy);
+        if (this.isMyPlayerPawn) {
+            this.subscribe("hud", "joy", this.joy);
+        }
     }
 
     buildDraw() {
@@ -70,13 +72,23 @@ class MovePawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
         return material;
     }
 
+    // joy(xy) {
+    //     const spin = xy[0];
+    //     const pitch = xy[1];
+    //     let q = q_multiply(q_identity(), q_axisAngle([0,1,0], spin * 0.005));
+    //     q = q_multiply(q, q_axisAngle([1,0,0], pitch * 0.005));
+    //     q = q_normalize(q);
+    //     this.setSpin(q);
+    // }
+
     joy(xy) {
         const spin = xy[0];
         const pitch = xy[1];
-        let q = q_multiply(q_identity(), q_axisAngle([0,1,0], spin * 0.005));
-        q = q_multiply(q, q_axisAngle([1,0,0], pitch * 0.005));
+        let q = q_multiply(q_identity(), q_axisAngle([0,1,0], spin * 0.5));
+        q = q_multiply(q, q_axisAngle([1,0,0], pitch * 0.5));
         q = q_normalize(q);
-        this.setSpin(q);
+        // console.log(q);
+        this.rotateTo(q);
     }
 
 }
@@ -97,16 +109,15 @@ class SpinBehavior extends Behavior {
 }
 SpinBehavior.register("SpinBehavior");
 
-class ChildActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
+class ChildActor extends mix(Actor).with(AM_Avatar, AM_Behavioral) {
 
     get pawn() {return ChildPawn}
 
     init(options) {
         super.init(options);
-        // this.color = 45;
-        // this.xxx = [1,2,3];
 
-        this.startBehavior(SpinBehavior);
+
+        // this.startBehavior(SpinBehavior);
 
         // this.subscribe("input", "dDown", this.test0)
         // this.subscribe("input", "sDown", this.test1)
@@ -130,7 +141,7 @@ ChildActor.register('ChildActor');
 // ChildPawn
 //------------------------------------------------------------------------------------------
 
-class ChildPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
+class ChildPawn extends mix(Pawn).with(PM_Avatar, PM_Visible) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
@@ -221,15 +232,15 @@ MyPlayerManager.register("MyPlayerManager");
 
 class MyModelRoot extends ModelRoot {
 
-    // static modelServices() {
-    //     return [ MyPlayerManager];
-    // }
+    static modelServices() {
+        return [ MyPlayerManager];
+    }
 
     init(...args) {
         super.init(...args);
         console.log("Start Model!!!!");
         BackgroundActor.create();
-        const mmm = MoveActor.create({translation: [0,0,-5]});
+        // const mmm = MoveActor.create({translation: [0,0,-5]});
     }
 
 }

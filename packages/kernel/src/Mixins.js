@@ -248,7 +248,7 @@ export const PM_Spatial = superclass => class extends PM_Tree(superclass) {
 
 constructor(...args) {
     super(...args);
-    this.listenOnce("globalChanged", this.onGlobalChanged);
+    // this.listenOnce("globalChanged", this.onGlobalChanged);
 }
 
 onGlobalChanged() { this.say("viewGlobalChanged"); }
@@ -276,41 +276,27 @@ get lookGlobal() { return this.global; } // Allows objects to have an offset cam
 
 export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
-    // init(options) {
-    //     this.listen("s_scale", this.localChanged);
-    //     this.listen("s_rotation", this.localChanged);
-    //     this.listen("s_translation", this.localChanged);
-    //     super.init(options);
-    // }
+    init(options) {
+        this.listen("s_scale", this.localChanged);
+        this.listen("s_rotation",  this.localChanged);
+        this.listen("s_translation", this.localChanged);
+        super.init(options);
+    }
 
-    // smoothSet(options) {
-    //     const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
-    //     for (const option of sorted) {
-    //         const n = "_" + option[0];
-    //         const v = option[1];
-    //         const o = this[n];
-    //         this[n] = v;
-    //         this.say('s'+n, {v, o});
-    //     }
-    // }
-
-    smoothSet(options) {
-        this.set(options, false);
+    smoothedSet(options) {
+        this.set(options, "s");
     }
 
     moveTo(v) {
-        this.set({translation: v}, false)
-        this.localChanged();
+        this.smoothedSet({translation: v}, "s")
     }
 
     rotateTo(q) {
-        this.set({rotation: q}, false)
-        this.localChanged();
+        this.smoothedSet({rotation: q} , "s")
     }
 
     scaleTo(v) {
-        this.set({scale: v}, false)
-        this.localChanged();
+        this.smoothedSet({scale: v}, "s")
     }
 
 };
@@ -482,8 +468,10 @@ export const AM_Predictive = superclass => class extends AM_Smoothed(superclass)
     get tickStep() {return this._tickStep || 15}
 
     init(...args) {
-        this.listen("avatarMoveTo", this.moveTo);
-        this.listen("avatarRotateTo", this.rotateTo);
+        // this.listen("avatarMoveTo", this.moveTo);
+        // this.listen("avatarRotateTo", this.rotateTo);
+        this.listen("p_translation", this.moveTo);
+        this.listen("p_rotation", this.rotateTo);
         this.listen("avatarSetVelocity", this.onSetVelocity);
         this.listen("avatarSetSpin", this.onSetSpin);
         super.init(...args);
@@ -491,7 +479,7 @@ export const AM_Predictive = superclass => class extends AM_Smoothed(superclass)
     }
 
     definePredictiveActorProperty() {
-        // Create subscription
+        // Create subscription that maps to smoothed set.
     }
 
     onSetVelocity(v) {
@@ -523,61 +511,70 @@ export const PM_Predictive = superclass => class extends PM_Smoothed(superclass)
     constructor(...args) {
         super(...args);
 
-        this.moveThrottle = 15;    // MS between throttled moveTo events
-        this.lastMoveTime = this.time;
+        // this.moveThrottle = 15;    // MS between throttled moveTo events
+        // this.lastMoveTime = this.time;
 
-        this.rotateThrottle = 50;  // MS between throttled rotateTo events
-        this.lastRotateTime = this.time;
+        // this.rotateThrottle = 50;  // MS between throttled rotateTo events
+        // this.lastRotateTime = this.time;
 
         this.velocity = v3_zero();
         this.spin = q_identity();
     }
 
-    definePredictivePawnProperty() {}
+    // definePredictivePawnProperty() {}
 
-    // Instantly sends a move event to the reflector. If you're calling it repeatly, maybe use throttledMoveTo instead.
+    predictiveSet(options = {}, throttle = 0) {
+        for (const option in options) {
+            const ul = '_' + option;
+            const v = options[option];
+            this[ul] = v;
+            this.say('p'+ul, v, throttle);
+        }
+    }
 
-
+    // Instantly sends a move event to the reflector. If you're calling it repeatedly, maybe use throttledMoveTo instead.
 
     moveTo(v) {
-        this._translation = v;
-        this.lastMoveTime = this.time;
-        this.lastMoveCache = null;
-        this.say("avatarMoveTo", v);
+        this.predictiveSet({translation: v});
+        this.onLocalChanged();
+        // this._translation = v;
+        // this.lastMoveTime = this.time;
+        // this.lastMoveCache = null;
+        // this.say("avatarMoveTo", v);
     }
 
     // No matter how often throttledMoveTo is called, it will only send a message to the reflector once per throttle interval.
 
-    throttledMoveTo(v) {
-        if (this.time < this.lastMoveTime + this.moveThrottle) {
-            this._translation = v;
-            this.lastMoveCache = v;
-        } else {
-            this.lastMoveTime = this.time;
-            this.lastMoveCache = null;
-            this.say("avatarMoveTo", v);
-        }
-    }
+    // throttledMoveTo(v) {
+    //     if (this.time < this.lastMoveTime + this.moveThrottle) {
+    //         this._translation = v;
+    //         this.lastMoveCache = v;
+    //     } else {
+    //         this.lastMoveTime = this.time;
+    //         this.lastMoveCache = null;
+    //         this.say("avatarMoveTo", v);
+    //     }
+    // }
 
-    // Instantly sends a rotate event to the reflector. If you're calling it repeatly, maybe use throttledRotateTo instead.
+    // Instantly sends a rotate event to the reflector. If you're calling it repeatedly, maybe use throttledRotateTo instead.
 
     rotateTo(q) {
-        this._rotation = q;
-        this.lastRotateTime = this.time;
-        this.lastRotateCache = null;
-        this.say("avatarRotateTo", q);
+        this.predictiveSet({rotation: q}, 0);
+        // this._rotation = q;
+        this.onLocalChanged();
+        // this.say("avatarRotateTo", q, 100);
     }
 
     // No matter how often throttleRotateTo is called, it will only send a message to the reflector once per throttle interval.
 
-    throttledRotateTo(q) {
-        if (this.time < this.lastRotateTime + this.rotateThrottle) {
-            this._rotation = q;
-            this.lastRotateCache = q;
-        } else {
-            this.rotateTo(q);
-        }
-    }
+    // throttledRotateTo(q) {
+    //     if (this.time < this.lastRotateTime + this.rotateThrottle) {
+    //         this._rotation = q;
+    //         this.lastRotateCache = q;
+    //     } else {
+    //         this.rotateTo(q);
+    //     }
+    // }
 
     setVelocity(v) {
         this.velocity = v;
@@ -590,32 +587,32 @@ export const PM_Predictive = superclass => class extends PM_Smoothed(superclass)
         this.spin = q;
         // this.isRotating = this.isRotating || !q_isZero(this.spin);
         this.isRotating = !q_isZero(this.spin);
-        this.say("avatarSetSpin", this.spin);
+        this.say("avatarSetSpin", this.spin, 100);
     }
 
     update(time, delta) {
 
-        if (this.isRotating) {
-            this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), delta));
-            this._local = null;
-            this._global = null;
-            this.isRotating = !q_isZero(this.spin);
-        }
-        if (this.isMoving)  {
-            const relative = v3_scale(this.velocity, delta);
-            const move = v3_transform(relative, m4_rotationQ(this.rotation));
-            this._translation = v3_add(this._translation, move);
-            this._local = null;
-            this._global = null;
-            this.isMoving= !v3_isZero(this.velocity);
-        }
+        // if (this.isRotating) {
+        //     this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), delta));
+        //     this._local = null;
+        //     this._global = null;
+        //     this.isRotating = !q_isZero(this.spin);
+        // }
+        // if (this.isMoving)  {
+        //     const relative = v3_scale(this.velocity, delta);
+        //     const move = v3_transform(relative, m4_rotationQ(this.rotation));
+        //     this._translation = v3_add(this._translation, move);
+        //     this._local = null;
+        //     this._global = null;
+        //     this.isMoving= !v3_isZero(this.velocity);
+        // }
 
         super.update(time, delta);
 
         // If a throttled move sequence ends, send the final cached value
 
-        if (this.lastMoveCache && this.time > this.lastMoveTime + this.moveThrottle) this.moveTo(this.lastMoveCache);
-        if (this.lastRotateCache && this.time > this.lastRotateTime + this.rotateThrottle) this.rotateTo(this.lastRotateCache);
+        // if (this.lastMoveCache && this.time > this.lastMoveTime + this.moveThrottle) this.moveTo(this.lastMoveCache);
+        // if (this.lastRotateCache && this.time > this.lastRotateTime + this.rotateThrottle) this.rotateTo(this.lastRotateCache);
 
     }
 
