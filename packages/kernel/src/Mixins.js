@@ -1,4 +1,5 @@
 import { Constants } from "@croquet/croquet";
+import { m4_identity } from "..";
 // import { Constants } from "@croquet/worldcore-kernel";
 import { PM_Dynamic, GetPawn } from "./Pawn";
 import { v3_zero, q_identity, v3_unit, m4_scaleRotationTranslation, m4_translation, m4_rotationX, m4_multiply, v3_lerp, v3_equals,
@@ -339,12 +340,29 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     set tug(t) {this._tug = t}
     get tug() {  return this._tug; }
 
-    set offset(m4) {
-        this._offset = m4;
-        this.onGlobalChanged();
+    // set scaleOffset(v) {
+    //     this._scaleOffset = v;
+    //     this.onLocalChanged();
+    // }
+
+    // set rotationOffset(q) {
+    //     this._rotationOffset = q;
+    //     this.onLocalChanged();
+    // }
+
+    // set translationOffset(v) {
+    //     this._translationOffset = v;
+    //     this.onLocalChanged();
+    // }
+
+    set localOffset(m4) {
+        this._localOffset = m4;
+        this.onLocalChanged();
     }
 
-    get offset() { return this._offset; }
+    // get scaleOffset() { return this._scaleOffset; }
+    // get rotationOffset() { return this._rotationOffset; }
+    // get translationOffset() { return this._translationOffset; }
 
 
     // Creates a property in the pawn that will access a matching property in the actor.
@@ -381,7 +399,12 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     }
 
     get local() {
-        if (!this._local) this._local = m4_scaleRotationTranslation(this._scale, this._rotation, this._translation);
+        if (this._local) return this. _local;
+        if (this._localOffset) {
+            this._local = m4_multiply(this._localOffset, m4_scaleRotationTranslation(this._scale, this._rotation, this._translation));
+            return this._local;
+        }
+        this._local = m4_scaleRotationTranslation(this._scale, this._rotation, this._translation);
         return this._local;
     }
 
@@ -392,7 +415,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         } else {
             this._global = this.local;
         }
-        if (this._offset) this._global = m4_multiply(this._global, this._offset);
+        // if (this._offset) this._global = m4_multiply(this._global, this._offset);
         this.say("viewGlobalChanged");
         return this._global;
     }

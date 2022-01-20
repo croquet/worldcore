@@ -2,7 +2,7 @@
 //
 // Croquet Studios, 2021
 
-import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX } from "@croquet/worldcore-kernel";
+import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX, m4_rotationZ } from "@croquet/worldcore-kernel";
 import {RenderManager, PM_Visible, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
@@ -54,14 +54,13 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player) {
         super(...args);
         this.setDrawCall(this.buildDraw());
         if (this.isMyPlayerPawn) {
-            // const sss = m4_translation([1,0,0]);
-            // this.offset = sss;
+            this.pulseDelta = 0.005;
+            this.pulseScale = 1;
+            // this.localOffset = m4_rotationZ(toRad(90));
+            // this.localOffset = m4_scale(2);
             this.subscribe("hud", "joy", this.joy);
             this.subscribe("input", "xDown", this.test)
-
         }
-
-
     }
 
     buildDraw() {
@@ -96,6 +95,17 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player) {
         q = q_normalize(q);
         this.setSpin(q);
     }
+
+    // update(time, delta) {
+    //     super.update(time,delta);
+    //     if (this.isMyPlayerPawn) {
+    //         this.pulseScale += this.pulseDelta;
+    //         if (this.pulseScale > 2 ||  this.pulseScale < 0.5) this.pulseDelta *= -1;
+    //         console.log(this.pulseScale);
+    //         this.localOffset = m4_scale(this.pulseScale);
+    //         this.localOffset = m4_translation([1,0,0])
+    //     }
+    // }
 
     // joy(xy) {
     //     const spin = xy[0];
@@ -133,7 +143,7 @@ class ChildActor extends mix(Actor).with(AM_Avatar, AM_Behavioral) {
         super.init(options);
 
 
-        // this.startBehavior(SpinBehavior);
+        this.startBehavior(SpinBehavior);
 
         // this.subscribe("input", "dDown", this.test0)
         // this.subscribe("input", "sDown", this.test1)
@@ -298,32 +308,32 @@ class MyViewRoot extends ViewRoot {
         this.HUD = new Widget({parent: ui.root, autoSize: [1,1]});
         this.joy = new JoystickWidget({parent: this.HUD, anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [200, 200], onChange: xy => {this.publish("hud", "joy", xy)}});
 
-        this.button0 = new ButtonWidget({
-            parent: this.HUD,
-            local: [20,20],
-            size: [200,80],
-            label: new TextWidget({fontURL: kwark, text: "Test 0", style: "italic"}),
-            onClick: () => { this.joy.set({scale: 2})}
-        });
+        // this.button0 = new ButtonWidget({
+        //     parent: this.HUD,
+        //     local: [20,20],
+        //     size: [200,80],
+        //     label: new TextWidget({fontURL: kwark, text: "Test 0", style: "italic"}),
+        //     onClick: () => { this.joy.set({scale: 2})}
+        // });
 
-        this.button1 = new ButtonWidget({
-            parent: this.HUD,
-            local: [20,110],
-            size: [200,80],
-            label: new TextWidget({fontURL: kwark, text: "Test 1", style: "oblique"}),
-            onClick: () => { this.joy.set({scale: 1})}
-        });
+        // this.button1 = new ButtonWidget({
+        //     parent: this.HUD,
+        //     local: [20,110],
+        //     size: [200,80],
+        //     label: new TextWidget({fontURL: kwark, text: "Test 1", style: "oblique"}),
+        //     onClick: () => { this.joy.set({scale: 1})}
+        // });
 
-        this.slider = new SliderWidget({
-            parent: this.HUD,
-            anchor: [1,0],
-            pivot: [1,0],
-            local: [-20,20],
-            size: [20, 300],
-            onChange: p => {console.log(p)}
-        })
+        // this.slider = new SliderWidget({
+        //     parent: this.HUD,
+        //     anchor: [1,0],
+        //     pivot: [1,0],
+        //     local: [-20,20],
+        //     size: [20, 300],
+        //     onChange: p => {console.log(p)}
+        // })
 
-        this.image = new ImageWidget({parent: this.HUD, local: [20, 200], size: [200,80], url: llama});
+        // this.image = new ImageWidget({parent: this.HUD, local: [20, 200], size: [200,80], url: llama});
 
     }
 
