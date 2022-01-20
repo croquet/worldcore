@@ -111,20 +111,20 @@ export class Pawn extends WorldcoreView {
     // Creates a property in the pawn that will access a matching property in the actor.
     // When the property is set in the actor, the pawn with set its matching property and call the onSet method
 
-    definePawnProperty(name, onSet) {
-        const ul = '_' + name;
-        const v = this.actor[name];
-        this[ul] = v;
-        Object.defineProperty(this, name, { get: function() {return this[ul]} });
-        if (onSet) onSet(v,null);
+    // definePawnProperty(name, onSet) {
+    //     const ul = '_' + name;
+    //     const v = this.actor[name];
+    //     this[ul] = v;
+    //     Object.defineProperty(this, name, { get: function() {return this[ul]} });
+    //     if (onSet) onSet(v,null);
 
-        this.listenOnce(ul, () => {
-            const o = this[ul];
-            const v = this.actor[name];
-            this[ul] = this.actor[name];
-            if (onSet) onSet(v,o);
-        });
-    }
+    //     this.listenOnce(ul, () => {
+    //         const o = this[ul];
+    //         const v = this.actor[name];
+    //         this[ul] = this.actor[name];
+    //         if (onSet) onSet(v,o);
+    //     });
+    // }
 
 }
 

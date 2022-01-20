@@ -40,6 +40,7 @@ export class Actor extends WorldcoreModel {
 
     init(options) {
         super.init();
+        this.listen("_set", this.set);
         this.set(options);
         this.service('ActorManager').add(this);
         this.publish("actor", "createActor", this);
@@ -55,14 +56,25 @@ export class Actor extends WorldcoreModel {
     // Different implementations of javascript may store object properties in different orders, so we sort them
     // so they are always processed alphabetically
 
-    set(options = {}, prefix = '') {
+    // set(options = {}, prefix = '') {
+    //     const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
+    //     for (const option of sorted) {
+    //         const n = "_" + option[0];
+    //         const v = option[1];
+    //         const o = this[n];
+    //         this[n] = v;
+    //         this.say(prefix+n, {v, o}); // Publish a local message whenever a property changes with its old and new value.
+    //     }
+    // }
+
+    set(options = {}) {
         const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
         for (const option of sorted) {
             const n = "_" + option[0];
             const v = option[1];
             const o = this[n];
             this[n] = v;
-            this.say(prefix+n, {v, o}); // Publish a local message whenever a property changes with its old and new value.
+            this.say(n, {v, o}); // Publish a local message whenever a property changes with its old and new value.
         }
     }
 

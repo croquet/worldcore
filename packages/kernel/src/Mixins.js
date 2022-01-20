@@ -202,14 +202,15 @@ export const PM_Tree = superclass => class extends superclass {
 export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
 
     init(options) {
+        super.init(options);
         this.listen("_scale", this.localChanged);
         this.listen("_rotation", this.localChanged);
         this.listen("_translation", this.localChanged);
-        super.init(options);
     }
 
     localChanged() {
         this.$local = null;
+        this.say("localChanged");
         this.globalChanged();
     }
 
@@ -248,7 +249,7 @@ export const PM_Spatial = superclass => class extends PM_Tree(superclass) {
 
 constructor(...args) {
     super(...args);
-    // this.listenOnce("globalChanged", this.onGlobalChanged);
+    this.listenOnce("globalChanged", this.onGlobalChanged);
 }
 
 onGlobalChanged() { this.say("viewGlobalChanged"); }
@@ -277,26 +278,34 @@ get lookGlobal() { return this.global; } // Allows objects to have an offset cam
 export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
     init(options) {
+        super.init(options);
+        this.listen("s_set", this.smoothSet);
         this.listen("s_scale", this.localChanged);
         this.listen("s_rotation",  this.localChanged);
         this.listen("s_translation", this.localChanged);
-        super.init(options);
     }
 
-    smoothedSet(options) {
-        this.set(options, "s");
+    smoothSet(options) {
+        const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
+        for (const option of sorted) {
+            const n = "_" + option[0];
+            const v = option[1];
+            const o = this[n];
+            this[n] = v;
+            this.say('s'+n, {v, o}); // Publish a local message whenever a property changes with its old and new value.
+        }
     }
 
     moveTo(v) {
-        this.smoothedSet({translation: v}, "s")
+        this.smoothSet({translation: v});
     }
 
     rotateTo(q) {
-        this.smoothedSet({rotation: q} , "s")
+        this.smoothSet({rotation: q});
     }
 
     scaleTo(v) {
-        this.smoothedSet({scale: v}, "s")
+        this.smoothSet({scale: v})
     }
 
 };
@@ -328,26 +337,38 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     }
 
     set tug(t) {this._tug = t}
-    get tug() {
-        if (this.parent) return this.parent.tug;
-        return this._tug;
+    get tug() {  return this._tug; }
+
+    set offset(m4) {
+        this._offset = m4;
+        this.onGlobalChanged();
     }
+
+    get offset() { return this._offset; }
+
 
     // Creates a property in the pawn that will access a matching property in the actor.
     // The property will interpolate every frame to track the actor value
     // Interpolation stops when the pawn equals the actor (within an epsilon)
     // If you set the property in the actor, it will immediately change in the pawn
-    // When the property changes (ether from set or update) it call the onSet method
+    // When the property changes (ether from set or update) it calls the onSet method
     // Handles both scalars and vectors automatically
     // If you need custom equals or lerp functions, you can supply them.
 
     defineSmoothedPawnProperty(name, onSet, equals, lerp) {
-        equals = equals || defaultEquals(this.actor[name]);
-        lerp = lerp || defaultLerp(this.actor[name]);
-        const ul = '_' + name;
-        this.definePawnProperty(name, onSet);
-        if (!this.smoothed) this.smoothed = {};
-        this.smoothed[name] = {ul, onSet, equals, lerp};
+        equals = equals || defaultEquals(this.actor[name]); // Test to determine if value has changed
+        lerp = lerp || defaultLerp(this.actor[name]);       // Interpolation between old and new
+
+        const ul = '_' + name;                              // The private name of the property in the pawn
+        this[ul] = this.actor[name]                         // Set the initial value
+
+        Object.defineProperty(this, name, { get: function() {return this[ul]} });   // Create a public getter
+
+        if (!this.smoothedProperties) this.smoothedProperties = {};     // Store the callbacks
+        this.smoothedProperties[name] = {ul, onSet, equals, lerp};
+
+        this.listenOnce(ul, () => { const o = this[ul]; const v = this.actor[name]; this[ul] = v; if (onSet) onSet(v,o); });    // listen for a set
+        this.listenOnce('s' + ul, () => { this.smoothedProperties[name].changed = true});                                       // listen for a smoothSet
     }
 
     onLocalChanged() {
@@ -371,6 +392,8 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         } else {
             this._global = this.local;
         }
+        if (this._offset) this._global = m4_multiply(this._global, this._offset);
+        this.say("viewGlobalChanged");
         return this._global;
     }
 
@@ -380,24 +403,28 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
 
-        const all = Object.entries(this.smoothed);
-        for (const s of all) {
+        for (const s of Object.entries(this.smoothedProperties)) {
             const name = s[0];
-            const ul = s[1].ul;
-            const onSet = s[1].onSet;
-            const equals = s[1].equals;
-            const lerp = s[1].lerp;
-            if (!equals(this[ul], this.actor[name])) {
-                const o = this[ul];
-                const v = lerp(o, this.actor[name], tug);
-                this[ul] = v;
-                if (onSet) onSet(v,o);
-            };
+            if (s[1].changed) {
+                const ul = s[1].ul;
+                const equals = s[1].equals;
+                if (equals(this[ul], this.actor[name])) {
+                    this.smoothedProperties[name].changed = false;
+                } else {
+                    const lerp = s[1].lerp;
+                    const o = this[ul];
+                    const v = lerp(o, this.actor[name], tug);
+                    const onSet = s[1].onSet;
+                    this[ul] = v;
+                    if (onSet) onSet(v,o);
+                };
+            }
         }
 
         if (!this._global) {
+            this.global;
             if (this.children) this.children.forEach(child => child._global = null); // If our global changes, so do the globals of our children
-            this.say("viewGlobalChanged");
+            // this.say("viewGlobalChanged");
         }
 
     }
@@ -445,10 +472,6 @@ function defaultVectorLerp (a,b,t) {
 //-- Predictive ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-//------------------------------------------------------------------------------------------
-//-- Avatar --------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
 // Avatar actors maintain a primary view-side scale/rotation/translation that you can drive directly
 // from player inputs so the avatar responds quickly to player input. On every frame this
 // transform is averaged with the official model-side values.
@@ -468,33 +491,15 @@ export const AM_Predictive = superclass => class extends AM_Smoothed(superclass)
     get tickStep() {return this._tickStep || 15}
 
     init(...args) {
-        // this.listen("avatarMoveTo", this.moveTo);
-        // this.listen("avatarRotateTo", this.rotateTo);
-        this.listen("p_translation", this.moveTo);
-        this.listen("p_rotation", this.rotateTo);
-        this.listen("avatarSetVelocity", this.onSetVelocity);
-        this.listen("avatarSetSpin", this.onSetSpin);
         super.init(...args);
         this.future(0).tick(0);
     }
 
-    definePredictiveActorProperty() {
-        // Create subscription that maps to smoothed set.
-    }
-
-    onSetVelocity(v) {
-        this.set({velocity: v});
-        this.isMoving = !v3_isZero(v);
-    }
-
-    onSetSpin(q) {
-        this.set({spin: q});
-        this.isRotating = !q_isZero(q);
-    }
-
     tick(delta) {
-        if (this.isRotating) this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
-        if (this.isMoving) {
+        if (!q_isZero(this.spin)) {
+            this.rotateTo(q_normalize(q_slerp(this.rotation, q_multiply(this.rotation, this.spin), delta)));
+        };
+        if (!v3_isZero(this.velocity)) {
             const relative = v3_scale(this.velocity, delta);
             const move = v3_transform(relative, m4_rotationQ(this.rotation));
             this.moveTo(v3_add(this.translation, move));
@@ -511,112 +516,60 @@ export const PM_Predictive = superclass => class extends PM_Smoothed(superclass)
     constructor(...args) {
         super(...args);
 
-        // this.moveThrottle = 15;    // MS between throttled moveTo events
-        // this.lastMoveTime = this.time;
-
-        // this.rotateThrottle = 50;  // MS between throttled rotateTo events
-        // this.lastRotateTime = this.time;
-
-        this.velocity = v3_zero();
         this.spin = q_identity();
+        this.velocity = v3_zero();
     }
-
-    // definePredictivePawnProperty() {}
 
     predictiveSet(options = {}, throttle = 0) {
         for (const option in options) {
             const ul = '_' + option;
-            const v = options[option];
-            this[ul] = v;
-            this.say('p'+ul, v, throttle);
+            this[ul] = options[option];
         }
+        this.say("s_set", options, throttle);
     }
 
     // Instantly sends a move event to the reflector. If you're calling it repeatedly, maybe use throttledMoveTo instead.
 
-    moveTo(v) {
-        this.predictiveSet({translation: v});
+    moveTo(v, throttle) {
+        this.predictiveSet({translation: v}, throttle);
         this.onLocalChanged();
-        // this._translation = v;
-        // this.lastMoveTime = this.time;
-        // this.lastMoveCache = null;
-        // this.say("avatarMoveTo", v);
     }
 
-    // No matter how often throttledMoveTo is called, it will only send a message to the reflector once per throttle interval.
-
-    // throttledMoveTo(v) {
-    //     if (this.time < this.lastMoveTime + this.moveThrottle) {
-    //         this._translation = v;
-    //         this.lastMoveCache = v;
-    //     } else {
-    //         this.lastMoveTime = this.time;
-    //         this.lastMoveCache = null;
-    //         this.say("avatarMoveTo", v);
-    //     }
-    // }
-
-    // Instantly sends a rotate event to the reflector. If you're calling it repeatedly, maybe use throttledRotateTo instead.
-
-    rotateTo(q) {
-        this.predictiveSet({rotation: q}, 0);
-        // this._rotation = q;
+    rotateTo(q, throttle) {
+        this.predictiveSet({rotation: q}, throttle);
         this.onLocalChanged();
-        // this.say("avatarRotateTo", q, 100);
     }
 
-    // No matter how often throttleRotateTo is called, it will only send a message to the reflector once per throttle interval.
-
-    // throttledRotateTo(q) {
-    //     if (this.time < this.lastRotateTime + this.rotateThrottle) {
-    //         this._rotation = q;
-    //         this.lastRotateCache = q;
-    //     } else {
-    //         this.rotateTo(q);
-    //     }
-    // }
-
-    setVelocity(v) {
-        this.velocity = v;
-        // this.isMoving = this.isMoving || !v3_isZero(this.velocity);
-        this.isMoving = !v3_isZero(this.velocity);
-        this.say("avatarSetVelocity", this.velocity);
+    setVelocity(v, throttle) {
+        this.predictiveSet({velocity: v}, throttle);
     }
 
-    setSpin(q) {
-        this.spin = q;
-        // this.isRotating = this.isRotating || !q_isZero(this.spin);
-        this.isRotating = !q_isZero(this.spin);
-        this.say("avatarSetSpin", this.spin, 100);
+    setSpin(q, throttle) {
+        this.predictiveSet({spin: q}, throttle);
     }
 
     update(time, delta) {
 
-        // if (this.isRotating) {
-        //     this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), delta));
-        //     this._local = null;
-        //     this._global = null;
-        //     this.isRotating = !q_isZero(this.spin);
-        // }
-        // if (this.isMoving)  {
-        //     const relative = v3_scale(this.velocity, delta);
-        //     const move = v3_transform(relative, m4_rotationQ(this.rotation));
-        //     this._translation = v3_add(this._translation, move);
-        //     this._local = null;
-        //     this._global = null;
-        //     this.isMoving= !v3_isZero(this.velocity);
-        // }
+        if (!q_isZero(this.spin)) {
+            this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), delta));
+            this._local = null;
+            this._global = null;
+        }
 
+        if (!v3_isZero(this.velocity))  {
+            const relative = v3_scale(this.velocity, delta);
+            const move = v3_transform(relative, m4_rotationQ(this.rotation));
+            this._translation = v3_add(this._translation, move);
+            this._local = null;
+            this._global = null;
+        }
         super.update(time, delta);
-
-        // If a throttled move sequence ends, send the final cached value
-
-        // if (this.lastMoveCache && this.time > this.lastMoveTime + this.moveThrottle) this.moveTo(this.lastMoveCache);
-        // if (this.lastRotateCache && this.time > this.lastRotateTime + this.rotateThrottle) this.rotateTo(this.lastRotateCache);
 
     }
 
 };
+
+// Old name for Predictive objects
 
 export const AM_Avatar = AM_Predictive;
 export const PM_Avatar = PM_Predictive;

@@ -2,7 +2,7 @@
 //
 // Croquet Studios, 2021
 
-import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable } from "@croquet/worldcore-kernel";
+import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX } from "@croquet/worldcore-kernel";
 import {RenderManager, PM_Visible, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
@@ -24,6 +24,7 @@ class MoveActor extends mix(Actor).with(AM_Avatar, AM_Player) {
         this.child = ChildActor.create({zzz: 123, parent: this, translation: [0,1.5,0]});
         this.subscribe("input", "dDown", this.test0)
         this.subscribe("input", "sDown", this.test1)
+        this.listen("test", this.test2)
     }
 
     test0() {
@@ -34,6 +35,11 @@ class MoveActor extends mix(Actor).with(AM_Avatar, AM_Player) {
     test1() {
         console.log("test1");
         this.moveTo([0,0,-5]);
+    }
+
+    test2(data) {
+        console.log(data);
+        console.log(data.xxx);
     }
 
 }
@@ -48,8 +54,14 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player) {
         super(...args);
         this.setDrawCall(this.buildDraw());
         if (this.isMyPlayerPawn) {
+            // const sss = m4_translation([1,0,0]);
+            // this.offset = sss;
             this.subscribe("hud", "joy", this.joy);
+            this.subscribe("input", "xDown", this.test)
+
         }
+
+
     }
 
     buildDraw() {
@@ -72,24 +84,28 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player) {
         return material;
     }
 
-    // joy(xy) {
-    //     const spin = xy[0];
-    //     const pitch = xy[1];
-    //     let q = q_multiply(q_identity(), q_axisAngle([0,1,0], spin * 0.005));
-    //     q = q_multiply(q, q_axisAngle([1,0,0], pitch * 0.005));
-    //     q = q_normalize(q);
-    //     this.setSpin(q);
-    // }
+    test() {
+        this.say("test", {xxx:[1,2,3]});
+    }
 
     joy(xy) {
         const spin = xy[0];
         const pitch = xy[1];
-        let q = q_multiply(q_identity(), q_axisAngle([0,1,0], spin * 0.5));
-        q = q_multiply(q, q_axisAngle([1,0,0], pitch * 0.5));
+        let q = q_multiply(q_identity(), q_axisAngle([0,1,0], spin * 0.005));
+        q = q_multiply(q, q_axisAngle([1,0,0], pitch * 0.005));
         q = q_normalize(q);
-        // console.log(q);
-        this.rotateTo(q);
+        this.setSpin(q);
     }
+
+    // joy(xy) {
+    //     const spin = xy[0];
+    //     const pitch = xy[1];
+    //     let q = q_multiply(q_identity(), q_axisAngle([0,1,0], spin * 0.5));
+    //     q = q_multiply(q, q_axisAngle([1,0,0], pitch * 0.5));
+    //     q = q_normalize(q);
+    //     // console.log(q);
+    //     this.rotateTo(q);
+    // }
 
 }
 
