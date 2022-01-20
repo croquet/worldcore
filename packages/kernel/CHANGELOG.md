@@ -33,6 +33,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 
 ## Pending
+## Added
+- Actors listen for "_set" to allow remote call of Set()
+- smoothSet() in AM_Smoothed
+- localOffset in _PM_Smoothed
+- defineSmoothedPawnProperty in PM_Smoothed
+-
+
+## Changed
+- Actor set() now sorts options to prevent divergence
+- PM_Dynamic pawns now have throttle argument in their say()
+- PM_Smoothed tug no longer uses parent tug
+- Renamed Avatar mixins to Predictive (old name is still supported but deprecated)
 
 
 
