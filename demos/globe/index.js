@@ -115,7 +115,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [ InputManager, ThreeRenderManager];
+        return [ InputManager, {service: ThreeRenderManager, options: {alpha: true}}];
     }
 
     constructor(model) {
@@ -127,11 +127,12 @@ class MyViewRoot extends ViewRoot {
         this.outlinePass.edgeStrength = 4;
         threeRenderManager.composer.addPass( this.outlinePass );
 
-        threeRenderManager.renderer.setClearColor(new THREE.Color(0.0, 0.0, 0.0));
+        // threeRenderManager.renderer.setClearColor(new THREE.Color(0.0, 0.0, 0.0));
+        threeRenderManager.renderer.setClearColor(0x000000,  0);
         threeRenderManager.camera.position.set(0,0,250);
 
         const lighting = new THREE.Group();
-        const ambient = new THREE.AmbientLight( 0xffffff, 0.15 );
+        const ambient = new THREE.AmbientLight( 0xffffff, 0.45 );
         const sun = new THREE.SpotLight( 0xffffff, 0.95 );
         sun.position.set(500, 0, 500);
         sun.angle= toRad(30);
