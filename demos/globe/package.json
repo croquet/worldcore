@@ -1,0 +1,25 @@
+{
+  "name": "@croquet/globe",
+  "version": "1.0.8",
+  "description": "Globe Demo",
+  "private": true,
+  "scripts": {
+    "start": "webpack-dev-server --mode development --devtool source-map --watch",
+    "build": "webpack --mode production"
+  },
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^4.5.2",
+    "webpack": "^4.46.0",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.2"
+  },
+  "dependencies": {
+    "@croquet/worldcore-kernel": "^1.0.8",
+    "@croquet/worldcore-three": "^1.0.8",
+    "@croquet/worldcore-widget": "^1.0.8",
+    "three": "^0.134.0"
+  }
+}
