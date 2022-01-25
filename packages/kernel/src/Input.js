@@ -290,7 +290,6 @@ export class InputManager extends ViewService {
         this.penultimateDown = this.lastDown;
         this.lastDown = {id: event.pointerId, button: event.button, time: event.timeStamp}
         this.zoomStart();
-
     }
 
     onPointerUp(event) {

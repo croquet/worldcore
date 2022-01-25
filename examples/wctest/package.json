@@ -21,6 +21,7 @@
     "@croquet/worldcore-behavior": "^1.0.8",
     "@croquet/worldcore-kernel": "^1.0.8",
     "@croquet/worldcore-webgl": "^1.0.8",
-    "@croquet/worldcore-widget": "^1.0.8"
+    "@croquet/worldcore-widget": "^1.0.8",
+    "@croquet/worldcore-three": "^1.0.8"
   }
 }

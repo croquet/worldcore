@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { ViewService } from "@croquet/worldcore-kernel";
+import { ViewService, PM_PointerTarget } from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
-//-- ThreeVisible Mixin --------------------------------------------------------------------
+//-- ThreeVisible  -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export const PM_ThreeVisible = superclass => class extends superclass {
@@ -29,17 +29,49 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 
     setRenderObject(renderObject) {
         const render = this.service("ThreeRenderManager");
+        renderObject.wcPawn = this;
         this.renderObject = renderObject;
         this.renderObject.matrixAutoUpdate = false;
         this.renderObject.matrix.fromArray(this.global);
         this.renderObject.matrixWorldNeedsUpdate = true;
         if (render && render.scene) render.scene.add(this.renderObject);
+        if (this.onSetRenderObject) this.onSetRenderObject(renderObject);
     }
 
 };
 
 //------------------------------------------------------------------------------------------
-//-- ThreeCamera Mixin ---------------------------------------------------------------------
+//-- PM_ThreePointerTarget  -----------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export const PM_ThreePointerTarget = superclass => class extends PM_PointerTarget(superclass) {
+    constructor(...args) {
+        super(...args)
+        const render = this.service("ThreeRenderManager");
+        if (!render.layers.pointer) render.layers.pointer = [];
+    }
+
+    destroy() {
+        super.destroy();
+        const render = this.service("ThreeRenderManager");
+        if (!render.layers.pointer) return;
+        const i = render.layers.pointer.indexOf(this.renderObject);
+        if (i === -1) return;
+        console.log(render.layers.pointer);
+        render.layers.pointer.splice(i,1);
+        console.log(render.layers.pointer);
+    }
+
+    onSetRenderObject(renderObject) {
+        if (super.onSetRenderObject) super.onSetRenderObject(renderObject)
+        const render = this.service("ThreeRenderManager");
+        render.layers.pointer.push(renderObject)
+        console.log(render.layers.pointer);
+    }
+}
+
+//------------------------------------------------------------------------------------------
+//-- ThreeCamera  --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export const PM_ThreeCamera = superclass => class extends superclass {
@@ -63,6 +95,20 @@ export const PM_ThreeCamera = superclass => class extends superclass {
         render.camera.matrixWorldNeedsUpdate = true;
     }
 
+    pointerRaycast(xy) {
+        const render = this.service("ThreeRenderManager");
+        if (!this.raycaster) this.raycaster = new THREE.Raycaster();
+        this.raycaster.setFromCamera({x: xy[0], y: xy[1]}, render.camera);
+        const h = this.raycaster.intersectObjects(render.layers.pointer);
+        if (h.length === 0) return {};
+        const hit = h[0];
+        return {
+            pawn: hit.object.wcPawn,
+            xyz: hit.point.toArray(),
+            uv: hit.uv.toArray()
+        };
+    }
+
 };
 
 //------------------------------------------------------------------------------------------
@@ -77,6 +123,7 @@ export class ThreeRenderManager extends ViewService {
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
+        this.layers = {};
 
         if (!options.canvas) {
             this.canvas = document.createElement("canvas");

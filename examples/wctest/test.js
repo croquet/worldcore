@@ -2,18 +2,53 @@
 //
 // Croquet Studios, 2021
 
-import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX, m4_rotationZ } from "@croquet/worldcore-kernel";
+import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX, m4_rotationZ, CardActor, PM_Pointer } from "@croquet/worldcore-kernel";
 import {RenderManager, PM_Visible, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
+import { PM_ThreeVisible, ThreeRenderManager,  PM_ThreeCamera, PM_ThreePointerTarget, THREE } from "@croquet/worldcore-three";
 
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
 
+let mmm;
+let ma;
+
+class AvatarActor extends mix(Actor).with(AM_Avatar, AM_Player) {
+    get pawn() {return AvatarPawn}
+}
+AvatarActor.register("AvatarActor");
+
+class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_ThreeCamera, PM_Pointer) {
+
+    constructor(...args) {
+        super(...args);
+        console.log("Avatar");
+        this.subscribe("input", "xDown", this.test)
+        // this.subscribe("ui", "pointerDown", this.down);
+    }
+
+    test() {
+        console.log("test");
+
+    }
+
+    // down(e) {
+    //     const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
+    //     const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
+    //     const rc = this.pointerRaycast([x,y]);
+    //     console.log(rc.pawn);
+    //     console.log(rc.xyz);
+    //     console.log(rc.uv);
+    // }
+}
+
 //------------------------------------------------------------------------------------------
 // MoveActor
 //------------------------------------------------------------------------------------------
+
+
 
 class MoveActor extends mix(Actor).with(AM_Avatar, AM_Player) {
 
@@ -24,22 +59,17 @@ class MoveActor extends mix(Actor).with(AM_Avatar, AM_Player) {
         this.child = ChildActor.create({zzz: 123, parent: this, translation: [0,1.5,0]});
         this.subscribe("input", "dDown", this.test0)
         this.subscribe("input", "sDown", this.test1)
-        this.listen("test", this.test2)
     }
 
     test0() {
         console.log("test0");
-        this.moveTo([1,0,-5]);
+        this.destroy();
+        // this.moveTo([1,0,-5]);
     }
 
     test1() {
         console.log("test1");
         this.moveTo([0,0,-5]);
-    }
-
-    test2(data) {
-        console.log(data);
-        console.log(data.xxx);
     }
 
 }
@@ -49,18 +79,18 @@ MoveActor.register('MoveActor');
 // MovePawn
 //------------------------------------------------------------------------------------------
 
-class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player) {
+class MovePawn extends mix(Pawn).with(PM_Avatar, PM_ThreeVisible, PM_Player, PM_ThreePointerTarget) {
     constructor(...args) {
         super(...args);
-        this.setDrawCall(this.buildDraw());
-        if (this.isMyPlayerPawn) {
-            this.pulseDelta = 0.005;
-            this.pulseScale = 1;
-            // this.localOffset = m4_rotationZ(toRad(90));
-            // this.localOffset = m4_scale(2);
-            this.subscribe("hud", "joy", this.joy);
-            this.subscribe("input", "xDown", this.test)
-        }
+        // this.setDrawCall(this.buildDraw());
+        this.cube = new THREE.BoxGeometry( 1, 1, 1 );
+        this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(1,0,0)});
+        const mesh = new THREE.Mesh( this.cube,  this.material );
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        this.setRenderObject(mesh);
+
+        this.subscribe("hud", "joy", this.joy);
     }
 
     buildDraw() {
@@ -83,9 +113,6 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_Visible, PM_Player) {
         return material;
     }
 
-    test() {
-        this.say("test", {xxx:[1,2,3]});
-    }
 
     joy(xy) {
         const spin = xy[0];
@@ -167,10 +194,19 @@ ChildActor.register('ChildActor');
 // ChildPawn
 //------------------------------------------------------------------------------------------
 
-class ChildPawn extends mix(Pawn).with(PM_Avatar, PM_Visible) {
+class ChildPawn extends mix(Pawn).with(PM_Avatar, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
-        this.setDrawCall(this.buildDraw());
+
+        this.cube = new THREE.BoxGeometry( 1, 1, 1 );
+        this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(0, 1,0)});
+        const mesh = new THREE.Mesh( this.cube,  this.material );
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        this.setRenderObject(mesh);
+
+
+        // this.setDrawCall(this.buildDraw());
 
         // this.defineSmoothedProperty("color", () => { console.log("onSetColor"); } );
         // this.defineSmoothedProperty("xxx", () => { console.log("onSetXXX"); } );
@@ -219,22 +255,24 @@ BackgroundActor.register('BackgroundActor');
 // BackgroundPawn
 //------------------------------------------------------------------------------------------
 
-class BackgroundPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
+class BackgroundPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
-        const c =  [0.6,1,0.6,1];
 
-        this.mesh = new Triangles();
-        this.mesh.addFace([[-20, -20, -10], [20, -20, -10], [20, 20, -10], [-20, 20, -10]], [c,c,c,c], [[0,0], [25,0], [25,25], [0,25]]);
-        this.mesh.load();
-        this.mesh.clear();
 
-        this.material = new Material();
-        this.material.pass = 'opaque';
-        this.material.texture.loadFromURL(paper);
+        // const c =  [0.6,1,0.6,1];
 
-        this.setDrawCall(new DrawCall(this.mesh, this.material));
+        // this.mesh = new Triangles();
+        // this.mesh.addFace([[-20, -20, -10], [20, -20, -10], [20, 20, -10], [-20, 20, -10]], [c,c,c,c], [[0,0], [25,0], [25,25], [0,25]]);
+        // this.mesh.load();
+        // this.mesh.clear();
+
+        // this.material = new Material();
+        // this.material.pass = 'opaque';
+        // this.material.texture.loadFromURL(paper);
+
+        // this.setDrawCall(new DrawCall(this.mesh, this.material));
     }
 }
 
@@ -245,8 +283,8 @@ class BackgroundPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
 class MyPlayerManager extends PlayerManager {
 
     createPlayer(options) {
-        options.translation = [0,0,-5];
-        return MoveActor.create(options);
+        options.translation = [0,0,5];
+        return AvatarActor.create(options);
     }
 
 }
@@ -266,7 +304,8 @@ class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start Model!!!!");
         BackgroundActor.create();
-        // const mmm = MoveActor.create({translation: [0,0,-5]});
+        const card = CardActor.create();
+        ma =MoveActor.create({translation: [0,0,-5]});
     }
 
 }
@@ -280,29 +319,48 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [ InputManager, RenderManager, UIManager];
+        return [ InputManager, UIManager, ThreeRenderManager];
     }
 
     constructor(model) {
         super(model);
 
-        const render = this.service("RenderManager");
+        const render = this.service("ThreeRenderManager");
 
-        render.setBackground([0.45, 0.8, 0.8, 1.0]);
-        render.lights.setAmbientColor([0.8, 0.8, 0.8]);
-        render.lights.setDirectionalColor([0.7, 0.7, 0.7]);
-        render.lights.setDirectionalAim([0.2,-1,0.1]);
+        render.renderer.setClearColor(0x80a0a0);
+        // render.camera.position.set(0,0,0);
 
-        const cameraMatrix = m4_scaleRotationTranslation([1,1,1], q_axisAngle([1,0,0], toRad(0)), [0,0,0]);
-        render.camera.setLocation(cameraMatrix);
-        render.camera.setProjection(toRad(60), 1.0, 10000.0);
+        const lighting = new THREE.Group();
+        const ambient = new THREE.AmbientLight( 0xffffff, 0.40 );
+        const sun = new THREE.SpotLight( 0xffffff, 0.60 );
+        sun.position.set(50, 50, 25);
+        sun.angle= toRad(30);
+        sun.castShadow = true;
 
-        const ao = render.aoShader;
-        if (ao) {
-            ao.setRadius(0.1);
-            ao.density = 0.5;
-            ao.falloff = 1;
-        }
+        sun.shadow.mapSize.width = 2048;
+        sun.shadow.mapSize.height = 2048;
+        sun.shadow.camera.near = 20;
+        sun.shadow.camera.far = 150;
+
+        lighting.add(ambient);
+        lighting.add(sun);
+        render.scene.add(lighting);
+
+        // render.setBackground([0.45, 0.8, 0.8, 1.0]);
+        // render.lights.setAmbientColor([0.8, 0.8, 0.8]);
+        // render.lights.setDirectionalColor([0.7, 0.7, 0.7]);
+        // render.lights.setDirectionalAim([0.2,-1,0.1]);
+
+        // const cameraMatrix = m4_scaleRotationTranslation([1,1,1], q_axisAngle([1,0,0], toRad(0)), [0,0,0]);
+        // render.camera.setLocation(cameraMatrix);
+        // render.camera.setProjection(toRad(60), 1.0, 10000.0);
+
+        // const ao = render.aoShader;
+        // if (ao) {
+        //     ao.setRadius(0.1);
+        //     ao.density = 0.5;
+        //     ao.falloff = 1;
+        // }
 
         const ui = this.service("UIManager");
         this.HUD = new Widget({parent: ui.root, autoSize: [1,1]});

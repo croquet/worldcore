@@ -321,10 +321,6 @@ RegisterMixin(AM_Smoothed);
 // When the difference between actor and pawn scale/rotation/translation drops below an epsilon,
 // interpolation is paused
 
-// const scaleEpsilon = 0.0001;
-// const rotationEpsilon = 0.000001;
-// const translationEpsilon = 0.0001;
-
 const DynamicSpatial = superclass => PM_Dynamic(PM_Spatial(superclass)); // Merge dynamic and spatial base mixins
 
 export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass) {
@@ -340,30 +336,10 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     set tug(t) {this._tug = t}
     get tug() {  return this._tug; }
 
-    // set scaleOffset(v) {
-    //     this._scaleOffset = v;
-    //     this.onLocalChanged();
-    // }
-
-    // set rotationOffset(q) {
-    //     this._rotationOffset = q;
-    //     this.onLocalChanged();
-    // }
-
-    // set translationOffset(v) {
-    //     this._translationOffset = v;
-    //     this.onLocalChanged();
-    // }
-
     set localOffset(m4) {
         this._localOffset = m4;
         this.onLocalChanged();
     }
-
-    // get scaleOffset() { return this._scaleOffset; }
-    // get rotationOffset() { return this._rotationOffset; }
-    // get translationOffset() { return this._translationOffset; }
-
 
     // Creates a property in the pawn that will access a matching property in the actor.
     // The property will interpolate every frame to track the actor value
@@ -415,7 +391,6 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         } else {
             this._global = this.local;
         }
-        // if (this._offset) this._global = m4_multiply(this._global, this._offset);
         this.say("viewGlobalChanged");
         return this._global;
     }
@@ -550,8 +525,6 @@ export const PM_Predictive = superclass => class extends PM_Smoothed(superclass)
         }
         this.say("s_set", options, throttle);
     }
-
-    // Instantly sends a move event to the reflector. If you're calling it repeatedly, maybe use throttledMoveTo instead.
 
     moveTo(v, throttle) {
         this.predictiveSet({translation: v}, throttle);
