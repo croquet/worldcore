@@ -14,35 +14,39 @@ export const AM_PointerTarget = superclass => class extends superclass {
         super.init(options);
         this.hovered = new Set();
         this.focused = new Set();
-        this.listen("pointerEnter", this.pointerEnter);
-        this.listen("pointerLeave", this.pointerLeave);
-        this.listen("focus", this.focus);
-        this.listen("blur", this.blur);
+        this.listen("pointerEnter", this.onPointerEnter);
+        this.listen("pointerLeave", this.onPointerLeave);
+        this.listen("focus", this.onFocus);
+        this.listen("blur", this.onBlur);
 
+        if (this.onPointerDown) this.listen("pointerDown", this.onPointerDown);
+        if (this.onPointerUp) this.listen("pointerUp", this.onPointerUp);
     }
 
     get isMultiuser() { return this._multiuser; }
+    get isHovered() { return this.hovered.size};
+    get isFocused() { return this.focused.size};
 
-    pointerEnter(pointerId) {
+    onPointerEnter(pointerId) {
         this.hovered.add(pointerId)
     }
 
-    pointerLeave(pointerId) {
+    onPointerLeave(pointerId) {
         this.hovered.delete(pointerId)
     }
 
-    focus(pointerId) {
+    onFocus(pointerId) {
         if (this.focused.has(pointerId)) return;
         if (!this.isMultiuser && this.focused.size > 0) {
             this.say("focusFailure", {pointerId, });
-            return;
+            return true;
         }
         this.focused.add(pointerId)
         this.say("focusSuccess", pointerId)
-        console.log(this.focused);
+        return false;
     }
 
-    blur(actorId) {
+    onBlur(actorId) {
         this.focused.delete(actorId)
     }
 
@@ -63,9 +67,8 @@ export const PM_PointerTarget = superclass => class extends superclass {
         super(...args);
         this.listen("pointerDown", this.onPointerDown);
         this.listen("pointerUp", this.onPointerUp);
-        this.listen("pointerMove", this.onPointerMove);
-        this.listen("pointerOver", this.onPointerOver);
         this.listen("pointerDown", this.onPointerUp);
+        this.listen("pointerMove", this.onPointerMove);
         this.listen("pointerEnter", this.onPointerEnter);
         this.listen("pointerLeave", this.onPointerLeave);
         this.listen("focusSuccess", this.onFocusSuccess);
@@ -73,43 +76,36 @@ export const PM_PointerTarget = superclass => class extends superclass {
         this.listen("blur", this.onBlur);
     }
 
-    get isMultiuser() {
-        return this.actor.isMultiuser;
-    }
+    get isMultiuser() { return this.actor.isMultiuser; }
+    get isHovered() { return this.actor.isHovered; }
+    get isFocused() { return this.actor.isFocused; }
 
-    onPointerDown(pe) {
-    }
-
-    onPointerUp(pe) {
-    }
+    onPointerDown(pe) {}
+    onPointerUp(pe) {}
 
     onPointerMove(pe) {
+        if (this.isFocused) {
+            console.log("focus move");
+        } else {
+            console.log("hover move");
+        }
     }
 
-    onPointerOver(pe) {
-    }
+    onPointerEnter(actorId) {}
 
-    onPointerEnter(actorId) {
-    }
-
-    onPointerLeave(actorId) {
-    }
+    onPointerLeave(actorId) {}
 
     onFocusSuccess(pointerId) {
         const pointerPawn = GetPawn(pointerId);
         if (pointerPawn) pointerPawn.focusPawn = this;
-        console.log("onFocusSuccess");
     }
 
     onFocusFailure(pointerId) {
         const pointerPawn = GetPawn(pointerId);
-        if (pointerPawn) pointerPawn.focusPawn = this;
-        console.log("onFocusFail");
+        if (pointerPawn) pointerPawn.focusPawn = null;
     }
 
-    onBlur(pointerId) {
-        console.log("onBlur");
-    }
+    onBlur(pointerId) {}
 
 }
 
@@ -153,13 +149,12 @@ export const PM_Pointer = superclass => class extends superclass {
     }
 
     focusTick() {
-        if (this.focusPawn && this.now() > this.focusTime + thisIdleTimeout) this.focusPawn.say("blur", this.actor.id);
+        if (this.focusPawn && this.now() > this.focusTime + this.IdleTimeout) this.focusPawn.say("blur", this.actor.id);
         if (!this.doomed) this.future(1000).focusTick();
     }
 
     doPointerDown(e) {
-        this.focusTimeout = this.now();
-        console.log(this.actor.id);
+        this.focusTime = this.now();
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const rc = this.pointerRaycast([x,y]);
@@ -169,7 +164,7 @@ export const PM_Pointer = superclass => class extends superclass {
             this.focusPawn = null;
         }
         if (rc.pawn) {
-            rc.pawn.say("focus", this.actor.id)
+            rc.pawn.say("focus", this.actor.id);
             rc.pawn.say("pointerDown", rc)
         }
     };
@@ -193,8 +188,8 @@ export const PM_Pointer = superclass => class extends superclass {
             this.hoverPawn = rc.pawn;
             if (this.hoverPawn) this.hoverPawn.say("pointerEnter", this.actor.id)
         }
-        if (this.hoverPawn) this.hoverPawn.say("pointerOver", rc);
-        if (this.focusPawn) this.focusPawn.say("pointerMove", rc);
+        const p = this.hoverPawn || this.focusPawn;
+        if (p) p.say("pointerMove", rc);
     }
 
 }
@@ -215,5 +210,4 @@ CardActor.register('CardActor');
 //------------------------------------------------------------------------------------------
 
 export class CardPawn extends Pawn {
-
 }

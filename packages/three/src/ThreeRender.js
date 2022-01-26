@@ -66,7 +66,7 @@ export const PM_ThreePointerTarget = superclass => class extends PM_PointerTarge
         if (super.onSetRenderObject) super.onSetRenderObject(renderObject)
         const render = this.service("ThreeRenderManager");
         render.layers.pointer.push(renderObject)
-        console.log(render.layers.pointer);
+        // console.log(render.layers.pointer);
     }
 }
 

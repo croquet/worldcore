@@ -22,8 +22,8 @@ class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_ThreeCamera, PM
 
     constructor(...args) {
         super(...args);
-        console.log("Avatar");
-        console.log(this.actor.id);
+        // console.log("Avatar");
+        // console.log(this.actor.id);
         this.subscribe("input", "xDown", this.test)
         // this.subscribe("ui", "pointerDown", this.down);
     }
@@ -83,7 +83,7 @@ class MovePawn extends mix(CardPawn).with(PM_Avatar, PM_ThreeVisible, PM_Player,
     constructor(...args) {
         super(...args);
 
-        console.log(this.isMultiuser);
+        // console.log(this.isMultiuser);
         // this.setDrawCall(this.buildDraw());
         this.cube = new THREE.BoxGeometry( 1, 1, 1 );
         this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(1,0,0)});
@@ -126,12 +126,12 @@ class MovePawn extends mix(CardPawn).with(PM_Avatar, PM_ThreeVisible, PM_Player,
     }
 
     onPointerEnter() {
-         console.log("enter");
+        super.onPointerEnter();
          this.localOffset = m4_rotationX(toRad(15));
     }
 
     onPointerLeave() {
-        console.log("leave");
+        super.onPointerLeave();
         this.localOffset = m4_identity();
    }
 
