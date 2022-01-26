@@ -2,7 +2,7 @@
 //
 // Croquet Studios, 2021
 
-import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX, m4_rotationZ, CardActor, PM_Pointer } from "@croquet/worldcore-kernel";
+import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX, m4_rotationZ, CardActor, CardPawn, PM_Pointer, AM_PointerTarget, m4_identity } from "@croquet/worldcore-kernel";
 import {RenderManager, PM_Visible, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
@@ -12,8 +12,6 @@ import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
 
-let mmm;
-let ma;
 
 class AvatarActor extends mix(Actor).with(AM_Avatar, AM_Player) {
     get pawn() {return AvatarPawn}
@@ -25,6 +23,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_ThreeCamera, PM
     constructor(...args) {
         super(...args);
         console.log("Avatar");
+        console.log(this.actor.id);
         this.subscribe("input", "xDown", this.test)
         // this.subscribe("ui", "pointerDown", this.down);
     }
@@ -50,12 +49,13 @@ class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_ThreeCamera, PM
 
 
 
-class MoveActor extends mix(Actor).with(AM_Avatar, AM_Player) {
+class MoveActor extends mix(CardActor).with(AM_Avatar, AM_Player) {
 
     get pawn() {return MovePawn}
 
     init(options = {}) {
         super.init(options);
+        this.set({multiuser: false});
         this.child = ChildActor.create({zzz: 123, parent: this, translation: [0,1.5,0]});
         this.subscribe("input", "dDown", this.test0)
         this.subscribe("input", "sDown", this.test1)
@@ -79,9 +79,11 @@ MoveActor.register('MoveActor');
 // MovePawn
 //------------------------------------------------------------------------------------------
 
-class MovePawn extends mix(Pawn).with(PM_Avatar, PM_ThreeVisible, PM_Player, PM_ThreePointerTarget) {
+class MovePawn extends mix(CardPawn).with(PM_Avatar, PM_ThreeVisible, PM_Player, PM_ThreePointerTarget) {
     constructor(...args) {
         super(...args);
+
+        console.log(this.isMultiuser);
         // this.setDrawCall(this.buildDraw());
         this.cube = new THREE.BoxGeometry( 1, 1, 1 );
         this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(1,0,0)});
@@ -122,6 +124,16 @@ class MovePawn extends mix(Pawn).with(PM_Avatar, PM_ThreeVisible, PM_Player, PM_
         q = q_normalize(q);
         this.setSpin(q);
     }
+
+    onPointerEnter() {
+         console.log("enter");
+         this.localOffset = m4_rotationX(toRad(15));
+    }
+
+    onPointerLeave() {
+        console.log("leave");
+        this.localOffset = m4_identity();
+   }
 
     // update(time, delta) {
     //     super.update(time,delta);
@@ -170,7 +182,7 @@ class ChildActor extends mix(Actor).with(AM_Avatar, AM_Behavioral) {
         super.init(options);
 
 
-        this.startBehavior(SpinBehavior);
+        // this.startBehavior(SpinBehavior);
 
         // this.subscribe("input", "dDown", this.test0)
         // this.subscribe("input", "sDown", this.test1)
@@ -305,7 +317,7 @@ class MyModelRoot extends ModelRoot {
         console.log("Start Model!!!!");
         BackgroundActor.create();
         const card = CardActor.create();
-        ma =MoveActor.create({translation: [0,0,-5]});
+        MoveActor.create({translation: [0,0,-5]});
     }
 
 }

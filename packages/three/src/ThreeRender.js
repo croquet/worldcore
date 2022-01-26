@@ -41,7 +41,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 };
 
 //------------------------------------------------------------------------------------------
-//-- PM_ThreePointerTarget  -----------------------------------------------------------
+//-- PM_ThreePointerTarget  ----------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export const PM_ThreePointerTarget = superclass => class extends PM_PointerTarget(superclass) {

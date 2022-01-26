@@ -90,6 +90,10 @@ export class Actor extends WorldcoreModel {
         this.unsubscribe(this.id, event);
     }
 
+    actorFromId(id) {
+        return this.service("ActorManager").get(id);
+    }
+
 }
 Actor.register("Actor");
 

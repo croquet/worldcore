@@ -82,6 +82,7 @@ export class Pawn extends WorldcoreView {
     get actor() {return this._actor};
 
     destroy() {
+        this.doomed = true;
         pm.delete(this);
         this.detach(); // Calling View clean-up.
     }
