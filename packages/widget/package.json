@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-widget",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "description": "Widget Component for Croquet Worldcore",
   "keywords": [
     "croquet",
@@ -23,6 +23,6 @@
     "directory": "packages/widget"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^1.0.8"
+    "@croquet/worldcore-kernel": "^1.1.0"
   }
 }
