@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-tutorial1",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "description": "Worldcore Tutorial",
   "private": true,
   "scripts": {
@@ -10,7 +10,7 @@
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@croquet/worldcore": "^1.0.8"
+    "@croquet/worldcore": "^1.1.0"
   },
   "devDependencies": {
     "file-loader": "^6.2.0",

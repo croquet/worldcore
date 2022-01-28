@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-card",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "description": "Card Component for Croquet Worldcore",
   "keywords": [
     "croquet",
@@ -23,7 +23,10 @@
     "directory": "packages/card"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^1.0.8",
-    "@croquet/worldcore-three": "^1.0.8"
+    "@croquet/worldcore-kernel": "^1.1.0",
+    "@croquet/worldcore-three": "^1.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

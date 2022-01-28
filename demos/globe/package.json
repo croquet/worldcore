@@ -1,6 +1,6 @@
 {
   "name": "@croquet/globe",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "description": "Globe Demo",
   "private": true,
   "scripts": {
@@ -17,9 +17,9 @@
     "webpack-dev-server": "^3.11.2"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^1.0.8",
-    "@croquet/worldcore-three": "^1.0.8",
-    "@croquet/worldcore-widget": "^1.0.8",
+    "@croquet/worldcore-kernel": "^1.1.0",
+    "@croquet/worldcore-three": "^1.1.0",
+    "@croquet/worldcore-widget": "^1.1.0",
     "three": "^0.134.0"
   }
 }
