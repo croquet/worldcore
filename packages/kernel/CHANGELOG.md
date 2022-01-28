@@ -4,15 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.9] - 2022-1-26
+## [1.0.9] - 2022-1-28
 ## Added
 - Actors listen for "_set" to allow remote call of set()
 - smoothSet() in AM_Smoothed
 - localOffset in _PM_Smoothed
 - defineSmoothedPawnProperty in PM_Smoothed
-- Cards
-- AM_PointerTarget
-- PM_PointerTarget
 - actorFromID to Actor
 
 ## Changed

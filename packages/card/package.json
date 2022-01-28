@@ -1,0 +1,29 @@
+{
+  "name": "@croquet/worldcore-card",
+  "version": "1.0.8",
+  "description": "Card Component for Croquet Worldcore",
+  "keywords": [
+    "croquet",
+    "worldcore",
+    "3d",
+    "game-engine",
+    "multiplayer",
+    "user-interface",
+    "card",
+    "pointer"
+  ],
+  "main": "index.js",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
+  "homepage": "https://croquet.io/docs/worldcore/",
+  "bugs": "https://github.com/croquet/worldcore/issues",
+  "repository": {
+    "type": "git",
+    "url": "github:croquet/worldcore",
+    "directory": "packages/card"
+  },
+  "dependencies": {
+    "@croquet/worldcore-kernel": "^1.0.8",
+    "@croquet/worldcore-three": "^1.0.8"
+  }
+}
