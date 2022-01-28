@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ViewService } from "@croquet/worldcore-kernel";
-import { PM_PointerTarget } from "@croquet/worldcore-card";
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------
@@ -41,35 +40,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 
 };
 
-//------------------------------------------------------------------------------------------
-//-- PM_ThreePointerTarget  ----------------------------------------------------------------
-//------------------------------------------------------------------------------------------
 
-export const PM_ThreePointerTarget = superclass => class extends PM_PointerTarget(superclass) {
-    constructor(...args) {
-        super(...args)
-        const render = this.service("ThreeRenderManager");
-        if (!render.layers.pointer) render.layers.pointer = [];
-    }
-
-    destroy() {
-        super.destroy();
-        const render = this.service("ThreeRenderManager");
-        if (!render.layers.pointer) return;
-        const i = render.layers.pointer.indexOf(this.renderObject);
-        if (i === -1) return;
-        console.log(render.layers.pointer);
-        render.layers.pointer.splice(i,1);
-        console.log(render.layers.pointer);
-    }
-
-    onSetRenderObject(renderObject) {
-        if (super.onSetRenderObject) super.onSetRenderObject(renderObject)
-        const render = this.service("ThreeRenderManager");
-        render.layers.pointer.push(renderObject)
-        // console.log(render.layers.pointer);
-    }
-}
 
 //------------------------------------------------------------------------------------------
 //-- ThreeCamera  --------------------------------------------------------------------------

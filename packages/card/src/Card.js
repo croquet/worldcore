@@ -1,7 +1,4 @@
-import { Pawn, GetPawn } from "./Pawn";
-import { Actor } from "./Actor";
-import { mix } from "./Mixins";
-
+import { Actor, Pawn, GetPawn, mix } from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
 //-- AM_PointerTarget ----------------------------------------------------------------------
@@ -273,6 +270,36 @@ export const PM_Pointer = superclass => class extends superclass {
         return pe;
     }
 
+}
+
+//------------------------------------------------------------------------------------------
+//-- PM_ThreePointerTarget  ----------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export const PM_ThreePointerTarget = superclass => class extends PM_PointerTarget(superclass) {
+    constructor(...args) {
+        super(...args)
+        const render = this.service("ThreeRenderManager");
+        if (!render.layers.pointer) render.layers.pointer = [];
+    }
+
+    destroy() {
+        super.destroy();
+        const render = this.service("ThreeRenderManager");
+        if (!render.layers.pointer) return;
+        const i = render.layers.pointer.indexOf(this.renderObject);
+        if (i === -1) return;
+        console.log(render.layers.pointer);
+        render.layers.pointer.splice(i,1);
+        console.log(render.layers.pointer);
+    }
+
+    onSetRenderObject(renderObject) {
+        if (super.onSetRenderObject) super.onSetRenderObject(renderObject)
+        const render = this.service("ThreeRenderManager");
+        render.layers.pointer.push(renderObject)
+        // console.log(render.layers.pointer);
+    }
 }
 
 //------------------------------------------------------------------------------------------
