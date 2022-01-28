@@ -14,44 +14,75 @@ export const AM_PointerTarget = superclass => class extends superclass {
         super.init(options);
         this.hovered = new Set();
         this.focused = new Set();
-        this.listen("pointerEnter", this.onPointerEnter);
-        this.listen("pointerLeave", this.onPointerLeave);
-        this.listen("focus", this.onFocus);
-        this.listen("blur", this.onBlur);
-
-        if (this.onPointerDown) this.listen("pointerDown", this.onPointerDown);
-        if (this.onPointerUp) this.listen("pointerUp", this.onPointerUp);
+        this.listen("pointerEnter", this._onPointerEnter);
+        this.listen("pointerLeave", this._onPointerLeave);
+        this.listen("tryFocus", this._onTryFocus);
+        this.listen("blur", this._onBlur);
+        if (this.onPointerDown) this.listen("pointerDown", this._onPointerDown);
+        if (this.onPointerUp)this.listen("pointerUp", this._onPointerUp);
+        this.future(0).dropoutTick();
     }
 
     get isMultiuser() { return this._multiuser; }
     get isHovered() { return this.hovered.size};
     get isFocused() { return this.focused.size};
 
-    onPointerEnter(pointerId) {
+    dropoutTick() {
+        const am = this.service("ActorManager");
+        const testHovered = new Set(this.hovered);
+        const testFocused = new Set(this.focused);
+        testHovered.forEach(id => {
+            if (!am.has(id)) this.hovered.delete(id);
+        })
+        testFocused.forEach(id => {
+            if (!am.has(id)) this.focused.delete(id);
+        })
+        if (!this.doomed) this.future(1000).dropoutTick();
+    }
+
+    _onPointerEnter(pointerId) {
         this.hovered.add(pointerId)
+        this.onPointerEnter(pointerId);
     }
 
-    onPointerLeave(pointerId) {
+    _onPointerLeave(pointerId) {
         this.hovered.delete(pointerId)
+        this.onPointerLeave(pointerId);
     }
 
-    onFocus(pointerId) {
+    _onTryFocus(pointerId) {
         if (this.focused.has(pointerId)) return;
         if (!this.isMultiuser && this.focused.size > 0) {
-            this.say("focusFailure", {pointerId, });
-            return true;
+            this.say("focusFailure", pointerId);
+        } else {
+            this.focused.add(pointerId)
+            this.say("focusSuccess", pointerId)
+            this.onFocus(pointerId);
         }
-        this.focused.add(pointerId)
-        this.say("focusSuccess", pointerId)
-        return false;
     }
 
-    onBlur(actorId) {
-        this.focused.delete(actorId)
+    _onBlur(pointerId) {
+        this.focused.delete(pointerId)
+        this.onBlur(pointerId);
     }
 
-    // onPointerDown()
-    // onPointerUp
+    _onPointerDown(pe) {
+        if (!this.focused.has(pe.pointerId)) return;
+        this.onPointerDown(pe);
+    }
+
+    _onPointerUp(pe) {
+        if (!this.focused.has(pe.pointerId)) return;
+        this.onPointerUp(pe);
+    }
+
+    onPointerEnter(pointerId) {}
+    onPointerLeave(pointerId) {}
+    onFocus(pointerId) {}
+    onBlur(pointerId) {}
+
+    // onPointerDown(pe) {}
+    // onPointerUp(pe) {}
 
 }
 
@@ -65,47 +96,86 @@ export const PM_PointerTarget = superclass => class extends superclass {
 
     constructor(...args) {
         super(...args);
-        this.listen("pointerDown", this.onPointerDown);
-        this.listen("pointerUp", this.onPointerUp);
-        this.listen("pointerDown", this.onPointerUp);
-        this.listen("pointerMove", this.onPointerMove);
-        this.listen("pointerEnter", this.onPointerEnter);
-        this.listen("pointerLeave", this.onPointerLeave);
-        this.listen("focusSuccess", this.onFocusSuccess);
-        this.listen("focusFailure", this.onFocusFailure);
-        this.listen("blur", this.onBlur);
+        this.listen("pointerDown", this._onPointerDown);
+        this.listen("pointerUp", this._onPointerUp);
+        this.listen("pointerOver", this._onPointerOver);
+        this.listen("pointerMove", this._onPointerMove);
+        this.listen("pointerEnter", this._onPointerEnter);
+        this.listen("pointerLeave", this._onPointerLeave);
+        this.listen("focusSuccess", this._onFocusSuccess);
+        this.listen("focusFailure", this._onFocusFailure);
+        this.listen("blur", this._onBlur);
+
+        console.log(this.actor.focused);
+    }
+
+    destroy() {
+        super.destroy();
+
+        const hoverEnd = new Set(this.actor.hovered);
+        hoverEnd.forEach( pointerId => {
+            const pointerPawn = GetPawn(pointerId);
+            if (pointerPawn) pointerPawn.hoverPawn = null;
+        });
+
+        const focusEnd = new Set(this.actor.focused);
+        focusEnd.forEach( pointerId => {
+            const pointerPawn = GetPawn(pointerId);
+            if (pointerPawn) pointerPawn.focusPawn = null;
+        });
     }
 
     get isMultiuser() { return this.actor.isMultiuser; }
     get isHovered() { return this.actor.isHovered; }
     get isFocused() { return this.actor.isFocused; }
 
-    onPointerDown(pe) {}
-    onPointerUp(pe) {}
-
-    onPointerMove(pe) {
-        if (this.isFocused) {
-            console.log("focus move");
-        } else {
-            console.log("hover move");
-        }
+    _onPointerDown(pe) {
+        this.onPointerDown(pe);
     }
 
-    onPointerEnter(actorId) {}
-
-    onPointerLeave(actorId) {}
-
-    onFocusSuccess(pointerId) {
-        const pointerPawn = GetPawn(pointerId);
-        if (pointerPawn) pointerPawn.focusPawn = this;
+    _onPointerUp(pe) {
+        this.onPointerUp(pe)
     }
 
-    onFocusFailure(pointerId) {
+    _onPointerMove(pe) {
+        this.onPointerMove(pe)
+    }
+
+    _onPointerOver(pe) {
+        this.onPointerOver(pe)
+    }
+
+    _onPointerEnter(pointerId) {
+        this.onPointerEnter(pointerId)
+    }
+
+    _onPointerLeave(pointerId) {
+        this.onPointerLeave(pointerId)
+    }
+
+    _onFocusSuccess(pointerId) {
+        this.onFocus(pointerId)
+    }
+
+    _onFocusFailure(pointerId) {
         const pointerPawn = GetPawn(pointerId);
         if (pointerPawn) pointerPawn.focusPawn = null;
+        this.onFocusFailure(pointerId)
     }
 
+    _onBlur(pointerId) {
+        this.onBlur(pointerId)
+    }
+
+    onPointerEnter(pointerId) {}
+    onPointerLeave(pointerId) {}
+    onFocus(pointerId) {}
+    onFocusFailure(pointerId) {}
     onBlur(pointerId) {}
+
+    onPointerDown(pe) {}
+    onPointerUp(pe) {}
+    onPointerMove(pe) {}
 
 }
 
@@ -122,8 +192,6 @@ export const PM_Pointer = superclass => class extends superclass {
         super(...args);
         if (this.isMyPlayerPawn) {
 
-            this.hoverPawn = null;
-            this.focusPawn = null;
             this.focusTime = this.now();
             this.idleTimeout = 5000;
 
@@ -158,23 +226,26 @@ export const PM_Pointer = superclass => class extends superclass {
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const rc = this.pointerRaycast([x,y]);
-        rc.pointerId = this.actor.id;
-        if (this.focusPawn && this.focusPawn !== rc.pawn) {
-            this.focusPawn.say("blur", this.actor.id);
-            this.focusPawn = null;
+
+        if (e.button === 0) {
+            if (this.focusPawn !== rc.pawn) {
+                if (this.focusPawn) this.focusPawn.say("blur", this.actor.id);
+                this.focusPawn = rc.pawn;
+                if (this.focusPawn) this.focusPawn.say("tryFocus", this.actor.id);
+            }
         }
-        if (rc.pawn) {
-            rc.pawn.say("focus", this.actor.id);
-            rc.pawn.say("pointerDown", rc)
-        }
+
+        if (this.focusPawn) this.focusPawn.say("pointerDown", this.pointerEvent(rc));
+
     };
 
     doPointerUp(e) {
+        this.focusTime = this.now();
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const rc = this.pointerRaycast([x,y]);
-        rc.pointerId = this.actor.id;
-        if (this.focusPawn) this.focusPawn.say("pointerUp,", rc)
+
+        if (this.focusPawn) this.focusPawn.say("pointerUp", this.pointerEvent(rc));
     };
 
     doPointerMove(e) {
@@ -182,14 +253,24 @@ export const PM_Pointer = superclass => class extends superclass {
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const rc = this.pointerRaycast([x,y]);
-        rc.pointerId = this.actor.id;
         if (this.hoverPawn !== rc.pawn) {
             if (this.hoverPawn) this.hoverPawn.say("pointerLeave", this.actor.id)
-            this.hoverPawn = rc.pawn;
-            if (this.hoverPawn) this.hoverPawn.say("pointerEnter", this.actor.id)
+            this.hoverPawn = rc.pawn
+            if (this.hoverPawn) rc.pawn.say("pointerEnter", this.actor.id)
         }
-        const p = this.hoverPawn || this.focusPawn;
-        if (p) p.say("pointerMove", rc);
+
+        if (this.focusPawn) this.focusPawn.say("pointerMove", this.pointerEvent(rc));
+    }
+
+    pointerEvent(rc) {
+        const pe = {pointerId: this.actor.id}
+        if (rc.pawn) {
+            pe.targetId = rc.pawn.actor.id,
+            pe.xyz = rc.xyz,
+            pe.xyzLocal = rc.xyzLocal,
+            pe.normal = rc.normal
+        }
+        return pe;
     }
 
 }

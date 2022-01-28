@@ -125,13 +125,13 @@ class MovePawn extends mix(CardPawn).with(PM_Avatar, PM_ThreeVisible, PM_Player,
         this.setSpin(q);
     }
 
-    onPointerEnter() {
-        super.onPointerEnter();
+    onPointerEnter(pointerId) {
+        // super.onPointerEnter(pointerId);
          this.localOffset = m4_rotationX(toRad(15));
     }
 
-    onPointerLeave() {
-        super.onPointerLeave();
+    onPointerLeave(pointerId) {
+        // super.onPointerLeave(pointerId);
         this.localOffset = m4_identity();
    }
 
@@ -316,7 +316,7 @@ class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start Model!!!!");
         BackgroundActor.create();
-        const card = CardActor.create();
+        // const card = CardActor.create();
         MoveActor.create({translation: [0,0,-5]});
     }
 

@@ -105,7 +105,9 @@ export const PM_ThreeCamera = superclass => class extends superclass {
         return {
             pawn: hit.object.wcPawn,
             xyz: hit.point.toArray(),
-            uv: hit.uv.toArray()
+            xyzLocal: hit.object.worldToLocal(hit.point).toArray(),
+            uv: hit.uv.toArray(),
+            normal: hit.face.normal.toArray()
         };
     }
 
