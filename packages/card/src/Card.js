@@ -1,4 +1,4 @@
-import { Actor, Pawn, GetPawn, mix } from "@croquet/worldcore-kernel";
+import { Actor, Pawn, GetPawn, mix, RegisterMixin } from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
 //-- AM_PointerTarget ----------------------------------------------------------------------
@@ -82,6 +82,7 @@ export const AM_PointerTarget = superclass => class extends superclass {
     // onPointerUp(pe) {}
 
 }
+RegisterMixin(AM_PointerTarget);
 
 //------------------------------------------------------------------------------------------
 //-- PM_PointerTarget ----------------------------------------------------------------------
@@ -102,8 +103,6 @@ export const PM_PointerTarget = superclass => class extends superclass {
         this.listen("focusSuccess", this._onFocusSuccess);
         this.listen("focusFailure", this._onFocusFailure);
         this.listen("blur", this._onBlur);
-
-        console.log(this.actor.focused);
     }
 
     destroy() {
@@ -280,7 +279,6 @@ export const PM_ThreePointerTarget = superclass => class extends PM_PointerTarge
     constructor(...args) {
         super(...args)
         const render = this.service("ThreeRenderManager");
-        if (!render.layers.pointer) render.layers.pointer = [];
     }
 
     destroy() {
@@ -289,16 +287,13 @@ export const PM_ThreePointerTarget = superclass => class extends PM_PointerTarge
         if (!render.layers.pointer) return;
         const i = render.layers.pointer.indexOf(this.renderObject);
         if (i === -1) return;
-        console.log(render.layers.pointer);
         render.layers.pointer.splice(i,1);
-        console.log(render.layers.pointer);
     }
 
     onSetRenderObject(renderObject) {
         if (super.onSetRenderObject) super.onSetRenderObject(renderObject)
         const render = this.service("ThreeRenderManager");
         render.layers.pointer.push(renderObject)
-        // console.log(render.layers.pointer);
     }
 }
 

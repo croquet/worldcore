@@ -98,6 +98,7 @@ export class ThreeRenderManager extends ViewService {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
         this.layers = {};
+        this.layers.pointer = [];
 
         if (!options.canvas) {
             this.canvas = document.createElement("canvas");
