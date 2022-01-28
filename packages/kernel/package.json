@@ -29,5 +29,8 @@
   },
   "dependencies": {
     "@croquet/croquet": "^1.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

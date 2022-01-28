@@ -25,5 +25,8 @@
   "dependencies": {
     "@croquet/worldcore-kernel": "^1.1.0",
     "three": "^0.134.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

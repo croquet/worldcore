@@ -34,5 +34,8 @@
     "@croquet/worldcore-three": "^1.1.0",
     "@croquet/worldcore-webgl": "^1.1.0",
     "@croquet/worldcore-widget": "^1.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
