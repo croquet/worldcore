@@ -75,28 +75,35 @@ class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisibl
 //-- CardActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class CardActor extends mix(Actor).with(AM_Predictive, AM_PointerTarget) {
+class CardActor extends mix(Actor).with(AM_Predictive, AM_PointerTarget) {
 
     get pawn() { return CardPawn; }
+
+}
+CardActor.register('CardActor');
+
+class MyCardActor extends CardActor {
+    get pawn() { return MyCardPawn; }
 
     onPointerDown(pe) {
         const x = pe.xyzLocal[0];
         const y = pe.xyzLocal[1];
         console.log([x,y]);
     }
-
 }
-CardActor.register('CardActor');
+MyCardActor.register('MyCardActor');
 
 //------------------------------------------------------------------------------------------
 //-- CardPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class CardPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_ThreePointerTarget) {
+class CardPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_ThreePointerTarget) {
+}
+
+class MyCardPawn extends CardPawn {
 
     constructor(...args) {
         super(...args);
-        console.log("new card pawn");
 
         this.cube = new THREE.BoxGeometry( 1, 1, 1 );
         this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(0.5,0.5,0.5)});
@@ -126,7 +133,6 @@ export class CardPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_
 
     onPointerLeave(pointerId) {
     }
-
 
 }
 
@@ -217,7 +223,7 @@ class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
         this.level = LevelActor.create();
-        this.card = CardActor.create({translation: [0,0,-10]})
+        this.card = MyCardActor.create({translation: [0,0,-10]})
     }
 
 }
@@ -243,9 +249,9 @@ class MyViewRoot extends ViewRoot {
 }
 
 StartWorldcore({
-    appId: 'io.croquet.tutorial',
+    appId: 'io.croquet.cardtest',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
-    name: 'tutorial',
+    name: 'CardTest',
     password: 'password',
     model: MyModelRoot,
     view: MyViewRoot,
