@@ -77,7 +77,10 @@ export class Pawn extends WorldcoreView {
         this._actor = actor;
         pm.add(this);
         this.listen("destroyActor", this.destroy);
+        this.init();
     }
+
+    init() {}
 
     get actor() {return this._actor};
 
