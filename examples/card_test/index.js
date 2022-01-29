@@ -86,7 +86,7 @@ export class CardActor extends mix(Actor).with(AM_Predictive, AM_PointerTarget) 
     }
 
 }
-CardActor.register('CardActor2');
+CardActor.register('CardActor');
 
 //------------------------------------------------------------------------------------------
 //-- CardPawn ------------------------------------------------------------------------------
