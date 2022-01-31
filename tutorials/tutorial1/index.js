@@ -9,7 +9,7 @@
 // This tutorial shows how to set up your root model and root view, and how to create a single
 // static object in the world.
 
-import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, AM_Spatial, PM_Spatial, PM_Visible, RenderManager, DrawCall, Cube,
+import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, AM_Spatial, PM_Spatial, PM_WebGLVisible, WebGLRenderManager, DrawCall, Cube,
     v3_normalize, q_axisAngle, toRad, InputManager } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
@@ -52,7 +52,7 @@ MyActor.register('MyActor');
 // actor changes position, and it will remove the draw call from the renderer if the actor is destroyed.
 
 
-class MyPawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
+class MyPawn extends mix(Pawn).with(PM_Spatial, PM_WebGLVisible) {
     constructor(...args) {
         super(...args);
         this.mesh = Cube(1,1,1);
@@ -115,7 +115,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, RenderManager];
+        return [InputManager, WebGLRenderManager];
     }
 
 }

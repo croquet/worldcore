@@ -17,7 +17,7 @@ import { Voxels } from "./Voxels";
 export function PickVoxel(xy, topLayer = Voxels.sizeZ) {
     // const camera = viewRoot.render.camera;
     // const voxels = viewRoot.model.voxels;
-    const camera = GetViewService("RenderManager").camera;
+    const camera = GetViewService("WebGLRenderManager").camera;
     const voxels = GetModelService("Voxels");
 
     const start = v3_divide(camera.location, Voxels.scale);
@@ -50,7 +50,7 @@ export function PickVoxel(xy, topLayer = Voxels.sizeZ) {
 export function PickSurface(xy, topLayer = Voxels.sizeZ) {
     // const camera = viewRoot.render.camera;
     // const surfaces = viewRoot.model.surfaces;
-    const camera = GetViewService("RenderManager").camera;
+    const camera = GetViewService("WebGLRenderManager").camera;
     const surfaces = GetModelService("Surfaces");
 
     const start = v3_divide(camera.location, Voxels.scale);
@@ -90,7 +90,7 @@ export function PickDigVoxel(xy, topLayer = Voxels.sizeZ) {
     const xyz = Voxels.adjacent(...pick.xyz, pick.direction);
     // const voxels = viewRoot.model.voxels;
     // const surfaces = viewRoot.model.surfaces;
-    // const camera = GetViewService("RenderManager").camera;
+    // const camera = GetViewService("WebGLRenderManager").camera;
     const voxels = GetModelService("Voxels");
     const surfaces = GetModelService("Surfaces");
     if (voxels.get(...xyz) < Voxels.solid) return null;
@@ -109,7 +109,7 @@ export function PickFillSurface(xy, topLayer = Voxels.sizeZ) {
     // const surfaces = viewRoot.model.surfaces;
     // const voxels = viewRoot.model.voxels;
 
-    const camera = GetViewService("RenderManager").camera;
+    const camera = GetViewService("WebGLRenderManager").camera;
     const voxels = GetModelService("Voxels");
     const surfaces = GetModelService("Surfaces");
 
@@ -167,7 +167,7 @@ export function PickGrabSurface(xy, topLayer = Voxels.sizeZ) {
     // const surfaces = viewRoot.model.surfaces;
     // const voxels = viewRoot.model.voxels;
 
-    const camera = GetViewService("RenderManager").camera;
+    const camera = GetViewService("WebGLRenderManager").camera;
     const voxels = GetModelService("Voxels");
     const surfaces = GetModelService("Surfaces");
 

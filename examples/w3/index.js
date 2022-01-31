@@ -3,7 +3,7 @@
 // Croquet Studios, 2021
 
 import { StartWorldcore, App, ModelRoot, ViewRoot, InputManager, v3_normalize } from "@croquet/worldcore-kernel";
-import {  RenderManager } from "@croquet/worldcore-webgl";
+import { WebGLRenderManager } from "@croquet/worldcore-webgl";
 import {  UIManager } from "@croquet/worldcore-widget";
 import { Voxels } from "./src/Voxels";
 import { Surfaces } from "./src/Surfaces";
@@ -50,7 +50,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, RenderManager, UIManager, VoxelRender, GodView, Editor, VoxelCursor, RoadRender];
+        return [InputManager, WebGLRenderManager, UIManager, VoxelRender, GodView, Editor, VoxelCursor, RoadRender];
     }
 
     constructor(model) {
@@ -59,7 +59,7 @@ class MyViewRoot extends ViewRoot {
         const ui = this.service("UIManager");
         this.HUD = new HUD({parent:ui.root, autoSize: [1,1]});
 
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         render.setBackground([0.45, 0.8, 0.8, 1.0]);
         render.lights.setAmbientColor([0.6, 0.6, 0.6]);
         render.lights.setDirectionalColor([0.3, 0.3, 0.3]);

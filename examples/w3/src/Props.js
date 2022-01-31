@@ -2,7 +2,7 @@ import { mix, Actor, Pawn, PM_Spatial, v3_add, m4_translation, CachedObject, q_a
     ModelService,
     m4_scaleRotationTranslation,
     q_identity} from "@croquet/worldcore-kernel";
-import { Material, Cylinder, Cone, InstancedDrawCall, UnitCube, PM_Visible, DrawCall } from "@croquet/worldcore-webgl";
+import { Material, Cylinder, Cone, InstancedDrawCall, UnitCube, PM_WebGLVisible, DrawCall } from "@croquet/worldcore-webgl";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
 import paper from "../assets/paper.jpg";
 import { AM_VoxelSmoothed, PM_LayeredInstancedVisible } from "./Components";
@@ -252,7 +252,7 @@ class TreePawn extends mix(PropPawn).with(PM_LayeredInstancedVisible) {
         const mesh = CachedObject("pineTreeMesh", this.buildMesh);
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        this.service("RenderManager").scene.addDrawCall(draw);
+        this.service("WebGLRenderManager").scene.addDrawCall(draw);
         return draw;
     }
 
@@ -504,7 +504,7 @@ BuildingActor.register("BuildingActor");
 //-- BuildingPawn --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BuildingPawn extends mix(PropPawn).with(PM_Visible) {
+class BuildingPawn extends mix(PropPawn).with(PM_WebGLVisible) {
 
     constructor(...args) {
         super(...args);
@@ -516,7 +516,7 @@ class BuildingPawn extends mix(PropPawn).with(PM_Visible) {
         const mesh = this.buildMesh();
         const material = this.buildMaterial();
         const draw = new DrawCall(mesh, material);
-        this.service("RenderManager").scene.addDrawCall(draw);
+        this.service("WebGLRenderManager").scene.addDrawCall(draw);
         return draw;
     }
 

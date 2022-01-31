@@ -1,5 +1,5 @@
 import { Actor, Pawn, mix, PM_Spatial, CachedObject, v3_add, ModelService } from "@croquet/worldcore-kernel";
-import { UnitCube, DrawCall, Triangles, Material, PM_Visible } from "@croquet/worldcore-webgl"
+import { UnitCube, DrawCall, Triangles, Material, PM_WebGLVisible } from "@croquet/worldcore-webgl"
 
 import { AM_VoxelSmoothed } from "./Components";
 import { Voxels } from "./Voxels";
@@ -442,7 +442,7 @@ function seIsValid(xyz) {
 
 let voxels;
 
-class WaterLayerPawn extends mix(Pawn).with(PM_Visible) {
+class WaterLayerPawn extends mix(Pawn).with(PM_WebGLVisible) {
 
     constructor(...args) {
         super(...args);
@@ -573,7 +573,7 @@ class WaterSourceActor extends mix(Actor).with(AM_VoxelSmoothed) {
 }
 WaterSourceActor.register('WaterSourceActor')
 
-class WaterSourcePawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
+class WaterSourcePawn extends mix(Pawn).with(PM_Spatial, PM_WebGLVisible) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
@@ -583,7 +583,7 @@ class WaterSourcePawn extends mix(Pawn).with(PM_Spatial, PM_Visible) {
         const mesh = this.buildMesh();
         const material = this.buildMaterial();
         const draw = new DrawCall(mesh, material);
-        this.service("RenderManager").scene.addDrawCall(draw);
+        this.service("WebGLRenderManager").scene.addDrawCall(draw);
         return draw;
     }
 

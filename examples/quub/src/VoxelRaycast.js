@@ -21,7 +21,7 @@ import { GetTopLayer } from "../index";
 
 export function PickBase(xy) {
     // const viewRoot =  GetNamedView("ViewRoot");
-    const render = GetViewService("RenderManager");
+    const render = GetViewService("WebGLRenderManager");
     const camera = render.camera;
 
     const start = v3_divide(camera.location, Voxels.scale);
@@ -38,7 +38,7 @@ export function PickBase(xy) {
 
 export function PickSolidVoxel(xy) {
     // const viewRoot =  GetNamedView("ViewRoot");
-    const render = GetViewService("RenderManager");
+    const render = GetViewService("WebGLRenderManager");
     const camera = render.camera;
     const topLayer = GetTopLayer();
     const voxels = GetModelService("Voxels");
@@ -60,7 +60,7 @@ export function PickSolidVoxel(xy) {
 
 export function PickEmptyVoxel(xy) {
     // const viewRoot =  GetNamedView("ViewRoot");
-    const render = GetViewService("RenderManager");
+    const render = GetViewService("WebGLRenderManager");
     const surfaces = GetModelService("Surfaces");
     const camera = render.camera;
     // const surfaces = viewRoot.model.surfaces;

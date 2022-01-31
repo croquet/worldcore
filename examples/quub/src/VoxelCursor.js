@@ -23,7 +23,7 @@ export class VoxelCursor extends ViewService {
         this.call.isHidden = true;
 
         // const render = GetNamedView("ViewRoot").render;
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         if (!noShow) render.scene.addDrawCall(this.call);
 
         this.subscribe("hud", "editColor", this.setColor);
@@ -59,7 +59,7 @@ export class VoxelCursor extends ViewService {
 
     destroy() {
         super.destroy();
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         render.scene.removeDrawCall(this.call);
         this.mesh.destroy();
         this.material.destroy();

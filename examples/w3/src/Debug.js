@@ -20,7 +20,7 @@ export class PathRender extends ViewService {
         this.material.pass = 'translucent';
         this.drawCall = new DrawCall(this.mesh, this.material);
 
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         render.scene.addDrawCall(this.drawCall);
 
         this.buildMesh();
@@ -31,7 +31,7 @@ export class PathRender extends ViewService {
 
     destroy() {
         super.destroy();
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         if (render) render.scene.removeDrawCall(this.drawCall);
         this.mesh.destroy();
         this.material.destroy();
@@ -80,7 +80,7 @@ export class RouteRender extends ViewService {
 
     destroy() {
         super.destroy();
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         if (render) render.scene.removeDrawCall(this.drawCall);
         this.mesh.destroy();
         this.material.destroy();
@@ -120,7 +120,7 @@ export class RoadDebugRender extends ViewService {
         this.material.pass = 'translucent';
         this.drawCall = new DrawCall(this.mesh, this.material);
 
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         render.scene.addDrawCall(this.drawCall);
 
         this.buildMesh();
@@ -130,7 +130,7 @@ export class RoadDebugRender extends ViewService {
 
     destroy() {
         super.destroy();
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         if (render) render.scene.removeDrawCall(this.drawCall);
         this.mesh.destroy();
         this.material.destroy();
