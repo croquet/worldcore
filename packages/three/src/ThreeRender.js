@@ -75,12 +75,21 @@ export const PM_ThreeCamera = superclass => class extends superclass {
         if (h.length === 0) return {};
         const hit = h[0];
         return {
-            pawn: hit.object.wcPawn,
+            pawn: this.getPawn(hit.object),
             xyz: hit.point.toArray(),
             xyzLocal: hit.object.worldToLocal(hit.point).toArray(),
             uv: hit.uv.toArray(),
             normal: hit.face.normal.toArray()
         };
+    }
+
+    getPawn(object) {
+        let o = object;
+        while(!o.wcPawn) {
+            if (!o.parent) return null;
+            o = o.parent;
+        };
+        return o.wcPawn;
     }
 
 };
