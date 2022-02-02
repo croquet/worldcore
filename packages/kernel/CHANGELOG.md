@@ -52,6 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Pawns have init() so you don't need to define constructors
 
+### Fixed
+- DoubleDown and TripleDown events work on touch devices
+
 ### Removed
 smoothSet() AM_Smoothed
 defineSmoothedPawnProperty in PM_Smoothed

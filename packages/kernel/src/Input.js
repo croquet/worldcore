@@ -278,10 +278,11 @@ export class InputManager extends ViewService {
     }
 
     onPointerDown(event) {
+        console.log("down");
         this.presses.set(event.pointerId, {id: event.pointerId, time: event.timeStamp, start: [event.clientX, event.clientY], xy: [event.clientX, event.clientY]});
         this.publish("input", "pointerDown", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
-        if (event.pointerId === this.lastDown.id && event.button === this.lastDown.button && event.timeStamp - this.lastDown.time < DOUBLE_DURATION) {
-            if (event.pointerId === this.penultimateDown.id && event.button === this.penultimateDown.button && event.timeStamp - this.penultimateDown.time < TRIPLE_DURATION) {
+        if (event.button === this.lastDown.button && event.timeStamp - this.lastDown.time < DOUBLE_DURATION) {
+                if (event.button === this.penultimateDown.button && event.timeStamp - this.penultimateDown.time < TRIPLE_DURATION) {
                 this.publish("input", "tripleDown", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
             } else {
                 this.publish("input", "doubleDown", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});

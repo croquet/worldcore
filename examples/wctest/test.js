@@ -258,6 +258,12 @@ class MyModelRoot extends ModelRoot {
         BackgroundActor.create();
         // const card = CardActor.create();
         MoveActor.create({translation: [0,0,-5]});
+
+        this.subscribe("input", "doubleDown", this.test)
+    }
+
+    test() {
+        console.log("double");
     }
 
 }
