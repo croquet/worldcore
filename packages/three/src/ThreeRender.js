@@ -74,12 +74,16 @@ export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) 
         const h = this.raycaster.intersectObjects(targets || render.layers.pointer);
         if (h.length === 0) return {};
         const hit = h[0];
+        let normal = hit.face.normal;
+        if(normal){
+            let m = new THREE.Matrix3().getNormalMatrix( hit.object.matrixWorld );
+            normal = normal.clone().applyMatrix3( m ).normalize();
+        }else normal = new THREE.Vector3(0,1,0);
         return {
             pawn: this.getPawn(hit.object),
             xyz: hit.point.toArray(),
-//          xyzLocal: hit.object.worldToLocal(hit.point).toArray(),
             uv: hit.uv.toArray(),
-            normal: hit.face.normal.toArray()
+            normal: normal.toArray()
         };
     }
 
