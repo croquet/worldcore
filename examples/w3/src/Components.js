@@ -21,30 +21,41 @@ import { GetTopLayer } from "./Globals";
 
 export const AM_VoxelSmoothed = superclass => class extends AM_Smoothed(superclass) {
 
-    set(options = {}) {
-        super.set(options);
-        if ('xyz' in options ) this.xyzChanged();
-        if ('fraction' in options) this.fractionChanged();
-        if ('translation' in options ) this.onTranslation(this.translation);
-        if ('key' in options) console.warn("Do not directly set the voxel key of a VoxelSmoothed actor. Set its voxel coordinates instead.");
+    init(options) {
+        super.init(options);
+        this.listen("_xyz", this.xyzChanged);
+        this.listen("_fraction", this.fractionChanged);
+        this.listen("_translation", this.extractVoxelInfo);
     }
 
+    // set(options = {}) {
+    //     super.set(options);
+    //     if ('xyz' in options ) this.xyzChanged();
+    //     if ('fraction' in options) this.fractionChanged();
+    //     if ('translation' in options ) this.onTranslationSet(this.translation);
+    //     if ('key' in options) console.warn("Do not directly set the voxel key of a VoxelSmoothed actor. Set its voxel coordinates instead.");
+    // }
+
     xyzChanged() {
+        console.log("xyz");
         this.say("xyzChanged", this.xyz);
         this.localChanged();
     }
 
     fractionChanged() {
+        console.log("frac");
         this.say("fractionChanged", this.fraction);
         this.localChanged();
     }
 
-    onTranslation(t) {
-        this.extractVoxelInfo(t);
-        delete this._translation;
-    }
+    // onTranslation(t) {
+    //     this.extractVoxelInfo(t);
+    //     delete this._translation;
+    // }
 
-    extractVoxelInfo(translation) {
+    extractVoxelInfo(d) {
+        console.log(d);
+        const translation = d.v;
         const t = Voxels.toVoxelXYZ(...translation);
         this._xyz = v3_floor(t);
         this._fraction = v3_sub(t, this._xyz);
@@ -87,8 +98,8 @@ RegisterMixin(AM_VoxelSmoothed);
 export const PM_VoxelSmoothed = superclass => class extends PM_Smoothed(superclass) {
     constructor(...args) {
         super(...args);
-        this.listenOnce("xyzChanged", this.onSetTranslation);
-        this.listenOnce("fractionChanged", this.onSetTranslation);
+        this.listenOnce("xyzChanged", this.onTranslationSet);
+        this.listenOnce("fractionChanged", this.onTranslationSet);
     }
 
 };

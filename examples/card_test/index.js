@@ -5,6 +5,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     AM_Predictive, PM_Predictive,
     AM_PointerTarget, PM_Pointer, PM_ThreePointerTarget,
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn } from "@croquet/worldcore";
+import { WidgetActor } from "../../packages/card/src/Card";
 
 //------------------------------------------------------------------------------------------
 //-- MyAvatar ------------------------------------------------------------------------------
@@ -223,6 +224,7 @@ class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
         this.level = LevelActor.create();
+        // this.widget = WidgetActor.create([0,0,-10]);
         this.card = MyCardActor.create({translation: [0,0,-10]})
     }
 

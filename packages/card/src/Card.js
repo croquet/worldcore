@@ -1,4 +1,4 @@
-import { Actor, Pawn, GetPawn, mix, RegisterMixin } from "@croquet/worldcore-kernel";
+import { Actor, Pawn, GetPawn, mix, RegisterMixin, AM_Predictive, PM_Predictive } from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
 //-- AM_PointerTarget ----------------------------------------------------------------------
@@ -297,6 +297,46 @@ export const PM_ThreePointerTarget = superclass => class extends PM_PointerTarge
     }
 }
 
+//------------------------------------------------------------------------------------------
+//-- WidgetActor ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// export class WidgetActor extends mix(Actor).with(AM_Predictive, AM_PointerTarget) {
+//     get pawn() { return WidgetPawn; }
+
+//     get size() { return this._size || [100,100];}
+//     get anchor() { return this._anchor || [0,0];}
+//     get pivot() { return this._pivot || [0,0];}
+//     get autoSize() { return this._autoSize || [0,0];}
+//     get isVisible() { return this._visible === undefined || this._visible;} // Default to true
+//     get color() { return this._color || [0,0,0];}
+
+
+// }
+// WidgetActor.register('WidgetActor');
+
+
+// //------------------------------------------------------------------------------------------
+// //-- WidgetPawn ---------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+
+// export class WidgetPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_ThreePointerTarget) {
+
+//     constructor(...args) {
+//         super(... args);
+//     }
+
+//     get size() { return this.actor.size; }
+//     get anchor() { return this.actor.anchor }
+//     get pivot() { return this.actor.pivot }
+//     get autoSize() { return this.actor.autoSize }
+//     get isVisible() { return this.actor.isVisible} // Default to true
+//     get color() { return this.actor.color }
+
+// }
+
+
+
 // //------------------------------------------------------------------------------------------
 // //-- CardActor ------------------------------------------------------------------------------
 // //------------------------------------------------------------------------------------------
@@ -314,3 +354,4 @@ export const PM_ThreePointerTarget = superclass => class extends PM_PointerTarge
 
 // export class CardPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_ThreePointerTarget) {
 // }
+

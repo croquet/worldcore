@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { ViewService } from "@croquet/worldcore-kernel";
+import { PM_Visible, PM_Camera, RenderManager } from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export const PM_ThreeVisible = superclass => class extends superclass {
+export const PM_ThreeVisible = superclass => class extends PM_Visible(superclass) {
 
     constructor(...args) {
         super(...args);
@@ -46,7 +46,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 //-- ThreeCamera  --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export const PM_ThreeCamera = superclass => class extends superclass {
+export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) {
     constructor(...args) {
         super(...args);
 
@@ -100,13 +100,12 @@ export const PM_ThreeCamera = superclass => class extends superclass {
 
 // The top render interface that controls the execution of draw passes.
 
-export class ThreeRenderManager extends ViewService {
+export class ThreeRenderManager extends RenderManager {
     constructor(options = {}, name) {
-        super(name || "ThreeRenderManager");
+        super(options, name || "ThreeRenderManager");
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
-        this.layers = {};
         this.layers.pointer = [];
 
         if (!options.canvas) {
