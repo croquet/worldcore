@@ -152,7 +152,6 @@ export const PM_PointerTarget = superclass => class extends superclass {
     }
 
     _onPointerWheel(e){
-        console.log("_onPointerWheel")
         this.onPointerWheel(e);
     }
 
@@ -293,7 +292,7 @@ export const PM_Pointer = superclass => class extends superclass {
         if (rc.pawn) {
             pe.targetId = rc.pawn.actor.id,
             pe.xyz = rc.xyz,
-            pe.xyzLocal = rc.xyzLocal,
+            //pe.xyzLocal = rc.xyzLocal,
             pe.normal = rc.normal
         }
         return pe;
@@ -324,6 +323,36 @@ export const PM_ThreePointerTarget = superclass => class extends PM_PointerTarge
         if (super.onSetRenderObject) super.onSetRenderObject(renderObject)
         const render = this.service("ThreeRenderManager");
         render.layers.pointer.push(renderObject)
+    }
+}
+
+
+export const PM_LayerTarget = superclass => class extends superclass {
+    constructor(...args) {
+        super(...args);
+     }
+
+    destroy() {
+        super.destroy();
+        const render = this.service("ThreeRenderManager");
+
+        if(this.layers)
+        this.layers.forEach( layer => {
+            if (render.layers[layer]){
+                const i = render.layers[layer].indexOf(this.renderObject);
+                if(i>=0) render.layers[layer].splice(i,1);
+            }
+        });
+    }
+
+    onSetRenderObject(renderObject) {
+        if (super.onSetRenderObject) super.onSetRenderObject(renderObject);
+        const render = this.service("ThreeRenderManager");
+        if(this.layers)
+        this.layers.forEach( layer =>{
+            if(!render.layers[layer])render.layers[layer]=[];
+            render.layers[layer].push(renderObject);
+        })
     }
 }
 
