@@ -100,6 +100,8 @@ export const PM_PointerTarget = superclass => class extends superclass {
         this.listen("pointerMove", this._onPointerMove);
         this.listen("pointerEnter", this._onPointerEnter);
         this.listen("pointerLeave", this._onPointerLeave);
+        this.listen("pointerWheel", this._onPointerWheel);
+        this.listen("pointerDoubleDown", this._onPointerDoubleDown);
         this.listen("focusSuccess", this._onFocusSuccess);
         this.listen("focusFailure", this._onFocusFailure);
         this.listen("blur", this._onBlur);
@@ -149,6 +151,15 @@ export const PM_PointerTarget = superclass => class extends superclass {
         this.onPointerLeave(pointerId)
     }
 
+    _onPointerWheel(e){
+        console.log("_onPointerWheel")
+        this.onPointerWheel(e);
+    }
+
+    _onPointerDoubleDown(pe) {
+        this.onPointerDoubleDown(pe);
+    }
+
     _onFocusSuccess(pointerId) {
         this.onFocus(pointerId)
     }
@@ -172,6 +183,8 @@ export const PM_PointerTarget = superclass => class extends superclass {
     onPointerDown(pe) {}
     onPointerUp(pe) {}
     onPointerMove(pe) {}
+    onPointerWheel(e) {}
+    onPointerDoubleDown(pe) {}
 
 }
 
@@ -197,11 +210,15 @@ export const PM_Pointer = superclass => class extends superclass {
                 this.subscribe("ui", "pointerDown", this.doPointerDown);
                 this.subscribe("ui", "pointerUp", this.doPointerUp);
                 this.subscribe("ui", "pointerMove", this.doPointerMove);
+                this.subscribe("ui", "wheel", this.doPointerWheel);
+                this.subscribe("ui", "doubleDown", this.doPointerDoubleDown);
             }
             else {
                 this.subscribe("input", "pointerDown", this.doPointerDown);
                 this.subscribe("input", "pointerUp", this.doPointerUp);
                 this.subscribe("input", "pointerMove", this.doPointerMove);
+                this.subscribe("input", "wheel", this.doPointerWheel);
+                this.subscribe("input", "doubleDown", this.doPointerDoubleDown);
             }
         }
     }
@@ -256,6 +273,19 @@ export const PM_Pointer = superclass => class extends superclass {
         }
 
         if (this.focusPawn) this.focusPawn.say("pointerMove", this.pointerEvent(rc));
+    }
+
+    doPointerWheel(e) {
+        if (this.focusPawn) this.focusPawn.say("pointerWheel", e);
+    }
+
+    doPointerDoubleDown(e) {
+        console.log("doPointerDoubleDown")
+        this.focusTimeout = this.now();
+        const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
+        const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
+        const rc = this.pointerRaycast([x,y]);
+        if (this.focusPawn) this.focusPawn.say("pointerDoubleDown", this.pointerEvent(rc));
     }
 
     pointerEvent(rc) {

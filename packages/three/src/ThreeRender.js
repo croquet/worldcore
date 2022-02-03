@@ -67,17 +67,17 @@ export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) 
         render.camera.matrixWorldNeedsUpdate = true;
     }
 
-    pointerRaycast(xy) {
+    pointerRaycast(xy, targets) {
         const render = this.service("ThreeRenderManager");
         if (!this.raycaster) this.raycaster = new THREE.Raycaster();
         this.raycaster.setFromCamera({x: xy[0], y: xy[1]}, render.camera);
-        const h = this.raycaster.intersectObjects(render.layers.pointer);
+        const h = this.raycaster.intersectObjects(targets || render.layers.pointer);
         if (h.length === 0) return {};
         const hit = h[0];
         return {
             pawn: this.getPawn(hit.object),
             xyz: hit.point.toArray(),
-            xyzLocal: hit.object.worldToLocal(hit.point).toArray(),
+//          xyzLocal: hit.object.worldToLocal(hit.point).toArray(),
             uv: hit.uv.toArray(),
             normal: hit.face.normal.toArray()
         };
