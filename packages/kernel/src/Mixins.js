@@ -238,8 +238,12 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
 
     get translation() { return this._translation || v3_zero() };
     set translation(v) { this.set({translation: v}) };
+
     get rotation() { return this._rotation || q_identity() };
+    set rotation(q) { this.set({rotation: q}) };
+
     get scale() { return this._scale || [1,1,1] };
+    set scale(v) { this.set({scale: v}) };
 }
 RegisterMixin(AM_Spatial);
 
@@ -349,7 +353,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     get translation() { return this._translation; }
 
     onScaleSet() {
-        this._scale = this._scale;
+        this._scale = this.actor._scale;
         this.onLocalChanged();
     }
 
