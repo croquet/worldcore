@@ -17,6 +17,8 @@ export const AM_PointerTarget = superclass => class extends superclass {
         this.listen("blur", this._onBlur);
         if (this.onPointerDown) this.listen("pointerDown", this._onPointerDown);
         if (this.onPointerUp)this.listen("pointerUp", this._onPointerUp);
+        if (this.onKeyDown) this.listen("keyDown", this.onKeyDown);
+        if (this.onKeyUp) this.listen("pointerUp", this.onKeyUp);
         this.future(0).dropoutTick();
     }
 
@@ -80,6 +82,8 @@ export const AM_PointerTarget = superclass => class extends superclass {
 
     // onPointerDown(pe) {}
     // onPointerUp(pe) {}
+    // onKeyDown(e) {}
+    // onKeyUp(e) {}
 
 }
 RegisterMixin(AM_PointerTarget);
@@ -94,17 +98,19 @@ export const PM_PointerTarget = superclass => class extends superclass {
 
     constructor(...args) {
         super(...args);
-        this.listen("pointerDown", this._onPointerDown);
-        this.listen("pointerUp", this._onPointerUp);
-        this.listen("pointerOver", this._onPointerOver);
-        this.listen("pointerMove", this._onPointerMove);
-        this.listen("pointerEnter", this._onPointerEnter);
-        this.listen("pointerLeave", this._onPointerLeave);
-        this.listen("pointerWheel", this._onPointerWheel);
-        this.listen("pointerDoubleDown", this._onPointerDoubleDown);
-        this.listen("focusSuccess", this._onFocusSuccess);
+        if (this.onPointerDown) this.listen("pointerDown", this.onPointerDown);
+        if (this.onPointerUp) this.listen("pointerUp", this.onPointerUp);
+        if (this.onPointerOver) this.listen("pointerOver", this.onPointerOver);
+        if (this.onPointerMove) this.listen("pointerMove", this.onPointerMove);
+        if (this.onPointerEnter) this.listen("pointerEnter", this.onPointerEnter);
+        if (this.onPointerLeave) this.listen("pointerLeave", this.onPointerLeave);
+        if (this.onPointerWheel) this.listen("pointerWheel", this.onPointerWheel);
+        if (this.onPointerDoubleDown) this.listen("pointerDoubleDown", this.onPointerDoubleDown);
+        if (this.onFocus) this.listen("focusSuccess", this.onFocus);
+        if (this.onBlur) this.listen("blur", this.onBlur);
+        if (this.onKeyDown) this.listen("keyDown", this.onKeyDown);
+        if (this.onKeyUp) this.listen("keyUp", this.onKeyUp);
         this.listen("focusFailure", this._onFocusFailure);
-        this.listen("blur", this._onBlur);
     }
 
     destroy() {
@@ -127,63 +133,26 @@ export const PM_PointerTarget = superclass => class extends superclass {
     get isHovered() { return this.actor.isHovered; }
     get isFocused() { return this.actor.isFocused; }
 
-    _onPointerDown(pe) {
-        this.onPointerDown(pe);
-    }
-
-    _onPointerUp(pe) {
-        this.onPointerUp(pe)
-    }
-
-    _onPointerMove(pe) {
-        this.onPointerMove(pe)
-    }
-
-    _onPointerOver(pe) {
-        this.onPointerOver(pe)
-    }
-
-    _onPointerEnter(pointerId) {
-        this.onPointerEnter(pointerId)
-    }
-
-    _onPointerLeave(pointerId) {
-        this.onPointerLeave(pointerId)
-    }
-
-    _onPointerWheel(e){
-        this.onPointerWheel(e);
-    }
-
-    _onPointerDoubleDown(pe) {
-        this.onPointerDoubleDown(pe);
-    }
-
-    _onFocusSuccess(pointerId) {
-        this.onFocus(pointerId)
-    }
 
     _onFocusFailure(pointerId) {
         const pointerPawn = GetPawn(pointerId);
         if (pointerPawn) pointerPawn.focusPawn = null;
-        this.onFocusFailure(pointerId)
+        if (this.onFocusFailure) this.onFocusFailure(pointerId)
     }
 
-    _onBlur(pointerId) {
-        this.onBlur(pointerId)
-    }
+    // onPointerEnter(pointerId) {}
+    // onPointerLeave(pointerId) {}
+    // onFocus(pointerId) {}
+    // onFocusFailure(pointerId) {}
+    // onBlur(pointerId) {}
 
-    onPointerEnter(pointerId) {}
-    onPointerLeave(pointerId) {}
-    onFocus(pointerId) {}
-    onFocusFailure(pointerId) {}
-    onBlur(pointerId) {}
-
-    onPointerDown(pe) {}
-    onPointerUp(pe) {}
-    onPointerMove(pe) {}
-    onPointerWheel(e) {}
-    onPointerDoubleDown(pe) {}
+    // onPointerDown(pe) {}
+    // onPointerUp(pe) {}
+    // onPointerMove(pe) {}
+    // onPointerWheel(e) {}
+    // onPointerDoubleDown(pe) {}
+    // onKeyDown(e) {}
+    // onKeyUp(e) {}
 
 }
 
@@ -219,6 +188,9 @@ export const PM_Pointer = superclass => class extends superclass {
                 this.subscribe("input", "wheel", this.doPointerWheel);
                 this.subscribe("input", "doubleDown", this.doPointerDoubleDown);
             }
+
+            this.subscribe("input", "keyDown", this.doKeyDown);
+            this.subscribe("input", "keyUp", this.doKeyUp);
         }
     }
 
@@ -240,6 +212,7 @@ export const PM_Pointer = superclass => class extends superclass {
         const rc = this.pointerRaycast([x,y]);
 
         if (e.button === 0) {
+            this.isPointerDown = true;
             if (this.focusPawn !== rc.pawn) {
                 if (this.focusPawn) this.focusPawn.say("blur", this.actor.id);
                 this.focusPawn = rc.pawn;
@@ -258,7 +231,8 @@ export const PM_Pointer = superclass => class extends superclass {
         const rc = this.pointerRaycast([x,y]);
 
         if (this.focusPawn) this.focusPawn.say("pointerUp", this.pointerEvent(rc));
-        this.focusPawn = null;
+        this.isPointerDown = false;
+        // this.focusPawn = null;
     };
 
     doPointerMove(e) {
@@ -272,7 +246,7 @@ export const PM_Pointer = superclass => class extends superclass {
             if (this.hoverPawn) rc.pawn.say("pointerEnter", this.actor.id)
         }
 
-        if (this.focusPawn) this.focusPawn.say("pointerMove", this.pointerEvent(rc));
+        if (this.isPointerDown && this.focusPawn) this.focusPawn.say("pointerMove", this.pointerEvent(rc));
     }
 
     doPointerWheel(e) {
@@ -280,12 +254,21 @@ export const PM_Pointer = superclass => class extends superclass {
     }
 
     doPointerDoubleDown(e) {
-        console.log("doPointerDoubleDown")
         this.focusTimeout = this.now();
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const rc = this.pointerRaycast([x,y]);
         if (this.focusPawn) this.focusPawn.say("pointerDoubleDown", this.pointerEvent(rc));
+    }
+
+    doKeyDown(e) {
+        this.focusTime = this.now();
+        if (this.focusPawn) this.focusPawn.say("keyDown", e);
+    }
+
+    doKeyUp(e) {
+        this.focusTime = this.now();
+        if (this.focusPawn) this.focusPawn.say("keyUp", e);
     }
 
     pointerEvent(rc) {
