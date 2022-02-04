@@ -258,6 +258,7 @@ export const PM_Pointer = superclass => class extends superclass {
         const rc = this.pointerRaycast([x,y]);
 
         if (this.focusPawn) this.focusPawn.say("pointerUp", this.pointerEvent(rc));
+        this.focusPawn = null;
     };
 
     doPointerMove(e) {
@@ -292,7 +293,7 @@ export const PM_Pointer = superclass => class extends superclass {
         if (rc.pawn) {
             pe.targetId = rc.pawn.actor.id,
             pe.xyz = rc.xyz,
-            //pe.xyzLocal = rc.xyzLocal,
+            pe.uv = rc.uv;
             pe.normal = rc.normal
         }
         return pe;
