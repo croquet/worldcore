@@ -97,6 +97,8 @@ class MyCardPawn extends mix(CardPawn).with(PM_ThreeVisible) {
         mesh.receiveShadow = true;
         this.setRenderObject(mesh);
         this.addToLayers("pointer");
+
+
     }
 
     onFocus(pointerId) {
