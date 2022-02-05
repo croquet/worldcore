@@ -3,7 +3,7 @@
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PlayerManager,
     AM_Player, PM_Player, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, PM_ThreeCamera, toRad, THREE,
     AM_Predictive, PM_Predictive,
-    AM_PointerTarget, PM_Pointer, PM_ThreePointerTarget,
+    AM_PointerTarget, PM_Pointer, PM_PointerTarget, CardActor, CardPawn,
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn } from "@croquet/worldcore";
 import { WidgetActor } from "../../packages/card/src/Card";
 
@@ -76,21 +76,8 @@ class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisibl
 //-- CardActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class CardActor extends mix(Actor).with(AM_Predictive, AM_PointerTarget) {
-
-    get pawn() { return CardPawn; }
-
-}
-CardActor.register('CardActor');
-
 class MyCardActor extends CardActor {
     get pawn() { return MyCardPawn; }
-
-    onPointerDown(pe) {
-        const x = pe.xyzLocal[0];
-        const y = pe.xyzLocal[1];
-        console.log([x,y]);
-    }
 }
 MyCardActor.register('MyCardActor');
 
@@ -98,10 +85,7 @@ MyCardActor.register('MyCardActor');
 //-- CardPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class CardPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_ThreePointerTarget) {
-}
-
-class MyCardPawn extends CardPawn {
+class MyCardPawn extends mix(CardPawn).with(PM_ThreeVisible) {
 
     constructor(...args) {
         super(...args);
@@ -112,6 +96,7 @@ class MyCardPawn extends CardPawn {
         mesh.castShadow = true;
         mesh.receiveShadow = true;
         this.setRenderObject(mesh);
+        this.addToLayers("pointer");
     }
 
     onFocus(pointerId) {
@@ -133,6 +118,10 @@ class MyCardPawn extends CardPawn {
     }
 
     onPointerLeave(pointerId) {
+    }
+
+    onPointerMove(xx) {
+        console.log(xx);
     }
 
 }
@@ -226,6 +215,17 @@ class MyModelRoot extends ModelRoot {
         this.level = LevelActor.create();
         // this.widget = WidgetActor.create([0,0,-10]);
         this.card = MyCardActor.create({translation: [0,0,-10]})
+        this.subscribe("input", "xDown", this.test0)
+    }
+
+    test0() {
+        if (this.card) {
+            this.card.destroy();
+            this.card = null;
+
+        } else {
+            this.card = MyCardActor.create({translation: [0,0,-10]});
+        }
     }
 
 }
@@ -245,7 +245,6 @@ class MyViewRoot extends ViewRoot {
         super(model);
         const three = this.service("ThreeRenderManager");
         three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
-        // this.subscribe("input", "click", () => {this.service("InputManager").enterPointerLock()});
     }
 
 }
