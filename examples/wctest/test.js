@@ -85,6 +85,10 @@ class MovePawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible, PM_Player)
         this.subscribe("input", "dDown", this.reset);
         this.subscribe("input", "xDown", this.big);
         this.subscribe("input", "cDown", this.small);
+
+        this.addToLayer("bink");
+        const render = this.service("WebGLRenderManager");
+
     }
 
     buildDraw() {

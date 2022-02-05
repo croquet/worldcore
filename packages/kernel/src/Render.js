@@ -5,7 +5,27 @@ import { ViewService } from "./Root";
 //-- PM_Visible  ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export const PM_Visible = superclass => class extends superclass {};
+export const PM_Visible = superclass => class extends superclass {
+
+    destroy() {
+        super.destroy();
+        const render = this.service("RenderManager");
+        for (const layerName in render.layers) {
+            const layer = render.layers[layerName];
+            if (layer.has(this)) render.dirtyLayer(layerName);
+            render.layers[layerName].delete(this);
+        }
+    }
+
+    addToLayers(...names) {
+        const render = this.service("RenderManager");
+        names.forEach(name => {
+            if (!render.layers[name]) render.layers[name] = new Set();
+            render.layers[name].add(this);
+            render.dirtyLayer(name);
+        });
+    }
+};
 
 //------------------------------------------------------------------------------------------
 //-- PM_Camera -----------------------------------------------------------------------------
@@ -17,12 +37,13 @@ export const PM_Camera = superclass => class extends superclass {};
 //-- RenderManager -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// The top render interface that controls the execution of draw passes.
-
 export class RenderManager extends ViewService {
     constructor(options = {}, name) {
-        super(name || "RenderManager");
+        super(name);
+        this.registerViewName("RenderManager"); // Alternate generic name
         this.layers = {};
     }
+
+    dirtyLayer(name) {} // Renderer can use this to trigger a rebuild of renderer-specific layer data;
 
 }

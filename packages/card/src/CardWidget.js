@@ -2,20 +2,20 @@ import { Actor, Pawn, mix, AM_Predictive, PM_Predictive } from "@croquet/worldco
 import { AM_PointerTarget, PM_ThreePointerTarget } from "./Card";
 import { PM_ThreeVisible } from "@croquet/worldcore-three";
 
-//------------------------------------------------------------------------------------------
-//-- WidgetActor ------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+// //-- WidgetActor ------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
 
-export class WidgetActor extends mix(Actor).with(AM_Predictive, AM_PointerTarget) {
+// export class WidgetActor extends mix(Actor).with(AM_Predictive, AM_PointerTarget) {
 
-    get pawn() { return WidgetPawn; }
+//     get pawn() { return WidgetPawn; }
 
-}
-WidgetActor.register('WidgetActor');
+// }
+// WidgetActor.register('WidgetActor');
 
-//------------------------------------------------------------------------------------------
-//-- WidgetPawn ------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+// //-- WidgetPawn ------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
 
-export class WidgetPawn extends mix(Pawn).with(PM_Predictive, PM_ThreePointerTarget) {
-}
+// export class WidgetPawn extends mix(Pawn).with(PM_Predictive, PM_ThreePointerTarget) {
+// }

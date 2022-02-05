@@ -71,7 +71,7 @@ export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) 
         const render = this.service("ThreeRenderManager");
         if (!this.raycaster) this.raycaster = new THREE.Raycaster();
         this.raycaster.setFromCamera({x: xy[0], y: xy[1]}, render.camera);
-        const h = this.raycaster.intersectObjects(targets || render.layers.pointer);
+        const h = this.raycaster.intersectObjects(targets || render.threeLayer("pointer"));
         if (h.length === 0) return {};
         const hit = h[0];
         let normal = hit.face.normal;
@@ -108,9 +108,10 @@ export class ThreeRenderManager extends RenderManager {
     constructor(options = {}, name) {
         super(options, name || "ThreeRenderManager");
 
+        this.threeLayers = {}; // Three-specific layers
+
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
-        this.layers.pointer = [];
 
         if (!options.canvas) {
             this.canvas = document.createElement("canvas");
@@ -143,6 +144,17 @@ export class ThreeRenderManager extends RenderManager {
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.composer.setSize(window.innerWidth, window.innerHeight)
+    }
+
+    dirtyLayer(name) {
+        this.threeLayers[name] = null;
+    }
+
+    threeLayer(name) {
+        if (!this.threeLayers[name]) {
+            this.threeLayers[name] = Array.from(this.layers[name]).map(p => p.renderObject);
+        }
+        return this.threeLayers[name];
     }
 
     update() {

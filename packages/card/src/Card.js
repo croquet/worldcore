@@ -133,7 +133,6 @@ export const PM_PointerTarget = superclass => class extends superclass {
     get isHovered() { return this.actor.isHovered; }
     get isFocused() { return this.actor.isFocused; }
 
-
     _onFocusFailure(pointerId) {
         const pointerPawn = GetPawn(pointerId);
         if (pointerPawn) pointerPawn.focusPawn = null;
@@ -284,61 +283,61 @@ export const PM_Pointer = superclass => class extends superclass {
 
 }
 
-//------------------------------------------------------------------------------------------
-//-- PM_ThreePointerTarget  ----------------------------------------------------------------
-//------------------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+// //-- PM_ThreePointerTarget  ----------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
 
-export const PM_ThreePointerTarget = superclass => class extends PM_PointerTarget(superclass) {
-    constructor(...args) {
-        super(...args)
-        const render = this.service("ThreeRenderManager");
-    }
+// export const PM_ThreePointerTarget = superclass => class extends PM_PointerTarget(superclass) {
+//     constructor(...args) {
+//         super(...args)
+//         const render = this.service("ThreeRenderManager");
+//     }
 
-    destroy() {
-        super.destroy();
-        const render = this.service("ThreeRenderManager");
-        if (!render.layers.pointer) return;
-        const i = render.layers.pointer.indexOf(this.renderObject);
-        if (i === -1) return;
-        render.layers.pointer.splice(i,1);
-    }
+//     destroy() {
+//         super.destroy();
+//         const render = this.service("ThreeRenderManager");
+//         if (!render.layers.pointer) return;
+//         const i = render.layers.pointer.indexOf(this.renderObject);
+//         if (i === -1) return;
+//         render.layers.pointer.splice(i,1);
+//     }
 
-    onSetRenderObject(renderObject) {
-        if (super.onSetRenderObject) super.onSetRenderObject(renderObject)
-        const render = this.service("ThreeRenderManager");
-        render.layers.pointer.push(renderObject)
-    }
-}
+//     // onSetRenderObject(renderObject) {
+//     //     if (super.onSetRenderObject) super.onSetRenderObject(renderObject)
+//     //     const render = this.service("ThreeRenderManager");
+//     //     render.layers.pointer.push(renderObject)
+//     // }
+// }
 
 
-export const PM_LayerTarget = superclass => class extends superclass {
-    constructor(...args) {
-        super(...args);
-     }
+// export const PM_LayerTarget = superclass => class extends superclass {
+//     constructor(...args) {
+//         super(...args);
+//      }
 
-    destroy() {
-        super.destroy();
-        const render = this.service("ThreeRenderManager");
+//     destroy() {
+//         super.destroy();
+//         const render = this.service("ThreeRenderManager");
 
-        if(this.layers)
-        this.layers.forEach( layer => {
-            if (render.layers[layer]){
-                const i = render.layers[layer].indexOf(this.renderObject);
-                if(i>=0) render.layers[layer].splice(i,1);
-            }
-        });
-    }
+//         if(this.layers)
+//         this.layers.forEach( layer => {
+//             if (render.layers[layer]){
+//                 const i = render.layers[layer].indexOf(this.renderObject);
+//                 if(i>=0) render.layers[layer].splice(i,1);
+//             }
+//         });
+//     }
 
-    onSetRenderObject(renderObject) {
-        if (super.onSetRenderObject) super.onSetRenderObject(renderObject);
-        const render = this.service("ThreeRenderManager");
-        if(this.layers)
-        this.layers.forEach( layer =>{
-            if(!render.layers[layer])render.layers[layer]=[];
-            render.layers[layer].push(renderObject);
-        })
-    }
-}
+//     // onSetRenderObject(renderObject) {
+//     //     if (super.onSetRenderObject) super.onSetRenderObject(renderObject);
+//     //     const render = this.service("ThreeRenderManager");
+//     //     if(this.layers)
+//     //     this.layers.forEach( layer =>{
+//     //         if(!render.layers[layer])render.layers[layer]=[];
+//     //         render.layers[layer].push(renderObject);
+//     //     })
+//     // }
+// }
 
 //------------------------------------------------------------------------------------------
 //-- WidgetActor ---------------------------------------------------------------------------
@@ -380,21 +379,21 @@ export const PM_LayerTarget = superclass => class extends superclass {
 
 
 
-// //------------------------------------------------------------------------------------------
-// //-- CardActor ------------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+//-- CardActor ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
-// export class CardActor extends mix(Actor).with(AM_Predictive, AM_PointerTarget) {
+export class CardActor extends mix(Actor).with(AM_Predictive, AM_PointerTarget) {
 
-//     get pawn() { return CardPawn; }
+    get pawn() { return CardPawn; }
 
-// }
-// CardActor.register('CardActor');
+}
+CardActor.register('CardActor');
 
-// //------------------------------------------------------------------------------------------
-// //-- CardPawn ------------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+//-- CardPawn ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
-// export class CardPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_ThreePointerTarget) {
-// }
+export class CardPawn extends mix(Pawn).with(PM_Predictive, PM_PointerTarget) {
+}
 
