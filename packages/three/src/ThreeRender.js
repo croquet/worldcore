@@ -157,6 +157,15 @@ export class ThreeRenderManager extends RenderManager {
         return this.threeLayers[name];
     }
 
+    threeLayerUnion(...names) {
+        let result = [];
+        while (names.length > 0) {
+            const a = this.threeLayer(names.pop());
+            result = result.concat(a.filter(x => result.indexOf(x) < 0))
+        }
+        return result;
+    }
+
     update() {
         this.composer.render();
     }
