@@ -98,6 +98,11 @@ class MyCardPawn extends mix(CardPawn).with(PM_ThreeVisible) {
         this.setRenderObject(mesh);
         this.addToLayers("pointer");
 
+        const render = this.service("ThreeRenderManager");
+        console.log(render.threeLayer("pointer"));
+        console.log(render.threeLayer("dork"));
+        console.log(render.threeLayerUnion("aaa", "pointer"));
+
 
     }
 
