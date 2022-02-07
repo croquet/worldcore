@@ -82,7 +82,7 @@ export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) 
         return {
             pawn: this.getPawn(hit.object),
             xyz: hit.point.toArray(),
-            uv: hit.uv.toArray(),
+            uv: hit.uv?hit.uv.toArray():undefined,
             normal: normal.toArray()
         };
     }
