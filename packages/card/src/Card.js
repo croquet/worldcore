@@ -18,7 +18,7 @@ export const AM_PointerTarget = superclass => class extends superclass {
         if (this.onPointerDown) this.listen("pointerDown", this._onPointerDown);
         if (this.onPointerUp)this.listen("pointerUp", this._onPointerUp);
         if (this.onKeyDown) this.listen("keyDown", this.onKeyDown);
-        if (this.onKeyUp) this.listen("pointerUp", this.onKeyUp);
+        if (this.onKeyUp) this.listen("keyUp", this.onKeyUp);
         this.future(0).dropoutTick();
     }
 
