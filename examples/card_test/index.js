@@ -4,8 +4,12 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     AM_Player, PM_Player, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, PM_ThreeCamera, toRad, THREE,
     AM_Predictive, PM_Predictive,
     AM_PointerTarget, PM_Pointer, PM_PointerTarget, CardActor, CardPawn,
-    q_axisAngle, m4_rotationQ, m4_identity, GetPawn } from "@croquet/worldcore";
-import { WidgetActor } from "../../packages/card/src/Card";
+    q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
+    TextWidgetActor } from "@croquet/worldcore";
+
+import diana from "./assets/diana.jpg";
+import llama from "./assets/llama.jpg";
+import kwark from "./assets/kwark.otf";
 
 //------------------------------------------------------------------------------------------
 //-- MyAvatar ------------------------------------------------------------------------------
@@ -51,6 +55,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisibl
             this.subscribe("input", "dUp", () => {this.cw = 0; this.changeSpin()});
 
         }
+
     }
 
     destroy() { // When the pawn is destroyed, we dispose of our Three.js objects.
@@ -76,62 +81,23 @@ class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisibl
 //-- CardActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class MyCardActor extends CardActor {
-    get pawn() { return MyCardPawn; }
+class MyWidgetActor extends WidgetActor {
+    get pawn() {return MyWidgetPawn}
 }
-MyCardActor.register('MyCardActor');
+MyWidgetActor.register('MyWidgetActor');
 
 //------------------------------------------------------------------------------------------
 //-- CardPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class MyCardPawn extends mix(CardPawn).with(PM_ThreeVisible) {
-
+class MyWidgetPawn extends CanvasWidgetPawn {
     constructor(...args) {
         super(...args);
-
-        this.cube = new THREE.BoxGeometry( 1, 1, 1 );
-        this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(0.5,0.5,0.5)});
-        const mesh = new THREE.Mesh( this.cube,  this.material );
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        this.setRenderObject(mesh);
-        this.addToLayers("pointer");
-
-        const render = this.service("ThreeRenderManager");
-        console.log(render.threeLayer("pointer"));
-        console.log(render.threeLayer("dork"));
-        console.log(render.threeLayerUnion("aaa", "pointer"));
-
-
-    }
-
-    onFocus(pointerId) {
-        console.log("focused")
-    }
-
-    onFocusFailure(pointerId) {
-        console.log("already focused by another avatar")
-    }
-
-    onBlur(pointerId) {
-        console.log("blurred")
-    }
-
-    onPointerEnter(pointerId) {
-        const pointerPawn = GetPawn(pointerId);
-        const pointerRotation = pointerPawn.actor.rotation;
-        this.localOffset = m4_rotationQ(pointerRotation);
-    }
-
-    onPointerLeave(pointerId) {
-    }
-
-    onPointerMove(xx) {
-        console.log(xx);
+        console.log("widget pawn constructor");
     }
 
 }
+
 
 //------------------------------------------------------------------------------------------
 //-- LevelActor ----------------------------------------------------------------------------
@@ -174,10 +140,10 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         pillar3.position.set(-29.5, 2, 29.5);
         group.add(pillar3);
 
-        const ambient = new THREE.AmbientLight( 0xffffff, 0.85 );
+        const ambient = new THREE.AmbientLight( 0xffffff, 0.5 );
         group.add(ambient);
 
-        const sun = new THREE.DirectionalLight( 0xffffff, 0.85 );
+        const sun = new THREE.DirectionalLight( 0xffffff, 0.5 );
         sun.position.set(1000, 1000, 1000);
         group.add(sun);
 
@@ -219,20 +185,22 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
+        console.log("Start root model!!!!!");
         this.level = LevelActor.create();
-        // this.widget = WidgetActor.create([0,0,-10]);
-        this.card = MyCardActor.create({translation: [0,0,-10]})
-        this.subscribe("input", "xDown", this.test0)
+        this.widget0 = ImageWidgetActor.create({translation: [0,0,-3], color: [1,1,1], size: [2,1], url: llama});
+        this.widget1 = ImageWidgetActor.create({parent: this.widget0, translation: [0.0,0.0,0], color: [1,1,1], size: [0.5,0.5], url: diana});
+        this.widget2 = TextWidgetActor.create({parent: this.widget1, translation: [0,0,0], color: [1,1,1], size: [0.1,0.1], pivot: [-1,0]});
+
+        this.subscribe("input", "zDown", this.test0)
+        this.subscribe("input", "xDown", this.test1)
     }
 
     test0() {
-        if (this.card) {
-            this.card.destroy();
-            this.card = null;
+        // this.widget.set({size: [2,1], color: [0,0.5,0.2], url: null});
+    }
 
-        } else {
-            this.card = MyCardActor.create({translation: [0,0,-10]});
-        }
+    test1() {
+        // this.widget.set({size: [3,1], color: [1,1,1], url: llama});
     }
 
 }
