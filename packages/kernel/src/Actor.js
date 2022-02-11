@@ -68,6 +68,7 @@ export class Actor extends WorldcoreModel {
     // }
 
     set(options = {}) {
+
         const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
         for (const option of sorted) {
             const n = "_" + option[0];

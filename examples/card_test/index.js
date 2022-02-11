@@ -83,6 +83,14 @@ class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisibl
 
 class MyWidgetActor extends WidgetActor {
     get pawn() {return MyWidgetPawn}
+
+    // onPointerEnter()  { console.log("pointer enter"); }
+    // onPointerLeave()  { console.log("pointer leave"); }
+    // onFocus() { console.log("focus"); }
+    // onBlur() { console.log("blur"); }
+    // onPointerMove() { console.log("pointer move"); }
+    // onPointerDown() { console.log("pointer down"); }
+    // onPointerUp() { console.log("pointer up"); }
 }
 MyWidgetActor.register('MyWidgetActor');
 
@@ -90,11 +98,19 @@ MyWidgetActor.register('MyWidgetActor');
 //-- CardPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class MyWidgetPawn extends CanvasWidgetPawn {
+class MyWidgetPawn extends WidgetPawn {
     constructor(...args) {
         super(...args);
         console.log("widget pawn constructor");
     }
+
+    // onPointerEnter()  { console.log("pointer enter"); }
+    // onPointerLeave()  { console.log("pointer leave"); }
+    // onFocus() { console.log("focus"); }
+    // onBlur() { console.log("blur"); }
+    // onPointerMove() { console.log("pointer move"); }
+    // onPointerDown() { console.log("pointer down"); }
+    // onPointerUp() { console.log("pointer up"); }
 
 }
 
@@ -185,22 +201,26 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!!");
+        console.log("Start root model!");
         this.level = LevelActor.create();
+        // this.widget = MyWidgetActor.create({translation: [0,0,-3]});
         this.widget0 = ImageWidgetActor.create({translation: [0,0,-3], color: [1,1,1], size: [2,1], url: llama});
-        this.widget1 = ImageWidgetActor.create({parent: this.widget0, translation: [0.0,0.0,0], color: [1,1,1], size: [0.5,0.5], url: diana});
-        this.widget2 = TextWidgetActor.create({parent: this.widget1, translation: [0,0,0], color: [1,1,1], size: [0.1,0.1], pivot: [-1,0]});
+        this.widget1 = ImageWidgetActor.create({parent: this.widget0, translation: [0.0,0.0,0], border: [0.1, 0.1, 0.1 ,0.1], color: [1,1,1], size: [0.5,0.5], url: diana , anchor: [-1,1], pivot: [-1,1], autoSize: [1,1]});
+        this.widget2 = TextWidgetActor.create({parent: this.widget1, translation: [0,0,0], color: [1,1,1],autoSize:[1,1], size: [0.3,0.3], anchor: [0,0], pivot: [0,0],
+            text:"This is a test of word wrap. It has a lot of text. And it should run onto the next line. You can have as much text as you want and it automatically reformats itself if the widget parameters change!", alignX: "center", alignY: "middle", font: "Trebuchet MS"});
 
         this.subscribe("input", "zDown", this.test0)
         this.subscribe("input", "xDown", this.test1)
     }
 
     test0() {
-        // this.widget.set({size: [2,1], color: [0,0.5,0.2], url: null});
+        console.log("test0");
+        this.widget2.set({resolution: 75, point: 6});
     }
 
     test1() {
-        // this.widget.set({size: [3,1], color: [1,1,1], url: llama});
+        console.log("test1");
+        this.widget2.set({resolution: 600, point: 48});
     }
 
 }

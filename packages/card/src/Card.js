@@ -22,7 +22,7 @@ export const AM_PointerTarget = superclass => class extends superclass {
         this.future(0).dropoutTick();
     }
 
-    get isMultiuser() { return this._multiuser; }
+    get isMultiuser() { return this._multiuser || true; }
     get isHovered() { return this.hovered.size};
     get isFocused() { return this.focused.size};
 
@@ -100,7 +100,7 @@ export const PM_PointerTarget = superclass => class extends superclass {
         super(...args);
         if (this.onPointerDown) this.listen("pointerDown", this.onPointerDown);
         if (this.onPointerUp) this.listen("pointerUp", this.onPointerUp);
-        if (this.onPointerOver) this.listen("pointerOver", this.onPointerOver);
+        // if (this.onPointerOver) this.listen("pointerOver", this.onPointerOver);
         if (this.onPointerMove) this.listen("pointerMove", this.onPointerMove);
         if (this.onPointerEnter) this.listen("pointerEnter", this.onPointerEnter);
         if (this.onPointerLeave) this.listen("pointerLeave", this.onPointerLeave);

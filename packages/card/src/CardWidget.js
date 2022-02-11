@@ -1,4 +1,5 @@
-import { Actor, Pawn, mix, AM_Predictive, PM_Predictive, LoadImage, LoadFont, m4_multiply, v2_multiply, v2_sub, v2_scale } from "@croquet/worldcore-kernel";
+import { Actor, Pawn, mix, AM_Predictive, PM_Predictive, LoadImage, LoadFont, m4_multiply, v2_multiply, v2_sub, v2_scale, v2_add,
+    m4_scaleRotationTranslation } from "@croquet/worldcore-kernel";
 import { AM_PointerTarget, PM_ThreePointerTarget, CardActor, CardPawn } from "./Card";
 import { PM_ThreeVisible, THREE } from "@croquet/worldcore-three";
 
@@ -6,9 +7,9 @@ import { PM_ThreeVisible, THREE } from "@croquet/worldcore-three";
 //-- HelperFunctions -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-function RelativeTransform(t, anchor, pivot, size, parentSize, border) {
+function RelativeTranslation(t, anchor, pivot, border, size, parentSize) {
     const aX = 0.5*parentSize[0] * anchor[0];
-    const aY = 0.5*parentSize[1]/2 * anchor[1];
+    const aY = 0.5*parentSize[1] * anchor[1];
     const pX = 0.5*size[0] * pivot[0];
     const pY = 0.5*size[1] * pivot[1];
     return [t[0]+aX-pX, t[1]+aY-pY, t[2]];
@@ -23,13 +24,61 @@ export class WidgetActor extends CardActor {
 
     get pawn() { return WidgetPawn; }
 
-    get size() { return this._size || [1,1];}
+    init(options) {
+        super.init(options);
+
+        this.listen("_size", this.onSizeSet);
+        this.listen("_anchor", this.onSizeSet);
+        this.listen("_pivot", this.onSizeSet);
+        this.listen("_border", this.onSizeSet);
+        this.listen("_autoSize", this.onSizeSet);
+
+    }
+
+    get rawSize() { return this._size || [1,1];}
     get anchor() { return this._anchor || [0,0];}
     get pivot() { return this._pivot || [0,0];}
+    get border() { return this._border || [0,0,0,0]; }
     get autoSize() { return this._autoSize || [0,0];}
     get isVisible() { return this._visible === undefined || this._visible;} // Default to true
     get color() { return this._color || [0,0,0];}
     get url() { return this._url || null}
+
+    get fullSize() { // The size without borders
+        if (this.$fullSize) return this.$fullSize;
+        this.$fullSize = [...this.rawSize];
+        if (this.parent) {
+            if (this.autoSize[0]) { this.$fullSize[0] = this.parent.size[0] * this.autoSize[0]; }
+            if (this.autoSize[1]) { this.$fullSize[1] = this.parent.size[1] * this.autoSize[1]; }
+        }
+        return this.$fullSize;
+    }
+
+    onSizeSet() {
+        this.$size = null;
+        this.$fullSize = null;
+        this.localChanged();
+        if (this.children) this.children.forEach(c => c.onSizeSet());
+    }
+
+    get size() { // Subtracts the borders
+        if (this.$size) return this.$size;
+        this.$size = [...this.fullSize];
+        this.$size[0] -= (this.border[0] + this.border[2]);
+        this.$size[1] -= (this.border[1] + this.border[3]);
+        return this.$size;
+    }
+
+    get local() {
+        console.log("new actor local");
+        if (!this.$local) {
+            let parentSize = [0,0];
+            if (this.parent) parentSize = this.parent.size;
+            const relativeTranslation = RelativeTranslation(this.translation, this.anchor, this.pivot, this.border, this.fullSize,  parentSize);
+            this.$local = m4_scaleRotationTranslation(this.scale, this.rotation, relativeTranslation);
+        }
+        return this.$local;
+    }
 
 }
 WidgetActor.register('WidgetActor');
@@ -51,17 +100,26 @@ export class WidgetPawn extends mix(CardPawn).with(PM_ThreeVisible) {
 
         const mesh = new THREE.Mesh( this.geometry, this.material );
         this.setRenderObject(mesh);
+        this.addToLayers("pointer");
 
         this.listen("_parent", this.onParentSet);
         this.listen("_size", this.onSizeSet);
         this.listen("_color", this.onColorSet);
+        this.listen("_anchor", this.onLocalChanged);
+        this.listen("_pivot", this.onLocalChanged);
+        this.listen("_border", this.onLocalChanged);
+        this.listen("_autoSize", this.onLocalChanged);
 
 
     }
 
+
+    get rawSize() { return this.actor.rawSize; } // Without borders and autoSize
+    get fullSize() { return this.actor.fullSize; } // With borders
     get size() { return this.actor.size; }
     get anchor() { return this.actor.anchor }
     get pivot() { return this.actor.pivot }
+    get border() { return this.actor.border }
     get autoSize() { return this.actor.autoSize }
     get isVisible() { return this.actor.isVisible} // Default to true
     get color() { return this.actor.color }
@@ -75,7 +133,9 @@ export class WidgetPawn extends mix(CardPawn).with(PM_ThreeVisible) {
     }
 
     onParentSet() {
+        this.onLocalChanged();
         this.setPolygonOffsets();
+
     }
 
     setPolygonOffsets() { // Set the polygon offsets to 1 less than our parent to prevent z fighting.
@@ -90,30 +150,30 @@ export class WidgetPawn extends mix(CardPawn).with(PM_ThreeVisible) {
     }
 
     onSizeSet() {
+        this.onLocalChanged();
         const plane = new THREE.PlaneGeometry(...this.size, 1);
         this.geometry.copy(plane);
         plane.dispose();
+        if (this.children) this.children.forEach(c => c.onSizeSet());
     }
 
     onColorSet() {
         this.material.color.set(new THREE.Color(...this.color));
     }
 
-    // get global() {
-    //     if (this.$global) return this.$global;
-    //     console.log("new global");
-    //     if (this.parent) {
-    //         // const halfParent = v2_scale(this.parent.size, 0.5);
-    //         // const halfSize = v2_scale(this.size, 0.5);
-    //         // const anchor = v2_multiply(halfParent, this.anchor);
-    //         // const pivot = v2_multiply(halfSize, this.pivot);
-    //         // const offset = v2_sub(anchor, pivot);
-    //         this.$global = m4_multiply(this.local, this.parent.global);
-    //     } else {
-    //         this.$global = this.local;
-    //     }
-    //     return this.$global;
-    // }
+    get local() {
+        if (this._local) return this. _local;
+
+        let parentSize = [0,0];
+        if (this.parent) parentSize = this.parent.size;
+
+        const relativeTranslation = RelativeTranslation(this.translation, this.anchor, this.pivot, this.border, this.fullSize,  parentSize);
+        this._local = m4_scaleRotationTranslation(this._scale, this._rotation, relativeTranslation);
+
+        if (this._localOffset) this._local = m4_multiply(this._localOffset, this._localOffset);
+
+        return this._local;
+    }
 
 }
 
@@ -182,6 +242,8 @@ export class CanvasWidgetActor extends WidgetActor {
 
     get pawn() { return CanvasWidgetPawn; }
 
+    get resolution() { return this._resolution || 300;}
+
 }
 CanvasWidgetActor.register('CanvasWidgetActor');
 
@@ -193,37 +255,40 @@ export class CanvasWidgetPawn extends WidgetPawn {
 
     constructor(...args) {
         super(...args);
+        this.buildCanvas();
+        this.listen("_resolution", this.onSizeSet);
+    }
+
+    buildCanvas() {
+        if (this.material.map) this.material.map.dispose();
+        if (this.canvas) this.canvas.remove();
 
         this.canvas = document.createElement("canvas");
         document.body.insertBefore(this.canvas, null);
         this.cc = this.canvas.getContext('2d');
         this.material.map = new THREE.CanvasTexture(this.canvas);
+        this.canvas.width = this.size[0] * this.resolution;
+        this.canvas.height = this.size[1] * this.resolution;
+        this.material.needsUpdate = true;
 
-
-        const xxx = RelativeTransform([0,0,0], [-1,0], [-1,0], [10,10], [500,200]);
-        console.log(xxx);
-
-        // canvas size relative to card?
-
-        this.canvas.width = this.size[0] * 300;
-        this.canvas.height = this.size[1] * 300;
-
-        // this.cc.fillStyle = 'white';
-        this.cc.fillStyle = canvasColor(...this.color);
-        this.cc.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.cc.fillStyle = 'red';
-        this.cc.fillText("xxx", 10, 10);
-
-        // this.canvasContext.fillStyle = 'red';
-        // this.canvasContext.fillRect(20, 10, 10, 10);
-
+        this.draw();
     }
 
     destroy() {
         super.destroy();
         if (this.material.map) this.material.map.dispose();
-        this.canvas.remove();
+        if (this.canvas) this.canvas.remove();
     }
+
+    get resolution() { return this.actor.resolution;}
+
+    onSizeSet() {
+        super.onSizeSet();
+        if (this.material.map) this.material.map.dispose();
+        this.buildCanvas();
+    }
+
+    draw() {};
 
 }
 
@@ -231,11 +296,18 @@ export class CanvasWidgetPawn extends WidgetPawn {
 //-- TextWidgetActor -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class TextWidgetActor extends WidgetActor {
+export class TextWidgetActor extends CanvasWidgetActor {
 
     get pawn() { return TextWidgetPawn; }
 
     get text() { return this._text || "Text"};
+    get font() { return this._font || "sans-serif";}
+    get point() { return this._point || 24 }
+    get lineSpacing() { return this._lineSpacing || 0;}
+    get style() { return this._style || "normal";}
+    get alignX() { return this._alignX || "center";}
+    get alignY() { return this._alignY || "middle";}
+    get wrap() { return this._wrap === undefined || this._wrap;} // Default to true
 
 
 }
@@ -249,12 +321,91 @@ export class TextWidgetPawn extends CanvasWidgetPawn {
 
     constructor(...args) {
         super(...args);
+
+        this.listen("_text", this.draw);
+        this.listen("_font", this.draw);
+        this.listen("_point", this.draw);
+        this.listen("_lineSpacing", this.draw);
+        this.listen("_style", this.draw);
+        this.listen("_alignX", this.draw);
+        this.listen("alignY", this.draw);
+        this.listen("_text", this.draw);
+        this.listen("_wrap", this.draw);
+
     }
 
+
     get text() { return this.actor.text; }
+    get font() { return this.actor.font;}
+    get point() { return this.actor.point; }
+    get lineSpacing() { return this.actor.lineSpacing;}
+    get style() { return this.actor.style;}
+    get alignX() { return this.actor.alignX;}
+    get alignY() { return this.actor.alignY;}
+    get wrap() { return this.actor.wrap;}
 
     destroy() {
         super.destroy();
+    }
+
+    lines() {
+        if (!this.wrap) return this.text.split('\n');
+        const out = [];
+        const spaceWidth = this.cc.measureText(' ').width;
+        const words = this.text.split(' ');
+        let sum = this.canvas.width+1;
+        words.forEach( word => {
+            const wordWidth = this.cc.measureText(word).width
+            sum += spaceWidth + wordWidth;
+            if (sum > this.canvas.width) {
+                out.push(word);
+                sum = wordWidth;
+            } else {
+                out[out.length-1] += ' ' + word;
+            }
+        });
+        return out;
+    }
+
+    onSizeSet() {
+        super.onSizeSet();
+        this.draw();
+    }
+
+    draw() {
+
+        this.cc.textAlign = this.alignX;
+        this.cc.textBaseline = this.alignY;
+        this.cc.font = this.style + " " + this.point + "px " + this.font;
+
+        const lineHeight = (this.point + this.lineSpacing);
+
+        this.cc.fillStyle = canvasColor(...this.color);
+        this.cc.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.cc.fillStyle = 'black';
+
+        const lines = this.lines();
+
+        let xy = [0,0];
+        let yOffset = 0;
+        if (this.alignX === "center") {
+            xy[0] = this.canvas.width / 2;
+        } else if (this.alignX === "right") {
+            xy[0] = this.canvas.width;
+        }
+        if (this.alignY === "middle") {
+            xy[1] = this.canvas.height / 2;
+            yOffset = lineHeight * (lines.length-1) / 2;
+        } else if (this.alignY === "bottom") {
+            xy[1] = this.canvas.height;
+            yOffset = lineHeight * (lines.length-1);
+        }
+
+        lines.forEach((line,i) => {
+            const o = (i * lineHeight) - yOffset;
+            this.cc.fillText(line, xy[0], xy[1] + o);
+        });
+
     }
 
 }
