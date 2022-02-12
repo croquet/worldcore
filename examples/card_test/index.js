@@ -5,7 +5,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     AM_Predictive, PM_Predictive,
     AM_PointerTarget, PM_Pointer, PM_PointerTarget, CardActor, CardPawn,
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
-    TextWidgetActor } from "@croquet/worldcore";
+    TextWidgetActor, ButtonWidgetActor } from "@croquet/worldcore";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
@@ -81,38 +81,38 @@ class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisibl
 //-- CardActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class MyWidgetActor extends WidgetActor {
-    get pawn() {return MyWidgetPawn}
+// class MyWidgetActor extends WidgetActor {
+//     get pawn() {return MyWidgetPawn}
 
-    // onPointerEnter()  { console.log("pointer enter"); }
-    // onPointerLeave()  { console.log("pointer leave"); }
-    // onFocus() { console.log("focus"); }
-    // onBlur() { console.log("blur"); }
-    // onPointerMove() { console.log("pointer move"); }
-    // onPointerDown() { console.log("pointer down"); }
-    // onPointerUp() { console.log("pointer up"); }
-}
-MyWidgetActor.register('MyWidgetActor');
+//     // onPointerEnter()  { console.log("pointer enter"); }
+//     // onPointerLeave()  { console.log("pointer leave"); }
+//     // onFocus() { console.log("focus"); }
+//     // onBlur() { console.log("blur"); }
+//     // onPointerMove() { console.log("pointer move"); }
+//     // onPointerDown() { console.log("pointer down"); }
+//     // onPointerUp() { console.log("pointer up"); }
+// }
+// MyWidgetActor.register('MyWidgetActor');
 
 //------------------------------------------------------------------------------------------
 //-- CardPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class MyWidgetPawn extends WidgetPawn {
-    constructor(...args) {
-        super(...args);
-        console.log("widget pawn constructor");
-    }
+// class MyWidgetPawn extends WidgetPawn {
+//     constructor(...args) {
+//         super(...args);
+//         console.log("widget pawn constructor");
+//     }
 
-    // onPointerEnter()  { console.log("pointer enter"); }
-    // onPointerLeave()  { console.log("pointer leave"); }
-    // onFocus() { console.log("focus"); }
-    // onBlur() { console.log("blur"); }
-    // onPointerMove() { console.log("pointer move"); }
-    // onPointerDown() { console.log("pointer down"); }
-    // onPointerUp() { console.log("pointer up"); }
+//     // onPointerEnter()  { console.log("pointer enter"); }
+//     // onPointerLeave()  { console.log("pointer leave"); }
+//     // onFocus() { console.log("focus"); }
+//     // onBlur() { console.log("blur"); }
+//     // onPointerMove() { console.log("pointer move"); }
+//     // onPointerDown() { console.log("pointer down"); }
+//     // onPointerUp() { console.log("pointer up"); }
 
-}
+// }
 
 
 //------------------------------------------------------------------------------------------
@@ -205,22 +205,29 @@ class MyModelRoot extends ModelRoot {
         this.level = LevelActor.create();
         // this.widget = MyWidgetActor.create({translation: [0,0,-3]});
         this.widget0 = ImageWidgetActor.create({translation: [0,0,-3], color: [1,1,1], size: [2,1], url: llama});
-        this.widget1 = ImageWidgetActor.create({parent: this.widget0, translation: [0.0,0.0,0], border: [0.1, 0.1, 0.1 ,0.1], color: [1,1,1], size: [0.5,0.5], url: diana , anchor: [-1,1], pivot: [-1,1], autoSize: [1,1]});
-        this.widget2 = TextWidgetActor.create({parent: this.widget1, translation: [0,0,0], color: [1,1,1],autoSize:[1,1], size: [0.3,0.3], anchor: [0,0], pivot: [0,0],
-            text:"This is a test of word wrap. It has a lot of text. And it should run onto the next line. You can have as much text as you want and it automatically reformats itself if the widget parameters change!", alignX: "center", alignY: "middle", font: "Trebuchet MS"});
+        this.widget1 = ImageWidgetActor.create({parent: this.widget0, translation: [0.0,0.0,0], border: [0.1, 0.1, 0.1 ,0.1], color: [1,1,1], size: [0.5,0.5], url: diana , anchor: [-1,1], pivot: [-1,1], autoSize: [0,0]});
+        // this.widget2 = TextWidgetActor.create({parent: this.widget1, translation: [0,0,0], color: [1,1,1],autoSize:[1,1], size: [0.3,0.3], anchor: [0,0], pivot: [0,0],
+        //     text:"This is a test of word wrap. It has a lot of text. And it should run onto the next line. You can have as much text as you want and it automatically reformats itself if the widget parameters change!", alignX: "center", alignY: "middle", font: "Trebuchet MS"});
 
-        this.subscribe("input", "zDown", this.test0)
-        this.subscribe("input", "xDown", this.test1)
+        this.button = ButtonWidgetActor.create({parent: this.widget0, size: [0.5,0.5]})
+
+        this.subscribe("input", "zDown", this.test0);
+        this.subscribe("input", "xDown", this.test1);
+        this.subscribe("input", "cDown", this.test2);
     }
 
     test0() {
         console.log("test0");
-        this.widget2.set({resolution: 75, point: 6});
+        // this.widget2.set({resolution: 75, point: 6});
     }
 
     test1() {
         console.log("test1");
-        this.widget2.set({resolution: 600, point: 48});
+        // this.widget2.set({resolution: 600, point: 48});
+    }
+
+    test2() {
+        this.widget0.set({visible: !this.widget0.isVisible});
     }
 
 }

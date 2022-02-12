@@ -73,6 +73,7 @@ export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) 
         this.raycaster.setFromCamera({x: xy[0], y: xy[1]}, render.camera);
         const h = this.raycaster.intersectObjects(targets || render.threeLayer("pointer"));
         if (h.length === 0) return {};
+        // console.log(h);
         const hit = h[0];
         let normal = hit.face.normal;
         if(normal){

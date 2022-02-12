@@ -1,6 +1,6 @@
 import { Actor, Pawn, mix, AM_Predictive, PM_Predictive, LoadImage, LoadFont, m4_multiply, v2_multiply, v2_sub, v2_scale, v2_add,
-    m4_scaleRotationTranslation } from "@croquet/worldcore-kernel";
-import { AM_PointerTarget, PM_ThreePointerTarget, CardActor, CardPawn } from "./Card";
+    m4_scaleRotationTranslation, GetPawn } from "@croquet/worldcore-kernel";
+import { AM_PointerTarget, PM_PointerTarget, CardActor, CardPawn } from "./Card";
 import { PM_ThreeVisible, THREE } from "@croquet/worldcore-three";
 
 //------------------------------------------------------------------------------------------
@@ -15,24 +15,21 @@ function RelativeTranslation(t, anchor, pivot, border, size, parentSize) {
     return [t[0]+aX-pX, t[1]+aY-pY, t[2]];
 }
 
-
 //------------------------------------------------------------------------------------------
 //-- WidgetActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class WidgetActor extends CardActor {
+export class WidgetActor extends mix(Actor).with(AM_Predictive) {
 
     get pawn() { return WidgetPawn; }
 
     init(options) {
         super.init(options);
-
         this.listen("_size", this.onSizeSet);
         this.listen("_anchor", this.onSizeSet);
         this.listen("_pivot", this.onSizeSet);
         this.listen("_border", this.onSizeSet);
         this.listen("_autoSize", this.onSizeSet);
-
     }
 
     get rawSize() { return this._size || [1,1];}
@@ -70,7 +67,6 @@ export class WidgetActor extends CardActor {
     }
 
     get local() {
-        console.log("new actor local");
         if (!this.$local) {
             let parentSize = [0,0];
             if (this.parent) parentSize = this.parent.size;
@@ -79,7 +75,6 @@ export class WidgetActor extends CardActor {
         }
         return this.$local;
     }
-
 }
 WidgetActor.register('WidgetActor');
 
@@ -87,32 +82,7 @@ WidgetActor.register('WidgetActor');
 //-- WidgetPawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class WidgetPawn extends mix(CardPawn).with(PM_ThreeVisible) {
-
-    constructor(...args) {
-        super(... args);
-
-        this.geometry = new THREE.PlaneGeometry(...this.size, 1);
-        // this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(...this.color), side: THREE.DoubleSide});
-        this.material = new THREE.MeshStandardMaterial({side: THREE.DoubleSide});
-        this.material.polygonOffset = true;
-        this.setPolygonOffsets();
-
-        const mesh = new THREE.Mesh( this.geometry, this.material );
-        this.setRenderObject(mesh);
-        this.addToLayers("pointer");
-
-        this.listen("_parent", this.onParentSet);
-        this.listen("_size", this.onSizeSet);
-        this.listen("_color", this.onColorSet);
-        this.listen("_anchor", this.onLocalChanged);
-        this.listen("_pivot", this.onLocalChanged);
-        this.listen("_border", this.onLocalChanged);
-        this.listen("_autoSize", this.onLocalChanged);
-
-
-    }
-
+export class WidgetPawn extends mix(Pawn).with(PM_Predictive) {
 
     get rawSize() { return this.actor.rawSize; } // Without borders and autoSize
     get fullSize() { return this.actor.fullSize; } // With borders
@@ -124,10 +94,61 @@ export class WidgetPawn extends mix(CardPawn).with(PM_ThreeVisible) {
     get isVisible() { return this.actor.isVisible} // Default to true
     get color() { return this.actor.color }
 
-    destroy() { // When the pawn is destroyed, we dispose of our Three.js objects.
-        super.destroy();
+    get local() { // Revised local to incorporate widget layout
+        if (this._local) return this. _local;
 
-        // Three.js clean-up
+        let parentSize = [0,0];
+        if (this.parent) parentSize = this.parent.size;
+
+        const relativeTranslation = RelativeTranslation(this.translation, this.anchor, this.pivot, this.border, this.fullSize,  parentSize);
+        this._local = m4_scaleRotationTranslation(this._scale, this._rotation, relativeTranslation);
+
+        if (this._localOffset) this._local = m4_multiply(this._localOffset, this._localOffset);
+
+        return this._local;
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- VisibleWidgetActor --------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class VisibleWidgetActor extends WidgetActor {
+
+    get pawn() { return VisibleWidgetPawn; }
+}
+VisibleWidgetActor.register('VisibleWidgetActor');
+
+//------------------------------------------------------------------------------------------
+//-- VisibleWidgetPawn ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class VisibleWidgetPawn extends mix(WidgetPawn).with(PM_ThreeVisible) {
+
+    constructor(actor) {
+        super(actor);
+
+        this.geometry = new THREE.PlaneGeometry(...this.size, 1);
+        this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(...this.color), side: THREE.DoubleSide});
+        this.material.polygonOffset = true;
+        this.setPolygonOffsets();
+
+        const mesh = new THREE.Mesh( this.geometry, this.material );
+        this.setRenderObject(mesh);
+        this.refreshVisibility();
+        this.listen("_parent", this.onParentSet);
+        this.listen("_size", this.onSizeSet);
+        this.listen("_color", this.onColorSet);
+        this.listen("_anchor", this.onLocalChanged);
+        this.listen("_pivot", this.onLocalChanged);
+        this.listen("_border", this.onLocalChanged);
+        this.listen("_autoSize", this.onLocalChanged);
+        this.listen("_visible", this.onVisibleSet);
+    }
+
+    destroy() {
+        super.destroy();
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -135,7 +156,25 @@ export class WidgetPawn extends mix(CardPawn).with(PM_ThreeVisible) {
     onParentSet() {
         this.onLocalChanged();
         this.setPolygonOffsets();
+        this.refreshVisibility();
+    }
 
+    onVisibleSet() {
+        this.refreshVisibility();
+    }
+
+//Visibility and polygon offsets are not robust with parent changes.
+// Need a way to set visibiligy locally like the local offset.
+
+    refreshVisibility() {
+        let v = this.isVisible;
+        let p = this.parent;
+        while(p) {
+            v = v && p.isVisible;
+            p = p.parent;
+        }
+        this.renderObject.visible = v;
+        if (this.children) this.children.forEach(c => c.refreshVisibility());
     }
 
     setPolygonOffsets() { // Set the polygon offsets to 1 less than our parent to prevent z fighting.
@@ -161,27 +200,13 @@ export class WidgetPawn extends mix(CardPawn).with(PM_ThreeVisible) {
         this.material.color.set(new THREE.Color(...this.color));
     }
 
-    get local() {
-        if (this._local) return this. _local;
-
-        let parentSize = [0,0];
-        if (this.parent) parentSize = this.parent.size;
-
-        const relativeTranslation = RelativeTranslation(this.translation, this.anchor, this.pivot, this.border, this.fullSize,  parentSize);
-        this._local = m4_scaleRotationTranslation(this._scale, this._rotation, relativeTranslation);
-
-        if (this._localOffset) this._local = m4_multiply(this._localOffset, this._localOffset);
-
-        return this._local;
-    }
-
 }
 
 //------------------------------------------------------------------------------------------
 //-- ImageWidgetActor ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class ImageWidgetActor extends WidgetActor {
+export class ImageWidgetActor extends VisibleWidgetActor {
 
     get pawn() { return ImageWidgetPawn; }
 
@@ -192,7 +217,7 @@ ImageWidgetActor.register('ImageWidgetActor');
 //-- ImageWidgetPawn -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class ImageWidgetPawn extends WidgetPawn {
+export class ImageWidgetPawn extends VisibleWidgetPawn {
 
     constructor(...args) {
         super(...args);
@@ -238,7 +263,7 @@ function canvasColor(r, g, b) {
 //-- CanvasWidgetActor ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class CanvasWidgetActor extends WidgetActor {
+export class CanvasWidgetActor extends VisibleWidgetActor {
 
     get pawn() { return CanvasWidgetPawn; }
 
@@ -251,7 +276,7 @@ CanvasWidgetActor.register('CanvasWidgetActor');
 //-- CanvasWidgetPawn -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class CanvasWidgetPawn extends WidgetPawn {
+export class CanvasWidgetPawn extends VisibleWidgetPawn {
 
     constructor(...args) {
         super(...args);
@@ -408,4 +433,127 @@ export class TextWidgetPawn extends CanvasWidgetPawn {
 
     }
 
+}
+
+//------------------------------------------------------------------------------------------
+//-- ControlWidgetActor --------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class ControlWidgetActor extends VisibleWidgetActor {
+
+    get pawn() { return ControlWidgetPawn; }
+
+}
+ControlWidgetActor.register('ControlWidgetActor');
+
+//------------------------------------------------------------------------------------------
+//-- ControlWidgetPawn ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class ControlWidgetPawn extends mix(VisibleWidgetPawn).with(PM_PointerTarget) {
+    constructor(actor) {
+        super(actor);
+
+        this.addToLayers("pointer");
+    }
+}
+
+
+
+//------------------------------------------------------------------------------------------
+//-- ButtonWidgetActor ---------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class ButtonWidgetActor extends ControlWidgetActor {
+
+    get pawn() { return ButtonWidgetPawn; }
+
+    init(options) {
+        super.init(options);
+
+        this._normal = VisibleWidgetActor.create({parent: this, autoSize: [1,1], color: [0,1,0]});
+        this._hovered = VisibleWidgetActor.create({parent: this, autoSize: [1,1], color: [0,0,1], visible:false});
+        this._pressed = VisibleWidgetActor.create({parent: this, autoSize: [1,1], color: [1,0,0], visible:false});
+
+        // this.set({normal: VisibleWidgetActor.create({parent: this, autoSize: [1,1], color: [0,1,0]})});
+        // if (!this.hover) this.set({hover: VisibleWidgetActor.create({parent: this, autoSize: [1,1], color: [0,0,1], visible:false})});
+        // if (!this.pressed) this.set({pressed: VisibleWidgetActor.create({parent: this, autoSize: [1,1], color: [1,0,0], visible:false})});
+
+        // console.log(this.normal);
+    }
+
+    get normal() {return this._normal; }
+    get hovered() {return this._hovered; }
+    get pressed() {return this._pressed; }
+
+    // // get label() {return this._label; }
+
+
+}
+ButtonWidgetActor.register('ButtonWidgetActor');
+
+//------------------------------------------------------------------------------------------
+//-- ButtonWidgetPawn ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+
+export class ButtonWidgetPawn extends ControlWidgetPawn {
+
+    constructor(actor) {
+        super(actor)
+    }
+
+    get normal() {
+        if (!this._normal) {
+            this._normal = null;
+            if (this.actor.normal) this._normal = GetPawn(this.actor.normal.id);
+        }
+        return this._normal;
+    }
+
+    get hovered() {
+        if (!this._hovered) {
+            this._hovered = null;
+            if (this.actor.hovered) this._hovered = GetPawn(this.actor.hovered.id);
+        }
+        return this._hovered;
+    }
+
+    get pressed() {
+        if (!this._pressed) {
+            this._pressed = null;
+            if (this.actor.pressed) this._pressed = GetPawn(this.actor.pressed.id);
+        }
+        return this._pressed;
+    }
+
+    onNormalSet() { this._normal = null; }
+
+    // onHoverSet() {
+    //     this._hover = null;
+    //     if (this.actor.hover) this._hover = GetPawn(this.actor.hover.id);
+    // }
+
+    // onPressedSet() {
+    //     this._pressed = null;
+    //     if (this.actor.pressed) this._pressed = GetPawn(this.actor.pressed.id);
+    // }
+
+    onPointerEnter() {
+        console.log("pointerEnter");
+        this.normal.renderObject.visible = false;
+        this.hovered.renderObject.visible = true;
+    }
+
+    onPointerLeave() {
+        console.log("pointerLeave");
+        this.normal.renderObject.visible = true;
+        this.hovered.renderObject.visible = false;
+    }
+
+    // onPointerDown() {
+    //     console.log("pointerLeave");
+    //     this.normal.renderObject.visible = true;
+    //     this.hovered.renderObject.visible = false;
+    // }
 }
