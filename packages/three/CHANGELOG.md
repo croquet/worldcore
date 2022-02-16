@@ -29,5 +29,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 
 ## Pending
+### Changed
+- PM_ThreeCamera.raycast handles grouped objects
+- PM_Visible inherits from base PM_Visible in kernel
+- PM_ThreeCamera inherits from base PM_Camera in kernel
+- ThreeRenderManager inherits from base RenderManager in kernel
+
+
 ### Added
+- ThreeRenderManager has threeLayer() to access Three-specific layer data.
+- ThreeRenderManager has threeLayerUnion()
+
+
 

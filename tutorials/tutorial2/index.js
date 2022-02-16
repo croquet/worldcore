@@ -9,7 +9,7 @@
 // This tutorial show how to create a hierarchy of dynamic objects and control them using
 // input events.
 
-import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, PM_Visible, RenderManager, DrawCall, Cube,
+import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, PM_WebGLVisible, WebGLRenderManager, DrawCall, Cube,
     v3_normalize, q_axisAngle, toRad, InputManager, q_multiply } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ MyActor.register('MyActor');
 // and they can communicate with their respective pawns without getting their wires crossed.
 //
 
-class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
+class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_WebGLVisible) {
     constructor(...args) {
         super(...args);
         this.mesh = Cube(1,1,1);
@@ -224,7 +224,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, RenderManager];
+        return [InputManager, WebGLRenderManager];
     }
 
 }

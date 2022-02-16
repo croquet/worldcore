@@ -1,4 +1,4 @@
-import { toRad, m4_identity, ViewService } from "@croquet/worldcore-kernel";
+import { toRad, m4_identity, ViewService, RenderManager, PM_Camera, PM_Visible } from "@croquet/worldcore-kernel";
 
 import { MainDisplay, Scene, Camera, Lights, GeometryBuffer, Framebuffer, SharedStencilFramebuffer, GetGLVersion, SetGLCamera, SetGLPipeline, StartStencilCapture, EndStencil, StartStencilApply } from "./Render";
 import { BasicShader, DecalShader, TranslucentShader, InstancedShader, GeometryShader, InstancedGeometryShader, TranslucentGeometryShader, PassthruShader, BlendShader, AOShader, InstancedDecalShader } from "./Shaders";
@@ -10,13 +10,13 @@ import { BasicShader, DecalShader, TranslucentShader, InstancedShader, GeometryS
 
 // Visible pawns have a mesh and a material and they handle inserting and removing themselves
 // from the scene. They should only be used with a companion mixin that has the method "global" that
-// supplies them with a 4x4 transform. Make sure the companion mixim is added first so it will
+// supplies them with a 4x4 transform. Make sure the companion mixin is added first so it will
 // be updated first.
 //
 // Note that destroying a pawn will not clean up the mesh and the material because they may be
 // used by multiple pawns.
 
-export const PM_Visible = superclass => class extends superclass {
+export const PM_WebGLVisible = superclass => class extends PM_Visible(superclass) {
 
     constructor(...args) {
         super(...args);
@@ -25,7 +25,7 @@ export const PM_Visible = superclass => class extends superclass {
 
     destroy() {
         super.destroy();
-        if (this.draw) this.service('RenderManager').scene.removeDrawCall(this.draw);
+        if (this.draw) this.service('WebGLRenderManager').scene.removeDrawCall(this.draw);
     }
 
     refreshDrawTransform() {
@@ -34,7 +34,7 @@ export const PM_Visible = superclass => class extends superclass {
 
     setDrawCall(draw) {
         if (this.draw === draw) return;
-        const scene = this.service('RenderManager').scene;
+        const scene = this.service('WebGLRenderManager').scene;
         if (this.draw) scene.removeDrawCall(this.draw);
         this.draw = draw;
         if (this.draw) {
@@ -54,7 +54,7 @@ export const PM_Visible = superclass => class extends superclass {
 // remove the draw call from the scene, it just removes the transform for this instance.
 
 
-export const PM_InstancedVisible = superclass => class extends superclass {
+export const PM_WebGLInstancedVisible = superclass => class extends superclass {
 
     constructor(...args) {
         super(...args);
@@ -71,7 +71,7 @@ export const PM_InstancedVisible = superclass => class extends superclass {
     }
 
     setDrawCall(draw) {
-        const scene = this.service('RenderManager').scene;
+        const scene = this.service('WebGLRenderManager').scene;
 
         this.draw = draw;
         if (this.draw) {
@@ -88,11 +88,11 @@ export const PM_InstancedVisible = superclass => class extends superclass {
 
 
 
-export const PM_Camera = superclass => class extends superclass {
+export const PM_WebGLCamera = superclass => class extends PM_Camera(superclass) {
 
     constructor(...args) {
         super(...args);
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         if (this.isMyPlayerPawn && render) {
             render.camera.setLocation(this.lookGlobal);
             render.camera.setProjection(toRad(60), 1.0, 10000.0);
@@ -101,7 +101,7 @@ export const PM_Camera = superclass => class extends superclass {
     }
 
     refreshCameraTransform() {
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         if (!this.isMyPlayerPawn || !render) return;
         render.camera.setLocation(this.lookGlobal);
     }
@@ -114,9 +114,9 @@ export const PM_Camera = superclass => class extends superclass {
 
 // The top render interface that controls the execution of draw passes.
 
-export class RenderManager extends ViewService {
-    constructor(name) {
-        super(name ||"RenderManager");
+export class WebGLRenderManager extends RenderManager {
+    constructor(options, name) {
+        super(options, name || "WebGLRenderManager");
         SetGLPipeline(this);
         this.display = new MainDisplay();
         this.buildBuffers();

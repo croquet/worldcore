@@ -49,6 +49,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 
 ## Pending
+### Added
+- Pawns have init() so you don't need to define constructors
+- Base mixins/classes for generic renderer support:
+- PM_Visible
+- PM_Camera
+- RenderManager
+
+### Fixed
+- DoubleDown and TripleDown events work on touch devices
+
+### Removed
+smoothSet() from AM_Smoothed
+defineSmoothedPawnProperty from PM_Smoothed
 
 
 

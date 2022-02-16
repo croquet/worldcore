@@ -15,7 +15,7 @@ export class GodView extends ViewService {
     constructor() {
         super("GodView");
 
-        this.camera = this.service("RenderManager").camera;
+        this.camera = this.service("WebGLRenderManager").camera;
         this.updateCamera();
 
         this.subscribe("ui", 'pointerDown', this.onPointerDown);

@@ -142,7 +142,14 @@ export class ViewService extends WorldcoreView {
     constructor(name) {
         super(viewRoot.model);
         this.model = viewRoot.model;
-        this.name = name;
+        this.registerViewName(name);
+        // this.name = name;
+        // if (!name) console.error("All services must have public names!");
+        // else if (viewServices.has(name)) console.error("Duplicate service!");
+        // else viewServices.set(name, this);
+    }
+
+    registerViewName(name) {
         if (!name) console.error("All services must have public names!");
         else if (viewServices.has(name)) console.error("Duplicate service!");
         else viewServices.set(name, this);

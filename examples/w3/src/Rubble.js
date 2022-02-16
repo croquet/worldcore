@@ -1,5 +1,5 @@
 import { mix, Actor, Pawn, AM_Smoothed, PM_Smoothed, v3_add, CachedObject, ModelService } from "@croquet/worldcore-kernel";
-import { Material, PM_InstancedVisible, InstancedDrawCall, Cube, Cylinder } from "@croquet/worldcore-webgl"
+import { Material, PM_WebGLInstancedVisible, InstancedDrawCall, Cube, Cylinder } from "@croquet/worldcore-webgl"
 import { AM_Behavioral } from "@croquet/worldcore-behavior"
 
 import { Voxels } from "./Voxels";
@@ -51,7 +51,7 @@ class RubbleActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 }
 RubbleActor.register("RubbleActor");
 
-export class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
+export class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_WebGLInstancedVisible) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(CachedObject("rubbleDrawCall"+this.actor.type, () => this.buildDraw()));
@@ -61,7 +61,7 @@ export class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         const mesh = CachedObject("rubbleMesh"+this.actor.type, () => this.buildMesh());
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        this.service("RenderManager").scene.addDrawCall(draw);
+        this.service("WebGLRenderManager").scene.addDrawCall(draw);
         return draw;
     }
 
@@ -96,7 +96,7 @@ export class TimberActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 }
 TimberActor.register("TimberActor");
 
-export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible) {
+export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_WebGLInstancedVisible) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(CachedObject("timberDrawCall", () => this.buildDraw()));
@@ -106,7 +106,7 @@ export class TimberPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedVisible)
         const mesh = CachedObject("timberMesh", this.buildMesh);
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        this.service("RenderManager").scene.addDrawCall(draw);
+        this.service("WebGLRenderManager").scene.addDrawCall(draw);
         return draw;
     }
 

@@ -15,7 +15,7 @@ const roadColor = [0.6, 0.6, 0.6, 1];
 export class RoadRender extends ViewService {
     constructor() {
         super("RoadRender");
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         this.layers = [];
         for (let z = 0; z < Voxels.sizeZ; z++) {
             this.layers[z] = new RoadLayer(z);
@@ -76,7 +76,7 @@ class RoadLayer extends WorldcoreView {
         this.triangles = new Triangles();
         this.triangles.load();
 
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         this.material = new Material();
         this.material.zOffset = -1;
         this.material.texture.loadFromURL(paper);
@@ -89,7 +89,7 @@ class RoadLayer extends WorldcoreView {
 
     destroy() {
         super.destroy();
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         render.scene.removeDrawCall(this.drawCall);
         this.triangles.destroy();
     }

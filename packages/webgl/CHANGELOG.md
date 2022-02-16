@@ -14,3 +14,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 
 ## Pending
+### Changed
+- Class names prefixed with "WebGL"
+- Classes inherit from base render classes in kernel

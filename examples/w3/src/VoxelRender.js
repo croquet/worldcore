@@ -28,7 +28,7 @@ import stripe from "../assets/stripe50.png";
 export class VoxelRender extends ViewService {
     constructor() {
         super("VoxelRender");
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
 
         this.exteriorMaterial = new Material();
         this.exteriorMaterial.texture.loadFromURL(paper);
@@ -51,7 +51,7 @@ export class VoxelRender extends ViewService {
 
     destroy() {
         super.detach();
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
 
         this.exteriorMaterial.destroy();
         this.exteriorMesh.destroy();

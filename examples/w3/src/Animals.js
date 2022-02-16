@@ -132,7 +132,7 @@ class PersonPawn extends mix(AnimalPawn).with(PM_LayeredInstancedVisible) {
         const mesh = CachedObject("personMesh", this.buildMesh);
         const material = CachedObject("instancedPaperMaterial", this.buildMaterial);
         const draw = new InstancedDrawCall(mesh, material);
-        this.service("RenderManager").scene.addDrawCall(draw);
+        this.service("WebGLRenderManager").scene.addDrawCall(draw);
         return draw;
     }
 

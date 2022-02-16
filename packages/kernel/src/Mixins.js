@@ -238,8 +238,12 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
 
     get translation() { return this._translation || v3_zero() };
     set translation(v) { this.set({translation: v}) };
+
     get rotation() { return this._rotation || q_identity() };
+    set rotation(q) { this.set({rotation: q}) };
+
     get scale() { return this._scale || [1,1,1] };
+    set scale(v) { this.set({scale: v}) };
 }
 RegisterMixin(AM_Spatial);
 
@@ -278,36 +282,28 @@ get lookGlobal() { return this.global; } // Allows objects to have an offset cam
 
 export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
-    init(options) {
-        super.init(options);
-        this.listen("s_set", this.smoothSet);
-        this.listen("s_scale", this.localChanged);
-        this.listen("s_rotation",  this.localChanged);
-        this.listen("s_translation", this.localChanged);
-    }
-
-    smoothSet(options) {
-        const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
-        for (const option of sorted) {
-            const n = "_" + option[0];
-            const v = option[1];
-            const o = this[n];
-            this[n] = v;
-            this.say('s'+n, {v, o}); // Publish a local message whenever a property changes with its old and new value.
-        }
-    }
-
-    moveTo(v) {
-        this.smoothSet({translation: v});
+    scaleTo(v) {
+        this._scale = v;
+        this.$local = null;
+        this.$global = null;
+        this.say("scaling");
     }
 
     rotateTo(q) {
-        this.smoothSet({rotation: q});
+        this._rotation = q;
+        this.$local = null;
+        this.$global = null;
+        this.say("rotating");
     }
 
-    scaleTo(v) {
-        this.smoothSet({scale: v})
+    translateTo(v) {
+        this._translation = v;
+        this.$local = null;
+        this.$global = null;
+        this.say("translating");
     }
+
+    moveTo(v) { this.translateTo(v)}
 
 };
 RegisterMixin(AM_Smoothed);
@@ -328,9 +324,19 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     constructor(...args) {
         super(...args);
         this.tug = 0.2;
-        this.defineSmoothedPawnProperty( "scale", () => this.onLocalChanged() );
-        this.defineSmoothedPawnProperty( "translation",  () => this.onLocalChanged() );
-        this.defineSmoothedPawnProperty( "rotation",  () => this.onLocalChanged(), (a,b) => q_equals(a,b,0.000001), q_slerp );
+
+        this._scale = this.actor.scale;
+        this._rotation = this.actor.rotation;
+        this._translation = this.actor.translation;
+
+        this.listenOnce("_scale", this.onScaleSet);
+        this.listenOnce("scaling", () => this.scaling = true)
+
+        this.listenOnce("_rotation", this.onRotationSet);
+        this.listenOnce("rotating", () => this.rotating = true)
+
+        this.listenOnce("_translation", this.onTranslationSet);
+        this.listenOnce("translating", () => this.translating = true)
     }
 
     set tug(t) {this._tug = t}
@@ -340,29 +346,25 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         this._localOffset = m4;
         this.onLocalChanged();
     }
+    get localOffset() { return this._localOffset; }
 
-    // Creates a property in the pawn that will access a matching property in the actor.
-    // The property will interpolate every frame to track the actor value
-    // Interpolation stops when the pawn equals the actor (within an epsilon)
-    // If you set the property in the actor, it will immediately change in the pawn
-    // When the property changes (ether from set or update) it calls the onSet method
-    // Handles both scalars and vectors automatically
-    // If you need custom equals or lerp functions, you can supply them.
+    get scale() { return this._scale; }
+    get rotation() { return this._rotation; }
+    get translation() { return this._translation; }
 
-    defineSmoothedPawnProperty(name, onSet, equals, lerp) {
-        equals = equals || defaultEquals(this.actor[name]); // Test to determine if value has changed
-        lerp = lerp || defaultLerp(this.actor[name]);       // Interpolation between old and new
+    onScaleSet() {
+        this._scale = this.actor._scale;
+        this.onLocalChanged();
+    }
 
-        const ul = '_' + name;                              // The private name of the property in the pawn
-        this[ul] = this.actor[name]                         // Set the initial value
+    onRotationSet() {
+        this._rotation = this.actor._rotation;
+        this.onLocalChanged();
+    }
 
-        Object.defineProperty(this, name, { get: function() {return this[ul]} });   // Create a public getter
-
-        if (!this.smoothedProperties) this.smoothedProperties = {};     // Store the callbacks
-        this.smoothedProperties[name] = {ul, onSet, equals, lerp};
-
-        this.listenOnce(ul, () => { const o = this[ul]; const v = this.actor[name]; this[ul] = v; if (onSet) onSet(v,o); });    // listen for a set
-        this.listenOnce('s' + ul, () => { this.smoothedProperties[name].changed = true});                                       // listen for a smoothSet
+    onTranslationSet() {
+        this._translation = this.actor._translation;
+        this.onLocalChanged();
     }
 
     onLocalChanged() {
@@ -401,28 +403,30 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
 
-        for (const s of Object.entries(this.smoothedProperties)) {
-            const name = s[0];
-            if (s[1].changed) {
-                const ul = s[1].ul;
-                const equals = s[1].equals;
-                if (equals(this[ul], this.actor[name])) {
-                    this.smoothedProperties[name].changed = false;
-                } else {
-                    const lerp = s[1].lerp;
-                    const o = this[ul];
-                    const v = lerp(o, this.actor[name], tug);
-                    const onSet = s[1].onSet;
-                    this[ul] = v;
-                    if (onSet) onSet(v,o);
-                };
-            }
+        if (!this.scaling || v3_equals(this._scale, this.actor.scale, .0001)) {
+            this.scaling = false;
+        } else {
+            this._scale = v3_lerp(this._scale, this.actor.scale, tug);
+            this.onLocalChanged();
+        }
+
+        if (!this.rotating || q_equals(this._rotation, this.actor.rotation, 0.000001)) {
+            this.rotating = false;
+        } else {
+            this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
+            this.onLocalChanged();
+        }
+
+        if (!this.translating || v3_equals(this._translation, this.actor.translation, .0001)) {
+            this.translating = false;
+        } else {
+            this._translation = v3_lerp(this._translation, this.actor.translation, tug);
+            this.onLocalChanged();
         }
 
         if (!this._global) {
             this.global;
             if (this.children) this.children.forEach(child => child._global = null); // If our global changes, so do the globals of our children
-            // this.say("viewGlobalChanged");
         }
 
     }
@@ -434,49 +438,17 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 
 }
 
-//-- Functions ----------------------------------------------------------------------------
-
-function defaultEquals(v) {
-    if (v.constructor === Array) return defaultVectorEquals;
-    return defaultScalarEquals;
-}
-
-function defaultScalarEquals (a,b) {
-    return 0.0001 > (Math.abs(a-b))
-}
-
-function defaultVectorEquals (a,b) {
-    let i = a.length;
-    while (i--) {
-        if (0.0001 < Math.abs(a[i] - b[i])) return false;
-    }
-    return true
-}
-
-function defaultLerp(v) {
-    if (v.constructor === Array) return defaultVectorLerp;
-    return defaultScalarLerp;
-}
-
-function defaultScalarLerp (a,b,t) {
-    return a + (b - a) * t;
-}
-
-function defaultVectorLerp (a,b,t) {
-    return a.map( (v, i) => {return v + (b[i]-v) * t} )
-}
-
 //------------------------------------------------------------------------------------------
 //-- Predictive ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Avatar actors maintain a primary view-side scale/rotation/translation that you can drive directly
-// from player inputs so the avatar responds quickly to player input. On every frame this
+// Predictive actors maintain a primary view-side scale/rotation/translation that you can drive directly
+// from player inputs so they responds quickly to player input. On every frame this
 // transform is averaged with the official model-side values.
 //
-// If you're using player-controlled avatars, you'll probably want to set:
+// If you're using them, you'll probably want to set:
 //      * Session tps to 60 with no cheat beats
-//      * AM_Avatar tick frequency to <16
+//      * AM_Predictive tick frequency to <16
 //
 // This will create the smoothest/fastest response.
 
@@ -490,6 +462,12 @@ export const AM_Predictive = superclass => class extends AM_Smoothed(superclass)
 
     init(...args) {
         super.init(...args);
+        this.listen("scaleTo", this.scaleTo);
+        this.listen("rotateTo", this.rotateTo);
+        this.listen("translateTo", this.translateTo);
+        this.listen("setVelocity", this.setVelocity);
+        this.listen("setSpin", this.setSpin);
+
         this.future(0).tick(0);
     }
 
@@ -505,43 +483,49 @@ export const AM_Predictive = superclass => class extends AM_Smoothed(superclass)
         if (!this.doomed) this.future(this.tickStep).tick(this.tickStep);
     }
 
+    setVelocity(v) { this._velocity = v; }
+
+    setSpin(q) { this._spin = q; }
+
 };
 RegisterMixin(AM_Predictive);
 
 //-- Pawn ----------------------------------------------------------------------------------
 
 export const PM_Predictive = superclass => class extends PM_Smoothed(superclass) {
+
     constructor(...args) {
         super(...args);
-
-        this.spin = q_identity();
-        this.velocity = v3_zero();
+        this.spin = this.actor.spin;
+        this.velocity = this.actor.velocity;
     }
 
-    predictiveSet(options = {}, throttle = 0) {
-        for (const option in options) {
-            const ul = '_' + option;
-            this[ul] = options[option];
-        }
-        this.say("s_set", options, throttle);
-    }
 
-    moveTo(v, throttle) {
-        this.predictiveSet({translation: v}, throttle);
+    scaleTo(v, throttle) {
+        this.say("scaleTo", v, throttle)
         this.onLocalChanged();
     }
 
     rotateTo(q, throttle) {
-        this.predictiveSet({rotation: q}, throttle);
+        this.say("rotateTo", q, throttle)
         this.onLocalChanged();
     }
 
+    translateTo(v, throttle) {
+        this.say("translateTo", v, throttle)
+        this.onLocalChanged();
+    }
+
+    moveTo(v, throttle) {this.translateTo(v,throttle); }
+
     setVelocity(v, throttle) {
-        this.predictiveSet({velocity: v}, throttle);
+        this.say("setVelocity", v, throttle)
+        this.onLocalChanged();
     }
 
     setSpin(q, throttle) {
-        this.predictiveSet({spin: q}, throttle);
+        this.say("setSpin", q, throttle)
+        this.onLocalChanged();
     }
 
     update(time, delta) {
@@ -569,7 +553,6 @@ export const PM_Predictive = superclass => class extends PM_Smoothed(superclass)
 
 export const AM_Avatar = AM_Predictive;
 export const PM_Avatar = PM_Predictive;
-
 
 
 //------------------------------------------------------------------------------------------

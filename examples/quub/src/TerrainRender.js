@@ -25,7 +25,7 @@ import { Colors } from "./Colors";
 export class TerrainRender extends ViewService {
     constructor() {
         super("TerrainRender");
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         // const render = GetNamedView("ViewRoot").render;
 
         this.exteriorMaterial = new Material();
@@ -55,7 +55,7 @@ export class TerrainRender extends ViewService {
 
     destroy() {
         super.destroy();
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         // const render = GetNamedView("ViewRoot").render;
 
         this.exteriorMaterial.destroy();

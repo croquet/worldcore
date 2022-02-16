@@ -14,7 +14,7 @@ export class GodView extends ViewService {
     constructor() {
         super("GodView");
 
-        const render = this.service('RenderManager');
+        const render = this.service('WebGLRenderManager');
         this.camera = render.camera;
         this.camera.setProjection(fov, 1.0, 10000.0)
         this.camera.setFOV(fov);

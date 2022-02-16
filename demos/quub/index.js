@@ -3,7 +3,7 @@
 // Croquet Studios, 2020
 
 import { ModelRoot, ViewRoot, InputManager, StartWorldcore, v3_normalize, App} from "@croquet/worldcore-kernel";
-import { RenderManager } from "@croquet/worldcore-webgl";
+import { WebGLRenderManager } from "@croquet/worldcore-webgl";
 import { UIManager } from "@croquet/worldcore-widget";
 import { Surfaces } from "./src/Surfaces";
 import { TerrainRender } from "./src/TerrainRender";
@@ -46,7 +46,7 @@ export function GetTopLayer(n) { return topLayer }
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, RenderManager, TerrainRender, VoxelCursor, UIManager, GodView];
+        return [InputManager, WebGLRenderManager, TerrainRender, VoxelCursor, UIManager, GodView];
     }
 
     constructor(model) {
@@ -56,7 +56,7 @@ class MyViewRoot extends ViewRoot {
 
         this.hud = new HUD({parent: ui.root});
 
-        const render = this.service("RenderManager");
+        const render = this.service("WebGLRenderManager");
         render.setBackground([0.45, 0.8, 0.8, 1.0]);
         render.lights.setAmbientColor([0.8, 0.8, 0.8]);
         render.lights.setDirectionalColor([0.4, 0.4, 0.4]);

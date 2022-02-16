@@ -9,7 +9,7 @@
 // This tutorial shows how to create user interface elements, and create avatars that only
 // respond to one user's input.
 
-import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, PM_Visible, RenderManager, DrawCall, Cube,
+import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, PM_WebGLVisible, WebGLRenderManager, DrawCall, Cube,
     v3_normalize, q_axisAngle, toRad, InputManager, q_multiply, UIManager, Widget, ButtonWidget, JoystickWidget, AM_Avatar, PM_Avatar, q_identity,
     q_normalize, PlayerManager, AM_Player, PM_Player, TextWidget } from "@croquet/worldcore";
 
@@ -83,7 +83,7 @@ MyAvatar.register('MyAvatar');
 // correct position of the actor. This is done with the same view smoothing mechanism that normal
 // smoothed pawns use.
 
-class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_Visible) {
+class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_WebGLVisible) {
     constructor(...args) {
         super(...args);
 
@@ -123,7 +123,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Avatar, PM_Player, PM_Visible) {
 
 // No change from the previous tutorial.
 
-class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_Visible) {
+class MyPawn extends mix(Pawn).with(PM_Smoothed, PM_WebGLVisible) {
 
     constructor(...args) {
         super(...args);
@@ -266,7 +266,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, RenderManager, UIManager];
+        return [InputManager, WebGLRenderManager, UIManager];
     }
 
     constructor(model) {

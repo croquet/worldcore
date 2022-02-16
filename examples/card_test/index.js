@@ -3,8 +3,13 @@
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PlayerManager,
     AM_Player, PM_Player, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, PM_ThreeCamera, toRad, THREE,
     AM_Predictive, PM_Predictive,
-    AM_PointerTarget, PM_Pointer, PM_ThreePointerTarget,
-    q_axisAngle, m4_rotationQ, m4_identity, GetPawn } from "@croquet/worldcore";
+    AM_PointerTarget, PM_Pointer, PM_PointerTarget, CardActor, CardPawn,
+    q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
+    TextWidgetActor, ButtonWidgetActor } from "@croquet/worldcore";
+
+import diana from "./assets/diana.jpg";
+import llama from "./assets/llama.jpg";
+import kwark from "./assets/kwark.otf";
 
 //------------------------------------------------------------------------------------------
 //-- MyAvatar ------------------------------------------------------------------------------
@@ -50,6 +55,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisibl
             this.subscribe("input", "dUp", () => {this.cw = 0; this.changeSpin()});
 
         }
+
     }
 
     destroy() { // When the pawn is destroyed, we dispose of our Three.js objects.
@@ -75,60 +81,39 @@ class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisibl
 //-- CardActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class CardActor extends mix(Actor).with(AM_Predictive, AM_PointerTarget) {
+// class MyWidgetActor extends WidgetActor {
+//     get pawn() {return MyWidgetPawn}
 
-    get pawn() { return CardPawn; }
-
-    onPointerDown(pe) {
-        const x = pe.xyzLocal[0];
-        const y = pe.xyzLocal[1];
-        console.log([x,y]);
-    }
-
-}
-CardActor.register('CardActor');
+//     // onPointerEnter()  { console.log("pointer enter"); }
+//     // onPointerLeave()  { console.log("pointer leave"); }
+//     // onFocus() { console.log("focus"); }
+//     // onBlur() { console.log("blur"); }
+//     // onPointerMove() { console.log("pointer move"); }
+//     // onPointerDown() { console.log("pointer down"); }
+//     // onPointerUp() { console.log("pointer up"); }
+// }
+// MyWidgetActor.register('MyWidgetActor');
 
 //------------------------------------------------------------------------------------------
 //-- CardPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class CardPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_ThreePointerTarget) {
+// class MyWidgetPawn extends WidgetPawn {
+//     constructor(...args) {
+//         super(...args);
+//         console.log("widget pawn constructor");
+//     }
 
-    constructor(...args) {
-        super(...args);
-        console.log("new card pawn");
+//     // onPointerEnter()  { console.log("pointer enter"); }
+//     // onPointerLeave()  { console.log("pointer leave"); }
+//     // onFocus() { console.log("focus"); }
+//     // onBlur() { console.log("blur"); }
+//     // onPointerMove() { console.log("pointer move"); }
+//     // onPointerDown() { console.log("pointer down"); }
+//     // onPointerUp() { console.log("pointer up"); }
 
-        this.cube = new THREE.BoxGeometry( 1, 1, 1 );
-        this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(0.5,0.5,0.5)});
-        const mesh = new THREE.Mesh( this.cube,  this.material );
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        this.setRenderObject(mesh);
-    }
+// }
 
-    onFocus(pointerId) {
-        console.log("focused")
-    }
-
-    onFocusFailure(pointerId) {
-        console.log("already focused by another avatar")
-    }
-
-    onBlur(pointerId) {
-        console.log("blurred")
-    }
-
-    onPointerEnter(pointerId) {
-        const pointerPawn = GetPawn(pointerId);
-        const pointerRotation = pointerPawn.actor.rotation;
-        this.localOffset = m4_rotationQ(pointerRotation);
-    }
-
-    onPointerLeave(pointerId) {
-    }
-
-
-}
 
 //------------------------------------------------------------------------------------------
 //-- LevelActor ----------------------------------------------------------------------------
@@ -171,10 +156,10 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         pillar3.position.set(-29.5, 2, 29.5);
         group.add(pillar3);
 
-        const ambient = new THREE.AmbientLight( 0xffffff, 0.85 );
+        const ambient = new THREE.AmbientLight( 0xffffff, 0.5 );
         group.add(ambient);
 
-        const sun = new THREE.DirectionalLight( 0xffffff, 0.85 );
+        const sun = new THREE.DirectionalLight( 0xffffff, 0.5 );
         sun.position.set(1000, 1000, 1000);
         group.add(sun);
 
@@ -216,8 +201,33 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
+        console.log("Start root model!");
         this.level = LevelActor.create();
-        this.card = CardActor.create({translation: [0,0,-10]})
+        // this.widget = MyWidgetActor.create({translation: [0,0,-3]});
+        this.widget0 = ImageWidgetActor.create({translation: [0,0,-3], color: [1,1,1], size: [2,1], url: llama});
+        this.widget1 = ImageWidgetActor.create({parent: this.widget0, translation: [0.0,0.0,0], border: [0.1, 0.1, 0.1 ,0.1], color: [1,1,1], size: [0.5,0.5], url: diana , anchor: [-1,1], pivot: [-1,1], autoSize: [0,0]});
+        // this.widget2 = TextWidgetActor.create({parent: this.widget1, translation: [0,0,0], color: [1,1,1],autoSize:[1,1], size: [0.3,0.3], anchor: [0,0], pivot: [0,0],
+        //     text:"This is a test of word wrap. It has a lot of text. And it should run onto the next line. You can have as much text as you want and it automatically reformats itself if the widget parameters change!", alignX: "center", alignY: "middle", font: "Trebuchet MS"});
+
+        this.button = ButtonWidgetActor.create({parent: this.widget0, size: [0.5,0.5]})
+
+        this.subscribe("input", "zDown", this.test0);
+        this.subscribe("input", "xDown", this.test1);
+        this.subscribe("input", "cDown", this.test2);
+    }
+
+    test0() {
+        console.log("test0");
+        // this.widget2.set({resolution: 75, point: 6});
+    }
+
+    test1() {
+        console.log("test1");
+        // this.widget2.set({resolution: 600, point: 48});
+    }
+
+    test2() {
+        this.widget0.set({visible: !this.widget0.isVisible});
     }
 
 }
@@ -237,15 +247,14 @@ class MyViewRoot extends ViewRoot {
         super(model);
         const three = this.service("ThreeRenderManager");
         three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
-        // this.subscribe("input", "click", () => {this.service("InputManager").enterPointerLock()});
     }
 
 }
 
 StartWorldcore({
-    appId: 'io.croquet.tutorial',
+    appId: 'io.croquet.cardtest',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
-    name: 'tutorial',
+    name: 'CardTest',
     password: 'password',
     model: MyModelRoot,
     view: MyViewRoot,
