@@ -378,6 +378,7 @@ export const PM_Pointer = superclass => class extends superclass {
 // }
 
 
+/*
 
 //------------------------------------------------------------------------------------------
 //-- CardActor ------------------------------------------------------------------------------
@@ -396,4 +397,4 @@ CardActor.register('CardActor');
 
 export class CardPawn extends mix(Pawn).with(PM_Predictive, PM_PointerTarget) {
 }
-
+*/
