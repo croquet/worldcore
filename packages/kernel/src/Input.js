@@ -274,7 +274,7 @@ export class InputManager extends ViewService {
 
     onClick(event) {
         window.focus();
-        this.publish("input", "click");
+        this.publish("input", "click", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
     }
 
     onPointerDown(event) {
@@ -379,7 +379,7 @@ export class InputManager extends ViewService {
     onWheel(event) {
         event.preventDefault();
         const y = event.deltaY;
-        this.publish("input", "wheel", y);
+        this.publish("input", "wheel", y, {xy: [event.clientX, event.clientY]});
     }
 
     onOrientation(event) {
