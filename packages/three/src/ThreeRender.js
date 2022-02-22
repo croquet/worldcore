@@ -77,7 +77,8 @@ export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) 
         if (h.length === 0) return {};
         // console.log(h);
         const hit = h[0];
-        let normal = hit.face.normal;
+        let normal;
+        if(hit.face) normal = hit.face.normal;
         if(normal){
             let m = new THREE.Matrix3().getNormalMatrix( hit.object.matrixWorld );
             normal = normal.clone().applyMatrix3( m ).normalize();
