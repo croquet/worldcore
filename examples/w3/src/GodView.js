@@ -91,7 +91,7 @@ export class GodView extends ViewService {
     }
 
     onWheel(data) {
-        this.setFOV(fov + data / 2000);
+        this.setFOV(fov + data.deltaY / 2000);
     }
 
     onFirstPerson(fp) {

@@ -379,7 +379,7 @@ export class InputManager extends ViewService {
     onWheel(event) {
         event.preventDefault();
         const y = event.deltaY;
-        this.publish("input", "wheel", y, {xy: [event.clientX, event.clientY]});
+        this.publish("input", "wheel", {deltaY: y, xy: [event.clientX, event.clientY]});
     }
 
     onOrientation(event) {

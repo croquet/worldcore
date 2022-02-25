@@ -92,8 +92,8 @@ export class GodView extends ViewService {
         this.setFOV(this.startFOV * 1/(data.zoom));
     }
 
-    wheelZoom(y) {
-        this.setFOV(fov + y / 4000);
+    wheelZoom(e) {
+        this.setFOV(fov + e.deltaY / 4000);
     }
 
     setFOV(angle) {
