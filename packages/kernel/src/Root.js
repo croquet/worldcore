@@ -107,11 +107,12 @@ export class ViewRoot extends WorldcoreView {
         ClearObjectCache();
         this.constructor.viewServices().forEach( service => {
             let options;
+            let name = service.name; // either the class name, or the name property;
             if (service.service) { // Process extended service object
                 options = service.options;
                 service = service.service;
             }
-            new service(options);
+            new service(options, name);
         });
         new PawnManager();
     }
@@ -126,7 +127,13 @@ export class ViewRoot extends WorldcoreView {
         time0 = time1;
         time1 = time;
         const delta = time1 - time0;
-        viewServices.forEach(s => { if (s.update) s.update(time, delta); });
+
+        let done = new Set();
+        viewServices.forEach(s => {
+            if (done.has(s)) {return;}
+            done.add(s);
+            if (s.update) s.update(time, delta);
+        });
     }
 
 }
