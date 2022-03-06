@@ -6,7 +6,6 @@ import { PM_Visible, PM_Camera, RenderManager } from "@croquet/worldcore-kernel"
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
 export const PM_ThreeVisible = superclass => class extends PM_Visible(superclass) {
 
     constructor(...args) {
@@ -153,8 +152,10 @@ export class ThreeRenderManager extends RenderManager {
 
         this.resize();
         this.subscribe("input", "resize", () => this.resize());
+        this.setRender(true);
     }
 
+    setRender(bool){this.doRender = bool; }
     destroy() {
         super.destroy();
         this.renderer.dispose();
@@ -190,7 +191,7 @@ export class ThreeRenderManager extends RenderManager {
     }
 
     update() {
-        this.composer.render();
+        if(this.doRender)this.composer.render();
     }
 
 }

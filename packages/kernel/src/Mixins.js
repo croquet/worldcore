@@ -467,6 +467,7 @@ export const AM_Predictive = superclass => class extends AM_Smoothed(superclass)
         this.listen("translateTo", this.translateTo);
         this.listen("setVelocity", this.setVelocity);
         this.listen("setSpin", this.setSpin);
+        this.listen("setVelocitySpin", this.setVelocitySpin);
 
         this.future(0).tick(0);
     }
@@ -486,6 +487,11 @@ export const AM_Predictive = superclass => class extends AM_Smoothed(superclass)
     setVelocity(v) { this._velocity = v; }
 
     setSpin(q) { this._spin = q; }
+
+    setVelocitySpin(vq){
+        this._velocity = vq[0];
+        this._spin = vq[1];
+    }
 
 };
 RegisterMixin(AM_Predictive);
@@ -525,6 +531,11 @@ export const PM_Predictive = superclass => class extends PM_Smoothed(superclass)
 
     setSpin(q, throttle) {
         this.say("setSpin", q, throttle)
+        this.onLocalChanged();
+    }
+
+    setVelocitySpin(vq, throttle){
+        this.say("setVelocitySpin", vq, throttle);
         this.onLocalChanged();
     }
 
