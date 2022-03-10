@@ -223,17 +223,17 @@ export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
 
     get local() {
         if (!this.$local) this.$local = m4_scaleRotationTranslation(this.scale, this.rotation, this.translation);
-        return this.$local;
+        return [...this.$local];
     }
 
     get global() {
-        if (this.$global) return this.$global;
+        if (this.$global) return [...this.$global];
         if (this.parent) {
             this.$global = m4_multiply(this.local, this.parent.global);
         } else {
             this.$global = this.local;
         }
-        return this.$global;
+        return [...this.$global];
     }
 
     get translation() { return this._translation?[...this._translation] : v3_zero() };
@@ -348,9 +348,9 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     }
     get localOffset() { return this._localOffset; }
 
-    get scale() { return [...this._scale]; }
-    get rotation() { return [...this._rotation]; }
-    get translation() { return [...this._translation]; }
+    get scale() { return this._scale; }
+    get rotation() { return this._rotation; }
+    get translation() { return this._translation; }
 
     onScaleSet() {
         this._scale = this.actor._scale;
@@ -456,8 +456,8 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
 
 export const AM_Predictive = superclass => class extends AM_Smoothed(superclass) {
 
-    get spin() { return this._spin || q_identity() }
-    get velocity() { return this._velocity || v3_zero() }
+    get spin() { return this._spin?[...this._spin] : q_identity() }
+    get velocity() { return this._velocity?[...this._velocity] : v3_zero() }
     get tickStep() {return this._tickStep || 15}
 
     init(...args) {
