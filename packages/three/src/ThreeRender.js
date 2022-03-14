@@ -94,7 +94,7 @@ export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) 
         if (!hit) {
             hit = h[0];
         }
-        
+
         let normal;
         if(hit.face) normal = hit.face.normal;
         if(normal){
@@ -106,7 +106,7 @@ export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) 
             xyz: hit.point.toArray(),
             uv: hit.uv?hit.uv.toArray():undefined,
             normal: normal.toArray(),
-            distance: h.distance
+            distance: hit.distance
         };
     }
 
