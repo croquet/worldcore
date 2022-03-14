@@ -328,6 +328,7 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         this._scale = this.actor.scale;
         this._rotation = this.actor.rotation;
         this._translation = this.actor.translation;
+        this._global = this.actor.global;
 
         this.listenOnce("_scale", this.onScaleSet);
         this.listenOnce("scaling", () => this.scaling = true)
