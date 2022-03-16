@@ -354,17 +354,17 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     get translation() { return this._translation; }
 
     onScaleSet() {
-        this._scale = this.actor._scale;
+        this._scale = this.actor.scale;
         this.onLocalChanged();
     }
 
     onRotationSet() {
-        this._rotation = this.actor._rotation;
+        this._rotation = this.actor.rotation;
         this.onLocalChanged();
     }
 
     onTranslationSet() {
-        this._translation = this.actor._translation;
+        this._translation = this.actor.translation;
         this.onLocalChanged();
     }
 
