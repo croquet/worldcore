@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { PM_Visible, PM_Camera, RenderManager } from "@croquet/worldcore-kernel";
+import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "three-mesh-bvh";
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------
@@ -152,9 +153,18 @@ export class ThreeRenderManager extends RenderManager {
         this.renderPass = new RenderPass( this.scene, this.camera );
         this.composer.addPass( this.renderPass );
 
+        this.useBVH = options.useBVH;
+        if (options.useBVH) {
+            this.setupBVH();
+        }
+
         this.resize();
         this.subscribe("input", "resize", () => this.resize());
         this.setRender(true);
+    }
+
+    setupBVH() {
+        console.log(computeBoundsTree, disposeBoundsTree, acceleratedRaycast);
     }
 
     setRender(bool){this.doRender = bool; }
