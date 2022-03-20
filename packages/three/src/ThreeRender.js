@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { PM_Visible, PM_Camera, RenderManager } from "@croquet/worldcore-kernel";
-import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from "three-mesh-bvh";
+import { MeshBVH, MeshBVHVisualizer } from "three-mesh-bvh";
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------
@@ -17,13 +17,20 @@ export const PM_ThreeVisible = superclass => class extends PM_Visible(superclass
     destroy() {
         super.destroy();
         const render = this.service("ThreeRenderManager");
-        if (render && render.scene) render.scene.remove(this.renderObject);
+        if (render && render.scene) {
+            if(this.renderObject)render.scene.remove(this.renderObject);
+            if(this.colliderObject)render.scene.remove(this.colliderObject);
+        }
     }
 
     refreshDrawTransform() {
         if(this.renderObject){
             this.renderObject.matrix.fromArray(this.global);
             this.renderObject.matrixWorldNeedsUpdate = true;
+        }
+        if(this.colliderObject){
+            this.colliderObject.matrix.fromArray(this.global);
+            this.colliderObject.matrixWorldNeedsUpdate = true;
         }
     }
 
@@ -38,6 +45,15 @@ export const PM_ThreeVisible = superclass => class extends PM_Visible(superclass
         if (this.onSetRenderObject) this.onSetRenderObject(renderObject);
     }
 
+    setColliderObject(colliderObject) {
+        const render = this.service("ThreeRenderManager");
+        colliderObject.wcPawn = this;
+        this.colliderObject = colliderObject;
+        this.colliderObject.matrixAutoUpdate = false;
+        this.colliderObject.matrix.fromArray(this.global);
+        this.colliderObject.matrixWorldNeedsUpdate = true;
+        if (render && render.scene) render.scene.add(this.colliderObject);
+    }
 };
 
 
@@ -164,7 +180,10 @@ export class ThreeRenderManager extends RenderManager {
     }
 
     setupBVH() {
-        console.log(computeBoundsTree, disposeBoundsTree, acceleratedRaycast);
+        this.MeshBVH = MeshBVH;
+        this.MeshBVHVisualizer = MeshBVHVisualizer;
+
+     //   console.log(computeBoundsTree, disposeBoundsTree, acceleratedRaycast);
     }
 
     setRender(bool){this.doRender = bool; }
@@ -188,7 +207,8 @@ export class ThreeRenderManager extends RenderManager {
     threeLayer(name) {
         if (!this.layers[name]) return [];
         if (!this.threeLayers[name]) {
-            this.threeLayers[name] = Array.from(this.layers[name]).map(p => p.renderObject);
+            this.threeLayers[name] = Array.from(this.layers[name]).map(p => p.colliderObject || p.renderObject);
+            console.log(this.threeLayers[name])
         }
         return this.threeLayers[name];
     }
