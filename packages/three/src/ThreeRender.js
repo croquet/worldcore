@@ -213,8 +213,7 @@ export class ThreeRenderManager extends RenderManager {
     threeLayer(name) {
         if (!this.layers[name]) return [];
         if (!this.threeLayers[name]) {
-            this.threeLayers[name] = Array.from(this.layers[name]).map(p => {console.log(p.colliderObject); return p.colliderObject || p.renderObject});
-            console.log(name, this.threeLayers[name])
+            this.threeLayers[name] = Array.from(this.layers[name]).map(p => p.colliderObject || p.renderObject);
         }
         return this.threeLayers[name];
     }
