@@ -25,6 +25,28 @@ export const PM_Visible = superclass => class extends superclass {
             render.dirtyLayer(name);
         });
     }
+
+    removeFromLayers(...names) {
+        const render = this.service("RenderManager");
+        names.forEach(name => {
+            if (!render.layers[name]) return;
+            render.layers[name].delete(this);
+            if (render.layers[name].size === 0) {
+                delete render.layers[name];
+            }
+            render.dirtyLayer(name);
+        });
+    }
+
+    layers() {
+        let result = [];
+        const render = this.service("RenderManager");
+        for (const layerName in render.layers) {
+            const layer = render.layers[layerName];
+            if (layer.has(this)) result.push(layerName);
+        }
+        return result;
+    }        
 };
 
 //------------------------------------------------------------------------------------------
