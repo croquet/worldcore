@@ -6,7 +6,7 @@ import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTrans
 import {WebGLRenderManager, PM_WebGLVisible, PM_WebGLCamera, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
-import { PM_ThreeVisible, ThreeRenderManager,  PM_ThreeCamera, THREE } from "@croquet/worldcore-three";
+// import { PM_ThreeVisible, ThreeRenderManager,  PM_ThreeCamera, THREE } from "@croquet/worldcore-three";
 
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
@@ -86,7 +86,7 @@ class MovePawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible, PM_Player)
         this.subscribe("input", "xDown", this.big);
         this.subscribe("input", "cDown", this.small);
 
-        this.addToLayer("bink");
+        // this.addToLayer("bink");
         const render = this.service("WebGLRenderManager");
 
     }
