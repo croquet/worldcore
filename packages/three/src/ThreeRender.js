@@ -101,9 +101,20 @@ export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) 
         if (h.length === 0) return {};
  
         let hit;
+        let normal;
         if (optStrictTargets) {
             for (let i = 0; i < h.length; i++) {
-                if (targets.indexOf(h[i].object) >= 0) {
+                let me = h[i].object;
+                let wcPawn = me.wcPawn;
+                while (!wcPawn && me) {
+                    me = me.parent;
+                    wcPawn = me.wcPawn;
+                }
+                if (wcPawn) {
+                    normal = wcPawn.hitNormal;
+                    if (Array.isArray(normal)) {
+                        normal = new THREE.Vector3(...normal);
+                    }
                     hit = h[i];
                     break;
                 }
@@ -114,12 +125,15 @@ export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) 
             hit = h[0];
         }
 
-        let normal;
-        if(hit.face) normal = hit.face.normal;
-        if(normal){
+        if(hit.face && !normal) {
+            normal = hit.face.normal;
+        }
+        if (normal) {
             let m = new THREE.Matrix3().getNormalMatrix( hit.object.matrixWorld );
             normal = normal.clone().applyMatrix3( m ).normalize();
-        }else normal = new THREE.Vector3(0,1,0);
+        } else {
+            normal = new THREE.Vector3(0,1,0);
+        }
         return {
             pawn: this.getPawn(hit.object),
             xyz: hit.point.toArray(),
