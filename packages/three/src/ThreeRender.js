@@ -36,7 +36,7 @@ export const PM_ThreeVisible = superclass => class extends PM_Visible(superclass
 
     setRenderObject(renderObject) {
         const render = this.service("ThreeRenderManager");
-        render.dirtyAllLayers();
+        if (render) render.dirtyAllLayers();
         renderObject.wcPawn = this;
         this.renderObject = renderObject;
         this.renderObject.matrixAutoUpdate = false;
@@ -48,7 +48,7 @@ export const PM_ThreeVisible = superclass => class extends PM_Visible(superclass
 
     setColliderObject(colliderObject) {
         const render = this.service("ThreeRenderManager");
-        render.dirtyAllLayers();
+        if (render) render.dirtyAllLayers();
         colliderObject.wcPawn = this;
         this.colliderObject = colliderObject;
         this.colliderObject.matrixAutoUpdate = false;
