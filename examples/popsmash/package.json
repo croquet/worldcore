@@ -1,6 +1,6 @@
 {
   "name": "@croquet/popsmash",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Pop Smash!",
   "private": true,
   "scripts": {
@@ -10,7 +10,7 @@
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@croquet/worldcore": "^1.1.2"
+    "@croquet/worldcore": "^1.2.0"
   },
   "devDependencies": {
     "file-loader": "^6.0.0",
