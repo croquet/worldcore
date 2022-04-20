@@ -25,7 +25,7 @@ Optional Extensions:
 * Alternate widget-based UI
 * Behavior tree AI scripting
 
-(**Note:** This the full installation of Worldcore with all its optional components.)
+(**Note:** This is the full installation of Worldcore with all its optional components.)
 
 **Get Started ...**
 

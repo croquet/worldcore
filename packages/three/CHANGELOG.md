@@ -4,7 +4,31 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.2] - 2021-1-28
+## [1.2.0] - 2022-4-20
+### Changed
+- PM_ThreeCamera.raycast handles grouped objects
+- PM_Visible inherits from base PM_Visible in kernel
+- PM_ThreeCamera inherits from base PM_Camera in kernel
+- ThreeRenderManager inherits from base RenderManager in kernel
+
+### Added
+- ThreeRenderManager has threeLayer() to access Three-specific layer data.
+- ThreeRenderManager has threeLayerUnion()
+
+- removeFromLayers
+- setColliderObject
+- BVH
+- hit distance
+- setVelocitySpin
+- setRender
+- strict raycast test
+- setRayCast
+
+### Fixed
+- hit test normal
+- invoke update() only once per object
+
+## [1.1.2] - 2022-1-28
 ### Fixed
 - Fixed crash if you create a raycast pointer with no targets.
 
@@ -29,16 +53,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 
 ## Pending
-### Changed
-- PM_ThreeCamera.raycast handles grouped objects
-- PM_Visible inherits from base PM_Visible in kernel
-- PM_ThreeCamera inherits from base PM_Camera in kernel
-- ThreeRenderManager inherits from base RenderManager in kernel
-
-
-### Added
-- ThreeRenderManager has threeLayer() to access Three-specific layer data.
-- ThreeRenderManager has threeLayerUnion()
-
-
 

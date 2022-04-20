@@ -4,6 +4,22 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2022-4-20
+### Added
+- Pawns have init() so you don't need to define constructors
+- Base mixins/classes for generic renderer support:
+  - PM_Visible
+  - PM_Camera
+  - RenderManager
+- add xy to click and wheel events
+
+### Fixed
+- DoubleDown and TripleDown events work on touch devices
+
+### Removed
+smoothSet() from AM_Smoothed
+defineSmoothedPawnProperty from PM_Smoothed
+
 ## [1.1.0] - 2022-1-28
 ## Added
 - Actors listen for "_set" to allow remote call of set()
@@ -49,23 +65,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 
 ## Pending
-### Added
-- Pawns have init() so you don't need to define constructors
-- Base mixins/classes for generic renderer support:
-- PM_Visible
-- PM_Camera
-- RenderManager
-
-### Fixed
-- DoubleDown and TripleDown events work on touch devices
-
-### Removed
-smoothSet() from AM_Smoothed
-defineSmoothedPawnProperty from PM_Smoothed
-
-
-
-
-
-
-
