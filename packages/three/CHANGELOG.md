@@ -15,17 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ThreeRenderManager has threeLayer() to access Three-specific layer data.
 - ThreeRenderManager has threeLayerUnion()
 
-- removeFromLayers
-- setColliderObject
-- BVH
-- hit distance
-- setVelocitySpin
-- setRender
-- strict raycast test
-- setRayCast
+- removeFromLayers dynamically removes an object from layers.
+- BVH Bounding Volume Hierachy (three-mesh-bvh) is added as an option to optimize raycast.
+- setColliderObject is used to set up the BVH geometry for an object.
+- The result from the raycaster has distance property.
+- setVelocitySpin is a convenience method to set _velocity and _spin at the same time.
+- pointerRaycast takes an optional flag to restrict the set of targets to objects in the targets list.
+- object that returns hitNormal can set the normal in pointerRaycast.
 
 ### Fixed
-- hit test normal
 - invoke update() only once per object
 
 ## [1.1.2] - 2022-1-28
