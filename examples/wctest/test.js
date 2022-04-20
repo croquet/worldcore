@@ -5,16 +5,19 @@
 import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX, m4_rotationZ,  m4_identity, PM_Predictive, AM_Predictive } from "@croquet/worldcore-kernel";
 import {WebGLRenderManager, PM_WebGLVisible, PM_WebGLCamera, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
-import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
-// import { PM_ThreeVisible, ThreeRenderManager,  PM_ThreeCamera, THREE } from "@croquet/worldcore-three";
+// import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
+import { AM_BehavioralX, BehaviorX } from "./BehaviorX.js";
+
+import * as Worldcore from "@croquet/worldcore-kernel";
+
 
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
 
-
 class AvatarActor extends mix(Actor).with(AM_Predictive, AM_Player) {
     get pawn() {return AvatarPawn}
+
 }
 AvatarActor.register("AvatarActor");
 
@@ -54,8 +57,6 @@ class MoveActor extends mix(Actor).with(AM_Predictive, AM_Player) {
     init(options = {}) {
         super.init(options);
         this.child = ChildActor.create({zzz: 123, parent: this, translation: [0,1.5,0]});
-        // this.subscribe("input", "dDown", this.test0)
-        // this.subscribe("input", "sDown", this.test1)
     }
 
     test0() {
@@ -86,7 +87,6 @@ class MovePawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible, PM_Player)
         this.subscribe("input", "xDown", this.big);
         this.subscribe("input", "cDown", this.small);
 
-        // this.addToLayer("bink");
         const render = this.service("WebGLRenderManager");
 
     }
@@ -140,8 +140,10 @@ class MovePawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible, PM_Player)
 // ChildActor
 //------------------------------------------------------------------------------------------
 
-class SpinBehavior extends Behavior {
+class SpinBehavior extends BehaviorX {
     do(delta) {
+
+        // const ttt = Worldcore.v3_random();
         const axis = v3_normalize([2,1,3]);
         let q = this.actor.rotation;
         q = q_multiply(q, q_axisAngle(axis, 0.13 * delta / 50));
@@ -151,14 +153,14 @@ class SpinBehavior extends Behavior {
 }
 SpinBehavior.register("SpinBehavior");
 
-class ChildActor extends mix(Actor).with(AM_Predictive, AM_Behavioral) {
+class ChildActor extends mix(Actor).with(AM_Predictive, AM_BehavioralX) {
 
     get pawn() {return ChildPawn}
 
     init(options) {
         super.init(options);
 
-        // this.startBehavior(SpinBehavior);
+        this.startBehavior(SpinBehavior);
 
     }
 
@@ -260,15 +262,10 @@ class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start Model!");
         BackgroundActor.create();
-        // const card = CardActor.create();
         MoveActor.create({translation: [0,0,-5]});
 
-        this.subscribe("input", "doubleDown", this.test)
     }
 
-    test() {
-        console.log("double");
-    }
 
 }
 MyModelRoot.register("MyModelRoot");
