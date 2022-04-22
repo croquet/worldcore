@@ -131,14 +131,14 @@ export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) 
         if (normal) {
             let m = new THREE.Matrix3().getNormalMatrix( hit.object.matrixWorld );
             normal = normal.clone().applyMatrix3( m ).normalize();
-        } else {
+        } /*else {
             normal = new THREE.Vector3(0,1,0);
-        }
+        }*/
         return {
             pawn: this.getPawn(hit.object),
             xyz: hit.point.toArray(),
             uv: hit.uv?hit.uv.toArray():undefined,
-            normal: normal.toArray(),
+            normal: normal?normal.toArray():undefined,
             distance: hit.distance
         };
     }
@@ -176,7 +176,7 @@ export class ThreeRenderManager extends RenderManager {
             document.body.insertBefore(this.canvas, null);
             options.canvas = this.canvas;
         }
-
+console.log("ThreeRenderManager options", options)
         this.renderer = new THREE.WebGLRenderer(options);
         this.renderer.shadowMap.enabled = true;
 
