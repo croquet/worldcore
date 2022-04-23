@@ -6,9 +6,9 @@ import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTrans
 import {WebGLRenderManager, PM_WebGLVisible, PM_WebGLCamera, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 // import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
-import { AM_BehavioralX, BehaviorX } from "./BehaviorX.js";
+import { AM_Behavioral, Behavior, SequenceBehavior, DelayBehavior, SelectorBehavior, InvertBehavior } from "./BehaviorX.js";
 
-import * as Worldcore from "@croquet/worldcore-kernel";
+// import * as Worldcore from "@croquet/worldcore-kernel";
 
 
 import paper from "./assets/paper.jpg";
@@ -137,30 +137,87 @@ class MovePawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible, PM_Player)
 
 
 //------------------------------------------------------------------------------------------
-// ChildActor
+// Behaviors
 //------------------------------------------------------------------------------------------
 
-class SpinBehavior extends BehaviorX {
-    do(delta) {
+class SpinBehavior extends Behavior {
+    onStart() {
+        this.axis = v3_normalize([2,1,3]);
+        this.speed = 1;
+    }
 
-        // const ttt = Worldcore.v3_random();
-        const axis = v3_normalize([2,1,3]);
+    do(delta) {
         let q = this.actor.rotation;
-        q = q_multiply(q, q_axisAngle(axis, 0.13 * delta / 50));
+        q = q_multiply(q, q_axisAngle(this.axis, 0.13 * delta * this.speed / 50));
         q = q_normalize(q);
         this.actor.rotateTo(q);
     }
 }
 SpinBehavior.register("SpinBehavior");
 
-class ChildActor extends mix(Actor).with(AM_Predictive, AM_BehavioralX) {
+class TestBehavior extends SelectorBehavior {
+    get behaviors()  {return[InvertBehavior1, InvertBehavior1, InvertBehavior1, DelayBehavior3, InvertBehavior1  ] };
+
+    succeed() {
+        console.log("test succeed!");
+        super.succeed();
+    }
+
+    fail() {
+        console.log("test fail!");
+        super.fail();
+    }
+}
+TestBehavior.register("TestBehavior");
+
+
+class DelayBehavior1 extends DelayBehavior {
+    get delay() { return this._delay || 1000};
+
+    succeed() {
+        console.log("delay 1 done!");
+        super.succeed();
+    }
+}
+DelayBehavior1.register("DelayBehavior1");
+
+class InvertBehavior1 extends InvertBehavior {
+    get behaviors() {return[DelayBehavior1];}
+}
+InvertBehavior1.register("InvertBehavior1");
+
+class DelayBehavior2 extends DelayBehavior {
+    get delay() { return this._delay || 2000};
+
+    succeed() {
+        console.log("delay 2 done!");
+        super.succeed();
+    }
+}
+DelayBehavior2.register("DelayBehavior2");
+
+class DelayBehavior3 extends DelayBehavior {
+    get delay() { return this._delay || 3000};
+
+    succeed() {
+        console.log("delay 3 done!");
+        super.succeed();
+    }
+}
+DelayBehavior3.register("DelayBehavior3");
+
+//------------------------------------------------------------------------------------------
+// ChildActor
+//------------------------------------------------------------------------------------------
+
+class ChildActor extends mix(Actor).with(AM_Predictive, AM_Behavioral) {
 
     get pawn() {return ChildPawn}
 
     init(options) {
         super.init(options);
 
-        this.startBehavior(SpinBehavior);
+        this.startBehavior(TestBehavior, {parallel: true, shuffle: true});
 
     }
 
