@@ -6,7 +6,7 @@ import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTrans
 import {WebGLRenderManager, PM_WebGLVisible, PM_WebGLCamera, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 // import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
-import { AM_Behavioral, Behavior, SequenceBehavior, DelayBehavior, SelectorBehavior, InvertBehavior } from "./BehaviorX.js";
+import { AM_Behavioral, Behavior, SequenceBehavior, DelayBehavior, SelectorBehavior, InvertBehavior, LoopBehavior, PM_Behavioral } from "./BehaviorX.js";
 
 // import * as Worldcore from "@croquet/worldcore-kernel";
 
@@ -155,8 +155,8 @@ class SpinBehavior extends Behavior {
 }
 SpinBehavior.register("SpinBehavior");
 
-class TestBehavior extends SelectorBehavior {
-    get behaviors()  {return[InvertBehavior1, InvertBehavior1, InvertBehavior1, DelayBehavior3, InvertBehavior1  ] };
+class TestBehavior extends LoopBehavior {
+    get behavior()  {return DelayBehavior1 };
 
     succeed() {
         console.log("test succeed!");
@@ -182,7 +182,7 @@ class DelayBehavior1 extends DelayBehavior {
 DelayBehavior1.register("DelayBehavior1");
 
 class InvertBehavior1 extends InvertBehavior {
-    get behaviors() {return[DelayBehavior1];}
+    get behavior() {return DelayBehavior1;}
 }
 InvertBehavior1.register("InvertBehavior1");
 
@@ -217,7 +217,7 @@ class ChildActor extends mix(Actor).with(AM_Predictive, AM_Behavioral) {
     init(options) {
         super.init(options);
 
-        this.startBehavior(TestBehavior, {parallel: true, shuffle: true});
+        this.startBehavior(SpinBehavior);
 
     }
 
@@ -229,10 +229,11 @@ ChildActor.register('ChildActor');
 // ChildPawn
 //------------------------------------------------------------------------------------------
 
-class ChildPawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible) {
+class ChildPawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible, PM_Behavioral) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
+        // this.behaviorCode = `do() { console.log("do!")}`;
     }
 
     buildDraw() {
@@ -317,7 +318,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start Model!");
+        console.log("Start Model!!");
         BackgroundActor.create();
         MoveActor.create({translation: [0,0,-5]});
 

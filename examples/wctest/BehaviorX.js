@@ -6,9 +6,16 @@ import * as Worldcore from "@croquet/worldcore-kernel";
 //-- Behavioral ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+ // Mixin to allow actors to use behavior trees.
+
 // StartBehavior sets the actor's current root behavior.
 
 export const AM_Behavioral = superclass => class extends superclass {
+
+    init(...args) {
+        super.init(...args);
+        this.listen("setBehaviorCode", this.setBehaviorCode);
+    }
 
     destroy() {
         super.destroy();
@@ -22,8 +29,21 @@ export const AM_Behavioral = superclass => class extends superclass {
         this.behavior = target;
     }
 
+    setBehaviorCode(code) {
+        this.behavior.set({code: code});
+    }
+
 }
 RegisterMixin(AM_Behavioral);
+
+//Mixin to allow pawns to get and set the behavior code snippets of their actors
+
+export const PM_Behavioral = superclass => class extends superclass {
+
+    get behaviorCode() { return this.actor.behavior.code }
+    set behaviorCode(code) { this.say("setBehaviorCode", code); }
+
+}
 
 //------------------------------------------------------------------------------------------
 //-- BehaviorHandler -----------------------------------------------------------------------
@@ -180,6 +200,24 @@ export class CompositeBehavior extends Behavior {
 CompositeBehavior.register('CompositeBehavior');
 
 //------------------------------------------------------------------------------------------
+//-- DecoratorBehavior ---------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class DecoratorBehavior extends Behavior {
+
+    get tickRate() { return 0 }
+    get behavior() { return null }
+
+    onStart() { this.startChild(this.behavior); }
+
+    onSucceed(child, data) {};
+    onFail(child, data) {};
+
+
+}
+DecoratorBehavior.register('DecoratorBehavior');
+
+//------------------------------------------------------------------------------------------
 //-- SequenceBehavior ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -218,9 +256,9 @@ SelectorBehavior.register('SelectorBehavior');
 //-- InvertBehavior ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Inverts completion status when children finish.
+// Inverts completion status when child finishes.
 
-export class InvertBehavior extends CompositeBehavior {
+export class InvertBehavior extends DecoratorBehavior {
 
     onSucceed(child, data) {this.fail(data)};
     onFail(child, data) {this.succeed(data)};
@@ -232,9 +270,9 @@ InvertBehavior.register('InvertBehavior');
 //-- SucceedBehavior -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Always returns success when a child finishes.
+// Always returns success when the child finishes.
 
-export class SucceedBehavior extends CompositeBehavior {
+export class SucceedBehavior extends DecoratorBehavior {
 
     onSucceed(child, data) {this.succeed(data)};
     onFail(child, data) {this.succeed(data)};
@@ -246,12 +284,12 @@ SucceedBehavior.register('SucceedBehavior');
 //-- FailBehavior --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Always returns fail when a child finishes.
+// Always returns fail when the child finishes.
 
-export class FailBehavior extends CompositeBehavior {
+export class FailBehavior extends DecoratorBehavior {
 
-    onSucceed(child, data) {this.succeed(data)};
-    onFail(child, data) {this.succeed(data)};
+    onSucceed(child, data) {this.fail(data)};
+    onFail(child, data) {this.fail(data)};
 
 }
 FailBehavior.register('FailBehavior');
@@ -273,3 +311,26 @@ export class DelayBehavior extends Behavior {
 
 }
 DelayBehavior.register("DelayBehavior");
+
+//------------------------------------------------------------------------------------------
+//-- LoopBehavior --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Holds a single child behavior. Will repeatedly execute it until count is reached, as long
+// as it succeeds. If it fails, the loop returns failure. If the count is set to 0, it executes indefinitely.
+
+
+export class LoopBehavior extends DecoratorBehavior {
+
+    get count() {return this._count || 0}
+
+    onStart() {
+        this.n = 0;
+        this.startChild(this.behavior);
+    }
+
+    onSucceed() { ++this.n === this.count ? this.succeed() : this.startChild(this.behavior);   }
+    onFail() { this.fail(); }
+
+}
+LoopBehavior.register('LoopBehavior');
