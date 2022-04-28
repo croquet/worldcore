@@ -35,11 +35,13 @@ ActorManager.register("ActorManager");
 //------------------------------------------------------------------------------------------
 
 export class Actor extends WorldcoreModel {
-    get pawn() {return Pawn}
+    get pawn() {return null;}
     get doomed() {return this._doomed} // About to be destroyed. This is used to prevent creating new future messages.
+    get parent() { return this._parent; }
 
     init(options) {
         super.init();
+        this.listen("_parent", this.onParent);
         this.listen("_set", this.set);
         this.set(options);
         this.service('ActorManager').add(this);
@@ -47,28 +49,15 @@ export class Actor extends WorldcoreModel {
     }
 
     destroy() {
+        new Set(this.children).forEach(child => child.destroy());
+        this.set({parent: null});
         this._doomed = true; // About to be destroyed. This is used to prevent creating new future messages.
         this.say("destroyActor");
         this.service('ActorManager').delete(this);
         super.destroy();
     }
 
-    // Different implementations of javascript may store object properties in different orders, so we sort them
-    // so they are always processed alphabetically
-
-    // set(options = {}, prefix = '') {
-    //     const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
-    //     for (const option of sorted) {
-    //         const n = "_" + option[0];
-    //         const v = option[1];
-    //         const o = this[n];
-    //         this[n] = v;
-    //         this.say(prefix+n, {v, o}); // Publish a local message whenever a property changes with its old and new value.
-    //     }
-    // }
-
     set(options = {}) {
-
         const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
         for (const option of sorted) {
             const n = "_" + option[0];
@@ -77,6 +66,20 @@ export class Actor extends WorldcoreModel {
             this[n] = v;
             this.say(n, {v, o}); // Publish a local message whenever a property changes with its old and new value.
         }
+    }
+
+    addChild(child) {
+        if (!this.children) this.children = new Set();
+        this.children.add(child);
+    }
+
+    removeChild(child) {
+        if (this.children) this.children.delete(child);
+    }
+
+    onParent(d) {
+        if (d.o) d.o.removeChild(this);
+        if (d.v) d.v.addChild(this);
     }
 
     say(event, data) {

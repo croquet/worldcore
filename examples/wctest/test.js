@@ -2,7 +2,7 @@
 //
 // Croquet Studios, 2021
 
-import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX, m4_rotationZ,  m4_identity, PM_Predictive, AM_Predictive } from "@croquet/worldcore-kernel";
+import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX, m4_rotationZ,  m4_identity, PM_Predictive, AM_Predictive, GetPawn } from "@croquet/worldcore-kernel";
 import {WebGLRenderManager, PM_WebGLVisible, PM_WebGLCamera, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 // import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
@@ -56,7 +56,7 @@ class MoveActor extends mix(Actor).with(AM_Predictive, AM_Player) {
 
     init(options = {}) {
         super.init(options);
-        this.child = ChildActor.create({zzz: 123, parent: this, translation: [0,1.5,0]});
+        this.child = SpinActor.create({zzz: 123, parent: this, translation: [0,1.5,0]});
     }
 
     test0() {
@@ -155,8 +155,8 @@ class SpinBehavior extends Behavior {
 }
 SpinBehavior.register("SpinBehavior");
 
-class TestBehavior extends LoopBehavior {
-    get behavior()  {return DelayBehavior1 };
+class TestBehavior extends SelectorBehavior {
+    get behaviors()  {return [DelayBehavior2,  SpinBehavior] };
 
     succeed() {
         console.log("test succeed!");
@@ -207,33 +207,36 @@ class DelayBehavior3 extends DelayBehavior {
 DelayBehavior3.register("DelayBehavior3");
 
 //------------------------------------------------------------------------------------------
-// ChildActor
+// SpinActor
 //------------------------------------------------------------------------------------------
 
-class ChildActor extends mix(Actor).with(AM_Predictive, AM_Behavioral) {
+class SpinActor extends mix(Actor).with(AM_Predictive, AM_Behavioral) {
 
-    get pawn() {return ChildPawn}
+    get pawn() {return SpinPawn}
 
     init(options) {
         super.init(options);
 
-        this.startBehavior(SpinBehavior);
+    // this.startBehavior(TestBehavior, {parallel: true, shuffle: false});
+    this.startBehavior(SpinBehavior);
 
     }
 
 }
-ChildActor.register('ChildActor');
+SpinActor.register('SpinActor');
 
 
 //------------------------------------------------------------------------------------------
-// ChildPawn
+// SpinPawn
 //------------------------------------------------------------------------------------------
 
-class ChildPawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible, PM_Behavioral) {
+class SpinPawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible, PM_Behavioral) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
         // this.behaviorCode = `do() { console.log("do!")}`;
+        // this.behaviorCode = `do(delta) { console.log( "calling super!"); this.speed = 2; super.do(delta) }`;
+        // this.behaviorCode = this.behaviorCode;
     }
 
     buildDraw() {
@@ -307,6 +310,19 @@ class MyPlayerManager extends PlayerManager {
 MyPlayerManager.register("MyPlayerManager");
 
 //------------------------------------------------------------------------------------------
+// Parent
+//------------------------------------------------------------------------------------------
+
+class TestActor extends Actor {
+
+    get pawn() { return Pawn}
+
+}
+TestActor.register("TestActor");
+
+
+
+//------------------------------------------------------------------------------------------
 // MyModelRoot
 //------------------------------------------------------------------------------------------
 
@@ -319,6 +335,7 @@ class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
         console.log("Start Model!!");
+
         BackgroundActor.create();
         MoveActor.create({translation: [0,0,-5]});
 
@@ -341,6 +358,7 @@ class MyViewRoot extends ViewRoot {
 
     constructor(model) {
         super(model);
+        console.log("Start View!");
 
         const render = this.service("WebGLRenderManager");
 

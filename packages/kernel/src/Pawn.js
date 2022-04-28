@@ -27,8 +27,10 @@ export class PawnManager extends ViewService {
         super.destroy();
     }
 
+
+
     spawnPawn(actor) {
-        new actor.pawn(actor);
+        if (actor.pawn) new actor.pawn(actor);
     }
 
     add(pawn) {
@@ -77,10 +79,8 @@ export class Pawn extends WorldcoreView {
         this._actor = actor;
         pm.add(this);
         this.listen("destroyActor", this.destroy);
-        this.init();
+        this.listen("_parent", this.onParent);
     }
-
-    init() {}
 
     get actor() {return this._actor};
 
@@ -88,6 +88,36 @@ export class Pawn extends WorldcoreView {
         this.doomed = true;
         pm.delete(this);
         this.detach(); // Calling View clean-up.
+    }
+
+    get parent() {
+        if (this.actor.parent && !this._parent) this._parent = GetPawn(this.actor.parent.id);
+        return this._parent;
+    }
+
+    get children() {
+        if (this.actor.children && !this._children) this.actor.children.forEach(child => { this.addChild(child.id); })
+        return this._children;
+    }
+
+    addChild(id) {
+        const child = GetPawn(id);
+        if (!child) return;
+        if (!this._children) this._children = new Set();
+        this._children.add(child);
+        child._parent = this;
+    }
+
+    removeChild(id) {
+        const child = GetPawn(id);
+        if (!child) return;
+        if (this._children) this._children.delete(child);
+        child._parent = null;
+    }
+
+    onParent(d) {
+        if (d.o) GetPawn(d.o.id).removeChild(this.actor.id);
+        if (d.v) GetPawn(d.v.id).addChild(this.actor.id);
     }
 
     say(event, data, throttle = 0) {
@@ -110,25 +140,6 @@ export class Pawn extends WorldcoreView {
     listenOnce(event, callback) {
         this.subscribe(this.actor.id, {event, handling: "oncePerFrame"}, callback);
     }
-
-
-    // Creates a property in the pawn that will access a matching property in the actor.
-    // When the property is set in the actor, the pawn with set its matching property and call the onSet method
-
-    // definePawnProperty(name, onSet) {
-    //     const ul = '_' + name;
-    //     const v = this.actor[name];
-    //     this[ul] = v;
-    //     Object.defineProperty(this, name, { get: function() {return this[ul]} });
-    //     if (onSet) onSet(v,null);
-
-    //     this.listenOnce(ul, () => {
-    //         const o = this[ul];
-    //         const v = this.actor[name];
-    //         this[ul] = this.actor[name];
-    //         if (onSet) onSet(v,o);
-    //     });
-    // }
 
 }
 

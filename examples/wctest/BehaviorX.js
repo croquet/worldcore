@@ -145,12 +145,12 @@ export class Behavior extends WorldcoreModel {
     }
 
     succeed(data) {
-        if (this.parent) this.parent.onSucceed(this, data);
+        if (this.parent) this.parent.proxy.onSucceed(this, data);
         this.destroy();
     }
 
     fail(data) {
-        if (this.parent) this.parent.onFail(this, data);
+        if (this.parent) this.parent.proxy.onFail(this, data);
         this.destroy();
     }
 

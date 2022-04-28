@@ -100,95 +100,6 @@ class MixinFactory  {
 }
 
 //------------------------------------------------------------------------------------------
-//-- Tree ----------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// Tree actors can be put in a hierarchy with parents and children. The tree pawns maintain
-// their own hierarchy that mirrors the actor hierarchy.
-
-//-- Actor ---------------------------------------------------------------------------------
-
-export const AM_Tree = superclass => class extends superclass {
-
-    init(...args) {
-        this.listen("_parent", this.onChangeParent);
-        super.init(...args);
-    }
-
-    destroy() {
-        new Set(this.children).forEach(child => child.destroy());
-        this.set({parent: null});
-        super.destroy();
-    }
-
-    onChangeParent(d) {
-        if (d.o) d.o.removeChild(this);
-        if (d.v) d.v.addChild(this);
-    }
-
-    get parent() { return this._parent; }
-
-    addChild(c) { // This should never be called directly, use set instead
-        if (!this.children) this.children = new Set();
-        this.children.add(c);
-    }
-
-    removeChild(c) { // This should never be called directly, use set instead
-        if (this.children) this.children.delete(c);
-    }
-
-};
-RegisterMixin(AM_Tree);
-
-//-- Pawn ----------------------------------------------------------------------------------
-
-export const PM_Tree = superclass => class extends superclass {
-
-    constructor(...args) {
-        super(...args);
-        if (this.actor.parent) {
-            const parent = GetPawn(this.actor.parent.id);
-            parent.addChild(this.actor.id);
-        }
-        this.listen("_parent", this.onChangeParent);
-    }
-
-    get parent() {
-        if (this.actor.parent && !this._parent) this._parent = GetPawn(this.actor.parent.id);
-        return this._parent;
-    }
-
-    get children() {
-        if (this.actor.children && !this._children) this.actor.children.forEach(child => { this.addChild(child.id); })
-        return this._children;
-    }
-
-    onChangeParent(d) {
-        if (d.o) {
-            GetPawn(d.o.id).removeChild(this.actor.id);
-        }
-        if (d.v) {
-            GetPawn(d.v.id).addChild(this.actor.id);
-        }
-    }
-
-    addChild(id) {
-        const child = GetPawn(id);
-        if (!child) return;
-        if (!this._children) this._children = new Set();
-        this._children.add(child);
-        child._parent = this;
-    }
-
-    removeChild(id) {
-        const child = GetPawn(id);
-        if (!child) return;
-        if (this._children) this._children.delete(child);
-        child._parent = null;
-    }
-};
-
-//------------------------------------------------------------------------------------------
 //-- Spatial -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -200,7 +111,7 @@ export const PM_Tree = superclass => class extends superclass {
 
 //-- Actor ---------------------------------------------------------------------------------
 
-export const AM_Spatial = superclass => class extends AM_Tree(superclass) {
+export const AM_Spatial = superclass => class extends superclass {
 
     init(options) {
         super.init(options);
@@ -250,7 +161,7 @@ RegisterMixin(AM_Spatial);
 
 //-- Pawn ----------------------------------------------------------------------------------
 
-export const PM_Spatial = superclass => class extends PM_Tree(superclass) {
+export const PM_Spatial = superclass => class extends superclass {
 
 constructor(...args) {
     super(...args);
