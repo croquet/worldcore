@@ -1,4 +1,4 @@
-import { RegisterMixin, WorldcoreModel, Shuffle } from "@croquet/worldcore-kernel";
+import { RegisterMixin, WorldcoreModel, Shuffle, Actor,  Pawn, GetPawn } from "@croquet/worldcore-kernel";
 
 import * as Worldcore from "@croquet/worldcore-kernel";
 
@@ -36,12 +36,11 @@ export const AM_Behavioral = superclass => class extends superclass {
 }
 RegisterMixin(AM_Behavioral);
 
-//Mixin to allow pawns to get and set the behavior code snippets of their actors
+//Mixin to allow view-side access of the behavior tree.
 
 export const PM_Behavioral = superclass => class extends superclass {
 
-    get behaviorCode() { return this.actor.behavior.code }
-    set behaviorCode(code) { this.say("setBehaviorCode", code); }
+    get behavior() { if(this.actor.behavior) return GetPawn(this.actor.behavior.id) }
 
 }
 
@@ -75,12 +74,13 @@ class BehaviorHandler  {
 //-- Behavior ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class Behavior extends WorldcoreModel {
-    init(options) {
-        super.init();
+export class Behavior extends Actor {
 
-        this.set(options);
-        if (this.parent) this.parent.addChild(this);
+    get pawn() { return BehaviorPawn; }
+
+    init(options) {
+        super.init(options);
+        this.listen("_code", this.clearProxy); // Flush the proxy if the code changes.
 
         if (this.tickRate) {
             const firstDelta = Math.random() * this.tickRate;
@@ -91,6 +91,7 @@ export class Behavior extends WorldcoreModel {
 
     }
 
+    clearProxy() { this.$proxy = null }
     get proxy() {
         if (!this.$proxy) {
 
@@ -103,24 +104,7 @@ export class Behavior extends WorldcoreModel {
     }
 
     get code() { return this._code}
-
-    destroy() {
-        super.destroy();
-        if (this.children) new Set(this.children).forEach(child => child.destroy());
-        if (this.parent) this.parent.removeChild(this);
-        this.doomed = true;
-    }
-
-    set(options = {}) {
-        const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
-        for (const option of sorted) {
-            this["_" + option[0]] = option[1];
-            if(option[0] === "code") this.$proxy = null;
-        }
-    }
-
     get actor() { return this._actor}
-    get parent() { return this._parent}
     get tickRate() { return this._tickRate || 100}
 
     tick(delta) {
@@ -133,15 +117,6 @@ export class Behavior extends WorldcoreModel {
         options.actor = this.actor;
         options.parent = this;
         behavior.create(options);
-    }
-
-    addChild(child) {
-        if (!this.children) this.children = new Set();
-        this.children.add(child);
-    }
-
-    removeChild(child) {
-        if (this.children) this.children.delete(child);
     }
 
     succeed(data) {
@@ -161,6 +136,16 @@ export class Behavior extends WorldcoreModel {
 
 }
 Behavior.register('Behavior');
+
+// Behaviors don't have to have pawns. They just provide view-side interface for changing the code snippet.
+// The BehaviorPawns replicate the structure of the whole behavior tree.
+
+export class BehaviorPawn extends Pawn {
+
+    get code() { return this.actor.code }
+    set code(code) { this.set( {code: code}) }
+
+}
 
 //------------------------------------------------------------------------------------------
 //-- CompositeBehavior ---------------------------------------------------------------------

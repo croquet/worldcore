@@ -141,6 +141,10 @@ export class Pawn extends WorldcoreView {
         this.subscribe(this.actor.id, {event, handling: "oncePerFrame"}, callback);
     }
 
+    set(options) {
+        this.say("_set", options);
+    }
+
 }
 
 //------------------------------------------------------------------------------------------

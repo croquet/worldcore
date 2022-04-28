@@ -155,8 +155,8 @@ class SpinBehavior extends Behavior {
 }
 SpinBehavior.register("SpinBehavior");
 
-class TestBehavior extends SelectorBehavior {
-    get behaviors()  {return [DelayBehavior2,  SpinBehavior] };
+class TestBehavior extends SequenceBehavior {
+    get behaviors()  {return [DelayBehavior1,  DelayBehavior2, DelayBehavior3, DelayBehavior3, SpinBehavior] };
 
     succeed() {
         console.log("test succeed!");
@@ -234,9 +234,10 @@ class SpinPawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible, PM_Behavio
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
-        // this.behaviorCode = `do() { console.log("do!")}`;
-        // this.behaviorCode = `do(delta) { console.log( "calling super!"); this.speed = 2; super.do(delta) }`;
-        // this.behaviorCode = this.behaviorCode;
+
+        this.subscribe("input", "dDown", this.test);
+
+
     }
 
     buildDraw() {
@@ -258,6 +259,17 @@ class SpinPawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible, PM_Behavio
         material.texture.loadFromURL(paper);
         return material;
     }
+
+    test() {
+        console.log("test!");
+
+        // this.behavior.code = `do(delta) { this.speed = 1; super.do(delta)}`;
+        // this.behavior.code = `do(delta) { console.log("foo!") }`;
+
+        // console.log(this.behavior.children);
+
+    }
+
 
 }
 
@@ -334,7 +346,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!");
+        console.log("Start Model!");
 
         BackgroundActor.create();
         MoveActor.create({translation: [0,0,-5]});
