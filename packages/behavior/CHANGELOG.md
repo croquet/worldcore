@@ -9,3 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial release
 
 ## Pending
+
+## Changed
+- Behaviors are Actors
+- BehaviorPawn provides a view-side interface to individual behaviors in the tree
+- Behaviors have a code snippet to allow live editing
+- PM_Behavioral can be added to pawns to access the object's behavior tree
+

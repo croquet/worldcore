@@ -65,3 +65,10 @@ defineSmoothedPawnProperty from PM_Smoothed
 - Initial release
 
 ## Pending
+
+### Changed
+- Parent/child relationships are included in the base functionality of Actors and Pawns
+- Actors don't have to have Pawns
+
+### Added
+- Pawn set() -- you can set actor options from the Pawn.

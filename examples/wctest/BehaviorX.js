@@ -8,7 +8,7 @@ import * as Worldcore from "@croquet/worldcore-kernel";
 
  // Mixin to allow actors to use behavior trees.
 
-// StartBehavior sets the actor's current root behavior.
+ // StartBehavior sets the actor's current root behavior.
 
 export const AM_Behavioral = superclass => class extends superclass {
 
@@ -49,8 +49,8 @@ export const PM_Behavioral = superclass => class extends superclass {
 //------------------------------------------------------------------------------------------
 
 //This is the default handler for the behavior proxies. It traps all method calls
-// and uses the code instead. If you want to call the base behavior methods from the code,
-// you can with "this.base.onStart()" (for example)
+// and uses the code snippet instead. If you want to call the base methods from the code snippet,
+// you can with "super.onStart()" (for example)
 
 class BehaviorHandler  {
 
@@ -131,14 +131,14 @@ export class Behavior extends Actor {
 
     onStart() {}
     do(delta) {}
-    onSucceed(child, data) {this.succeed(data)};
-    onFail(child, data) { this.fail(data)};
+    onSucceed(child, data) { this.succeed(data) };
+    onFail(child, data) { this.fail(data) };
 
 }
 Behavior.register('Behavior');
 
-// Behaviors don't have to have pawns. They just provide view-side interface for changing the code snippet.
-// The BehaviorPawns replicate the structure of the whole behavior tree.
+// Behaviors don't have to have pawns. BehaviorPawn just provides a view-side interface for changing the code snippet.
+// The BehaviorPawns replicate the structure of the behavior tree so you can use this to inspect the current state of the tree.
 
 export class BehaviorPawn extends Pawn {
 
@@ -150,6 +150,9 @@ export class BehaviorPawn extends Pawn {
 //------------------------------------------------------------------------------------------
 //-- CompositeBehavior ---------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// Behaviors with multiple child behaviors. They don't tick themselves, but respond to reported success or
+// failure by their children who are ticking.
 
 export class CompositeBehavior extends Behavior {
 
@@ -177,30 +180,8 @@ export class CompositeBehavior extends Behavior {
         this.isShuffle ? this.startChild(this.behaviors[this.deck[this.n++]]) : this.startChild(this.behaviors[this.n++]);
     }
 
-    onSucceed(child, data) {};
-    onFail(child, data) {};
-
-
 }
 CompositeBehavior.register('CompositeBehavior');
-
-//------------------------------------------------------------------------------------------
-//-- DecoratorBehavior ---------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-export class DecoratorBehavior extends Behavior {
-
-    get tickRate() { return 0 }
-    get behavior() { return null }
-
-    onStart() { this.startChild(this.behavior); }
-
-    onSucceed(child, data) {};
-    onFail(child, data) {};
-
-
-}
-DecoratorBehavior.register('DecoratorBehavior');
 
 //------------------------------------------------------------------------------------------
 //-- SequenceBehavior ----------------------------------------------------------------------
@@ -238,6 +219,22 @@ export class SelectorBehavior extends CompositeBehavior {
 SelectorBehavior.register('SelectorBehavior');
 
 //------------------------------------------------------------------------------------------
+//-- DecoratorBehavior ---------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Holds a single child behavior. Passes on its completion status when it finishes.
+
+export class DecoratorBehavior extends Behavior {
+
+    get tickRate() { return 0 }
+    get behavior() { return null }
+
+    onStart() { this.startChild(this.behavior); }
+
+}
+DecoratorBehavior.register('DecoratorBehavior');
+
+//------------------------------------------------------------------------------------------
 //-- InvertBehavior ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -259,8 +256,8 @@ InvertBehavior.register('InvertBehavior');
 
 export class SucceedBehavior extends DecoratorBehavior {
 
-    onSucceed(child, data) {this.succeed(data)};
-    onFail(child, data) {this.succeed(data)};
+    onSucceed(child, data) { this.succeed(data) };
+    onFail(child, data) { this.succeed(data) };
 
 }
 SucceedBehavior.register('SucceedBehavior');
@@ -290,9 +287,7 @@ export class DelayBehavior extends Behavior {
     get tickRate() { return 0 }
     get delay() { return this._delay || 1000};
 
-    onStart() {
-        this.future(this.delay).succeed();
-    }
+    onStart() { this.future(this.delay).succeed(); }
 
 }
 DelayBehavior.register("DelayBehavior");
@@ -301,9 +296,8 @@ DelayBehavior.register("DelayBehavior");
 //-- LoopBehavior --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Holds a single child behavior. Will repeatedly execute it until count is reached, as long
+// Repeatedly executes a child behavior until count is reached, as long
 // as it succeeds. If it fails, the loop returns failure. If the count is set to 0, it executes indefinitely.
-
 
 export class LoopBehavior extends DecoratorBehavior {
 

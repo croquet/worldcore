@@ -6,7 +6,7 @@ import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTrans
 import {WebGLRenderManager, PM_WebGLVisible, PM_WebGLCamera, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 // import { Behavior, AM_Behavioral } from "@croquet/worldcore-behavior";
-import { AM_Behavioral, Behavior, SequenceBehavior, DelayBehavior, SelectorBehavior, InvertBehavior, LoopBehavior, PM_Behavioral } from "./BehaviorX.js";
+import { AM_Behavioral, Behavior, SequenceBehavior, DelayBehavior, SelectorBehavior, InvertBehavior, PM_Behavioral } from "@croquet/worldcore-behavior";
 
 // import * as Worldcore from "@croquet/worldcore-kernel";
 
