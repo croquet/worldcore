@@ -33,11 +33,15 @@ export class PlayerManager extends ModelService {
         return null;
     }
 
+    destroyPlayer(player) {
+        this.publish("playerManager", "destroy", player);
+        player.destroy();
+    }
+
     onExit(viewId) {
         const player = this.player(viewId);
         if (!player) return;
-        this.publish("playerManager", "destroy", player);
-        player.destroy();
+        this.destroyPlayer(player);
         this.players.delete(viewId);
     }
 

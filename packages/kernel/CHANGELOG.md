@@ -72,3 +72,4 @@ defineSmoothedPawnProperty from PM_Smoothed
 
 ### Added
 - Pawn set() -- you can set actor options from the Pawn.
+- PlayerManager destroyPlayer() -- override to customize player destruction
