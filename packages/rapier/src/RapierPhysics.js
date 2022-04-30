@@ -30,8 +30,9 @@ export class RapierPhysicsManager extends ModelService {
         };
     }
 
-    init(options = {}, name) {
-        super.init(name || 'RapierPhysicsManager');
+    init(options = {}) {
+        super.init('RapierPhysicsManager');
+        this.useCollisionEventQueue = options.useCollisionEventQueue;
 
         const gravity = options.gravity || [0.0, -9.8, 0.0];
         const timeStep = options.timeStep || 50; // In ms
@@ -61,7 +62,11 @@ export class RapierPhysicsManager extends ModelService {
 
     tick() {
         if (!this.isPaused) {
-            this.world.step();
+            let queue;
+            if (this.useCollisionEventQueue) {
+                queue = new RAPIER.EventQueue(true);
+            }
+            this.world.step(queue);
             this.world.forEachActiveRigidBodyHandle(h => {
                 const rb = this.rigidBodies[h];
                 const t = rb.rigidBody.translation();
@@ -73,10 +78,32 @@ export class RapierPhysicsManager extends ModelService {
                 rb.moveTo(v);
                 rb.rotateTo(q);
             });
+            if (queue) {
+                if (this.contactEventHandler) {
+                    queue.drainContactEvents((handle1, handle2, started) => {
+                        let rb1 = this.rigidBodies[handle1];
+                        let rb2 = this.rigidBodies[handle2];
+                        this.contactEventHandler.contactEvent(rb1, rb2, started);
+                    });
+                }
+                if (this.intersectionEventHandler) {
+                    queue.drainIntersectionEvents((handle1, handle2, intersecting) => {
+                        let rb1 = this.rigidBodies[handle1];
+                        let rb2 = this.rigidBodies[handle2];
+                        this.intersectionEventHandler.intersectionEvent(rb1, rb2, intersecting);
+                    });
+                }
+            }
         }
         this.future(this.timeStep).tick();
     }
 
+    registerContactEventHandler(handler) {
+        this.contactEventHandler = handler;
+    }
+    registerIntersectionEventHandler(handler) {
+        this.intersectionEventHandler = handler;
+    }
 }
 RapierPhysicsManager.register("RapierPhysicsManager");
 
