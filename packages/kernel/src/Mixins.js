@@ -246,7 +246,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 
         this.listenOnce("scaleSet", this.onScale);
         this.listenOnce("rotationSet", this.onRotation);
-        this.listenOnce("translationSet", this.onRotation);
+        this.listenOnce("translationSet", this.onTranslation);
 
     }
 
