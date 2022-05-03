@@ -264,40 +264,43 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     get rotation() { return this._rotation; }
     get translation() { return this._translation; }
 
+    onLocalChanged(){
+        this._local = null;
+        this.onGlobalChanged();
+    }
+
+    onGlobalChanged(){
+        this._global = null;
+    }
+
     scaleTo(v, throttle) {
         this.say("scaleTo", v, throttle)
-        this._local = null;
-        this._global = null;
+        this.onLocalChanged();
     }
 
     rotateTo(q, throttle) {
         this.say("rotateTo", q, throttle)
-        this._local = null;
-        this._global = null;
+        this.onLocalChanged();
     }
 
     translateTo(v, throttle) {
         this.say("translateTo", v, throttle)
-        this._local = null;
-        this._global = null;
+        this.onLocalChanged();
     }
 
     onScale() {
         this._scale = this.actor.scale;
-        this._local = null;
-        this._global = null;
+        this.onLocalChanged();
     }
 
     onRotation() {
         this._rotation = this.actor.rotation;
-        this._local = null;
-        this._global = null;
+        this.onLocalChanged();
     }
 
     onTranslation() {
         this._translation = this.actor.translation;
-        this._local = null;
-        this._global = null;
+        this.onLocalChanged();
     }
 
     get local() {
@@ -328,25 +331,22 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 
         if (!v3_equals(this._scale, this.actor.scale, .0001)) {
             this._scale = v3_lerp(this._scale, this.actor.scale, tug);
-            this._local = null;
-            this._global = null;
+            this.onLocalChanged();
         }
 
         if (!q_equals(this._rotation, this.actor.rotation, 0.000001)) {
             this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-            this._local = null;
-            this._global = null;
+            this.onLocalChanged();
         }
 
         if (!v3_equals(this._translation, this.actor.translation, .0001)) {
             this._translation = v3_lerp(this._translation, this.actor.translation, tug);
-            this._local = null;
-            this._global = null;
+            this.onLocalChanged();
         }
 
         if (!this._global) {
             this.say("viewGlobalChanged");
-            if (this.children) this.children.forEach(child => child._global = null); // If our global changes, so do the globals of our children
+            if (this.children) this.children.forEach(child => child.onGlobalChanged); // If our global changes, so do the globals of our children
         }
 
     }

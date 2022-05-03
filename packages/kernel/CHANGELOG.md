@@ -4,6 +4,17 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2022-5-3
+### Changed
+- Parent/child relationships are included in the base functionality of Actors and Pawns
+- Actors aren't required to have Pawns
+- PM_Dynamic rolled into base Pawn class.
+- Pawns have a throttle parameter in their say() method by default.
+
+### Added
+- Pawn set() -- you can set actor options from the Pawn.
+- PlayerManager destroyPlayer() -- override to customize player destruction
+
 ## [1.2.0] - 2022-4-20
 ### Added
 - Pawns have init() so you don't need to define constructors
@@ -66,12 +77,3 @@ defineSmoothedPawnProperty from PM_Smoothed
 
 ## Pending
 
-### Changed
-- Parent/child relationships are included in the base functionality of Actors and Pawns
-- Actors aren't required to have Pawns
-- PM_Dynamic rolled into base Pawn class.
-- Pawns have a throttle parameter in their say() method by default.
-
-### Added
-- Pawn set() -- you can set actor options from the Pawn.
-- PlayerManager destroyPlayer() -- override to customize player destruction
