@@ -39,9 +39,10 @@ export class Actor extends WorldcoreModel {
     get doomed() {return this._doomed} // About to be destroyed. This is used to prevent creating new future messages.
     get parent() { return this._parent; }
 
+
     init(options) {
         super.init();
-        this.listen("_parent", this.onParent);
+        this.listen("parentSet", this.onParent);
         this.listen("_set", this.set);
         this.set(options);
         this.service('ActorManager').add(this);
@@ -60,11 +61,13 @@ export class Actor extends WorldcoreModel {
     set(options = {}) {
         const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
         for (const option of sorted) {
+            const name = option[0];
+            const setEvent = name + "Set";
             const n = "_" + option[0];
             const v = option[1];
             const o = this[n];
             this[n] = v;
-            this.say(n, {v, o}); // Publish a local message whenever a property changes with its old and new value.
+            this.say(setEvent, {v, o}); // Publish a local message whenever a property changes with its old and new value.
         }
     }
 

@@ -114,9 +114,9 @@ export const AM_Spatial = superclass => class extends superclass {
 
     init(options) {
         super.init(options);
-        this.listen("_scale", this.localChanged);
-        this.listen("_rotation", this.localChanged);
-        this.listen("_translation", this.localChanged);
+        this.listen("scaleSet", this.localChanged);
+        this.listen("rotationSet", this.localChanged);
+        this.listen("translationSet", this.localChanged);
     }
 
     localChanged() {
@@ -244,9 +244,9 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this._translation = this.actor.translation;
         this._global = this.actor.global;
 
-        this.listenOnce("_scale", this.onScale);
-        this.listenOnce("_rotation", this.onRotation);
-        this.listenOnce("_translation", this.onRotation);
+        this.listenOnce("scaleSet", this.onScale);
+        this.listenOnce("rotationSet", this.onRotation);
+        this.listenOnce("translationSet", this.onRotation);
 
     }
 
@@ -377,10 +377,6 @@ export const AM_Predictive = superclass => class extends AM_Smoothed(superclass)
 
     init(...args) {
         super.init(...args);
-        this.listen("setVelocity", this.setVelocity);
-        this.listen("setSpin", this.setSpin);
-        this.listen("setVelocitySpin", this.setVelocitySpin);
-
         this.future(0).tick(0);
     }
 
@@ -394,15 +390,6 @@ export const AM_Predictive = superclass => class extends AM_Smoothed(superclass)
             this.moveTo(v3_add(this.translation, move));
         }
         if (!this.doomed) this.future(this.tickStep).tick(this.tickStep);
-    }
-
-    setVelocity(v) { this._velocity = v; }
-
-    setSpin(q) { this._spin = q; }
-
-    setVelocitySpin(vq){
-        this._velocity = vq[0];
-        this._spin = vq[1];
     }
 
 };
@@ -421,37 +408,30 @@ export const PM_Predictive = superclass => class extends PM_Smoothed(superclass)
     moveTo(v, throttle) {this.translateTo(v,throttle); }
 
     setVelocity(v, throttle) {
-        this.say("setVelocity", v, throttle)
-        this._local = null;
-        this._global = null;
+        this.set({velocity: v}, throttle)
     }
 
     setSpin(q, throttle) {
-        this.say("setSpin", q, throttle)
-        this._local = null;
-        this._global = null;
+        this.set({spin: q}, throttle)
     }
 
-    setVelocitySpin(vq, throttle){
-        this.say("setVelocitySpin", vq, throttle);
-        this._local = null;
-        this._global = null;
-    }
+    // setVelocitySpin(v, q, throttle){
+    //     // this.say("setVelocitySpin", vq, throttle);
+    //     this.set({velocity: v, spin: q}, throttle)
+    // }
 
     update(time, delta) {
 
         if (!q_isZero(this.spin)) {
             this._rotation = q_normalize(q_slerp(this._rotation, q_multiply(this._rotation, this.spin), delta));
-            this._local = null;
-            this._global = null;
+            this.onLocalChanged();
         }
 
         if (!v3_isZero(this.velocity))  {
             const relative = v3_scale(this.velocity, delta);
             const move = v3_transform(relative, m4_rotationQ(this.rotation));
             this._translation = v3_add(this._translation, move);
-            this._local = null;
-            this._global = null;
+            this.onLocalChanged();
         }
         super.update(time, delta);
 

@@ -53,7 +53,7 @@ export class Pawn extends WorldcoreView {
         this._actor = actor;
         pm.add(this);
         this.listen("destroyActor", this.destroy);
-        this.listen("_parent", this.onParent);
+        this.listen("parentSet", this.onParent);
         this.init();
     }
 
@@ -123,8 +123,8 @@ export class Pawn extends WorldcoreView {
         this.subscribe(this.actor.id, {event, handling: "oncePerFrame"}, callback);
     }
 
-    set(options) {
-        this.say("_set", options);
+    set(options, throttle = 0) {
+        this.say("_set", options, throttle);
     }
 
     preUpdate(time, delta) {} // Called immediately before the main update

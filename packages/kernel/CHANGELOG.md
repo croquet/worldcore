@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Actors aren't required to have Pawns
 - PM_Dynamic rolled into base Pawn class.
 - Pawns have a throttle parameter in their say() method by default.
+- The event published by Actor set() is "propertySet" instead of "_property".
 
 ### Added
 - Pawn set() -- you can set actor options from the Pawn.

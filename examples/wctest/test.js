@@ -83,7 +83,8 @@ class MovePawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible, PM_Player)
         let q = q_multiply(q_identity(), q_axisAngle([0,1,0], spin * 0.005));
         q = q_multiply(q, q_axisAngle([1,0,0], pitch * 0.005));
         q = q_normalize(q);
-        this.setSpin(q, 100);
+        // this.setSpin(q, 100);
+        this.set({spin: q}, 100)
     }
 
     reset() {
