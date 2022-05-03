@@ -26,13 +26,20 @@ export class RapierPhysicsManager extends ModelService {
                 cls: RAPIER.World,
                 write: world => world.takeSnapshot(),
                 read:  snapshot => RAPIER.World.restoreSnapshot(snapshot)
-            }
+            },
+            "RAPIER.EventQueue": {
+                cls: RAPIER.EventQueue,
+                write: q => {},
+                read:  q => new RAPIER.EventQueue(true)
+            },
         };
     }
 
     init(options = {}) {
         super.init('RapierPhysicsManager');
-        this.useCollisionEventQueue = options.useCollisionEventQueue;
+        if (options.useCollisionEventQueue) {
+            this.queue = new RAPIER.EventQueue(true);
+        }
 
         const gravity = options.gravity || [0.0, -9.8, 0.0];
         const timeStep = options.timeStep || 50; // In ms
@@ -62,11 +69,7 @@ export class RapierPhysicsManager extends ModelService {
 
     tick() {
         if (!this.isPaused) {
-            let queue;
-            if (this.useCollisionEventQueue) {
-                queue = new RAPIER.EventQueue(true);
-            }
-            this.world.step(queue);
+            this.world.step(this.queue); // may be undefined
             this.world.forEachActiveRigidBodyHandle(h => {
                 const rb = this.rigidBodies[h];
                 const t = rb.rigidBody.translation();
@@ -76,9 +79,10 @@ export class RapierPhysicsManager extends ModelService {
                 const q = [r.x, r.y, r.z, r.w];
 
                 rb.moveTo(v);
+                rb.say("translating", v);
                 rb.rotateTo(q);
             });
-            if (queue) {
+            if (this.queue) {
                 if (this.contactEventHandler) {
                     queue.drainContactEvents((handle1, handle2, started) => {
                         let rb1 = this.rigidBodies[handle1];
@@ -94,7 +98,7 @@ export class RapierPhysicsManager extends ModelService {
                     });
                 }
             }
-        }
+         }
         this.future(this.timeStep).tick();
     }
 
