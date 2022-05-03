@@ -1,7 +1,7 @@
 import { Constants } from "@croquet/croquet";
 import { m4_identity } from "..";
 // import { Constants } from "@croquet/worldcore-kernel";
-import { PM_Dynamic, GetPawn } from "./Pawn";
+// import { GetPawn } from "./Pawn";
 import { v3_zero, q_identity, v3_unit, m4_scaleRotationTranslation, m4_translation, m4_rotationX, m4_multiply, v3_lerp, v3_equals,
     q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, v3_transform, q_euler, TAU, clampRad, q_axisAngle } from  "./Vector";
 
@@ -103,8 +103,7 @@ class MixinFactory  {
 //-- Spatial -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Spatial actors have a translation, rotation and scale in 3D space. They inherit from Tree
-// so they also maintain a hierarchy of transforms.
+// Spatial actors have a translation, rotation and scale in 3D space.
 //
 // They don't have any view-side smoothing, so the pawn will change its transform to exactly
 // match the transform of the actor.
@@ -193,25 +192,29 @@ get lookGlobal() { return this.global; } // Allows objects to have an offset cam
 
 export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
+    init(...args) {
+        super.init(...args);
+        this.listen("scaleTo", this.scaleTo);
+        this.listen("rotateTo", this.rotateTo);
+        this.listen("translateTo", this.translateTo);
+    }
+
     scaleTo(v) {
         this._scale = v;
         this.$local = null;
         this.$global = null;
-        this.say("scaling");
     }
 
     rotateTo(q) {
         this._rotation = q;
         this.$local = null;
         this.$global = null;
-        this.say("rotating");
     }
 
     translateTo(v) {
         this._translation = v;
         this.$local = null;
         this.$global = null;
-        this.say("translating");
     }
 
     moveTo(v) { this.translateTo(v)}
@@ -228,9 +231,9 @@ RegisterMixin(AM_Smoothed);
 // When the difference between actor and pawn scale/rotation/translation drops below an epsilon,
 // interpolation is paused
 
-const DynamicSpatial = superclass => PM_Dynamic(PM_Spatial(superclass)); // Merge dynamic and spatial base mixins
+// const DynamicSpatial = superclass => PM_Dynamic(PM_Spatial(superclass)); // Merge dynamic and spatial base mixins
 
-export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass) {
+export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 
     constructor(...args) {
         super(...args);
@@ -241,22 +244,19 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         this._translation = this.actor.translation;
         this._global = this.actor.global;
 
-        this.listenOnce("_scale", this.onScaleSet);
-        this.listenOnce("scaling", () => this.scaling = true)
+        this.listenOnce("_scale", this.onScale);
+        this.listenOnce("_rotation", this.onRotation);
+        this.listenOnce("_translation", this.onRotation);
 
-        this.listenOnce("_rotation", this.onRotationSet);
-        this.listenOnce("rotating", () => this.rotating = true)
-
-        this.listenOnce("_translation", this.onTranslationSet);
-        this.listenOnce("translating", () => this.translating = true)
     }
 
     set tug(t) {this._tug = t}
-    get tug() {  return this._tug; }
+    get tug() { return this._tug; }
 
     set localOffset(m4) {
         this._localOffset = m4;
-        this.onLocalChanged();
+        this._local = null;
+        this._global = null;
     }
     get localOffset() { return this._localOffset; }
 
@@ -264,27 +264,39 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
     get rotation() { return this._rotation; }
     get translation() { return this._translation; }
 
-    onScaleSet() {
-        this._scale = this.actor.scale;
-        this.onLocalChanged();
-    }
-
-    onRotationSet() {
-        this._rotation = this.actor.rotation;
-        this.onLocalChanged();
-    }
-
-    onTranslationSet() {
-        this._translation = this.actor.translation;
-        this.onLocalChanged();
-    }
-
-    onLocalChanged() {
+    scaleTo(v, throttle) {
+        this.say("scaleTo", v, throttle)
         this._local = null;
         this._global = null;
     }
 
-    onGlobalChanged() {
+    rotateTo(q, throttle) {
+        this.say("rotateTo", q, throttle)
+        this._local = null;
+        this._global = null;
+    }
+
+    translateTo(v, throttle) {
+        this.say("translateTo", v, throttle)
+        this._local = null;
+        this._global = null;
+    }
+
+    onScale() {
+        this._scale = this.actor.scale;
+        this._local = null;
+        this._global = null;
+    }
+
+    onRotation() {
+        this._rotation = this.actor.rotation;
+        this._local = null;
+        this._global = null;
+    }
+
+    onTranslation() {
+        this._translation = this.actor.translation;
+        this._local = null;
         this._global = null;
     }
 
@@ -305,7 +317,6 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         } else {
             this._global = this.local;
         }
-        this.say("viewGlobalChanged");
         return this._global;
     }
 
@@ -315,37 +326,29 @@ export const PM_Smoothed = superclass => class extends DynamicSpatial(superclass
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
 
-        if (!this.scaling || v3_equals(this._scale, this.actor.scale, .0001)) {
-            this.scaling = false;
-        } else {
+        if (!v3_equals(this._scale, this.actor.scale, .0001)) {
             this._scale = v3_lerp(this._scale, this.actor.scale, tug);
-            this.onLocalChanged();
+            this._local = null;
+            this._global = null;
         }
 
-        if (!this.rotating || q_equals(this._rotation, this.actor.rotation, 0.000001)) {
-            this.rotating = false;
-        } else {
+        if (!q_equals(this._rotation, this.actor.rotation, 0.000001)) {
             this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-            this.onLocalChanged();
+            this._local = null;
+            this._global = null;
         }
 
-        if (!this.translating || v3_equals(this._translation, this.actor.translation, .0001)) {
-            this.translating = false;
-        } else {
+        if (!v3_equals(this._translation, this.actor.translation, .0001)) {
             this._translation = v3_lerp(this._translation, this.actor.translation, tug);
-            this.onLocalChanged();
+            this._local = null;
+            this._global = null;
         }
 
         if (!this._global) {
-            this.global;
+            this.say("viewGlobalChanged");
             if (this.children) this.children.forEach(child => child._global = null); // If our global changes, so do the globals of our children
         }
 
-    }
-
-    postUpdate(time, delta) {
-        super.postUpdate(time, delta);
-        if (this.children) this.children.forEach(child => child.fullUpdate(time, delta));
     }
 
 }
@@ -374,9 +377,6 @@ export const AM_Predictive = superclass => class extends AM_Smoothed(superclass)
 
     init(...args) {
         super.init(...args);
-        this.listen("scaleTo", this.scaleTo);
-        this.listen("rotateTo", this.rotateTo);
-        this.listen("translateTo", this.translateTo);
         this.listen("setVelocity", this.setVelocity);
         this.listen("setSpin", this.setSpin);
         this.listen("setVelocitySpin", this.setVelocitySpin);
@@ -418,37 +418,24 @@ export const PM_Predictive = superclass => class extends PM_Smoothed(superclass)
         this.velocity = this.actor.velocity;
     }
 
-
-    scaleTo(v, throttle) {
-        this.say("scaleTo", v, throttle)
-        this.onLocalChanged();
-    }
-
-    rotateTo(q, throttle) {
-        this.say("rotateTo", q, throttle)
-        this.onLocalChanged();
-    }
-
-    translateTo(v, throttle) {
-        this.say("translateTo", v, throttle)
-        this.onLocalChanged();
-    }
-
     moveTo(v, throttle) {this.translateTo(v,throttle); }
 
     setVelocity(v, throttle) {
         this.say("setVelocity", v, throttle)
-        this.onLocalChanged();
+        this._local = null;
+        this._global = null;
     }
 
     setSpin(q, throttle) {
         this.say("setSpin", q, throttle)
-        this.onLocalChanged();
+        this._local = null;
+        this._global = null;
     }
 
     setVelocitySpin(vq, throttle){
         this.say("setVelocitySpin", vq, throttle);
-        this.onLocalChanged();
+        this._local = null;
+        this._global = null;
     }
 
     update(time, delta) {

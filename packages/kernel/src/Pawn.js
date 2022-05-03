@@ -12,7 +12,7 @@ export class PawnManager extends ViewService {
         super(name || "PawnManager");
         pm = this;
         this.pawns = new Map();
-        this.dynamic = new Set();
+        // this.dynamic = new Set();
 
         const actorManager = this.modelService("ActorManager");
         actorManager.actors.forEach(actor => this.spawnPawn(actor));
@@ -27,46 +27,18 @@ export class PawnManager extends ViewService {
         super.destroy();
     }
 
-
-
-    spawnPawn(actor) {
-        if (actor.pawn) new actor.pawn(actor);
-    }
-
-    add(pawn) {
-        this.pawns.set(pawn.actor.id, pawn);
-
-    }
-
-    has(id) {
-        return this.pawns.has(id);
-    }
-
-    get(id) {
-        return this.pawns.get(id);
-    }
-
-    delete(pawn) {
-        this.pawns.delete(pawn.actor.id);
-
-    }
-
-    addDynamic(pawn) {
-        this.dynamic.add(pawn);
-    }
-
-    deleteDynamic(pawn) {
-        this.dynamic.delete(pawn);
-    }
-
+    spawnPawn(actor) { if (actor.pawn) new actor.pawn(actor); }
+    add(pawn) {  this.pawns.set(pawn.actor.id, pawn); }
+    has(id) { return this.pawns.has(id); }
+    get(id) { return this.pawns.get(id); }
+    delete(pawn) { this.pawns.delete(pawn.actor.id); }
 
     update(time, delta) {
-        this.dynamic.forEach( pawn => {
-            if (pawn.parent) return; // Child pawns get updated in their parent's postUpdate
-            pawn.fullUpdate(time, delta);
-        });
+        for(const pawn of this.pawns.values()) { if (!pawn.parent) pawn.fullUpdate(time, delta); };
     }
 }
+
+export function GetPawn(actorId) { return pm.get(actorId); }
 
 //------------------------------------------------------------------------------------------
 //-- Pawn ----------------------------------------------------------------------------------
@@ -76,6 +48,8 @@ export class Pawn extends WorldcoreView {
 
     constructor(actor) {
         super(actor);
+        this._sayNext = {};
+        this._sayCache = {};
         this._actor = actor;
         pm.add(this);
         this.listen("destroyActor", this.destroy);
@@ -121,8 +95,13 @@ export class Pawn extends WorldcoreView {
     }
 
     say(event, data, throttle = 0) {
-        if (throttle) console.warn("Only dynamic pawns can throttle 'say'!");
-        this.publish(this.actor.id, event, data);
+        if (this.time < this._sayNext[event]) {
+            this._sayCache[event] = data;
+        } else {
+            this._sayNext[event] = this.time + throttle;
+            this._sayCache[event] = null;
+            this.publish(this.actor.id, event, data);
+        }
     }
 
     listen(event, callback) {
@@ -145,41 +124,14 @@ export class Pawn extends WorldcoreView {
         this.say("_set", options);
     }
 
-}
-
-//------------------------------------------------------------------------------------------
-//-- PM_Dynamic ----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// Dynamic pawns get their update called every frame. Most stuff should go in update, but if there are operations
-// that need to occur before or after everything else, you can overload pre- and post- update.
-
-export const PM_Dynamic = superclass => class extends superclass {
-    constructor(...args) {
-        super(...args);
-        pm.addDynamic(this);
-        this._sayNext = {};
-        this._sayCache = {};
-    }
-
-    destroy() {
-        pm.deleteDynamic(this);
-        super.destroy();
-    }
-
-    say(event, data, throttle = 0) {
-        if (this.time < this._sayNext[event]) {
-            this._sayCache[event] = data;
-        } else {
-            this._sayNext[event] = this.time + throttle;
-            this._sayCache[event] = null;
-            this.publish(this.actor.id, event, data);
-        }
-    }
-
     preUpdate(time, delta) {} // Called immediately before the main update
     update(time, delta) {}
-    postUpdate(time, delta){ // Called immediately after the main update.
+    postUpdate(time, delta){} // Called immediately after the main update.
+
+    fullUpdate(time, delta) {
+        this.preUpdate(time, delta);
+        this.update(time, delta);
+        this.postUpdate(time, delta);
 
         for (const event in this._sayCache) { // Flushes expired cached events from throttled says
             const data = this._sayCache[event];
@@ -188,16 +140,11 @@ export const PM_Dynamic = superclass => class extends superclass {
                 this.publish(this.actor.id, event, data);
             }
         }
+
+        if (this.children) this.children.forEach(child => child.fullUpdate(time, delta));
     }
 
-    fullUpdate(time, delta) {
-        this.preUpdate(time, delta);
-        this.update(time, delta);
-        this.postUpdate(time, delta);
-    }
 
 }
 
-export function GetPawn(actorId) {
-    return pm.get(actorId);
-}
+

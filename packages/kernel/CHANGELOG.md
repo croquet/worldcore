@@ -68,7 +68,9 @@ defineSmoothedPawnProperty from PM_Smoothed
 
 ### Changed
 - Parent/child relationships are included in the base functionality of Actors and Pawns
-- Actors don't have to have Pawns
+- Actors aren't required to have Pawns
+- PM_Dynamic rolled into base Pawn class.
+- Pawns have a throttle parameter in their say() method by default.
 
 ### Added
 - Pawn set() -- you can set actor options from the Pawn.
