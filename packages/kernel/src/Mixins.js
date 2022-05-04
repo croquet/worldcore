@@ -197,6 +197,7 @@ export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
         this.listen("scaleTo", this.scaleTo);
         this.listen("rotateTo", this.rotateTo);
         this.listen("translateTo", this.translateTo);
+        this.listen("positionTo", this.positionTo);
     }
 
     scaleTo(v) {
@@ -215,6 +216,14 @@ export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
         this._translation = v;
         this.$local = null;
         this.$global = null;
+    }
+
+    positionTo(data) {
+        this._translation = data.v;
+        this._rotation = data.q;
+        this.$local = null;
+        this.$global = null;
+
     }
 
     moveTo(v) { this.translateTo(v)}
@@ -273,17 +282,18 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 
     scaleTo(v, throttle) {
         this.say("scaleTo", v, throttle)
-        this.onLocalChanged();
     }
 
     rotateTo(q, throttle) {
         this.say("rotateTo", q, throttle)
-        this.onLocalChanged();
     }
 
     translateTo(v, throttle) {
         this.say("translateTo", v, throttle)
-        this.onLocalChanged();
+    }
+
+    positionTo(v, q, throttle) {
+        this.say("positionTo", {v,q}, throttle)
     }
 
     onScale() {
@@ -369,36 +379,38 @@ export const PM_SmoothedDriver = superclass => class extends PM_Smoothed(supercl
         this.ignore("translationSet");
         }
 
-        setPosition(v, q) {
+        positionTo(v, q, throttle) {
+            throttle = throttle || this.throttle;
             this._translation = v;
             this._rotation = q;
             this.localDriver = true;
             this.onLocalChanged();
-            this.set({rotation: q, translation: v}, this.throttle);
+            super.positionTo(v, q, throttle);
         }
 
-         setScale(v) {
-            this.localScale = true;
+        scaleTo(v, throttle) {
+            throttle = throttle || this.throttle;
             this._scale = v;
             this.localDriver = true;
             this.onLocalChanged();
-            this.set({scale: v}, this.throttle);
+            super.scaleTo(v, throttle);
         }
 
-        setRotation(q) {
-            this.localRotation = true;
+        rotateTo(q, throttle) {
+            throttle = throttle || this.throttle;
             this._rotation = q;
             this.localDriver = true;
             this.onLocalChanged();
-            this.set({rotation: q}, this.throttle);
+            super.rotateTo(q, throttle);
         }
 
-        setTranslation(v) {
-            this.localTranslation = true;
+        translateTo(v, throttle)  {
+            throttle = throttle || this.throttle;
             this._translation = v;
             this.localDriver = true;
             this.onLocalChanged();
-            this.set({translation: v}, this.throttle);
+            super.translateTo(v, throttle);
+
         }
 
     }

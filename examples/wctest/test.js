@@ -178,14 +178,12 @@ class SpinPawn extends mix(Pawn).with(PM_SmoothedDriver, PM_WebGLVisible, PM_Beh
 
     test1() {
         console.log("test1!");
-        this.setTranslation([0, 2.5, 0]);
-        console.log(this.translation);
+        this.translateTo([0, 2.5, 0]);
     }
 
     test2() {
         console.log("test2!");
-        this.setTranslation([0, 1.5, 0]);
-        console.log(this.translation);
+        this.translateTo([0, 1.5, 0]);
     }
 }
 
@@ -249,7 +247,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start Model!");
+        console.log("Start Model!!");
 
         BackgroundActor.create();
         MoveActor.create({translation: [0,0,-5]});
