@@ -78,3 +78,6 @@ defineSmoothedPawnProperty from PM_Smoothed
 
 ## Pending
 
+### Added
+- PM_SmoothedDriver mixin
+

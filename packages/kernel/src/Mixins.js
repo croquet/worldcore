@@ -231,8 +231,6 @@ RegisterMixin(AM_Smoothed);
 // When the difference between actor and pawn scale/rotation/translation drops below an epsilon,
 // interpolation is paused
 
-// const DynamicSpatial = superclass => PM_Dynamic(PM_Spatial(superclass)); // Merge dynamic and spatial base mixins
-
 export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 
     constructor(...args) {
@@ -299,7 +297,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     }
 
     onTranslation() {
-        this._translation = this.actor.translation;
+        this._translation = [...this.actor.translation];
         this.onLocalChanged();
     }
 
@@ -329,19 +327,21 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
 
-        if (!v3_equals(this._scale, this.actor.scale, .0001)) {
-            this._scale = v3_lerp(this._scale, this.actor.scale, tug);
-            this.onLocalChanged();
-        }
+        if(!this.localDriver) {
+            if (!v3_equals(this._scale, this.actor.scale, .0001)) {
+                this._scale = v3_lerp(this._scale, this.actor.scale, tug);
+                this.onLocalChanged();
+            }
 
-        if (!q_equals(this._rotation, this.actor.rotation, 0.000001)) {
-            this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-            this.onLocalChanged();
-        }
+            if (!q_equals(this._rotation, this.actor.rotation, 0.000001)) {
+                this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
+                this.onLocalChanged();
+            }
 
-        if (!v3_equals(this._translation, this.actor.translation, .0001)) {
-            this._translation = v3_lerp(this._translation, this.actor.translation, tug);
-            this.onLocalChanged();
+            if (!v3_equals(this._translation, this.actor.translation, .0001)) {
+                this._translation = v3_lerp(this._translation, this.actor.translation, tug);
+                this.onLocalChanged();
+            }
         }
 
         if (!this._global) {
@@ -352,6 +352,56 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     }
 
 }
+
+//------------------------------------------------------------------------------------------
+//-- PM_SmoothedDriver ---------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// This version of PM_Smoothed  sets the transform values instantly on the local pawn and only implements smoothing on other clients.
+
+export const PM_SmoothedDriver = superclass => class extends PM_Smoothed(superclass) {
+
+    constructor(...args) {
+        super(...args);
+        this.throttle = 100; //ms
+        this.ignore("scaleSet");
+        this.ignore("rotationSet");
+        this.ignore("translationSet");
+        }
+
+        setPosition(v, q) {
+            this._translation = v;
+            this._rotation = q;
+            this.localDriver = true;
+            this.onLocalChanged();
+            this.set({rotation: q, translation: v}, this.throttle);
+        }
+
+         setScale(v) {
+            this.localScale = true;
+            this._scale = v;
+            this.localDriver = true;
+            this.onLocalChanged();
+            this.set({scale: v}, this.throttle);
+        }
+
+        setRotation(q) {
+            this.localRotation = true;
+            this._rotation = q;
+            this.localDriver = true;
+            this.onLocalChanged();
+            this.set({rotation: q}, this.throttle);
+        }
+
+        setTranslation(v) {
+            this.localTranslation = true;
+            this._translation = v;
+            this.localDriver = true;
+            this.onLocalChanged();
+            this.set({translation: v}, this.throttle);
+        }
+
+    }
 
 //------------------------------------------------------------------------------------------
 //-- Predictive ----------------------------------------------------------------------------

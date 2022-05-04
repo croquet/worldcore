@@ -2,7 +2,7 @@
 //
 // Croquet Studios, 2021
 
-import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX, m4_rotationZ,  m4_identity, PM_Predictive, AM_Predictive, GetPawn } from "@croquet/worldcore-kernel";
+import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX, m4_rotationZ,  m4_identity, PM_Predictive, AM_Predictive, GetPawn, PM_SmoothedDriver } from "@croquet/worldcore-kernel";
 import {WebGLRenderManager, PM_WebGLVisible, PM_WebGLCamera, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
 import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
 
@@ -146,12 +146,13 @@ SpinActor.register('SpinActor');
 // SpinPawn
 //------------------------------------------------------------------------------------------
 
-class SpinPawn extends mix(Pawn).with(PM_Smoothed, PM_WebGLVisible, PM_Behavioral) {
+class SpinPawn extends mix(Pawn).with(PM_SmoothedDriver, PM_WebGLVisible, PM_Behavioral) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
 
-        this.subscribe("input", "dDown", this.test);
+        this.subscribe("input", "dDown", this.test1);
+        this.subscribe("input", "sDown", this.test2);
 
     }
 
@@ -175,8 +176,16 @@ class SpinPawn extends mix(Pawn).with(PM_Smoothed, PM_WebGLVisible, PM_Behaviora
         return material;
     }
 
-    test() {
-        console.log("test!");
+    test1() {
+        console.log("test1!");
+        this.setTranslation([0, 2.5, 0]);
+        console.log(this.translation);
+    }
+
+    test2() {
+        console.log("test2!");
+        this.setTranslation([0, 1.5, 0]);
+        console.log(this.translation);
     }
 }
 
