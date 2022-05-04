@@ -307,7 +307,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     }
 
     onTranslation() {
-        this._translation = [...this.actor.translation];
+        this._translation = this.actor.translation;
         this.onLocalChanged();
     }
 
