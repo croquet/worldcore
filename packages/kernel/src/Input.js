@@ -55,6 +55,7 @@ export class InputManager extends ViewService {
         document.body.style.touchAction = "none";
         this.addAllListeners();
 
+        this.synthesizedModifierKeys = new Map();
     }
 
     destroy() {
@@ -211,6 +212,25 @@ export class InputManager extends ViewService {
         return document.documentElement.requestPointerLock || document.documentElement.mozRequestPointerLock;
     }
 
+    modifierKeysFrom(event) {
+        let {altKey, ctrlKey, metaKey, shiftKey} = event;
+        altKey = !!(altKey || this.synthesizedModifierKeys.get("altKey"));
+        ctrlKey = !!(ctrlKey || this.synthesizedModifierKeys.get("ctrlKey"));
+        metaKey = !!(metaKey || this.synthesizedModifierKeys.get("metaKey"));
+        shiftKey = !!(shiftKey || this.synthesizedModifierKeys.get("shiftKey"));
+        return {altKey, ctrlKey, metaKey, shiftKey};
+    }
+
+    setModifierKeys(obj) {
+        for (let k in obj) {
+            this.synthesizedModifierKeys.set(k, !!obj[k])
+        }
+    }
+
+    modifierEqual(e1, e2) {
+        return !!e1.altKey === !!e2.altKey && !!e1.ctrlKey === !!e2.ctrlKey && !!e1.metaKey === !!e2.metaKey && !!e1.shiftKey === !!e2.shiftKey;
+    }
+
     enterPointerLock() {
         if (this.inPointerLock) return;
         if (!this.canPointerLock) return;
@@ -250,14 +270,15 @@ export class InputManager extends ViewService {
 
     onKeyDown(event) {
         const key = event.key;
+        let modKeys = this.modifierKeysFrom(event);
         keys.add(key);
         if (event.repeat) {
-            this.publish("input", key + "Repeat", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
-            this.publish("input", "keyRepeat", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
+            this.publish("input", key + "Repeat", {key, shift: modKeys.shiftKey, alt: modKeys.altKey, ctrl: modKeys.ctrlKey, meta: modKeys.metaKey, ...modKeys});
+            this.publish("input", "keyRepeat", {key, shift: modKeys.shiftKey, alt: modKeys.altKey, ctrl: modKeys.ctrlKey, meta: modKeys.metaKey, ...modKeys});
             // This can generate a lot of events! Don't subscribe to in model.
         } else {
-            this.publish("input", key + "Down", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
-            this.publish("input", "keyDown", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
+            this.publish("input", key + "Down", {key, shift: modKeys.shiftKey, alt: modKeys.altKey, ctrl: modKeys.ctrlKey, meta: modKeys.metaKey, ...modKeys});
+            this.publish("input", "keyDown", {key, shift: modKeys.shiftKey, alt: modKeys.altKey, ctrl: modKeys.ctrlKey, meta: modKeys.metaKey, ...modKeys});
             this.onChordDown(key);
         }
     }
@@ -265,35 +286,39 @@ export class InputManager extends ViewService {
     // publish both keyUp + arg and "xUp" where "x" is the key
     onKeyUp(event) {
         const key = event.key;
+        let modKeys = this.modifierKeysFrom(event);
         if (!KeyDown(key)) return;
-        this.publish("input", key + "Up", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
-        this.publish("input", "keyUp", {key, shift: event.shiftKey, alt: event.altKey, ctrl: event.ctrlKey, meta: event.metaKey});
+        this.publish("input", key + "Up", {key, shift: modKeys.shiftKey, alt: modKeys.altKey, ctrl: modKeys.ctrlKey, meta: modKeys.metaKey, ...modKeys});
+        this.publish("input", "keyUp", {key, shift: modKeys.shiftKey, alt: modKeys.altKey, ctrl: modKeys.ctrlKey, meta: modKeys.metaKey, modKeys});
         keys.delete(key);
         this.onChordUp(key);
     }
 
     onClick(event) {
+        let modKeys = this.modifierKeysFrom(event);
         window.focus();
-        this.publish("input", "click", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
+        this.publish("input", "click", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
     }
 
     onPointerDown(event) {
-        this.presses.set(event.pointerId, {id: event.pointerId, time: event.timeStamp, start: [event.clientX, event.clientY], xy: [event.clientX, event.clientY]});
-        this.publish("input", "pointerDown", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
-        if (event.button === this.lastDown.button && event.timeStamp - this.lastDown.time < DOUBLE_DURATION) {
-                if (event.button === this.penultimateDown.button && event.timeStamp - this.penultimateDown.time < TRIPLE_DURATION) {
-                this.publish("input", "tripleDown", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
+        let modKeys = this.modifierKeysFrom(event);
+        this.presses.set(event.pointerId, {id: event.pointerId, time: event.timeStamp, start: [event.clientX, event.clientY], ...modKeys, xy: [event.clientX, event.clientY]});
+        this.publish("input", "pointerDown", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
+        if (event.button === this.lastDown.button && event.timeStamp - this.lastDown.time < DOUBLE_DURATION && this.modifierEqual(event, this.lastDown)) {
+            if (event.button === this.penultimateDown.button && event.timeStamp - this.penultimateDown.time < TRIPLE_DURATION) {
+                this.publish("input", "tripleDown", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
             } else {
-                this.publish("input", "doubleDown", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
+                this.publish("input", "doubleDown", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
             }
         }
         this.penultimateDown = this.lastDown;
-        this.lastDown = {id: event.pointerId, button: event.button, time: event.timeStamp}
+        this.lastDown = {id: event.pointerId, button: event.button, ...modKeys, time: event.timeStamp};
         this.zoomStart();
     }
 
     onPointerUp(event) {
         const press = this.presses.get(event.pointerId);
+        let modKeys = this.modifierKeysFrom(event);
         if (press) {
             press.xy = [event.clientX, event.clientY];
             const duration = event.timeStamp - press.time;
@@ -302,23 +327,24 @@ export class InputManager extends ViewService {
             const ax = Math.abs(dx);
             const ay = Math.abs(dy);
             if (duration < TAP_DURATION && ax < TAP_DISTANCE && ay < TAP_DISTANCE) {
-                this.publish("input", "tap", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
+                this.publish("input", "tap", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
             }
             if (duration < SWIPE_DURATION && ax > SWIPE_DISTANCE) {
-                this.publish("input", "swipeX", {id: event.pointerId, type: event.pointerType, button: event.button, distance: dx});
+                this.publish("input", "swipeX", {id: event.pointerId, type: event.pointerType, button: event.button, distance: dx, ...modKeys});
             }
             if (duration < SWIPE_DURATION && ay > SWIPE_DISTANCE) {
-                this.publish("input", "swipeY", {id: event.pointerId, type: event.pointerType, button: event.button, distance: dy});
+                this.publish("input", "swipeY", {id: event.pointerId, type: event.pointerType, button: event.button, distance: dy, ...modKeys});
             }
         }
 
         this.presses.delete(event.pointerId);
-        this.publish("input", "pointerUp", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
+        this.publish("input", "pointerUp", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
         this.zoomEnd();
     }
 
     onPointerMove(event) {
         const press = this.presses.get(event.pointerId);
+        let modKeys = this.modifierKeysFrom(event);
         if (press) {
             press.xy = [event.clientX, event.clientY];
             const duration = event.timeStamp - press.time;
@@ -327,11 +353,11 @@ export class InputManager extends ViewService {
             const ax = Math.abs(dx);
             const ay = Math.abs(dy);
             if (duration > TAP_DURATION || ax > TAP_DISTANCE || ay > TAP_DISTANCE) { // Only publish pressed move events that aren't taps
-                this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
+                this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
             }
         } else {
-            this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.clientX, event.clientY]});
-            this.publish("input", "pointerDelta", {id: event.pointerId, type: event.pointerType, button: event.button, xy: [event.movementX, event.movementY]});
+            this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
+            this.publish("input", "pointerDelta", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.movementX, event.movementY]});
         }
         this.zoomUpdate();
     }
@@ -377,9 +403,10 @@ export class InputManager extends ViewService {
     }
 
     onWheel(event) {
+        let modKeys = this.modifierKeysFrom(event);
         event.preventDefault();
         const y = event.deltaY;
-        this.publish("input", "wheel", {deltaY: y, xy: [event.clientX, event.clientY]});
+        this.publish("input", "wheel", {deltaY: y, ...modKeys, xy: [event.clientX, event.clientY]});
     }
 
     onOrientation(event) {
