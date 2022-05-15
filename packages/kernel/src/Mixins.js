@@ -307,8 +307,13 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     }
 
     onTranslation() {
-        // DO NOT SHARE VARIABLES BETWEEN ACTORS AND PAWNS
-        this._translation = [...this.actor.translation];
+        this._translation = this.actor.translation;
+        this.onLocalChanged();
+    }
+
+    onPosition(){
+        this._rotation = this.actor.rotation;
+        this._translation = this.actor.translation;
         this.onLocalChanged();
     }
 
@@ -334,7 +339,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 
     update(time, delta) {
         super.update(time, delta);
-        
+
         if(!this.localDriver) {
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
