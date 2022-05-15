@@ -334,11 +334,11 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 
     update(time, delta) {
         super.update(time, delta);
-
+        
+        if(!this.localDriver) {
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
 
-        if(!this.localDriver) {
             if (!v3_equals(this._scale, this.actor.scale, .0001)) {
                 this._scale = v3_lerp(this._scale, this.actor.scale, tug);
                 this.onLocalChanged();
@@ -357,7 +357,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 
         if (!this._global) {
             this.say("viewGlobalChanged");
-            if (this.children) this.children.forEach(child => child.onGlobalChanged); // If our global changes, so do the globals of our children
+            if (this.children) this.children.forEach(child => child.onGlobalChanged()); // If our global changes, so do the globals of our children
         }
 
     }
