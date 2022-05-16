@@ -297,22 +297,22 @@ export class InputManager extends ViewService {
     onClick(event) {
         let modKeys = this.modifierKeysFrom(event);
         window.focus();
-        this.publish("input", "click", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
+        this.publish("input", "click", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.clientX, event.clientY]});
     }
 
     onPointerDown(event) {
         let modKeys = this.modifierKeysFrom(event);
         this.presses.set(event.pointerId, {id: event.pointerId, time: event.timeStamp, start: [event.clientX, event.clientY], ...modKeys, xy: [event.clientX, event.clientY]});
-        this.publish("input", "pointerDown", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
+        this.publish("input", "pointerDown", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.clientX, event.clientY]});
         if (event.button === this.lastDown.button && event.timeStamp - this.lastDown.time < DOUBLE_DURATION && this.modifierEqual(event, this.lastDown)) {
             if (event.button === this.penultimateDown.button && event.timeStamp - this.penultimateDown.time < TRIPLE_DURATION) {
-                this.publish("input", "tripleDown", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
+                this.publish("input", "tripleDown", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.clientX, event.clientY]});
             } else {
-                this.publish("input", "doubleDown", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
+                this.publish("input", "doubleDown", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.clientX, event.clientY]});
             }
         }
         this.penultimateDown = this.lastDown;
-        this.lastDown = {id: event.pointerId, button: event.button, ...modKeys, time: event.timeStamp};
+        this.lastDown = {id: event.pointerId, button: event.button, buttons: event.buttons, ...modKeys, time: event.timeStamp};
         this.zoomStart();
     }
 
@@ -327,18 +327,18 @@ export class InputManager extends ViewService {
             const ax = Math.abs(dx);
             const ay = Math.abs(dy);
             if (duration < TAP_DURATION && ax < TAP_DISTANCE && ay < TAP_DISTANCE) {
-                this.publish("input", "tap", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
+                this.publish("input", "tap", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.clientX, event.clientY]});
             }
             if (duration < SWIPE_DURATION && ax > SWIPE_DISTANCE) {
-                this.publish("input", "swipeX", {id: event.pointerId, type: event.pointerType, button: event.button, distance: dx, ...modKeys});
+                this.publish("input", "swipeX", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, distance: dx, ...modKeys});
             }
             if (duration < SWIPE_DURATION && ay > SWIPE_DISTANCE) {
-                this.publish("input", "swipeY", {id: event.pointerId, type: event.pointerType, button: event.button, distance: dy, ...modKeys});
+                this.publish("input", "swipeY", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, distance: dy, ...modKeys});
             }
         }
 
         this.presses.delete(event.pointerId);
-        this.publish("input", "pointerUp", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
+        this.publish("input", "pointerUp", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.clientX, event.clientY]});
         this.zoomEnd();
     }
 
@@ -353,11 +353,11 @@ export class InputManager extends ViewService {
             const ax = Math.abs(dx);
             const ay = Math.abs(dy);
             if (duration > TAP_DURATION || ax > TAP_DISTANCE || ay > TAP_DISTANCE) { // Only publish pressed move events that aren't taps
-                this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
+                this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.clientX, event.clientY]});
             }
         } else {
-            this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.clientX, event.clientY]});
-            this.publish("input", "pointerDelta", {id: event.pointerId, type: event.pointerType, button: event.button, ...modKeys, xy: [event.movementX, event.movementY]});
+            this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.clientX, event.clientY]});
+            this.publish("input", "pointerDelta", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.movementX, event.movementY]});
         }
         this.zoomUpdate();
     }
