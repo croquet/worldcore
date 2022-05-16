@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { PM_Visible, PM_Camera, RenderManager } from "@croquet/worldcore-kernel";
-import { MeshBVH, MeshBVHVisualizer } from "three-mesh-bvh";
+
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------
@@ -99,7 +99,7 @@ export const PM_ThreeCamera = superclass => class extends PM_Camera(superclass) 
         const render = this.service("ThreeRenderManager");
         const h = this.raycaster.intersectObjects(targets || render.threeLayer("pointer"));
         if (h.length === 0) return {};
- 
+
         let hit;
         let normal;
         if (optStrictTargets) {
@@ -176,7 +176,7 @@ export class ThreeRenderManager extends RenderManager {
             document.body.insertBefore(this.canvas, null);
             options.canvas = this.canvas;
         }
-console.log("ThreeRenderManager options", options)
+
         this.renderer = new THREE.WebGLRenderer(options);
         this.renderer.shadowMap.enabled = true;
 
@@ -185,21 +185,9 @@ console.log("ThreeRenderManager options", options)
         this.renderPass = new RenderPass( this.scene, this.camera );
         this.composer.addPass( this.renderPass );
 
-        this.useBVH = options.useBVH;
-        if (options.useBVH) {
-            this.setupBVH();
-        }
-
         this.resize();
         this.subscribe("input", "resize", () => this.resize());
         this.setRender(true);
-    }
-
-    setupBVH() {
-        this.MeshBVH = MeshBVH;
-        this.MeshBVHVisualizer = MeshBVHVisualizer;
-
-     //   console.log(computeBoundsTree, disposeBoundsTree, acceleratedRaycast);
     }
 
     setRender(bool){this.doRender = bool; }
