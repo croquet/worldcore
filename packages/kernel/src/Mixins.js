@@ -254,7 +254,6 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this.listenOnce("scaleSet", this.onScale);
         this.listenOnce("rotationSet", this.onRotation);
         this.listenOnce("translationSet", this.onTranslation);
-
     }
 
     set tug(t) {this._tug = t}
@@ -311,12 +310,6 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this.onLocalChanged();
     }
 
-    onPosition(){
-        this._rotation = this.actor.rotation;
-        this._translation = this.actor.translation;
-        this.onLocalChanged();
-    }
-
     get local() {
         if (this._local) return this. _local;
         if (this._localOffset) {
@@ -360,6 +353,10 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
             }
         }
 
+        this.globalChanged();
+    }
+
+    globalChanged(){
         if (!this._global) {
             this.say("viewGlobalChanged");
             if (this.children) this.children.forEach(child => child.onGlobalChanged()); // If our global changes, so do the globals of our children
@@ -383,6 +380,7 @@ export const PM_SmoothedDriver = superclass => class extends PM_Smoothed(supercl
         this.ignore("scaleSet");
         this.ignore("rotationSet");
         this.ignore("translationSet");
+        this.ignore("positionSet");
         }
 
         positionTo(v, q, throttle) {
