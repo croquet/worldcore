@@ -146,7 +146,7 @@ SpinActor.register('SpinActor');
 // SpinPawn
 //------------------------------------------------------------------------------------------
 
-class SpinPawn extends mix(Pawn).with(PM_Smoothed, PM_WebGLVisible, PM_Behavioral) {
+class SpinPawn extends mix(Pawn).with(PM_SmoothedDriver, PM_WebGLVisible, PM_Behavioral) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
@@ -247,7 +247,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!");
+        console.log("Start Model!!!");
 
         BackgroundActor.create();
         MoveActor.create({translation: [0,0,-5]});

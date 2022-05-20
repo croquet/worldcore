@@ -346,50 +346,47 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     update(time, delta) {
         super.update(time, delta);
 
-        if(!this.localDriver) {
-            let tug = this.tug;
-            if (delta) tug = Math.min(1, tug * delta / 15);
+        let tug = this.tug;
+        if (delta) tug = Math.min(1, tug * delta / 15);
 
-            if (this.isScaling) {
-                if (v3_equals(this._scale, this.actor.scale, .0001)) {
-                    this._scale = this.actor.scale;
-                    this.isScaling = false;
-                } else {
-                    this._scale = v3_lerp(this._scale, this.actor.scale, tug);
-                }
-                this.onLocalChanged();
+        if (this.isScaling) {
+            if (v3_equals(this._scale, this.actor.scale, .0001)) {
+                this._scale = this.actor.scale;
+                this.isScaling = false;
+            } else {
+                this._scale = v3_lerp(this._scale, this.actor.scale, tug);
             }
+            this.onLocalChanged();
+        }
 
-            if (this.isRotating) {
-                if (q_equals(this._rotation, this.actor.rotation, 0.000001)) {
-                    this._rotation = this.actor.rotation;
-                    this.isRotating = false;
-                } else {
-                    this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-                }
-                this.onLocalChanged();
+        if (this.isRotating) {
+            if (q_equals(this._rotation, this.actor.rotation, 0.000001)) {
+                this._rotation = this.actor.rotation;
+                this.isRotating = false;
+            } else {
+                this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
             }
+            this.onLocalChanged();
+        }
 
-            if (this.isRotating) {
-                if (q_equals(this._rotation, this.actor.rotation, 0.000001)) {
-                    this._rotation = this.actor.rotation;
-                    this.isRotating = false;
-                } else {
-                    this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-                }
-                this.onLocalChanged();
+        if (this.isRotating) {
+            if (q_equals(this._rotation, this.actor.rotation, 0.000001)) {
+                this._rotation = this.actor.rotation;
+                this.isRotating = false;
+            } else {
+                this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
             }
+            this.onLocalChanged();
+        }
 
-            if (this.isTranslating) {
-                if (v3_equals(this._translation, this.actor.translation, .0001)) {
-                    this._translation = this.actor.translation;
-                    this.isTranslating = false;
-                } else {
-                    this._translation = v3_lerp(this._translation, this.actor.translation, tug);
-                }
-                this.onLocalChanged();
+        if (this.isTranslating) {
+            if (v3_equals(this._translation, this.actor.translation, .0001)) {
+                this._translation = this.actor.translation;
+                this.isTranslating = false;
+            } else {
+                this._translation = v3_lerp(this._translation, this.actor.translation, tug);
             }
-
+            this.onLocalChanged();
         }
 
         if (!this._global) {
@@ -399,14 +396,6 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 
 
     }
-
-    // globalChanged() {
-    //     if (!this._global) {
-    //         this.say("viewGlobalChanged");
-    //         if (this.children) this.children.forEach(child => child.onGlobalChanged()); // If our global changes, so do the globals of our children
-    //     }
-
-    // }
 
 }
 
@@ -431,7 +420,8 @@ export const PM_SmoothedDriver = superclass => class extends PM_Smoothed(supercl
             throttle = throttle || this.throttle;
             this._translation = v;
             this._rotation = q;
-            this.localDriver = true;
+            this.isTranslating = false;
+            this.isRotating = false;
             this.onLocalChanged();
             super.positionTo(v, q, throttle);
         }
@@ -439,7 +429,7 @@ export const PM_SmoothedDriver = superclass => class extends PM_Smoothed(supercl
         scaleTo(v, throttle) {
             throttle = throttle || this.throttle;
             this._scale = v;
-            this.localDriver = true;
+            this.isScaling = false;
             this.onLocalChanged();
             super.scaleTo(v, throttle);
         }
@@ -447,7 +437,7 @@ export const PM_SmoothedDriver = superclass => class extends PM_Smoothed(supercl
         rotateTo(q, throttle) {
             throttle = throttle || this.throttle;
             this._rotation = q;
-            this.localDriver = true;
+            this.isRotating = false;
             this.onLocalChanged();
             super.rotateTo(q, throttle);
         }
@@ -455,7 +445,7 @@ export const PM_SmoothedDriver = superclass => class extends PM_Smoothed(supercl
         translateTo(v, throttle)  {
             throttle = throttle || this.throttle;
             this._translation = v;
-            this.localDriver = true;
+            this.isTranslating = false;
             this.onLocalChanged();
             super.translateTo(v, throttle);
 
