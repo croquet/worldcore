@@ -169,7 +169,7 @@ export function v2_equals(a,b,e = 0) { // e is an epsilon
 }
 
 export function v2_isZero(v) {
-    return !(v[0] || v[1] );
+    return v[0] === 0 && v[1] === 0;
 }
 
 export function v2_manhattan(a, b) {
@@ -344,7 +344,7 @@ export function v3_equals(a,b,e = 0) { // e is an epsilon
 }
 
 export function v3_isZero(v) {
-    return !(v[0] || v[1] || v[2]);
+    return v[0] === 0 && v[1] === 0 && v[2] === 0;
 }
 
 //--------------------------------------------------------------------------------
@@ -1166,7 +1166,7 @@ export function q_equals(a,b,e = 0.0001) { // e is an epsilon
 }
 
 export function q_isZero(q) {
-    return !(q[0] || q[1] || q[2]);
+    return q[0] === 0 && q[1] === 0 && q[2] === 0;
 }
 
 
