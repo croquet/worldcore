@@ -194,28 +194,31 @@ export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
     init(...args) {
         super.init(...args);
-        this.listen("scaleTo", this.scaleTo);
-        this.listen("rotateTo", this.rotateTo);
-        this.listen("translateTo", this.translateTo);
-        this.listen("positionTo", this.positionTo);
+        this.listen("_scaleTo", this.scaleTo);
+        this.listen("_rotateTo", this.rotateTo);
+        this.listen("_translateTo", this.translateTo);
+        this.listen("_positionTo", this.positionTo);
     }
 
     scaleTo(v) {
         this._scale = v;
         this.$local = null;
         this.$global = null;
+        this.say("scaleTo", v);
     }
 
     rotateTo(q) {
         this._rotation = q;
         this.$local = null;
         this.$global = null;
+        this.say("rotateTo", q);
     }
 
     translateTo(v) {
         this._translation = v;
         this.$local = null;
         this.$global = null;
+        this.say("translateTo", v);
     }
 
     positionTo(data) {
@@ -223,6 +226,8 @@ export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
         this._rotation = data.q;
         this.$local = null;
         this.$global = null;
+        this.say("rotateTo", data.q);
+        this.say("translateTo", data.v);
 
     }
 
@@ -251,9 +256,13 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this._translation = this.actor.translation;
         this._global = this.actor.global;
 
-        this.listenOnce("scaleSet", this.onScale);
-        this.listenOnce("rotationSet", this.onRotation);
-        this.listenOnce("translationSet", this.onTranslation);
+        this.listenOnce("scaleSet", this.onScaleSet);
+        this.listenOnce("rotationSet", this.onRotationSet);
+        this.listenOnce("translationSet", this.onTranslationSet);
+
+        this.listenOnce("scaleTo", this.onScaleTo);
+        this.listenOnce("rotateTo", this.onRotateTo);
+        this.listenOnce("translateTo", this.onTranslateTo);
     }
 
     set tug(t) {this._tug = t}
@@ -280,35 +289,39 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     }
 
     scaleTo(v, throttle) {
-        this.say("scaleTo", v, throttle)
+        this.say("_scaleTo", v, throttle)
     }
 
     rotateTo(q, throttle) {
-        this.say("rotateTo", q, throttle)
+        this.say("_rotateTo", q, throttle)
     }
 
     translateTo(v, throttle) {
-        this.say("translateTo", v, throttle)
+        this.say("_translateTo", v, throttle)
     }
 
     positionTo(v, q, throttle) {
-        this.say("positionTo", {v,q}, throttle)
+        this.say("_positionTo", {v,q}, throttle)
     }
 
-    onScale() {
+    onScaleSet() {
         this._scale = this.actor.scale;
         this.onLocalChanged();
     }
 
-    onRotation() {
+    onRotationSet() {
         this._rotation = this.actor.rotation;
         this.onLocalChanged();
     }
 
-    onTranslation() {
+    onTranslationSet() {
         this._translation = this.actor.translation;
         this.onLocalChanged();
     }
+
+    onScaleTo(q) { this.isScaling = true; }
+    onRotateTo(q) { this.isRotating = true; }
+    onTranslateTo(v) { this.isTranslating = true; }
 
     get local() {
         if (this._local) return this. _local;
@@ -334,35 +347,66 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         super.update(time, delta);
 
         if(!this.localDriver) {
-        let tug = this.tug;
-        if (delta) tug = Math.min(1, tug * delta / 15);
+            let tug = this.tug;
+            if (delta) tug = Math.min(1, tug * delta / 15);
 
-            if (!v3_equals(this._scale, this.actor.scale, .0001)) {
-                this._scale = v3_lerp(this._scale, this.actor.scale, tug);
+            if (this.isScaling) {
+                if (v3_equals(this._scale, this.actor.scale, .0001)) {
+                    this._scale = this.actor.scale;
+                    this.isScaling = false;
+                } else {
+                    this._scale = v3_lerp(this._scale, this.actor.scale, tug);
+                }
                 this.onLocalChanged();
             }
 
-            if (!q_equals(this._rotation, this.actor.rotation, 0.000001)) {
-                this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
+            if (this.isRotating) {
+                if (q_equals(this._rotation, this.actor.rotation, 0.000001)) {
+                    this._rotation = this.actor.rotation;
+                    this.isRotating = false;
+                } else {
+                    this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
+                }
                 this.onLocalChanged();
             }
 
-            if (!v3_equals(this._translation, this.actor.translation, .0001)) {
-                this._translation = v3_lerp(this._translation, this.actor.translation, tug);
+            if (this.isRotating) {
+                if (q_equals(this._rotation, this.actor.rotation, 0.000001)) {
+                    this._rotation = this.actor.rotation;
+                    this.isRotating = false;
+                } else {
+                    this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
+                }
                 this.onLocalChanged();
             }
+
+            if (this.isTranslating) {
+                if (v3_equals(this._translation, this.actor.translation, .0001)) {
+                    this._translation = this.actor.translation;
+                    this.isTranslating = false;
+                } else {
+                    this._translation = v3_lerp(this._translation, this.actor.translation, tug);
+                }
+                this.onLocalChanged();
+            }
+
         }
 
-        this.globalChanged();
-    }
-
-    globalChanged(){
         if (!this._global) {
             this.say("viewGlobalChanged");
             if (this.children) this.children.forEach(child => child.onGlobalChanged()); // If our global changes, so do the globals of our children
         }
 
+
     }
+
+    // globalChanged() {
+    //     if (!this._global) {
+    //         this.say("viewGlobalChanged");
+    //         if (this.children) this.children.forEach(child => child.onGlobalChanged()); // If our global changes, so do the globals of our children
+    //     }
+
+    // }
 
 }
 

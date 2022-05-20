@@ -49,9 +49,9 @@ class MovePawn extends mix(Pawn).with(PM_Predictive, PM_WebGLVisible, PM_Player)
         this.setDrawCall(this.buildDraw());
 
         this.subscribe("hud", "joy", this.joy);
-        this.subscribe("input", "dDown", this.reset);
-        this.subscribe("input", "xDown", this.big);
-        this.subscribe("input", "cDown", this.small);
+        // this.subscribe("input", "dDown", this.reset);
+        // this.subscribe("input", "xDown", this.big);
+        // this.subscribe("input", "cDown", this.small);
 
         const render = this.service("WebGLRenderManager");
 
@@ -146,7 +146,7 @@ SpinActor.register('SpinActor');
 // SpinPawn
 //------------------------------------------------------------------------------------------
 
-class SpinPawn extends mix(Pawn).with(PM_SmoothedDriver, PM_WebGLVisible, PM_Behavioral) {
+class SpinPawn extends mix(Pawn).with(PM_Smoothed, PM_WebGLVisible, PM_Behavioral) {
     constructor(...args) {
         super(...args);
         this.setDrawCall(this.buildDraw());
