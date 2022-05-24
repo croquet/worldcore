@@ -5,11 +5,14 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     AM_Predictive, PM_Predictive,
     AM_PointerTarget, PM_Pointer, PM_PointerTarget, CardActor, CardPawn,
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
-    TextWidgetActor, ButtonWidgetActor } from "@croquet/worldcore";
+    TextWidgetActor, ButtonWidgetActor, GetViewService } from "@croquet/worldcore";
+
+import { Widget3, VisibleWidget3 } from "./ThreeWidget";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
+
 
 //------------------------------------------------------------------------------------------
 //-- MyAvatar ------------------------------------------------------------------------------
@@ -183,6 +186,7 @@ class MyPlayerManager extends PlayerManager {
 
     createPlayer(options) {
         options.color = [Math.random(), Math.random(), Math.random(), 1];
+        options.translation = [0,0,5];
         return MyAvatar.create(options);
     }
 
@@ -203,13 +207,13 @@ class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start root model!");
         this.level = LevelActor.create();
-        // this.widget = MyWidgetActor.create({translation: [0,0,-3]});
-        this.widget0 = ImageWidgetActor.create({translation: [0,0,-3], color: [1,1,1], size: [2,1], url: llama});
-        this.widget1 = ImageWidgetActor.create({parent: this.widget0, translation: [0.0,0.0,0], border: [0.1, 0.1, 0.1 ,0.1], color: [1,1,1], size: [0.5,0.5], url: diana , anchor: [-1,1], pivot: [-1,1], autoSize: [0,0]});
-        // this.widget2 = TextWidgetActor.create({parent: this.widget1, translation: [0,0,0], color: [1,1,1],autoSize:[1,1], size: [0.3,0.3], anchor: [0,0], pivot: [0,0],
-        //     text:"This is a test of word wrap. It has a lot of text. And it should run onto the next line. You can have as much text as you want and it automatically reformats itself if the widget parameters change!", alignX: "center", alignY: "middle", font: "Trebuchet MS"});
+        // // this.widget = MyWidgetActor.create({translation: [0,0,-3]});
+        // this.widget0 = ImageWidgetActor.create({translation: [0,0,-3], color: [1,1,1], size: [2,1], url: llama});
+        // this.widget1 = ImageWidgetActor.create({parent: this.widget0, translation: [0.0,0.0,0], border: [0.1, 0.1, 0.1 ,0.1], color: [1,1,1], size: [0.5,0.5], url: diana , anchor: [-1,1], pivot: [-1,1], autoSize: [0,0]});
+        // // this.widget2 = TextWidgetActor.create({parent: this.widget1, translation: [0,0,0], color: [1,1,1],autoSize:[1,1], size: [0.3,0.3], anchor: [0,0], pivot: [0,0],
+        // //     text:"This is a test of word wrap. It has a lot of text. And it should run onto the next line. You can have as much text as you want and it automatically reformats itself if the widget parameters change!", alignX: "center", alignY: "middle", font: "Trebuchet MS"});
 
-        this.button = ButtonWidgetActor.create({parent: this.widget0, size: [0.5,0.5]})
+        // this.button = ButtonWidgetActor.create({parent: this.widget0, size: [0.5,0.5]})
 
         this.subscribe("input", "zDown", this.test0);
         this.subscribe("input", "xDown", this.test1);
@@ -218,16 +222,14 @@ class MyModelRoot extends ModelRoot {
 
     test0() {
         console.log("test0");
-        // this.widget2.set({resolution: 75, point: 6});
     }
 
     test1() {
         console.log("test1");
-        // this.widget2.set({resolution: 600, point: 48});
     }
 
     test2() {
-        this.widget0.set({visible: !this.widget0.isVisible});
+        console.log("test2");
     }
 
 }
@@ -247,6 +249,15 @@ class MyViewRoot extends ViewRoot {
         super(model);
         const three = this.service("ThreeRenderManager");
         three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
+
+
+        const widget0 = new VisibleWidget3({color: [0,1,1]});
+        const widget1 = new Widget3({parent: widget0});
+        const widget2 = new Widget3({parent: widget0});
+
+        console.log(widget0.children);
+        console.log(widget1);
+        console.log(widget2);
     }
 
 }

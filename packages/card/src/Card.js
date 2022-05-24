@@ -116,17 +116,17 @@ export const PM_PointerTarget = superclass => class extends superclass {
     destroy() {
         super.destroy();
 
-        const hoverEnd = new Set(this.actor.hovered);
-        hoverEnd.forEach( pointerId => {
-            const pointerPawn = GetPawn(pointerId);
-            if (pointerPawn) pointerPawn.hoverPawn = null;
-        });
+        // const hoverEnd = new Set(this.actor.hovered);
+        // hoverEnd.forEach( pointerId => {
+        //     const pointerPawn = GetPawn(pointerId);
+        //     if (pointerPawn) pointerPawn.hoverPawn = null;
+        // });
 
-        const focusEnd = new Set(this.actor.focused);
-        focusEnd.forEach( pointerId => {
-            const pointerPawn = GetPawn(pointerId);
-            if (pointerPawn) pointerPawn.focusPawn = null;
-        });
+        // const focusEnd = new Set(this.actor.focused);
+        // focusEnd.forEach( pointerId => {
+        //     const pointerPawn = GetPawn(pointerId);
+        //     if (pointerPawn) pointerPawn.focusPawn = null;
+        // });
     }
 
     get isMultiuser() { return this.actor.isMultiuser; }
