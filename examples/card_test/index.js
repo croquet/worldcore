@@ -7,7 +7,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
     TextWidgetActor, ButtonWidgetActor, GetViewService } from "@croquet/worldcore";
 
-import { Widget3, VisibleWidget3 } from "./ThreeWidget";
+import { Widget3, VisibleWidget3, PM_Widget3, WidgetManager } from "./ThreeWidget";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
@@ -57,6 +57,8 @@ class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisibl
             this.subscribe("input", "dDown", () => {this.cw = 1; this.changeSpin()});
             this.subscribe("input", "dUp", () => {this.cw = 0; this.changeSpin()});
 
+            this.subscribe("input", "pointerDown", this.doPointerDown);
+
         }
 
     }
@@ -77,45 +79,57 @@ class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisibl
         this.setSpin(spin);
     }
 
+    doPointerDown(e) {
+        const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
+        const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
+
+        console.log([x,y]);
+        const rc = this.pointerRaycast([x,y]);
+
+        const render = this.service("ThreeRenderManager");
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera({x: x, y: y}, render.camera);
+
+        const intersects = raycaster.intersectObjects( render.scene.children );
+
+        console.log(intersects);
+    };
+
 }
 
 
 //------------------------------------------------------------------------------------------
-//-- CardActor -----------------------------------------------------------------------------
+//-- TestActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// class MyWidgetActor extends WidgetActor {
-//     get pawn() {return MyWidgetPawn}
+class TestActor extends mix(Actor).with(AM_Predictive) {
+    get pawn() {return TestPawn}
 
-//     // onPointerEnter()  { console.log("pointer enter"); }
-//     // onPointerLeave()  { console.log("pointer leave"); }
-//     // onFocus() { console.log("focus"); }
-//     // onBlur() { console.log("blur"); }
-//     // onPointerMove() { console.log("pointer move"); }
-//     // onPointerDown() { console.log("pointer down"); }
-//     // onPointerUp() { console.log("pointer up"); }
-// }
-// MyWidgetActor.register('MyWidgetActor');
+}
+TestActor.register('TestActor');
 
 //------------------------------------------------------------------------------------------
-//-- CardPawn ------------------------------------------------------------------------------
+//-- TestPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// class MyWidgetPawn extends WidgetPawn {
-//     constructor(...args) {
-//         super(...args);
-//         console.log("widget pawn constructor");
-//     }
+class TestPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_Widget3) {
+    constructor(...args) {
+        super(...args);
+        console.log("test pawn constructor");
 
-//     // onPointerEnter()  { console.log("pointer enter"); }
-//     // onPointerLeave()  { console.log("pointer leave"); }
-//     // onFocus() { console.log("focus"); }
-//     // onBlur() { console.log("blur"); }
-//     // onPointerMove() { console.log("pointer move"); }
-//     // onPointerDown() { console.log("pointer down"); }
-//     // onPointerUp() { console.log("pointer up"); }
+        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
+        const cube = new THREE.Mesh( this.geometry, this.material );
+        this.setRenderObject(cube);
 
-// }
+        this.subscribe("input", "dDown", this.test);
+    }
+
+    test() {
+        console.log("dTest");
+        const child = new VisibleWidget3({parent: this.rootWidget, color: [0,1,1], scale: [1,1,1], translation: [2,0,0]});
+    }
+}
 
 
 //------------------------------------------------------------------------------------------
@@ -205,8 +219,9 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
+        console.log("Start root model!!");
         this.level = LevelActor.create();
+        this.testActor = TestActor.create({translation: [0,0,-3]});
         // // this.widget = MyWidgetActor.create({translation: [0,0,-3]});
         // this.widget0 = ImageWidgetActor.create({translation: [0,0,-3], color: [1,1,1], size: [2,1], url: llama});
         // this.widget1 = ImageWidgetActor.create({parent: this.widget0, translation: [0.0,0.0,0], border: [0.1, 0.1, 0.1 ,0.1], color: [1,1,1], size: [0.5,0.5], url: diana , anchor: [-1,1], pivot: [-1,1], autoSize: [0,0]});
@@ -222,10 +237,13 @@ class MyModelRoot extends ModelRoot {
 
     test0() {
         console.log("test0");
+        this.testActor.set({translation: [-1,0,-3]});
     }
 
     test1() {
         console.log("test1");
+        // this.testActor.set({translation: [0,0,-3]});
+        this.testActor.translateTo([0,0,-3]);
     }
 
     test2() {
@@ -242,7 +260,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager];
+        return [InputManager, ThreeRenderManager, WidgetManager];
     }
 
     constructor(model) {
@@ -251,13 +269,13 @@ class MyViewRoot extends ViewRoot {
         three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
 
 
-        const widget0 = new VisibleWidget3({color: [0,1,1]});
-        const widget1 = new Widget3({parent: widget0});
-        const widget2 = new Widget3({parent: widget0});
+        // const widget0 = new VisibleWidget3({color: [0,1,1]});
+        // const widget1 = new Widget3({parent: widget0});
+        // const widget2 = new Widget3({parent: widget0});
 
-        console.log(widget0.children);
-        console.log(widget1);
-        console.log(widget2);
+        // console.log(widget0.children);
+        // console.log(widget1);
+        // console.log(widget2);
     }
 
 }
