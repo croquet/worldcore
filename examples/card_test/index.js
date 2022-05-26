@@ -7,7 +7,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
     TextWidgetActor, ButtonWidgetActor, GetViewService } from "@croquet/worldcore";
 
-import { Widget3, VisibleWidget3, PM_Widget3, WidgetManager } from "./ThreeWidget";
+import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3 } from "./ThreeWidget";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
@@ -30,7 +30,7 @@ MyAvatar.register('MyAvatar');
 //-- AvatarPawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisible, PM_ThreeCamera, PM_Pointer) {
+class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisible, PM_ThreeCamera, PM_WidgetPointer) {
     constructor(...args) {
         super(...args);
 
@@ -57,7 +57,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisibl
             this.subscribe("input", "dDown", () => {this.cw = 1; this.changeSpin()});
             this.subscribe("input", "dUp", () => {this.cw = 0; this.changeSpin()});
 
-            this.subscribe("input", "pointerDown", this.doPointerDown);
+            // this.subscribe("input", "pointerDown", this.doPointerDown);
 
         }
 
@@ -78,22 +78,6 @@ class AvatarPawn extends mix(Pawn).with(PM_Predictive, PM_Player, PM_ThreeVisibl
         const spin = q_axisAngle([0,1,0], 0.001 * (this.ccw - this.cw) )
         this.setSpin(spin);
     }
-
-    doPointerDown(e) {
-        const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
-        const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
-
-        console.log([x,y]);
-        const rc = this.pointerRaycast([x,y]);
-
-        const render = this.service("ThreeRenderManager");
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera({x: x, y: y}, render.camera);
-
-        const intersects = raycaster.intersectObjects( render.scene.children );
-
-        console.log(intersects);
-    };
 
 }
 
@@ -118,16 +102,24 @@ class TestPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_Widget3
         console.log("test pawn constructor");
 
         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
         const cube = new THREE.Mesh( this.geometry, this.material );
         this.setRenderObject(cube);
 
-        this.subscribe("input", "dDown", this.test);
+        this.subscribe("input", "bDown", this.test);
     }
 
     test() {
-        console.log("dTest");
-        const child = new VisibleWidget3({parent: this.rootWidget, color: [0,1,1], scale: [1,1,1], translation: [2,0,0]});
+        console.log("bTest");
+        const child0 = new ImageWidget3({name: "child0",parent: this.rootWidget, color: [1,1,1], size: [2,1], translation: [2,0,0], url: llama});
+        const child1 = new ControlWidget3({name: "child1", parent: child0, color: [1,0,0], size: [0.5, 0.5], anchor: [0,0], pivot: [0,0]});
+        const child2 = new ControlWidget3({name: "child2",parent: child1, color: [0,0,1], size: [0.2, 0.2], autoSize: [1,1], border: [0.1,0.1,0.1,0.1]});
+
+        child0.size = [3,2];
+        // child0.url = diana;
+
+        console.log(child2.trueSize);
     }
 }
 
@@ -276,6 +268,14 @@ class MyViewRoot extends ViewRoot {
         // console.log(widget0.children);
         // console.log(widget1);
         // console.log(widget2);
+
+        // this.subscribe("input", "bDown", this.test);
+    }
+
+    test() {
+        console.log("test");
+        const wm = this.service("WidgetManager");
+        console.log(wm.colliders)
     }
 
 }
