@@ -7,7 +7,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
     TextWidgetActor, ButtonWidgetActor, GetViewService } from "@croquet/worldcore";
 
-import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3 } from "./ThreeWidget";
+import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3 } from "./ThreeWidget";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
@@ -108,18 +108,29 @@ class TestPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_Widget3
         this.setRenderObject(cube);
 
         this.subscribe("input", "bDown", this.test);
+        this.subscribe("input", "nDown", this.test2);
+        this.subscribe("input", "mDown", this.test3);
     }
 
     test() {
         console.log("bTest");
-        const child0 = new ImageWidget3({name: "child0",parent: this.rootWidget, color: [1,1,1], size: [2,1], translation: [2,0,0], url: llama});
-        const child1 = new ControlWidget3({name: "child1", parent: child0, color: [1,0,0], size: [0.5, 0.5], anchor: [0,0], pivot: [0,0]});
-        const child2 = new ControlWidget3({name: "child2",parent: child1, color: [0,0,1], size: [0.2, 0.2], autoSize: [1,1], border: [0.1,0.1,0.1,0.1]});
+        this.child0 = new ImageWidget3({name: "child0",parent: this.rootWidget, color: [1,1,1], size: [2,1], translation: [2,0,0], url: llama});
+        this.child1 = new ControlWidget3({name: "child1",parent: this.child0, color: [1,0,0], size: [0.5, 0.5], anchor: [0,0], pivot: [0,0]});
+        this.child2 = new ControlWidget3({name: "child2", parent: this.child1, color: [0,0,1], size: [0.2, 0.2], autoSize: [1,1], border: [0.1,0.1,0.1,0.1]});
 
-        child0.size = [3,2];
-        // child0.url = diana;
+        this.text = new TextWidget3({name: "canvas", parent: this.rootWidget, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1],
+            text: "Alternate Text String"});
 
-        console.log(child2.trueSize);
+    }
+
+    test2() {
+        console.log("nTest");
+        this.child2.visible = false;
+    }
+
+    test3() {
+        console.log("mTest");
+        this.child2.visible = true;
     }
 }
 
@@ -270,13 +281,12 @@ class MyViewRoot extends ViewRoot {
         // console.log(widget2);
 
         // this.subscribe("input", "bDown", this.test);
+
+        const xxx = {visible: true};
+        console.log(xxx.visible);
+        console.log(xxx.visible === undefined || xxx.visible);
     }
 
-    test() {
-        console.log("test");
-        const wm = this.service("WidgetManager");
-        console.log(wm.colliders)
-    }
 
 }
 

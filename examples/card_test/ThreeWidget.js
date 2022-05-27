@@ -2,6 +2,8 @@
 
 import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply } from "@croquet/worldcore";
 
+let wm;
+
 //------------------------------------------------------------------------------------------
 //-- WidgetManager -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -9,6 +11,7 @@ import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRo
 export class WidgetManager extends ViewService {
     constructor(name) {
         super(name || "WidgetManager");
+        wm = this;
         console.log("Widget Manager constructor")
         this.widgets = new Set();
     }
@@ -27,6 +30,10 @@ export class WidgetManager extends ViewService {
         this.widgets.forEach(widget => {
             { if (!widget.parent) widget.update(time, delta); };
         })
+    }
+
+    clearColliders() {
+        this._colliders = null;
     }
 
     get colliders() {
@@ -82,7 +89,6 @@ export const PM_WidgetPointer = superclass => class extends superclass {
 
     widgetRaycast(x,y) {
         const render = GetViewService("ThreeRenderManager");
-        const wm = GetViewService("WidgetManager");
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera({x: x, y: y}, render.camera);
 
@@ -137,14 +143,12 @@ export class Widget3 {
 
     constructor(options) {
         this.set(options);
-        const wm = GetViewService("WidgetManager");
         wm.add(this);
     }
 
     destroy() {
         new Set(this.children).forEach(child => child.destroy());
         this.parent = null;
-        const wm = GetViewService("WidgetManager");
         wm.delete(this);
     }
 
@@ -200,6 +204,17 @@ export class Widget3 {
         }
         return this._global;
     }
+    get visible() {
+        const v = this._visible === undefined || this._visible;
+        if (v && this.parent) return this.parent.visible;
+        return v;
+    }
+    set visible(b) {this._visible = b; this.refreshVisibility()}
+
+    refreshVisibility() {
+        wm.clearColliders();
+        if (this.children) this.children.forEach(child => child.refreshVisibility());
+    }
 
     get size() { return this._size || [1,1];}
     set size(v) { this._size = v; }
@@ -222,7 +237,6 @@ export class Widget3 {
         out[1] -= (this.border[1] + this.border[3]);
         return out;
     }
-
 
 
     set(options) {
@@ -251,7 +265,7 @@ export class Widget3 {
 }
 
 //------------------------------------------------------------------------------------------
-//-- VisibleThreeWidget --------------------------------------------------------------------
+//-- VisibleWidget --------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class VisibleWidget3 extends Widget3  {
@@ -260,13 +274,14 @@ export class VisibleWidget3 extends Widget3  {
         super(options);
         const render = GetViewService("ThreeRenderManager");
 
-        this.geometry = new THREE.PlaneGeometry(...this.trueSize, 1);
+        this.buildGeometry();
         this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(...this.color)});
         this.material.polygonOffset = true;
         this.material.polygonOffsetFactor = -this.depth;
         this.material.polygonOffsetUnits = -this.depth;
 
         this.mesh = new THREE.Mesh( this.geometry, this.material );
+        this.mesh.visible = this.visible;
         this.mesh.widget = this;
         this.mesh.matrixAutoUpdate = false;
         this.mesh.matrix.fromArray(this.global);
@@ -275,23 +290,31 @@ export class VisibleWidget3 extends Widget3  {
 
     }
 
-    // Need to handle resizing
+    refreshVisibility() {
+        super.refreshVisibility();
+        if (this.mesh) this.mesh.visible = this.visible;
+    }
 
-    // get size() { return super.size}
-    // set size(v) {super.size = v; this.buildGeometry()}
 
-    // buildGeometry() {
-    //     if (this.geometry) this.geometry.dispose();
-    //     this.geometry = new THREE.PlaneGeometry(...this.trueSize, 1);
-    // }
+    //  Anything that affect true size needs to rebuild geometry.  Also some things need to invalidate local
+
+    get size() { return super.size}
+    set size(v) {super.size = v; this.buildGeometry()}
+
+    buildGeometry() {
+        if (this.geometry) this.geometry.dispose();
+        this.geometry = new THREE.PlaneGeometry(...this.trueSize, 1);
+        if (this.mesh) this.mesh.geometry = this.geometry;
+    }
 
     destroy() {
         super.destroy();
         this.geometry.dispose();
         this.material.dispose();
+        if (this.material.map) this.material.map.dispose();
     }
 
-    get color() { return this._color || [0,0,0];}
+    get color() { return this._color || [1,1,1];}
     set color(v) { this._color = v; if (this.material) this.material.color = new THREE.Color(...this.color); }
 
     onParentChanged() {
@@ -314,7 +337,6 @@ export class VisibleWidget3 extends Widget3  {
 
     }
 
-
 }
 
 //------------------------------------------------------------------------------------------
@@ -335,11 +357,6 @@ export class ImageWidget3 extends VisibleWidget3 {
         this.image.src = this.url;
     }
 
-    destroy() {
-        super.destroy();
-        if (this.material.map) this.material.map.dispose();
-    }
-
     get url() { return this._url }
     set url(url) {
         this._url = url;
@@ -349,12 +366,148 @@ export class ImageWidget3 extends VisibleWidget3 {
 }
 
 //------------------------------------------------------------------------------------------
+//-- CanvasWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+function canvasColor(r, g, b) {
+    return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
+}
+
+export class CanvasWidget3 extends VisibleWidget3 {
+
+    constructor(options) {
+        super(options);
+        this.buildCanvas();
+    }
+
+    get size() { return super.size}
+    set size(v) {super.size = v; this.buildCanvas()}
+    get resolution() { return this._resolution || 300;}
+    set resolution(v) { this._resolution = v; this.buildCanvas(); }
+
+    buildCanvas() {
+        if(!this.material) return;
+        if (this.material.map) this.material.map.dispose();
+        const canvas = document.createElement("canvas");
+        canvas.width = this.size[0] * this.resolution;
+        canvas.height = this.size[1] * this.resolution;
+        this.material.map = new THREE.CanvasTexture(canvas);
+        this.draw(canvas)
+    }
+
+    update(time,delta) {
+        super.update(time,delta)
+        if (this.needsRedraw) {
+            this.buildCanvas();
+            this.needsRedraw = false;
+        } ;
+    }
+
+    redraw() {this.needsRedraw = true;}
+
+    draw(canvas) {};
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- TextWidget ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class TextWidget3 extends CanvasWidget3 {
+
+    constructor(options) {
+        super(options);
+    }
+
+    get text() { return this._text || "Text"}
+    set text(s) { this._text = s; this.redraw() }
+    get font() { return this._font || "sans-serif"}
+    set font(s) { this._font = s; this.redraw() }
+    get point() { return this._point || 24 }
+    set point(n) { this._point = n; this.redraw() }
+    get lineSpacing() { return this._lineSpacing || 0}
+    set lineSpacing(n) { this._lineSpacing = n }
+    get style() { return this._style || "normal"}
+    set style(s) { this._style = s; this.redraw() }
+    get alignX() { return this._alignX || "center"}
+    set alignX(s) { this._alignX = s }
+    get alignY() { return this._alignY || "middle"}
+    set alignY(s) { this._alignY = s; this.redraw() }
+    get noWrap() { return this._noWrap }
+    set noWrap(b) { this._noWrap = b; this.redraw() }
+
+    get bgColor()  {return this._bgColor || [1,1,1]}
+    set bgColor(v)  { this._bgColor = v; this.redraw() }
+    get fgColor()  {return this._fgColor || [0,0,0]}
+    set fgColor(v)  { this._fgColor = v; this.redraw() }
+
+    lines(canvas) {
+        if (this.noWrap) return this.text.split('\n');
+        const cc = canvas.getContext('2d');
+        const out = [];
+        const spaceWidth = cc.measureText(' ').width;
+        const words = this.text.split(' ');
+        let sum = canvas.width+1;
+        words.forEach( word => {
+            const wordWidth = cc.measureText(word).width
+            sum += spaceWidth + wordWidth;
+            if (sum > canvas.width) {
+                out.push(word);
+                sum = wordWidth;
+            } else {
+                out[out.length-1] += ' ' + word;
+            }
+        });
+        return out;
+    }
+
+    draw(canvas) {
+        const cc = canvas.getContext('2d');
+        cc.textAlign = this.alignX;
+        cc.textBaseline = this.alignY;
+        cc.font = this.style + " " + this.point + "px " + this.font;
+
+        const lineHeight = (this.point + this.lineSpacing);
+
+        cc.fillStyle = canvasColor(...this.bgColor);
+        cc.fillRect(0, 0, canvas.width, canvas.height);
+        cc.fillStyle = canvasColor(...this.fgColor);
+
+        const lines = this.lines(canvas);
+
+        let xy = [0,0];
+        let yOffset = 0;
+        if (this.alignX === "center") {
+            xy[0] = canvas.width / 2;
+        } else if (this.alignX === "right") {
+            xy[0] = canvas.width;
+        }
+        if (this.alignY === "middle") {
+            xy[1] = canvas.height / 2;
+            yOffset = lineHeight * (lines.length-1) / 2;
+        } else if (this.alignY === "bottom") {
+            xy[1] = canvas.height;
+            yOffset = lineHeight * (lines.length-1);
+        }
+
+        lines.forEach((line,i) => {
+            const o = (i * lineHeight) - yOffset;
+            cc.fillText(line, xy[0], xy[1] + o);
+        });
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
 //-- ControlWidget -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Visibility changes change colliders
+
 export class ControlWidget3 extends VisibleWidget3 {
 
-    get collider() { return this.mesh }
+    get collider() { if (this.visible) return this.mesh }
+    // get collider() { return this.mesh }
 
     onHover() { console.log(this.name + " hover");}
     onUnhover() { console.log(this.name + " unhover")}
