@@ -57,6 +57,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
     constructor(...args) {
         super(...args)
         this.subscribe("input", "pointerDown", this.doPointerDown);
+        this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerMove", this.doPointerMove);
     }
 
@@ -64,13 +65,27 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const hits = this.widgetRaycast(x,y);
+        let w = null;
+        if (hits.length > 0) w = ParentControl(hits[0].object.widget);
+        if (this.pressed !== w) {
+            this.pressed = w;
+            if(this.pressed) this.pressed.press();
+        }
 
-        hits.forEach(hit => {
-            console.log(hit.object.widget.name);
-            console.log(hit.object.widget.depth);
-        })
-        if (hits.length === 0) console.log("no hit!");
+    }
 
+    doPointerUp(e) {
+        const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
+        const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
+        const hits = this.widgetRaycast(x,y);
+        let w = null;
+        if (hits.length > 0) w = ParentControl(hits[0].object.widget);
+
+        if (this.pressed === w) w.click();
+        if (this.pressed) this.pressed.normal()
+
+        this.pressed = null;
+        this.hovered = null;
     }
 
     doPointerMove(e) {
@@ -78,11 +93,17 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const hits = this.widgetRaycast(x,y);
         let w = null;
-        if (hits.length > 0) w = hits[0].object.widget;
-        if (this.hovered !== w) {
-            if (this.hovered) this.hovered.onUnhover();
+        if (hits.length > 0) w = ParentControl(hits[0].object.widget);
+        if (this.pressed) {
+            if (this.pressed == w)
+                this.pressed.press()
+            else {
+                this.pressed.normal()
+            }
+        } else if (this.hovered !== w) {
+            if (this.hovered) this.hovered.normal();
             this.hovered = w;
-            if (this.hovered) this.hovered.onHover();
+            if (this.hovered) this.hovered.hover();
         }
 
     }
@@ -103,6 +124,8 @@ export const PM_WidgetPointer = superclass => class extends superclass {
 
 
 }
+
+
 
 //------------------------------------------------------------------------------------------
 //-- PM_Widget3 ----------------------------------------------------------------------------
@@ -149,6 +172,7 @@ export class Widget3 {
     destroy() {
         new Set(this.children).forEach(child => child.destroy());
         this.parent = null;
+        wm.clearColliders();
         wm.delete(this);
     }
 
@@ -216,6 +240,9 @@ export class Widget3 {
         if (this.children) this.children.forEach(child => child.refreshVisibility());
     }
 
+    show() { this.visible = true; }
+    hide() { this.visible = false; }
+
     get size() { return this._size || [1,1];}
     set size(v) { this._size = v; }
     get anchor() { return this._anchor || [0.5,0.5];}
@@ -262,6 +289,7 @@ export class Widget3 {
         if (this.children) this.children.forEach(child => child.update(time,delta));
     }
 
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -290,13 +318,16 @@ export class VisibleWidget3 extends Widget3  {
 
     }
 
+    get collider() { if (this.visible) return this.mesh }
+
+
     refreshVisibility() {
         super.refreshVisibility();
         if (this.mesh) this.mesh.visible = this.visible;
     }
 
 
-    //  Anything that affect true size needs to rebuild geometry.  Also some things need to invalidate local
+    //  Anything that affects true size needs to rebuild geometry.  Also some things need to invalidate local
 
     get size() { return super.size}
     set size(v) {super.size = v; this.buildGeometry()}
@@ -309,6 +340,8 @@ export class VisibleWidget3 extends Widget3  {
 
     destroy() {
         super.destroy();
+        const render = GetViewService("ThreeRenderManager");
+        render.scene.remove(this.mesh);
         this.geometry.dispose();
         this.material.dispose();
         if (this.material.map) this.material.map.dispose();
@@ -406,7 +439,6 @@ export class CanvasWidget3 extends VisibleWidget3 {
     redraw() {this.needsRedraw = true;}
 
     draw(canvas) {};
-
 }
 
 //------------------------------------------------------------------------------------------
@@ -502,16 +534,125 @@ export class TextWidget3 extends CanvasWidget3 {
 //-- ControlWidget -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Visibility changes change colliders
-
-export class ControlWidget3 extends VisibleWidget3 {
-
-    get collider() { if (this.visible) return this.mesh }
-    // get collider() { return this.mesh }
-
-    onHover() { console.log(this.name + " hover");}
-    onUnhover() { console.log(this.name + " unhover")}
+function ParentControl(w) {
+    do {
+        if (w instanceof ControlWidget3) return w;
+        w = w.parent
+    } while(w)
+    return null;
 }
+
+export class ControlWidget3 extends Widget3 {
+
+
+    hover() { console.log(this.name + " hover");}
+    unhover() { console.log(this.name + " unhover")}
+
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- ButtonWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class ButtonWidget3 extends ControlWidget3 {
+
+    constructor(options) {
+        super(options);
+
+        this._default = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0,1,0]});
+        this._hovered = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0,0,1], visible:false});
+        this._pressed = new VisibleWidget3({parent: this, autoSize: [1,1], color: [1,0,0], visible:false});
+
+    }
+
+    get default() {return this._default; }
+
+    set default(w) {
+        if (this._default) this._default.destroy();
+        this._default = w;
+        w.set({parent: this, autoSize: [1,1]})
+    }
+
+    get hovered() {return this._hovered; }
+    set default(w) {this._hovered = w}
+    get pressed() {return this._pressed; }
+    set default(w) {this._pressed = w}
+
+    normal() {
+        this.default.show();
+        this.hovered.hide();
+        this.pressed.hide();
+    }
+
+    hover() {
+        this.default.hide();
+        this.hovered.show();
+        this.pressed.hide();
+    }
+
+    press() {
+        this.default.hide();
+        this.hovered.hide();
+        this.pressed.show();
+    }
+
+    onClick() {
+        console.log("click")
+    }
+}
+
+//------------------------------------------------------------------------------------------
+//-- ToggleWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class ToggleWidget3 extends ControlWidget3 {
+
+    constructor(options) {
+        super(options);
+
+        this._default = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0,1,0]});
+        this._hovered = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0,0,1], visible:false});
+        this._pressed = new VisibleWidget3({parent: this, autoSize: [1,1], color: [1,0,0], visible:false});
+
+    }
+
+    get default() {return this._default; }
+    get hovered() {return this._hovered; }
+    get pressed() {return this._pressed; }
+
+    get on() { return this._on; }
+    get off() { return this._off; }
+    get hoveredOn() { return this._on; }
+    get hoveredOff() { return this._off; }
+    get pressedOn() { return this._pressedOn; }
+    get pressedOff() { return this._pressedOff; }
+
+
+    normal() {
+        this.default.show();
+        this.hovered.hide();
+        this.pressed.hide();
+    }
+
+    hover() {
+        this.default.hide();
+        this.hovered.show();
+        this.pressed.hide();
+    }
+
+    press() {
+        this.default.hide();
+        this.hovered.hide();
+        this.pressed.show();
+    }
+
+    click() {
+        console.log("click")
+    }
+
+}
+
 
 
 
