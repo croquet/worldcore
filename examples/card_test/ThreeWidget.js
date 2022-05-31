@@ -14,6 +14,7 @@ export class WidgetManager extends ViewService {
         wm = this;
         console.log("Widget Manager constructor")
         this.widgets = new Set();
+
     }
 
     add(widget) {
@@ -69,7 +70,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         if (hits.length > 0) w = ParentControl(hits[0].object.widget);
         if (this.pressed !== w) {
             this.pressed = w;
-            if(this.pressed) this.pressed.press();
+            if(this.pressed) this.pressed.onPress();
         }
 
     }
@@ -80,9 +81,10 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         const hits = this.widgetRaycast(x,y);
         let w = null;
         if (hits.length > 0) w = ParentControl(hits[0].object.widget);
-
-        if (this.pressed === w) w.click();
-        if (this.pressed) this.pressed.normal()
+        if (w) {
+            if (this.pressed === w) w.onClick();
+            if (this.pressed) this.pressed.onNormal()
+        }
 
         this.pressed = null;
         this.hovered = null;
@@ -96,14 +98,14 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         if (hits.length > 0) w = ParentControl(hits[0].object.widget);
         if (this.pressed) {
             if (this.pressed == w)
-                this.pressed.press()
+                this.pressed.onPress()
             else {
-                this.pressed.normal()
+                this.pressed.onNormal()
             }
         } else if (this.hovered !== w) {
-            if (this.hovered) this.hovered.normal();
+            if (this.hovered) this.hovered.onNormal();
             this.hovered = w;
-            if (this.hovered) this.hovered.hover();
+            if (this.hovered) this.hovered.onHilite();
         }
 
     }
@@ -151,11 +153,11 @@ export const PM_Widget3 = superclass => class extends superclass {
 //------------------------------------------------------------------------------------------
 
 function RelativeTranslation(t, anchor, pivot, border, size, parentSize) {
-    const aX = -0.5*parentSize[0] + parentSize[0] * anchor[0];
-    const aY = -0.5*parentSize[1] + parentSize[1] * anchor[1];
-    const pX = -0.5*size[0] + size[0] * pivot[0];
-    const pY = -0.5*size[1] + size[1] * pivot[1];
-    return [t[0]+aX-pX, t[1]+aY-pY, t[2]];
+    const aX = -0.5*parentSize[0] + parentSize[0]*anchor[0];
+    const aY = -0.5*parentSize[1] + parentSize[1]*anchor[1];
+    const pX = 0.5*size[0] - size[0]*pivot[0];
+    const pY = 0.5*size[1] - size[1]*pivot[1];
+    return [t[0]+aX+pX, t[1]+aY+pY, t[2]];
 }
 
 //------------------------------------------------------------------------------------------
@@ -243,7 +245,7 @@ export class Widget3 {
     show() { this.visible = true; }
     hide() { this.visible = false; }
 
-    get size() { return this._size || [1,1];}
+    get size() { return this._size || [0,0];}
     set size(v) { this._size = v; }
     get anchor() { return this._anchor || [0.5,0.5];}
     set anchor(v) { this._anchor = v; }
@@ -258,7 +260,7 @@ export class Widget3 {
         const out = [...this.size]
         if (this.parent) {
             if (this.autoSize[0]) { out[0] = this.parent.trueSize[0] * this.autoSize[0]; }
-            if (this.autoSize[1]) { out[1] = this.parent.size[1] * this.autoSize[1]; }
+            if (this.autoSize[1]) { out[1] = this.parent.trueSize[1] * this.autoSize[1]; }
         }
         out[0] -= (this.border[0] + this.border[2]);
         out[1] -= (this.border[1] + this.border[3]);
@@ -422,8 +424,8 @@ export class CanvasWidget3 extends VisibleWidget3 {
         if(!this.material) return;
         if (this.material.map) this.material.map.dispose();
         const canvas = document.createElement("canvas");
-        canvas.width = this.size[0] * this.resolution;
-        canvas.height = this.size[1] * this.resolution;
+        canvas.width = Math.min(1,this.trueSize[0]) * this.resolution;
+        canvas.height = Math.min(1,this.trueSize[1]) * this.resolution;
         this.material.map = new THREE.CanvasTexture(canvas);
         this.draw(canvas)
     }
@@ -545,8 +547,9 @@ function ParentControl(w) {
 export class ControlWidget3 extends Widget3 {
 
 
-    hover() { console.log(this.name + " hover");}
-    unhover() { console.log(this.name + " unhover")}
+    onHilite() { console.log(this.name + " hilite");}
+    onNormal() { console.log(this.name + " normal")}
+    onPress() { console.log(this.name + " press");}
 
 
 }
@@ -560,41 +563,23 @@ export class ButtonWidget3 extends ControlWidget3 {
     constructor(options) {
         super(options);
 
-        this._default = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0,1,0]});
-        this._hovered = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0,0,1], visible:false});
-        this._pressed = new VisibleWidget3({parent: this, autoSize: [1,1], color: [1,0,0], visible:false});
+        this.frame = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0,0,1]});
+        this.label = new TextWidget3({ parent: this.frame, autoSize: [1,1], border: [0.1, 0.1, 0.1, 0.1], color: [0.8,0.8,0.8], point: 72, text:  "Button" });
 
     }
 
-    get default() {return this._default; }
-
-    set default(w) {
-        if (this._default) this._default.destroy();
-        this._default = w;
-        w.set({parent: this, autoSize: [1,1]})
+    onNormal() {
+        this.frame.color = [0,0,1];
+        this.label.color = [0.8,0.8,0.8];
     }
 
-    get hovered() {return this._hovered; }
-    set default(w) {this._hovered = w}
-    get pressed() {return this._pressed; }
-    set default(w) {this._pressed = w}
-
-    normal() {
-        this.default.show();
-        this.hovered.hide();
-        this.pressed.hide();
+    onHilite() {
+        this.frame.color = [0,1,1];
     }
 
-    hover() {
-        this.default.hide();
-        this.hovered.show();
-        this.pressed.hide();
-    }
-
-    press() {
-        this.default.hide();
-        this.hovered.hide();
-        this.pressed.show();
+    onPress() {
+        this.frame.color = [0,1,1];
+        this.label.color = [1,1,1];
     }
 
     onClick() {
@@ -606,49 +591,68 @@ export class ButtonWidget3 extends ControlWidget3 {
 //-- ToggleWidget --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class ToggleWidget3 extends ControlWidget3 {
+export class ToggleWidget3 extends ButtonWidget3 {
 
     constructor(options) {
         super(options);
+    }
 
-        this._default = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0,1,0]});
-        this._hovered = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0,0,1], visible:false});
-        this._pressed = new VisibleWidget3({parent: this, autoSize: [1,1], color: [1,0,0], visible:false});
+    destroy() {
+        super.destroy();
+        if (this.toggleSet) this.toggleSet.delete(this);
 
     }
 
-    get default() {return this._default; }
-    get hovered() {return this._hovered; }
-    get pressed() {return this._pressed; }
-
-    get on() { return this._on; }
-    get off() { return this._off; }
-    get hoveredOn() { return this._on; }
-    get hoveredOff() { return this._off; }
-    get pressedOn() { return this._pressedOn; }
-    get pressedOff() { return this._pressedOff; }
-
-
-    normal() {
-        this.default.show();
-        this.hovered.hide();
-        this.pressed.hide();
+    get toggleSet() { return this._toggleSet }
+    set toggleSet(ts) {
+        this._toggleSet = ts;
+        if (ts) ts.set.add(this);
+        console.log(ts);
     }
 
-    hover() {
-        this.default.hide();
-        this.hovered.show();
-        this.pressed.hide();
+    toggleOn() {
+        this.isOn = true;
+        this.onToggle()
     }
 
-    press() {
-        this.default.hide();
-        this.hovered.hide();
-        this.pressed.show();
+    toggleOff() {
+        this.isOn = false;
+        this.onToggle()
     }
 
-    click() {
-        console.log("click")
+    onToggle() {
+        this.isOn ? this.label.text = "On" : this.label.text = "Off"
+
+    }
+
+
+    onClick() {
+        if (this.toggleSet) {
+            this.toggleSet.pick(this);
+        } else if (this.isOn) {
+            this.toggleOff();
+        } else {
+            this.toggleOn();
+        }
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- ToggleSet -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Helper class that manages a linked set of toggle widgets. You can pass a list of toggles
+// into the constructor.
+
+export class ToggleSet3  {
+    constructor(...args) {
+        this.set = new Set();
+    }
+
+    pick(on) {
+        on.toggleOn();
+        this.set.forEach(w => { if (w !== on) w.toggleOff() });
     }
 
 }

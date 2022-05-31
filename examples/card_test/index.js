@@ -7,7 +7,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
     TextWidgetActor, ButtonWidgetActor, GetViewService } from "@croquet/worldcore";
 
-import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3 } from "./ThreeWidget";
+import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3 } from "./ThreeWidget";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
@@ -114,14 +114,32 @@ class TestPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_Widget3
 
     test() {
         console.log("bTest");
-        this.panel = new ImageWidget3({name: "panel",parent: this.rootWidget, color: [1,1,1], size: [2,1], translation: [2,0,0], url: llama});
+        this.panel = new ImageWidget3({name: "panel",parent: this.rootWidget, color: [1,1,1], size: [6,4], translation: [5,2,0], url: llama});
+        // this.inset = new VisibleWidget3({name: "inset", parent: this.panel, translation: [0, 0, 0], autoSize: [1,1], size: [1, 1], color: [1,0,0],
+        // anchor: [0.5, 0.5], pivot: [0.5, 0.5],
+        // border: [0.1, 0.1, 0.1, 0.1]});
 
-        this.button = new ButtonWidget3({name: "button", parent: this.panel, size: [0.5, 0.5], anchor: [0,0], pivot: [0,0]});
 
-        this.button2 = new ButtonWidget3({name: "button", parent: this.panel, size: [0.5, 0.5], anchor: [0.5,0], pivot: [0.5,0]});
+        const ts = new ToggleSet3();
+        this.toggle1 = new ToggleWidget3({name: "toggle1", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.1,-0.2,0]});
+        this.toggle2 = new ToggleWidget3({name: "toggle2", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.1,-1.5,0]});
 
-        this.text = new TextWidget3({name: "canvas", parent: this.rootWidget, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1],
-            text: "Alternate Text String"});
+        // this.frame = new VisibleWidget3({parent: this.panel, autoSize: [1,1], color: [0,1,1], border: [0.1, 0.1, 0.1, 0.1]});
+        // this.label = new VisibleWidget3({parent: this.frame, autoSize: [1,1], border: [0.1, 0.1, 0.1, 0.1], color: [1,0,0]});
+
+
+        // this.inset = new VisibleWidget3({name: "inset", parent: this.panel, size: [1.5, 1], color: [1,0,0], anchor: [0.5,0.5], pivot: [0.5,0.5]});
+
+        // this.inset = new VisibleWidget3({name: "inset", parent: this.panel, size: [1, 1], color: [1,0,1],
+        // anchor: [0.5, 0.5], pivot: [0.5, 0.5]});
+
+        // console.log(this.panel.global);
+        // console.log(this.inset.global);
+
+
+
+        // this.text = new TextWidget3({name: "canvas", parent: this.panel, translation: [0,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1], size: [1,1],
+            // text: "Alternate Text String"});
 
     }
 
