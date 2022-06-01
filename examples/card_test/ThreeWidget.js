@@ -1,6 +1,6 @@
 // THREE.js widget system.
 
-import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply } from "@croquet/worldcore";
+import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply, View, viewRoot } from "@croquet/worldcore";
 
 let wm;
 
@@ -70,7 +70,8 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         if (hits.length > 0) w = ParentControl(hits[0].object.widget);
         if (this.pressed !== w) {
             this.pressed = w;
-            if(this.pressed) this.pressed.onPress();
+            console.log(hits[0]);
+            if(this.pressed) this.pressed.onPress(e.xy);
         }
 
     }
@@ -164,14 +165,16 @@ function RelativeTranslation(t, anchor, pivot, border, size, parentSize) {
 //-- Widget3 -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class Widget3 {
+export class Widget3 extends View {
 
     constructor(options) {
+        super(viewRoot.model);
         this.set(options);
         wm.add(this);
     }
 
     destroy() {
+        this.detach();
         new Set(this.children).forEach(child => child.destroy());
         this.parent = null;
         wm.clearColliders();
@@ -552,6 +555,10 @@ export class ControlWidget3 extends Widget3 {
     onPress() { console.log(this.name + " press");}
 
 
+    onClick() {
+        console.log("click")
+    }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -565,7 +572,6 @@ export class ButtonWidget3 extends ControlWidget3 {
 
         this.frame = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0,0,1]});
         this.label = new TextWidget3({ parent: this.frame, autoSize: [1,1], border: [0.1, 0.1, 0.1, 0.1], color: [0.8,0.8,0.8], point: 72, text:  "Button" });
-
     }
 
     onNormal() {
@@ -604,11 +610,7 @@ export class ToggleWidget3 extends ButtonWidget3 {
     }
 
     get toggleSet() { return this._toggleSet }
-    set toggleSet(ts) {
-        this._toggleSet = ts;
-        if (ts) ts.set.add(this);
-        console.log(ts);
-    }
+    set toggleSet(ts) { this._toggleSet = ts; if (ts) ts.set.add(this); }
 
     toggleOn() {
         this.isOn = true;
@@ -657,7 +659,63 @@ export class ToggleSet3  {
 
 }
 
+//------------------------------------------------------------------------------------------
+//-- SliderWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
+export class SliderWidget3 extends ControlWidget3 {
+
+    constructor(options) {
+        super(options);
+
+        this.bar = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0.8,0.8,0.8]});
+        this.knob = new VisibleWidget3({
+            parent: this.bar,
+            size: this.knobSize,
+            translation: this.knobTranslation,
+            color: [0,0,1]
+        });
+
+
+    }
+
+    get isHorizontal() { return this.trueSize[0] > this.trueSize[1]; }
+    get knobSize() {
+        return this.isHorizontal ? [this.trueSize[1], this.trueSize[1]] : [this.trueSize[0], this.trueSize[0]]
+    }
+    get percent() { return this._percent || 0; }
+    set percent(p) { this._percent = p; this.setKnobTranslation() }
+
+    setKnobTranslation() {
+        if (!this.knob) return;
+        const t = [0,0,0]
+        if (this.isHorizontal) {
+                t[0] = this.trueSize[0]*this.percent;
+        } else {
+                t[1] = -0.5 * this.trueSize[1] + this.trueSize[1]*this.percent + this.knobSize[1]/2;
+        }
+        this.knob.translation = t;
+    }
+
+    onNormal() {
+        this.knob.color = [0,0,1];
+        this.unsubscribe("input", "pointerMove", this.onPointerMove);
+    }
+
+    onHilite() {
+        this.knob.color = [0,1,1];
+    }
+
+    onPress(xy) {
+        console.log(xy);
+        this.subscribe("input", "pointerMove", this.onPointerMove);
+    }
+
+    onPointerMove(e) {
+        console.log(e.xy);
+    }
+
+}
 
 
 

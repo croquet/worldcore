@@ -7,7 +7,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
     TextWidgetActor, ButtonWidgetActor, GetViewService } from "@croquet/worldcore";
 
-import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3 } from "./ThreeWidget";
+import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3 } from "./ThreeWidget";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
@@ -115,43 +115,36 @@ class TestPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_Widget3
     test() {
         console.log("bTest");
         this.panel = new ImageWidget3({name: "panel",parent: this.rootWidget, color: [1,1,1], size: [6,4], translation: [5,2,0], url: llama});
-        // this.inset = new VisibleWidget3({name: "inset", parent: this.panel, translation: [0, 0, 0], autoSize: [1,1], size: [1, 1], color: [1,0,0],
-        // anchor: [0.5, 0.5], pivot: [0.5, 0.5],
-        // border: [0.1, 0.1, 0.1, 0.1]});
+
 
 
         const ts = new ToggleSet3();
         this.toggle1 = new ToggleWidget3({name: "toggle1", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.1,-0.2,0]});
         this.toggle2 = new ToggleWidget3({name: "toggle2", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.1,-1.5,0]});
 
-        // this.frame = new VisibleWidget3({parent: this.panel, autoSize: [1,1], color: [0,1,1], border: [0.1, 0.1, 0.1, 0.1]});
-        // this.label = new VisibleWidget3({parent: this.frame, autoSize: [1,1], border: [0.1, 0.1, 0.1, 0.1], color: [1,0,0]});
+        this.slider = new SliderWidget3({name: "slider", parent: this.panel, anchor: [1,1], pivot: [1,1], translation: [-0.1,-0.1,0], size: [0.2, 3], percent: 1.0});
 
-
-        // this.inset = new VisibleWidget3({name: "inset", parent: this.panel, size: [1.5, 1], color: [1,0,0], anchor: [0.5,0.5], pivot: [0.5,0.5]});
-
-        // this.inset = new VisibleWidget3({name: "inset", parent: this.panel, size: [1, 1], color: [1,0,1],
-        // anchor: [0.5, 0.5], pivot: [0.5, 0.5]});
-
-        // console.log(this.panel.global);
-        // console.log(this.inset.global);
+        console.log(this.slider.percent);
 
 
 
-        // this.text = new TextWidget3({name: "canvas", parent: this.panel, translation: [0,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1], size: [1,1],
-            // text: "Alternate Text String"});
+
+
+
+        this.text = new TextWidget3({name: "canvas", parent: this.rootWidget, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1], size: [1,1],
+            text: "Alternate Text String"});
 
     }
 
     test2() {
         console.log("nTest");
-        // this.panel.destroy();
-        // this.button.default = new VisibleWidget3({color: [0.5, 0.5, 0.5]} );
+        this.slider.percent = 0.75;
+
     }
 
     test3() {
         console.log("mTest");
-        // this.child2.visible = true;
+        this.slider.percent = 0.25;
     }
 }
 
@@ -224,7 +217,7 @@ class MyPlayerManager extends PlayerManager {
 
     createPlayer(options) {
         options.color = [Math.random(), Math.random(), Math.random(), 1];
-        options.translation = [0,0,5];
+        options.translation = [0,0,10];
         return MyAvatar.create(options);
     }
 
@@ -243,16 +236,10 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!");
+        console.log("Start root model!");
         this.level = LevelActor.create();
         this.testActor = TestActor.create({translation: [0,0,-3]});
-        // // this.widget = MyWidgetActor.create({translation: [0,0,-3]});
-        // this.widget0 = ImageWidgetActor.create({translation: [0,0,-3], color: [1,1,1], size: [2,1], url: llama});
-        // this.widget1 = ImageWidgetActor.create({parent: this.widget0, translation: [0.0,0.0,0], border: [0.1, 0.1, 0.1 ,0.1], color: [1,1,1], size: [0.5,0.5], url: diana , anchor: [-1,1], pivot: [-1,1], autoSize: [0,0]});
-        // // this.widget2 = TextWidgetActor.create({parent: this.widget1, translation: [0,0,0], color: [1,1,1],autoSize:[1,1], size: [0.3,0.3], anchor: [0,0], pivot: [0,0],
-        // //     text:"This is a test of word wrap. It has a lot of text. And it should run onto the next line. You can have as much text as you want and it automatically reformats itself if the widget parameters change!", alignX: "center", alignY: "middle", font: "Trebuchet MS"});
 
-        // this.button = ButtonWidgetActor.create({parent: this.widget0, size: [0.5,0.5]})
 
         this.subscribe("input", "zDown", this.test0);
         this.subscribe("input", "xDown", this.test1);
