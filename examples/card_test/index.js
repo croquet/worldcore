@@ -120,15 +120,9 @@ class TestPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_Widget3
 
         const ts = new ToggleSet3();
         this.toggle1 = new ToggleWidget3({name: "toggle1", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.1,-0.2,0]});
-        this.toggle2 = new ToggleWidget3({name: "toggle2", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.1,-1.5,0]});
+        this.toggle2 = new ToggleWidget3({name: "toggle2", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.1,-1.7,0]});
 
         this.slider = new SliderWidget3({name: "slider", parent: this.panel, anchor: [1,1], pivot: [1,1], translation: [-0.1,-0.1,0], size: [0.2, 3], percent: 1.0});
-
-        console.log(this.slider.percent);
-
-
-
-
 
 
         this.text = new TextWidget3({name: "canvas", parent: this.rootWidget, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1], size: [1,1],
@@ -290,9 +284,9 @@ class MyViewRoot extends ViewRoot {
 
         // this.subscribe("input", "bDown", this.test);
 
-        const xxx = {visible: true};
-        console.log(xxx.visible);
-        console.log(xxx.visible === undefined || xxx.visible);
+        // const xxx = {visible: true};
+        // console.log(xxx.visible);
+        // console.log(xxx.visible === undefined || xxx.visible);
     }
 
 
