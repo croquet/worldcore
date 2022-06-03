@@ -1,6 +1,7 @@
 // THREE.js widget system.
 
 import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply, View, viewRoot } from "@croquet/worldcore";
+import { PM_ThreeVisible } from "../../packages/card/node_modules/@croquet/worldcore-three/src/ThreeRender";
 
 let wm;
 
@@ -69,7 +70,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
 
         if (this.pressed !== hit.control) {
             this.pressed = hit.control;
-            if(this.pressed) this.pressed.onPress(hit.xy);
+            if(this.pressed) this.pressed.onPress(hit);
         }
 
     }
@@ -80,7 +81,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         const hit = this.controlRaycast(x,y);
 
         if (hit.control) {
-            if (this.pressed === hit.control) hit.control.onClick();
+            if (this.pressed === hit.control) hit.control.onClick(hit);
             if (this.pressed) this.pressed.onNormal()
         }
 
@@ -95,7 +96,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
 
         if (this.pressed) {
             if (this.pressed == hit.control)
-                this.pressed.onPress(hit.xy)
+                this.pressed.onPress(hit)
             else {
                 this.pressed.onNormal()
             }
@@ -117,14 +118,18 @@ export const PM_WidgetPointer = superclass => class extends superclass {
             const topRoot = hits[0].object.widget.root;
             hits = hits.filter(hit => hit.object.widget.root === topRoot).sort( (a,b) => {return b.object.widget.depth - a.object.widget.depth});
         }
+
+        const out = {};
         if(hits.length > 0) {
             const hit = hits[0];
+            const widget = hit.object.widget;
             const control = ParentControl(hit.object.widget)
             const xy = [hit.uv.x, hit.uv.y];
-            return {control, xy};
-        } else {
-            return {control: null, xy:[0,0]};
+            out.widget = widget;
+            out.control = control;
+            out.xy = xy;
         }
+        return out;
 
     }
 
@@ -334,7 +339,6 @@ export class PlaneWidget3 extends Widget3 {
 
     refreshVisibility() {
         super.refreshVisibility();
-        if (this.mesh) this.mesh.visible = this.visible;
     }
 
     buildGeometry() {
@@ -375,11 +379,22 @@ export class PlaneWidget3 extends Widget3 {
 }
 
 //------------------------------------------------------------------------------------------
-//-- GuideWidget -------------------------------------------------------------------------
+//-- ColliderWidget ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class GuideWidget3 extends PlaneWidget3 {
-    get collider() { return this.mesh }
+export class ColliderWidget3 extends PlaneWidget3 {
+
+    constructor(options) {
+        super(options);
+        this.mesh.visible = false;
+    }
+
+    refreshVisibility() {
+        super.refreshVisibility();
+        if (this.mesh) this.mesh.visible = false;
+    }
+
+    get collider() { if (this.visible) return this.mesh }
 }
 
 //------------------------------------------------------------------------------------------
@@ -388,33 +403,15 @@ export class GuideWidget3 extends PlaneWidget3 {
 
 export class VisibleWidget3 extends PlaneWidget3  {
 
-    // constructor(options) {
-    //     super(options);
-    //     const render = GetViewService("ThreeRenderManager");
+    constructor(options) {
+        super(options);
+        if (this.mesh) this.mesh.visible = this.visible;
+    }
 
-    //     this.buildGeometry();
-    //     this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(...this.color)});
-    //     this.material.polygonOffset = true;
-    //     this.material.polygonOffsetFactor = -this.depth;
-    //     this.material.polygonOffsetUnits = -this.depth;
-
-    //     this.mesh = new THREE.Mesh( this.geometry, this.material );
-    //     this.mesh.visible = this.visible;
-    //     this.mesh.widget = this;
-    //     this.mesh.matrixAutoUpdate = false;
-    //     this.mesh.matrix.fromArray(this.global);
-
-    //     render.scene.add(this.mesh);
-
-    // }
-
-    // get collider() { if (this.visible) return this.mesh }
-
-
-    // refreshVisibility() {
-    //     super.refreshVisibility();
-    //     if (this.mesh) this.mesh.visible = this.visible;
-    // }
+    refreshVisibility() {
+        super.refreshVisibility();
+        if (this.mesh) this.mesh.visible = this.visible;
+    }
 
 
     // //  Anything that affects true size needs to rebuild geometry.  Also some things need to invalidate local
@@ -512,8 +509,8 @@ export class CanvasWidget3 extends VisibleWidget3 {
         if(!this.material) return;
         if (this.material.map) this.material.map.dispose();
         const canvas = document.createElement("canvas");
-        canvas.width = Math.min(1,this.trueSize[0]) * this.resolution;
-        canvas.height = Math.min(1,this.trueSize[1]) * this.resolution;
+        canvas.width = Math.max(1,this.trueSize[0]) * this.resolution;
+        canvas.height = Math.max(1,this.trueSize[1]) * this.resolution;
         this.material.map = new THREE.CanvasTexture(canvas);
         this.draw(canvas)
     }
@@ -636,10 +633,7 @@ export class ControlWidget3 extends Widget3 {
 
     constructor(options) {
         super(options);
-        // this.guide = new GuideWidget3({parent: this, autoSize: [1,1], visible: false, color: [1,0,1]});
-
-        // const xxx = [this.size[0]+0.3, this.size[1]+0.3]
-        this.guide = new GuideWidget3({parent: this, autoSize: [1,1], visible: true, color: [1,0,1]});
+        this.active = new ColliderWidget3({parent: this, autoSize: [1,1], visible: true, color: [1,0,1]});
 
 
     }
@@ -651,7 +645,7 @@ export class ControlWidget3 extends Widget3 {
 
 
     onClick() {
-        console.log("click")
+        // console.log("click")
     }
 
 }
@@ -666,7 +660,7 @@ export class ButtonWidget3 extends ControlWidget3 {
         super(options);
 
         this.frame = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0,0,1]});
-        this.label = new TextWidget3({ parent: this.frame, autoSize: [1,1], border: [0.1, 0.1, 0.1, 0.1], color: [0.8,0.8,0.8], point: 72, text:  "Button" });
+        this.label = new TextWidget3({ parent: this.frame, autoSize: [1,1], border: [0.1, 0.1, 0.1, 0.1], color: [0.8,0.8,0.8], point: 96, text:  "Button" });
     }
 
     onNormal() {
@@ -696,6 +690,7 @@ export class ToggleWidget3 extends ButtonWidget3 {
 
     constructor(options) {
         super(options);
+        this.onToggle();
     }
 
     destroy() {
@@ -704,33 +699,39 @@ export class ToggleWidget3 extends ButtonWidget3 {
 
     }
 
+    get isOn() { return this._isOn || false}
+    set isOn(b) { this._isOn = b; this.onToggle()}
     get toggleSet() { return this._toggleSet }
     set toggleSet(ts) { this._toggleSet = ts; if (ts) ts.set.add(this); }
 
-    toggleOn() {
-        this.isOn = true;
-        this.onToggle()
-    }
+    // toggleOn() {
+    //     this.isOn = true;
+    //     this.onToggle()
+    // }
 
-    toggleOff() {
-        this.isOn = false;
-        this.onToggle()
-    }
+    // toggleOff() {
+    //     this.isOn = false;
+    //     this.onToggle()
+    // }
 
     onToggle() {
-        this.isOn ? this.label.text = "On" : this.label.text = String(99);
-
+        this.isOn ? this.label.text = "On" : this.label.text = 'Off';
     }
 
 
     onClick() {
         if (this.toggleSet) {
             this.toggleSet.pick(this);
-        } else if (this.isOn) {
-            this.toggleOff();
         } else {
-            this.toggleOn();
+            this.isOn = !this.isOn;
         }
+
+        // else if (this.isOn) {
+        //     this.is
+        //     // this.toggleOff();
+        // } else {
+        //     // this.toggleOn();
+        // }
     }
 
 }
@@ -748,8 +749,8 @@ export class ToggleSet3  {
     }
 
     pick(on) {
-        on.toggleOn();
-        this.set.forEach(w => { if (w !== on) w.toggleOff() });
+        on.isOn = true
+        this.set.forEach(w => { if (w !== on) w.isOn = false });
     }
 
 }
@@ -763,13 +764,19 @@ export class SliderWidget3 extends ControlWidget3 {
     constructor(options) {
         super(options);
 
+        this.dragMargin = 0.5;
+
+        const dragSize = [this.size[0]+2*this.dragMargin, this.size[1]+2*this.dragMargin]
+        this.drag = new ColliderWidget3({parent: this.active, size: dragSize, visible: false, color: [1,0,1]});
+
         this.bar = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0.8,0.8,0.8]});
         this.knob = new VisibleWidget3({
             parent: this.bar,
             size: this.knobSize,
-            translation: this.knobTranslation,
             color: [0,0,1]
         });
+
+        this.setKnobTranslation();
 
 
     }
@@ -778,25 +785,35 @@ export class SliderWidget3 extends ControlWidget3 {
     get knobSize() {
         return this.isHorizontal ? [this.trueSize[1], this.trueSize[1]] : [this.trueSize[0], this.trueSize[0]]
     }
-    get percent() { return this._percent || 0; }
+    get percent() {
+        return this._percent || 0;
+    }
+
     set percent(p) {
         p = Math.min(1,p);
         p = Math.max(0,p);
+        p = Math.round(p * (this.step)) / (this.step)
         this._percent = p;
-        this.setKnobTranslation() }
+        this.onPercent(p);
+        this.setKnobTranslation()
+    }
+    get step() { return this._step || 0; }        // The number of d1screte steps the slider has. (0=continuous)
+    set step(n) { this._step = n }
 
     setKnobTranslation() {
         if (!this.knob) return;
         const t = [0,0,0]
         if (this.isHorizontal) {
-                // t[0] = this.trueSize[0]*this.percent;
+            t[0] = -0.5 * this.trueSize[0] + (this.trueSize[0]-this.knobSize[0])*this.percent;
         } else {
-                t[1] = -0.5 * this.trueSize[1] + (this.trueSize[1]-this.knobSize[1])*this.percent;
+            // t[1] = -0.5 * this.trueSize[1] + (this.trueSize[1]-this.knobSize[1])*this.percent;
+            t[1] = -0.5 * this.trueSize[1] + 0.5* this.knobSize[1] + this.percent*(this.trueSize[1]-this.knobSize[1]);
         }
         this.knob.translation = t;
     }
 
     onNormal() {
+        this.drag.visible = false;
         this.knob.color = [0,0,1];
     }
 
@@ -804,16 +821,27 @@ export class SliderWidget3 extends ControlWidget3 {
         this.knob.color = [0,1,1];
     }
 
-    onPress(xy) {
+    onPress(hit) {
+        this.drag.visible = true;
+        let x = hit.xy[0];
+        let y = hit.xy[1];
+        if(hit.widget === this.drag) {
+
+            x = (x*this.drag.size[0] - this.dragMargin) / this.size[0]
+            y = (y*this.drag.size[1] - this.dragMargin) / this.size[1]
+
+        }
+
+
+
         if(this.isHorizontal) {
+            this.percent = x;
         } else {
-            console.log(xy[1]);
-            this.percent = xy[1];
+            this.percent = y;
         }
     }
 
     onPercent(p) {
-
     }
 
 
