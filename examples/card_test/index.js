@@ -7,7 +7,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
     TextWidgetActor, ButtonWidgetActor, GetViewService } from "@croquet/worldcore";
 
-import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3 } from "./ThreeWidget";
+import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3, BoxWidget3 } from "./ThreeWidget";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
@@ -149,14 +149,14 @@ class TestPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_Widget3
         });
 
 
-        this.text = new TextWidget3({name: "canvas", parent: this.rootWidget, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1], size: [1,1],
-            text: "Alternate Text String"});
+        this.text = new TextWidget3({name: "canvas", parent: this.rootWidget, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1], size: [1,1], text: "Alternate Text String"});
 
+        this.box = new BoxWidget3({name: "box", parent: this.rootWidget, translation: [-3,2,0], color: [1,0,0], size: [2,2]});
     }
 
     test2() {
         console.log("nTest");
-        this.slider.percent = 0.0;
+        this.panel.destroy();
 
     }
 

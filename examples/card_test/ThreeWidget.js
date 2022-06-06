@@ -1,7 +1,6 @@
 // THREE.js widget system.
 
 import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply, View, viewRoot } from "@croquet/worldcore";
-import { PM_ThreeVisible } from "../../packages/card/node_modules/@croquet/worldcore-three/src/ThreeRender";
 
 let wm;
 
@@ -179,9 +178,17 @@ export class Widget3 extends View {
         super(viewRoot.model);
         this.set(options);
         wm.add(this);
+        this.mesh = this.buildMesh();
+        const render = GetViewService("ThreeRenderManager");
+        if (this.mesh) render.scene.add(this.mesh);
+
     }
 
+    buildMesh() {return null};
+
     destroy() {
+        const render = GetViewService("ThreeRenderManager");
+        if (this.mesh) render.scene.remove(this.mesh);
         this.detach();
         new Set(this.children).forEach(child => child.destroy());
         this.parent = null;
@@ -266,6 +273,9 @@ export class Widget3 extends View {
     set border(v) { this._border = v; }
     get autoSize() { return this._autoSize || [0,0];}
     set autoSize(v) { this._autoSize = v; }
+    get collidable() { return this._collidable }
+    set collidable(b) { this._collidable = b; }
+    get collider() { if (this.collidable && this.visible) return this.mesh }
 
     get trueSize() {
         const out = [...this.size]
@@ -311,50 +321,38 @@ export class Widget3 extends View {
 
 export class PlaneWidget3 extends Widget3 {
 
-    constructor(options) {
-        super(options);
-        const render = GetViewService("ThreeRenderManager");
+    buildMesh() {
+        this.threeDispose();
+        this.geometry = new THREE.PlaneGeometry(...this.trueSize, 1);
+        if (this.mesh) this.mesh.geometry = this.geometry;
 
-        this.buildGeometry();
         this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(...this.color)});
         this.material.polygonOffset = true;
         this.material.polygonOffsetFactor = -this.depth;
         this.material.polygonOffsetUnits = -this.depth;
 
-        this.mesh = new THREE.Mesh( this.geometry, this.material );
-        this.mesh.visible = this.visible;
-        this.mesh.widget = this;
-        this.mesh.matrixAutoUpdate = false;
-        this.mesh.matrix.fromArray(this.global);
+        const mesh = new THREE.Mesh( this.geometry, this.material );
+        mesh.visible = this.visible;
+        mesh.widget = this;
+        mesh.matrixAutoUpdate = false;
+        mesh.matrix.fromArray(this.global);
 
-        render.scene.add(this.mesh);
-
+        return mesh;
     }
 
-    get size() { return super.size}
-    set size(v) {super.size = v; this.buildGeometry()}
-
-    get color() { return this._color || [1,1,1];}
-    set color(v) { this._color = v; if (this.material) this.material.color = new THREE.Color(...this.color); }
-
-    refreshVisibility() {
-        super.refreshVisibility();
-    }
-
-    buildGeometry() {
-        if (this.geometry) this.geometry.dispose();
-        this.geometry = new THREE.PlaneGeometry(...this.trueSize, 1);
-        if (this.mesh) this.mesh.geometry = this.geometry;
+    threeDispose() {
+        if (this.geometry)this.geometry.dispose();
+        if (this.material)this.material.dispose();
+        if (this.material && this.material.map) this.material.map.dispose();
     }
 
     destroy() {
         super.destroy();
-        const render = GetViewService("ThreeRenderManager");
-        render.scene.remove(this.mesh);
-        this.geometry.dispose();
-        this.material.dispose();
-        if (this.material.map) this.material.map.dispose();
+        this.threeDispose();
     }
+
+    get color() { return this._color || [1,1,1];}
+    set color(v) { this._color = v; if (this.material) this.material.color = new THREE.Color(...this.color); }
 
     onParentChanged() {
         if (!this.material) return;
@@ -379,23 +377,72 @@ export class PlaneWidget3 extends Widget3 {
 }
 
 //------------------------------------------------------------------------------------------
-//-- ColliderWidget ------------------------------------------------------------------------
+//-- BoxWidget ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class ColliderWidget3 extends PlaneWidget3 {
+export class BoxWidget3 extends Widget3 {
 
-    constructor(options) {
-        super(options);
-        this.mesh.visible = false;
+    buildMesh() {
+        this.threeDispose();
+        console.log(this.size);
+        console.log(this.trueSize);
+        console.log(this.thick);
+        this.geometry = new THREE.BoxGeometry(...this.trueSize, this.thick);
+        if (this.mesh) this.mesh.geometry = this.geometry;
+
+        this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(...this.color)});
+        this.material.polygonOffset = true;
+        this.material.polygonOffsetFactor = -this.depth;
+        this.material.polygonOffsetUnits = -this.depth;
+
+        const mesh = new THREE.Mesh( this.geometry, this.material );
+        mesh.visible = this.visible;
+        mesh.widget = this;
+        mesh.matrixAutoUpdate = false;
+        mesh.matrix.fromArray(this.global);
+
+        return mesh;
     }
 
-    refreshVisibility() {
-        super.refreshVisibility();
-        if (this.mesh) this.mesh.visible = false;
+    threeDispose() {
+        if (this.geometry)this.geometry.dispose();
+        if (this.material)this.material.dispose();
+        if (this.material && this.material.map) this.material.map.dispose();
     }
 
-    get collider() { if (this.visible) return this.mesh }
+    destroy() {
+        super.destroy();
+        this.threeDispose();
+    }
+
+    get thick() { return this._thick || 0.1;}
+    set thick(n) { this._thick = v; }
+
+    get color() { return this._color || [1,1,1];}
+    set color(v) { this._color = v; if (this.material) this.material.color = new THREE.Color(...this.color); }
+
+    onParentChanged() {
+        if (!this.material) return;
+        this.material.polygonOffsetFactor = -this.depth;
+        this.material.polygonOffsetUnits = -this.depth;
+    }
+
+    globalChanged() {
+        super.globalChanged();
+        this.isDirty = true;
+    }
+
+    update(time,delta) {
+        super.update(time,delta)
+        if (this.isDirty) {
+            this.mesh.matrix.fromArray(this.global);
+            this.isDirty = false;
+        }
+
+    }
+
 }
+
 
 //------------------------------------------------------------------------------------------
 //-- VisibleWidget -------------------------------------------------------------------------
@@ -413,49 +460,6 @@ export class VisibleWidget3 extends PlaneWidget3  {
         if (this.mesh) this.mesh.visible = this.visible;
     }
 
-
-    // //  Anything that affects true size needs to rebuild geometry.  Also some things need to invalidate local
-
-    // get size() { return super.size}
-    // set size(v) {super.size = v; this.buildGeometry()}
-
-    // buildGeometry() {
-    //     if (this.geometry) this.geometry.dispose();
-    //     this.geometry = new THREE.PlaneGeometry(...this.trueSize, 1);
-    //     if (this.mesh) this.mesh.geometry = this.geometry;
-    // }
-
-    // destroy() {
-    //     super.destroy();
-    //     const render = GetViewService("ThreeRenderManager");
-    //     render.scene.remove(this.mesh);
-    //     this.geometry.dispose();
-    //     this.material.dispose();
-    //     if (this.material.map) this.material.map.dispose();
-    // }
-
-    // get color() { return this._color || [1,1,1];}
-    // set color(v) { this._color = v; if (this.material) this.material.color = new THREE.Color(...this.color); }
-
-    // onParentChanged() {
-    //     if (!this.material) return;
-    //     this.material.polygonOffsetFactor = -this.depth;
-    //     this.material.polygonOffsetUnits = -this.depth;
-    // }
-
-    // globalChanged() {
-    //     super.globalChanged();
-    //     this.isDirty = true;
-    // }
-
-    // update(time,delta) {
-    //     super.update(time,delta)
-    //     if (this.isDirty) {
-    //         this.mesh.matrix.fromArray(this.global);
-    //         this.isDirty = false;
-    //     }
-
-    // }
 
 }
 
@@ -633,7 +637,7 @@ export class ControlWidget3 extends Widget3 {
 
     constructor(options) {
         super(options);
-        this.active = new ColliderWidget3({parent: this, autoSize: [1,1], visible: true, color: [1,0,1]});
+        this.active = new PlaneWidget3({parent: this, autoSize: [1,1], visible: true, color: [1,0,1], collidable:true});
 
 
     }
@@ -695,7 +699,7 @@ export class ToggleWidget3 extends ButtonWidget3 {
 
     destroy() {
         super.destroy();
-        if (this.toggleSet) this.toggleSet.delete(this);
+        if (this.toggleSet) this.toggleSet.set.delete(this);
 
     }
 
@@ -703,16 +707,6 @@ export class ToggleWidget3 extends ButtonWidget3 {
     set isOn(b) { this._isOn = b; this.onToggle()}
     get toggleSet() { return this._toggleSet }
     set toggleSet(ts) { this._toggleSet = ts; if (ts) ts.set.add(this); }
-
-    // toggleOn() {
-    //     this.isOn = true;
-    //     this.onToggle()
-    // }
-
-    // toggleOff() {
-    //     this.isOn = false;
-    //     this.onToggle()
-    // }
 
     onToggle() {
         this.isOn ? this.label.text = "On" : this.label.text = 'Off';
@@ -767,7 +761,7 @@ export class SliderWidget3 extends ControlWidget3 {
         this.dragMargin = 0.5;
 
         const dragSize = [this.size[0]+2*this.dragMargin, this.size[1]+2*this.dragMargin]
-        this.drag = new ColliderWidget3({parent: this.active, size: dragSize, visible: false, color: [1,0,1]});
+        this.drag = new PlaneWidget3({parent: this.active, size: dragSize, visible: false, collidable:true, color: [1,0,1]});
 
         this.bar = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0.8,0.8,0.8]});
         this.knob = new VisibleWidget3({
