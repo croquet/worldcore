@@ -256,7 +256,7 @@ export class Widget3 extends View {
     set visible(b) {this._visible = b; this.refreshVisibility()}
 
     refreshVisibility() {
-        wm.clearColliders();
+        if (this.mesh) this.mesh.visible = this.visible;
         if (this.children) this.children.forEach(child => child.refreshVisibility());
     }
 
@@ -274,8 +274,8 @@ export class Widget3 extends View {
     get autoSize() { return this._autoSize || [0,0];}
     set autoSize(v) { this._autoSize = v; }
     get collidable() { return this._collidable }
-    set collidable(b) { this._collidable = b; }
-    get collider() { if (this.collidable && this.visible) return this.mesh }
+    set collidable(b) { this._collidable = b; wm.clearColliders();}
+    get collider() { if (this.collidable && ParentControl(this).visible) return this.mesh }
 
     get trueSize() {
         const out = [...this.size]
@@ -384,9 +384,6 @@ export class BoxWidget3 extends Widget3 {
 
     buildMesh() {
         this.threeDispose();
-        console.log(this.size);
-        console.log(this.trueSize);
-        console.log(this.thick);
         this.geometry = new THREE.BoxGeometry(...this.trueSize, this.thick);
         if (this.mesh) this.mesh.geometry = this.geometry;
 
@@ -416,7 +413,7 @@ export class BoxWidget3 extends Widget3 {
     }
 
     get thick() { return this._thick || 0.1;}
-    set thick(n) { this._thick = v; }
+    set thick(n) { this._thick = n; }
 
     get color() { return this._color || [1,1,1];}
     set color(v) { this._color = v; if (this.material) this.material.color = new THREE.Color(...this.color); }
@@ -448,26 +445,26 @@ export class BoxWidget3 extends Widget3 {
 //-- VisibleWidget -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class VisibleWidget3 extends PlaneWidget3  {
+// export class VisibleWidget3 extends PlaneWidget3  {
 
-    constructor(options) {
-        super(options);
-        if (this.mesh) this.mesh.visible = this.visible;
-    }
+//     // constructor(options) {
+//     //     super(options);
+//     //     if (this.mesh) this.mesh.visible = this.visible;
+//     // }
 
-    refreshVisibility() {
-        super.refreshVisibility();
-        if (this.mesh) this.mesh.visible = this.visible;
-    }
+//     // refreshVisibility() {
+//     //     super.refreshVisibility();
+//     //     if (this.mesh) this.mesh.visible = this.visible;
+//     // }
 
 
-}
+// }
 
 //------------------------------------------------------------------------------------------
 //-- ImageWidget ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class ImageWidget3 extends VisibleWidget3 {
+export class ImageWidget3 extends PlaneWidget3 {
 
     constructor(options) {
         super(options);
@@ -497,7 +494,7 @@ function canvasColor(r, g, b) {
     return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
 }
 
-export class CanvasWidget3 extends VisibleWidget3 {
+export class CanvasWidget3 extends PlaneWidget3 {
 
     constructor(options) {
         super(options);
@@ -663,7 +660,7 @@ export class ButtonWidget3 extends ControlWidget3 {
     constructor(options) {
         super(options);
 
-        this.frame = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0,0,1]});
+        this.frame = new PlaneWidget3({parent: this, autoSize: [1,1], color: [0,0,1]});
         this.label = new TextWidget3({ parent: this.frame, autoSize: [1,1], border: [0.1, 0.1, 0.1, 0.1], color: [0.8,0.8,0.8], point: 96, text:  "Button" });
     }
 
@@ -719,13 +716,6 @@ export class ToggleWidget3 extends ButtonWidget3 {
         } else {
             this.isOn = !this.isOn;
         }
-
-        // else if (this.isOn) {
-        //     this.is
-        //     // this.toggleOff();
-        // } else {
-        //     // this.toggleOn();
-        // }
     }
 
 }
@@ -761,17 +751,16 @@ export class SliderWidget3 extends ControlWidget3 {
         this.dragMargin = 0.5;
 
         const dragSize = [this.size[0]+2*this.dragMargin, this.size[1]+2*this.dragMargin]
-        this.drag = new PlaneWidget3({parent: this.active, size: dragSize, visible: false, collidable:true, color: [1,0,1]});
+        this.drag = new PlaneWidget3({parent: this.active, size: dragSize, visible: false, collidable:false, color: [1,0,1]});
 
-        this.bar = new VisibleWidget3({parent: this, autoSize: [1,1], color: [0.8,0.8,0.8]});
-        this.knob = new VisibleWidget3({
+        this.bar = new PlaneWidget3({parent: this, autoSize: [1,1], color: [0.8,0.8,0.8]});
+        this.knob = new PlaneWidget3({
             parent: this.bar,
             size: this.knobSize,
             color: [0,0,1]
         });
 
         this.setKnobTranslation();
-
 
     }
 
@@ -786,12 +775,12 @@ export class SliderWidget3 extends ControlWidget3 {
     set percent(p) {
         p = Math.min(1,p);
         p = Math.max(0,p);
-        p = Math.round(p * (this.step)) / (this.step)
+        if (this.ste) p = Math.round(p * (this.step)) / (this.step)
         this._percent = p;
         this.onPercent(p);
         this.setKnobTranslation()
     }
-    get step() { return this._step || 0; }        // The number of d1screte steps the slider has. (0=continuous)
+    get step() { return this._step || 0; }        // The number of steps the slider has. (0=continuous)
     set step(n) { this._step = n }
 
     setKnobTranslation() {
@@ -807,7 +796,7 @@ export class SliderWidget3 extends ControlWidget3 {
     }
 
     onNormal() {
-        this.drag.visible = false;
+        this.drag.collidable = false;
         this.knob.color = [0,0,1];
     }
 
@@ -816,14 +805,12 @@ export class SliderWidget3 extends ControlWidget3 {
     }
 
     onPress(hit) {
-        this.drag.visible = true;
+        this.drag.collidable = true;
         let x = hit.xy[0];
         let y = hit.xy[1];
         if(hit.widget === this.drag) {
-
             x = (x*this.drag.size[0] - this.dragMargin) / this.size[0]
             y = (y*this.drag.size[1] - this.dragMargin) / this.size[1]
-
         }
 
 
@@ -836,6 +823,43 @@ export class SliderWidget3 extends ControlWidget3 {
     }
 
     onPercent(p) {
+        this.publish(this.id, "percent", p);
+    }
+
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- DragWidget ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class DragWidget3 extends ControlWidget3 {
+
+    constructor(options) {
+        super(options);
+        const dragSize = [2,2];
+        this.knob = new BoxWidget3({parent: this.active, size: [1,1], thick:1, color: [0,0,1], collidable: true});
+        this.drag = new PlaneWidget3({parent: this.active, size: dragSize, visible: true, collidable:true, color: [1,0,1]});
+
+    }
+
+    onNormal() {
+        this.knob.color = [0,0,1];
+        this.knob.collidable = true;
+    }
+
+    onHilite() {
+        this.knob.color = [0,1,1];
+    }
+
+    onPress(hit) {
+        this.knob.collidable = false;
+        this.drag.collidable = true;
+        if(hit.widget === this.knob) {
+            console.log("knob");
+        } else if (hit.widget = this.drag) {
+            console.log("drag");
+        }
     }
 
 

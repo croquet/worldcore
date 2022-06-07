@@ -7,7 +7,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
     TextWidgetActor, ButtonWidgetActor, GetViewService } from "@croquet/worldcore";
 
-import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3, BoxWidget3 } from "./ThreeWidget";
+import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3, BoxWidget3, DragWidget3 } from "./ThreeWidget";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
@@ -96,18 +96,18 @@ TestActor.register('TestActor');
 //-- TestPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class PercentTextWidget extends TextWidget3 {
-    constructor(options) {
-        super(options);
-        this.text = String(0);
-        this.subscribe("test", "percent", this.onTest)
+// class PercentTextWidget extends TextWidget3 {
+//     constructor(options) {
+//         super(options);
+//         this.text = String(0);
+//         // this.subscribe("test", "percent", this.onTest)
 
-    }
+//     }
 
-    onTest(p) {
-        this.text = (p*100).toFixed() + "%";
-    }
-}
+//     onTest(p) {
+//         this.text = (p*100).toFixed() + "%";
+//     }
+// }
 
 class TestPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_Widget3) {
     constructor(...args) {
@@ -132,26 +132,30 @@ class TestPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_Widget3
 
 
         const ts = new ToggleSet3();
-        this.toggle1 = new ToggleWidget3({name: "toggle1", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0.5,1], pivot: [0.5,1], translation: [0,-0.2,0]});
-        this.toggle2 = new ToggleWidget3({name: "toggle2", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0.5,1], pivot: [0.5,1], translation: [0,-1.7,0]});
+        this.toggle1 = new ToggleWidget3({name: "toggle1", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.2,-0.2,0]});
+        this.toggle2 = new ToggleWidget3({name: "toggle2", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.2,-1.7,0]});
 
-        this.slider = new SliderWidget3({name: "slider", parent: this.panel, anchor: [1,1], pivot: [1,1], translation: [-0.1,-0.1,0], step: 10, size: [0.2, 3], percent: 1});
-        this.slider.onPercent = (p) => { this.publish("test", "percent", p)};
+        this.slider = new SliderWidget3({name: "slider", parent: this.panel, anchor: [1,1], pivot: [1,1], translation: [-0.1,-0.1,0], step: 0, size: [0.2, 3], percent: 1});
 
-        this.pt = new PercentTextWidget({
+        this.pt = new TextWidget3({
             parent: this.panel,
             translation: [-0.5, -0.1, 0],
-            point: 128,
-            font: "serif",
+            point: 96,
+            text: "100%",
+            font: "sans-serif",
             size: [1,1],
             anchor: [1,1],
-            pivot: [1, 1]
+            pivot: [1,1]
+        });
+
+        this.pt.subscribe(this.slider.id, "percent", p => {
+            this.pt.text = (p*100).toFixed() + "%";
         });
 
 
         this.text = new TextWidget3({name: "canvas", parent: this.rootWidget, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1], size: [1,1], text: "Alternate Text String"});
 
-        this.box = new BoxWidget3({name: "box", parent: this.rootWidget, translation: [-3,2,0], color: [1,0,0], size: [2,2]});
+        this.drag = new DragWidget3({name: "drag", parent: this.rootWidget, translation: [-3,2,0]});
     }
 
     test2() {
