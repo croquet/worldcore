@@ -80,4 +80,6 @@ defineSmoothedPawnProperty from PM_Smoothed
 
 ### Added
 - PM_SmoothedDriver mixin
+### Changed
+- q_equals() defaults to epsilon = 0;
 
