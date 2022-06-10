@@ -1161,8 +1161,9 @@ export function q_slerp(a,b,t) {
     return [c0,c1,c2,c3];
 }
 
-export function q_equals(a,b,e = 0.0001) { // e is an epsilon
-    return Math.abs(q_dot(a,b)) + e >= 1;
+export function q_equals(a,b,e = 0) { // e is an epsilon
+    if (e) return Math.abs(q_dot(a,b)) + e >= 1;
+    return (a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]);
 }
 
 export function q_isZero(q) {
