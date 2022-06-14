@@ -57,12 +57,12 @@ export const PM_WidgetPointer = superclass => class extends superclass {
 
     constructor(...args) {
         super(...args)
-        this.subscribe("input", "pointerDown", this.doPointerDown);
-        this.subscribe("input", "pointerUp", this.doPointerUp);
-        this.subscribe("input", "pointerMove", this.doPointerMove);
+        this.subscribe("input", "pointerDown", this.widgetPointerDown);
+        this.subscribe("input", "pointerUp", this.widgetPointerUp);
+        this.subscribe("input", "pointerMove", this.widgetPointerMove);
     }
 
-    doPointerDown(e) {
+    widgetPointerDown(e) {
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const hit = this.controlRaycast(x,y);
@@ -74,7 +74,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
 
     }
 
-    doPointerUp(e) {
+    widgetPointerUp(e) {
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const hit = this.controlRaycast(x,y);
@@ -88,7 +88,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         this.hovered = null;
     }
 
-    doPointerMove(e) {
+    widgetPointerMove(e) {
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const hit = this.controlRaycast(x,y);

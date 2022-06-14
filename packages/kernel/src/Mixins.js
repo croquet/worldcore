@@ -405,53 +405,103 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 
 // This version of PM_Smoothed  sets the transform values instantly on the local pawn and only implements smoothing on other clients.
 
-export const PM_SmoothedDriver = superclass => class extends PM_Smoothed(superclass) {
+// export const PM_SmoothedDriver = superclass => class extends PM_Smoothed(superclass) {
 
-    constructor(...args) {
-        super(...args);
-        this.throttle = 100; //ms
-        this.ignore("scaleSet");
-        this.ignore("rotationSet");
-        this.ignore("translationSet");
-        this.ignore("positionSet");
+//     constructor(...args) {
+//         super(...args);
+//         this.throttle = 100; //ms
+//         this.ignore("scaleSet");
+//         this.ignore("rotationSet");
+//         this.ignore("translationSet");
+//         this.ignore("positionSet");
+//         }
+
+//         positionTo(v, q, throttle) {
+//             throttle = throttle || this.throttle;
+//             this._translation = v;
+//             this._rotation = q;
+//             this.isTranslating = false;
+//             this.isRotating = false;
+//             this.onLocalChanged();
+//             super.positionTo(v, q, throttle);
+//         }
+
+//         scaleTo(v, throttle) {
+//             throttle = throttle || this.throttle;
+//             this._scale = v;
+//             this.isScaling = false;
+//             this.onLocalChanged();
+//             super.scaleTo(v, throttle);
+//         }
+
+//         rotateTo(q, throttle) {
+//             throttle = throttle || this.throttle;
+//             this._rotation = q;
+//             this.isRotating = false;
+//             this.onLocalChanged();
+//             super.rotateTo(q, throttle);
+//         }
+
+//         translateTo(v, throttle)  {
+//             throttle = throttle || this.throttle;
+//             this._translation = v;
+//             this.isTranslating = false;
+//             this.onLocalChanged();
+//             super.translateTo(v, throttle);
+
+//         }
+
+//     }
+
+//------------------------------------------------------------------------------------------
+//-- PM_Driver -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// You can add this to a PM_Smoothed pawn to make it more responsive to direct user input.
+// Transform values are set instantly on the local pawn and smoothing only happens on remote instances.
+
+    export const PM_Driver = superclass => class extends superclass {
+
+        constructor(...args) {
+            super(...args);
+            this.throttle = 100; //ms
+            }
+
+            positionTo(v, q, throttle) {
+                throttle = throttle || this.throttle;
+                this._translation = v;
+                this._rotation = q;
+                this.isTranslating = false;
+                this.isRotating = false;
+                this.onLocalChanged();
+                super.positionTo(v, q, throttle);
+            }
+
+            scaleTo(v, throttle) {
+                throttle = throttle || this.throttle;
+                this._scale = v;
+                this.isScaling = false;
+                this.onLocalChanged();
+                super.scaleTo(v, throttle);
+            }
+
+            rotateTo(q, throttle) {
+                throttle = throttle || this.throttle;
+                this._rotation = q;
+                this.isRotating = false;
+                this.onLocalChanged();
+                super.rotateTo(q, throttle);
+            }
+
+            translateTo(v, throttle)  {
+                throttle = throttle || this.throttle;
+                this._translation = v;
+                this.isTranslating = false;
+                this.onLocalChanged();
+                super.translateTo(v, throttle);
+            }
+
         }
-
-        positionTo(v, q, throttle) {
-            throttle = throttle || this.throttle;
-            this._translation = v;
-            this._rotation = q;
-            this.isTranslating = false;
-            this.isRotating = false;
-            this.onLocalChanged();
-            super.positionTo(v, q, throttle);
-        }
-
-        scaleTo(v, throttle) {
-            throttle = throttle || this.throttle;
-            this._scale = v;
-            this.isScaling = false;
-            this.onLocalChanged();
-            super.scaleTo(v, throttle);
-        }
-
-        rotateTo(q, throttle) {
-            throttle = throttle || this.throttle;
-            this._rotation = q;
-            this.isRotating = false;
-            this.onLocalChanged();
-            super.rotateTo(q, throttle);
-        }
-
-        translateTo(v, throttle)  {
-            throttle = throttle || this.throttle;
-            this._translation = v;
-            this.isTranslating = false;
-            this.onLocalChanged();
-            super.translateTo(v, throttle);
-
-        }
-
-    }
 
 //------------------------------------------------------------------------------------------
 //-- Predictive ----------------------------------------------------------------------------
@@ -515,11 +565,6 @@ export const PM_Predictive = superclass => class extends PM_Smoothed(superclass)
         this.set({spin: q}, throttle)
     }
 
-    // setVelocitySpin(v, q, throttle){
-    //     // this.say("setVelocitySpin", vq, throttle);
-    //     this.set({velocity: v, spin: q}, throttle)
-    // }
-
     update(time, delta) {
 
         if (!q_isZero(this.spin)) {
@@ -553,95 +598,95 @@ export const PM_Avatar = PM_Predictive;
 // by mouse or other continous xy inputs. The avatar internally stores pitch and yaw information
 // that can be used for animation if necessary. Both pitch and yaw are smoothed in the pawn.
 
-//-- Actor ---------------------------------------------------------------------------------
+// //-- Actor ---------------------------------------------------------------------------------
 
-export const AM_MouselookAvatar = superclass => class extends AM_Avatar(superclass) {
+// export const AM_MouselookAvatar = superclass => class extends AM_Avatar(superclass) {
 
-    init(...args) {
-        this.listen("avatarLookTo", this.onLookTo);
-        super.init(...args);
-        this.set({rotation: q_euler(0, this.lookYaw, 0)});
-    }
+//     init(...args) {
+//         this.listen("avatarLookTo", this.onLookTo);
+//         super.init(...args);
+//         this.set({rotation: q_euler(0, this.lookYaw, 0)});
+//     }
 
-    get lookPitch() { return this._lookPitch || 0 };
-    get lookYaw() { return this._lookYaw || 0 };
+//     get lookPitch() { return this._lookPitch || 0 };
+//     get lookYaw() { return this._lookYaw || 0 };
 
-    onLookTo(e) {
-        this.set({lookPitch: e[0], lookYaw: e[1]});
-        this.rotateTo(q_euler(0, this.lookYaw, 0));
-    }
+//     onLookTo(e) {
+//         this.set({lookPitch: e[0], lookYaw: e[1]});
+//         this.rotateTo(q_euler(0, this.lookYaw, 0));
+//     }
 
-}
-RegisterMixin(AM_MouselookAvatar);
+// }
+// RegisterMixin(AM_MouselookAvatar);
 
-//-- Pawn ---------------------------------------------------------------------------------
+// //-- Pawn ---------------------------------------------------------------------------------
 
-export const PM_MouselookAvatar = superclass => class extends PM_Avatar(superclass) {
+// export const PM_MouselookAvatar = superclass => class extends PM_Avatar(superclass) {
 
-    constructor(...args) {
-        super(...args);
+//     constructor(...args) {
+//         super(...args);
 
-        this._lookPitch = this.actor.lookPitch;
-        this._lookYaw = this.actor.lookYaw;
+//         this._lookPitch = this.actor.lookPitch;
+//         this._lookYaw = this.actor.lookYaw;
 
-        this.lookThrottle = 50;  // MS between throttled lookTo events
-        this.lastlookTime = this.time;
+//         this.lookThrottle = 50;  // MS between throttled lookTo events
+//         this.lastlookTime = this.time;
 
-        this.lookOffset = [0,0,0]; // Vector displacing the camera from the avatar origin.
-    }
+//         this.lookOffset = [0,0,0]; // Vector displacing the camera from the avatar origin.
+//     }
 
-    get lookPitch() { return this._lookPitch}
-    get lookYaw() { return this._lookYaw}
+//     get lookPitch() { return this._lookPitch}
+//     get lookYaw() { return this._lookYaw}
 
-    lookTo(pitch, yaw) {
-        this.setLookAngles(pitch, yaw);
-        this.lastLookTime = this.time;
-        this.lastLookCache = null;
-        this.say("avatarLookTo", [pitch, yaw]);
-        this.say("lookGlobalChanged");
-    }
+//     lookTo(pitch, yaw) {
+//         this.setLookAngles(pitch, yaw);
+//         this.lastLookTime = this.time;
+//         this.lastLookCache = null;
+//         this.say("avatarLookTo", [pitch, yaw]);
+//         this.say("lookGlobalChanged");
+//     }
 
-    throttledLookTo(pitch, yaw) {
-        pitch = Math.min(Math.PI/2, Math.max(-Math.PI/2, pitch));
-        yaw = clampRad(yaw);
-        if (this.time < this.lastLookTime + this.lookThrottle) {
-            this.setLookAngles(pitch, yaw);
-            this.lastLookCache = {pitch, yaw};
-        } else {
-            this.lookTo(pitch,yaw);
-        }
-    }
+//     throttledLookTo(pitch, yaw) {
+//         pitch = Math.min(Math.PI/2, Math.max(-Math.PI/2, pitch));
+//         yaw = clampRad(yaw);
+//         if (this.time < this.lastLookTime + this.lookThrottle) {
+//             this.setLookAngles(pitch, yaw);
+//             this.lastLookCache = {pitch, yaw};
+//         } else {
+//             this.lookTo(pitch,yaw);
+//         }
+//     }
 
-    setLookAngles(pitch, yaw) {
-        this._lookPitch = pitch;
-        this._lookYaw = yaw;
-        this._rotation = q_euler(0, yaw, 0);
-    }
+//     setLookAngles(pitch, yaw) {
+//         this._lookPitch = pitch;
+//         this._lookYaw = yaw;
+//         this._rotation = q_euler(0, yaw, 0);
+//     }
 
-    get lookGlobal() {
-        const pitchRotation = q_axisAngle([1,0,0], this.lookPitch);
-        const yawRotation = q_axisAngle([0,1,0], this.lookYaw);
+//     get lookGlobal() {
+//         const pitchRotation = q_axisAngle([1,0,0], this.lookPitch);
+//         const yawRotation = q_axisAngle([0,1,0], this.lookYaw);
 
-        const modelLocal =  m4_scaleRotationTranslation(this.scale, yawRotation, this.translation)
-        let modelGlobal = modelLocal;
-        if (this.parent) modelGlobal = m4_multiply(modelLocal, this.parent.global);
+//         const modelLocal =  m4_scaleRotationTranslation(this.scale, yawRotation, this.translation)
+//         let modelGlobal = modelLocal;
+//         if (this.parent) modelGlobal = m4_multiply(modelLocal, this.parent.global);
 
 
-        const m0 = m4_translation(this.lookOffset);
-        const m1 = m4_rotationQ(pitchRotation);
-        const m2 = m4_multiply(m1, m0);
-        return m4_multiply(m2, modelGlobal);
-    }
+//         const m0 = m4_translation(this.lookOffset);
+//         const m1 = m4_rotationQ(pitchRotation);
+//         const m2 = m4_multiply(m1, m0);
+//         return m4_multiply(m2, modelGlobal);
+//     }
 
-    update(time, delta) {
-        super.update(time, delta);
+//     update(time, delta) {
+//         super.update(time, delta);
 
-        if (this.lastLookCache && this.time > this.lastLookTime + this.lookThrottle) {
-            this.lookTo(this.lastLookCache.pitch, this.lastLookCache.yaw);
-        }
+//         if (this.lastLookCache && this.time > this.lastLookTime + this.lookThrottle) {
+//             this.lookTo(this.lastLookCache.pitch, this.lastLookCache.yaw);
+//         }
 
-    }
+//     }
 
-}
+// }
 
 

@@ -79,7 +79,11 @@ defineSmoothedPawnProperty from PM_Smoothed
 ## Pending
 
 ### Added
-- PM_SmoothedDriver mixin
+- PM_Driver mixin
+### Removed
+- PM_MouselookAvatar mixin
 ### Changed
 - q_equals() defaults to epsilon = 0;
+## Fixed
+- InputManager generates pointerDelta events during a drag.
 
