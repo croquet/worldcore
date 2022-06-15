@@ -1,6 +1,6 @@
 // THREE.js widget system.
 
-import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply, View, viewRoot } from "@croquet/worldcore";
+import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply, View, viewRoot, v3_add } from "@croquet/worldcore";
 
 let wm;
 
@@ -89,6 +89,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
     }
 
     widgetPointerMove(e) {
+        if (this.service("InputManager").inPointerLock) return;
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const hit = this.controlRaycast(x,y);
@@ -148,6 +149,11 @@ export const PM_Widget3 = superclass => class extends superclass {
         this.rootWidget = new Widget3({local: this.global});
 
         this.listen("viewGlobalChanged", this.moveRoot);
+    }
+
+    destroy() {
+        super.destroy();
+        if (this.rootWidget) this.rootWidget.destroy();
     }
 
     moveRoot() {
@@ -440,26 +446,6 @@ export class BoxWidget3 extends Widget3 {
 
 }
 
-
-//------------------------------------------------------------------------------------------
-//-- VisibleWidget -------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// export class VisibleWidget3 extends PlaneWidget3  {
-
-//     // constructor(options) {
-//     //     super(options);
-//     //     if (this.mesh) this.mesh.visible = this.visible;
-//     // }
-
-//     // refreshVisibility() {
-//     //     super.refreshVisibility();
-//     //     if (this.mesh) this.mesh.visible = this.visible;
-//     // }
-
-
-// }
-
 //------------------------------------------------------------------------------------------
 //-- ImageWidget ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -622,7 +608,7 @@ export class TextWidget3 extends CanvasWidget3 {
 //-- ControlWidget -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-function ParentControl(w) {
+export function ParentControl(w) {
     do {
         if (w instanceof ControlWidget3) return w;
         w = w.parent
@@ -813,8 +799,6 @@ export class SliderWidget3 extends ControlWidget3 {
             y = (y*this.drag.size[1] - this.dragMargin) / this.size[1]
         }
 
-
-
         if(this.isHorizontal) {
             this.percent = x;
         } else {
@@ -837,32 +821,59 @@ export class DragWidget3 extends ControlWidget3 {
 
     constructor(options) {
         super(options);
-        const dragSize = [2,2];
-        this.knob = new BoxWidget3({parent: this.active, size: [1,1], thick:1, color: [0,0,1], collidable: true});
-        this.drag = new PlaneWidget3({parent: this.active, size: dragSize, visible: true, collidable:true, color: [1,0,1]});
+        this.dragSize = [100,100];
+        this.knob = new BoxWidget3({parent: this.active, size: [0.3,0.3], thick:0.3, color: [0,0,1], collidable: true});
+        this.drag = new PlaneWidget3({parent: this.active, size: this.dragSize, visible: false, collidable:false, color: [1,0,1]});
+        this.pawnStart = ParentEditor(this).pawn.translation;
 
     }
 
     onNormal() {
         this.knob.color = [0,0,1];
         this.knob.collidable = true;
+        this.drag.collidable = false;
     }
 
     onHilite() {
-        this.knob.color = [0,1,1];
+        this.knob.color = [0,0.5,1];
     }
 
     onPress(hit) {
+        this.knob.color = [0.9,1,1];
         this.knob.collidable = false;
         this.drag.collidable = true;
         if(hit.widget === this.knob) {
-            console.log("knob");
         } else if (hit.widget = this.drag) {
-            console.log("drag");
+            let x = this.dragSize[0] * (hit.xy[0]-0.5);
+            let y = this.dragSize[1] * (hit.xy[1]-0.5);
+            this.knob.translation = [x,y,0];
+            const pt0 = v3_add(this.pawnStart, this.knob.translation);
+            ParentEditor(this).pawn.translateTo(pt0);
         }
     }
 
+}
 
+//------------------------------------------------------------------------------------------
+//-- EditorWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export function ParentEditor(w) {
+    do {
+        if (w instanceof EditorWidget3) return w;
+        w = w.parent
+    } while(w)
+    return null;
+}
+
+export class EditorWidget3 extends Widget3 {
+    constructor(options) {
+        super(options);
+        if (this.pawn) this.local = this.pawn.global;
+    }
+
+    get pawn() { return this._pawn }
+    set pawn(p) { this._pawn = p }
 }
 
 

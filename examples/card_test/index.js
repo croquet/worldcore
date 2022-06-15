@@ -7,7 +7,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
     TextWidgetActor, ButtonWidgetActor, GetViewService, UIManager, ButtonWidget, TextWidget, Widget, AM_Smoothed, PM_Smoothed, PM_Driver, v3_scale, v3_add, TAU, v3_rotate, toDeg, q_multiply, m4_multiply, m4_scaleRotationTranslation } from "@croquet/worldcore";
 
-import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3, BoxWidget3, DragWidget3 } from "./ThreeWidget";
+import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3, BoxWidget3, DragWidget3, EditorWidget3 } from "./ThreeWidget";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
@@ -131,7 +131,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_Player, PM_Th
 //-- TestActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Predictive) {
+class TestActor extends mix(Actor).with(AM_Smoothed) {
     get pawn() {return TestPawn}
 
 }
@@ -154,7 +154,7 @@ TestActor.register('TestActor');
 //     }
 // }
 
-class TestPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_Widget3) {
+class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) {
     constructor(...args) {
         super(...args);
         console.log("test pawn constructor");
@@ -172,9 +172,10 @@ class TestPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_Widget3
 
     test() {
         console.log("bTest");
+
+        this.editor = new EditorWidget3({name: "editor", pawn: this});
+
         this.panel = new ImageWidget3({name: "panel",parent: this.rootWidget, color: [1,1,1], size: [6,4], translation: [5,2,0], url: llama});
-
-
 
         const ts = new ToggleSet3();
         this.toggle1 = new ToggleWidget3({name: "toggle1", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.2,-0.2,0]});
@@ -200,18 +201,15 @@ class TestPawn extends mix(Pawn).with(PM_Predictive, PM_ThreeVisible, PM_Widget3
 
         this.text = new TextWidget3({name: "canvas", parent: this.rootWidget, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1], size: [1,1], text: "Alternate Text String"});
 
-        this.drag = new DragWidget3({name: "drag", parent: this.rootWidget, translation: [-3,2,0]});
+        this.drag = new DragWidget3({name: "drag", parent: this.editor, translation: [-3,2,0]});
     }
 
     test2() {
         console.log("nTest");
-        this.panel.destroy();
-
     }
 
     test3() {
         console.log("mTest");
-        this.slider.percent = 1;
     }
 }
 
@@ -308,14 +306,14 @@ class MyModelRoot extends ModelRoot {
         this.testActor = TestActor.create({translation: [0,0,-3]});
 
 
-        // this.subscribe("input", "zDown", this.test0);
+        this.subscribe("input", "mDown", this.test0);
         // this.subscribe("input", "xDown", this.test1);
         // this.subscribe("input", "cDown", this.test2);
     }
 
     test0() {
-        console.log("test0");
-        this.testActor.set({translation: [-1,0,-3]});
+        console.log("mTest");
+        // this.testActor.destroy();
     }
 
     test1() {
