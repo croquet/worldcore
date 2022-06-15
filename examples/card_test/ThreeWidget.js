@@ -1,6 +1,6 @@
 // THREE.js widget system.
 
-import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply, View, viewRoot, v3_add } from "@croquet/worldcore";
+import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply, View, viewRoot, v3_add, TAU, toDeg, q_axisAngle, q_multiply, q_lookAt, v3_normalize, v3_sub, m4_getTranslation } from "@croquet/worldcore";
 
 let wm;
 
@@ -157,6 +157,7 @@ export const PM_Widget3 = superclass => class extends superclass {
     }
 
     moveRoot() {
+        console.log("move root");// xxx somehow this is disabling the billboards
         this.rootWidget.local = this.global;
     }
 
@@ -282,6 +283,8 @@ export class Widget3 extends View {
     get collidable() { return this._collidable }
     set collidable(b) { this._collidable = b; wm.clearColliders();}
     get collider() { if (this.collidable && ParentControl(this).visible) return this.mesh }
+    get billboard() { return this._billboard }
+    set billboard(b) { this._billboard = b; }
 
     get trueSize() {
         const out = [...this.size]
@@ -315,6 +318,21 @@ export class Widget3 extends View {
     }
 
     update(time,delta) {
+        if (this.billboard) {
+            console.log("bb");
+            const render = GetViewService("ThreeRenderManager");
+            const cameraMatrix = render.camera.matrix;
+            let v = new THREE.Vector3().setFromMatrixPosition(cameraMatrix);
+            const cameraXZ = [v.x, 0, v.z];
+            const forward = [0,0,1];
+            const up = [0,1,0];
+            const widgetXZ = m4_getTranslation(this.global);
+            widgetXZ[1] = 0;
+
+            const target = v3_normalize(v3_sub(cameraXZ, widgetXZ));
+            const q = q_lookAt(forward, up, target);
+            this.rotation = q
+        }
         if (this.children) this.children.forEach(child => child.update(time,delta));
     }
 
@@ -602,6 +620,8 @@ export class TextWidget3 extends CanvasWidget3 {
         });
     }
 
+
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -825,6 +845,7 @@ export class DragWidget3 extends ControlWidget3 {
         this.knob = new BoxWidget3({parent: this.active, size: [0.3,0.3], thick:0.3, color: [0,0,1], collidable: true});
         this.drag = new PlaneWidget3({parent: this.active, size: this.dragSize, visible: false, collidable:false, color: [1,0,1]});
         this.pawnStart = ParentEditor(this).pawn.translation;
+        // this.startScale = ParentEditor(this).pawn.scale;
 
     }
 
@@ -848,7 +869,74 @@ export class DragWidget3 extends ControlWidget3 {
             let y = this.dragSize[1] * (hit.xy[1]-0.5);
             this.knob.translation = [x,y,0];
             const pt0 = v3_add(this.pawnStart, this.knob.translation);
-            ParentEditor(this).pawn.translateTo(pt0);
+            ParentEditor(this).pawn.translateTo(pt0, 100);
+        }
+    }
+
+    // onPress(hit) {
+    //     this.knob.color = [0.9,1,1];
+    //     this.knob.collidable = false;
+    //     this.drag.collidable = true;
+    //     if(hit.widget === this.knob) {
+    //     } else if (hit.widget = this.drag) {
+    //         let x = this.dragSize[0] * (hit.xy[0]-0.5);
+    //         let y = this.dragSize[1] * (hit.xy[1]-0.5);
+    //         this.knob.translation = [x,y,0];
+    //         // const pt0 = v3_add(this.pawnStart, this.knob.translation);
+
+    //         const s = (this.local[0] - x) / this.local[0];
+
+    //         // const s = 1
+
+    //         console.log(s);
+    //         ParentEditor(this).pawn.scaleTo([s,s,s], 100);
+    //     }
+    // }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- SpinWidget ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class SpinWidget3 extends ControlWidget3 {
+
+    constructor(options) {
+        super(options);
+        this.dragSize = [2,2];
+        this.knob = new BoxWidget3({parent: this.active, size: [0.3,0.3], thick:0.3, color: [0,0,1], collidable: true});
+        this.drag = new PlaneWidget3({parent: this.active, size: this.dragSize, visible: false, collidable:false, color: [1,0,1]});
+        this.pawnStart = ParentEditor(this).pawn.translation;
+
+    }
+
+    onNormal() {
+        this.knob.color = [0,0,1];
+        this.knob.collidable = true;
+        this.drag.collidable = false;
+    }
+
+    onHilite() {
+        this.knob.color = [0,0.5,1];
+    }
+
+    onPress(hit) {
+        this.knob.color = [0.9,1,1];
+        this.knob.collidable = false;
+        this.drag.collidable = true;
+        if(hit.widget === this.knob) {
+        } else if (hit.widget = this.drag) {
+            let x = TAU * (hit.xy[0]- 0.5);
+            let y = TAU * (hit.xy[1] - 0.5);
+            // console.log(toDeg(x));
+            const q0 = q_axisAngle([0,1,0],x);
+            const q1 = q_axisAngle([-1,0,0], y);
+            const q2 = q_multiply(q1,q0);
+            this.knob.rotation = q0;
+            ParentEditor(this).pawn.rotateTo(q0, 100);
+            // this.knob.translation = [x,y,0];
+            // const pt0 = v3_add(this.pawnStart, this.knob.translation);
+            // ParentEditor(this).pawn.translateTo(pt0, 100);
         }
     }
 
@@ -877,6 +965,36 @@ export class EditorWidget3 extends Widget3 {
 }
 
 
+// //------------------------------------------------------------------------------------------
+// //-- BillboardWidget --------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
 
+
+// export class BillboardWidget3 extends PlaneWidget3 {
+//     constructor(options) {
+//         super(options);
+
+//     }
+
+//     // update(time, delta) {
+//     //     if (this.billboard) {
+//     //             const render = GetViewService("ThreeRenderManager");
+//     //             const cameraMatrix = render.camera.matrix;
+//     //             let v = new THREE.Vector3().setFromMatrixPosition(cameraMatrix);
+//     //             const cameraXZ = [v.x, 0, v.z];
+//     //             const forward = [0,0,1];
+//     //             const up = [0,1,0];
+//     //             const widgetXZ = m4_getTranslation(this.global);
+//     //             widgetXZ[1] = 0;
+
+//     //             const target = v3_normalize(v3_sub(cameraXZ, widgetXZ));
+//     //             const q = q_lookAt(forward, up, target );
+//     //             this.rotation = q
+//     //     }
+//     //     super.update(time, delta);
+//     // }
+
+
+// }
 
 
