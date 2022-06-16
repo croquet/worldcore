@@ -304,7 +304,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!");
+        console.log("Start root model!!!!!");
         this.level = LevelActor.create();
         this.testActor = TestActor.create({translation: [0,0,-3]});
 

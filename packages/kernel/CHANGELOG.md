@@ -4,6 +4,17 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.3.1] - 2022-6-16
+### Added
+- PM_Driver mixin
+### Removed
+- PM_MouselookAvatar mixin
+### Changed
+- q_equals() defaults to epsilon = 0;
+## Fixed
+- InputManager generates pointerDelta events during a drag.
+
 ## [1.3.0] - 2022-5-3
 ### Changed
 - Parent/child relationships are included in the base functionality of Actors and Pawns
@@ -78,12 +89,5 @@ defineSmoothedPawnProperty from PM_Smoothed
 
 ## Pending
 
-### Added
-- PM_Driver mixin
-### Removed
-- PM_MouselookAvatar mixin
-### Changed
-- q_equals() defaults to epsilon = 0;
-## Fixed
-- InputManager generates pointerDelta events during a drag.
+
 

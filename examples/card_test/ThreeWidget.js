@@ -157,7 +157,7 @@ export const PM_Widget3 = superclass => class extends superclass {
     }
 
     moveRoot() {
-        console.log("move root");// xxx somehow this is disabling the billboards
+        // console.log("move root");// xxx somehow this is disabling the billboards
         this.rootWidget.local = this.global;
     }
 
@@ -319,7 +319,7 @@ export class Widget3 extends View {
 
     update(time,delta) {
         if (this.billboard) {
-            console.log("bb");
+            // console.log("bb");
             const render = GetViewService("ThreeRenderManager");
             const cameraMatrix = render.camera.matrix;
             let v = new THREE.Vector3().setFromMatrixPosition(cameraMatrix);
