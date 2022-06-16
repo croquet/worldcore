@@ -1,5 +1,11 @@
 {
   "name": "worldcore",
+  "description": "3D World Engine for Croquet",
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
+  "homepage": "https://croquet.io/docs/worldcore/",
+  "bugs": "https://github.com/croquet/worldcore/issues",
+  "comment": "This mono repo has various sub-repositories, each of which is a separate package.  See the README.md file for more information.",
   "private": true,
   "devDependencies": {
     "lerna": "^4.0.0"
