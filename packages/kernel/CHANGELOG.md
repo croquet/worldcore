@@ -5,27 +5,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.3.1] - 2022-6-16
-### Added
-- PM_Driver mixin
-### Removed
-- PM_MouselookAvatar mixin
-### Changed
-- q_equals() defaults to epsilon = 0;
-## Fixed
-- InputManager generates pointerDelta events during a drag.
-
-## [1.3.0] - 2022-5-3
+## [1.3.0] - 2022-6-16
 ### Changed
 - Parent/child relationships are included in the base functionality of Actors and Pawns
 - Actors aren't required to have Pawns
 - PM_Dynamic rolled into base Pawn class.
 - Pawns have a throttle parameter in their say() method by default.
 - The event published by Actor set() is "propertySet" instead of "_property".
+- q_equals() defaults to epsilon = 0;
+
+## Fixed
+- InputManager generates pointerDelta events during a drag.
 
 ### Added
 - Pawn set() -- you can set actor options from the Pawn.
 - PlayerManager destroyPlayer() -- override to customize player destruction
+- PM_Driver mixin
+
+### Removed
+- PM_MouselookAvatar mixin
 
 ## [1.2.0] - 2022-4-20
 ### Added
