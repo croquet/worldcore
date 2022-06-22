@@ -1,6 +1,6 @@
 // THREE.js widget system.
 
-import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply, View, viewRoot, v3_add, TAU, toDeg, q_axisAngle, q_multiply, q_lookAt, v3_normalize, v3_sub, m4_getTranslation } from "@croquet/worldcore";
+import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply, View, viewRoot, v3_add, TAU, toDeg, q_axisAngle, q_multiply, q_lookAt, v3_normalize, v3_sub, m4_getTranslation, v3_transform, v3_rotate, m4_getRotation } from "@croquet/worldcore";
 
 let wm;
 
@@ -157,7 +157,6 @@ export const PM_Widget3 = superclass => class extends superclass {
     }
 
     moveRoot() {
-        // console.log("move root");// xxx somehow this is disabling the billboards
         this.rootWidget.local = this.global;
     }
 
@@ -319,19 +318,18 @@ export class Widget3 extends View {
 
     update(time,delta) {
         if (this.billboard) {
-            // console.log("bb");
             const render = GetViewService("ThreeRenderManager");
             const cameraMatrix = render.camera.matrix;
             let v = new THREE.Vector3().setFromMatrixPosition(cameraMatrix);
             const cameraXZ = [v.x, 0, v.z];
-            const forward = [0,0,1];
+            let forward = [0,0,1];
+            if (this.parent) forward = v3_rotate([0,0,1], m4_getRotation(this.parent.global));
             const up = [0,1,0];
             const widgetXZ = m4_getTranslation(this.global);
             widgetXZ[1] = 0;
-
             const target = v3_normalize(v3_sub(cameraXZ, widgetXZ));
             const q = q_lookAt(forward, up, target);
-            this.rotation = q
+            this.rotation = q;
         }
         if (this.children) this.children.forEach(child => child.update(time,delta));
     }
@@ -906,7 +904,7 @@ export class SpinWidget3 extends ControlWidget3 {
         this.dragSize = [2,2];
         this.knob = new BoxWidget3({parent: this.active, size: [0.3,0.3], thick:0.3, color: [0,0,1], collidable: true});
         this.drag = new PlaneWidget3({parent: this.active, size: this.dragSize, visible: false, collidable:false, color: [1,0,1]});
-        this.pawnStart = ParentEditor(this).pawn.translation;
+        this.pawnStart = ParentEditor(this).pawn.rotation;
 
     }
 
@@ -926,17 +924,14 @@ export class SpinWidget3 extends ControlWidget3 {
         this.drag.collidable = true;
         if(hit.widget === this.knob) {
         } else if (hit.widget = this.drag) {
-            let x = TAU * (hit.xy[0]- 0.5);
+            let x = TAU * (hit.xy[0] - 0.5);
             let y = TAU * (hit.xy[1] - 0.5);
-            // console.log(toDeg(x));
             const q0 = q_axisAngle([0,1,0],x);
             const q1 = q_axisAngle([-1,0,0], y);
             const q2 = q_multiply(q1,q0);
+            const q3 = q_multiply( this.pawnStart,q0);
             this.knob.rotation = q0;
             ParentEditor(this).pawn.rotateTo(q0, 100);
-            // this.knob.translation = [x,y,0];
-            // const pt0 = v3_add(this.pawnStart, this.knob.translation);
-            // ParentEditor(this).pawn.translateTo(pt0, 100);
         }
     }
 

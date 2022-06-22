@@ -614,6 +614,10 @@ export function m4_getTranslation(m) {
     return [m[12], m[13], m[14]];
 }
 
+// export function m4_getTranslation(m) {
+//     return [m[12]/m[15], m[13]/m[15], m[14]/m[15]];
+// }
+
 // Accepts a scalar or a 3 vector
 export function m4_scale(s) {
     if (s instanceof Array) {

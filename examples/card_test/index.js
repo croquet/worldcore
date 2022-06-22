@@ -5,7 +5,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     AM_Predictive, PM_Predictive,
     AM_PointerTarget, PM_Pointer, PM_PointerTarget, CardActor, CardPawn,
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
-    TextWidgetActor, ButtonWidgetActor, GetViewService, UIManager, ButtonWidget, TextWidget, Widget, AM_Smoothed, PM_Smoothed, PM_Driver, v3_scale, v3_add, TAU, v3_rotate, toDeg, q_multiply, m4_multiply, m4_scaleRotationTranslation } from "@croquet/worldcore";
+    TextWidgetActor, ButtonWidgetActor, GetViewService, UIManager, ButtonWidget, TextWidget, Widget, AM_Smoothed, PM_Smoothed, PM_Driver, v3_scale, v3_add, TAU, v3_rotate, toDeg, q_multiply, m4_multiply, m4_scaleRotationTranslation, q_identity } from "@croquet/worldcore";
 
 import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3, BoxWidget3, DragWidget3, EditorWidget3, SpinWidget3, BillboardWidget3 } from "./ThreeWidget";
 
@@ -154,7 +154,7 @@ TestActor.register('TestActor');
 //     }
 // }
 
-class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) {
+class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeVisible, PM_Widget3) {
     constructor(...args) {
         super(...args);
         console.log("test pawn constructor");
@@ -172,43 +172,50 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) 
 
     test() {
         console.log("bTest");
+        if (this.ui) return;
 
-        this.editor = new EditorWidget3({name: "editor", pawn: this});
+        this.ui = new Widget3({parent: this.rootWidget})
 
-        this.panel = new ImageWidget3({name: "panel",parent: this.rootWidget, color: [1,1,1], size: [6,4], translation: [5,2,0], url: llama, billboard: false});
+        this.editor = new EditorWidget3({name: "editor", pawn: this, billboard: true});
 
-        const ts = new ToggleSet3();
-        this.toggle1 = new ToggleWidget3({name: "toggle1", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.2,-0.2,0]});
-        this.toggle2 = new ToggleWidget3({name: "toggle2", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.2,-1.7,0]});
+        // this.panel = new ImageWidget3({name: "panel", parent: this.ui, color: [1,1,1], size: [6,4], translation: [5,2,0], url: llama, billboard: false});
 
-        this.slider = new SliderWidget3({name: "slider", parent: this.panel, anchor: [1,1], pivot: [1,1], translation: [-0.1,-0.1,0], step: 0, size: [0.2, 3], percent: 1});
+        // const ts = new ToggleSet3();
+        // this.toggle1 = new ToggleWidget3({name: "toggle1", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.2,-0.2,0]});
+        // this.toggle2 = new ToggleWidget3({name: "toggle2", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.2,-1.7,0]});
 
-        this.pt = new TextWidget3({
-            parent: this.panel,
-            translation: [-0.5, -0.1, 0],
-            point: 96,
-            text: "100%",
-            font: "sans-serif",
-            size: [1,1],
-            anchor: [1,1],
-            pivot: [1,1]
-        });
+        // this.slider = new SliderWidget3({name: "slider", parent: this.panel, anchor: [1,1], pivot: [1,1], translation: [-0.1,-0.1,0], step: 0, size: [0.2, 3], percent: 1});
 
-        this.pt.subscribe(this.slider.id, "percent", p => {
-            this.pt.text = (p*100).toFixed() + "%";
-        });
+        // this.pt = new TextWidget3({
+        //     parent: this.panel,
+        //     translation: [-0.5, -0.1, 0],
+        //     point: 96,
+        //     text: "100%",
+        //     font: "sans-serif",
+        //     size: [1,1],
+        //     anchor: [1,1],
+        //     pivot: [1,1]
+        // });
+
+        // this.pt.subscribe(this.slider.id, "percent", p => {
+        //     this.pt.text = (p*100).toFixed() + "%";
+        // });
 
 
-        this.text = new TextWidget3({name: "canvas", parent: this.rootWidget, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1], size: [1,1], text: "Alternate Text String", billboard: false});
+        // this.text = new TextWidget3({name: "canvas", parent: this.ui, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1], size: [1,1], text: "Alternate Text String", billboard: false});
 
-        this.billboard = new ImageWidget3({name: "billboard",parent: this.rootWidget, color: [1,1,1], size: [1,1], translation: [-1,1.5,0], url: diana, billboard: true});
+        this.billboard = new ImageWidget3({name: "billboard",parent: this.ui, color: [1,1,1], size: [1,1], translation: [-1,1.5,0], url: diana, billboard: true});
 
-        // this.drag = new DragWidget3({name: "drag", parent: this.editor, translation: [-3,2,0]});
-        this.Spin = new SpinWidget3({name: "spin", parent: this.editor, translation: [-3,2,0]});
+        this.drag = new DragWidget3({name: "drag", parent: this.editor, translation: [-3,2,0]});
+        // this.spin = new SpinWidget3({name: "spin", parent: this.editor, translation: [-3,2,0]});
     }
 
     test2() {
         console.log("nTest");
+        this.ui.destroy();
+        this.ui = null;
+        this.editor.destroy();
+        this.editor = null;
     }
 
     test3() {
@@ -304,13 +311,13 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!!");
+        console.log("Start root model!!!!!!");
         this.level = LevelActor.create();
-        this.testActor = TestActor.create({translation: [0,0,-3]});
+        this.testActor = TestActor.create({translation: [0,0,0]});
 
 
-        this.subscribe("input", "mDown", this.test0);
-        // this.subscribe("input", "xDown", this.test1);
+        // this.subscribe("input", "mDown", this.test0);
+        this.subscribe("input", "xDown", this.test1);
         // this.subscribe("input", "cDown", this.test2);
     }
 
@@ -322,7 +329,8 @@ class MyModelRoot extends ModelRoot {
     test1() {
         console.log("test1");
         // this.testActor.set({translation: [0,0,-3]});
-        this.testActor.translateTo([0,0,-3]);
+        this.testActor.rotateTo(q_identity());
+        this.testActor.translateTo([0,0,0]);
     }
 
     test2() {
