@@ -71,6 +71,8 @@ export class Actor extends WorldcoreModel {
         }
     }
 
+    get name() {return this._name || "Actor"}
+
     addChild(child) {
         if (!this.children) this.children = new Set();
         this.children.add(child);

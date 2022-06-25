@@ -146,7 +146,7 @@ export const PM_Widget3 = superclass => class extends superclass {
 
     constructor(...args) {
         super(...args);
-        this.rootWidget = new Widget3({local: this.global});
+        this.rootWidget = new Widget3({local: this.global, pawn: this});
 
         this.listen("viewGlobalChanged", this.moveRoot);
     }
@@ -184,21 +184,20 @@ export class Widget3 extends View {
         super(viewRoot.model);
         this.set(options);
         wm.add(this);
-        this.mesh = this.buildMesh();
-        const render = GetViewService("ThreeRenderManager");
-        if (this.mesh) render.scene.add(this.mesh);
-
+        // this.mesh = this.buildMesh();
+        // const render = GetViewService("ThreeRenderManager");
+        // if (this.mesh) render.scene.add(this.mesh);
     }
 
-    buildMesh() {return null};
+    // buildMesh() {return null};
 
     destroy() {
-        const render = GetViewService("ThreeRenderManager");
-        if (this.mesh) render.scene.remove(this.mesh);
+        // const render = GetViewService("ThreeRenderManager");
+        // if (this.mesh) render.scene.remove(this.mesh);
         this.detach();
         new Set(this.children).forEach(child => child.destroy());
         this.parent = null;
-        wm.clearColliders();
+        // wm.clearColliders();
         wm.delete(this);
     }
 
@@ -217,6 +216,13 @@ export class Widget3 extends View {
 
     get depth(){ if (this.parent) {return this.parent.depth+1} else {return 0} }
     get root() { if (this.parent) {return this.parent.root} else {return this} }
+
+    get pawn() {
+        if (this._pawn) return this._pawn;
+        if (this.parent) return this.parent.pawn;
+        return null;
+    }
+    set pawn(p) { this._pawn = p }
 
     get scale() { return this._scale || [1,1,1] }
     set scale(v) { this._scale = v; this.localChanged() }
@@ -285,6 +291,21 @@ export class Widget3 extends View {
     get billboard() { return this._billboard }
     set billboard(b) { this._billboard = b; }
 
+    get width() { return this._width|| 0;}  // Overrides for the automatic resize in layout widgets.
+    set width(n) { this._width = n; }
+    get height() { return this._height|| 0;}
+    set height(n) { this._height = n; }
+
+    get lit() { return this._lit }
+    set lit(b) { this._lit = b; }
+
+    get opacity() {
+        if (this._opacity) return this._opacity;
+        if (this.parent) return this.parent.opacity;
+        return 1;
+    }
+    set opacity(n) { this._opacity = n; }
+
     get trueSize() {
         const out = [...this.size]
         if (this.parent) {
@@ -334,6 +355,184 @@ export class Widget3 extends View {
         if (this.children) this.children.forEach(child => child.update(time,delta));
     }
 
+}
+
+
+
+//------------------------------------------------------------------------------------------
+//-- LayoutWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class LayoutWidget3 extends Widget3 {
+    constructor(options) {
+        super(options);
+        this.slots = [];
+    }
+
+    get size() { return super.size }
+    set size(v) { super.size = v; this.needsResize = true}
+    get margin() { return this._margin || 0 }
+    set margin(n) { this._margin = n; this.needsResize = true}
+
+    addChild(child) {
+        super.addChild(child);
+        this.needsResize = true;
+    }
+
+    resize() {}
+
+    update(time, delta) {
+        super.update(time, delta);
+        if (this.needsResize) this.resize();
+        this.needsResize = false;
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- HorizontalWidget ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class HorizontalWidget3 extends LayoutWidget3 {
+
+    resize() {
+        console.log("resize");
+        if (!this.children) return;
+        let widthSum = Math.max(0, (this.children.size - 1) * this.margin);
+        let autoCount = 0;
+        this.children.forEach(child => {
+            if (child.width) {
+                widthSum += child.width;
+            } else {
+                autoCount++;
+            }
+        });
+
+        let autoWidth = 0;
+        if (autoCount > 0) autoWidth = Math.max(0, (this.trueSize[0] - widthSum) / autoCount);
+        let offset = -this.trueSize[0]/2;
+        console.log(autoWidth);
+        this.children.forEach(child => {
+            let width = autoWidth;
+            if (child.width) width = child.width;
+            child.set({autoSize: [0,1], size:[width, 0], translation:[offset+width/2,0,0]});
+            console.log(child.trueSize);
+            offset += width + this.margin;
+        });
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- VerticalWidget ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class VerticalWidget3 extends LayoutWidget3 {
+
+    resize() {
+        if (!this.children) return;
+        let heightSum = Math.max(0, (this.slots.length - 1) * this.margin);
+        let autoCount = 0;
+
+        this.children.forEach(child => {
+            if (child.height) {
+                heightSum += child.height;
+            } else {
+                autoCount++;
+            }
+        });
+
+        let autoHeight = 0;
+        if (autoCount > 0) autoHeight = Math.max(0, (this.trueSize[1] - heightSum) / autoCount);
+        let offset = this.trueSize[1]/2;
+
+        this.children.forEach(child => {
+            let height = autoHeight;
+            if (child.height) height = child.height;
+            child.set({autoSize: [1,0], size:[0, height], translation: [0, offset-height/2,0]});
+            // child.set({
+            //     autoSize: [1,0],
+            //     size:[0, height],
+            //     translation: [0, offset-height/2,0]
+            // });
+            offset -= height + this.margin;
+        });
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- RenderWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class RenderWidget3 extends Widget3 {
+
+    constructor(options) {
+        super(options);
+        this.buildGeometry();
+        this.buildMaterial();
+        this.buildMesh();
+    }
+
+    get parent() { return super.parent; }
+    set parent(p) { super.parent = p; this.buildMaterial()} // May change sorting order of coplanar widgets.
+
+    get color() { return this._color || [1,1,1];}
+    set color(v) { this._color = v; this.buildMaterial(); }
+
+    buildGeometry() {
+        if (this.geometry) this.geometry.dispose();
+        this.geometry = null;
+     }
+
+    buildMaterial() {
+        if (this.material && this.material.map) this.material.map.dispose();
+        if (this.material) this.material.dispose();
+        // this.material = null;
+
+        this.material = this.lit ? new THREE.MeshStandardMaterial({color: new THREE.Color(...this.color), transparent: true, opacity: this.opacity})
+        : new THREE.MeshBasicMaterial({color: new THREE.Color(...this.color), transparent: true, opacity: this.opacity});
+         this.material.polygonOffset = true;
+         this.material.polygonOffsetFactor = -this.depth;
+         this.material.polygonOffsetUnits = -this.depth;
+         if (this.mesh) this.mesh.material = this.material;
+    }
+
+    buildMesh() {
+        const render = GetViewService("ThreeRenderManager");
+        if (this.mesh) render.scene.remove(this.mesh);
+
+        this.mesh = new THREE.Mesh( this.geometry, this.material );
+        this.mesh.visible = this.visible;
+        this.mesh.widget = this;
+        this.mesh.matrixAutoUpdate = false;
+        this.mesh.matrix.fromArray(this.global);
+        render.scene.add(this.mesh);
+    }
+
+    destroy() {
+        super.destroy();
+        wm.clearColliders();
+        const render = GetViewService("ThreeRenderManager");
+        if (this.mesh) render.scene.remove(this.mesh);
+        if (this.geometry)this.geometry.dispose();
+        if (this.material)this.material.dispose();
+        if (this.material && this.material.map) this.material.map.dispose();
+    }
+
+    globalChanged() {
+        super.globalChanged();
+        this.isDirty = true;
+    }
+
+    update(time,delta) {
+        super.update(time,delta)
+        if (this.mesh && this.isDirty) {
+            this.mesh.matrix.fromArray(this.global);
+            this.isDirty = false;
+        }
+
+    }
 
 }
 
@@ -341,60 +540,50 @@ export class Widget3 extends View {
 //-- PlaneWidget ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class PlaneWidget3 extends Widget3 {
+export class PlaneWidget3 extends RenderWidget3 {
 
-    buildMesh() {
-        this.threeDispose();
+    buildGeometry() {
+        super.buildGeometry();
         this.geometry = new THREE.PlaneGeometry(...this.trueSize, 1);
         if (this.mesh) this.mesh.geometry = this.geometry;
-
-        this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(...this.color)});
-        this.material.polygonOffset = true;
-        this.material.polygonOffsetFactor = -this.depth;
-        this.material.polygonOffsetUnits = -this.depth;
-
-        const mesh = new THREE.Mesh( this.geometry, this.material );
-        mesh.visible = this.visible;
-        mesh.widget = this;
-        mesh.matrixAutoUpdate = false;
-        mesh.matrix.fromArray(this.global);
-
-        return mesh;
     }
 
-    threeDispose() {
-        if (this.geometry)this.geometry.dispose();
-        if (this.material)this.material.dispose();
-        if (this.material && this.material.map) this.material.map.dispose();
-    }
+    // buildMaterial() {
+    //    super.buildMaterial();
 
-    destroy() {
-        super.destroy();
-        this.threeDispose();
-    }
+    //    this.material = this.lit ? new THREE.MeshStandardMaterial({color: new THREE.Color(...this.color), transparent: true, opacity: this.opacity})
+    //    : new THREE.MeshBasicMaterial({color: new THREE.Color(...this.color), transparent: true, opacity: this.opacity});
+    //     this.material.polygonOffset = true;
+    //     this.material.polygonOffsetFactor = -this.depth;
+    //     this.material.polygonOffsetUnits = -this.depth;
+    //     if (this.mesh) this.mesh.material = this.material;
+    // }
 
-    get color() { return this._color || [1,1,1];}
-    set color(v) { this._color = v; if (this.material) this.material.color = new THREE.Color(...this.color); }
+    // get color() { return this._color || [1,1,1];}
+    // set color(v) { this._color = v; this.buildMaterial(); }
 
-    onParentChanged() {
-        if (!this.material) return;
-        this.material.polygonOffsetFactor = -this.depth;
-        this.material.polygonOffsetUnits = -this.depth;
-    }
+    get size() { return super.size ;}
+    set size(v) { super.size = v; this.buildGeometry();}
 
-    globalChanged() {
-        super.globalChanged();
-        this.isDirty = true;
-    }
+    // onParentChanged() {
+    //     if (!this.material) return;
+    //     this.material.polygonOffsetFactor = -this.depth;
+    //     this.material.polygonOffsetUnits = -this.depth;
+    // }
 
-    update(time,delta) {
-        super.update(time,delta)
-        if (this.isDirty) {
-            this.mesh.matrix.fromArray(this.global);
-            this.isDirty = false;
-        }
+    // globalChanged() {
+    //     super.globalChanged();
+    //     this.isDirty = true;
+    // }
 
-    }
+    // update(time,delta) {
+    //     super.update(time,delta)
+    //     if (this.mesh && this.isDirty) {
+    //         this.mesh.matrix.fromArray(this.global);
+    //         this.isDirty = false;
+    //     }
+
+    // }
 
 }
 
@@ -402,63 +591,84 @@ export class PlaneWidget3 extends Widget3 {
 //-- BoxWidget ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BoxWidget3 extends Widget3 {
+export class BoxWidget3 extends RenderWidget3 {
 
-    buildMesh() {
-        this.threeDispose();
+    buildGeometry() {
+        super.buildGeometry();
         this.geometry = new THREE.BoxGeometry(...this.trueSize, this.thick);
         if (this.mesh) this.mesh.geometry = this.geometry;
-
-        this.material = new THREE.MeshStandardMaterial({color: new THREE.Color(...this.color)});
-        this.material.polygonOffset = true;
-        this.material.polygonOffsetFactor = -this.depth;
-        this.material.polygonOffsetUnits = -this.depth;
-
-        const mesh = new THREE.Mesh( this.geometry, this.material );
-        mesh.visible = this.visible;
-        mesh.widget = this;
-        mesh.matrixAutoUpdate = false;
-        mesh.matrix.fromArray(this.global);
-
-        return mesh;
     }
 
-    threeDispose() {
-        if (this.geometry)this.geometry.dispose();
-        if (this.material)this.material.dispose();
-        if (this.material && this.material.map) this.material.map.dispose();
-    }
+    // buildMaterial() {
+    //    super.buildMaterial();
 
-    destroy() {
-        super.destroy();
-        this.threeDispose();
-    }
+    //    this.material = this.lit ? new THREE.MeshStandardMaterial({color: new THREE.Color(...this.color), transparent: true, opacity: this.opacity})
+    //    : new THREE.MeshBasicMaterial({color: new THREE.Color(...this.color), transparent: true, opacity: this.opacity});
+    //     this.material.polygonOffset = true;
+    //     this.material.polygonOffsetFactor = -this.depth;
+    //     this.material.polygonOffsetUnits = -this.depth;
+    //     if (this.mesh) this.mesh.material = this.material;
+    // }
+
+
+    // buildMesh() {
+    //     this.threeDispose();
+    //     this.geometry = new THREE.BoxGeometry(...this.trueSize, this.thick);
+    //     if (this.mesh) this.mesh.geometry = this.geometry;
+
+    //     this.material = this.lit ? new THREE.MeshStandardMaterial({color: new THREE.Color(...this.color), transparent: true, opacity: this.opacity})
+    //     : new THREE.MeshBasicMaterial({color: new THREE.Color(...this.color), transparent: true, opacity: this.opacity});
+    //     this.material.polygonOffset = true;
+    //     this.material.polygonOffsetFactor = -this.depth;
+    //     this.material.polygonOffsetUnits = -this.depth;
+
+    //     const mesh = new THREE.Mesh( this.geometry, this.material );
+    //     mesh.visible = this.visible;
+    //     mesh.widget = this;
+    //     mesh.matrixAutoUpdate = false;
+    //     mesh.matrix.fromArray(this.global);
+
+    //     return mesh;
+    // }
+
+    // threeDispose() {
+    //     if (this.geometry)this.geometry.dispose();
+    //     if (this.material)this.material.dispose();
+    //     if (this.material && this.material.map) this.material.map.dispose();
+    // }
+
+    // destroy() {
+    // //     super.destroy();
+    // //     this.threeDispose();
+    // // }
 
     get thick() { return this._thick || 0.1;}
-    set thick(n) { this._thick = n; }
+    set thick(n) { this._thick = n; this.buildGeometry();}
+    get size() { return super.size ;}
+    set size(v) { super.size = v; this.buildGeometry();}
 
-    get color() { return this._color || [1,1,1];}
-    set color(v) { this._color = v; if (this.material) this.material.color = new THREE.Color(...this.color); }
+    // get color() { return this._color || [1,1,1];}
+    // set color(v) { this._color = v; this.buildMaterial(); }
 
-    onParentChanged() {
-        if (!this.material) return;
-        this.material.polygonOffsetFactor = -this.depth;
-        this.material.polygonOffsetUnits = -this.depth;
-    }
+    // onParentChanged() {
+    //     if (!this.material) return;
+    //     this.material.polygonOffsetFactor = -this.depth;
+    //     this.material.polygonOffsetUnits = -this.depth;
+    // }
 
-    globalChanged() {
-        super.globalChanged();
-        this.isDirty = true;
-    }
+    // globalChanged() {
+    //     super.globalChanged();
+    //     this.isDirty = true;
+    // }
 
-    update(time,delta) {
-        super.update(time,delta)
-        if (this.isDirty) {
-            this.mesh.matrix.fromArray(this.global);
-            this.isDirty = false;
-        }
+    // update(time,delta) {
+    //     super.update(time,delta)
+    //     if (this.isDirty) {
+    //         this.mesh.matrix.fromArray(this.global);
+    //         this.isDirty = false;
+    //     }
 
-    }
+    // }
 
 }
 
@@ -506,29 +716,31 @@ export class CanvasWidget3 extends PlaneWidget3 {
     get size() { return super.size}
     set size(v) {super.size = v; this.buildCanvas()}
     get resolution() { return this._resolution || 300;}
-    set resolution(v) { this._resolution = v; this.buildCanvas(); }
+    set resolution(n) { this._resolution = n; this.buildCanvas(); }
+
+    buildMaterial() {
+        super.buildMaterial();
+        this.buildCanvas();
+    }
 
     buildCanvas() {
-        if(!this.material) return;
-        if (this.material.map) this.material.map.dispose();
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.max(1,this.trueSize[0]) * this.resolution;
-        canvas.height = Math.max(1,this.trueSize[1]) * this.resolution;
-        this.material.map = new THREE.CanvasTexture(canvas);
-        this.draw(canvas)
+        if(this.material && this.material.map) this.material.map.dispose();
+        this.canvas = document.createElement("canvas");
+        this.canvas.width = Math.max(1,this.trueSize[0]) * this.resolution;
+        this.canvas.height = Math.max(1,this.trueSize[1]) * this.resolution;
+        if(this.material) this.material.map = new THREE.CanvasTexture(this.canvas);
+        this.draw()
     }
 
     update(time,delta) {
         super.update(time,delta)
-        if (this.needsRedraw) {
+        if (this.redraw) {
             this.buildCanvas();
-            this.needsRedraw = false;
+            this.redraw = false;
         } ;
     }
 
-    redraw() {this.needsRedraw = true;}
-
-    draw(canvas) {};
+    draw() {};
 }
 
 //------------------------------------------------------------------------------------------
@@ -542,38 +754,38 @@ export class TextWidget3 extends CanvasWidget3 {
     }
 
     get text() { return this._text || "Text"}
-    set text(s) { this._text = s; this.redraw() }
+    set text(s) { this._text = s; this.redraw = true; }
     get font() { return this._font || "sans-serif"}
-    set font(s) { this._font = s; this.redraw() }
+    set font(s) { this._font = s; this.redraw = true; }
     get point() { return this._point || 24 }
-    set point(n) { this._point = n; this.redraw() }
+    set point(n) { this._point = n; this.redraw = true; }
     get lineSpacing() { return this._lineSpacing || 0}
     set lineSpacing(n) { this._lineSpacing = n }
     get style() { return this._style || "normal"}
-    set style(s) { this._style = s; this.redraw() }
+    set style(s) { this._style = s; this.redraw = true; }
     get alignX() { return this._alignX || "center"}
-    set alignX(s) { this._alignX = s }
+    set alignX(s) { this._alignX = s; this.redraw = true; }
     get alignY() { return this._alignY || "middle"}
-    set alignY(s) { this._alignY = s; this.redraw() }
+    set alignY(s) { this._alignY = s; this.redraw = true; }
     get noWrap() { return this._noWrap }
-    set noWrap(b) { this._noWrap = b; this.redraw() }
+    set noWrap(b) { this._noWrap = b; this.redraw = true; }
 
     get bgColor()  {return this._bgColor || [1,1,1]}
-    set bgColor(v)  { this._bgColor = v; this.redraw() }
+    set bgColor(v)  { this._bgColor = v; this.redraw = true; }
     get fgColor()  {return this._fgColor || [0,0,0]}
-    set fgColor(v)  { this._fgColor = v; this.redraw() }
+    set fgColor(v)  { this._fgColor = v; this.redraw = true; }
 
-    lines(canvas) {
+    lines() {
         if (this.noWrap) return this.text.split('\n');
-        const cc = canvas.getContext('2d');
+        const cc = this.canvas.getContext('2d');
         const out = [];
         const spaceWidth = cc.measureText(' ').width;
         const words = this.text.split(' ');
-        let sum = canvas.width+1;
+        let sum = this.canvas.width+1;
         words.forEach( word => {
             const wordWidth = cc.measureText(word).width
             sum += spaceWidth + wordWidth;
-            if (sum > canvas.width) {
+            if (sum > this.canvas.width) {
                 out.push(word);
                 sum = wordWidth;
             } else {
@@ -583,8 +795,8 @@ export class TextWidget3 extends CanvasWidget3 {
         return out;
     }
 
-    draw(canvas) {
-        const cc = canvas.getContext('2d');
+    draw() {
+        const cc = this.canvas.getContext('2d');
         cc.textAlign = this.alignX;
         cc.textBaseline = this.alignY;
         cc.font = this.style + " " + this.point + "px " + this.font;
@@ -592,23 +804,23 @@ export class TextWidget3 extends CanvasWidget3 {
         const lineHeight = (this.point + this.lineSpacing);
 
         cc.fillStyle = canvasColor(...this.bgColor);
-        cc.fillRect(0, 0, canvas.width, canvas.height);
+        cc.fillRect(0, 0, this.canvas.width, this.canvas.height);
         cc.fillStyle = canvasColor(...this.fgColor);
 
-        const lines = this.lines(canvas);
+        const lines = this.lines(this.canvas);
 
         let xy = [0,0];
         let yOffset = 0;
         if (this.alignX === "center") {
-            xy[0] = canvas.width / 2;
+            xy[0] = this.canvas.width / 2;
         } else if (this.alignX === "right") {
-            xy[0] = canvas.width;
+            xy[0] = this.canvas.width;
         }
         if (this.alignY === "middle") {
-            xy[1] = canvas.height / 2;
+            xy[1] = this.canvas.height / 2;
             yOffset = lineHeight * (lines.length-1) / 2;
         } else if (this.alignY === "bottom") {
-            xy[1] = canvas.height;
+            xy[1] = this.canvas.height;
             yOffset = lineHeight * (lines.length-1);
         }
 
@@ -791,9 +1003,9 @@ export class SliderWidget3 extends ControlWidget3 {
         if (!this.knob) return;
         const t = [0,0,0]
         if (this.isHorizontal) {
-            t[0] = -0.5 * this.trueSize[0] + (this.trueSize[0]-this.knobSize[0])*this.percent;
+            // t[0] = -0.5 * this.trueSize[0] + (this.trueSize[0]-this.knobSize[0])*this.percent;
+            t[0] = -0.5 * this.trueSize[0] + 0.5* this.knobSize[0] + this.percent*(this.trueSize[0]-this.knobSize[0]);
         } else {
-            // t[1] = -0.5 * this.trueSize[1] + (this.trueSize[1]-this.knobSize[1])*this.percent;
             t[1] = -0.5 * this.trueSize[1] + 0.5* this.knobSize[1] + this.percent*(this.trueSize[1]-this.knobSize[1]);
         }
         this.knob.translation = t;
@@ -842,7 +1054,7 @@ export class DragWidget3 extends ControlWidget3 {
         this.dragSize = [100,100];
         this.knob = new BoxWidget3({parent: this.active, size: [0.3,0.3], thick:0.3, color: [0,0,1], collidable: true});
         this.drag = new PlaneWidget3({parent: this.active, size: this.dragSize, visible: false, collidable:false, color: [1,0,1]});
-        this.pawnStart = ParentEditor(this).pawn.translation;
+        this.pawnStart = this.pawn.translation;
         // this.startScale = ParentEditor(this).pawn.scale;
 
     }
@@ -867,7 +1079,7 @@ export class DragWidget3 extends ControlWidget3 {
             let y = this.dragSize[1] * (hit.xy[1]-0.5);
             this.knob.translation = [x,y,0];
             const pt0 = v3_add(this.pawnStart, this.knob.translation);
-            ParentEditor(this).pawn.translateTo(pt0, 100);
+            this.pawn.translateTo(pt0, 100);
         }
     }
 
@@ -902,9 +1114,9 @@ export class SpinWidget3 extends ControlWidget3 {
     constructor(options) {
         super(options);
         this.dragSize = [2,2];
-        this.knob = new BoxWidget3({parent: this.active, size: [0.3,0.3], thick:0.3, color: [0,0,1], collidable: true});
+        this.knob = new BoxWidget3({parent: this.active, size: [0.3,0.3], thick:0.3, color: [0,0,1], lit: true, collidable: true});
         this.drag = new PlaneWidget3({parent: this.active, size: this.dragSize, visible: false, collidable:false, color: [1,0,1]});
-        this.pawnStart = ParentEditor(this).pawn.rotation;
+        this.pawnStart = this.pawn.rotation;
 
     }
 
@@ -931,7 +1143,7 @@ export class SpinWidget3 extends ControlWidget3 {
             const q2 = q_multiply(q1,q0);
             const q3 = q_multiply( this.pawnStart,q0);
             this.knob.rotation = q0;
-            ParentEditor(this).pawn.rotateTo(q0, 100);
+            this.pawn.rotateTo(q0, 100);
         }
     }
 
@@ -941,13 +1153,13 @@ export class SpinWidget3 extends ControlWidget3 {
 //-- EditorWidget --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export function ParentEditor(w) {
-    do {
-        if (w instanceof EditorWidget3) return w;
-        w = w.parent
-    } while(w)
-    return null;
-}
+// export function ParentEditor(w) {
+//     do {
+//         if (w instanceof EditorWidget3) return w;
+//         w = w.parent
+//     } while(w)
+//     return null;
+// }
 
 export class EditorWidget3 extends Widget3 {
     constructor(options) {
@@ -955,41 +1167,11 @@ export class EditorWidget3 extends Widget3 {
         if (this.pawn) this.local = this.pawn.global;
     }
 
-    get pawn() { return this._pawn }
-    set pawn(p) { this._pawn = p }
+    // get pawn() { return this._pawn }
+    // set pawn(p) { this._pawn = p }
 }
 
 
-// //------------------------------------------------------------------------------------------
-// //-- BillboardWidget --------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
 
-
-// export class BillboardWidget3 extends PlaneWidget3 {
-//     constructor(options) {
-//         super(options);
-
-//     }
-
-//     // update(time, delta) {
-//     //     if (this.billboard) {
-//     //             const render = GetViewService("ThreeRenderManager");
-//     //             const cameraMatrix = render.camera.matrix;
-//     //             let v = new THREE.Vector3().setFromMatrixPosition(cameraMatrix);
-//     //             const cameraXZ = [v.x, 0, v.z];
-//     //             const forward = [0,0,1];
-//     //             const up = [0,1,0];
-//     //             const widgetXZ = m4_getTranslation(this.global);
-//     //             widgetXZ[1] = 0;
-
-//     //             const target = v3_normalize(v3_sub(cameraXZ, widgetXZ));
-//     //             const q = q_lookAt(forward, up, target );
-//     //             this.rotation = q
-//     //     }
-//     //     super.update(time, delta);
-//     // }
-
-
-// }
 
 
