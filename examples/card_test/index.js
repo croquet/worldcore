@@ -7,7 +7,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
     TextWidgetActor, ButtonWidgetActor, GetViewService, UIManager, ButtonWidget, TextWidget, Widget, AM_Smoothed, PM_Smoothed, PM_Driver, v3_scale, v3_add, TAU, v3_rotate, toDeg, q_multiply, m4_multiply, m4_scaleRotationTranslation, q_identity } from "@croquet/worldcore";
 
-import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3, BoxWidget3, DragWidget3, EditorWidget3, SpinWidget3, BillboardWidget3, PlaneWidget3, HorizontalWidget3, VerticalWidget3 } from "./ThreeWidget";
+import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3, BoxWidget3, DragWidget3, EditorWidget3, SpinWidget3, BillboardWidget3, PlaneWidget3, HorizontalWidget3, VerticalWidget3, AlphaWidget3 } from "./ThreeWidget";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
@@ -160,7 +160,11 @@ class InfoPanel extends Widget3 {
             text: this.pawn.actor.name,
             point: 128,
             resolution: 500,
-            opacity: 1
+            alpha: true,
+            // fgColor: [1,1,1],
+            // bgColor: [0,0,0],
+            color: [0,0,0],
+            // opacity: 1
         })
 
         this.horizontal = new HorizontalWidget3({
@@ -182,19 +186,31 @@ class InfoPanel extends Widget3 {
         this.xText = new TextWidget3 ({
             parent: this.horizontal,
             point: 128,
-            opacity: 1,
+            alpha: true,
+            // fgColor: [1,1,1],
+            // bgColor: [0,0,0],
+            color: [0,0,0],
+            // opacity: 1,
         })
 
         this.yText = new TextWidget3 ({
             parent: this.horizontal,
             point: 128,
-            opacity: 1,
+            alpha: true,
+            // fgColor: [1,1,1],
+            // bgColor: [0,0,0],
+            color: [0,0,0],
+            // opacity: 1,
         })
 
         this.zText = new TextWidget3 ({
             parent: this.horizontal,
             point: 128,
-            opacity: 1,
+            alpha: true,
+            // fgColor: [1,1,1],
+            // bgColor: [0,0,0],
+            color: [0,0,0],
+            // opacity: 1,
         })
 
         const t = this.pawn.translation;
@@ -257,7 +273,7 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeVisible, P
 
         this.infoPanel = new InfoPanel({parent: this.rootWidget, pawn: this, billboard: true, translation:[0,0,0], opacity: 0.5})
 
-        // this.ui = new Widget3({parent: this.rootWidget})
+        this.ui = new Widget3({parent: this.rootWidget})
 
         this.editor = new EditorWidget3({name: "editor", pawn: this, billboard: false});
 
@@ -285,9 +301,12 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeVisible, P
         // });
 
 
-        this.text = new TextWidget3({name: "canvas", parent: this.ui, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, fgColor: [0,0,1], size: [1,1], text: "Alternate Text String", billboard: false});
+        this.text = new TextWidget3({name: "canvas", parent: this.ui, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, size: [1,1], text: "Alternate Text String", billboard: false, color: [1,1,1], color: [0,1,1],alpha: true});
 
-        this.billboard = new ImageWidget3({name: "billboard",parent: this.ui, color: [1,1,1], size: [1,1], translation: [-5, 1.5,0], url: diana, billboard: true, opacity: 0.8});
+        // this.alpha = new AlphaWidget3({name: "alpha", parent: this.ui, translation: [-2,0,0], point: 48, font: "serif", alpha: true, resolution: 300, color: [0,1,1], size: [1,1]});
+
+
+        this.billboard = new ImageWidget3({name: "billboard", parent: this.ui, color: [1,1,1], size: [1,1], translation: [-2, 0,-2], url: diana, billboard: true, opacity: 0.8});
 
         this.drag = new DragWidget3({name: "drag", parent: this.editor, translation: [-3,2,0]});
         // this.spin = new SpinWidget3({name: "spin", parent: this.editor, translation: [-3,2,0]});
@@ -295,10 +314,10 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeVisible, P
 
     test2() {
         console.log("nTest");
-        this.text.text = "This better show up!";
-        this.ui.destroy();
-        this.ui = null;
-        this.infoPanel.destroy();
+        // this.text.text = "This better show up!";
+        // this.ui.destroy();
+        // this.ui = null;
+        // this.infoPanel.destroy();
         // this.editor.destroy();
         // this.editor = null;
     }

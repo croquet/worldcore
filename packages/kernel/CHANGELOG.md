@@ -86,6 +86,8 @@ defineSmoothedPawnProperty from PM_Smoothed
 - Initial release
 
 ## Pending
+### Added
+- Actors have a name option.
 
 
 
