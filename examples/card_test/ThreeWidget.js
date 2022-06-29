@@ -60,6 +60,8 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         this.subscribe("input", "pointerDown", this.widgetPointerDown);
         this.subscribe("input", "pointerUp", this.widgetPointerUp);
         this.subscribe("input", "pointerMove", this.widgetPointerMove);
+        this.subscribe("input", "keyDown", this.widgetKeyDown);
+        this.subscribe("input", "keyUp", this.widgetKeyUp);
     }
 
     widgetPointerDown(e) {
@@ -70,6 +72,15 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         if (this.pressed !== hit.control) {
             this.pressed = hit.control;
             if(this.pressed) this.pressed.onPress(hit);
+        }
+
+        if (this.focused !== hit.control) {
+            if(this.focused) this.focused.onBlur();
+            this.focused = null;
+        }
+        if (hit.control instanceof FocusWidget3) {
+            this.focused = hit.control;
+            this.focused.onFocus();
         }
 
     }
@@ -107,6 +118,15 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         }
 
     }
+
+    widgetKeyDown(e) {
+        if(this.focused) this.focused.keyDown(e);
+    }
+
+    widgetKeyUp(e) {
+        if(this.focused) this.focused.keyUp(e);
+    }
+
 
     controlRaycast(x,y) {
         const render = GetViewService("ThreeRenderManager");
@@ -691,17 +711,39 @@ export class TextWidget3 extends CanvasWidget3 {
         return out;
     }
 
-    draw() {
-        const cc = this.canvas.getContext('2d', {alpha: false});
+    letterOffset(n) {
+        const cc = this.canvas.getContext('2d');
+        this.setStyle(cc);
+        const c = [...this.text];
+        let offset = 0;
+        n = Math.min(n, c.length);
+        for (let i = 0; i < n; i++) {
+            offset += cc.measureText(c[i]).width;
+        }
+        return offset / this.resolution;
+    }
+
+    setStyle(cc) {
         cc.textAlign = this.alignX;
         cc.textBaseline = this.alignY;
         cc.font = this.style + " " + this.point + "px " + this.font;
-
-        const lineHeight = (this.point + this.lineSpacing);
-
         cc.fillStyle = canvasColor(...this.bgColor);
         cc.fillRect(0, 0, this.canvas.width, this.canvas.height);
         cc.fillStyle = canvasColor(...this.fgColor);
+    }
+
+    draw() {
+        const cc = this.canvas.getContext('2d', {alpha: false});
+        this.setStyle(cc);
+        // cc.textAlign = this.alignX;
+        // cc.textBaseline = this.alignY;
+        // cc.font = this.style + " " + this.point + "px " + this.font;
+
+        const lineHeight = (this.point + this.lineSpacing);
+
+        // cc.fillStyle = canvasColor(...this.bgColor);
+        // cc.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // cc.fillStyle = canvasColor(...this.fgColor);
 
         const lines = this.lines(this.canvas);
 
@@ -752,9 +794,9 @@ export class ControlWidget3 extends Widget3 {
     }
 
 
-    onHilite() { console.log(this.name + " hilite");}
-    onNormal() { console.log(this.name + " normal")}
-    onPress() { console.log(this.name + " press");}
+    onHilite() {}
+    onNormal() {}
+    onPress() {}
 
 
     onClick() {
@@ -1049,13 +1091,6 @@ export class SpinWidget3 extends ControlWidget3 {
 //-- EditorWidget --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// export function ParentEditor(w) {
-//     do {
-//         if (w instanceof EditorWidget3) return w;
-//         w = w.parent
-//     } while(w)
-//     return null;
-// }
 
 export class EditorWidget3 extends Widget3 {
     constructor(options) {
@@ -1065,6 +1100,82 @@ export class EditorWidget3 extends Widget3 {
 
     // get pawn() { return this._pawn }
     // set pawn(p) { this._pawn = p }
+}
+
+//------------------------------------------------------------------------------------------
+//-- FocusWidget -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+
+export class FocusWidget3 extends ControlWidget3 {
+
+    onFocus() { console.log(this.name + " focus")}
+    onBlur() {console.log(this.name + " blur")}
+    keyDown(e) {}
+    keyUp(e) {}
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- TextFieldWidget -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+
+export class TextFieldWidget3 extends FocusWidget3 {
+    constructor(options) {
+        super(options);
+
+        this.left = 1;
+        this.right = 1;
+
+
+        this.text = new TextWidget3({
+            parent: this,
+            autoSize:[1,1],
+            bgColor: [1,1,1],
+            fgColor: [0,0,0],
+            font: "sans-serif",
+            alignX: "left",
+            point: 96,
+            text: "12345"});
+
+        this.cursor = new PlaneWidget3({
+            parent: this.text,
+            autoSize: [0,1],
+            border: [0, 0.1, 0, 0.1],
+            size: [0.02, 0],
+            color:[0,0,0],
+            translation: [this.cursorX,0,0]
+            });
+
+    }
+
+    get cursorX() {
+        return -this.trueSize[0]/2 + this.text.letterOffset(this.left);
+    }
+
+    keyDown(e) {
+        switch (e.key) {
+            default:
+                this.insert(e.key)
+        }
+    }
+
+    insert(s) {
+        const t = this.text.text.slice(0, this.left) + s + this.text.text.slice(this.right);
+        this.text.text = t;
+        this.cursor.translation = [this.cursorX,0,0];
+    }
+
+    backspace() {
+        const cut = Math.max(0, this.left - 1);
+        const t = this.text.text.slice(0, cut) + this.text.text.slice(this.right);
+        this.text.text = t;
+        this.left = cut;
+        this.right = this.left;
+        this.cursor.translation = [this.cursorX,0,0];
+    }
+
 }
 
 

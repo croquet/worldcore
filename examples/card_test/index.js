@@ -7,7 +7,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
     TextWidgetActor, ButtonWidgetActor, GetViewService, UIManager, ButtonWidget, TextWidget, Widget, AM_Smoothed, PM_Smoothed, PM_Driver, v3_scale, v3_add, TAU, v3_rotate, toDeg, q_multiply, m4_multiply, m4_scaleRotationTranslation, q_identity } from "@croquet/worldcore";
 
-import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3, BoxWidget3, DragWidget3, EditorWidget3, SpinWidget3, BillboardWidget3, PlaneWidget3, HorizontalWidget3, VerticalWidget3, AlphaWidget3 } from "./ThreeWidget";
+import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3, BoxWidget3, DragWidget3, EditorWidget3, SpinWidget3, BillboardWidget3, PlaneWidget3, HorizontalWidget3, VerticalWidget3, AlphaWidget3, TextFieldWidget3 } from "./ThreeWidget";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
@@ -44,33 +44,53 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_Player, PM_Th
         this.setRenderObject(cube);
 
         if (this.isMyPlayerPawn) {
-            this.subscribe("input", "wDown", () => {this.fore = 1});
-            this.subscribe("input", "wUp", () => {this.fore = 0});
-            this.subscribe("input", "sDown", () => {this.back = 1});
-            this.subscribe("input", "sUp", () => {this.back = 0});
-
-            this.subscribe("input", "ArrowUpDown", () => {this.fore = 1});
-            this.subscribe("input", "ArrowUpUp", () => {this.fore = 0});
-            this.subscribe("input", "ArrowDownDown", () => {this.back = 1});
-            this.subscribe("input", "ArrowDownUp", () => {this.back = 0});
-
-            this.subscribe("input", "aDown", () => {this.left = 1});
-            this.subscribe("input", "aUp", () => {this.left = 0});
-            this.subscribe("input", "dDown", () => {this.right = 1});
-            this.subscribe("input", "dUp", () => {this.right = 0});
-
-            this.subscribe("input", "ArrowLeftDown", () => {this.left = 1});
-            this.subscribe("input", "ArrowLeftUp", () => {this.left = 0});
-            this.subscribe("input", "ArrowRightDown", () => {this.right = 1});
-            this.subscribe("input", "ArrowRightUp", () => {this.right = 0});
-
             this.subscribe("input", "pointerDown", this.doPointerDown);
             this.subscribe("input", "pointerUp", this.doPointerUp);
             this.subscribe("input", "pointerDelta", this.doPointerDelta);
-
+            this.subscribe("input", "keyDown", this.keyDown);
+            this.subscribe("input", "keyUp", this.keyUp);
         }
 
     }
+
+    keyDown(e) {
+        if (this.focused) return;
+        switch(e.key) {
+            case "ArrowUp":
+            case "w":
+                this.fore = 1; break;
+            case "ArrowDown":
+            case "s":
+                this.back = 1; break;
+            case "ArrowLeft":
+            case "a":
+                this.left = 1; break;
+            case "ArrowRight":
+            case "d":
+                this.right = 1; break;
+            default:
+        }
+    }
+
+    keyUp(e) {
+        if (this.focused) return;
+        switch(e.key) {
+            case "ArrowUp":
+            case "w":
+                this.fore = 0; break;
+            case "ArrowDown":
+            case "s":
+                this.back = 0; break;
+            case "ArrowLeft":
+            case "a":
+                this.left = 0; break;
+            case "ArrowRight":
+            case "d":
+                this.right = 0; break;
+            default:
+        }
+    }
+
 
     destroy() { // When the pawn is destroyed, we dispose of our Three.js objects.
         super.destroy();
@@ -271,15 +291,15 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeVisible, P
         console.log("bTest");
         if (this.ui) return;
 
-        this.infoPanel = new InfoPanel({parent: this.rootWidget, pawn: this, billboard: true, translation:[0,0,0], opacity: 0.5})
+        // this.infoPanel = new InfoPanel({parent: this.rootWidget, pawn: this, billboard: true, translation:[0,0,0], opacity: 0.5})
 
         this.ui = new Widget3({parent: this.rootWidget})
 
         this.editor = new EditorWidget3({name: "editor", pawn: this, billboard: false});
 
-        // this.panel = new ImageWidget3({name: "panel", parent: this.ui, color: [1,1,1], size: [6,4], translation: [5,2,0], url: llama, opacity: 0.8});
+        this.panel = new ImageWidget3({name: "panel", parent: this.ui, color: [1,1,1], size: [6,4], translation: [5,1,0], url: llama, opacity: 1});
 
-        // const ts = new ToggleSet3();
+        const ts = new ToggleSet3();
         // this.toggle1 = new ToggleWidget3({name: "toggle1", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.2,-0.2,0], opacity: 1});
         // this.toggle2 = new ToggleWidget3({name: "toggle2", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.2,-1.7,0], opacity: 1});
 
@@ -303,7 +323,14 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeVisible, P
 
         this.text = new TextWidget3({name: "canvas", parent: this.ui, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, size: [1,1], text: "Alternate Text String", billboard: false, color: [1,1,1], color: [0,1,1],alpha: true});
 
-        // this.alpha = new AlphaWidget3({name: "alpha", parent: this.ui, translation: [-2,0,0], point: 48, font: "serif", alpha: true, resolution: 300, color: [0,1,1], size: [1,1]});
+        this.tf = new TextFieldWidget3({
+            name: "tf",
+            parent: this.panel,
+            size: [3, 1],
+            anchor: [0,0],
+            pivot: [0,0],
+            translation: [0.2,0.2,0]
+        });
 
 
         this.billboard = new ImageWidget3({name: "billboard", parent: this.ui, color: [1,1,1], size: [1,1], translation: [-2, 0,-2], url: diana, billboard: true, opacity: 0.8});
