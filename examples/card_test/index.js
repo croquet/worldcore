@@ -283,8 +283,8 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeVisible, P
         this.setRenderObject(cube);
 
         this.subscribe("input", "bDown", this.test);
-        this.subscribe("input", "nDown", this.test2);
-        this.subscribe("input", "mDown", this.test3);
+        // this.subscribe("input", "nDown", this.test2);
+        // this.subscribe("input", "mDown", this.test3);
     }
 
     test() {
@@ -321,15 +321,15 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeVisible, P
         // });
 
 
-        this.text = new TextWidget3({name: "canvas", parent: this.ui, translation: [-2,0,0], point: 48, font: "serif", resolution: 300, size: [1,1], text: "Alternate Text String", billboard: false, color: [1,1,1], color: [0,1,1],alpha: true});
+        this.text = new TextWidget3({name: "canvas", parent: this.ui, translation: [-2,0,0], point: 48, font: "sans-serif", resolution: 300, size: [1,1], text: "This is text with an offset.", billboard: false, noWrap: false, fgColor: [0,0,0], bgColor: [1,1,1], alpha: false});
 
         this.tf = new TextFieldWidget3({
             name: "tf",
             parent: this.panel,
-            size: [3, 1],
+            size: [3, 0.5],
             anchor: [0,0],
             pivot: [0,0],
-            translation: [0.2,0.2,0]
+            translation: [1,1,0]
         });
 
 

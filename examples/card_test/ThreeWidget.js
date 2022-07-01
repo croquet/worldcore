@@ -3,6 +3,7 @@
 import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply, View, viewRoot, v3_add, TAU, toDeg, q_axisAngle, q_multiply, q_lookAt, v3_normalize, v3_sub, m4_getTranslation, v3_transform, v3_rotate, m4_getRotation } from "@croquet/worldcore";
 
 let wm;
+const tiny = 0.0001
 
 //------------------------------------------------------------------------------------------
 //-- WidgetManager -------------------------------------------------------------------------
@@ -61,6 +62,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         this.subscribe("input", "pointerUp", this.widgetPointerUp);
         this.subscribe("input", "pointerMove", this.widgetPointerMove);
         this.subscribe("input", "keyDown", this.widgetKeyDown);
+        // this.subscribe("input", "keyRepeat", this.widgetKeyDown);
         this.subscribe("input", "keyUp", this.widgetKeyUp);
     }
 
@@ -69,19 +71,24 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const hit = this.controlRaycast(x,y);
 
+        if (this.focused !== hit.control) {
+            if(this.focused) {
+                this.focused.isFocused = false;
+                this.focused.onBlur();
+                this.focused = null;
+            }
+            if (hit.control instanceof FocusWidget3) {
+                this.focused = hit.control;
+                this.focused.isFocused = true;
+                this.focused.onFocus();
+            }
+        }
+
         if (this.pressed !== hit.control) {
             this.pressed = hit.control;
             if(this.pressed) this.pressed.onPress(hit);
         }
 
-        if (this.focused !== hit.control) {
-            if(this.focused) this.focused.onBlur();
-            this.focused = null;
-        }
-        if (hit.control instanceof FocusWidget3) {
-            this.focused = hit.control;
-            this.focused.onFocus();
-        }
 
     }
 
@@ -676,15 +683,18 @@ export class TextWidget3 extends CanvasWidget3 {
     get point() { return this._point || 24 }
     set point(n) { this._point = n; this.redraw = true; }
     get lineSpacing() { return this._lineSpacing || 0}
-    set lineSpacing(n) { this._lineSpacing = n }
+    set lineSpacing(n) { this._lineSpacing = n; this.redraw = true; }
     get style() { return this._style || "normal"}
     set style(s) { this._style = s; this.redraw = true; }
     get alignX() { return this._alignX || "center"}
     set alignX(s) { this._alignX = s; this.redraw = true; }
     get alignY() { return this._alignY || "middle"}
     set alignY(s) { this._alignY = s; this.redraw = true; }
+    get offset() { return this._offset || [0,0] }
+    set offset(v) { this._offset = v; this.redraw = true; }
     get noWrap() { return this._noWrap }
     set noWrap(b) { this._noWrap = b; this.redraw = true; }
+
 
     get bgColor()  {return this._bgColor || [0,0,0]}
     set bgColor(v)  { this._bgColor = v; this.redraw = true; }
@@ -723,6 +733,27 @@ export class TextWidget3 extends CanvasWidget3 {
         return offset / this.resolution;
     }
 
+    get textWidth() {
+        const cc = this.canvas.getContext('2d');
+        this.setStyle(cc);
+        return cc.measureText(this.text).width;
+    }
+
+    selectionIndex(x) {
+        x = x * this.resolution;
+        const cc = this.canvas.getContext('2d');
+        this.setStyle(cc);
+
+        const c = [...this.text];
+        let sum = 0;
+        for (let i = 0; i < c.length; i++) {
+            const w = cc.measureText(c[i]).width;
+            if (x < sum + w/2) return i;
+            sum += w;
+        }
+        return c.length;
+    }
+
     setStyle(cc) {
         cc.textAlign = this.alignX;
         cc.textBaseline = this.alignY;
@@ -735,16 +766,7 @@ export class TextWidget3 extends CanvasWidget3 {
     draw() {
         const cc = this.canvas.getContext('2d', {alpha: false});
         this.setStyle(cc);
-        // cc.textAlign = this.alignX;
-        // cc.textBaseline = this.alignY;
-        // cc.font = this.style + " " + this.point + "px " + this.font;
-
         const lineHeight = (this.point + this.lineSpacing);
-
-        // cc.fillStyle = canvasColor(...this.bgColor);
-        // cc.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        // cc.fillStyle = canvasColor(...this.fgColor);
-
         const lines = this.lines(this.canvas);
 
         let xy = [0,0];
@@ -764,7 +786,7 @@ export class TextWidget3 extends CanvasWidget3 {
 
         lines.forEach((line,i) => {
             const o = (i * lineHeight) - yOffset;
-            cc.fillText(line, xy[0], xy[1] + o);
+            cc.fillText(line, xy[0] + this.offset[0], xy[1] + o + this.offset[1]);
         });
     }
 
@@ -788,7 +810,7 @@ export class ControlWidget3 extends Widget3 {
 
     constructor(options) {
         super(options);
-        this.active = new PlaneWidget3({parent: this, autoSize: [1,1], visible: true, color: [1,0,1], collidable:true});
+        this.active = new PlaneWidget3({parent: this, name: "active", autoSize: [1,1], visible: true, color: [1,0,1], collidable:true});
 
 
     }
@@ -1012,7 +1034,7 @@ export class DragWidget3 extends ControlWidget3 {
         this.knob.collidable = false;
         this.drag.collidable = true;
         if(hit.widget === this.knob) {
-        } else if (hit.widget = this.drag) {
+        } else if (hit.widget === this.drag) {
             let x = this.dragSize[0] * (hit.xy[0]-0.5);
             let y = this.dragSize[1] * (hit.xy[1]-0.5);
             this.knob.translation = [x,y,0];
@@ -1073,7 +1095,7 @@ export class SpinWidget3 extends ControlWidget3 {
         this.knob.collidable = false;
         this.drag.collidable = true;
         if(hit.widget === this.knob) {
-        } else if (hit.widget = this.drag) {
+        } else if (hit.widget === this.drag) {
             let x = TAU * (hit.xy[0] - 0.5);
             let y = TAU * (hit.xy[1] - 0.5);
             const q0 = q_axisAngle([0,1,0],x);
@@ -1125,9 +1147,13 @@ export class TextFieldWidget3 extends FocusWidget3 {
     constructor(options) {
         super(options);
 
-        this.left = 1;
-        this.right = 1;
+        this.left = 0;
+        this.right = 0;
+        this.dragMargin = 0.5;
 
+        const dragSize = [this.trueSize[0]+2*this.dragMargin, this.trueSize[1]+2*this.dragMargin]
+
+        this.drag = new PlaneWidget3({parent: this.active, name:"drag", size: dragSize, visible: false, collidable:false, color: [1,0,1]});
 
         this.text = new TextWidget3({
             parent: this,
@@ -1136,8 +1162,27 @@ export class TextFieldWidget3 extends FocusWidget3 {
             fgColor: [0,0,0],
             font: "sans-serif",
             alignX: "left",
+            alignY: "middle",
             point: 96,
-            text: "12345"});
+            noWrap: true,
+            text: "123467890",
+            offset: [0,0]
+        });
+
+        // console.log(this.text.canvas.width);
+        // console.log(this.text.textWidth);
+
+        // this.text.offset = [this.text.canvas.width - this.text.textWidth, 0];
+
+        this.select = new PlaneWidget3 ({
+            parent: this.text,
+            autoSize: [0,1],
+            size: [this.selectSizeX, 0],
+            color:[1,0,0],
+            visible: false,
+            opacity: 0.5,
+            translation: [this.selectX,0,tiny]
+        })
 
         this.cursor = new PlaneWidget3({
             parent: this.text,
@@ -1145,35 +1190,148 @@ export class TextFieldWidget3 extends FocusWidget3 {
             border: [0, 0.1, 0, 0.1],
             size: [0.02, 0],
             color:[0,0,0],
+            visible: false,
+            opacity: 1,
             translation: [this.cursorX,0,0]
-            });
+        });
+
+        this.cursorBlink();
+
 
     }
+
+    // get textWidth(){
+    //     return this.text.letterOffset(this.text.text.length-1);
+    // }
+
 
     get cursorX() {
         return -this.trueSize[0]/2 + this.text.letterOffset(this.left);
     }
 
+    get rangeSelected() { return this.left !== this.right }
+
+    get leftX() {
+        return -this.trueSize[0]/2 + this.text.letterOffset(this.left);
+    }
+
+    get rightX() {
+        return -this.trueSize[0]/2 + this.text.letterOffset(this.right);
+    }
+
+    get selectSizeX() {
+        return this.rightX - this.leftX;
+    }
+
+    get selectX() {
+        return (this.rightX + this.leftX) / 2;
+    }
+
+    onNormal() {
+        this.dragging = false;
+        this.drag.collidable = false;
+    }
+
+    onPress(hit) {
+        if(!this.isFocused) return;
+        let x = hit.xy[0] * this.trueSize[0];
+        if (hit.widget === this.drag) x = (hit.xy[0]*this.drag.size[0] - this.dragMargin);
+        const index = this.text.selectionIndex(x);
+        if (this.dragging) {
+            if (index < this.startIndex) {
+                this.left = index;
+                this.right = this.startIndex;
+            } else {
+                this.left = this.startIndex;
+                this.right = index;
+            }
+        } else {
+            this.drag.collidable = true;
+            this.dragging = true;
+            this.startIndex = index;
+            this.left = this.right = index;
+        }
+
+        this.cursor.translation = [this.cursorX,0,tiny];
+        this.select.size = [this.selectSizeX, 0];
+        this.select.translation = [this.selectX,0,tiny];
+
+        this.cursor.visible = !this.rangeSelected;
+        this.select.visible = this.rangeSelected;
+
+    }
+
+    onBlur() {
+        this.cursor.visible = false;
+    }
+    cursorBlink() {
+        if(this.isFocused && !this.rangeSelected) {
+            this.cursor.visible = !this.cursor.visible
+        }
+        this.future(530).cursorBlink();
+    }
+
     keyDown(e) {
         switch (e.key) {
+            case 'ArrowLeft':
+                this.cursorLeft();
+                break;
+            case 'ArrowRight':
+                this.cursorRight();
+                break;
+            case 'Backspace':
+                this.backspace();
+                break;
             default:
-                this.insert(e.key)
+                if (e.key.length === 1) this.insert(e.key)
         }
     }
 
     insert(s) {
-        const t = this.text.text.slice(0, this.left) + s + this.text.text.slice(this.right);
+        if (this.rangeSelected) this.deleteSelect();
+        console.log(s);
+        const t = this.text.text.slice(0, this.left) + s + this.text.text.slice(this.right); // Why double letter?
         this.text.text = t;
-        this.cursor.translation = [this.cursorX,0,0];
+        // const xxx = this.text.canvas.width - this.text.textWidth;
+        if (this.text.canvas.width - this.text.textWidth > this.text.canvas.width) this.text.offset = [this.text.canvas.width - this.text.letterOffset(this.right+1), 0];
+        this.cursorRight();
+    }
+
+    cursorLeft() {
+        this.right = this.left = Math.max(0,this.left-1);
+        this.cursor.translation = [this.cursorX,0,tiny];
+        this.cursor.visible = true;
+    }
+
+    cursorRight() {
+        this.right = this.left = Math.min(this.text.text.length,this.left+1);
+        this.cursor.translation = [this.cursorX,0,tiny];
+        this.cursor.visible = true;
     }
 
     backspace() {
-        const cut = Math.max(0, this.left - 1);
-        const t = this.text.text.slice(0, cut) + this.text.text.slice(this.right);
-        this.text.text = t;
-        this.left = cut;
+        if (this.rangeSelected) {
+            this.deleteSelect();
+        } else {
+            const cut = Math.max(0, this.left - 1);
+            const t = this.text.text.slice(0, cut) + this.text.text.slice(this.right);
+            this.text.text = t;
+            this.cursorLeft();
+        }
+
+    }
+
+    deleteSelect() {
+        const cut = Math.min(this.text.text.length, this.right);
+        const t = this.text.text.slice(0, this.left) + this.text.text.slice(cut);
+        this.text.text=t;
         this.right = this.left;
-        this.cursor.translation = [this.cursorX,0,0];
+        this.cursor.translation = [this.cursorX,0,tiny];
+        this.select.size = [this.selectSizeX, 0];
+        this.select.translation = [this.selectX,0,tiny];
+
+        this.select.visible = false;
+        this.cursor.visible = true;
     }
 
 }
