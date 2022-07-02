@@ -62,7 +62,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         this.subscribe("input", "pointerUp", this.widgetPointerUp);
         this.subscribe("input", "pointerMove", this.widgetPointerMove);
         this.subscribe("input", "keyDown", this.widgetKeyDown);
-        // this.subscribe("input", "keyRepeat", this.widgetKeyDown);
+        this.subscribe("input", "keyRepeat", this.widgetKeyDown);
         this.subscribe("input", "keyUp", this.widgetKeyUp);
     }
 
@@ -530,17 +530,23 @@ export class RenderWidget3 extends Widget3 {
         if (this.material && this.material.map) this.material.map.dispose();
     }
 
-    globalChanged() {
-        super.globalChanged();
-        this.isDirty = true;
-    }
+    // globalChanged() {
+    //     super.globalChanged();
+    //     this.isDirty = true;
+    // }
+
+    // update(time,delta) {
+    //     super.update(time,delta)
+    //     if (this.mesh && this.isDirty) {
+    //         this.mesh.matrix.fromArray(this.global);
+    //         this.isDirty = false;
+    //     }
+
+    // }
 
     update(time,delta) {
         super.update(time,delta)
-        if (this.mesh && this.isDirty) {
-            this.mesh.matrix.fromArray(this.global);
-            this.isDirty = false;
-        }
+        if (this.mesh) this.mesh.matrix.fromArray(this.global);
 
     }
 
@@ -676,7 +682,7 @@ export class TextWidget3 extends CanvasWidget3 {
         super(options);
     }
 
-    get text() { return this._text || "Text"}
+    get text() { return this._text || ""}
     set text(s) { this._text = s; this.redraw = true; }
     get font() { return this._font || "sans-serif"}
     set font(s) { this._font = s; this.redraw = true; }
@@ -786,7 +792,7 @@ export class TextWidget3 extends CanvasWidget3 {
 
         lines.forEach((line,i) => {
             const o = (i * lineHeight) - yOffset;
-            cc.fillText(line, xy[0] + this.offset[0], xy[1] + o + this.offset[1]);
+            cc.fillText(line, xy[0] + this.offset[0], xy[1] +this.offset[1] + o);
         });
     }
 
@@ -1147,8 +1153,7 @@ export class TextFieldWidget3 extends FocusWidget3 {
     constructor(options) {
         super(options);
 
-        this.left = 0;
-        this.right = 0;
+
         this.dragMargin = 0.5;
 
         const dragSize = [this.trueSize[0]+2*this.dragMargin, this.trueSize[1]+2*this.dragMargin]
@@ -1165,22 +1170,19 @@ export class TextFieldWidget3 extends FocusWidget3 {
             alignY: "middle",
             point: 96,
             noWrap: true,
-            text: "123467890",
-            offset: [0,0]
+            text: "1234567890"
         });
 
-        // console.log(this.text.canvas.width);
-        // console.log(this.text.textWidth);
-
-        // this.text.offset = [this.text.canvas.width - this.text.textWidth, 0];
+        this.left = this.text.text.length;
+        this.right = 0;
 
         this.select = new PlaneWidget3 ({
             parent: this.text,
             autoSize: [0,1],
             size: [this.selectSizeX, 0],
-            color:[1,0,0],
+            color:[0,0,0],
             visible: false,
-            opacity: 0.5,
+            opacity: 0.2,
             translation: [this.selectX,0,tiny]
         })
 
@@ -1200,23 +1202,18 @@ export class TextFieldWidget3 extends FocusWidget3 {
 
     }
 
-    // get textWidth(){
-    //     return this.text.letterOffset(this.text.text.length-1);
-    // }
-
-
     get cursorX() {
-        return -this.trueSize[0]/2 + this.text.letterOffset(this.left);
+        return -this.trueSize[0]/2 + this.text.letterOffset(this.left) + this.text.offset[0] / this.text.resolution;
     }
 
     get rangeSelected() { return this.left !== this.right }
 
     get leftX() {
-        return -this.trueSize[0]/2 + this.text.letterOffset(this.left);
+        return -this.trueSize[0]/2 + this.text.letterOffset(this.left) + this.text.offset[0] / this.text.resolution;
     }
 
     get rightX() {
-        return -this.trueSize[0]/2 + this.text.letterOffset(this.right);
+        return -this.trueSize[0]/2 + this.text.letterOffset(this.right) + this.text.offset[0] / this.text.resolution;
     }
 
     get selectSizeX() {
@@ -1234,8 +1231,8 @@ export class TextFieldWidget3 extends FocusWidget3 {
 
     onPress(hit) {
         if(!this.isFocused) return;
-        let x = hit.xy[0] * this.trueSize[0];
-        if (hit.widget === this.drag) x = (hit.xy[0]*this.drag.size[0] - this.dragMargin);
+        let x = hit.xy[0] * this.trueSize[0] - this.text.offset[0] / this.text.resolution;
+        if (hit.widget === this.drag) x = (hit.xy[0]*this.drag.size[0] - this.dragMargin - this.text.offset[0] / this.text.resolution);
         const index = this.text.selectionIndex(x);
         if (this.dragging) {
             if (index < this.startIndex) {
@@ -1250,19 +1247,26 @@ export class TextFieldWidget3 extends FocusWidget3 {
             this.dragging = true;
             this.startIndex = index;
             this.left = this.right = index;
+            // this.selectAll();
         }
 
-        this.cursor.translation = [this.cursorX,0,tiny];
+
+        this.cursor.translation = [this.cursorX,0,0];
         this.select.size = [this.selectSizeX, 0];
-        this.select.translation = [this.selectX,0,tiny];
+        this.select.translation = [this.selectX,0,0];
 
         this.cursor.visible = !this.rangeSelected;
         this.select.visible = this.rangeSelected;
 
     }
 
+    onFocus() {
+        this.cursor.visible = true;
+    }
+
     onBlur() {
         this.cursor.visible = false;
+        this.select.visible = false;
     }
     cursorBlink() {
         if(this.isFocused && !this.rangeSelected) {
@@ -1272,40 +1276,66 @@ export class TextFieldWidget3 extends FocusWidget3 {
     }
 
     keyDown(e) {
-        switch (e.key) {
-            case 'ArrowLeft':
-                this.cursorLeft();
-                break;
-            case 'ArrowRight':
-                this.cursorRight();
-                break;
-            case 'Backspace':
-                this.backspace();
-                break;
-            default:
-                if (e.key.length === 1) this.insert(e.key)
+        if (e.ctrl || e.meta) {
+            switch (e.key) {
+                case 'x':
+                    this.cut();
+                    break;
+                case 'c':
+                    this.copy();
+                    break;
+                case 'v':
+                    this.paste();
+                    break;
+                default:
+            }
+        } else {
+            switch (e.key) {
+                case 'ArrowLeft':
+                    this.cursorLeft();
+                    break;
+                case 'ArrowRight':
+                    this.cursorRight();
+                    break;
+                case 'Backspace':
+                    this.backspace();
+                    break;
+                default:
+                    if (e.key.length === 1) this.insert(e.key)
+            }
         }
     }
 
+
     insert(s) {
         if (this.rangeSelected) this.deleteSelect();
-        console.log(s);
-        const t = this.text.text.slice(0, this.left) + s + this.text.text.slice(this.right); // Why double letter?
+        const t = this.text.text.slice(0, this.left) + s + this.text.text.slice(this.right);
         this.text.text = t;
-        // const xxx = this.text.canvas.width - this.text.textWidth;
-        if (this.text.canvas.width - this.text.textWidth > this.text.canvas.width) this.text.offset = [this.text.canvas.width - this.text.letterOffset(this.right+1), 0];
-        this.cursorRight();
+        // console.log(s.length);
+        this.cursorRight(s.length);
     }
 
-    cursorLeft() {
+    adjustOffset() {
+        const rightmost = this.text.canvas.width-this.text.textWidth
+        const leftmost = -this.text.letterOffset(this.left+1);
+
+        if (this.text.textWidth > this.text.canvas.width) {
+            this.text.offset = [rightmost, 0];
+        } else {
+            this.text.offset = [0,0];
+        }
+        this.cursor.translation = [this.cursorX,0,0];
+    }
+
+    cursorLeft() { // xxx Can go past end instead of moving window
         this.right = this.left = Math.max(0,this.left-1);
-        this.cursor.translation = [this.cursorX,0,tiny];
+        this.adjustOffset();
         this.cursor.visible = true;
     }
 
-    cursorRight() {
-        this.right = this.left = Math.min(this.text.text.length,this.left+1);
-        this.cursor.translation = [this.cursorX,0,tiny];
+    cursorRight(n=1) { // xxx Can go past end instead of moving window
+        this.right = this.left = Math.min(this.text.text.length,this.left+n);
+        this.adjustOffset();
         this.cursor.visible = true;
     }
 
@@ -1318,20 +1348,44 @@ export class TextFieldWidget3 extends FocusWidget3 {
             this.text.text = t;
             this.cursorLeft();
         }
-
+        this.adjustOffset();
     }
 
     deleteSelect() {
         const cut = Math.min(this.text.text.length, this.right);
         const t = this.text.text.slice(0, this.left) + this.text.text.slice(cut);
-        this.text.text=t;
+        this.text.text=t || " ";
         this.right = this.left;
-        this.cursor.translation = [this.cursorX,0,tiny];
+        this.cursor.translation = [this.cursorX,0,0];
         this.select.size = [this.selectSizeX, 0];
-        this.select.translation = [this.selectX,0,tiny];
+        this.select.translation = [this.selectX,0,0];
 
         this.select.visible = false;
         this.cursor.visible = true;
+    }
+
+    // selectAll() { // Has problems if parts of the string are hidden.
+    //     this.left = 0;
+    //     this.right = this.text.text.length;
+    //     this.select.visible = true;
+    // }
+
+    cut() {
+        if (!this.rangeSelected) return;
+        const t = this.text.text.slice(this.left, this.right);
+        this.deleteSelect();
+        navigator.clipboard.writeText(t); // This is a promise, but we don't care if it finishes.
+    }
+
+    copy() {
+        if (!this.rangeSelected) return;
+        const t = this.text.text.slice(this.left, this.right);
+        console.log(t);
+        navigator.clipboard.writeText(t); // This is a promise, but we don't care if it finishes.
+    }
+
+    paste() {
+        navigator.clipboard.readText().then( text => this.insert(text));
     }
 
 }
