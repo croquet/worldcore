@@ -7,7 +7,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
     q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
     TextWidgetActor, ButtonWidgetActor, GetViewService, UIManager, ButtonWidget, TextWidget, Widget, AM_Smoothed, PM_Smoothed, PM_Driver, v3_scale, v3_add, TAU, v3_rotate, toDeg, q_multiply, m4_multiply, m4_scaleRotationTranslation, q_identity } from "@croquet/worldcore";
 
-import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3, BoxWidget3, DragWidget3, EditorWidget3, SpinWidget3, BillboardWidget3, PlaneWidget3, HorizontalWidget3, VerticalWidget3, AlphaWidget3, TextFieldWidget3 } from "./ThreeWidget";
+import { Widget3, VisibleWidget3, ControlWidget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, TextWidget3, ButtonWidget3, ToggleWidget3, ToggleSet3, SliderWidget3, BoxWidget3, DragWidget3, EditorWidget3, SpinWidget3, BillboardWidget3, PlaneWidget3, HorizontalWidget3, VerticalWidget3, AlphaWidget3, TextFieldWidget3 } from "@croquet/worldcore";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";

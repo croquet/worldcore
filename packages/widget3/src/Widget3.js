@@ -1,6 +1,7 @@
 // THREE.js widget system.
 
-import { ViewService, GetViewService, THREE, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply, View, viewRoot, v3_add, TAU, toDeg, q_axisAngle, q_multiply, q_lookAt, v3_normalize, v3_sub, m4_getTranslation, v3_transform, v3_rotate, m4_getRotation } from "@croquet/worldcore";
+import { ViewService, GetViewService, m4_identity, q_identity, m4_scaleRotationTranslation, m4_multiply, View, viewRoot, v3_add, TAU, toDeg, q_axisAngle, q_multiply, q_lookAt, v3_normalize, v3_sub, m4_getTranslation, v3_transform, v3_rotate, m4_getRotation } from "@croquet/worldcore-kernel";
+import { THREE } from "@croquet/worldcore-three";
 
 let wm;
 const tiny = 0.0001
