@@ -14,7 +14,6 @@ export class WidgetManager extends ViewService {
     constructor(name) {
         super(name || "WidgetManager");
         wm = this;
-        console.log("Widget Manager constructor")
         this.widgets = new Set();
 
     }
@@ -228,10 +227,8 @@ export class Widget3 extends View {
         if (this.parent) this.parent.removeChild(this);
         this._parent = p;
         if (this.parent) this.parent.addChild(this);
-        this.onParentChanged();
         this.globalChanged();
     }
-    onParentChanged() {}
 
     get depth(){ if (this.parent) {return this.parent.depth+1} else {return 0} }
     get root() { if (this.parent) {return this.parent.root} else {return this} }
@@ -389,22 +386,16 @@ export class LayoutWidget3 extends Widget3 {
     }
 
     get size() { return super.size }
-    set size(v) { super.size = v; this.needsResize = true}
+    set size(v) { super.size = v; this.resize()}
     get margin() { return this._margin || 0 }
-    set margin(n) { this._margin = n; this.needsResize = true}
+    set margin(n) { this._margin = n; this.resize()}
 
     addChild(child) {
         super.addChild(child);
-        this.needsResize = true;
+        this.resize();
     }
 
     resize() {}
-
-    update(time, delta) {
-        super.update(time, delta);
-        if (this.needsResize) this.resize();
-        this.needsResize = false;
-    }
 
 }
 
@@ -414,10 +405,34 @@ export class LayoutWidget3 extends Widget3 {
 
 export class HorizontalWidget3 extends LayoutWidget3 {
 
+    // resize() {
+    //     if (!this.children) return;
+    //     let widthSum = Math.max(0, (this.children.size - 1) * this.margin);
+    //     let autoCount = 0;
+    //     this.children.forEach(child => {
+    //         if (child.width) {
+    //             widthSum += child.width;
+    //         } else {
+    //             autoCount++;
+    //         }
+    //     });
+
+    //     let autoWidth = 0;
+    //     if (autoCount > 0) autoWidth = Math.max(0, (this.trueSize[0] - widthSum) / autoCount);
+    //     let offset = -this.trueSize[0]/2;
+    //     this.children.forEach(child => {
+    //         let width = autoWidth;
+    //         if (child.width) width = child.width;
+    //         child.set({autoSize: [0,1], size:[width, 0], translation:[offset+width/2,0,0]});
+    //         offset += width + this.margin;
+    //     });
+    // }
+
     resize() {
         if (!this.children) return;
         let widthSum = Math.max(0, (this.children.size - 1) * this.margin);
         let autoCount = 0;
+
         this.children.forEach(child => {
             if (child.width) {
                 widthSum += child.width;
@@ -429,10 +444,11 @@ export class HorizontalWidget3 extends LayoutWidget3 {
         let autoWidth = 0;
         if (autoCount > 0) autoWidth = Math.max(0, (this.trueSize[0] - widthSum) / autoCount);
         let offset = -this.trueSize[0]/2;
+
         this.children.forEach(child => {
             let width = autoWidth;
-            if (child.width) width = child.width;
-            child.set({autoSize: [0,1], size:[width, 0], translation:[offset+width/2,0,0]});
+            if (child.width) height = child.width;
+            child.set({autoSize: [0,1], size:[width, 0], anchor: null, pivot: null, translation: [offset + width/2,0,0]});
             offset += width + this.margin;
         });
     }
@@ -447,7 +463,7 @@ export class VerticalWidget3 extends LayoutWidget3 {
 
     resize() {
         if (!this.children) return;
-        let heightSum = Math.max(0, (this.slots.length - 1) * this.margin);
+        let heightSum = Math.max(0, (this.children.size - 1) * this.margin);
         let autoCount = 0;
 
         this.children.forEach(child => {
@@ -465,7 +481,7 @@ export class VerticalWidget3 extends LayoutWidget3 {
         this.children.forEach(child => {
             let height = autoHeight;
             if (child.height) height = child.height;
-            child.set({autoSize: [1,0], size:[0, height], translation: [0, offset-height/2,0]});
+            child.set({autoSize: [1,0], size:[0, height], anchor: null, pivot: null, translation: [0,offset - height/2,0]});
             offset -= height + this.margin;
         });
     }
@@ -485,6 +501,11 @@ export class RenderWidget3 extends Widget3 {
         this.buildMesh();
     }
 
+    get geometry() {
+        if (!this._geometry) this.buildGeometry();
+        return this._geometry;
+    }
+
     get parent() { return super.parent; }
     set parent(p) { super.parent = p; this.buildMaterial()} // May change sorting order of coplanar widgets.
 
@@ -492,8 +513,8 @@ export class RenderWidget3 extends Widget3 {
     set color(v) { this._color = v; this.buildMaterial(); }
 
     buildGeometry() {
-        if (this.geometry) this.geometry.dispose();
-        this.geometry = null;
+        if (this._geometry) this._geometry.dispose();
+        this._geometry = null;
      }
 
     buildMaterial() {
@@ -547,7 +568,7 @@ export class PlaneWidget3 extends RenderWidget3 {
 
     buildGeometry() {
         super.buildGeometry();
-        this.geometry = new THREE.PlaneGeometry(...this.trueSize, 1);
+        this._geometry = new THREE.PlaneGeometry(...this.trueSize, 1);
         if (this.mesh) this.mesh.geometry = this.geometry;
     }
 
@@ -613,29 +634,35 @@ function canvasColor(r, g, b) {
 
 export class CanvasWidget3 extends PlaneWidget3 {
 
-    // constructor(options) {
-    //     super(options);
-    //     // this.buildCanvas();
-    // }
+    constructor(options) {
+        super(options);
+        this.rebuildCanvas = true;
+    }
+
+    get parent() { return super.parent }
+    set parent(p) { super.parent = p; this.rebuildCanvas = true; }
 
     get size() { return super.size}
-    set size(v) {super.size = v; this.buildCanvas()}
+    set size(v) {super.size = v; this.rebuildCanvas = true; }
+    get autoSize() { return super.autoSize}
+    set autoSize(v) {super.autoSize = v; this.rebuildCanvas = true; }
     get resolution() { return this._resolution || 300;}
-    set resolution(n) { this._resolution = n; this.buildCanvas(); }
+    set resolution(n) { this._resolution = n; this.rebuildCanvas = true; }
     get alpha() { return this._alpha;}
-    set alpha(b) { this._alpha = b; this.buildCanvas(); }
+    set alpha(b) { this._alpha = b; this.rebuildCanvas = true; }
 
     buildMaterial() {
         super.buildMaterial();
-        this.buildCanvas();
+        this.rebuildCanvas = true;
     }
 
     buildCanvas() {
+        if (this.trueSize[0] <= 0 || this.trueSize[1] <= 0 ) return
         if(this.material && this.material.map) this.material.map.dispose();
         if(this.material && this.material.alphaMap) this.material.alphaMap.dispose();
         this.canvas = document.createElement("canvas");
-        this.canvas.width = Math.max(1,this.trueSize[0]) * this.resolution;
-        this.canvas.height = Math.max(1,this.trueSize[1]) * this.resolution;
+        this.canvas.width = this.trueSize[0] * this.resolution;
+        this.canvas.height = this.trueSize[1] * this.resolution;
         if (this.material) {
             if (this.alpha) {
                 this.material.alphaMap = new THREE.CanvasTexture(this.canvas);
@@ -644,30 +671,34 @@ export class CanvasWidget3 extends PlaneWidget3 {
                 this.material.map = new THREE.CanvasTexture(this.canvas);
                 this.material.alphaTest = 0;
             }
+            this.material.needsUpdate = true;
         }
-        this.draw()
+        this.cc = this.canvas.getContext('2d');
+        this.rebuildCanvas = false;
+        this.redraw = true;
     }
+
+    fill(color) {
+        this.cc.fillStyle = canvasColor(...color);
+        this.cc.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+
+    draw() {this.redraw = false;};
 
     update(time,delta) {
         super.update(time,delta)
-        if (this.redraw) {
-            this.buildCanvas();
-            this.redraw = false;
-        } ;
+        if (this.rebuildCanvas) this.buildCanvas();
+        if (this.redraw) this.draw();
     }
-
-    draw() {};
 }
 
 //------------------------------------------------------------------------------------------
 //-- TextWidget ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class TextWidget3 extends CanvasWidget3 {
+// xxx Needs clean-up
 
-    constructor(options) {
-        super(options);
-    }
+export class TextWidget3 extends CanvasWidget3 {
 
     get text() { return this._text || ""}
     set text(s) { this._text = s; this.redraw = true; }
@@ -696,13 +727,13 @@ export class TextWidget3 extends CanvasWidget3 {
 
     lines() {
         if (this.noWrap) return this.text.split('\n');
-        const cc = this.canvas.getContext('2d');
+        // const cc = this.canvas.getContext('2d');
         const out = [];
-        const spaceWidth = cc.measureText(' ').width;
+        const spaceWidth = this.cc.measureText(' ').width;
         const words = this.text.split(' ');
         let sum = this.canvas.width+1;
         words.forEach( word => {
-            const wordWidth = cc.measureText(word).width
+            const wordWidth = this.cc.measureText(word).width
             sum += spaceWidth + wordWidth;
             if (sum > this.canvas.width) {
                 out.push(word);
@@ -715,50 +746,52 @@ export class TextWidget3 extends CanvasWidget3 {
     }
 
     letterOffset(n) {
-        const cc = this.canvas.getContext('2d');
-        this.setStyle(cc);
+        if (!this.cc) return;
+        this.setStyle();
         const c = [...this.text];
         let offset = 0;
         n = Math.min(n, c.length);
         for (let i = 0; i < n; i++) {
-            offset += cc.measureText(c[i]).width;
+            offset += this.cc.measureText(c[i]).width;
         }
         return offset / this.resolution;
     }
 
     get textWidth() {
-        const cc = this.canvas.getContext('2d');
-        this.setStyle(cc);
-        return cc.measureText(this.text).width;
+        // const cc = this.canvas.getContext('2d');
+        this.setStyle();
+        return this.cc.measureText(this.text).width;
     }
 
     selectionIndex(x) {
         x = x * this.resolution;
-        const cc = this.canvas.getContext('2d');
-        this.setStyle(cc);
+        // const cc = this.canvas.getContext('2d');
+        this.setStyle();
 
         const c = [...this.text];
         let sum = 0;
         for (let i = 0; i < c.length; i++) {
-            const w = cc.measureText(c[i]).width;
+            const w = this.cc.measureText(c[i]).width;
             if (x < sum + w/2) return i;
             sum += w;
         }
         return c.length;
     }
 
-    setStyle(cc) {
-        cc.textAlign = this.alignX;
-        cc.textBaseline = this.alignY;
-        cc.font = this.style + " " + this.point + "px " + this.font;
-        cc.fillStyle = canvasColor(...this.bgColor);
-        cc.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        cc.fillStyle = canvasColor(...this.fgColor);
+    setStyle() {
+        if (!this.cc) return;
+        this.cc.textAlign = this.alignX;
+        this.cc.textBaseline = this.alignY;
+        this.cc.font = this.style + " " + this.point + "px " + this.font;
+        this.cc.fillStyle = canvasColor(...this.fgColor);
     }
 
     draw() {
-        const cc = this.canvas.getContext('2d', {alpha: false});
-        this.setStyle(cc);
+        super.draw();
+        console.log("text redraw");
+        this.fill(this.bgColor);
+        this.setStyle();
+
         const lineHeight = (this.point + this.lineSpacing);
         const lines = this.lines(this.canvas);
 
@@ -779,9 +812,13 @@ export class TextWidget3 extends CanvasWidget3 {
 
         lines.forEach((line,i) => {
             const o = (i * lineHeight) - yOffset;
-            cc.fillText(line, xy[0] + this.offset[0], xy[1] +this.offset[1] + o);
+            this.cc.fillText(line, xy[0] + this.offset[0], xy[1] + this.offset[1] + o);
         });
+
+        this.material.map.needsUpdate = true;
     }
+
+
 
 
 
@@ -803,7 +840,7 @@ export class ControlWidget3 extends Widget3 {
 
     constructor(options) {
         super(options);
-        this.active = new PlaneWidget3({parent: this, name: "active", autoSize: [1,1], visible: true, color: [1,0,1], collidable:true});
+        this.active = new PlaneWidget3({parent: this, name: "active", autoSize: [1,1], visible: false, color: [1,0,1], collidable:true});
 
 
     }
@@ -990,10 +1027,36 @@ export class SliderWidget3 extends ControlWidget3 {
     }
 
     onPercent(p) {
+        // console.log(p);
         this.publish(this.id, "percent", p);
     }
 
+}
 
+//------------------------------------------------------------------------------------------
+//-- MenuWidget ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class MenuWidget3 extends ControlWidget3 {
+
+    constructor(options) {
+        super(options);
+
+        this.background = new PlaneWidget3({parent: this, autoSize: [1,1], color: [1,1,0], visible: false})
+        this.buildListPanel();
+    }
+
+    get list() { return this._list || []; }
+    set list(a) { this._list = a }
+
+    buildListPanel() {
+        if (this.vertical) this.vertical.destroy();
+        this.vertical = new VerticalWidget3({parent: this, autoSize: [1,0], size:[0,1], });
+        this.list.forEach(entry =>{
+            new TextWidget3({parent: this.vertical, text: entry, bgColor: [1,1,1], fgColor: [0,0,0], noWrap: true, point: 48, font: "sans-serif"})
+        });
+
+    }
 }
 
 //------------------------------------------------------------------------------------------
