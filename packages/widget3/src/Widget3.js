@@ -815,7 +815,7 @@ export class TextWidget3 extends CanvasWidget3 {
             this.cc.fillText(line, xy[0] + this.offset[0], xy[1] + this.offset[1] + o);
         });
 
-        this.material.map.needsUpdate = true;
+        this.material.map.needsUpdate = true; // Should go in super.draw?
     }
 
 

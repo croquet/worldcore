@@ -1,0 +1,23 @@
+{
+  "name": "@croquet/worldcore-base",
+  "version": "1.3.0",
+  "description": "Worldcore Microverse Base",
+  "private": true,
+  "scripts": {
+    "start": "webpack-dev-server --mode development --devtool source-map --watch",
+    "build": "webpack --mode production"
+  },
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@croquet/worldcore": "^1.3.0"
+  },
+  "devDependencies": {
+    "file-loader": "^6.0.0",
+    "html-webpack-plugin": "^4.3.0",
+    "inspectpack": "^4.5.2",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12",
+    "webpack-dev-server": "^3.11.0"
+  }
+}
