@@ -352,7 +352,7 @@ class MyModelRoot extends ModelRoot {
         console.log("Start root model!!");
         this.level = LevelActor.create();
         this.testActor = TestActor.create({name: "Yellow Box", translation: [0,0,0]});
-        this.textAvatar = Avatar.create({name: "Avatar", translation: [-2,0,0]})
+        // this.testAvatar = Avatar.create({name: "Avatar", translation: [-2,0,0]})
 
 
         // this.subscribe("input", "mDown", this.test0);

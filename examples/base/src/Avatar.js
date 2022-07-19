@@ -1,4 +1,10 @@
-import { Actor, Pawn, mix, AM_Smoothed, PM_Smoothed, PM_Driver, PM_ThreeVisible, THREE } from "@croquet/worldcore";
+import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PlayerManager,
+    AM_Player, PM_Player, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, PM_ThreeCamera, toRad, THREE,
+    AM_Predictive, PM_Predictive,
+    AM_PointerTarget, PM_Pointer, PM_PointerTarget, CardActor, CardPawn,
+    q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
+    TextWidgetActor, ButtonWidgetActor, GetViewService, UIManager, ButtonWidget, TextWidget, Widget, AM_Smoothed, PM_Smoothed, PM_Driver, v3_scale, v3_add, TAU, v3_rotate, toDeg, q_multiply, m4_multiply, m4_scaleRotationTranslation, q_identity, MenuWidget3 } from "@croquet/worldcore";
+
 
 //------------------------------------------------------------------------------------------
 //-- Avatar --------------------------------------------------------------------------------
@@ -15,7 +21,7 @@ Avatar.register('Avatar');
 //-- AvatarPawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeVisible) {
+export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeVisible ) {
 
     constructor(actor) {
         super(actor);
@@ -29,107 +35,134 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeV
         const cube = new THREE.Mesh( this.geometry, this.material );
         this.setRenderObject(cube);
 
-        // if (this.isMyPlayerPawn) {
-        //     this.subscribe("input", "pointerDown", this.doPointerDown);
-        //     this.subscribe("input", "pointerUp", this.doPointerUp);
-        //     this.subscribe("input", "pointerDelta", this.doPointerDelta);
-        //     this.subscribe("input", "keyDown", this.keyDown);
-        //     this.subscribe("input", "keyUp", this.keyUp);
-        // }
+        this.drive();
 
     }
+
+    destroy() { // When the pawn is destroyed, we dispose of our Three.js objects.
+        super.destroy();
+        this.geometry.dispose();
+        this.material.dispose();
+    }
+
 
     get isMyAvatar() {
 
     }
 
-    // keyDown(e) {
-    //     if (this.focused) return;
-    //     switch(e.key) {
-    //         case "ArrowUp":
-    //         case "w":
-    //             this.fore = 1; break;
-    //         case "ArrowDown":
-    //         case "s":
-    //             this.back = 1; break;
-    //         case "ArrowLeft":
-    //         case "a":
-    //             this.left = 1; break;
-    //         case "ArrowRight":
-    //         case "d":
-    //             this.right = 1; break;
-    //         default:
-    //     }
-    // }
+    drive() {
+        this.subscribe("input", "pointerDown", this.doPointerDown);
+        this.subscribe("input", "pointerUp", this.doPointerUp);
+        this.subscribe("input", "pointerDelta", this.doPointerDelta);
+        this.subscribe("input", "keyDown", this.keyDown);
+        this.subscribe("input", "keyUp", this.keyUp);
 
-    // keyUp(e) {
-    //     if (this.focused) return;
-    //     switch(e.key) {
-    //         case "ArrowUp":
-    //         case "w":
-    //             this.fore = 0; break;
-    //         case "ArrowDown":
-    //         case "s":
-    //             this.back = 0; break;
-    //         case "ArrowLeft":
-    //         case "a":
-    //             this.left = 0; break;
-    //         case "ArrowRight":
-    //         case "d":
-    //             this.right = 0; break;
-    //         default:
-    //     }
-    // }
+        // this.listen("lookGlobalChanged", this.lookGlobalChanged);
+        this.listen("viewGlobalChanged", this.lookGlobalChanged);
+    }
+
+    park() {
+        this.unsubscribe("input", "pointerDown", this.doPointerDown);
+        this.unsubscribe("input", "pointerUp", this.doPointerUp);
+        this.unsubscribe("input", "pointerDelta", this.doPointerDelta);
+        this.unsubscribe("input", "keyDown", this.keyDown);
+        this.unsubscribe("input", "keyUp", this.keyUp);
+    }
+
+    keyDown(e) {
+        if (this.focused) return;
+        switch(e.key) {
+            case "ArrowUp":
+            case "w":
+                this.fore = 1; break;
+            case "ArrowDown":
+            case "s":
+                this.back = 1; break;
+            case "ArrowLeft":
+            case "a":
+                this.left = 1; break;
+            case "ArrowRight":
+            case "d":
+                this.right = 1; break;
+            default:
+        }
+    }
+
+    keyUp(e) {
+        if (this.focused) return;
+        switch(e.key) {
+            case "ArrowUp":
+            case "w":
+                this.fore = 0; break;
+            case "ArrowDown":
+            case "s":
+                this.back = 0; break;
+            case "ArrowLeft":
+            case "a":
+                this.left = 0; break;
+            case "ArrowRight":
+            case "d":
+                this.right = 0; break;
+            default:
+        }
+    }
 
 
-    // destroy() { // When the pawn is destroyed, we dispose of our Three.js objects.
-    //     super.destroy();
-    //     this.geometry.dispose();
-    //     this.material.dispose();
-    // }
+    get velocity() {
+        return [ (this.left - this.right), 0,  (this.fore - this.back)];
+    }
 
-    // get velocity() {
-    //     return [ (this.left - this.right), 0,  (this.fore - this.back)];
-    // }
+    update(time, delta) {
+        super.update(time,delta);
+        const pitchQ = q_axisAngle([1,0,0], this.pitch);
+        const yawQ = q_axisAngle([0,1,0], this.yaw);
+        // const yawQ = q_identity();
+        // const lookQ = q_multiply(pitchQ, yawQ);
+        const v = v3_scale(this.velocity, -this.speed * delta/1000)
+        const v2 = v3_rotate(v, yawQ);
+        const t = v3_add(this.translation, v2)
+        // this.translateTo(t);
+        this.positionTo(t, yawQ);
+    }
 
-    // update(time, delta) {
-    //     super.update(time,delta);
-    //     const pitchQ = q_axisAngle([1,0,0], this.pitch);
-    //     const yawQ = q_axisAngle([0,1,0], this.yaw);
-    //     // const lookQ = q_multiply(pitchQ, yawQ);
-    //     const v = v3_scale(this.velocity, -this.speed * delta/1000)
-    //     const v2 = v3_rotate(v, yawQ);
-    //     const t = v3_add(this.translation, v2)
-    //     this.positionTo(t, yawQ);
-    // }
+    doPointerDown(e) {
+        if (e.button === 2) this.service("InputManager").enterPointerLock();;
+    }
 
-    // doPointerDown(e) {
-    //     if (e.button === 2) this.service("InputManager").enterPointerLock();;
-    // }
+    doPointerUp(e) {
+        if (e.button === 2) this.service("InputManager").exitPointerLock();
+    }
 
-    // doPointerUp(e) {
-    //     if (e.button === 2) this.service("InputManager").exitPointerLock();
-    // }
+    doPointerDelta(e) {
+        if (this.service("InputManager").inPointerLock) {
+            this.yaw += (-this.turnSpeed * e.xy[0]) % TAU;
+            this.pitch += (-this.turnSpeed * e.xy[1]) % TAU;
+            this.pitch = Math.max(-Math.PI/2, this.pitch);
+            this.pitch = Math.min(Math.PI/2, this.pitch);
+        };
+    }
 
-    // doPointerDelta(e) {
-    //     if (this.service("InputManager").inPointerLock) {
-    //         this.yaw += (-this.turnSpeed * e.xy[0]) % TAU;
-    //         this.pitch += (-this.turnSpeed * e.xy[1]) % TAU;
-    //         this.pitch = Math.max(-Math.PI/2, this.pitch);
-    //         this.pitch = Math.min(Math.PI/2, this.pitch);
-    //     };
-    // }
+    get lookGlobal() {
+        const pitchQ = q_axisAngle([1,0,0], this.pitch);
+        const yawQ = q_axisAngle([0,1,0], this.yaw);
+        const lookQ = q_multiply(pitchQ, yawQ);
 
-    // get lookGlobal() {
-    //     const pitchQ = q_axisAngle([1,0,0], this.pitch);
-    //     const yawQ = q_axisAngle([0,1,0], this.yaw);
-    //     const lookQ = q_multiply(pitchQ, yawQ);
+        const local =  m4_scaleRotationTranslation(this.scale, lookQ, this.translation)
+        let global = local;
+        if (this.parent && this.parent.global) global = m4_multiply(local, this.parent.global);
 
-    //     const local =  m4_scaleRotationTranslation(this.scale, lookQ, this.translation)
-    //     let global= local;
-    //     if (this.parent && this.parent.global) global = m4_multiply(local, this.parent.global);
+        return global;
+    }
 
-    //     return global;
-    // }
+    lookGlobalChanged() {
+        console.log("look changed");
+        // console.log(this.lookGlobal);
+
+
+        const render = this.service("ThreeRenderManager");
+
+        // render.camera.matrix.fromArray(this.lookGlobal);
+        // render.camera.matrixWorldNeedsUpdate = true;
+    }
 
 }
