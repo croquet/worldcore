@@ -788,7 +788,6 @@ export class TextWidget3 extends CanvasWidget3 {
 
     draw() {
         super.draw();
-        console.log("text redraw");
         this.fill(this.bgColor);
         this.setStyle();
 

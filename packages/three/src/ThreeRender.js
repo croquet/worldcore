@@ -168,6 +168,7 @@ export class ThreeRenderManager extends RenderManager {
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
+        this.camera.matrixAutoUpdate = false;
 
         if (!options.canvas) {
             this.canvas = document.createElement("canvas");
@@ -231,6 +232,11 @@ export class ThreeRenderManager extends RenderManager {
 
     update() {
         if(this.doRender)this.composer.render();
+    }
+
+    setCameraTransform(m) {
+        this.camera.matrix.fromArray(m);
+        this.camera.matrixWorldNeedsUpdate = true;
     }
 
 }

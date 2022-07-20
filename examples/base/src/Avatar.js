@@ -13,6 +13,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
 export class Avatar extends mix(Actor).with(AM_Smoothed) {
 
     get pawn() {return AvatarPawn}
+    get driver() { return this._driver} // The user that is controlling this avatar.
 
 }
 Avatar.register('Avatar');
@@ -34,6 +35,9 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeV
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,0)} );
         const cube = new THREE.Mesh( this.geometry, this.material );
         this.setRenderObject(cube);
+        this.refreshDrawTransform();
+
+        this.listenOnce("driverSet", this.onDriverSet);
 
         this.drive();
 
@@ -46,19 +50,28 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeV
     }
 
 
-    get isMyAvatar() {
+    get isMyAvatarPawn() {
+        if (this.actor && this.actor.driver) return this.actor.driver.userId === this.viewId;
+        return false;
 
     }
 
+    onDriverSet(e) {
+        // if (e.v === e.o) return;b
+        this.park();
+        this.drive();
+    }
+
     drive() {
+        if (!this.isMyAvatarPawn) return;
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
-
-        // this.listen("lookGlobalChanged", this.lookGlobalChanged);
-        this.listen("viewGlobalChanged", this.lookGlobalChanged);
+        this.listen("lookGlobalChanged", this.refreshCamera);
+        this.listen("viewGlobalChanged", this.refreshCamera);
+        this.refreshCamera();
     }
 
     park() {
@@ -113,16 +126,14 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeV
     }
 
     update(time, delta) {
-        super.update(time,delta);
-        const pitchQ = q_axisAngle([1,0,0], this.pitch);
+
+        // const pitchQ = q_axisAngle([1,0,0], this.pitch);
         const yawQ = q_axisAngle([0,1,0], this.yaw);
-        // const yawQ = q_identity();
-        // const lookQ = q_multiply(pitchQ, yawQ);
         const v = v3_scale(this.velocity, -this.speed * delta/1000)
         const v2 = v3_rotate(v, yawQ);
         const t = v3_add(this.translation, v2)
-        // this.translateTo(t);
         this.positionTo(t, yawQ);
+        super.update(time,delta);
     }
 
     doPointerDown(e) {
@@ -154,15 +165,9 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeV
         return global;
     }
 
-    lookGlobalChanged() {
-        console.log("look changed");
-        // console.log(this.lookGlobal);
-
-
+    refreshCamera() {
         const render = this.service("ThreeRenderManager");
-
-        // render.camera.matrix.fromArray(this.lookGlobal);
-        // render.camera.matrixWorldNeedsUpdate = true;
+        render.setCameraTransform(this.lookGlobal);
     }
 
 }

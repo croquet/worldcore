@@ -3,6 +3,21 @@
 
 import { Actor, ModelService } from "@croquet/worldcore";
 
+// ------------------------------------------------------------------------------------------
+// -- User ----------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------
+
+export class User extends Actor {
+    // init(options) {
+    //     super.init(options);
+    //     // console.log("default user");
+    //     // console.log(this.userId);
+    // }
+
+    get userId() { return this._userId }
+}
+User.register('User');
+
 //------------------------------------------------------------------------------------------
 //-- UserManager ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -11,11 +26,11 @@ import { Actor, ModelService } from "@croquet/worldcore";
 
 export class UserManager extends ModelService {
 
-    get defaultUser() { return User }
+    get defaultUser() {return User;}
 
-    init(name) {
-        super.init(name ||'UserManager');
-        console.log("UserManager");
+
+    init(options) {
+        super.init('UserManager');
         this.users = new Map();
         this.subscribe(this.sessionId, "view-join", this.onJoin);
         this.subscribe(this.sessionId, "view-exit", this.onExit);
@@ -42,17 +57,4 @@ export class UserManager extends ModelService {
 UserManager.register("UserManager");
 
 
-// ------------------------------------------------------------------------------------------
-// -- User ----------------------------------------------------------------------------------
-// ------------------------------------------------------------------------------------------
 
-export class User extends Actor {
-    init(options) {
-        super.init(options);
-        console.log("new user");
-        console.log(this.userId);
-    }
-
-    get userId() { return this._userId }
-}
-User.register('User');
