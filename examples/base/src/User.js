@@ -8,12 +8,6 @@ import { Actor, ModelService } from "@croquet/worldcore";
 // ------------------------------------------------------------------------------------------
 
 export class User extends Actor {
-    // init(options) {
-    //     super.init(options);
-    //     // console.log("default user");
-    //     // console.log(this.userId);
-    // }
-
     get userId() { return this._userId }
 }
 User.register('User');

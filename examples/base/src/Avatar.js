@@ -1,9 +1,7 @@
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PlayerManager,
     AM_Player, PM_Player, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, PM_ThreeCamera, toRad, THREE,
-    AM_Predictive, PM_Predictive,
-    AM_PointerTarget, PM_Pointer, PM_PointerTarget, CardActor, CardPawn,
-    q_axisAngle, m4_rotationQ, m4_identity, GetPawn, WidgetActor, WidgetPawn, ImageWidgetPawn, CanvasWidgetPawn, ImageWidgetActor, CanvasWidgetActor,
-    TextWidgetActor, ButtonWidgetActor, GetViewService, UIManager, ButtonWidget, TextWidget, Widget, AM_Smoothed, PM_Smoothed, PM_Driver, v3_scale, v3_add, TAU, v3_rotate, toDeg, q_multiply, m4_multiply, m4_scaleRotationTranslation, q_identity, MenuWidget3 } from "@croquet/worldcore";
+    q_axisAngle,
+    TextWidgetActor, ButtonWidgetActor, GetViewService, UIManager, ButtonWidget, TextWidget, Widget, AM_Smoothed, PM_Smoothed, PM_Driver, v3_scale, v3_add, TAU, v3_rotate, v3_rotateY, toDeg, q_multiply, m4_multiply, m4_scaleRotationTranslation, q_identity, MenuWidget3, q_isZero, PM_WidgetPointer } from "@croquet/worldcore";
 
 
 //------------------------------------------------------------------------------------------
@@ -12,8 +10,25 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
 
 export class Avatar extends mix(Actor).with(AM_Smoothed) {
 
+    // init(options) {
+    //     super.init(options);
+    //     this.listen("ooo", this.ooo);
+    //     this.listen("ppp", this.ppp);
+    // }
+
     get pawn() {return AvatarPawn}
     get driver() { return this._driver} // The user that is controlling this avatar.
+
+    // ooo() {
+    //     console.log("left");
+    //     this.set({translation: [-3,0,0]});
+    // }
+
+    // ppp() {
+    //     console.log("right");
+    //     this.set({translation: [3,0,0]});
+    //     // this.translateTo([3,0,0]);
+    // }
 
 }
 Avatar.register('Avatar');
@@ -22,10 +37,11 @@ Avatar.register('Avatar');
 //-- AvatarPawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeVisible ) {
+export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_WidgetPointer ) {
 
     constructor(actor) {
         super(actor);
+        console.log("AvatarPawn");
 
         this.fore = this.back = this.left = this.right = this.pitch = this.yaw = 0;
         this.speed = 5;
@@ -38,6 +54,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeV
         this.refreshDrawTransform();
 
         this.listenOnce("driverSet", this.onDriverSet);
+
 
         this.drive();
 
@@ -57,13 +74,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeV
     }
 
     onDriverSet(e) {
-        // if (e.v === e.o) return;b
         this.park();
         this.drive();
     }
 
     drive() {
         if (!this.isMyAvatarPawn) return;
+        this.driving = true;
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
@@ -75,6 +92,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeV
     }
 
     park() {
+        this.driving = false;
         this.unsubscribe("input", "pointerDown", this.doPointerDown);
         this.unsubscribe("input", "pointerUp", this.doPointerUp);
         this.unsubscribe("input", "pointerDelta", this.doPointerDelta);
@@ -126,14 +144,16 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeV
     }
 
     update(time, delta) {
-
-        // const pitchQ = q_axisAngle([1,0,0], this.pitch);
-        const yawQ = q_axisAngle([0,1,0], this.yaw);
-        const v = v3_scale(this.velocity, -this.speed * delta/1000)
-        const v2 = v3_rotate(v, yawQ);
-        const t = v3_add(this.translation, v2)
-        this.positionTo(t, yawQ);
         super.update(time,delta);
+        if(this.driving) {
+            const yawQ = q_axisAngle([0,1,0], this.yaw);
+            const v = v3_scale(this.velocity, -this.speed * delta/1000)
+            const v2 = v3_rotate(v, yawQ);
+            const t = v3_add(this.translation, v2)
+            if( v !== 0 || this.yawDelta !== 0) this.positionTo(t, yawQ);
+        }
+
+
     }
 
     doPointerDown(e) {
@@ -146,8 +166,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Driver, PM_ThreeV
 
     doPointerDelta(e) {
         if (this.service("InputManager").inPointerLock) {
-            this.yaw += (-this.turnSpeed * e.xy[0]) % TAU;
-            this.pitch += (-this.turnSpeed * e.xy[1]) % TAU;
+            this.yawDelta = (-this.turnSpeed * e.xy[0]) % TAU;
+            this.pitchDelta = (-this.turnSpeed * e.xy[1]) % TAU;
+            this.yaw += this.yawDelta;
+            this.pitch += this.pitchDelta;
             this.pitch = Math.max(-Math.PI/2, this.pitch);
             this.pitch = Math.min(Math.PI/2, this.pitch);
         };
