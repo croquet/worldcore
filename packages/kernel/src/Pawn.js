@@ -55,6 +55,9 @@ export class Pawn extends WorldcoreView {
         this.listen("destroyActor", this.destroy);
         this.listen("parentSet", this.onParent);
         this.init();
+        if (actor._parent && GetPawn(actor._parent.id)) {
+            this.onParent({v: {id: actor.parent.id}});
+        }
     }
 
     init() {}
