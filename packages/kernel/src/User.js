@@ -1,7 +1,7 @@
-// import { Actor } from "./Actor";
-// import { ModelService } from "./Root";
+import { Actor } from "./Actor";
+import { ModelService } from "./Root";
 
-import { Actor, ModelService } from "@croquet/worldcore";
+// import { Actor, ModelService } from "@croquet/worldcore";
 
 // ------------------------------------------------------------------------------------------
 // -- User ----------------------------------------------------------------------------------

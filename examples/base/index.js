@@ -1,13 +1,13 @@
 // Microverse Base
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3  } from "@croquet/worldcore";
+    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager } from "@croquet/worldcore";
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
 import { Avatar, FPSAvatar } from "./src/Avatar";
-import { User, UserManager } from "./src/User";
+// import { User, UserManager } from "./src/User";
 
 
 //------------------------------------------------------------------------------------------
