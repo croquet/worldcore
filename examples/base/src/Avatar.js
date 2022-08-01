@@ -10,42 +10,16 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, Pl
 
 export class Avatar extends mix(Actor).with(AM_Smoothed) {
 
-    // init(options) {
-    //     super.init(options);
-    //     this.listen("ooo", this.ooo);
-    //     this.listen("ppp", this.ppp);
-    // }
-
     get pawn() {return AvatarPawn}
     get driver() { return this._driver} // The user that is controlling this avatar.
 
-    // ooo() {
-    //     console.log("left");
-    //     this.set({translation: [-3,0,0]});
-    // }
-
-    // ppp() {
-    //     console.log("right");
-    //     this.set({translation: [3,0,0]});
-    //     // this.translateTo([3,0,0]);
-    // }
-
 }
 Avatar.register('Avatar');
-
-//------------------------------------------------------------------------------------------
-//-- AvatarPawn ----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
 
 export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_WidgetPointer ) {
 
     constructor(actor) {
         super(actor);
-        console.log("AvatarPawn");
-
-        this.fore = this.back = this.left = this.right = this.pitch = this.yaw = 0;
-        this.speed = 5;
-        this.turnSpeed = 0.002;
 
         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,0)} );
@@ -54,7 +28,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.refreshDrawTransform();
 
         this.listenOnce("driverSet", this.onDriverSet);
-
 
         this.drive();
 
@@ -66,7 +39,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.material.dispose();
     }
 
-
     get isMyAvatarPawn() {
         if (this.actor && this.actor.driver) return this.actor.driver.userId === this.viewId;
         return false;
@@ -76,6 +48,33 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     onDriverSet(e) {
         this.park();
         this.drive();
+    }
+}
+
+
+
+//------------------------------------------------------------------------------------------
+//-- FPSAvatar ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class FPSAvatar extends Avatar {
+
+    get pawn() {return FPSAvatarPawn}
+
+}
+FPSAvatar.register('FPSAvatar');
+
+
+
+
+export class FPSAvatarPawn extends AvatarPawn {
+
+    constructor(actor) {
+        super(actor);
+
+        this.fore = this.back = this.left = this.right = this.pitch = this.yaw = 0;
+        this.speed = 5;
+        this.turnSpeed = 0.002;
     }
 
     drive() {
@@ -152,8 +151,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const t = v3_add(this.translation, v2)
             if( v !== 0 || this.yawDelta !== 0) this.positionTo(t, yawQ);
         }
-
-
     }
 
     doPointerDown(e) {

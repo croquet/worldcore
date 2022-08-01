@@ -6,7 +6,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
-import { Avatar } from "./src/Avatar";
+import { Avatar, FPSAvatar } from "./src/Avatar";
 import { User, UserManager } from "./src/User";
 
 
@@ -189,12 +189,12 @@ class MyUser extends User {
 
     init(options) {
         super.init(options);
-        this.testAvatar = Avatar.create({name: "Avatar", driver: this, translation: [0,0,10]})
+        this.myAvatar = FPSAvatar.create({name: "Avatar", driver: this, translation: [0,0,10]})
     }
 
     destroy() {
         super.destroy();
-        if (this.testAvatar) this.testAvatar.destroy();
+        if (this.myAvatar) this.myAvatar.destroy();
     }
 
 

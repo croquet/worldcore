@@ -82,12 +82,17 @@ defineSmoothedPawnProperty from PM_Smoothed
 - Fixed bug with initialization of async services
 
 ## [1.0.0] - 2021-10-20
-### Added
-- Initial release
+### Removed
+- PM_Driver mixin
+
+### Changed
+- PM_Smoothed suppresses smoothing when the Pawn is used as a driver.
 
 ## Pending
 ### Added
 - Actors have a name option.
+- Users and UserManager
+- Avatars
 
 
 
