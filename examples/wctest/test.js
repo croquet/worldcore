@@ -23,10 +23,16 @@ class MoveActor extends mix(Actor).with(AM_Smoothed) {
     init(options = {}) {
         super.init(options);
         this.child = SpinActor.create({zzz: 123, parent: this, translation: [0,1.5,0]});
+
+        console.log(this.children);
         this.tick();
+
+        // this.subscribe("input", "bDown", this.test0);
+        // this.subscribe("input", "nDown", this.test1);
     }
 
     get spin() {return this._spin || q_identity()};
+
 
     tick() {
         const spin = q_axisAngle([0,1,0], toRad(5));
@@ -34,6 +40,16 @@ class MoveActor extends mix(Actor).with(AM_Smoothed) {
 
         this.rotateTo(rotation);
         this.future(15).tick();
+    }
+
+    test0() {
+        console.log("test0");
+        this.child.set({parent: null});
+    }
+
+    test1() {
+        console.log("test1");
+        this.child.set({parent: this});
     }
 
 }
@@ -135,7 +151,6 @@ class SpinPawn extends mix(Pawn).with(PM_Smoothed, PM_WebGLVisible) {
 
         this.subscribe("input", "dDown", this.test1);
         this.subscribe("input", "sDown", this.test2);
-
     }
 
     buildDraw() {

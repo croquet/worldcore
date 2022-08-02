@@ -12,10 +12,11 @@ export class PawnManager extends ViewService {
         super(name || "PawnManager");
         pm = this;
         this.pawns = new Map();
-        // this.dynamic = new Set();
 
         const actorManager = this.modelService("ActorManager");
         actorManager.actors.forEach(actor => this.spawnPawn(actor));
+
+        for(const pawn of this.pawns.values()) { pawn.link() }; // recreate child links after all pawns are spawned
 
         this.subscribe("actor", "createActor", this.spawnPawn);
     }
@@ -27,7 +28,11 @@ export class PawnManager extends ViewService {
         super.destroy();
     }
 
-    spawnPawn(actor) { if (actor.pawn) new actor.pawn(actor); }
+    spawnPawn(actor) { if (actor.pawn) {
+        const p = new actor.pawn(actor);
+        p.link();}
+    }
+
     add(pawn) {  this.pawns.set(pawn.actor.id, pawn); }
     has(id) { return this.pawns.has(id); }
     get(id) { return this.pawns.get(id); }
@@ -50,14 +55,18 @@ export class Pawn extends WorldcoreView {
         super(actor);
         this._sayNext = {};
         this._sayCache = {};
+
+        // this.sayLast = {};
+        // this.sayCache ={};
         this._actor = actor;
         pm.add(this);
+        this.link();
+
         this.listen("destroyActor", this.destroy);
         this.listen("parentSet", this.onParent);
-        this.init();
     }
 
-    init() {}
+    link() { if(this.parent) this.parent.addChild(this); }
 
     get actor() {return this._actor};
 
@@ -73,28 +82,24 @@ export class Pawn extends WorldcoreView {
     }
 
     get children() {
-        if (this.actor.children && !this._children) this.actor.children.forEach(child => { this.addChild(child.id); })
         return this._children;
     }
 
-    addChild(id) {
-        const child = GetPawn(id);
-        if (!child) return;
+    addChild(child) {
         if (!this._children) this._children = new Set();
         this._children.add(child);
-        child._parent = this;
     }
 
-    removeChild(id) {
-        const child = GetPawn(id);
-        if (!child) return;
+    removeChild(child) {
         if (this._children) this._children.delete(child);
-        child._parent = null;
     }
 
     onParent(d) {
-        if (d.o) GetPawn(d.o.id).removeChild(this.actor.id);
-        if (d.v) GetPawn(d.v.id).addChild(this.actor.id);
+        if (d.o) {
+            this._parent = null;
+            GetPawn(d.o.id).removeChild(this);
+        }
+        if(this.parent) this.parent.addChild(this);
     }
 
     say(event, data, throttle = 0) {
@@ -106,6 +111,18 @@ export class Pawn extends WorldcoreView {
             this.publish(this.actor.id, event, data);
         }
     }
+
+    // say(event, data, throttle = 0) {
+    //     if (this.time < (this.sayLast[event] || 0) + throttle) {
+    //         const expire = this.time + throttle;
+    //         this.sayCache[event] = {data, expire};
+    //     } else {
+    //         this.sayLast[event] = this.time;
+    //         this.publish(this.actor.id, event, data);
+    //         this.sayCache[event] = null;
+    //     }
+    // }
+
 
     listen(event, callback) {
         this.subscribe(this.actor.id, event, callback);
@@ -148,6 +165,26 @@ export class Pawn extends WorldcoreView {
 
         if (this.children) this.children.forEach(child => child.fullUpdate(time, delta));
     }
+
+    // fullUpdate(time, delta) {
+    //     this.preUpdate(time, delta);
+    //     this.update(time, delta);
+    //     this.postUpdate(time, delta);
+
+    //     for (const event in this.sayCache) { // Flushes expired cached events from throttled says
+    //         const cache = this.sayCache[event];
+    //         // console.log(cache);
+    //         if (cache) {
+    //             console.log("flush");
+    //             this.sayLast[event] = this.time;
+    //             this.publish(this.actor.id, event, cache.data);
+    //             this.sayCache[event] = null;
+    //             // console.log(this.sayCache[event]);
+    //         }
+    //     }
+
+    //     if (this.children) this.children.forEach(child => child.fullUpdate(time, delta));
+    // }
 
 
 }

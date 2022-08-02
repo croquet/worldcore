@@ -82,11 +82,8 @@ defineSmoothedPawnProperty from PM_Smoothed
 - Fixed bug with initialization of async services
 
 ## [1.0.0] - 2021-10-20
-### Removed
-- PM_Driver mixin
-
-### Changed
-- PM_Smoothed suppresses smoothing when the Pawn is used as a driver.
+### Added
+- Initial release
 
 ## Pending
 ### Added
@@ -96,6 +93,14 @@ defineSmoothedPawnProperty from PM_Smoothed
 
 ### Changed
 - Pawns update before other view services
+- PM_Smoothed suppresses smoothing when the Pawn is used as a driver.
+
+### Fixed
+- Pawns link to children correctly regardless of creation order
+
+### Removed
+- PM_Driver mixin
+- Pawn init() (Use constructor instead)
 
 
 
