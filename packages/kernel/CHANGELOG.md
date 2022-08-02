@@ -90,9 +90,12 @@ defineSmoothedPawnProperty from PM_Smoothed
 
 ## Pending
 ### Added
-- Actors have a name option.
+- Actors have a name option
 - Users and UserManager
 - Avatars
+
+### Changed
+- Pawns update before other view services
 
 
 
