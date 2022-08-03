@@ -128,10 +128,13 @@ export class ViewRoot extends WorldcoreView {
         time0 = time1;
         time1 = time;
         const delta = time1 - time0;
+        let done = new Set();
 
         pawnManager.update(time, delta); // Pawns update before other services
         viewServices.forEach(s => {
+            if (done.has(s)) {return;}
             if (s === pawnManager) return;
+            done.add(s);
             if (s.update) s.update(time, delta);
         });
     }
