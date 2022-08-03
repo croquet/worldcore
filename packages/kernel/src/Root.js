@@ -92,6 +92,7 @@ export let viewRoot;
 let time0 = 0;
 let time1 = 0;
 const viewServices = new Map();
+let pawnManager;
 
 export class ViewRoot extends WorldcoreView {
 
@@ -114,7 +115,7 @@ export class ViewRoot extends WorldcoreView {
             }
             new service(options, name);
         });
-        new PawnManager();
+        pawnManager = new PawnManager();
     }
 
     detach() {
@@ -127,10 +128,12 @@ export class ViewRoot extends WorldcoreView {
         time0 = time1;
         time1 = time;
         const delta = time1 - time0;
-
         let done = new Set();
+
+        pawnManager.update(time, delta); // Pawns update before other services
         viewServices.forEach(s => {
             if (done.has(s)) {return;}
+            if (s === pawnManager) return;
             done.add(s);
             if (s.update) s.update(time, delta);
         });
@@ -150,10 +153,6 @@ export class ViewService extends WorldcoreView {
         super(viewRoot.model);
         this.model = viewRoot.model;
         this.registerViewName(name);
-        // this.name = name;
-        // if (!name) console.error("All services must have public names!");
-        // else if (viewServices.has(name)) console.error("Duplicate service!");
-        // else viewServices.set(name, this);
     }
 
     registerViewName(name) {
