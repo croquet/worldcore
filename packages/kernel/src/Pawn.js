@@ -99,7 +99,7 @@ export class Pawn extends WorldcoreView {
 
     say(event, data, throttle = 0) {
         if (this.time < this._sayNext[event]) {
-            this._sayCache[event] = data;
+            this._sayCache[event] = { data, throttle };
         } else {
             this._sayNext[event] = this.time + throttle;
             this._sayCache[event] = null;
@@ -137,8 +137,10 @@ export class Pawn extends WorldcoreView {
         this.postUpdate(time, delta);
 
         for (const event in this._sayCache) { // Flushes expired cached events from throttled says
-            const data = this._sayCache[event];
-            if (data && time > this._sayNext[event]) {
+            const cache = this._sayCache[event];
+            if (cache && time > this._sayNext[event]) {
+                const { data, throttle } = cache;
+                this._sayNext[event] = time + throttle;
                 this._sayCache[event] = null;
                 this.publish(this.actor.id, event, data);
             }
