@@ -369,16 +369,6 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
             this.onLocalChanged();
         }
 
-        if (this.isRotating) {
-            if (q_equals(this._rotation, this.actor.rotation, 0.000001)) {
-                this._rotation = this.actor.rotation;
-                this.isRotating = false;
-            } else {
-                this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-            }
-            this.onLocalChanged();
-        }
-
         if (this.isTranslating) {
             if (v3_equals(this._translation, this.actor.translation, .0001)) {
                 this._translation = this.actor.translation;
