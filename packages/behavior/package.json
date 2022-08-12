@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-behavior",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Behavior Tree Component for Croquet Worldcore",
   "keywords": [
     "croquet",
@@ -24,7 +24,7 @@
     "directory": "packages/behavior"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^1.3.0"
+    "@croquet/worldcore-kernel": "^1.3.1"
   },
   "publishConfig": {
     "access": "public"
