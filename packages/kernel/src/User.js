@@ -40,9 +40,9 @@ export class UserManager extends ModelService {
     onExit(viewId) {
         const user = this.user(viewId);
         if (!user) return;
-        this.publish("userManager", "destroy", user);
         user.destroy();
         this.users.delete(viewId);
+        this.publish("userManager", "destroy", user);
     }
 
 }
