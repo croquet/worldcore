@@ -405,29 +405,6 @@ export class LayoutWidget3 extends Widget3 {
 
 export class HorizontalWidget3 extends LayoutWidget3 {
 
-    // resize() {
-    //     if (!this.children) return;
-    //     let widthSum = Math.max(0, (this.children.size - 1) * this.margin);
-    //     let autoCount = 0;
-    //     this.children.forEach(child => {
-    //         if (child.width) {
-    //             widthSum += child.width;
-    //         } else {
-    //             autoCount++;
-    //         }
-    //     });
-
-    //     let autoWidth = 0;
-    //     if (autoCount > 0) autoWidth = Math.max(0, (this.trueSize[0] - widthSum) / autoCount);
-    //     let offset = -this.trueSize[0]/2;
-    //     this.children.forEach(child => {
-    //         let width = autoWidth;
-    //         if (child.width) width = child.width;
-    //         child.set({autoSize: [0,1], size:[width, 0], translation:[offset+width/2,0,0]});
-    //         offset += width + this.margin;
-    //     });
-    // }
-
     resize() {
         if (!this.children) return;
         let widthSum = Math.max(0, (this.children.size - 1) * this.margin);
@@ -587,7 +564,7 @@ export class BoxWidget3 extends RenderWidget3 {
 
     buildGeometry() {
         super.buildGeometry();
-        this.geometry = new THREE.BoxGeometry(...this.trueSize, this.thick);
+        this._geometry = new THREE.BoxGeometry(...this.trueSize, this.thick);
         if (this.mesh) this.mesh.geometry = this.geometry;
     }
 
@@ -816,9 +793,6 @@ export class TextWidget3 extends CanvasWidget3 {
 
         this.material.map.needsUpdate = true; // Should go in super.draw?
     }
-
-
-
 
 
 }

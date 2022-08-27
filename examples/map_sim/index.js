@@ -1,92 +1,51 @@
 // Microverse Base
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, m4_identity, m4_rotationX, toRad, m4_scaleRotationTranslation, q_pitch, q_axisAngle } from "@croquet/worldcore";
+    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, m4_identity, m4_rotationX, toRad, m4_scaleRotationTranslation, q_pitch, q_axisAngle, PlaneWidget3, viewRoot } from "@croquet/worldcore";
+
+    import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
+
 
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
-import map from "./assets/silk.jpg";
+import silk from "./assets/silk.jpg";
+import { Godview } from "./src/Godview";
+import { MapActor} from "./src/Map";
+import { BotActor} from "./src/Bot";
 
 
-//------------------------------------------------------------------------------------------
-//-- TestActor -----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+// //-- BotActor -----------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Smoothed) {
-    get pawn() {return TestPawn}
+// class BotActor extends mix(Actor).with(AM_Smoothed) {
+//     get pawn() {return BotPawn}
 
-}
-TestActor.register('TestActor');
+// }
+// BotActor.register('BotActor');
 
-//------------------------------------------------------------------------------------------
-//-- TestPawn ------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) {
-    constructor(...args) {
-        super(...args);
-        // console.log("test pawn constructor");
-
-        this.geometry = new THREE.BoxGeometry( 1, 2, 1 );
-        this.material = new THREE.MeshStandardMaterial( {color: 0x784212} );
-        const cube = new THREE.Mesh( this.geometry, this.material );
-        const group = new THREE.Group();
-        group.add(cube);
-        cube.position.set(0, 1, 0);
-        cube.castShadow = true;
-        this.setRenderObject(group);
-
-    }
-
-}
+// //------------------------------------------------------------------------------------------
+// //-- BotPawn ------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
 
 
-//------------------------------------------------------------------------------------------
-//-- LevelActor ----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
+// class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) {
+//     constructor(...args) {
+//         super(...args);
 
-class LevelActor extends mix(Actor).with(AM_Spatial) {
-    get pawn() {return LevelPawn}
-}
-LevelActor.register('LevelActor');
+//         this.geometry = new THREE.BoxGeometry( 1, 2, 1 );
+//         this.material = new THREE.MeshStandardMaterial( {color: 0x784212} );
+//         const cube = new THREE.Mesh( this.geometry, this.material );
+//         const group = new THREE.Group();
+//         group.add(cube);
+//         cube.position.set(0, 1, 0);
+//         cube.castShadow = true;
+//         this.setRenderObject(group);
 
-//------------------------------------------------------------------------------------------
-//-- LevelPawn ----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
+//     }
 
-class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
-    constructor(...args) {
-        super(...args);
+// }
 
-        const group = new THREE.Group();
-
-        this.floorGeometry = new THREE.PlaneGeometry(200.0, 96.4);
-        this.floorMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1) } );
-
-        this.image = new Image();
-        this.image.onload = () => {
-            if (this.floorMaterial.map) this.floorMaterial.map.dispose();
-            this.floorMaterial.map = new THREE.CanvasTexture(this.image);
-            this.floorMaterial.needsUpdate = true;
-        }
-        this.image.src = map;
-
-        const floor = new THREE.Mesh( this.floorGeometry, this.floorMaterial );
-        floor.receiveShadow = true;
-        floor.rotation.set(-Math.PI/2, 0, 0);
-        group.add(floor);
-
-        this.setRenderObject(group);
-    }
-
-    destroy() {
-        super.destroy();
-        this.floorGeometry.dispose();
-        this.floorMaterial.dispose();
-        this.pillarGeometry.dispose();
-        this.pillarMaterial.dispose();
-    }
-}
 
 //------------------------------------------------------------------------------------------
 //-- MyUser --------------------------------------------------------------------------------
@@ -103,7 +62,6 @@ class MyUser extends User {
         super.destroy();
         if (this.myAvatar) this.myAvatar.destroy();
     }
-
 
 }
 MyUser.register("MyUser");
@@ -129,8 +87,8 @@ class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
         console.log("Start root model!!!!");
-        this.level = LevelActor.create();
-        this.testActor = TestActor.create({name: "Yellow Box", translation: [0,0,0]});
+        this.map = MapActor.create();
+        this.testActor = BotActor.create({parent: this.map, name: "Yellow Box", translation: [0,0,-1]});
     }
 
 
@@ -154,11 +112,15 @@ class MyViewRoot extends ViewRoot {
         render.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
         render.renderer.shadowMap.enabled = true;
 
-        const cameraMatrix = m4_scaleRotationTranslation([1,1,1], q_axisAngle([1,0,0], toRad(-45)), [0,20,20]);
-        const pitchMatrix = m4_rotationX(toRad(-20));
-        render.camera.matrix.fromArray(cameraMatrix);
-        render.camera.matrixAutoUpdate = false;
-        render.camera.matrixWorldNeedsUpdate = true;
+        this.outlinePass = new OutlinePass( new THREE.Vector2( window.innerWidth, window.innerHeight ), render.scene, render.camera );
+        this.outlinePass.edgeStrength = 3;
+        this.outlinePass.edgeGlow = 1;
+        this.outlinePass.edgeThickness = 1;
+        // this.outlinePass.selectedObjects = test;
+        this.outlinePass.visibleEdgeColor = new THREE.Color(0,1,0);
+        render.composer.addPass( this.outlinePass );
+
+        this.godView = new Godview(this.model);
 
         const ambient = new THREE.AmbientLight( new THREE.Color(1,1,1), 0.5 );
         render.scene.add(ambient);
@@ -166,16 +128,27 @@ class MyViewRoot extends ViewRoot {
         const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 0.8 );
         sun.position.set(50, 50, 50);
         sun.castShadow = true;
-
         sun.shadow.mapSize.width = 1024;
         sun.shadow.mapSize.height = 1024;
         sun.shadow.camera.near = 20;
         sun.shadow.camera.far = 100;
 
-
         render.scene.add(sun);
 
+    }
 
+    update(time) {
+        super.update(time);
+        this.godView.update(time);
+
+    }
+
+    hiliteMesh(mesh) {
+        if (mesh) {
+            this.outlinePass.selectedObjects = [mesh];
+        } else {
+            this.outlinePass.selectedObjects = [];
+        }
     }
 
 
