@@ -12,6 +12,7 @@ import silk from "./assets/silk.jpg";
 import { Godview } from "./src/Godview";
 import { MapActor} from "./src/Map";
 import { BotActor} from "./src/Bot";
+import { Paths } from "./src/Path";
 
 
 // //------------------------------------------------------------------------------------------
@@ -86,9 +87,25 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!");
+        console.log("Start root model!!!!!");
         this.map = MapActor.create();
         this.testActor = BotActor.create({parent: this.map, name: "Yellow Box", translation: [0,0,-1]});
+
+        this.paths = Paths.create();
+        this.paths.addNode("almaty", [0,0]);
+        this.paths.addNode("tashkent", [1,1]);
+        this.paths.addNode("samarkand", [2,2]);
+        this.paths.addNode("delhi", [3,3]);
+        this.paths.addEdge("almaty", "tashkent", 55);
+        this.paths.addEdge("tashkent", "samarkand", 111);
+        this.paths.addEdge("samarkand", "delhi", 44);
+        console.log(this.paths.nodes);
+
+        const path = this.paths.findPath("tashkent", "samarkand");
+        console.log(path);
+
+
+
     }
 
 
