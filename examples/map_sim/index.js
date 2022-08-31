@@ -12,40 +12,7 @@ import silk from "./assets/silk.jpg";
 import { Godview } from "./src/Godview";
 import { MapActor} from "./src/Map";
 import { BotActor} from "./src/Bot";
-import { Paths } from "./src/Path";
-
-
-// //------------------------------------------------------------------------------------------
-// //-- BotActor -----------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
-
-// class BotActor extends mix(Actor).with(AM_Smoothed) {
-//     get pawn() {return BotPawn}
-
-// }
-// BotActor.register('BotActor');
-
-// //------------------------------------------------------------------------------------------
-// //-- BotPawn ------------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
-
-
-// class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) {
-//     constructor(...args) {
-//         super(...args);
-
-//         this.geometry = new THREE.BoxGeometry( 1, 2, 1 );
-//         this.material = new THREE.MeshStandardMaterial( {color: 0x784212} );
-//         const cube = new THREE.Mesh( this.geometry, this.material );
-//         const group = new THREE.Group();
-//         group.add(cube);
-//         cube.position.set(0, 1, 0);
-//         cube.castShadow = true;
-//         this.setRenderObject(group);
-
-//     }
-
-// }
+import { PathDebug, Paths } from "./src/Path";
 
 
 //------------------------------------------------------------------------------------------
@@ -82,27 +49,36 @@ MyUserManager.register("MyUserManager");
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [MyUserManager];
+        return [MyUserManager, Paths];
     }
 
     init(...args) {
         super.init(...args);
         console.log("Start root model!!!!!");
         this.map = MapActor.create();
-        this.testActor = BotActor.create({parent: this.map, name: "Yellow Box", translation: [0,0,-1]});
 
-        this.paths = Paths.create();
-        this.paths.addNode("almaty", [0,0]);
-        this.paths.addNode("tashkent", [1,1]);
-        this.paths.addNode("samarkand", [2,2]);
-        this.paths.addNode("delhi", [3,3]);
+
+        this.paths = this.service("Paths")
+        this.paths.addNode("istambul", [-11,-7]);
+        this.paths.addNode("almaty", [-5,0]);
+        this.paths.addNode("tashkent", [0,-3]);
+        this.paths.addNode("samarkand", [3,1]);
+        this.paths.addNode("delhi", [7,5]);
+        this.paths.addNode("mongolia", [11,-8]);
+
+
+        this.paths.addEdge("tashkent", "istambul", 12);
+        this.paths.addEdge("tashkent", "mongolia", 5);
         this.paths.addEdge("almaty", "tashkent", 55);
-        this.paths.addEdge("tashkent", "samarkand", 111);
+        this.paths.addEdge("tashkent", "samarkand", 11);
         this.paths.addEdge("samarkand", "delhi", 44);
-        console.log(this.paths.nodes);
+        this.paths.addEdge("mongolia", "samarkand", 30);
 
-        const path = this.paths.findPath("tashkent", "samarkand");
-        console.log(path);
+
+        // const path = this.paths.findPath("delhi", "delhi");
+        // console.log(path);
+
+        this.testActor = BotActor.create({parent: this.map, home: "tashkent" });
 
 
 
@@ -133,7 +109,6 @@ class MyViewRoot extends ViewRoot {
         this.outlinePass.edgeStrength = 3;
         this.outlinePass.edgeGlow = 1;
         this.outlinePass.edgeThickness = 1;
-        // this.outlinePass.selectedObjects = test;
         this.outlinePass.visibleEdgeColor = new THREE.Color(0,1,0);
         render.composer.addPass( this.outlinePass );
 
@@ -151,6 +126,8 @@ class MyViewRoot extends ViewRoot {
         sun.shadow.camera.far = 100;
 
         render.scene.add(sun);
+
+        this.pathDebug = new PathDebug();
 
     }
 

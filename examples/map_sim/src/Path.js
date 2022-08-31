@@ -1,18 +1,14 @@
 // Node
 
-import { WorldcoreModel, PriorityQueue, v2_manhattan } from "@croquet/worldcore";
+import { WorldcoreModel, ModelService, PriorityQueue, v2_manhattan, WorldcoreView, viewRoot, THREE } from "@croquet/worldcore";
 
-// {
-//     xy: [0,0]
-//     exits: [
-//         { node: 0, weight: 5 },
-//         { node: 2, weight: 7 },
-//     ]
-// }
+//------------------------------------------------------------------------------------------
+//-- Paths ---------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
-export class Paths extends WorldcoreModel {
+export class Paths extends ModelService {
     init() {
-        super.init();
+        super.init("Paths");
         this.nodes = new Map();
     }
 
@@ -59,34 +55,26 @@ export class Paths extends WorldcoreModel {
 
         const frontier = new PriorityQueue((a, b) => a.priority < b.priority);
         const visited = new Map();
+
+        frontier.push({priority: 0, key: startKey});
         visited.set(startKey, {from: startKey, cost: 0});
 
-        // Iterate until frontier is empty or we test the end of the path
-        let key = startKey;
-        let cost = 0;
-        let count = 0;
-        do {
+        let key;
+        while (!frontier.isEmpty) {
+            key = frontier.pop().key;
             if (key === endKey) break;
+            const cost = visited.get(key).cost;
             this.getNode(key).exits.forEach( (exitWeight, exitKey) => {
-                if (!visited.has(exitKey)) visited.set(exitKey, { from: key, cost: cost + exitWeight}); // First time visited
+                if (!visited.has(exitKey)) visited.set(exitKey, {}); // First time visited
                 const exit = visited.get(exitKey);
-                if( exit.cost > cost + exitWeight ) { // This route is better
+                if (!exit.from || exit.cost > cost + exitWeight) { // This route is better
                     exit.from = key;
                     exit.cost = cost + exitWeight;
-                };
-                const heuristic = v2_manhattan(this.getNode(exitKey).xy, endXY);
-                frontier.push({priority: exit.cost + heuristic, key: exitKey});
+                    const heuristic = v2_manhattan(this.getNode(exitKey).xy, endXY);
+                    frontier.push({priority: exit.cost + heuristic, key: exitKey});
+                }
             });
-            key = frontier.pop().key;
-            cost = visited.get(key).cost;
-            count++;
-            console.log(key);
-            if (count> 10) {
-                console.log("hung!")
-                return [];
-            }
-        } while(!frontier.isEmpty)
-
+        }
 
         if (key === endKey) { // A path was found!
             while (key !== startKey) { // Run backwards along "from" links to build path array
@@ -104,3 +92,55 @@ export class Paths extends WorldcoreModel {
     }
 }
 Paths.register('Paths');
+
+//------------------------------------------------------------------------------------------
+//-- PathDebug -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class PathDebug extends WorldcoreView {
+    constructor() {
+        super(viewRoot.model);
+
+        this.nodeMaterial = new THREE.LineBasicMaterial( { color: 0xff0000 } );
+        this.edgeMaterial = new THREE.LineBasicMaterial( { color: 0x00ffff } );
+
+        this.drawNodes();
+        this.drawEdges();
+
+    }
+
+    drawNodes() {
+        const render = this.service("ThreeRenderManager");
+        const paths = this.modelService("Paths");
+        const group = new THREE.Group();
+        paths.nodes.forEach(node => {
+            const points = [
+                new THREE.Vector3( node.xy[0], 0, node.xy[1] ),
+                new THREE.Vector3( node.xy[0], 3, node.xy[1] )
+            ];
+            const geometry = new THREE.BufferGeometry().setFromPoints( points );
+            const line = new THREE.Line( geometry, this.nodeMaterial );
+            group.add(line);
+        });
+        render.scene.add(group);
+    }
+
+    drawEdges() {
+        const render = this.service("ThreeRenderManager");
+        const paths = this.modelService("Paths");
+        const group = new THREE.Group();
+        paths.nodes.forEach(node0 => {
+            node0.exits.forEach((weight, key) => {
+                const node1 = paths.getNode(key);
+                const points = [
+                    new THREE.Vector3( node0.xy[0], 0.2, node0.xy[1] ),
+                    new THREE.Vector3( node1.xy[0], 0.2, node1.xy[1] )
+                ];
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line( geometry, this.edgeMaterial );
+                group.add(line);
+            });
+        });
+        render.scene.add(group);
+    }
+}
