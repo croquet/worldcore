@@ -1,20 +1,36 @@
-import { Actor, Pawn, mix, PM_ThreeVisible, THREE, AM_Smoothed, PM_Smoothed, PM_Widget3, BoxWidget3, FocusWidget3, viewRoot, AM_Behavioral, Behavior, v2_sub, v2_normalize, v2_scale, v2_magnitude  } from "@croquet/worldcore";
+import { Actor, Pawn, mix, PM_ThreeVisible, THREE, AM_Smoothed, PM_Smoothed, PM_Widget3, BoxWidget3, FocusWidget3, viewRoot, AM_Behavioral, Behavior, v2_sub, v2_normalize, v2_scale, v2_magnitude, q_axisAngle, toRad, toDeg, SequenceBehavior  } from "@croquet/worldcore";
 
 
 //------------------------------------------------------------------------------------------
-//-- Behviors ------------------------------------------------------------------------------
+//-- Behaviors -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class WalkToBehavior extends Behavior {
+class PickDestination extends Behavior {
+
+    init(options) {
+        super.init(options);
+        const paths = this.service("Paths");
+        const destination = paths.randomNode();
+        this.succeed(destination);
+    }
+
+}
+PickDestination.register("PickDestination");
+
+//------------------------------------------------------------------------------------------
+
+class WalkTo extends Behavior {
 
     init(options) {
         super.init(options);
 
+        console.log("WalkTo");
+        console.log(this.destination);
+
         const paths = this.service("Paths");
 
         this.path = paths.findPath(this.actor.town, this.destination);
-        this.step = 0;
-        console.log (this.path);
+        this.step = 1;
         if (this.path.length === 0) this.fail() // No path to destination
         if (this.path.length === 1) this.succeed() // already there
 
@@ -23,26 +39,68 @@ class WalkToBehavior extends Behavior {
     get destination() { return this._destination;  }
 
     do(delta) {
-        const speed = 0.001;
-        const paths = this.service("Paths");
-        const next = this.path[this.step+1];
 
+        const speed = 0.003;
+
+        if (this.step >= this.path.length) {
+            console.log("End Walk");
+            console.log(this.actor.town);
+            this.succeed();
+            return;
+        }
+        const next = this.path[this.step];
+
+        const paths = this.service("Paths");
         const nextXY = paths.getNode(next).xy;
         const xyz = this.actor.translation;
         const xy = [xyz[0], xyz[2]];
 
         const remaining = v2_sub(nextXY, xy);
-        if (v2_magnitude(remaining) <0.1) this.succeed();
-        const forward = v2_normalize(remaining);
+        if (v2_magnitude(remaining) < 0.1) {
+            this.actor.translateTo([nextXY[0], 0, nextXY[1]]);
+            this.actor.town = next;
+            this.step += 1;
+            return;
+        }
+
+        let  forward = v2_normalize(remaining);
         const move = v2_scale(forward, speed * delta);
 
+        let angle = 0;
+        if (forward[0] < 0) {
+            angle = Math.acos(-forward[1])
+        } else {
+            angle = -Math.acos(-forward[1])
+        }
+
+        this.actor.rotateTo(q_axisAngle([0,1,0], angle));
         this.actor.translateTo([xyz[0] + move[0], 0, xyz[2] + move[1]]);
-        console.log("next: " + next);
     }
 
 
 }
-WalkToBehavior.register("WalkToBehavior");
+WalkTo.register("WalkTo");
+
+//------------------------------------------------------------------------------------------
+
+class Wander extends Behavior {
+
+    init(options) {
+        super.init(options);
+        this.startChild(PickDestination);
+        this.startChild(WalkTo, {destination: "mongolia"});
+    }
+
+    onSucceed(child, data) {
+        console.log("onSucceed!");
+        if (child instanceof PickDestination) {
+            console.log(data);
+            console.log(WalkTo);
+            // this.startChild(WalkTo, {destination: "mongolia"});
+        }
+    }
+}
+Wander.register("Wander");
 
 //------------------------------------------------------------------------------------------
 //-- BotActor ------------------------------------------------------------------------------
@@ -53,11 +111,14 @@ export class BotActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
     init(options) {
         super.init(options);
-        console.log("bot start");
-        console.log(this.home);
         this.goHome();
 
-        this.startBehavior(WalkToBehavior, {tickRate: 200,destination: "almaty"});
+        // const paths = this.service("Paths");
+        // console.log(paths.randomNode());
+
+        this.startBehavior(Wander);
+
+        // this.startBehavior(WalkTo, {tickRate: 50,destination: "mongolia"});
     }
 
     get home() { return this._home}

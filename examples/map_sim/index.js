@@ -78,7 +78,8 @@ class MyModelRoot extends ModelRoot {
         // const path = this.paths.findPath("delhi", "delhi");
         // console.log(path);
 
-        this.testActor = BotActor.create({parent: this.map, home: "tashkent" });
+        // this.testActor = BotActor.create({parent: this.map, home: "delhi" });
+        this.testActor0 = BotActor.create({parent: this.map, home: "istambul" });
 
 
 
@@ -122,7 +123,7 @@ class MyViewRoot extends ViewRoot {
         sun.castShadow = true;
         sun.shadow.mapSize.width = 1024;
         sun.shadow.mapSize.height = 1024;
-        sun.shadow.camera.near = 20;
+        sun.shadow.camera.near = 10;
         sun.shadow.camera.far = 100;
 
         render.scene.add(sun);

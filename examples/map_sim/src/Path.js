@@ -44,6 +44,12 @@ export class Paths extends ModelService {
         this.nodes.delete(key);
     }
 
+    randomNode() {
+        const keys = [...this.nodes.keys()];
+        const n = Math.floor(keys.length * Math.random() )
+        return keys[n];
+    }
+
     findPath(startKey, endKey) {
 
         const path = [];
