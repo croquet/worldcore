@@ -82,6 +82,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
                 this.focused.isFocused = true;
                 this.focused.onFocus();
             }
+            this.publish("widgetPointer", "focusChanged", this.focused);
         }
 
         if (this.pressed !== hit.control) {

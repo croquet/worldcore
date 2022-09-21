@@ -1,7 +1,7 @@
 // Microverse Base
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, m4_identity, m4_rotationX, toRad, m4_scaleRotationTranslation, q_pitch, q_axisAngle, PlaneWidget3, viewRoot } from "@croquet/worldcore";
+    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, m4_identity, m4_rotationX, toRad, m4_scaleRotationTranslation, q_pitch, q_axisAngle, PlaneWidget3, viewRoot, Widget, BoxWidget } from "@croquet/worldcore";
 
     import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 
@@ -21,15 +21,14 @@ import { PathDebug, Paths } from "./src/Path";
 
 class MyUser extends User {
 
-    init(options) {
-        super.init(options);
-        // this.myAvatar = FPSAvatar.create({name: "Avatar", driver: this, translation: [0,0,10]})
-    }
+    // init(options) {
+    //     super.init(options);
+    // }
 
-    destroy() {
-        super.destroy();
-        if (this.myAvatar) this.myAvatar.destroy();
-    }
+    // destroy() {
+    //     super.destroy();
+    //     if (this.myAvatar) this.myAvatar.destroy();
+    // }
 
 }
 MyUser.register("MyUser");
@@ -54,7 +53,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!!");
+        console.log("Start root model!");
         this.map = MapActor.create();
 
 
@@ -68,21 +67,22 @@ class MyModelRoot extends ModelRoot {
 
 
         this.paths.addEdge("tashkent", "istambul", 12);
-        this.paths.addEdge("tashkent", "mongolia", 5);
+        this.paths.addEdge("tashkent", "mongolia", 20);
         this.paths.addEdge("almaty", "tashkent", 55);
         this.paths.addEdge("tashkent", "samarkand", 11);
         this.paths.addEdge("samarkand", "delhi", 44);
         this.paths.addEdge("mongolia", "samarkand", 30);
 
-
-        // const path = this.paths.findPath("delhi", "delhi");
-        // console.log(path);
-
-        // this.testActor = BotActor.create({parent: this.map, home: "delhi" });
-        this.testActor0 = BotActor.create({parent: this.map, home: "istambul" });
+        this.subscribe("input", "xDown", this.test);
 
 
 
+    }
+
+    test() {
+        console.log("test")
+        if (this.testActor) this.testActor.destroy();
+        this.testActor = BotActor.create({parent: this.map, home: "istambul" });
     }
 
 
@@ -102,6 +102,41 @@ class MyViewRoot extends ViewRoot {
 
     constructor(model) {
         super(model);
+
+        const url = new URL(window.location.href);
+        const urlParams = new URLSearchParams(url.searchParams);
+        this.mode = urlParams.get('ui')
+
+        const render = this.service("ThreeRenderManager");
+        render.doRender = false;
+        render.renderer.clear();
+
+        if (this.mode === "teacher") {
+            render.doRender = true;
+            this.buildScene();
+            this.buildHUD();
+        }
+
+        if (this.mode === "student") {
+            this.buildHUD();
+        }
+
+        this.subscribe("widgetPointer", "focusChanged", this.ttt);
+
+    }
+
+    ttt(focus) {
+        if (focus)
+        console.log(focus.pawn);
+    }
+
+    buildHUD() {
+        const ui = this.service("UIManager");
+        this.hud = new Widget({parent: ui.root, autoSize: [1,1]});
+        this.box = new BoxWidget({parent: this.hud, color: [1,0,0]})
+    }
+
+    buildScene() {
         const render = this.service("ThreeRenderManager");
         render.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
         render.renderer.shadowMap.enabled = true;
@@ -113,29 +148,32 @@ class MyViewRoot extends ViewRoot {
         this.outlinePass.visibleEdgeColor = new THREE.Color(0,1,0);
         render.composer.addPass( this.outlinePass );
 
-        this.godView = new Godview(this.model);
-
         const ambient = new THREE.AmbientLight( new THREE.Color(1,1,1), 0.5 );
         render.scene.add(ambient);
 
         const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 0.8 );
-        sun.position.set(50, 50, 50);
+        sun.position.set(20, 20, 20);
         sun.castShadow = true;
         sun.shadow.mapSize.width = 1024;
         sun.shadow.mapSize.height = 1024;
-        sun.shadow.camera.near = 10;
+        sun.shadow.camera.near = 0;
         sun.shadow.camera.far = 100;
+
+        sun.shadow.camera.top = 20;
+        sun.shadow.camera.bottom = -20;
+        sun.shadow.camera.left = -20;
+        sun.shadow.camera.right = 20;
 
         render.scene.add(sun);
 
         this.pathDebug = new PathDebug();
 
+        this.godView = new Godview(this.model);
     }
 
     update(time) {
         super.update(time);
-        this.godView.update(time);
-
+        if (this.godview) this.godView.update(time);
     }
 
     hiliteMesh(mesh) {
@@ -144,6 +182,13 @@ class MyViewRoot extends ViewRoot {
         } else {
             this.outlinePass.selectedObjects = [];
         }
+    }
+
+    toggleRender() {
+        console.log("toggle");
+        const render = this.service("ThreeRenderManager");
+        render.doRender = !render.doRender;
+        if(!render.doRender) render.renderer.clear();
     }
 
 

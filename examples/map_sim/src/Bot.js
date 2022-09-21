@@ -5,7 +5,7 @@ import { Actor, Pawn, mix, PM_ThreeVisible, THREE, AM_Smoothed, PM_Smoothed, PM_
 //-- Behaviors -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class PickDestination extends Behavior {
+class PickDestinationBehavior extends Behavior {
 
     init(options) {
         super.init(options);
@@ -15,17 +15,14 @@ class PickDestination extends Behavior {
     }
 
 }
-PickDestination.register("PickDestination");
+PickDestinationBehavior.register("PickDestinationBehavior");
 
 //------------------------------------------------------------------------------------------
 
-class WalkTo extends Behavior {
+class WalkToBehavior extends Behavior {
 
     init(options) {
         super.init(options);
-
-        console.log("WalkTo");
-        console.log(this.destination);
 
         const paths = this.service("Paths");
 
@@ -43,8 +40,6 @@ class WalkTo extends Behavior {
         const speed = 0.003;
 
         if (this.step >= this.path.length) {
-            console.log("End Walk");
-            console.log(this.actor.town);
             this.succeed();
             return;
         }
@@ -56,7 +51,7 @@ class WalkTo extends Behavior {
         const xy = [xyz[0], xyz[2]];
 
         const remaining = v2_sub(nextXY, xy);
-        if (v2_magnitude(remaining) < 0.1) {
+        if (v2_magnitude(remaining) < 0.2) { // xxx
             this.actor.translateTo([nextXY[0], 0, nextXY[1]]);
             this.actor.town = next;
             this.step += 1;
@@ -77,30 +72,29 @@ class WalkTo extends Behavior {
         this.actor.translateTo([xyz[0] + move[0], 0, xyz[2] + move[1]]);
     }
 
-
 }
-WalkTo.register("WalkTo");
+WalkToBehavior.register("WalkToBehavior");
 
 //------------------------------------------------------------------------------------------
 
-class Wander extends Behavior {
+class WanderBehavior extends Behavior {
 
     init(options) {
         super.init(options);
-        this.startChild(PickDestination);
-        this.startChild(WalkTo, {destination: "mongolia"});
+        this.startChild(PickDestinationBehavior);
     }
 
     onSucceed(child, data) {
-        console.log("onSucceed!");
-        if (child instanceof PickDestination) {
-            console.log(data);
-            console.log(WalkTo);
-            // this.startChild(WalkTo, {destination: "mongolia"});
+        if (child instanceof PickDestinationBehavior) {
+            this.startChild(WalkToBehavior, {destination: data});
+        }
+
+        if (child instanceof WalkToBehavior) {
+            this.startChild(PickDestinationBehavior);
         }
     }
 }
-Wander.register("Wander");
+WanderBehavior.register("WanderBehavior");
 
 //------------------------------------------------------------------------------------------
 //-- BotActor ------------------------------------------------------------------------------
@@ -112,13 +106,7 @@ export class BotActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
     init(options) {
         super.init(options);
         this.goHome();
-
-        // const paths = this.service("Paths");
-        // console.log(paths.randomNode());
-
-        this.startBehavior(Wander);
-
-        // this.startBehavior(WalkTo, {tickRate: 50,destination: "mongolia"});
+        this.startBehavior(WanderBehavior);
     }
 
     get home() { return this._home}
@@ -149,13 +137,7 @@ class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) {
         this.focus.onFocus = () => { viewRoot.hiliteMesh(this.widget.mesh) };
         this.focus.onBlur = () => { viewRoot.hiliteMesh(null) };
 
-
-        // this.subscribe("input", "bDown", this.ttt)
     }
 
-    // ttt() {
-    //     console.log("b")
-    //     viewRoot.hiliteMesh(this.widget.mesh);
-    // }
 
 }

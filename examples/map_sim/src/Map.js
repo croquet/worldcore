@@ -22,7 +22,7 @@ class MapPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Widget3) {
     constructor(...args) {
         super(...args)
 
-        const map = new MapWidget({parent: this.rootWidget, size:[200,96.4], rotation: q_axisAngle([1,0,0], toRad(-90))});
+        const map = new MapWidget({parent: this.rootWidget, size:[200,96.4], translation: [0,0,0], rotation: q_axisAngle([1,0,0], toRad(-90))});
     }
 
 }
@@ -39,21 +39,4 @@ class MapWidget extends ControlWidget3 {
         image.mesh.receiveShadow = true;
     }
 
-    // onNormal() {
-    //     this.dragging = false;
-    //     console.log("stop");
-    // }
-
-    // onPress(hit) {
-    //     if (!this.dragging) {
-    //         console.log("first");
-    //         this.dragging = true;
-    //         this.publish("map", "start", hit.xy);
-
-
-
-    //     } else {
-    //         this.publish("map", "drag", hit.xy)
-    //     }
-    // }
 }
