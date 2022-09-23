@@ -13,6 +13,8 @@ import { Godview } from "./src/Godview";
 import { MapActor} from "./src/Map";
 import { BotActor} from "./src/Bot";
 import { PathDebug, Paths } from "./src/Path";
+import { CaravanManager } from "./src/Caravan";
+import { HUD } from "./src/Hud";
 
 
 //------------------------------------------------------------------------------------------
@@ -48,12 +50,12 @@ MyUserManager.register("MyUserManager");
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [MyUserManager, Paths];
+        return [MyUserManager, Paths, CaravanManager];
     }
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
+        console.log("Start root model!!");
         this.map = MapActor.create();
 
 
@@ -64,6 +66,8 @@ class MyModelRoot extends ModelRoot {
         this.paths.addNode("samarkand", [3,1]);
         this.paths.addNode("delhi", [7,5]);
         this.paths.addNode("mongolia", [11,-8]);
+        this.paths.addNode("peking", [25,0]);
+        this.paths.addNode("shanghai", [20,5]);
 
 
         this.paths.addEdge("tashkent", "istambul", 12);
@@ -72,17 +76,26 @@ class MyModelRoot extends ModelRoot {
         this.paths.addEdge("tashkent", "samarkand", 11);
         this.paths.addEdge("samarkand", "delhi", 44);
         this.paths.addEdge("mongolia", "samarkand", 30);
+        this.paths.addEdge("mongolia", "peking", 70);
+        this.paths.addEdge("shanghai", "peking", 30);
+        this.paths.addEdge("shanghai", "delhi", 40);
 
-        this.subscribe("input", "xDown", this.test);
+        this.subscribe("hud", "newCaravan", this.test);
 
 
 
     }
 
     test() {
-        console.log("test")
-        if (this.testActor) this.testActor.destroy();
-        this.testActor = BotActor.create({parent: this.map, home: "istambul" });
+        console.log("test");
+
+
+        const names = ["Akbar", "Battuta", "Marco", "Peng", "Jasmine", "Aladdin", "Sinbad"];
+        const n = Math.floor(names.length * Math.random())
+        const home = this.service("Paths").randomNode();
+
+        const cm = this.service("CaravanManager");
+        cm.createCaravan(names[n], home);
     }
 
 
@@ -121,19 +134,19 @@ class MyViewRoot extends ViewRoot {
             this.buildHUD();
         }
 
-        this.subscribe("widgetPointer", "focusChanged", this.ttt);
+        // this.subscribe("widgetPointer", "focusChanged", this.ttt);
 
     }
 
-    ttt(focus) {
-        if (focus)
-        console.log(focus.pawn);
-    }
+    // ttt(focus) {
+    //     if (focus)
+    //     console.log(focus.pawn);
+    // }
 
     buildHUD() {
         const ui = this.service("UIManager");
-        this.hud = new Widget({parent: ui.root, autoSize: [1,1]});
-        this.box = new BoxWidget({parent: this.hud, color: [1,0,0]})
+        this.hud = new HUD({parent: ui.root, autoSize: [1,1]});
+        // this.box = new BoxWidget({parent: this.hud, color: [1,0,0]})
     }
 
     buildScene() {
@@ -173,7 +186,7 @@ class MyViewRoot extends ViewRoot {
 
     update(time) {
         super.update(time);
-        if (this.godview) this.godView.update(time);
+        if (this.godView) this.godView.update(time);
     }
 
     hiliteMesh(mesh) {

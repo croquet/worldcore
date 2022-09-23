@@ -644,7 +644,7 @@ export class CanvasWidget3 extends PlaneWidget3 {
         if (this.material) {
             if (this.alpha) {
                 this.material.alphaMap = new THREE.CanvasTexture(this.canvas);
-                this.material.alphaTest = 0.1;
+                this.material.alphaTest = 0.5;
             } else {
                 this.material.map = new THREE.CanvasTexture(this.canvas);
                 this.material.alphaTest = 0;
@@ -765,6 +765,7 @@ export class TextWidget3 extends CanvasWidget3 {
     }
 
     draw() {
+        // console.log("text draw");
         super.draw();
         this.fill(this.bgColor);
         this.setStyle();
@@ -792,7 +793,8 @@ export class TextWidget3 extends CanvasWidget3 {
             this.cc.fillText(line, xy[0] + this.offset[0], xy[1] + this.offset[1] + o);
         });
 
-        this.material.map.needsUpdate = true; // Should go in super.draw?
+        if (this.material.map) this.material.map.needsUpdate = true; // Should go in super.draw?
+        if (this.material.alphaMap) this.material.alphaMap.needsUpdate = true; // Should go in super.draw?
     }
 
 

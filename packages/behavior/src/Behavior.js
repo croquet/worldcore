@@ -87,21 +87,31 @@ export class Behavior extends Actor {
             this.future(firstDelta).tick(firstDelta);
         }
 
-        this.proxy.onStart();
+        // this.proxy.onStart();
+
+            this.onStart();
 
     }
 
     clearProxy() { this.$proxy = null }
-    get proxy() {
-        if (!this.$proxy) {
+    // get proxy() {
+    //     if (!this.$proxy) {
 
-            const factoryCode = `return class extends superclass { ${this.code} }`;
-            const factory = new Function('superclass', 'WC', factoryCode);
+    //         const factoryCode = `return class extends superclass { ${this.code} }`;
+    //         const factory = new Function('superclass', 'WC', factoryCode);
 
-            this.$proxy = new Proxy(this, factory(BehaviorHandler, Worldcore).prototype);
-        }
-        return this.$proxy;
-    }
+    //         this.$proxy = new Proxy(this, factory(BehaviorHandler, Worldcore).prototype);
+    //     }
+    //     return this.$proxy;
+    // }
+
+    // get proxy() {
+
+    //     const factoryCode = `return class extends superclass { ${this.code} }`;
+    //     const factory = new Function('superclass', 'WC', factoryCode);
+
+    //      return new Proxy(this, factory(BehaviorHandler, Worldcore).prototype);
+    // }
 
     get code() { return this._code}
     get actor() { return this._actor}
@@ -109,7 +119,8 @@ export class Behavior extends Actor {
 
     tick(delta) {
         if (this.doomed) return;
-        this.proxy.do(delta);
+        // this.proxy.do(delta);
+        this.do(delta);
         if (!this.doomed) this.future(this.tickRate).tick(this.tickRate);
     }
 
@@ -119,13 +130,23 @@ export class Behavior extends Actor {
         behavior.create(options);
     }
 
+    // succeed(data) {
+    //     if (this.parent) this.parent.proxy.onSucceed(this, data);
+    //     this.destroy();
+    // }
+
     succeed(data) {
-        if (this.parent) this.parent.proxy.onSucceed(this, data);
+        if (this.parent) this.parent.onSucceed(this, data);
         this.destroy();
     }
 
+    // fail(data) {
+    //     if (this.parent) this.parent.proxy.onFail(this, data);
+    //     this.destroy();
+    // }
+
     fail(data) {
-        if (this.parent) this.parent.proxy.onFail(this, data);
+        if (this.parent) this.parent.onFail(this, data);
         this.destroy();
     }
 

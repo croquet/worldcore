@@ -12,7 +12,7 @@ export class Godview extends mix(WorldcoreView).with(PM_WidgetPointer) {
         this.right = 0;
         this.left = 0;
 
-        this.translation = [0,20,20];
+        this.translation = [0,10,10];
         this.rotation = q_axisAngle([1,0,0], toRad(-40));
         this.updateCamera();
 

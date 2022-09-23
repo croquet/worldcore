@@ -74,20 +74,20 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) 
         });
 
 
-        this.text = new TextWidget3({name: "canvas", parent: this.ui, translation: [-2,0.5,0], point: 48, font: "sans-serif", resolution: 300, size: [1,1.5], text: "Alpha\nBeta\nGamma", billboard: false, noWrap: true, fgColor: [0,0,0], bgColor: [1,1,1], alpha: false});
+        this.text = new TextWidget3({name: "canvas", parent: this.ui, translation: [-2,0.5,0], point: 48, font: "sans-serif", resolution: 300, size: [1,1.5], text: "Alpha\nBeta\nGamma", billboard: false, noWrap: true, fgColor: [1,1,1], bgColor: [0,0,0], color: [1,0,0], alpha: true});
 
         // this.textField = new TextFieldWidget3({name: "textField", parent: this.panel, anchor: [0,0], pivot: [0,0],  translation: [0.1,0.1,0], point: 48, size: [3,1.5], text: "12345"});
 
-        this.menu= new MenuWidget3({
-            name: "menu",
-            parent: this.panel,
-            size: [2, 0.5],
-            anchor: [0,0],
-            pivot: [0,0],
-            translation: [1,1,0],
-            list: ["Alpha", "Beta", "Gamma", "Delta"]
-            // list: ["Alpha"]
-        });
+        // this.menu= new MenuWidget3({
+        //     name: "menu",
+        //     parent: this.panel,
+        //     size: [2, 0.5],
+        //     anchor: [0,0],
+        //     pivot: [0,0],
+        //     translation: [1,1,0],
+        //     list: ["Alpha", "Beta", "Gamma", "Delta"]
+        //     // list: ["Alpha"]
+        // });
 
         // this.menu2= new MenuWidget3({
         //     name: "menu2",

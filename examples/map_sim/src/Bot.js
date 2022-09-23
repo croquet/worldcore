@@ -1,28 +1,16 @@
-import { Actor, Pawn, mix, PM_ThreeVisible, THREE, AM_Smoothed, PM_Smoothed, PM_Widget3, BoxWidget3, FocusWidget3, viewRoot, AM_Behavioral, Behavior, v2_sub, v2_normalize, v2_scale, v2_magnitude, q_axisAngle, toRad, toDeg, SequenceBehavior  } from "@croquet/worldcore";
+import { Actor, Pawn, mix, PM_ThreeVisible, THREE, AM_Smoothed, PM_Smoothed, PM_Widget3, BoxWidget3, FocusWidget3, viewRoot, AM_Behavioral, Behavior, v2_sub, v2_normalize, v2_scale, v2_magnitude, q_axisAngle, toRad, toDeg, SequenceBehavior, PlaneWidget3, TextWidget3  } from "@croquet/worldcore";
 
 
 //------------------------------------------------------------------------------------------
-//-- Behaviors -----------------------------------------------------------------------------
+//-- Bot Behaviors -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class PickDestinationBehavior extends Behavior {
+export class WalkTo extends Behavior {
 
     init(options) {
+        options.name = "WalkTo";
         super.init(options);
-        const paths = this.service("Paths");
-        const destination = paths.randomNode();
-        this.succeed(destination);
-    }
-
-}
-PickDestinationBehavior.register("PickDestinationBehavior");
-
-//------------------------------------------------------------------------------------------
-
-class WalkToBehavior extends Behavior {
-
-    init(options) {
-        super.init(options);
+        this.actor.set({destination: options.destination})
 
         const paths = this.service("Paths");
 
@@ -34,10 +22,10 @@ class WalkToBehavior extends Behavior {
     }
 
     get destination() { return this._destination;  }
+    get speed() { return this._speed || 0.003; };
 
     do(delta) {
 
-        const speed = 0.003;
 
         if (this.step >= this.path.length) {
             this.succeed();
@@ -59,7 +47,7 @@ class WalkToBehavior extends Behavior {
         }
 
         let  forward = v2_normalize(remaining);
-        const move = v2_scale(forward, speed * delta);
+        const move = v2_scale(forward, this.speed * delta);
 
         let angle = 0;
         if (forward[0] < 0) {
@@ -73,28 +61,7 @@ class WalkToBehavior extends Behavior {
     }
 
 }
-WalkToBehavior.register("WalkToBehavior");
-
-//------------------------------------------------------------------------------------------
-
-class WanderBehavior extends Behavior {
-
-    init(options) {
-        super.init(options);
-        this.startChild(PickDestinationBehavior);
-    }
-
-    onSucceed(child, data) {
-        if (child instanceof PickDestinationBehavior) {
-            this.startChild(WalkToBehavior, {destination: data});
-        }
-
-        if (child instanceof WalkToBehavior) {
-            this.startChild(PickDestinationBehavior);
-        }
-    }
-}
-WanderBehavior.register("WanderBehavior");
+WalkTo.register("WalkTo");
 
 //------------------------------------------------------------------------------------------
 //-- BotActor ------------------------------------------------------------------------------
@@ -106,9 +73,9 @@ export class BotActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
     init(options) {
         super.init(options);
         this.goHome();
-        this.startBehavior(WanderBehavior);
     }
 
+    get destination() { return this._destination;  }
     get home() { return this._home}
 
     goHome() {
@@ -133,6 +100,18 @@ class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) {
         this.focus = new FocusWidget3({parent:this.rootWidget, name:"bot"});
         this.widget = new BoxWidget3({parent:this.focus, collidable: true, size:[1,2], thick: 1, translation: [0,1,0], color: [0.5, 0.25, 0.1]});
         this.widget.mesh.castShadow = true;
+        this.nameplate = new TextWidget3({
+            parent: this.focus, size: [4,2],
+            translation: [0,3,0],
+            resolution: 50,
+            alpha: true,
+            point: 48,
+            collidable: true,
+            color: [0,1,0],
+            bgColor: [0, 0, 0],
+            fgColor: [1, 1, 1],
+            billboard: true,
+            text: this.actor.name});
 
         this.focus.onFocus = () => { viewRoot.hiliteMesh(this.widget.mesh) };
         this.focus.onBlur = () => { viewRoot.hiliteMesh(null) };
