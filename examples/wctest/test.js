@@ -4,14 +4,14 @@
 
 import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX, m4_rotationZ,  m4_identity, GetPawn, TAU } from "@croquet/worldcore-kernel";
 import {WebGLRenderManager, PM_WebGLVisible, PM_WebGLCamera, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
-import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget } from "@croquet/worldcore-widget";
+import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget} from "@croquet/worldcore-widget";
 
 import { AM_Behavioral, Behavior, SequenceBehavior, DelayBehavior, SelectorBehavior, InvertBehavior, PM_Behavioral } from "@croquet/worldcore-behavior";
 
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
-import { Widget2, CanvasWidget2, WidgetManager2, VerticalWidget2, HorizontalWidget2, ImageWidget2, TextWidget2 } from "./Widget2";
+import { Widget2, CanvasWidget2, WidgetManager2, VerticalWidget2, HorizontalWidget2, ImageWidget2, TextWidget2, ControlWidget2, ButtonWidget2, ToggleWidget2, ToggleSet2, SliderWidget2, JoystickWidget2, JoyStickWidget2  } from "./Widget2";
 
 //------------------------------------------------------------------------------------------
 // MoveActor
@@ -292,14 +292,21 @@ class MyViewRoot extends ViewRoot {
 
 
 
-        this.hud = new CanvasWidget2({parent: wm.root, size:[200,400], color: [1,1,1], translation: [20,20]});
+        this.hud = new Widget2({parent: wm.root, size:[200,400], color: [1,1,1], anchor:[0,0], pivot: [0,0], translation: [20,20]});
 
+        const ts = new ToggleSet2;
         this.vvv = new VerticalWidget2({parent: this.hud, margin: 0, autoSize:[1,1]});
         this.widget0 = new CanvasWidget2({parent: this.vvv, width: 30, color: [1,0,0]});
-        this.widget1 = new CanvasWidget2({parent: this.vvv, color: [0,1,0]});
-        this.widget2 = new CanvasWidget2({parent: this.vvv, color: [0,0,1]});
-        this.widget3 = new ImageWidget2({parent: this.vvv, color: [0,0,1], url: llama});
-        this.widget3 = new TextWidget2({parent: this.vvv, color: [1,1,1], text: "Test\nWrap", noWrap: true});
+        this.widget1 = new ImageWidget2({parent: this.vvv, color: [1,1,0], url: llama});
+
+        this.widget2 = new ToggleWidget2({parent: this.vvv, color: [1,1,0], toggleSet: ts});
+        this.widget3 = new ToggleWidget2({parent: this.vvv, color: [0,1,1], toggleSet: ts});
+
+        this.widget4 = new TextWidget2({parent: this.vvv, color: [1,1,1], text: "Test\nWrap", noWrap: true});
+
+        // this.slider = new SliderWidget2({parent: wm.root, size:[20,200], translation: [20,20], step: 5, percent: 0.95});
+
+        this.joy = new JoyStickWidget2({parent: wm.root, anchor: [1,1], pivot: [1,1], translation: [-20,-20], size: [150, 150]});
 
         this.subscribe("input", "xDown", this.xTest);
         this.subscribe("input", "cDown", this.cTest);
@@ -309,12 +316,16 @@ class MyViewRoot extends ViewRoot {
 
     xTest() {
         console.log("xTest");
-        this.widget3.loadFromURL(llama);
+        // this.hud.set({visible: false});
+        this.widget4.set({text: "Long Text String"});
     }
 
     cTest() {
         console.log("cTest");
+        // this.hud.set({visible: true});
+        this.widget4.set({text: "Short Text String"});
     }
+
 
 }
 
