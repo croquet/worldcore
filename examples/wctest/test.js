@@ -11,6 +11,7 @@ import { AM_Behavioral, Behavior, SequenceBehavior, DelayBehavior, SelectorBehav
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
+import { Widget2, CanvasWidget2, WidgetManager2, VerticalWidget2, HorizontalWidget2, ImageWidget2, TextWidget2 } from "./Widget2";
 
 //------------------------------------------------------------------------------------------
 // MoveActor
@@ -24,7 +25,7 @@ class MoveActor extends mix(Actor).with(AM_Smoothed) {
         super.init(options);
         this.child = SpinActor.create({zzz: 123, parent: this, translation: [0,1.5,0]});
 
-        console.log(this.children);
+        // console.log(this.children);
         this.tick();
 
         // this.subscribe("input", "bDown", this.test0);
@@ -149,8 +150,8 @@ class SpinPawn extends mix(Pawn).with(PM_Smoothed, PM_WebGLVisible) {
         super(...args);
         this.setDrawCall(this.buildDraw());
 
-        this.subscribe("input", "dDown", this.test1);
-        this.subscribe("input", "sDown", this.test2);
+        // this.subscribe("input", "dDown", this.test1);
+        // this.subscribe("input", "sDown", this.test2);
     }
 
     buildDraw() {
@@ -240,7 +241,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start Model!!!!");
+        console.log("Start Model!!!!!");
 
         BackgroundActor.create();
         MoveActor.create({translation: [0,0,-5]});
@@ -259,7 +260,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [ InputManager, UIManager, WebGLRenderManager];
+        return [ InputManager, UIManager, WebGLRenderManager, WidgetManager2];
     }
 
     constructor(model) {
@@ -283,10 +284,36 @@ class MyViewRoot extends ViewRoot {
             ao.falloff = 1;
         }
 
-        const ui = this.service("UIManager");
-        this.HUD = new Widget({parent: ui.root, autoSize: [1,1]});
-        this.joy = new JoystickWidget({parent: this.HUD, anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [150, 150], onChange: xy => {this.publish("hud", "joy", xy)}});
+        // const ui = this.service("UIManager");
+        // this.HUD = new Widget({parent: ui.root, autoSize: [1,1]});
+        // this.joy = new JoystickWidget({parent: this.HUD, anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [150, 150], onChange: xy => {this.publish("hud", "joy", xy)}});
 
+        const wm = this.service("WidgetManager2");
+
+
+
+        this.hud = new CanvasWidget2({parent: wm.root, size:[200,400], color: [1,1,1], translation: [20,20]});
+
+        this.vvv = new VerticalWidget2({parent: this.hud, margin: 0, autoSize:[1,1]});
+        this.widget0 = new CanvasWidget2({parent: this.vvv, width: 30, color: [1,0,0]});
+        this.widget1 = new CanvasWidget2({parent: this.vvv, color: [0,1,0]});
+        this.widget2 = new CanvasWidget2({parent: this.vvv, color: [0,0,1]});
+        this.widget3 = new ImageWidget2({parent: this.vvv, color: [0,0,1], url: llama});
+        this.widget3 = new TextWidget2({parent: this.vvv, color: [1,1,1], text: "Test\nWrap", noWrap: true});
+
+        this.subscribe("input", "xDown", this.xTest);
+        this.subscribe("input", "cDown", this.cTest);
+
+
+    }
+
+    xTest() {
+        console.log("xTest");
+        this.widget3.loadFromURL(llama);
+    }
+
+    cTest() {
+        console.log("cTest");
     }
 
 }
