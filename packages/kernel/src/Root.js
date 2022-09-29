@@ -75,6 +75,10 @@ export function GetModelService(name) { return viewRoot.wellKnownModel(name) }
 
 export class WorldcoreView extends View {
 
+    destroy() {
+        this.detach();
+    }
+
     service(name) { return viewServices.get(name) }
     modelService(name) { return this.wellKnownModel(name) }
     get time() {return time1}
@@ -162,7 +166,7 @@ export class ViewService extends WorldcoreView {
     }
 
     destroy() {
-        this.detach();
+        super.destroy();
         viewServices.delete(this.name);
     }
 

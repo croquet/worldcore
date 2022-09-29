@@ -11,7 +11,7 @@ import { AM_Behavioral, Behavior, SequenceBehavior, DelayBehavior, SelectorBehav
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
-import { Widget2, CanvasWidget2, WidgetManager2, VerticalWidget2, HorizontalWidget2, ImageWidget2, TextWidget2, ControlWidget2, ButtonWidget2, ToggleWidget2, ToggleSet2, SliderWidget2, JoystickWidget2, JoyStickWidget2  } from "./Widget2";
+import { Widget2, CanvasWidget2, WidgetManager2, VerticalWidget2, HorizontalWidget2, ImageWidget2, TextWidget2, ControlWidget2, ButtonWidget2, ToggleWidget2, ToggleSet2, SliderWidget2, JoystickWidget2, JoyStickWidget2, WindowWidget2  } from "./Widget2";
 
 //------------------------------------------------------------------------------------------
 // MoveActor
@@ -289,24 +289,20 @@ class MyViewRoot extends ViewRoot {
         // this.joy = new JoystickWidget({parent: this.HUD, anchor: [1,1], pivot: [1,1], local: [-20,-20], size: [150, 150], onChange: xy => {this.publish("hud", "joy", xy)}});
 
         const wm = this.service("WidgetManager2");
+        // this.window = new WindowWidget2({parent: wm.root, size:[200,300], translation: [10,10], depth: 100});
+        // const ts = new ToggleSet2;
+        // this.vvv = new VerticalWidget2({parent: this.window.content, autoSize:[1,1]});
+        // this.widget1 = new ImageWidget2({parent: this.vvv, color: [1,1,0], url: llama});
+        // this.widget2 = new ToggleWidget2({parent: this.vvv, color: [1,1,0], toggleSet: ts});
+        // this.widget3 = new ToggleWidget2({parent: this.vvv, color: [0,1,1], toggleSet: ts});
+        // this.widget4 = new TextWidget2({parent: this.vvv, color: [1,1,1], text: "Test\nWrap", noWrap: true});
+
+        // this.slider = new SliderWidget2({parent: this.window.content, size:[10,100], translation: [20,20], percent: 0.95});
+
+        this.joy = new JoyStickWidget2({parent: wm.root, anchor: [1,1], pivot: [1,1], translation: [-20,-20], size: [150, 150], visible: true });
+        this.joy.onChange = xy => {this.publish("hud", "joy", xy)};
 
 
-
-        this.hud = new Widget2({parent: wm.root, size:[200,400], color: [1,1,1], anchor:[0,0], pivot: [0,0], translation: [20,20]});
-
-        const ts = new ToggleSet2;
-        this.vvv = new VerticalWidget2({parent: this.hud, margin: 0, autoSize:[1,1]});
-        this.widget0 = new CanvasWidget2({parent: this.vvv, width: 30, color: [1,0,0]});
-        this.widget1 = new ImageWidget2({parent: this.vvv, color: [1,1,0], url: llama});
-
-        this.widget2 = new ToggleWidget2({parent: this.vvv, color: [1,1,0], toggleSet: ts});
-        this.widget3 = new ToggleWidget2({parent: this.vvv, color: [0,1,1], toggleSet: ts});
-
-        this.widget4 = new TextWidget2({parent: this.vvv, color: [1,1,1], text: "Test\nWrap", noWrap: true});
-
-        // this.slider = new SliderWidget2({parent: wm.root, size:[20,200], translation: [20,20], step: 5, percent: 0.95});
-
-        this.joy = new JoyStickWidget2({parent: wm.root, anchor: [1,1], pivot: [1,1], translation: [-20,-20], size: [150, 150]});
 
         this.subscribe("input", "xDown", this.xTest);
         this.subscribe("input", "cDown", this.cTest);
@@ -316,8 +312,15 @@ class MyViewRoot extends ViewRoot {
 
     xTest() {
         console.log("xTest");
-        // this.hud.set({visible: false});
-        this.widget4.set({text: "Long Text String"});
+
+        const wm = this.service("WidgetManager2");
+        const window = new WindowWidget2({parent: wm.root, size:[200,300], translation: [10,10]});
+        const ts = new ToggleSet2;
+        const vvv = new VerticalWidget2({parent: window.content, autoSize:[1,1]});
+        const widget1 = new ImageWidget2({parent: vvv, color: [1,1,0], url: llama});
+        const widget2 = new ToggleWidget2({parent: vvv, color: [1,1,0], toggleSet: ts});
+        const widget3 = new ToggleWidget2({parent: vvv, color: [0,1,1], toggleSet: ts});
+        const widget4 = new TextWidget2({parent: vvv, color: [1,1,1], text: "Test\nWrap", noWrap: true});
     }
 
     cTest() {

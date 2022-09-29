@@ -80,7 +80,7 @@ export class Behavior extends Actor {
 
     init(options) {
         super.init(options);
-        this.listen("_code", this.clearProxy); // Flush the proxy if the code changes.
+        // this.listen("_code", this.clearProxy); // Flush the proxy if the code changes.
 
         if (this.tickRate) {
             const firstDelta = Math.random() * this.tickRate;
@@ -93,7 +93,7 @@ export class Behavior extends Actor {
 
     }
 
-    clearProxy() { this.$proxy = null }
+    // clearProxy() { this.$proxy = null }
     // get proxy() {
     //     if (!this.$proxy) {
 

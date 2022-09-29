@@ -1,17 +1,17 @@
-import { WorldcoreView, viewRoot, ViewService, v2_add, v3_add, v2_magnitude, v2_scale, v2_normalize} from "@croquet/worldcore-kernel";
+import { WorldcoreView, viewRoot, ViewService, v2_add, v3_add, v2_magnitude, v2_scale, v2_normalize, v2_sub} from "@croquet/worldcore-kernel";
 // import { Widget } from "@croquet/worldcore-widget";
 
 //------------------------------------------------------------------------------------------
 //-- HelperFunctions -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-function RelativeTranslation(t, anchor, pivot, size, parentSize) {
-    const aX = -0.5*parentSize[0] + parentSize[0]*anchor[0];
-    const aY = -0.5*parentSize[1] + parentSize[1]*anchor[1];
-    const pX = 0.5*size[0] - size[0]*pivot[0];
-    const pY = 0.5*size[1] - size[1]*pivot[1];
-    return [t[0]+aX+pX, t[1]+aY+pY, t[2]];
-}
+// function RelativeTranslation(t, anchor, pivot, size, parentSize) {
+//     const aX = -0.5*parentSize[0] + parentSize[0]*anchor[0];
+//     const aY = -0.5*parentSize[1] + parentSize[1]*anchor[1];
+//     const pX = 0.5*size[0] - size[0]*pivot[0];
+//     const pY = 0.5*size[1] - size[1]*pivot[1];
+//     return [t[0]+aX+pX, t[1]+aY+pY, t[2]];
+// }
 
 function canvasColor(r, g, b) {
     return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
@@ -31,12 +31,16 @@ function vEquals(a, b) {
 //-- WidgetManager2 -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+let wm;
+
 export class WidgetManager2 extends ViewService {
     constructor(name) {
         super(name || "WidgetManager2");
+        wm = this;
         const x = window.innerWidth;
         const y = window.innerHeight;
         this.root = new Widget2({size: [x,y]});
+        this.topWindow = 10;
 
         this.subscribe("input", "pointerDown", this.pointerDown);
         this.subscribe("input", "pointerUp", this.pointerUp);
@@ -45,6 +49,11 @@ export class WidgetManager2 extends ViewService {
         this.subscribe("input", "keyRepeat", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
 
+    }
+
+    destroy() {
+        super.destroy();
+        if (this.root) this.root.destroy();
     }
 
     update(time,delta) {
@@ -80,6 +89,7 @@ export class Widget2 extends WorldcoreView {
     constructor(options) {
         super(viewRoot.model);
         this.set(options);
+        this.buildDefault();
     }
 
     destroy() {
@@ -87,6 +97,8 @@ export class Widget2 extends WorldcoreView {
         new Set(this.children).forEach(child => child.destroy());
         if (this.parent) this.parent.removeChild(this);
     }
+
+    buildDefault() {}
 
     get name() { return this._name; }
     get parent() { return this._parent }
@@ -96,10 +108,10 @@ export class Widget2 extends WorldcoreView {
     get height() { return this._height || 0}
     get width() { return this._width || 0}
     get translation() { return this._translation || [0,0] }
-    get zIndex() { return this._zIndex || 0}
+    get depth() { return this._depth || 0}
     get anchor() { return this._anchor || [0,0]}
     get pivot() { return this._pivot || [0,0]}
-    get color() {return this._color || [0,1,1]}
+    get color() {return this._color || [0,0,0]}
 
     get visible() {
         const v = this._visible === undefined || this._visible;
@@ -143,9 +155,9 @@ export class Widget2 extends WorldcoreView {
         return out;
     }
 
-    get trueZIndex() {
-        if (this.parent && this.parent.trueZIndex ) return this.parent.trueZIndex + 1;
-        return this.zIndex;
+    get trueDepth() {
+        if (this.parent && this.parent.trueDepth ) return this.parent.trueDepth + 1;
+        return this.depth;
     }
 
     set(options) {
@@ -167,6 +179,38 @@ export class Widget2 extends WorldcoreView {
         if (this.parent) this.parent.removeChild(this);
         this._parent = p;
         if (this.parent) this.parent.addChild(this);
+        this.repositionChildren();
+    }
+
+    sizeSet(s) {
+        if (vEquals(s, this.size)) return;
+        this._size = s;
+        this.repositionChildren();
+        this.redrawChildren();
+    }
+
+    translationSet(t) {
+        if (vEquals(t, this.translation)) return;
+        this._translation = t;
+        this.repositionChildren();
+    }
+
+    depthSet(z) {
+        if (this.depth === z) return;
+        this._depth= z;
+        this.repositionChildren();
+    }
+
+    anchorSet(a) {
+        if (vEquals(a, this.anchor)) return;
+        this._anchor = a;
+        this.repositionChildren()
+    }
+
+    pivotSet(p) {
+        if (vEquals(p, this.pivot)) return;
+        this._pivot = p;
+        this.repositionChildren()
     }
 
     colorSet(s) {
@@ -193,6 +237,11 @@ export class Widget2 extends WorldcoreView {
     redrawChildren() {
         this.redraw  = true;
         if (this.children) this.children.forEach( child => child.redrawChildren());
+    }
+
+    repositionChildren() {
+        this.reposition  = true;
+        if (this.children) this.children.forEach( child => child.repositionChildren());
     }
 
     inside(xy) {
@@ -252,53 +301,18 @@ export class CanvasWidget2 extends Widget2 {
 
     destroy() {
         super.destroy();
-        this.element.remove();
+        this.canvas.remove();
+
     }
 
     get cc() {
         return this.canvas.getContext('2d');
     }
 
-    translationSet(t) {
-        if (vEquals(t, this.translation)) return;
-        this._translation = t;
-        this.reposition = true;
-    }
-
-    anchorSet(a) {
-        if (vEquals(a, this.anchor)) return;
-        this._anchor = a;
-        this.reposition = true;
-    }
-
-    pivotSet(p) {
-        if (vEquals(p, this.pivot)) return;
-        this._pivot = p;
-        this.reposition = true;
-    }
-
-    sizeSet(s) {
-        if (vEquals(s, this.size)) return;
-        this._size = s;
-        this.redraw = true;
-    }
-
-    zIndexSet(z) {
-        if (this.zIndex === z) return;
-        this._zIndex = z;
-        this.reposition = true;
-    }
-
-    parentSet(p) {
-        super.parentSet(p)
-        this.reposition = true;
-        this.redraw = true;
-    }
-
     position() {
         this.canvas.style.left = this.global[0] + "px";
         this.canvas.style.top = this.global[1] + "px";
-        this.canvas.style.zIndex = this.trueZIndex;
+        this.canvas.style.zIndex = this.trueDepth;
     }
 
     draw() {
@@ -546,13 +560,14 @@ export function ParentControl(w) {
     return null;
 }
 
-export class ControlWidget2 extends CanvasWidget2 {
+export class ControlWidget2 extends Widget2 {
 
     constructor(options) {
         super(options);
     }
 
     pointerDown(e) {
+        super.pointerDown(e);
         if(this.inside(e.xy)) {
             this.pressed = true;
             this.onPress();
@@ -561,6 +576,7 @@ export class ControlWidget2 extends CanvasWidget2 {
     }
 
     pointerUp(e) {
+        super.pointerUp(e);
         if(this.pressed) {
             this.pressed = false;
             this.onNormal();
@@ -568,6 +584,7 @@ export class ControlWidget2 extends CanvasWidget2 {
     }
 
     pointerMove(e) {
+        super.pointerMove();
         if(this.inside(e.xy)) {
             this.hovered = true;
             if (this.pressed) {
@@ -593,17 +610,19 @@ export class ControlWidget2 extends CanvasWidget2 {
 
 export class ButtonWidget2 extends ControlWidget2 {
 
-    constructor(options) {
-        super(options);
-        this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0,0,1]});
-        this.label = new TextWidget2({ parent: this.frame, autoSize: [1,1], border: [5, 5, 5, 5], color: [0.8,0.8,0.8], text:  "Button" });
+    buildDefault() {
+            this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0,0,1]});
+            this.label = new TextWidget2({ parent: this.frame, autoSize: [1,1], border: [5, 5, 5, 5], color: [0.8,0.8,0.8], text:  "Button" });
     }
 
     pointerUp(e) {
+
         if(this.pressed && this.inside(e.xy) ) {
+            console.log("up");
+            this.onNormal();
             this.onClick();
         }
-       super.pointerUp();
+    //    super.pointerUp();
     }
 
     onHover() {
@@ -621,6 +640,29 @@ export class ButtonWidget2 extends ControlWidget2 {
     onClick() {
         this.publish(this.id, "click");
     }
+}
+
+//------------------------------------------------------------------------------------------
+//-- CloseBoxWidget2 --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class CloseBoxWidget2 extends ButtonWidget2 {
+
+    buildDefault() {
+            // this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0,0,0]});
+            this.box = new CanvasWidget2({ parent: this, autoSize: [1,1], color: [1,1,1]});
+    }
+
+    onHover() {}
+
+    onPress() {
+        this.box.set({color: [1,0,0]});
+    }
+
+    onNormal() {
+        this.box.set({color: [1,1,1]});
+    }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -774,11 +816,13 @@ export class JoyStickWidget2 extends ControlWidget2 {
     constructor(options) {
         super(options);
 
-        this.gate = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.8,0.8,0.8]});
-        this.knob = new CanvasWidget2({parent: this.gate, anchor:[0.5, 0.5], pivot: [0.5,0.5], size: [20,20], color: [0.6,0.6,0.6] });
+        this.background = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.8,0.8,0.8]});
+        this.gate = new Widget2({parent: this.background, autoSize: [1,1], border:[this.knobSize/2, this.knobSize/2, this.knobSize/2,this.knobSize/2]});
+        this.knob = new CanvasWidget2({parent: this.gate, anchor:[0.5, 0.5], pivot: [0.5,0.5], size: [this.knobSize,this.knobSize], color: [0.6,0.6,0.6] });
     }
 
     get deadRadius() { return this._deadRadius || 0.1}
+    get knobSize() { return this._knobSize || 20};
 
     onPress() {
         this.knob.set({color: [0.4, 0.4, 0.4]});
@@ -795,88 +839,121 @@ export class JoyStickWidget2 extends ControlWidget2 {
     pointerDown(e) {
         super.pointerDown(e);
         if(this.inside(e.xy)) {
-            const x = (e.xy[0] - this.global[0]) / this.trueSize[0];
-            const y = (e.xy[1] - this.global[1]) / this.trueSize[1];
-            const xy = [x,y]
+            const x = Math.min(1, Math.max(0,(0.5 + e.xy[0] - this.global[0]) / this.trueSize[0]));
+            const y = Math.min(1, Math.max(0,(0.5 + e.xy[1] - this.global[1]) / this.trueSize[1]));
+            let xy = [x,y]
+
+            const v = v2_sub(xy,[0.5,0.5]);
+            const m = v2_magnitude(v);
+
+            if(m > 0.5) {
+                const n = v2_normalize(v);
+                const s = v2_scale(n, 0.5);
+                xy = v2_add(s,[0.5,0.5]);
+            }
+
             this.knob.set({anchor: xy });
+            this.change(xy);
         }
     }
 
     pointerMove(e) {
         super.pointerMove(e);
         if(this.pressed) {
-            const x = 0.5 + (e.xy[0] - this.global[0]) / this.trueSize[0];
-            const y = 0.5 + (e.xy[1] - this.global[1]) / this.trueSize[1];
+            const x = Math.min(1, Math.max(0,(0.5 + e.xy[0] - this.global[0]) / this.trueSize[0]));
+            const y = Math.min(1, Math.max(0,(0.5 + e.xy[1] - this.global[1]) / this.trueSize[1]));
             let xy = [x,y]
 
-            const n = v2_normalize(xy);
-            const clamp = Math.max(0, v2_magnitude(xy)-this.deadRadius) / (1-this.deadRadius);
-            xy = v2_scale(n,clamp);
-            this.knob.set({anchor: n });
+            const v = v2_sub(xy,[0.5,0.5]);
+            const m = v2_magnitude(v);
+
+            if(m > 0.5) {
+                const n = v2_normalize(v);
+                const s = v2_scale(n, 0.5);
+                xy = v2_add(s,[0.5,0.5]);
+            }
+
+            this.knob.set({anchor: xy });
+            this.change(xy);
         }
     }
 
     pointerUp(e) {
         super.pointerUp(e);
         this.knob.set({anchor: [0.5,0.5] });
+        this.change([0.5,0.5]);
+    }
+
+    change(xy) {
+        let v = v2_scale(v2_sub(xy,[0.5,0.5]),2);
+        const m = v2_magnitude(v);
+        if( m < this.deadRadius) v = [0,0];
+        this.publish(this.id, "xy", v);
+        this.onChange(v);
+    }
+
+    onChange(xy){
+        console.log(xy);
     }
 
 }
 
-    // get knobTranslation() {
-    //     return t;
-    // }
+//------------------------------------------------------------------------------------------
+//-- DragWidget2 -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
-    // percentSet(p) {
-    //     p = Math.min(1,p);
-    //     p = Math.max(0,p);
-    //     if (this.step) p = Math.round(p * this.step) / this.step;
-    //     this._percent = p;
-    //     if (this.knob) this.knob.set({translation: this.knobTranslation});
-    //     this.onPercent(this.percent);
-    // }
+export class DragWidget2 extends ControlWidget2 {
+    constructor(options) {
+        super(options);
 
-    // onPress() {
-    //     this.knob.set({color: [0.4, 0.4, 0.4]});
-    // }
+        this.handle = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.6,0.6,0.6]});
+    }
 
-    // onNormal() {
-    //     this.knob.set({color: [0.6,0.6,0.6]});
-    // }
+    pointerDown(e) {
+        super.pointerDown(e);
+        if(this.inside(e.xy)) {
+            this.pressed = true;
+            if (this.parent) {
+                this.grab = v2_sub(this.parent.translation, e.xy)
+            }
+        }
 
-    // onHover() {
-    //     this.knob.set({color: [0.5, 0.5, 0.5]});
-    // }
+    }
 
-    // pointerDown(e) {
-    //     super.pointerDown(e);
-    //     if(this.inside(e.xy)) {
-    //         let p = 0;
-    //         if (this.isHorizontal) {
-    //             p = (e.xy[0] - this.global[0]- this.knobSize[0]/2) / (this.trueSize[0]-this.knobSize[0]);
-    //         } else {
-    //             p = (e.xy[1] - this.global[1]- this.knobSize[1]/2) / (this.trueSize[1]-this.knobSize[1]);
-    //         }
-    //         this.set({percent: p});
-    //     }
-    // }
+    pointerUp(e) {
+        if(this.pressed) {
+            this.pressed = false;
+            if (this.parent) this.parent.set({translation: v2_add(e.xy, this.grab)});
+        }
+        super.pointerUp(e);
+    }
 
-    // pointerMove(e) {
-    //     super.pointerMove(e);
-    //     if(this.pressed) {
-    //         let p = 0;
-    //         if (this.isHorizontal) {
-    //             p = (e.xy[0] - this.global[0]- this.knobSize[0]/2) / (this.trueSize[0]-this.knobSize[0]);
-    //         } else {
-    //             p = (e.xy[1] - this.global[1]- this.knobSize[1]/2) / (this.trueSize[1]-this.knobSize[1]);
-    //         }
-    //         this.set({percent: p});
-    //     }
-    // }
+    pointerMove(e) {
+        if (this.pressed) {
+            if (this.parent) this.parent.set({translation: v2_add(e.xy, this.grab)});
+        }
+    }
+}
 
-    // onPercent(p) {
-    //     this.publish(this.id, "percent", p);
-    // }
+//------------------------------------------------------------------------------------------
+//-- WindowWidget2 -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class WindowWidget2 extends Widget2 {
+    constructor(options) {
+        super(options);
+        const depth = wm.topWindow+10;
+        this.set({depth})
+        wm.topWindow = depth;
+
+        this.layout = new VerticalWidget2({parent: this, autoSize: [1,1]});
+        this.drag = new DragWidget2({parent: this.layout, height:15, color: [0.5,0.5,0.5]});
+        this.content = new CanvasWidget2({parent: this.layout, color: [0,1,0]});
+        this.close = new CloseBoxWidget2({parent: this.drag, size:[8,8], anchor: [1,0.5], pivot: [1,0.5], translation: [-5, 0]});
+        this.close.onClick = () => this.destroy();
+    }
+
+}
 
 
 
