@@ -567,7 +567,6 @@ export class ControlWidget2 extends Widget2 {
     }
 
     pointerDown(e) {
-        super.pointerDown(e);
         if(this.inside(e.xy)) {
             this.pressed = true;
             this.onPress();
@@ -576,7 +575,6 @@ export class ControlWidget2 extends Widget2 {
     }
 
     pointerUp(e) {
-        super.pointerUp(e);
         if(this.pressed) {
             this.pressed = false;
             this.onNormal();
@@ -618,11 +616,9 @@ export class ButtonWidget2 extends ControlWidget2 {
     pointerUp(e) {
 
         if(this.pressed && this.inside(e.xy) ) {
-            console.log("up");
             this.onNormal();
             this.onClick();
         }
-    //    super.pointerUp();
     }
 
     onHover() {
@@ -642,28 +638,7 @@ export class ButtonWidget2 extends ControlWidget2 {
     }
 }
 
-//------------------------------------------------------------------------------------------
-//-- CloseBoxWidget2 --------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
 
-export class CloseBoxWidget2 extends ButtonWidget2 {
-
-    buildDefault() {
-            // this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0,0,0]});
-            this.box = new CanvasWidget2({ parent: this, autoSize: [1,1], color: [1,1,1]});
-    }
-
-    onHover() {}
-
-    onPress() {
-        this.box.set({color: [1,0,0]});
-    }
-
-    onNormal() {
-        this.box.set({color: [1,1,1]});
-    }
-
-}
 
 //------------------------------------------------------------------------------------------
 //-- ToggleWidget --------------------------------------------------------------------------
@@ -899,24 +874,52 @@ export class JoyStickWidget2 extends ControlWidget2 {
 }
 
 //------------------------------------------------------------------------------------------
+//-- CloseBoxWidget2 -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class CloseBoxWidget2 extends ButtonWidget2 {
+
+    buildDefault() {
+            // this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0,0,0]});
+            this.box = new CanvasWidget2({ parent: this, autoSize: [1,1], color: [1,1,1]});
+    }
+
+    onHover() {}
+
+    onPress() {
+        this.box.set({color: [1,0,0]});
+    }
+
+    onNormal() {
+        this.box.set({color: [1,1,1]});
+    }
+
+    // onClick() {
+    //     console.log("close");
+    // }
+
+}//------------------------------------------------------------------------------------------
 //-- DragWidget2 -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class DragWidget2 extends ControlWidget2 {
+class DragWidget2 extends ControlWidget2 {
     constructor(options) {
         super(options);
 
         this.handle = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.6,0.6,0.6]});
+        this.close = new CloseBoxWidget2({parent: this.handle, size:[8,8], anchor: [1,0.5], pivot: [1,0.5], translation: [-5, 0]});
+
+        this.close.onClick = () => this.parent.destroy();
     }
 
     pointerDown(e) {
-        super.pointerDown(e);
-        if(this.inside(e.xy)) {
+        if(this.inside(e.xy) && !this.close.inside(e.xy)) {
             this.pressed = true;
             if (this.parent) {
                 this.grab = v2_sub(this.parent.translation, e.xy)
             }
         }
+        this.close.pointerDown(e);
 
     }
 
@@ -925,15 +928,18 @@ export class DragWidget2 extends ControlWidget2 {
             this.pressed = false;
             if (this.parent) this.parent.set({translation: v2_add(e.xy, this.grab)});
         }
-        super.pointerUp(e);
+        this.close.pointerUp(e);
     }
 
     pointerMove(e) {
         if (this.pressed) {
             if (this.parent) this.parent.set({translation: v2_add(e.xy, this.grab)});
         }
+        this.close.pointerMove(e);
     }
 }
+
+
 
 //------------------------------------------------------------------------------------------
 //-- WindowWidget2 -------------------------------------------------------------------------
@@ -949,8 +955,8 @@ export class WindowWidget2 extends Widget2 {
         this.layout = new VerticalWidget2({parent: this, autoSize: [1,1]});
         this.drag = new DragWidget2({parent: this.layout, height:15, color: [0.5,0.5,0.5]});
         this.content = new CanvasWidget2({parent: this.layout, color: [0,1,0]});
-        this.close = new CloseBoxWidget2({parent: this.drag, size:[8,8], anchor: [1,0.5], pivot: [1,0.5], translation: [-5, 0]});
-        this.close.onClick = () => this.destroy();
+
+        // this.close.onClick = () => this.destroy();
     }
 
 }
