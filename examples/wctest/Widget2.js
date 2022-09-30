@@ -94,7 +94,8 @@ export class Widget2 extends WorldcoreView {
 
     destroy() {
         super.destroy();
-        new Set(this.children).forEach(child => child.destroy());
+        this.destroyChildren();
+        // new Set(this.children).forEach(child => child.destroy());
         if (this.parent) this.parent.removeChild(this);
     }
 
@@ -232,6 +233,10 @@ export class Widget2 extends WorldcoreView {
 
     removeChild(child) {
         if (this.children) this.children.delete(child);
+    }
+
+    destroyChildren() {
+        new Set(this.children).forEach(child => child.destroy());
     }
 
     redrawChildren() {
@@ -426,6 +431,11 @@ export class ImageWidget2 extends CanvasWidget2 {
 
     get url() { return this._url; }
 
+    urlSet(url) {
+        this._url = url;
+        if (this.image) this.image.src = this.url;
+    }
+
     draw() {
         super.draw();
         if (!this.image) return;
@@ -450,6 +460,7 @@ export class TextWidget2 extends CanvasWidget2 {
     get offset() { return this._offset || [0,0] }
     get noWrap() { return this._noWrap }
     get textColor()  {return this._textColor || [0,0,0]}
+    get offset() { return this._offset || [0,0] }
 
     textSet(t) {
         if (t === this.text) return;
@@ -540,7 +551,7 @@ export class TextWidget2 extends CanvasWidget2 {
 
         lines.forEach((line,i) => {
             const o = (i * lineHeight) - yOffset;
-            this.cc.fillText(line, x, y + o);
+            this.cc.fillText(line, x+ this.offset[0], y+ this.offset[1] + o);
         });
 
     }
@@ -880,7 +891,6 @@ export class JoyStickWidget2 extends ControlWidget2 {
 class CloseBoxWidget2 extends ButtonWidget2 {
 
     buildDefault() {
-            // this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0,0,0]});
             this.box = new CanvasWidget2({ parent: this, autoSize: [1,1], color: [1,1,1]});
     }
 
@@ -894,18 +904,14 @@ class CloseBoxWidget2 extends ButtonWidget2 {
         this.box.set({color: [1,1,1]});
     }
 
-    // onClick() {
-    //     console.log("close");
-    // }
 
 }//------------------------------------------------------------------------------------------
 //-- DragWidget2 -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class DragWidget2 extends ControlWidget2 {
-    constructor(options) {
-        super(options);
 
+    buildDefault() {
         this.handle = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.6,0.6,0.6]});
         this.close = new CloseBoxWidget2({parent: this.handle, size:[8,8], anchor: [1,0.5], pivot: [1,0.5], translation: [-5, 0]});
 
@@ -920,7 +926,6 @@ class DragWidget2 extends ControlWidget2 {
             }
         }
         this.close.pointerDown(e);
-
     }
 
     pointerUp(e) {
@@ -939,15 +944,13 @@ class DragWidget2 extends ControlWidget2 {
     }
 }
 
-
-
 //------------------------------------------------------------------------------------------
 //-- WindowWidget2 -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class WindowWidget2 extends Widget2 {
-    constructor(options) {
-        super(options);
+
+    buildDefault() {
         const depth = wm.topWindow+10;
         this.set({depth})
         wm.topWindow = depth;
@@ -955,13 +958,97 @@ export class WindowWidget2 extends Widget2 {
         this.layout = new VerticalWidget2({parent: this, autoSize: [1,1]});
         this.drag = new DragWidget2({parent: this.layout, height:15, color: [0.5,0.5,0.5]});
         this.content = new CanvasWidget2({parent: this.layout, color: [0,1,0]});
-
-        // this.close.onClick = () => this.destroy();
     }
 
 }
 
+//------------------------------------------------------------------------------------------
+//-- MenuWidget2 ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
+export class MenuWidget2 extends ControlWidget2 {
+
+    buildDefault() {
+        this.background = new CanvasWidget2({parent: this, autoSize: [1,0], color: [1,1,1],});
+        this.layout = new VerticalWidget2({parent: this.background, autoSize: [1,1]});
+        this.buildEntries();
+    }
+
+    get list() { return this._list || []; }
+
+    listSet(list) {
+        this._list = list;
+        this.buildEntries();
+    }
+
+    buildDefault() {
+        this.background = new CanvasWidget2({parent: this, autoSize: [1,0], color: [1,1,1],});
+        this.layout = new VerticalWidget2({parent: this.background, autoSize: [1,1]});
+        this.buildEntries();
+    }
+
+    buildEntries() {
+        if (!this.background) return;
+        this.layout.destroyChildren();
+        const y = this.list.length * 20;
+        this.background.set({size: [0,y]});
+        this.list.forEach(entry =>{
+            new TextWidget2({parent: this.layout, text: entry, color: [1,1,1], noWrap: true, offset: [10,0], alignX: "left", point: 12, font: "sans-serif"})
+        });
+    }
+
+    pointerDown(e) {
+        if(this.background.inside(e.xy)) {
+            this.pressed = true;
+            const w = this.findEntry(e.xy);
+            this.unhiliteAll();
+            this.hiliteEntry(w);
+        }
+    }
+
+    pointerMove(e) {
+        if (this.pressed) {
+            this.unhiliteAll();
+            const w = this.findEntry(e.xy);
+            if (w) this.hiliteEntry(w);
+        }
+    }
+
+    pointerUp(e) {
+        if (this.pressed) {
+            this.pressed = false;
+            this.unhiliteAll();
+            const w = this.findEntry(e.xy);
+            if (w) this.pick(w);
+        }
+    }
+
+    findEntry(xy) {
+        let out = null;
+        this.layout.children.forEach( child => {
+            if (child.inside(xy)){
+                out = child;
+                return;
+            }
+        } )
+        return out;
+    }
+
+    hiliteEntry(entry) {
+        entry.set({color:[0.4,0.4,0.4]});
+    }
+
+    unhiliteAll() {
+        this.layout.children.forEach( child => child.set({color:[1,1,1]}));
+    }
+
+    pick(w) {
+        this.publish(this.id, "pick", w.text);
+        this.onPick(w)
+    }
+
+    onPick(w) {}
+}
 
 
 

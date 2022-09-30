@@ -10,8 +10,10 @@ import { AM_Behavioral, Behavior, SequenceBehavior, DelayBehavior, SelectorBehav
 
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
+import diana from "./assets/diana.jpg";
+import silk from "./assets/silk.jpg";
 import kwark from "./assets/kwark.otf";
-import { Widget2, CanvasWidget2, WidgetManager2, VerticalWidget2, HorizontalWidget2, ImageWidget2, TextWidget2, ControlWidget2, ButtonWidget2, ToggleWidget2, ToggleSet2, SliderWidget2, JoystickWidget2, JoyStickWidget2, WindowWidget2  } from "./Widget2";
+import { Widget2, CanvasWidget2, WidgetManager2, VerticalWidget2, HorizontalWidget2, ImageWidget2, TextWidget2, ControlWidget2, ButtonWidget2, ToggleWidget2, ToggleSet2, SliderWidget2, JoystickWidget2, JoyStickWidget2, WindowWidget2, MenuWidget2  } from "./Widget2";
 
 //------------------------------------------------------------------------------------------
 // MoveActor
@@ -301,11 +303,14 @@ class MyViewRoot extends ViewRoot {
 
         this.joy = new JoyStickWidget2({parent: wm.root, anchor: [1,1], pivot: [1,1], translation: [-20,-20], size: [150, 150], visible: true });
         this.joy.onChange = xy => {this.publish("hud", "joy", xy)};
+        this.menu = new MenuWidget2({parent: wm.root, size:[ 100,200], translation: [20,20], list:["Alpha", "Paper", "Witch", "Llama"]});
+        this.menu.set({list: ["Witch", "Paper", "Silk", "Llama"]});
 
 
 
         this.subscribe("input", "xDown", this.xTest);
         this.subscribe("input", "cDown", this.cTest);
+        this.subscribe(this.menu.id, "pick", this.menuPick);
 
 
     }
@@ -321,12 +326,26 @@ class MyViewRoot extends ViewRoot {
         const widget2 = new ToggleWidget2({parent: vvv, color: [1,1,0], toggleSet: ts});
         const widget3 = new ToggleWidget2({parent: vvv, color: [0,1,1], toggleSet: ts});
         const widget4 = new TextWidget2({parent: vvv, color: [1,1,1], text: "Test\nWrap", noWrap: true});
+
+        this.imageWidget = widget1;
     }
 
     cTest() {
         console.log("cTest");
         // this.hud.set({visible: true});
-        this.widget4.set({text: "Short Text String"});
+        // this.widget4.set({text: "Short Text String"});
+    }
+
+    menuPick(s) {
+        console.log(s);
+        if (this.imageWidget) {
+            let url = paper;
+            if( s === "Paper") url = paper;
+            if( s === "Llama") url = llama;
+            if( s === "Witch") url = diana;
+            if( s === "Silk") url = silk;
+            this.imageWidget.set({url});
+        }
     }
 
 
