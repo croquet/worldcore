@@ -81,7 +81,7 @@ export class BallPawn extends AvatarPawn {
         this.fore = this.back = this.left = this.right = this.pitch = this.yaw = 0;
         this.thrust = 5;        // Acceleration when you press an arrow.
         this.spin = 0.002;      // Yaw mouse sensitivity
-        this.drag = 0.2;        // Velocity decay every frame
+        this.drag = 0.1;        // Velocity decay every frame
         this.velocity = [0,0,0]
         this.maxVelocity = 1;   // Top speed
     }
@@ -189,9 +189,6 @@ export class AvatarCamera extends WorldcoreView {
         this.pitch = toRad(-30);
         this.zoom = 10;
 
-        // const cap = v3_cap([1,1,1], 1.5)
-
-        // console.log(v3_magnitude(cap))
     }
 
 

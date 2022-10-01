@@ -3,11 +3,8 @@
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
     UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager } from "@croquet/worldcore";
 
-import diana from "./assets/diana.jpg";
 import check from "./assets/check.jpg";
-import llama from "./assets/llama.jpg";
-import kwark from "./assets/kwark.otf";
-import { Avatar, BallAvatar, FPSAvatar } from "./src/Avatar";
+import { BallAvatar, } from "./src/Avatar";
 
 
 //------------------------------------------------------------------------------------------
@@ -24,7 +21,7 @@ TestActor.register('TestActor');
 //-- TestPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) {
+class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
@@ -72,20 +69,20 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         floor.position.set(0,-0.5, 0);
         group.add(floor);
 
-        this.pillarGeometry = new THREE.BoxGeometry( 1, 5, 1 );
-        this.pillarMaterial = new THREE.MeshStandardMaterial( {color: 0x784212 } );
-        const pillar0 = new THREE.Mesh( this.pillarGeometry, this.pillarMaterial );
-        group.add(pillar0);
-        pillar0.position.set(29.5, 2, -29.5);
-        const pillar1 = new THREE.Mesh( this.pillarGeometry, this.pillarMaterial );
-        pillar1.position.set(-29.5, 2, -29.5);
-        group.add(pillar1);
-        const pillar2 = new THREE.Mesh( this.pillarGeometry, this.pillarMaterial );
-        pillar2.position.set(29.5, 2, 29.5);
-        group.add(pillar2);
-        const pillar3 = new THREE.Mesh( this.pillarGeometry, this.pillarMaterial );
-        pillar3.position.set(-29.5, 2, 29.5);
-        group.add(pillar3);
+        // this.pillarGeometry = new THREE.BoxGeometry( 1, 5, 1 );
+        // this.pillarMaterial = new THREE.MeshStandardMaterial( {color: 0x784212 } );
+        // const pillar0 = new THREE.Mesh( this.pillarGeometry, this.pillarMaterial );
+        // group.add(pillar0);
+        // pillar0.position.set(29.5, 2, -29.5);
+        // const pillar1 = new THREE.Mesh( this.pillarGeometry, this.pillarMaterial );
+        // pillar1.position.set(-29.5, 2, -29.5);
+        // group.add(pillar1);
+        // const pillar2 = new THREE.Mesh( this.pillarGeometry, this.pillarMaterial );
+        // pillar2.position.set(29.5, 2, 29.5);
+        // group.add(pillar2);
+        // const pillar3 = new THREE.Mesh( this.pillarGeometry, this.pillarMaterial );
+        // pillar3.position.set(-29.5, 2, 29.5);
+        // group.add(pillar3);
 
         const ambient = new THREE.AmbientLight( 0xffffff, 0.5 );
         group.add(ambient);
@@ -101,8 +98,6 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         super.destroy();
         this.floorGeometry.dispose();
         this.floorMaterial.dispose();
-        this.pillarGeometry.dispose();
-        this.pillarMaterial.dispose();
     }
 }
 
@@ -146,7 +141,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!");
+        console.log("Start root model!");
         this.level = LevelActor.create();
         this.testActor = TestActor.create({name: "Yellow Box", translation: [0,0,0]});
     }
@@ -163,7 +158,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, UIManager, ThreeRenderManager, WidgetManager];
+        return [InputManager, UIManager, ThreeRenderManager];
     }
 
     constructor(model) {
@@ -172,12 +167,9 @@ class MyViewRoot extends ViewRoot {
         three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
 
         this.subscribe("input", "pointerDown", this.doPointerDown);
-
-
     }
 
     doPointerDown() {
-        console.log("ddd");
         this.service("InputManager").enterPointerLock();
     }
 
