@@ -58,18 +58,33 @@ export class Actor extends WorldcoreModel {
         super.destroy();
     }
 
-    set(options = {}) {
+    // set(options = {}) {
+    //     const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
+    //     for (const option of sorted) {
+    //         const name = option[0];
+    //         const setEvent = name + "Set";
+    //         const n = "_" + option[0];
+    //         const v = option[1];
+    //         const o = this[n];
+    //         this[n] = v;
+    //         this.say(setEvent, {v, o}); // Publish a local message whenever a property changes with its old and new value.
+    //     }
+    // }
+
+    set(options = {}, noSnap) {
         const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
         for (const option of sorted) {
             const name = option[0];
-            const setEvent = name + "Set";
-            const n = "_" + option[0];
-            const v = option[1];
-            const o = this[n];
-            this[n] = v;
-            this.say(setEvent, {v, o}); // Publish a local message whenever a property changes with its old and new value.
+            const value = option[1];
+            const n = "_" + name;
+            const old = this[n];
+            this[n] = value;
+            const data = {v: value, o: old};
+            this.say(name + "Set", data);
+            if (!noSnap) this.say(name + "Snap", data);
         }
     }
+
 
     get name() {return this._name || "Actor"}
 

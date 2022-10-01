@@ -201,27 +201,31 @@ export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
     }
 
     scaleTo(v) {
-        this._scale = v;
+        // this._scale = v;
+        this.set({scale:v}, true);
         this.$local = null;
         this.$global = null;
         // this.say("scaleTo", v);
     }
 
     rotateTo(q) {
-        this._rotation = q;
+        // this._rotation = q;
+        this.set({rotation:q}, true);
         this.$local = null;
         this.$global = null;
     }
 
     translateTo(v) {
-        this._translation = v;
+        // this._translation = v;
+        this.set({translation:v}, true);
         this.$local = null;
         this.$global = null;
     }
 
     positionTo(data) {
-        this._translation = data.v;
-        this._rotation = data.q;
+        // this._translation = data.v;
+        // this._rotation = data.q;
+        this.set({translation:data.v, rotation: data.q}, true)
         this.$local = null;
         this.$global = null;
     }
@@ -252,9 +256,9 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this._translation = this.actor.translation;
         this._global = this.actor.global;
 
-        this.listenOnce("scaleSet", this.onScaleSet);
-        this.listenOnce("rotationSet", this.onRotationSet);
-        this.listenOnce("translationSet", this.onTranslationSet);
+        this.listenOnce("scaleSnap", this.onScaleSnap);
+        this.listenOnce("rotationSnap", this.onRotationSnap);
+        this.listenOnce("translationSnap", this.onTranslationSnap);
 
     }
 
@@ -303,17 +307,17 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this.say("positionTo", {v,q}, this.throttle)
     }
 
-    onScaleSet() {
+    onScaleSnap() {
         this._scale = this.actor.scale;
         this.localChanged();
     }
 
-    onRotationSet() {
+    onRotationSnap() {
         this._rotation = this.actor.rotation;
         this.localChanged();
     }
 
-    onTranslationSet() {
+    onTranslationSnap() {
         this._translation = this.actor.translation;
         this.localChanged();
     }
