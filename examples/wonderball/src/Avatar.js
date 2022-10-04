@@ -79,11 +79,11 @@ export class BallPawn extends AvatarPawn {
         this.setRenderObject(cube);
 
         this.fore = this.back = this.left = this.right = this.pitch = this.yaw = 0;
-        this.thrust = 5;        // Acceleration when you press an arrow.
+        this.thrust = 4;        // Acceleration when you press an arrow.
         this.spin = 0.002;      // Yaw mouse sensitivity
         this.drag = 0.1;        // Velocity decay every frame
         this.velocity = [0,0,0]
-        this.maxVelocity = 1;   // Top speed
+        this.maxVelocity = 0.5;   // Top speed
     }
 
     destroy() {

@@ -4,16 +4,14 @@
 
 import { Session, ModelRoot, ViewRoot, q_axisAngle, toRad, m4_scaleRotationTranslation, Actor, Pawn, mix, AM_Smoothed, PM_Smoothed,  CachedObject, q_multiply, q_normalize, q_identity,  AM_Spatial, PM_Spatial, InputManager, AM_Avatar, PM_Avatar, AM_Player, PM_Player, PlayerManager, v3_normalize, StartWorldcore, FocusManager, PM_Focusable, m4_scale, m4_translation, m4_rotationX, m4_rotationZ,  m4_identity, GetPawn, TAU } from "@croquet/worldcore-kernel";
 import {WebGLRenderManager, PM_WebGLVisible, PM_WebGLCamera, Material, DrawCall, Triangles, Sphere, Cylinder } from "@croquet/worldcore-webgl"
-import { UIManager, Widget, JoystickWidget, ButtonWidget, ImageWidget, TextWidget, SliderWidget} from "@croquet/worldcore-widget";
-
 import { AM_Behavioral, Behavior, SequenceBehavior, DelayBehavior, SelectorBehavior, InvertBehavior, PM_Behavioral } from "@croquet/worldcore-behavior";
+import { Widget2, CanvasWidget2, WidgetManager2, VerticalWidget2, HorizontalWidget2, ImageWidget2, TextWidget2, ControlWidget2, ButtonWidget2, ToggleWidget2, ToggleSet2, SliderWidget2, JoystickWidget2, JoyStickWidget2, WindowWidget2, MenuWidget2  } from "@croquet/worldcore-widget2";
 
 import paper from "./assets/paper.jpg";
 import llama from "./assets/llama.jpg";
 import diana from "./assets/diana.jpg";
 import silk from "./assets/silk.jpg";
 import kwark from "./assets/kwark.otf";
-import { Widget2, CanvasWidget2, WidgetManager2, VerticalWidget2, HorizontalWidget2, ImageWidget2, TextWidget2, ControlWidget2, ButtonWidget2, ToggleWidget2, ToggleSet2, SliderWidget2, JoystickWidget2, JoyStickWidget2, WindowWidget2, MenuWidget2  } from "./Widget2";
 
 //------------------------------------------------------------------------------------------
 // MoveActor
@@ -262,7 +260,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [ InputManager, UIManager, WebGLRenderManager, WidgetManager2];
+        return [ InputManager, WebGLRenderManager, WidgetManager2];
     }
 
     constructor(model) {

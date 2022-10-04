@@ -1,6 +1,7 @@
 import { RegisterMixin, WorldcoreModel, Shuffle, Actor,  Pawn, GetPawn } from "@croquet/worldcore-kernel";
 
 import * as Worldcore from "@croquet/worldcore-kernel";
+// Old stuff with bugged proxies
 
 //------------------------------------------------------------------------------------------
 //-- Behavioral ----------------------------------------------------------------------------
@@ -80,14 +81,38 @@ export class Behavior extends Actor {
 
     init(options) {
         super.init(options);
+        // this.listen("_code", this.clearProxy); // Flush the proxy if the code changes.
 
         if (this.tickRate) {
             const firstDelta = Math.random() * this.tickRate;
             this.future(firstDelta).tick(firstDelta);
         }
-         this.onStart();
+
+        // this.proxy.onStart();
+
+            this.onStart();
 
     }
+
+    // clearProxy() { this.$proxy = null }
+    // get proxy() {
+    //     if (!this.$proxy) {
+
+    //         const factoryCode = `return class extends superclass { ${this.code} }`;
+    //         const factory = new Function('superclass', 'WC', factoryCode);
+
+    //         this.$proxy = new Proxy(this, factory(BehaviorHandler, Worldcore).prototype);
+    //     }
+    //     return this.$proxy;
+    // }
+
+    // get proxy() {
+
+    //     const factoryCode = `return class extends superclass { ${this.code} }`;
+    //     const factory = new Function('superclass', 'WC', factoryCode);
+
+    //      return new Proxy(this, factory(BehaviorHandler, Worldcore).prototype);
+    // }
 
     get code() { return this._code}
     get actor() { return this._actor}
@@ -106,10 +131,20 @@ export class Behavior extends Actor {
         behavior.create(options);
     }
 
+    // succeed(data) {
+    //     if (this.parent) this.parent.proxy.onSucceed(this, data);
+    //     this.destroy();
+    // }
+
     succeed(data) {
         if (this.parent) this.parent.onSucceed(this, data);
         this.destroy();
     }
+
+    // fail(data) {
+    //     if (this.parent) this.parent.proxy.onFail(this, data);
+    //     this.destroy();
+    // }
 
     fail(data) {
         if (this.parent) this.parent.onFail(this, data);

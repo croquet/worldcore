@@ -4,6 +4,23 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2022-10-3
+### Added
+- Actors have a name property
+- Users and UserManager
+- Default Avatars
+
+### Changed
+- Pawns update before other view services
+- PM_Smoothed suppresses smoothing when the Pawn is used as a driver.
+- TranslateTo, RotateTo & ScaleTo publish "propertySet" message
+
+### Fixed
+- Pawns link to children correctly regardless of creation order
+
+### Removed
+- PM_Driver mixin
+- Pawn init() (Use constructor instead)
 
 ## [1.3.0] - 2022-6-16
 ### Changed
@@ -86,21 +103,7 @@ defineSmoothedPawnProperty from PM_Smoothed
 - Initial release
 
 ## Pending
-### Added
-- Actors have a name option
-- Users and UserManager
-- Avatars
 
-### Changed
-- Pawns update before other view services
-- PM_Smoothed suppresses smoothing when the Pawn is used as a driver.
-
-### Fixed
-- Pawns link to children correctly regardless of creation order
-
-### Removed
-- PM_Driver mixin
-- Pawn init() (Use constructor instead)
 
 
 
