@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-kernel",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "3D World Engine for Croquet (minimal install)",
   "keywords": [
     "croquet",
