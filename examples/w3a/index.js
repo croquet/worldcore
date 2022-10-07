@@ -1,8 +1,9 @@
 // Microverse Base
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants } from "@croquet/worldcore";
+    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot } from "@croquet/worldcore";
 
+import paper from "./assets/paper.jpg";
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
@@ -11,10 +12,12 @@ import { Voxels } from "./src/Voxels";
 import { Surfaces } from "./src/Surfaces";
 import { WorldBuilder } from "./src/WorldBuilder";
 import { GodView } from "./src/GodView";
+import { MeshBuilder } from "./src/Tools";
+import { MapView } from "./src/MapView";
 
 
 //------------------------------------------------------------------------------------------
-//-- TestActor -----------------------------------------------------------------------------
+//-- WorldActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class TestActor extends mix(Actor).with(AM_Smoothed) {
@@ -30,15 +33,31 @@ TestActor.register('TestActor');
 class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
-        // console.log("test pawn constructor");
 
-        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
-        const cube = new THREE.Mesh( this.geometry, this.material );
-        cube.receiveShadow = true;
-        cube.castShadow = true;
-        this.setRenderObject(cube);
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
+        this.material.shadowSide = THREE.FrontSide;
+        this.material.vertexColors = true;
+
+        this.image = new Image();
+        this.image.onload = () => {
+            if (this.material.map) this.material.map.dispose();
+            this.material.map = new THREE.CanvasTexture(this.image);
+            this.material.needsUpdate = true;
+        }
+
+        this.image.src = paper;
+
+        const mb  = new MeshBuilder();
+        mb.addFace(
+            [[0,0,0], [5,0,0], [5,5,0], [0,5,0]],
+            [[0,0], [1,0], [1,1], [0,1]],
+            [1,1,0]
+        )
+        const mesh =  mb.build(this.material);
+
+        mesh.castShadow = true;
+
+        this.setRenderObject(mesh);
 
     }
 
@@ -46,7 +65,7 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
 
 //------------------------------------------------------------------------------------------
-//-- MapActor ----------------------------------------------------------------------------
+//-- LevelActor ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class LevelActor extends mix(Actor).with(AM_Spatial) {
@@ -55,7 +74,7 @@ class LevelActor extends mix(Actor).with(AM_Spatial) {
 LevelActor.register('LevelActor');
 
 //------------------------------------------------------------------------------------------
-//-- mapPawn ----------------------------------------------------------------------------
+//-- LevelPawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
@@ -64,30 +83,31 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
         const group = new THREE.Group();
 
-        this.floorGeometry = new THREE.BoxGeometry(50, 50, 0.5);
+        this.floorGeometry = new THREE.BoxGeometry(50, 50, 0.1);
         this.floorMaterial = new THREE.MeshStandardMaterial( {color: 0x145A32 } );
         const floor = new THREE.Mesh( this.floorGeometry, this.floorMaterial );
         floor.receiveShadow = true;
         floor.castShadow = true;
-        floor.position.set(10,10,-2);
+        floor.position.set(10,10,-1);
         group.add(floor);
 
 
         const ambient = new THREE.AmbientLight( 0xffffff, 0.5 );
         group.add(ambient);
 
-        const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 1.2 );
-        sun.position.set(20, 20, 20);
+        const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 1 );
+        sun.position.set(200, 200, 200);
         sun.castShadow = true;
         sun.shadow.mapSize.width = 1024;
         sun.shadow.mapSize.height = 1024;
         sun.shadow.camera.near = 0;
-        sun.shadow.camera.far = 100;
+        sun.shadow.camera.far = 500;
 
-        sun.shadow.camera.top = 20;
-        sun.shadow.camera.bottom = -20;
-        sun.shadow.camera.left = -20;
-        sun.shadow.camera.right = 20;
+        sun.shadow.camera.top = 100;
+        sun.shadow.camera.bottom = -100;
+        sun.shadow.camera.left = -100;
+        sun.shadow.camera.right = 100;
+        sun.shadow.bias = 0.00005;
         group.add(sun);
 
         this.setRenderObject(group);
@@ -95,36 +115,10 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
     destroy() {
         super.destroy();
-        // this.floorGeometry.dispose();
-        // this.floorMaterial.dispose();
+        this.floorGeometry.dispose();
+        this.floorMaterial.dispose();
     }
 }
-
-//------------------------------------------------------------------------------------------
-//-- MyUser --------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-class MyUser extends User {
-
-    init(options) {
-        super.init(options);
-        // this.myAvatar = FPSAvatar.create({name: "Avatar", driver: this, translation: [0,0,10]})
-    }
-
-    destroy() {
-        super.destroy();
-        if (this.myAvatar) this.myAvatar.destroy();
-    }
-
-
-}
-MyUser.register("MyUser");
-
-class MyUserManager extends UserManager {
-    get defaultUser() {return MyUser;}
-
-}
-MyUserManager.register("MyUserManager");
 
 //------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
@@ -135,17 +129,18 @@ MyUserManager.register("MyUserManager");
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [MyUserManager, Voxels, Surfaces, WorldBuilder];
+        return [Voxels, Surfaces, WorldBuilder];
     }
 
     init(...args) {
         super.init(...args);
         console.log("Start root model!!!!!");
         this.level = LevelActor.create();
-        this.actor0 = TestActor.create({name: "Origin", translation: [0,0,0]});
-        this.actor1 = TestActor.create({name: "X", translation: [Constants.sizeX * Constants.scaleX,0,0]});
-        this.actor2 = TestActor.create({name: "Y", translation: [0,Constants.sizeY * Constants.scaleY,0]});
-        this.actor3 = TestActor.create({name: "XY", translation: [Constants.sizeX * Constants.scaleX, Constants.sizeY * Constants.scaleY,0]});
+        // this.actor0 = TestActor.create({name: "Origin", translation: [-1,0,1]});
+        // this.actor1 = TestActor.create({name: "Origin", translation: [10,0,1]});
+        // this.actor2 = TestActor.create({name: "Origin", translation: [0,10,1]});
+        // this.actor3 = TestActor.create({name: "Origin", translation: [10,10,1]});
+
 
         const wb = this.service("WorldBuilder");
         const voxels = this.service("Voxels");
@@ -176,6 +171,7 @@ class MyViewRoot extends ViewRoot {
         three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
 
         this.godView = new GodView(this.model);
+        this.mapView = new MapView(this.model);
     }
 
     update(time) {

@@ -28,5 +28,6 @@ export class WorldBuilder extends ModelService {
 
 
     }
+
 }
 WorldBuilder.register('WorldBuilder');

@@ -4,9 +4,9 @@ import { ModelService, Constants } from "@croquet/worldcore";
 //-- Constants -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-Constants.sizeX = 4;
-Constants.sizeY = 4;
-Constants.sizeZ = 4;
+Constants.sizeX = 16;
+Constants.sizeY = 16;
+Constants.sizeZ = 16;
 
 Constants.scaleX = 5;
 Constants.scaleY = 5;

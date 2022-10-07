@@ -30,6 +30,10 @@ export class Surfaces extends ModelService {
         super.init('Surfaces');
     }
 
+    get(key) {
+        return(this.surfaces.get(key));
+    }
+
     rebuildAll() {
         this.surfaces = new Map();
         const surfaces = this.surfaces;
@@ -57,7 +61,6 @@ export class Surfaces extends ModelService {
 
         });
 
-        console.log(this.surfaces)
     }
 }
 Surfaces.register('Surfaces');
