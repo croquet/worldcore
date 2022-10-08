@@ -14,7 +14,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
 
         const xxx = Constants.scaleX * Constants.sizeX / 2;
 
-        this.translation = [xxx,-50,50];
+        this.translation = [0,-20,20];
         this.rotation = q_axisAngle([1,0,0], toRad(45));
         this.updateCamera();
 

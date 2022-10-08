@@ -1,10 +1,13 @@
 import {THREE} from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
-//-- Three ------------------------------------------------------------------------------
+//-- Three ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class MeshBuilder {
+// Rename TriangleBuilder
+// Add LineBuilder
+
+export class GeometryBuilder {
     constructor(material) {
         this.material = material;
         this.clear();
@@ -23,7 +26,9 @@ export class MeshBuilder {
         geometry.setAttribute( 'uv', new THREE.Float32BufferAttribute( this.uvs, 2) );
         geometry.computeVertexNormals();
         this.clear();
-        return new THREE.Mesh( geometry, material );
+        return geometry;
+
+
     }
 
     addFace(vertices, uvs, color) {

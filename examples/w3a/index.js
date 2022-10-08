@@ -12,7 +12,6 @@ import { Voxels } from "./src/Voxels";
 import { Surfaces } from "./src/Surfaces";
 import { WorldBuilder } from "./src/WorldBuilder";
 import { GodView } from "./src/GodView";
-import { MeshBuilder } from "./src/Tools";
 import { MapView } from "./src/MapView";
 
 
@@ -92,14 +91,14 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         group.add(floor);
 
 
-        const ambient = new THREE.AmbientLight( 0xffffff, 0.5 );
+        const ambient = new THREE.AmbientLight( 0xffffff, 0.8 );
         group.add(ambient);
 
         const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 1 );
         sun.position.set(200, 200, 200);
         sun.castShadow = true;
-        sun.shadow.mapSize.width = 1024;
-        sun.shadow.mapSize.height = 1024;
+        sun.shadow.mapSize.width = 2048;
+        sun.shadow.mapSize.height = 2048;
         sun.shadow.camera.near = 0;
         sun.shadow.camera.far = 500;
 
@@ -107,7 +106,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         sun.shadow.camera.bottom = -100;
         sun.shadow.camera.left = -100;
         sun.shadow.camera.right = 100;
-        sun.shadow.bias = 0.00005;
+        sun.shadow.bias = -0.005;
         group.add(sun);
 
         this.setRenderObject(group);
@@ -134,7 +133,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!!");
+        console.log("Start root model!");
         this.level = LevelActor.create();
         // this.actor0 = TestActor.create({name: "Origin", translation: [-1,0,1]});
         // this.actor1 = TestActor.create({name: "Origin", translation: [10,0,1]});
