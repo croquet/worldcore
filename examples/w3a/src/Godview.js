@@ -1,7 +1,8 @@
-import { WorldcoreView, mix, m4_rotationX, toRad, m4_scaleRotationTranslation, q_axisAngle, PM_WidgetPointer, v2_sub, Constants, q_multiply, TAU, v3_scale } from "@croquet/worldcore";
+import { WorldcoreView, mix, m4_rotationX, toRad, m4_scaleRotationTranslation, q_axisAngle, PM_WidgetPointer, v2_sub, Constants, q_multiply, TAU, v3_scale, v3_add, v3_normalize, v3_rotate, v3_magnitude } from "@croquet/worldcore";
 
 let time0 = 0;
 let time1 = 0;
+let fov = 60;
 
 export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
     constructor(model) {
@@ -14,7 +15,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
 
         const xxx = Constants.scaleX * Constants.sizeX / 2;
 
-        this.speed = 5;
+        this.moveSpeed = 0.02;
         this.turnSpeed = 0.002;
 
         this.pitch = toRad(45)
@@ -42,6 +43,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
+        this.subscribe("input", 'wheel', this.onWheel);
 
     }
 
@@ -73,6 +75,13 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         };
     }
 
+    onWheel(data) {
+        const render = this.service("ThreeRenderManager");
+        fov = Math.max(10, Math.min(80, fov + data.deltaY / 100));
+        render.camera.fov = fov;
+        render.camera.updateProjectionMatrix();
+    }
+
     updateCamera() {
         const render = this.service("ThreeRenderManager");
 
@@ -88,18 +97,16 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
     }
 
     update(time) {
-        const speed = 0.02;
-
-        // const yawQ = q_axisAngle([0,1,0], this.yaw);
-        // const v = v3_scale(this.velocity, -this.speed * delta/1000)
-        // const v2 = v3_rotate(v, yawQ);
-        // const t = v3_add(this.translation, v2)
-
         time0 = time1;
         time1 = time;
         const delta = time1 - time0;
-        this.translation[0] += (this.right + this.left) * delta * speed;
-        this.translation[1] += (this.fore + this.back) * delta * speed;
+
+        const yawQ = q_axisAngle([0,0,1], this.yaw);
+        let forward = [0,0,0];
+        const v = v3_rotate([this.right + this.left, this.fore + this.back,0], yawQ);
+        if (v3_magnitude(v)) forward = v3_normalize(v);
+        const move = v3_scale(forward, delta * this.moveSpeed);
+        this.translation = v3_add(this.translation,move)
         this.updateCamera();
     }
 

@@ -32,6 +32,7 @@ export class WorldBuilder extends ModelService {
         landMatrix[3][2][1] = Constants.rock;
         landMatrix[3][2][2] = Constants.rock;
         landMatrix[3][2][1] = Constants.rock;
+        landMatrix[4][2][1] = Constants.rock;
 
         landMatrix[3][2][3] = Constants.rock;
 

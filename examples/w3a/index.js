@@ -106,7 +106,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         sun.shadow.camera.bottom = -100;
         sun.shadow.camera.left = -100;
         sun.shadow.camera.right = 100;
-        sun.shadow.bias = -0.001;
+        sun.shadow.bias = -0.002;
         group.add(sun);
 
         this.setRenderObject(group);
@@ -135,10 +135,6 @@ class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start root model!");
         this.level = LevelActor.create();
-        // this.actor0 = TestActor.create({name: "Origin", translation: [-1,0,1]});
-        // this.actor1 = TestActor.create({name: "Origin", translation: [10,0,1]});
-        // this.actor2 = TestActor.create({name: "Origin", translation: [0,10,1]});
-        // this.actor3 = TestActor.create({name: "Origin", translation: [10,10,1]});
 
 
         const wb = this.service("WorldBuilder");

@@ -110,9 +110,28 @@ export class Voxels extends ModelService {
         this.voxels = Array.from(Array(Constants.sizeX), ()=>Array.from(Array(Constants.sizeY), ()=>new VoxelColumn()));
     }
 
+    isValid(x,y,z) {
+        if (x < 0) return false;
+        if (x >= Constants.sizeX) return false;
+        if (y < 0) return false;
+        if (y >= Constants.sizeY) return false;
+        if (z < 0) return false;
+        if (z >= Constants.sizeZ) return false;
+        return true;
+    }
+
+    adjacent(x,y,z,v) {
+        const out = [...v];
+        out[0] += x;
+        out[1] += y;
+        out[2] += z;
+        return out;
+    }
+
     get(x, y, z) {
         return this.voxels[x][y].get(z);
     }
+
 
     set(x, y, z, type) {
         const column = this.voxels[x][y];

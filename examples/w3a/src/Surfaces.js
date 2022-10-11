@@ -7,11 +7,45 @@ import { packKey, unpackKey } from "./Voxels";
 
 class Surface {
     constructor(key) {
+        this.xyz = unpackKey(key);
         this.key = key;
         this.faces = [0,0,0,0,0,0];
+        this.ramps = [0,0,0,0]
     }
 
-    findFaces(voxels) {
+    findRamps(voxels) {
+
+        // No floor or low ceiling = no ramp
+        if (!this.faces[4] || this.faces[5]) return;
+
+        // Add a ramp if there's a face opposite a non-face.
+
+        if (this.faces[0] && !this.faces[2]) this.ramps[0] = true;
+        if (this.faces[1] && !this.faces[3]) this.ramps[1] = true;
+        if (this.faces[2] && !this.faces[0]) this.ramps[2] = true;
+        if (this.faces[3] && !this.faces[1]) this.ramps[3] = true;
+
+        // No ramps to nowhere -- ramps must lead up to empty voxels
+
+        if (this.ramps[0]) {
+            const adjacent = voxels.adjacent(...this.xyz, [-1,0,1]);
+            if (voxels.isValid(...adjacent) && voxels.get(...adjacent)) this.ramps[0] = 0
+        };
+
+        if (this.ramps[1]) {
+            const adjacent = voxels.adjacent(...this.xyz, [0,-1,1]);
+            if (voxels.isValid(...adjacent) && voxels.get(...adjacent)) this.ramps[1] = 0
+        };
+
+        if (this.ramps[2]) {
+            const adjacent = voxels.adjacent(...this.xyz, [1,0,1]);
+            if (voxels.isValid(...adjacent) && voxels.get(...adjacent)) this.ramps[2] = 0
+        };
+
+        if (this.ramps[3]) {
+            const adjacent = voxels.adjacent(...this.xyz, [0,1,1]);
+            if (voxels.isValid(...adjacent) && voxels.get(...adjacent)) this.ramps[3] = 0
+        };
 
     }
 }
@@ -59,6 +93,12 @@ export class Surfaces extends ModelService {
                 s.faces[d] = t
             });
 
+        });
+
+        primary.forEach(key => {
+            const xyz = unpackKey(key);
+            const s = this.get(key);
+            s.findRamps(voxels);
         });
 
     }
