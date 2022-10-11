@@ -1,6 +1,6 @@
 import { viewRoot, WorldcoreView, Constants, THREE, v3_add, v3_multiply, ThreeRenderManager } from "@croquet/worldcore";
 
-import { GeometryBuilder, MeshBuilder } from "./Tools";
+import { LineBuilder, TriangleBuilder } from "./Tools";
 import paper from ".././assets/paper.jpg";
 import { unpackKey } from "./Voxels";
 
@@ -8,64 +8,68 @@ export class MapView extends WorldcoreView {
     constructor() {
         super(viewRoot.model)
 
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
-        this.material.polygonOffset = true;
-        this.material.polygonOffsetFactor = 1;
-        this.material.polygonOffsetUnits = 1;
+        this.tb = new TriangleBuilder();
+        this.lb = new LineBuilder();
 
-        this.lineMaterial = new THREE.LineBasicMaterial( {
-            color: 0xffff00,
-            linewidth: 1,
-            linecap: 'round', //ignored by WebGLRenderer
-            linejoin:  'round' //ignored by WebGLRenderer
-        } );
+        this.triangleMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(1,1,1)});
+        this.triangleMaterial.polygonOffset = true;
+        this.triangleMaterial.polygonOffsetFactor = 1;
+        this.triangleMaterial.polygonOffsetUnits = 1;
+        this.triangleMaterial.shadowSide = THREE.FrontSide;
+        this.triangleMaterial.vertexColors = true;
 
+        this.image = new Image();
+        this.image.onload = () => {
+            if (this.triangleMaterial.map) this.triangleMaterial.map.dispose();
+            this.triangleMaterial.map = new THREE.CanvasTexture(this.image);
+            this.triangleMaterial.needsUpdate = true;
+        }
+        this.image.src = paper;
+
+        this.lineMaterial = new THREE.LineBasicMaterial( {color: new THREE.Color(0.9,0.9,0.9)} );
+        this.lineMaterial.blending = THREE.MultiplyBlending;
+        this.lineMaterial.blendSrc = THREE.OneMinusSrcColorFactor;
+        this.lineMaterial.blendDst = THREE.DstColorFactor;
         this.lineMaterial.polygonOffset = true;
         this.lineMaterial.polygonOffsetFactor = -1;
         this.lineMaterial.polygonOffsetUnits = -1;
 
-        this.material.shadowSide = THREE.FrontSide;
-        this.material.shadowSide = THREE.DoubleSide;
-        this.material.vertexColors = true;
-
-
-        this.image = new Image();
-        this.image.onload = () => {
-            if (this.material.map) this.material.map.dispose();
-            this.material.map = new THREE.CanvasTexture(this.image);
-            this.material.needsUpdate = true;
-        }
-
-        this.image.src = paper;
-
-        this.build();
+        this.buildGeometry();
     }
 
-    build() {
-        const gb  = new GeometryBuilder();
+    buildGeometry() {
         const render = this.service("ThreeRenderManager");
         const surfaces = this.modelService("Surfaces");
+
+        if (this.triangleGeometry) this.triangleGeometry.dispose();
+        if (this.lineGeometry) this.lineGeometry.dispose();
+
+        this.tb.clear();
+        this.lb.clear();
         for (const key of surfaces.surfaces.keys()) {
             const xyz = unpackKey(key);
             const surface = surfaces.get(key);
-            if (surface.faces[4]) this.buildFloor(gb,xyz,[0.5,0.5,0.5]);
-            if (surface.faces[3]) this.buildNorth(gb,xyz,[0.7,0.7,0]);
-            if (surface.faces[2]) this.buildEast(gb,xyz,[0.7,0.7,0]);
-            if (surface.faces[0]) this.buildWest(gb,xyz,[0.7,0.7,0]);
+            if (surface.faces[4]) this.buildFloor(xyz,[0.5,0.5,0.5]);
+            if (surface.faces[3]) this.buildNorth(xyz,[0.7,0.7,0]);
+            if (surface.faces[2]) this.buildEast(xyz,[0.7,0.7,0]);
+            if (surface.faces[1]) this.buildSouth(xyz,[0.7,0.7,0]);
+            if (surface.faces[0]) this.buildWest(xyz,[0.7,0.7,0]);
         };
 
-        const geo = gb.build();
-        const mesh = new THREE.Mesh( geo, this.material );
-        const lines  = new THREE.LineSegments(geo, this.lineMaterial);
-        mesh.receiveShadow = true;
-        mesh.castShadow = true;
+        this.triangleGeometry = this.tb.build();
+        this.lineGeometry = this.lb.build();
 
-        render.scene.add(mesh);
-        render.scene.add(lines);
+        this.mesh = new THREE.Mesh( this.triangleGeometry, this.triangleMaterial );
+        this.mesh.receiveShadow = true;
+        this.mesh.castShadow = true;
 
+        this.lines  = new THREE.LineSegments(this.lineGeometry, this.lineMaterial);
+
+        render.scene.add(this.mesh);
+        render.scene.add(this.lines);
     }
 
-    buildFloor(mb,xyz,color) {
+    buildFloor(xyz,color) {
         const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
         const vertices = [];
         const uvs = [];
@@ -77,10 +81,11 @@ export class MapView extends WorldcoreView {
         uvs.push([1,0]);
         uvs.push([1,1]);
         uvs.push([0,1]);
-        mb.addFace(vertices, uvs, color);
+        this.tb.addFace(vertices, uvs, color);
+        this.lb.addLoop(vertices);
     }
 
-    buildNorth(mb,xyz,color) {
+    buildNorth(xyz,color) {
         const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
         const vertices = [];
         const uvs = [];
@@ -92,10 +97,27 @@ export class MapView extends WorldcoreView {
         uvs.push([1,0]);
         uvs.push([1,1]);
         uvs.push([0,1]);
-        mb.addFace(vertices, uvs, color);
+        this.tb.addFace(vertices, uvs, color);
+        this.lb.addLoop(vertices);
     }
 
-    buildWest(mb,xyz,color) {
+    buildSouth(xyz,color) {
+        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+        const vertices = [];
+        const uvs = [];
+        vertices.push(v3_multiply(v3_add(xyz,[0,0,0]),s));
+        vertices.push(v3_multiply(v3_add(xyz,[0,0,1]),s));
+        vertices.push(v3_multiply(v3_add(xyz,[1,0,1]),s));
+        vertices.push(v3_multiply(v3_add(xyz,[1,0,0]),s));
+        uvs.push([0,0]);
+        uvs.push([1,0]);
+        uvs.push([1,1]);
+        uvs.push([0,1]);
+        this.tb.addFace(vertices, uvs, color);
+        this.lb.addLoop(vertices);
+    }
+
+    buildWest(xyz,color) {
         const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
         const vertices = [];
         const uvs = [];
@@ -107,10 +129,11 @@ export class MapView extends WorldcoreView {
         uvs.push([1,0]);
         uvs.push([1,1]);
         uvs.push([0,1]);
-        mb.addFace(vertices, uvs, color);
+        this.tb.addFace(vertices, uvs, color);
+        this.lb.addLoop(vertices);
     }
 
-    buildEast(mb,xyz,color) {
+    buildEast(xyz,color) {
         const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
         const vertices = [];
         const uvs = [];
@@ -122,11 +145,19 @@ export class MapView extends WorldcoreView {
         uvs.push([1,0]);
         uvs.push([1,1]);
         uvs.push([0,1]);
-        mb.addFace(vertices, uvs, color);
+        this.tb.addFace(vertices, uvs, color);
+        this.lb.addLoop(vertices);
     }
 
     destroy() {
         super.destroy();
+        if (this.triangleMaterial)  {
+            if (this.triangleMaterial.map) this.triangleMaterial.map.dispose();
+            this.triangleMaterial.dispose();
+        }
+        if (this.lineMaterial) this.lineMaterial.dispose();
+        if (this.triangleGeometry) this.triangleGeometry.dispose();
+        if (this.lineGeometry) this.lineGeometry.dispose();
     }
 
 

@@ -4,12 +4,8 @@ import {THREE} from "@croquet/worldcore";
 //-- Three ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Rename TriangleBuilder
-// Add LineBuilder
-
-export class GeometryBuilder {
+export class TriangleBuilder {
     constructor(material) {
-        this.material = material;
         this.clear();
     }
 
@@ -27,8 +23,6 @@ export class GeometryBuilder {
         geometry.computeVertexNormals();
         this.clear();
         return geometry;
-
-
     }
 
     addFace(vertices, uvs, color) {
@@ -54,6 +48,36 @@ export class GeometryBuilder {
             this.vertices.push(...vertices[i+2]);
             this.colors.push(...color);
             this.uvs.push(...uvs[i+2]);
+        }
+    }
+}
+
+export class LineBuilder {
+    constructor(material) {
+        this.clear();
+    }
+
+    clear() {
+        this.vertices = [];
+    }
+
+    build() {
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( this.vertices, 3 ) );
+        // geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( this.colors, 3) );
+        // geometry.setAttribute( 'uv', new THREE.Float32BufferAttribute( this.uvs, 2) );
+        geometry.computeVertexNormals();
+        this.clear();
+        return geometry;
+    }
+
+    addLoop(vertices) {
+        const segmentCount = vertices.length;
+
+        for (let i = 0; i < segmentCount; i++) {
+            this.vertices.push(...vertices[i]);
+            const b = (i+1) % segmentCount
+            this.vertices.push(...vertices[b]);
         }
     }
 }

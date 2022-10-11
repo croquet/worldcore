@@ -95,7 +95,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         group.add(ambient);
 
         const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 1 );
-        sun.position.set(200, 200, 200);
+        sun.position.set(200, 100, 200);
         sun.castShadow = true;
         sun.shadow.mapSize.width = 2048;
         sun.shadow.mapSize.height = 2048;
@@ -106,7 +106,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         sun.shadow.camera.bottom = -100;
         sun.shadow.camera.left = -100;
         sun.shadow.camera.right = 100;
-        sun.shadow.bias = -0.005;
+        sun.shadow.bias = -0.001;
         group.add(sun);
 
         this.setRenderObject(group);
