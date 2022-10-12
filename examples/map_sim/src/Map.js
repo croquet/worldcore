@@ -5,6 +5,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM
 import diana from "../assets/diana.jpg";
 import llama from "../assets/llama.jpg";
 import silk from "../assets/silk.jpg";
+import map from "../assets/map.jpg";
 //------------------------------------------------------------------------------------------
 //-- LevelActor ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -22,7 +23,7 @@ class MapPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Widget3) {
     constructor(...args) {
         super(...args)
 
-        const map = new MapWidget({parent: this.rootWidget, size:[200,96.4], translation: [0,0,0], rotation: q_axisAngle([1,0,0], toRad(-90))});
+        const map = new MapWidget({parent: this.rootWidget, size:[510,315], translation: [0,0,0], rotation: q_axisAngle([1,0,0], toRad(-90))});
     }
 
 }
@@ -35,7 +36,7 @@ class MapWidget extends ControlWidget3 {
     constructor(options) {
         super(options);
 
-        const image = new ImageWidget3({parent: this, lit: true, autoSize:[1,1], collideable: true, url: silk});
+        const image = new ImageWidget3({parent: this, lit: true, autoSize:[1,1], collideable: true, url: map});
         image.mesh.receiveShadow = true;
     }
 

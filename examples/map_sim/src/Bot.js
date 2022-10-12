@@ -98,16 +98,16 @@ class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) {
         super(...args);
 
         this.focus = new FocusWidget3({parent:this.rootWidget, name:"bot"});
-        this.widget = new BoxWidget3({parent:this.focus, collidable: true, size:[1,2], thick: 1, translation: [0,1,0], color: [0.5, 0.25, 0.1]});
+        this.widget = new BoxWidget3({parent:this.focus, collidable: true, size:[1,3], thick: 1, translation: [0,1.5,0], color: [0.5, 0.25, 0.1]});
         this.widget.mesh.castShadow = true;
         this.nameplate = new TextWidget3({
-            parent: this.focus, size: [4,2],
-            translation: [0,3,0],
+            parent: this.focus, size: [10,5],
+            translation: [0,5,0],
             resolution: 50,
             alpha: true,
-            point: 48,
+            point: 96,
             collidable: true,
-            color: [0,1,0],
+            color: [0,0,0],
             bgColor: [0, 0, 0],
             fgColor: [1, 1, 1],
             billboard: true,

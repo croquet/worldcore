@@ -108,10 +108,10 @@ export class PathDebug extends WorldcoreView {
         super(viewRoot.model);
 
         this.nodeMaterial = new THREE.LineBasicMaterial( { color: 0xff0000 } );
-        this.edgeMaterial = new THREE.LineBasicMaterial( { color: 0x00ffff } );
+        this.edgeMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
 
-        this.drawNodes();
-        this.drawEdges();
+        // this.drawNodes();
+        // this.drawEdges();
 
     }
 
@@ -122,7 +122,7 @@ export class PathDebug extends WorldcoreView {
         paths.nodes.forEach(node => {
             const points = [
                 new THREE.Vector3( node.xy[0], 0, node.xy[1] ),
-                new THREE.Vector3( node.xy[0], 3, node.xy[1] )
+                new THREE.Vector3( node.xy[0], 15, node.xy[1] )
             ];
             const geometry = new THREE.BufferGeometry().setFromPoints( points );
             const line = new THREE.Line( geometry, this.nodeMaterial );
@@ -139,8 +139,8 @@ export class PathDebug extends WorldcoreView {
             node0.exits.forEach((weight, key) => {
                 const node1 = paths.getNode(key);
                 const points = [
-                    new THREE.Vector3( node0.xy[0], 0.2, node0.xy[1] ),
-                    new THREE.Vector3( node1.xy[0], 0.2, node1.xy[1] )
+                    new THREE.Vector3( node0.xy[0], 3, node0.xy[1] ),
+                    new THREE.Vector3( node1.xy[0], 3, node1.xy[1] )
                 ];
                 const geometry = new THREE.BufferGeometry().setFromPoints(points);
                 const line = new THREE.Line( geometry, this.edgeMaterial );

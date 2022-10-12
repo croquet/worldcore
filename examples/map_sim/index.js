@@ -15,6 +15,7 @@ import { BotActor} from "./src/Bot";
 import { PathDebug, Paths } from "./src/Path";
 import { CaravanManager } from "./src/Caravan";
 import { HUD } from "./src/Hud";
+import { CityActor, CityManager } from "./src/City";
 
 
 //------------------------------------------------------------------------------------------
@@ -50,35 +51,44 @@ MyUserManager.register("MyUserManager");
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [MyUserManager, Paths, CaravanManager];
+        return [MyUserManager, Paths, CityManager, CaravanManager];
     }
 
     init(...args) {
         super.init(...args);
         console.log("Start root model!!");
         this.map = MapActor.create();
+        this.venice = CityActor.create({name: "Venice", map: [-31.467,-12.153]});
+        this.ayas = CityActor.create({name: "Ayas", map: [-18.153,-7.153]});
+        this.tabriz = CityActor.create({name: "Tabriz", map: [-11.53,-7.59]});
+        this.samarkand = CityActor.create({name: "Samarkand", map: [-1.03,-9.47]});
+        this.kashgar = CityActor.create({name: "Kashgar", map: [5.73,-9.86]});
+        this.dunhuang = CityActor.create({name: "Dunhuang", map: [13.957,-9.4762]});
+        this.lanzhou = CityActor.create({name: "Lanzhou", map: [22.488,-7.887]});
+        this.dadu = CityActor.create({name: "Dadu", map: [29.575,-9.093]});
 
 
         this.paths = this.service("Paths")
-        this.paths.addNode("istambul", [-11,-7]);
-        this.paths.addNode("almaty", [-5,0]);
-        this.paths.addNode("tashkent", [0,-3]);
-        this.paths.addNode("samarkand", [3,1]);
-        this.paths.addNode("delhi", [7,5]);
-        this.paths.addNode("mongolia", [11,-8]);
-        this.paths.addNode("peking", [25,0]);
-        this.paths.addNode("shanghai", [20,5]);
+
+        this.paths.addNode("venice", this.venice.node);
+        this.paths.addNode("ayas", this.ayas.node);
+        this.paths.addNode("tabriz", this.tabriz.node);
+        this.paths.addNode("samarkand", this.samarkand.node);
+        this.paths.addNode("kashgar", this.kashgar.node);
+        this.paths.addNode("dunhuang", this.dunhuang.node);
+        this.paths.addNode("lanzhou", this.lanzhou.node);
+        this.paths.addNode("dadu", this.dadu.node);
 
 
-        this.paths.addEdge("tashkent", "istambul", 12);
-        this.paths.addEdge("tashkent", "mongolia", 20);
-        this.paths.addEdge("almaty", "tashkent", 55);
-        this.paths.addEdge("tashkent", "samarkand", 11);
-        this.paths.addEdge("samarkand", "delhi", 44);
-        this.paths.addEdge("mongolia", "samarkand", 30);
-        this.paths.addEdge("mongolia", "peking", 70);
-        this.paths.addEdge("shanghai", "peking", 30);
-        this.paths.addEdge("shanghai", "delhi", 40);
+        this.paths.addEdge("venice", "ayas", 1);
+        this.paths.addEdge("ayas", "tabriz", 1);
+        this.paths.addEdge("tabriz", "samarkand", 1);
+        this.paths.addEdge("samarkand", "samarkand", 1);
+        this.paths.addEdge("samarkand", "kashgar", 1);
+        this.paths.addEdge("kashgar", "dunhuang", 1);
+        this.paths.addEdge("dunhuang", "lanzhou", 1);
+        this.paths.addEdge("lanzhou", "dadu", 1);
+        // this.paths.addEdge("shanghai", "delhi", 1);
 
         this.subscribe("hud", "newCaravan", this.test);
 
@@ -165,17 +175,17 @@ class MyViewRoot extends ViewRoot {
         render.scene.add(ambient);
 
         const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 0.8 );
-        sun.position.set(20, 20, 20);
+        sun.position.set(10, 10, 10);
         sun.castShadow = true;
-        sun.shadow.mapSize.width = 1024;
-        sun.shadow.mapSize.height = 1024;
+        sun.shadow.mapSize.width = 4096;
+        sun.shadow.mapSize.height = 4096;
         sun.shadow.camera.near = 0;
-        sun.shadow.camera.far = 100;
+        sun.shadow.camera.far = 50;
 
-        sun.shadow.camera.top = 20;
-        sun.shadow.camera.bottom = -20;
-        sun.shadow.camera.left = -20;
-        sun.shadow.camera.right = 20;
+        sun.shadow.camera.top = 200;
+        sun.shadow.camera.bottom = -1000;
+        sun.shadow.camera.left = -1000;
+        sun.shadow.camera.right = 200;
 
         render.scene.add(sun);
 
