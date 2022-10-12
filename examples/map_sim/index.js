@@ -1,7 +1,7 @@
 // Microverse Base
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, m4_identity, m4_rotationX, toRad, m4_scaleRotationTranslation, q_pitch, q_axisAngle, PlaneWidget3, viewRoot, Widget, BoxWidget } from "@croquet/worldcore";
+    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, m4_identity, m4_rotationX, toRad, m4_scaleRotationTranslation, q_pitch, q_axisAngle, PlaneWidget3, viewRoot, Widget, BoxWidget, WidgetManager2 } from "@croquet/worldcore";
 
     import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 
@@ -58,14 +58,14 @@ class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start root model!!");
         this.map = MapActor.create();
-        this.venice = CityActor.create({name: "Venice", map: [-31.467,-12.153]});
-        this.ayas = CityActor.create({name: "Ayas", map: [-18.153,-7.153]});
-        this.tabriz = CityActor.create({name: "Tabriz", map: [-11.53,-7.59]});
-        this.samarkand = CityActor.create({name: "Samarkand", map: [-1.03,-9.47]});
-        this.kashgar = CityActor.create({name: "Kashgar", map: [5.73,-9.86]});
-        this.dunhuang = CityActor.create({name: "Dunhuang", map: [13.957,-9.4762]});
-        this.lanzhou = CityActor.create({name: "Lanzhou", map: [22.488,-7.887]});
-        this.dadu = CityActor.create({name: "Dadu", map: [29.575,-9.093]});
+        this.venice = CityActor.create({name: "venice", title: "Venice", sells: "Sells:\nGlass Lenses", buys: "Buys: Silk, Spices", map: [-31.467,-12.153]});
+        this.ayas = CityActor.create({name: "ayas", title: "Ayas", sells: "Sells: Fish", buys: "Buys: Salt", map: [-18.153,-7.153]});
+        this.tabriz = CityActor.create({name: "tabriz", title: "Tabriz", sells: "Sells: Gems, Salt", buys: "Buys: Glass Lenses", map: [-11.53,-7.59]});
+        this.samarkand = CityActor.create({name: "samarkand", title: "Samarkand", sells: "Sells: Wool, Carpets", buys: "Buys: Silver", map: [-1.03,-9.47]});
+        this.kashgar = CityActor.create({name: "kashgar", title: "Kashgar", sells: "Sells: Jade", buys: "Buys: Wool", map: [5.73,-9.86]});
+        this.dunhuang = CityActor.create({name: "dunhuang", title: "Dunhuang", sells: "Sells: Silk, Jade", buys: "Buys: Glass Lenses, Wool",map: [13.957,-9.4762]});
+        this.lanzhou = CityActor.create({name: "lanzhou", title: "Lanzhou", sells: "Sells: Silk, Spices", buys: "Buys: Glass Lenses", map: [22.488,-7.887]});
+        this.dadu = CityActor.create({name: "dadu", title: "Dadu", sells: "Sells: Silk", buys: "Buys: Wool", map: [29.575,-9.093]});
 
 
         this.paths = this.service("Paths")
@@ -79,16 +79,26 @@ class MyModelRoot extends ModelRoot {
         this.paths.addNode("lanzhou", this.lanzhou.node);
         this.paths.addNode("dadu", this.dadu.node);
 
+        this.paths.addNode("sea", [ 510 * -25 /70.83, 315 * -6 /43.75 ]);
+        this.paths.addNode("persia", [ 510 * -7.4 /70.83, 315 * -6.4 /43.75 ]);
+        this.paths.addNode("desert", [ 510 * 10 /70.83, 315 * -8 /43.75 ]);
 
-        this.paths.addEdge("venice", "ayas", 1);
+        // this.paths.addEdge("venice", "ayas", 1);
         this.paths.addEdge("ayas", "tabriz", 1);
-        this.paths.addEdge("tabriz", "samarkand", 1);
+        // this.paths.addEdge("tabriz", "samarkand", 1);
         this.paths.addEdge("samarkand", "samarkand", 1);
         this.paths.addEdge("samarkand", "kashgar", 1);
-        this.paths.addEdge("kashgar", "dunhuang", 1);
+        // this.paths.addEdge("kashgar", "dunhuang", 1);
         this.paths.addEdge("dunhuang", "lanzhou", 1);
         this.paths.addEdge("lanzhou", "dadu", 1);
-        // this.paths.addEdge("shanghai", "delhi", 1);
+
+        this.paths.addEdge("venice", "sea", 1);
+        this.paths.addEdge("sea", "ayas", 1);
+        this.paths.addEdge("tabriz", "persia", 1);
+        this.paths.addEdge("persia", "samarkand", 1);
+        this.paths.addEdge("kashgar", "desert", 1);
+        this.paths.addEdge("desert", "dunhuang", 1);
+
 
         this.subscribe("hud", "newCaravan", this.test);
 
@@ -97,12 +107,12 @@ class MyModelRoot extends ModelRoot {
     }
 
     test() {
-        console.log("test");
 
 
         const names = ["Akbar", "Battuta", "Marco", "Peng", "Jasmine", "Aladdin", "Sinbad"];
         const n = Math.floor(names.length * Math.random())
-        const home = this.service("Paths").randomNode();
+        const homes = ["venice", "ayas", "tabriz", "samarkand", "dadu"]
+        const home = homes[Math.floor(homes.length * Math.random())];
 
         const cm = this.service("CaravanManager");
         cm.createCaravan(names[n], home);
@@ -129,6 +139,7 @@ class MyViewRoot extends ViewRoot {
         const url = new URL(window.location.href);
         const urlParams = new URLSearchParams(url.searchParams);
         this.mode = urlParams.get('ui')
+        this.mode = "teacher";
 
         const render = this.service("ThreeRenderManager");
         render.doRender = false;
@@ -144,19 +155,11 @@ class MyViewRoot extends ViewRoot {
             this.buildHUD();
         }
 
-        // this.subscribe("widgetPointer", "focusChanged", this.ttt);
-
     }
-
-    // ttt(focus) {
-    //     if (focus)
-    //     console.log(focus.pawn);
-    // }
 
     buildHUD() {
         const ui = this.service("UIManager");
         this.hud = new HUD({parent: ui.root, autoSize: [1,1]});
-        // this.box = new BoxWidget({parent: this.hud, color: [1,0,0]})
     }
 
     buildScene() {
@@ -165,31 +168,35 @@ class MyViewRoot extends ViewRoot {
         render.renderer.shadowMap.enabled = true;
 
         this.outlinePass = new OutlinePass( new THREE.Vector2( window.innerWidth, window.innerHeight ), render.scene, render.camera );
-        this.outlinePass.edgeStrength = 3;
-        this.outlinePass.edgeGlow = 1;
-        this.outlinePass.edgeThickness = 1;
-        this.outlinePass.visibleEdgeColor = new THREE.Color(0,1,0);
+        this.outlinePass.edgeStrength = 5;
+        this.outlinePass.edgeGlow = 0;
+        this.outlinePass.edgeThickness = 2;
+        this.outlinePass.visibleEdgeColor = new THREE.Color(0.1,1,0.1);
+        this.outlinePass.hiddenEdgeColor = new THREE.Color(0.1,1,0.1);
         render.composer.addPass( this.outlinePass );
 
-        const ambient = new THREE.AmbientLight( new THREE.Color(1,1,1), 0.5 );
+        const ambient = new THREE.AmbientLight( new THREE.Color(1,1,1), 0.1 );
         render.scene.add(ambient);
 
-        const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 0.8 );
-        sun.position.set(10, 10, 10);
+        const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 1.2 );
+        sun.position.set(100, 100, 100);
         sun.castShadow = true;
         sun.shadow.mapSize.width = 4096;
         sun.shadow.mapSize.height = 4096;
-        sun.shadow.camera.near = 0;
-        sun.shadow.camera.far = 50;
+        sun.shadow.camera.near = 5;
+        sun.shadow.camera.far = 1000;
 
         sun.shadow.camera.top = 200;
-        sun.shadow.camera.bottom = -1000;
-        sun.shadow.camera.left = -1000;
+        sun.shadow.camera.bottom = -200;
+        sun.shadow.camera.left = -200;
         sun.shadow.camera.right = 200;
 
         render.scene.add(sun);
 
-        this.pathDebug = new PathDebug();
+        // const helper = new THREE.DirectionalLightHelper( sun, 10 );
+        // render.scene.add( helper );
+
+        // this.pathDebug = new PathDebug();
 
         this.godView = new Godview(this.model);
     }

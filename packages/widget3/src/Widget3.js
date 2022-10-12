@@ -67,6 +67,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
     }
 
     widgetPointerDown(e) {
+        if (e.button === 2) return;
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const hit = this.controlRaycast(x,y);
@@ -94,6 +95,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
     }
 
     widgetPointerUp(e) {
+        if (e.button === 2) return;
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const hit = this.controlRaycast(x,y);
@@ -108,6 +110,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
     }
 
     widgetPointerMove(e) {
+        if (e.button === 2) return;
         if (this.service("InputManager").inPointerLock) return;
         const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;

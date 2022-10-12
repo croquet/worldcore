@@ -60,14 +60,17 @@ export class WidgetManager2 extends ViewService {
     }
 
     pointerDown(e) {
+        if (e.button === 2) return;
         this.root.pointerDown(e);
     }
 
     pointerUp(e) {
+        if (e.button === 2) return;
         this.root.pointerUp(e);
     }
 
     pointerMove(e) {
+        if (e.button === 2) return;
         this.root.pointerMove(e);
     }
 

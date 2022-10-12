@@ -15,7 +15,9 @@ export class CaravanManager extends ModelService {
     createCaravan(name, home) {
         const old = this.caravans.get(name);
         if (old) old.destroy();
-        const caravan = CaravanActor.create({name, home});
+        const ggg = ["Carrying: Silk, Salt", "Carrying: Silk", "Carrying: Glass Lenses, Jade", "Carrying: Wool", "Carrying: Spices, Silk"]
+        const goods = ggg[Math.floor(ggg.length * Math.random())];
+        const caravan = CaravanActor.create({name, home, goods, title: "Caravan" });
         this.caravans.set(name, caravan);
     }
 }

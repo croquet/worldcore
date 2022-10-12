@@ -77,6 +77,8 @@ export class BotActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
     get destination() { return this._destination;  }
     get home() { return this._home}
+    get title() { return this._title}
+    get goods() { return this._goods}
 
     goHome() {
         const paths = this.service("Paths");
@@ -103,15 +105,15 @@ class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) {
         this.nameplate = new TextWidget3({
             parent: this.focus, size: [10,5],
             translation: [0,5,0],
-            resolution: 50,
+            resolution: 10,
             alpha: true,
-            point: 96,
+            point: 24,
             collidable: true,
             color: [0,0,0],
             bgColor: [0, 0, 0],
             fgColor: [1, 1, 1],
             billboard: true,
-            text: this.actor.name});
+            text: this.actor.title});
 
         this.focus.onFocus = () => { viewRoot.hiliteMesh(this.widget.mesh) };
         this.focus.onBlur = () => { viewRoot.hiliteMesh(null) };

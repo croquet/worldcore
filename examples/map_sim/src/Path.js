@@ -110,8 +110,8 @@ export class PathDebug extends WorldcoreView {
         this.nodeMaterial = new THREE.LineBasicMaterial( { color: 0xff0000 } );
         this.edgeMaterial = new THREE.LineBasicMaterial( { color: 0x000000 } );
 
-        // this.drawNodes();
-        // this.drawEdges();
+        this.drawNodes();
+        this.drawEdges();
 
     }
 
