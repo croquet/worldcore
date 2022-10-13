@@ -55,8 +55,8 @@ export class MapView extends WorldcoreView {
             if (surface.faces[1]) this.buildSouth(xyz,[0.7,0.7,0]);
             if (surface.faces[0]) this.buildWest(xyz,[0.7,0.7,0]);
             this.buildRamps(xyz,surface.ramps, [1,0,1])
+            this.buildDoubles(xyz,surface.doubles, [0,1,1])
         };
-        // this.buildRamps([0,0,2], [0,0,0,1], [1,0,1]);
 
         this.triangleGeometry = this.tb.build();
         this.lineGeometry = this.lb.build();
@@ -206,6 +206,62 @@ export class MapView extends WorldcoreView {
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([1,1]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        };
+    }
+
+    buildDoubles(xyz, doubles, color) {
+        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+
+        if (doubles[0]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[1,1,0]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[0,1,1]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[1,0,1]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        };
+
+        if (doubles[1]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[0,1,0]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[0,0,1]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[1,1,1]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        };
+
+        if (doubles[2]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[0,0,0]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[1,0,1]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[0,1,1]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        };
+
+        if (doubles[3]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[1,0,0]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[1,1,1]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[0,0,1]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
             uvs.push([0,1]);
             this.tb.addFace(vertices, uvs, color);
             this.lb.addLoop(vertices);

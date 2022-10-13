@@ -10,7 +10,8 @@ class Surface {
         this.xyz = unpackKey(key);
         this.key = key;
         this.faces = [0,0,0,0,0,0];
-        this.ramps = [0,0,0,0]
+        this.ramps = [0,0,0,0];
+        this.doubles = [0,0,0,0];
     }
 
     findRamps(voxels) {
@@ -46,6 +47,32 @@ class Surface {
             const adjacent = voxels.adjacent(...this.xyz, [0,1,1]);
             if (voxels.isValid(...adjacent) && voxels.get(...adjacent)) this.ramps[3] = 0
         };
+
+        // Replace double ramps
+
+        if (this.ramps[0] && this.ramps[1]) {
+            this.doubles[0] = true;
+            this.ramps[0] = 0;
+            this.ramps[1] = 0;
+        }
+
+        if (this.ramps[1] && this.ramps[2]) {
+            this.doubles[1] = true;
+            this.ramps[1] = 0;
+            this.ramps[2] = 0;
+        }
+
+        if (this.ramps[2] && this.ramps[3]) {
+            this.doubles[2] = true;
+            this.ramps[2] = 0;
+            this.ramps[3] = 0;
+        }
+
+        if (this.ramps[3] && this.ramps[0]) {
+            this.doubles[3] = true;
+            this.ramps[3] = 0;
+            this.ramps[0] = 0;
+        }
 
     }
 }
