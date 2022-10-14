@@ -26,7 +26,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         const yawQ = q_axisAngle([0,0,1], this.yaw);
         const lookQ = q_multiply(pitchQ, yawQ);
 
-        this.translation = [0,-20,20];
+        this.translation = [0,-30,30];
         this.rotation = lookQ;
         this.updateCamera();
 

@@ -82,13 +82,13 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
         const group = new THREE.Group();
 
-        this.floorGeometry = new THREE.BoxGeometry(50, 50, 0.1);
-        this.floorMaterial = new THREE.MeshStandardMaterial( {color: 0x145A32 } );
-        const floor = new THREE.Mesh( this.floorGeometry, this.floorMaterial );
-        floor.receiveShadow = true;
-        floor.castShadow = true;
-        floor.position.set(10,10,-1);
-        group.add(floor);
+        // this.floorGeometry = new THREE.BoxGeometry(50, 50, 0.1);
+        // this.floorMaterial = new THREE.MeshStandardMaterial( {color: 0x145A32 } );
+        // const floor = new THREE.Mesh( this.floorGeometry, this.floorMaterial );
+        // floor.receiveShadow = true;
+        // floor.castShadow = true;
+        // floor.position.set(10,10,-1);
+        // group.add(floor);
 
 
         const ambient = new THREE.AmbientLight( 0xffffff, 0.8 );
@@ -107,6 +107,8 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         sun.shadow.camera.left = -100;
         sun.shadow.camera.right = 100;
         sun.shadow.bias = -0.002;
+        sun.shadow.radius = 2
+        sun.shadow.blurSamples = 3
         group.add(sun);
 
         this.setRenderObject(group);
@@ -114,8 +116,8 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
     destroy() {
         super.destroy();
-        this.floorGeometry.dispose();
-        this.floorMaterial.dispose();
+        // this.floorGeometry.dispose();
+        // this.floorMaterial.dispose();
     }
 }
 
@@ -133,7 +135,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
+        console.log("Start root model!!");
         this.level = LevelActor.create();
 
 
@@ -167,6 +169,27 @@ class MyViewRoot extends ViewRoot {
 
         this.godView = new GodView(this.model);
         this.mapView = new MapView(this.model);
+
+        this.subscribe("input", "pointerDown", this.ttt);
+    }
+
+    ttt(e) {
+        console.log("click!");
+        console.log(e.button);
+        if (e.button === 2) return;
+        const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
+        const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
+        const render = this.service("ThreeRenderManager");
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera({x: x, y: y}, render.camera);
+        let hits = raycaster.intersectObjects( this.mapView.collider );
+        if (hits && hits[0]) {
+            const p = hits[0].point;
+            const xx = Math.floor(p.x / Constants.scaleX);
+            const yy = Math.floor(p.y / Constants.scaleY);
+            const zz = Math.floor(p.z / Constants.scaleZ);
+            console.log([xx,yy,zz]);
+        }
     }
 
     update(time) {
