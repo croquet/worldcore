@@ -1,8 +1,52 @@
-import { WorldcoreView, mix, m4_rotationX, toRad, m4_scaleRotationTranslation, q_axisAngle, PM_WidgetPointer, v2_sub, Constants, q_multiply, TAU, v3_scale, v3_add, v3_normalize, v3_rotate, v3_magnitude } from "@croquet/worldcore";
+import { WorldcoreView, mix, m4_rotationX, toRad, m4_scaleRotationTranslation, q_axisAngle, PM_WidgetPointer, v2_sub, Constants, q_multiply, TAU, v3_scale, v3_add, v3_normalize, v3_rotate, v3_magnitude, THREE, viewRoot, v3_sub, v3_floor, PM_ThreeVisible, Widget2, CanvasWidget2, ToggleWidget2, ToggleSet2, ImageWidget2 } from "@croquet/worldcore";
+import { Voxels} from  "./Voxels";
 
 let time0 = 0;
 let time1 = 0;
 let fov = 60;
+
+import diana from "../assets/diana.jpg";
+import fillOffIcon from "../assets/fillOffIcon.png";
+import fillOnIcon from "../assets/fillOnIcon.png";
+import digOffIcon from "../assets/digOffIcon.png";
+import digOnIcon from "../assets/digOnIcon.png";
+
+//------------------------------------------------------------------------------------------
+//-- Widgets -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class ImageToggleWidget2 extends ToggleWidget2 {
+
+    buildDefault() {
+        this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.5,0.5]});
+        this.label = new ImageWidget2({parent: this.frame, autoSize: [1,1], border: [2.5, 2.5, 2.5, 2.5], color: [0.6,0.6,0.6], url: this.offURL});
+    }
+
+    get offURL() {return this._offURL}
+    get onURL() {return this._onURL}
+
+    onHover() {
+        this.frame.set({color: [0.4,0.4,0.4]});
+    }
+
+    onPress() {
+        this.frame.set({color: [0.8,0.8,0.8]});
+    }
+
+    onNormal() {
+        this.frame.set({color: [0.6,0.6,0.6]});
+    }
+
+    onToggle() {
+        this.isOn ? this.label.set({url: this.onURL}) : this.label.set({url: this.offURL});
+    }
+}
+
+
+//------------------------------------------------------------------------------------------
+//-- GodView -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
 
 export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
     constructor(model) {
@@ -13,8 +57,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         this.right = 0;
         this.left = 0;
 
-        const xxx = Constants.scaleX * Constants.sizeX / 2;
-
+        this.buildHUD();
         this.moveSpeed = 0.02;
         this.turnSpeed = 0.002;
 
@@ -26,7 +69,8 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         const yawQ = q_axisAngle([0,0,1], this.yaw);
         const lookQ = q_multiply(pitchQ, yawQ);
 
-        this.translation = [0,-30,30];
+        const xxx = Constants.scaleX * Constants.sizeX / 2;
+        this.translation = [xxx,-50,50];
         this.rotation = lookQ;
         this.updateCamera();
 
@@ -40,11 +84,29 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         this.subscribe("input", "aDown", this.leftDown);
         this.subscribe("input", "aUp", this.leftUp)
 
-        this.subscribe("input", "pointerDown", this.doPointerDown);
+        this.subscribe("ui", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
+        this.subscribe("input", "pointerMove", this.doPointerMove);
         this.subscribe("input", 'wheel', this.onWheel);
 
+        this.subscribe("input", 'zDown', this.onFill);
+        this.subscribe("input", 'xDown', this.onDig);
+
+    }
+
+    buildHUD() {
+        const wm = this.service("WidgetManager2");
+        const hud = new Widget2({parent: wm.root, autoSize: [1,1]});
+        const toggleSet = new ToggleSet2;
+        const fillToggle = new ImageToggleWidget2({name: "fill", parent: hud, size:[30,30], translation: [15,15], toggleSet: toggleSet, offURL: fillOffIcon, onURL: fillOnIcon});
+        const digToggle = new ImageToggleWidget2({name: "dig", parent: hud, size:[30,30], translation: [15,50], toggleSet: toggleSet, offURL: digOffIcon, onURL: digOnIcon});
+        this.subscribe(toggleSet.id, "pick", this.setEditMode);
+        toggleSet.pick(fillToggle);
+    }
+
+    setEditMode(mode) {
+        this.editMode = mode;
     }
 
     foreDown() { this.fore = 1; }
@@ -58,11 +120,23 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
     leftUp() { this.left = 0; }
 
     doPointerDown(e) {
-        if (e.button === 2) this.service("InputManager").enterPointerLock();;
+        if (e.button === 2) {
+            this.service("InputManager").enterPointerLock();
+        } else{
+            switch (this.editMode) {
+                case "fill": this.onFill(); break;
+                case "dig": this.onDig(); break;
+            }
+
+        };
     }
 
     doPointerUp(e) {
-        if (e.button === 2) this.service("InputManager").exitPointerLock();
+        if (e.button === 2) {
+            this.service("InputManager").exitPointerLock();
+        } else{
+
+        };
     }
 
     doPointerDelta(e) {
@@ -73,6 +147,44 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
             this.pitch = Math.min(Math.PI/2, this.pitch);
             this.updateCamera();
         };
+    }
+
+    doPointerMove(e) {
+        const windowX = ( e.xy[0] / window.innerWidth ) * 2 - 1;
+        const windowY = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
+        const render = this.service("ThreeRenderManager");
+        const surfaces = this.modelService("Surfaces");
+        if (!render) return;
+        if (!viewRoot.mapView) return;
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera({x: windowX, y: windowY}, render.camera);
+        this.pointerHit = null
+        let hits = raycaster.intersectObjects( viewRoot.mapView.collider );
+        if (hits && hits[0]) {
+            const p = hits[0].point;
+            const xyz = [ p.x / Constants.scaleX, p.y / Constants.scaleY, p.z / Constants.scaleZ ];
+            const voxel = v3_floor(xyz);
+            const fraction = v3_sub(xyz,voxel);
+            this.pointerHit = { xyz, voxel, fraction};
+        }
+    }
+
+    onFill() {
+        if (!this.pointerHit) return;
+        this.publish("edit", "setVoxel",{xyz: this.pointerHit.voxel, type: Constants.dirt});
+    }
+
+    onDig() {
+        if (!this.pointerHit) return;
+        const e = 0.001
+        let xyz = [0,0,0];
+        if (this.pointerHit.fraction[0]-e < 0) xyz = Voxels.adjacent(...this.pointerHit.voxel, [-1,0,0]);
+        if (this.pointerHit.fraction[0]+e > 1) xyz = Voxels.adjacent(...this.pointerHit.voxel, [1,0,0]);
+        if (this.pointerHit.fraction[1]-e < 0) xyz = Voxels.adjacent(...this.pointerHit.voxel, [0,-1,0]);
+        if (this.pointerHit.fraction[1]+e > 1) xyz = Voxels.adjacent(...this.pointerHit.voxel, [0,1,0]);
+        if (this.pointerHit.fraction[2]-e < 0) xyz = Voxels.adjacent(...this.pointerHit.voxel, [0,0,-1]);
+
+        if (Voxels.canEdit(...xyz)) this.publish("edit", "setVoxel",{xyz, type: Constants.air});
     }
 
     onWheel(data) {

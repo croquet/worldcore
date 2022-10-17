@@ -60,8 +60,11 @@ export class WidgetManager2 extends ViewService {
     }
 
     pointerDown(e) {
-        if (e.button === 2) return;
-        this.root.pointerDown(e);
+        if (e.button == 0) {
+            if (this.root.pointerDown(e)) return;
+
+        };
+        this.publish("ui", "pointerDown", e);
     }
 
     pointerUp(e) {
@@ -260,8 +263,10 @@ export class Widget2 extends WorldcoreView {
     }
 
     pointerDown(e) {
-        if (!this.visible) return;
-        if (this.children) this.children.forEach( child => child.pointerDown(e));
+        if (!this.visible) return false;
+        let consumed = false;
+        if (this.children) this.children.forEach( child => consumed = child.pointerDown(e) || consumed);
+        return consumed;
     }
 
     pointerUp(e) {
@@ -583,8 +588,9 @@ export class ControlWidget2 extends Widget2 {
         if(this.inside(e.xy)) {
             this.pressed = true;
             this.onPress();
+            return true;
         }
-
+        return false;
     }
 
     pointerUp(e) {
@@ -622,7 +628,7 @@ export class ControlWidget2 extends Widget2 {
 export class ButtonWidget2 extends ControlWidget2 {
 
     buildDefault() {
-            this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0,0,1]});
+            this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.5,0.7]});
             this.label = new TextWidget2({ parent: this.frame, autoSize: [1,1], border: [5, 5, 5, 5], color: [0.8,0.8,0.8], text:  "Button" });
     }
 
@@ -701,8 +707,9 @@ export class ToggleWidget2 extends ButtonWidget2 {
 //-- ToggleSet2 -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class ToggleSet2  {
+export class ToggleSet2 extends WorldcoreView  {
     constructor() {
+        super(viewRoot.model);
         this.set = new Set();
     }
 
@@ -711,6 +718,7 @@ export class ToggleSet2  {
         this.set.forEach(w => {
             if (w !== on) w.set({isOn: false});
         });
+        this.publish(this.id, "pick",on.name);
     }
 
 }
@@ -773,6 +781,7 @@ export class SliderWidget2 extends ControlWidget2 {
                 p = (e.xy[1] - this.global[1]- this.knobSize[1]/2) / (this.trueSize[1]-this.knobSize[1]);
             }
             this.set({percent: p});
+            return true;
         }
     }
 
@@ -842,6 +851,7 @@ export class JoyStickWidget2 extends ControlWidget2 {
 
             this.knob.set({anchor: xy });
             this.change(xy);
+            return true;
         }
     }
 
@@ -927,7 +937,7 @@ class DragWidget2 extends ControlWidget2 {
                 this.grab = v2_sub(this.parent.translation, e.xy)
             }
         }
-        this.close.pointerDown(e);
+        return this.close.pointerDown(e);
     }
 
     pointerUp(e) {
@@ -1005,6 +1015,7 @@ export class MenuWidget2 extends ControlWidget2 {
             const w = this.findEntry(e.xy);
             this.unhiliteAll();
             this.hiliteEntry(w);
+            return true;
         }
     }
 

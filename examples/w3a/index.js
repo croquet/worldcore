@@ -1,7 +1,7 @@
 // Microverse Base
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot } from "@croquet/worldcore";
+    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2 } from "@croquet/worldcore";
 
 import paper from "./assets/paper.jpg";
 import diana from "./assets/diana.jpg";
@@ -80,21 +80,13 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
-        const group = new THREE.Group();
-
-        // this.floorGeometry = new THREE.BoxGeometry(50, 50, 0.1);
-        // this.floorMaterial = new THREE.MeshStandardMaterial( {color: 0x145A32 } );
-        // const floor = new THREE.Mesh( this.floorGeometry, this.floorMaterial );
-        // floor.receiveShadow = true;
-        // floor.castShadow = true;
-        // floor.position.set(10,10,-1);
-        // group.add(floor);
+        const group = new THREE.Group()
 
 
-        const ambient = new THREE.AmbientLight( 0xffffff, 0.8 );
+        const ambient = new THREE.AmbientLight( 0xffffff, 0.5 );
         group.add(ambient);
 
-        const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 1 );
+        const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 0.5 );
         sun.position.set(200, 100, 200);
         sun.castShadow = true;
         sun.shadow.mapSize.width = 2048;
@@ -102,10 +94,10 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         sun.shadow.camera.near = 0;
         sun.shadow.camera.far = 500;
 
-        sun.shadow.camera.top = 100;
-        sun.shadow.camera.bottom = -100;
-        sun.shadow.camera.left = -100;
-        sun.shadow.camera.right = 100;
+        sun.shadow.camera.top = 200;
+        sun.shadow.camera.bottom = -200;
+        sun.shadow.camera.left = -200;
+        sun.shadow.camera.right = 200;
         sun.shadow.bias = -0.002;
         sun.shadow.radius = 2
         sun.shadow.blurSamples = 3
@@ -116,8 +108,6 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
     destroy() {
         super.destroy();
-        // this.floorGeometry.dispose();
-        // this.floorMaterial.dispose();
     }
 }
 
@@ -135,7 +125,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!");
+        console.log("Start root model!!!!");
         this.level = LevelActor.create();
 
 
@@ -146,6 +136,15 @@ class MyModelRoot extends ModelRoot {
         surfaces.rebuildAll();
 
 
+        this.subscribe("input", "nDown", this.test)
+    }
+
+    test() {
+        console.log("test");
+        const wb = this.service("WorldBuilder");
+        wb.build();
+        const voxels = this.service("Voxels");
+        // voxels.set(3,2,1, 4);
 
     }
 
@@ -159,7 +158,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, UIManager, ThreeRenderManager, WidgetManager];
+        return [InputManager, {service:ThreeRenderManager, options: {antialias: true}}, WidgetManager, WidgetManager2];
     }
 
     constructor(model) {
@@ -170,26 +169,12 @@ class MyViewRoot extends ViewRoot {
         this.godView = new GodView(this.model);
         this.mapView = new MapView(this.model);
 
-        this.subscribe("input", "pointerDown", this.ttt);
-    }
+        // this.subscribe("input", "pointerDown", this.ttt);
+        // this.subscribe("input", "pointerDown", this.ttt);
 
-    ttt(e) {
-        console.log("click!");
-        console.log(e.button);
-        if (e.button === 2) return;
-        const x = ( e.xy[0] / window.innerWidth ) * 2 - 1;
-        const y = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
-        const render = this.service("ThreeRenderManager");
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera({x: x, y: y}, render.camera);
-        let hits = raycaster.intersectObjects( this.mapView.collider );
-        if (hits && hits[0]) {
-            const p = hits[0].point;
-            const xx = Math.floor(p.x / Constants.scaleX);
-            const yy = Math.floor(p.y / Constants.scaleY);
-            const zz = Math.floor(p.z / Constants.scaleZ);
-            console.log([xx,yy,zz]);
-        }
+        document.body.style.cursor = "pointer";
+        document.body.style.cursor = "not-allowed";
+        document.body.style.cursor = "crosshair";
     }
 
     update(time) {

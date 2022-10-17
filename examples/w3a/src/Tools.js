@@ -4,8 +4,45 @@ import {THREE} from "@croquet/worldcore";
 //-- Three ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+export class TriBuilder {
+    constructor() {
+        this.clear();
+    }
+
+    clear() {
+        this.vertices = [];
+    }
+
+    build() {
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( this.vertices, 3 ) );
+        geometry.computeVertexNormals();
+        this.clear();
+        return geometry;
+    }
+
+    addFace(vertices) {
+        const triCount = vertices.length - 2
+
+        for (let i = 0; i < triCount; i++) {
+
+            //-- Vertex A--
+
+            this.vertices.push(...vertices[0]);
+
+            //-- Vertex B --
+
+            this.vertices.push(...vertices[i+1]);
+
+            //-- Vertex C --
+
+            this.vertices.push(...vertices[i+2]);
+        }
+    }
+}
+
 export class TriangleBuilder {
-    constructor(material) {
+    constructor() {
         this.clear();
     }
 
@@ -15,7 +52,7 @@ export class TriangleBuilder {
         this.uvs = [];
     }
 
-    build(material) {
+    build() {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( this.vertices, 3 ) );
         geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( this.colors, 3) );
@@ -53,7 +90,7 @@ export class TriangleBuilder {
 }
 
 export class LineBuilder {
-    constructor(material) {
+    constructor() {
         this.clear();
     }
 
@@ -64,8 +101,6 @@ export class LineBuilder {
     build() {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( this.vertices, 3 ) );
-        // geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( this.colors, 3) );
-        // geometry.setAttribute( 'uv', new THREE.Float32BufferAttribute( this.uvs, 2) );
         geometry.computeVertexNormals();
         this.clear();
         return geometry;

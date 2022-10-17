@@ -4,9 +4,9 @@ import { ModelService, Constants } from "@croquet/worldcore";
 //-- Constants -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-Constants.sizeX = 16;
-Constants.sizeY = 16;
-Constants.sizeZ = 16;
+Constants.sizeX = 32;
+Constants.sizeY = 32;
+Constants.sizeZ = 32;
 
 Constants.scaleX = 5;
 Constants.scaleY = 5;
@@ -17,6 +17,11 @@ Constants.base = 1;
 Constants.lava = 2;
 Constants.rock = 3;
 Constants.dirt = 4;
+
+Constants.lavaColor = [1.0, 0.0, 0.0];
+Constants.rockColor = [0.7, 0.7, 0.7];
+Constants.dirtColor = [0.8, 0.4, 0.2];
+Constants.grassColor = [0.4, 0.8, 0.2];
 
 //------------------------------------------------------------------------------------------
 //-- Utility ------------------------------------------------------------------------------
@@ -63,33 +68,43 @@ class VoxelColumn {
     }
 
     compress(array) {
-            let n = 1;
-            let previous = array[0]
-            array.forEach(entry => {
-                if (entry !== previous) n++;
-                previous = entry;
-            });
+        let n = 1;
+        let previous = array[0]
+        array.forEach(entry => {
+            if (entry !== previous) n++;
+            previous = entry;
+        });
 
-            this.c = new Uint16Array(n);
-            this.t = new Uint16Array(n);
+        this.c = new Uint16Array(n);
+        this.t = new Uint16Array(n);
 
-            n = 0;
-            previous = array[0]
-            let count = 0;
-            array.forEach(entry => {
-                if (entry === previous) {
-                    count++;
-                } else {
-                    this.t[n] = previous;
-                    this.c[n] = count;
-                    count = 1;
-                    n++;
-                }
-                previous = entry;
-            });
-            this.t[n] = previous;
-            this.c[n] = count;
-        }
+        n = 0;
+        previous = array[0]
+        let count = 0;
+        array.forEach(entry => {
+            if (entry === previous) {
+                count++;
+            } else {
+                this.t[n] = previous;
+                this.c[n] = count;
+                count = 1;
+                n++;
+            }
+            previous = entry;
+        });
+        this.t[n] = previous;
+        this.c[n] = count;
+    }
+
+    summit() {
+        let h = 0;
+        const top = this.t.findLastIndex(type => type >= Constants.lava );
+        this.c.forEach((count, index) => {
+            if (index > top) return;
+            h += count;
+        })
+        return h;
+    }
 
 }
 
@@ -103,14 +118,7 @@ export class Voxels extends ModelService {
         return { "W3:VoxelColumn": VoxelColumn };
     }
 
-    init() {
-        super.init('Voxels');
-        console.log("Voxels");
-
-        this.voxels = Array.from(Array(Constants.sizeX), ()=>Array.from(Array(Constants.sizeY), ()=>new VoxelColumn()));
-    }
-
-    isValid(x,y,z) {
+    static isValid(x,y,z) {
         if (x < 0) return false;
         if (x >= Constants.sizeX) return false;
         if (y < 0) return false;
@@ -120,12 +128,38 @@ export class Voxels extends ModelService {
         return true;
     }
 
-    adjacent(x,y,z,v) {
+    // The top and bottom layer of voxels can't be changed to keep edge conditions simple.
+    static canEdit(x, y, z) {
+        if (x < 0) return false;
+        if (x >= Constants.sizeX) return false;
+        if (y < 0) return false;
+        if (y >= Constants.sizeY) return false;
+        if (z < 1) return false;
+        if (z >= Constants.sizeZ-1) return false;
+        return true;
+    }
+
+    static adjacent(x,y,z,v) {
         const out = [...v];
         out[0] += x;
         out[1] += y;
         out[2] += z;
         return out;
+    }
+
+    init() {
+        super.init('Voxels');
+        console.log("Voxels");
+
+        this.voxels = Array.from(Array(Constants.sizeX), ()=>Array.from(Array(Constants.sizeY), ()=>new VoxelColumn()));
+
+        this.subscribe("edit", "setVoxel", this.doSetVoxel);
+    }
+
+    doSetVoxel(data) {
+        if (this.isValid(...data.xyz)) {
+            this.set(...data.xyz, data.type);
+        }
     }
 
     get(x, y, z) {
@@ -159,7 +193,7 @@ export class Voxels extends ModelService {
         }
     }
 
-    forAdjacent( x,y,z, callback){
+    forAdjacent(x,y,z, callback){
         const x0 = x-1, x1 = x+1;
         const y0 = y-1, y1 = y+1;
         const z0 = z-1, z1 = z+1;
@@ -169,6 +203,21 @@ export class Voxels extends ModelService {
         if (y1 < Constants.sizeY) callback(3, x,y1,z, this.get(x,y1,z));
         if (z0 >= 0) callback(4,  x,y,z0, this.get(x,y,z0));
         if (z1 < Constants.sizeZ) callback(5, x,y,z1, this.get(x,y,z1));
+    }
+
+    edgeSummit() { // Finds the maximum height of the voxels on the outside border
+        let h = 0
+        for (let x = 0; x < Constants.sizeX; x++) {
+            h = Math.max(h, this.voxels[x][0].summit())
+            h = Math.max(h, this.voxels[x][Constants.sizeY-1].summit())
+        }
+
+        for (let y = 0; y < Constants.sizeY; y++) {
+            h = Math.max(h, this.voxels[0][y].summit())
+            h = Math.max(h, this.voxels[Constants.sizeX-1][y].summit())
+        }
+
+        return h;
     }
 
 }
