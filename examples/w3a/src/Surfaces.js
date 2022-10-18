@@ -26,6 +26,14 @@ class Surface {
     get below() { return this.faces[4]; }
     get above() { return this.faces[5]; }
 
+    get hasFace() { return this.faces.some(e => e)}
+    get hasRamp() { return this.ramps.some(e => e)}
+    get hasDouble() {return this.doubles.some(e => e)}
+    get hasCap() {return this.caps.some(e => e)}
+    get hasSide() {return this.sides.some(e => e)}
+    get hasShim() {return this.shims.some(e => e)}
+    get isEmpty() { return !(this.floor || this.ceiling || this.hasFace || this.hasRamp || this.hasDouble || this.hasCap || this.hasSide || this.hasShim); }
+
     elevation(x,y) {
         const xx = 1-x;
         const yy = 1-y
@@ -48,11 +56,20 @@ class Surface {
 
     }
 
+    findFaces(voxels) {
+        voxels.forAdjacent(...this.xyz, (d,x,y,z,t) => {
+            if(t<2) return;
+            this.faces[d] = t
+            this.sides[d] = t;
+            this.floor = this.below;
+            this.ceiling = this.above;
+        });
+    }
+
     findRamps(voxels) {
 
         // No floor or low ceiling = no ramp
         if (!this.below || this.above|| this.below == Constants.lava) return;
-
 
         // Add a ramp if there's a face opposite a non-face.
 
@@ -138,6 +155,113 @@ class Surface {
                 this.ramps[0] = 0;
             }
         }
+    }
+
+    findCaps(voxels, surfaces, secondary) {
+        if (!this.hasDouble) return false;
+        const aboveXYZ = Voxels.adjacent(...this.xyz, [0,0,1]);
+        if (!Voxels.isValid(...aboveXYZ)) return;
+        const aboveKey = packKey(...aboveXYZ);
+        const above = surfaces.get(aboveKey);
+        surfaces.surfaces.set(aboveKey, above);
+        secondary.add(aboveKey);
+        above.caps = [...this.doubles];
+    }
+
+    findSides(voxels, surfaces, secondary) {
+
+        if (this.ramps[0]) {
+            const leftXYZ = Voxels.adjacent(...this.xyz, [0,-1,0]);
+            const rightXYZ = Voxels.adjacent(...this.xyz, [0,1,0]);
+
+            if (Voxels.isValid(...leftXYZ) && voxels.get(...leftXYZ)<2) {
+                const leftKey = packKey(...leftXYZ);
+                let left = surfaces.get(leftKey);
+                surfaces.surfaces.set(leftKey, left);
+                secondary.add(leftKey);
+                left.faces[3] = this.below;
+                left.sides[3] = 1;
+            }
+
+            if (Voxels.isValid(...rightXYZ) && voxels.get(...rightXYZ)<2){
+                const rightKey = packKey(...rightXYZ);
+                let right = surfaces.get(rightKey);
+                surfaces.surfaces.set(rightKey, right);
+                secondary.add(rightKey);
+                right.faces[1] = this.below;
+                right.sides[1] = 2;
+            }
+
+        }
+
+        if (this.ramps[1]) {
+            const leftXYZ = Voxels.adjacent(...this.xyz, [-1,0,0]);
+            const rightXYZ = Voxels.adjacent(...this.xyz, [1,0,0]);
+
+            if (Voxels.isValid(...leftXYZ) && voxels.get(...leftXYZ)<2) {
+                const leftKey = packKey(...leftXYZ);
+                let left = surfaces.get(leftKey);
+                surfaces.surfaces.set(leftKey, left);
+                secondary.add(leftKey);
+                left.faces[2] = this.below;
+                left.sides[2] = 2;
+            }
+
+            if (Voxels.isValid(...rightXYZ) && voxels.get(...rightXYZ)<2){
+                const rightKey = packKey(...rightXYZ);
+                let right = surfaces.get(rightKey);
+                surfaces.surfaces.set(rightKey, right);
+                secondary.add(rightKey);
+                right.faces[0] = this.below;
+                right.sides[0] = 1;
+            }
+        }
+
+        if (this.ramps[2]) {
+            const leftXYZ = Voxels.adjacent(...this.xyz, [0,-1,0]);
+            const rightXYZ = Voxels.adjacent(...this.xyz, [0,1,0]);
+
+            if (Voxels.isValid(...leftXYZ) && voxels.get(...leftXYZ)<2) {
+                const leftKey = packKey(...leftXYZ);
+                let left = surfaces.get(leftKey);
+                surfaces.surfaces.set(leftKey, left);
+                secondary.add(leftKey);
+                left.faces[3] = this.below;
+                left.sides[3] = 2;
+            }
+
+            if (Voxels.isValid(...rightXYZ) && voxels.get(...rightXYZ)<2){
+                const rightKey = packKey(...rightXYZ);
+                let right = surfaces.get(rightKey);
+                surfaces.surfaces.set(rightKey, right);
+                secondary.add(rightKey);
+                right.faces[1] = this.below;
+                right.sides[1] = 1;
+            }
+        }
+
+        if (this.ramps[3]) {
+            const leftXYZ = Voxels.adjacent(...this.xyz, [-1,0,0]);
+            const rightXYZ = Voxels.adjacent(...this.xyz, [1,0,0]);
+
+            if (Voxels.isValid(...leftXYZ) && voxels.get(...leftXYZ)<2) {
+                const leftKey = packKey(...leftXYZ);
+                let left = surfaces.get(leftKey);
+                surfaces.surfaces.set(leftKey, left);
+                secondary.add(leftKey);
+                left.faces[2] = this.below;
+                left.sides[2] = 1;
+            }
+
+            if (Voxels.isValid(...rightXYZ) && voxels.get(...rightXYZ)<2){
+                const rightKey = packKey(...rightXYZ);
+                let right = surfaces.get(rightKey);
+                surfaces.surfaces.set(rightKey, right);
+                secondary.add(rightKey);
+                right.faces[0] = this.below;
+                right.sides[0] = 2;
+            }
+        }
 
     }
 
@@ -152,8 +276,13 @@ class Surface {
         if (this.caps[1] && this.sides[1] == 1  && this.sides[2] == 2) this.shims[1] = this.caps[1];
         if (this.caps[2] && this.sides[2] == 1 && this.sides[3] == 2) this.shims[2] = this.caps[2];
         if (this.caps[3] && this.sides[3] == 1 && this.sides[0] == 2) this.shims[3] = this.caps[3];
-
     }
+
+    cullUnderRamps() {}
+    cullUnderDoubles() {}
+    cullUnderShims(){}
+    cullDuplicateSides(surfaces){}
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -185,7 +314,8 @@ export class Surfaces extends ModelService {
     }
 
     get(key) {
-        return(this.surfaces.get(key));
+        return this.surfaces.get(key) || new Surface(key);
+        // return this.surfaces.get(key) ;
     }
 
     add(key) {
@@ -199,6 +329,7 @@ export class Surfaces extends ModelService {
 
         const voxels = this.service("Voxels");
         const primary = new Set();
+        const secondary = new Set();
 
         // Build primary set
         voxels.forEach((x,y,z,t)=> {
@@ -206,157 +337,16 @@ export class Surfaces extends ModelService {
             const key = packKey(x,y,z);
             voxels.forAdjacent(x,y,z, (d,x,y,z,t) => {
                 if (t<2) return;
-                this.add(key)
+                this.add(key) // xxx
                 primary.add(key);
             })
         });
 
-        // Find faces
-        primary.forEach(key => {
-            const xyz = unpackKey(key);
-            const s = this.get(key);
-            voxels.forAdjacent(...xyz, (d,x,y,z,t) => {
-                if(t<2) return;
-                s.faces[d] = t
-                s.sides[d] = t;
-                s.floor = s.below;
-                s.ceiling = s.above;
-            });
-
-
-        });
-
-        // Find ramps
-        primary.forEach(key => {
-            const xyz = unpackKey(key);
-            const s = this.get(key);
-            s.findRamps(voxels);
-        });
-
-        // Find caps
-        primary.forEach(key => {
-            const xyz = unpackKey(key);
-            const aboveXYZ = Voxels.adjacent(...xyz, [0,0,1]);
-            if (!Voxels.isValid(...aboveXYZ)) return;
-            const aboveKey = packKey(...aboveXYZ);
-            let above = this.get(aboveKey);
-            const s = this.get(key);
-            if (s.doubles[0] || s.doubles[1] || s.doubles[2] ||s.doubles[3]) {
-                if (!above) above = this.add(aboveKey);
-                above.caps = [...s.doubles];
-            }
-        });
-
-        // Find sides
-
-        const secondary = new Set(); // surfaces with a side may have a shim
-        primary.forEach(key => {
-            const xyz = unpackKey(key);
-
-            const s = this.get(key);
-
-            if (s.ramps[0]) {
-                const leftXYZ = Voxels.adjacent(...xyz, [0,-1,0]);
-                const rightXYZ = Voxels.adjacent(...xyz, [0,1,0]);
-
-                if (Voxels.isValid(...leftXYZ) && !voxels.get(...leftXYZ)) {
-                    const leftKey = packKey(...leftXYZ);
-                    let left = this.get(leftKey);
-                    if (!left) left = this.add(leftKey);
-                    left.faces[3] = s.below;
-                    left.sides[3] = 1;
-                    secondary.add(leftKey);
-                }
-
-                if (Voxels.isValid(...rightXYZ) && !voxels.get(...rightXYZ)){
-                    const rightKey = packKey(...rightXYZ);
-                    let right = this.get(rightKey);
-                    if (!right) right = this.add(rightKey);
-                    right.faces[1] = s.below;
-                    right.sides[1] = 2;
-                    secondary.add(rightKey);
-
-                }
-            }
-
-            if (s.ramps[1]) {
-                const leftXYZ = Voxels.adjacent(...xyz, [-1,0,0]);
-                const rightXYZ = Voxels.adjacent(...xyz, [1,0,0]);
-
-                if (Voxels.isValid(...leftXYZ) && !voxels.get(...leftXYZ)) {
-                    const leftKey = packKey(...leftXYZ);
-                    let left = this.get(leftKey);
-                    if (!left) left = this.add(leftKey);
-                    left.faces[2] = s.below;
-                    left.sides[2] = 2;
-                    secondary.add(leftKey);
-                }
-
-                if (Voxels.isValid(...rightXYZ) && !voxels.get(...rightXYZ)){
-                    const rightKey = packKey(...rightXYZ);
-                    let right = this.get(rightKey);
-                    if (!right) right = this.add(rightKey);
-                    right.faces[0] = s.below;
-                    right.sides[0] = 1;
-                    secondary.add(rightKey);
-                }
-            }
-
-            if (s.ramps[2]) {
-                const leftXYZ = Voxels.adjacent(...xyz, [0,-1,0]);
-                const rightXYZ = Voxels.adjacent(...xyz, [0,1,0]);
-
-                if (Voxels.isValid(...leftXYZ) && !voxels.get(...leftXYZ)) {
-                    const leftKey = packKey(...leftXYZ);
-                    let left = this.get(leftKey);
-                    if (!left) left = this.add(leftKey);
-                    left.faces[3] = s.below;
-                    left.sides[3] = 2;
-                    secondary.add(leftKey);
-                }
-
-                if (Voxels.isValid(...rightXYZ) && !voxels.get(...rightXYZ)){
-                    const rightKey = packKey(...rightXYZ);
-                    let right = this.get(rightKey);
-                    if (!right) right = this.add(rightKey);
-                    right.faces[1] = s.below;
-                    right.sides[1] = 1;
-                    secondary.add(rightKey);
-
-                }
-            }
-
-            if (s.ramps[3]) {
-                const leftXYZ = Voxels.adjacent(...xyz, [-1,0,0]);
-                const rightXYZ = Voxels.adjacent(...xyz, [1,0,0]);
-
-                if (Voxels.isValid(...leftXYZ) && !voxels.get(...leftXYZ)) {
-                    const leftKey = packKey(...leftXYZ);
-                    let left = this.get(leftKey);
-                    if (!left) left = this.add(leftKey);
-                    left.faces[2] = s.below;
-                    left.sides[2] = 1;
-                    secondary.add(leftKey);
-                }
-
-                if (Voxels.isValid(...rightXYZ) && !voxels.get(...rightXYZ)){
-                    const rightKey = packKey(...rightXYZ);
-                    let right = this.get(rightKey);
-                    if (!right) right = this.add(rightKey);
-                    right.faces[0] = s.below;
-                    right.sides[0] = 2;
-                    secondary.add(rightKey);
-
-                }
-            }
-        });
-
-        // Find Shims
-
-        secondary.forEach(key => {
-            const s = this.get(key);
-            s.findShims();
-        });
+        primary.forEach(key => { this.get(key).findFaces(voxels) });
+        primary.forEach(key => { this.get(key).findRamps(voxels); });
+        primary.forEach(key => { this.get(key).findCaps(voxels,this,secondary) });
+        primary.forEach(key => { this.get(key).findSides(voxels,this,secondary)});
+        secondary.forEach(key => {this.get(key).findShims();});
 
         // Cull floor & sides under ramps
 

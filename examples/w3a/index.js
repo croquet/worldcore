@@ -166,7 +166,7 @@ class MyModelRoot extends ModelRoot {
     }
 
     test() {
-        console.log("test");
+        // console.log("test");
         const wb = this.service("WorldBuilder");
         wb.build();
         const voxels = this.service("Voxels");
