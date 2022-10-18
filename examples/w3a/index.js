@@ -10,9 +10,34 @@ import kwark from "./assets/kwark.otf";
 import { Avatar, FPSAvatar } from "./src/Avatar";
 import { Voxels } from "./src/Voxels";
 import { Surfaces } from "./src/Surfaces";
+import { Stress } from "./src/Stress";
 import { WorldBuilder } from "./src/WorldBuilder";
 import { GodView } from "./src/GodView";
 import { MapView } from "./src/MapView";
+
+//------------------------------------------------------------------------------------------
+//-- Helper Functions -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// export function THREE_v3(x,y,z) { return new THREE.Vector3 (x,y,z) }
+// export function THREE_v2(x,y) { return new THREE.Vector2 (x,y) }
+// export function THREE_q(x,y,z,w) { return new THREE.Quaternion (x,y,z,w) }
+
+// export function THREE_m4(n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44) {
+//     const m = new THREE.Matrix4 ();
+//     m.set( n11, n12, n13, n14, n21, n22, n23, n24, n31, n32, n33, n34, n41, n42, n43, n44 );
+//     return m;
+//  }
+
+// export function v3(v) { return [v.x, v.y, v.z] }
+// export function v2(v) { return [v.x, v.y]}
+// export function q(q) { return [q.x, q.y, q.z, q.w ] }
+// export function m4(m) {  return [...m.elements] }
+
+// THREE.Vector3.prototype.elements = function() { return [this.x, this.y, this.z]};
+// THREE.Quaternion.prototype.elements = function() { return [this.x, this.y, this.z, this.w ]};
+
+
 
 
 //------------------------------------------------------------------------------------------
@@ -120,7 +145,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [Voxels, Surfaces, WorldBuilder];
+        return [Voxels, Stress, Surfaces, WorldBuilder];
     }
 
     init(...args) {
@@ -132,8 +157,9 @@ class MyModelRoot extends ModelRoot {
         const wb = this.service("WorldBuilder");
         const voxels = this.service("Voxels");
         wb.build();
-        const surfaces = this.service("Surfaces");
-        surfaces.rebuildAll();
+
+        // const surfaces = this.service("Surfaces");
+        // surfaces.rebuildAll();
 
 
         this.subscribe("input", "nDown", this.test)
@@ -169,11 +195,6 @@ class MyViewRoot extends ViewRoot {
         this.godView = new GodView(this.model);
         this.mapView = new MapView(this.model);
 
-        // this.subscribe("input", "pointerDown", this.ttt);
-        // this.subscribe("input", "pointerDown", this.ttt);
-
-        document.body.style.cursor = "pointer";
-        document.body.style.cursor = "not-allowed";
         document.body.style.cursor = "crosshair";
     }
 

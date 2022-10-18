@@ -3,6 +3,12 @@ import { viewRoot, WorldcoreView, Constants, THREE, v3_add, v3_multiply, ThreeRe
 import { LineBuilder, TriangleBuilder, TriBuilder } from "./Tools";
 import paper from ".././assets/paper.jpg";;
 
+Constants.color = {};
+Constants.color.lava = [1.0, 0.0, 0.0];
+Constants.color.rock = [0.7, 0.7, 0.7];
+Constants.color.dirt = [0.8, 0.4, 0.2];
+Constants.color.grass = [0.4, 0.8, 0.2];
+
 const e = 0.00001; // Offset to prevent floor error at voxel edges
 const a = e;
 const b = 1-e;
@@ -53,18 +59,18 @@ export class MapView extends WorldcoreView {
 
     color(type) {
         switch (type) {
-            case Constants.lava: return Constants.lavaColor;
-            case Constants.rock: return Constants.rockColor;
-            case Constants.dirt: return Constants.dirtColor;
+            case Constants.voxel.lava: return Constants.color.lava;
+            case Constants.voxel.rock: return Constants.color.rock;
+            case Constants.voxel.dirt: return Constants.color.dirt;
             default: return [1,0,1]; // Magenta for error
         }
     }
 
     topColor(type) {
         switch (type) {
-            case Constants.lava: return Constants.lavaColor;
-            case Constants.rock: return Constants.rockColor;
-            case Constants.dirt: return Constants.grassColor;
+            case Constants.voxel.lava: return Constants.color.lava;
+            case Constants.voxel.rock: return Constants.color.rock;
+            case Constants.voxel.dirt: return Constants.color.grass;
             default: return [1,0,1]; // Magenta for error
         }
     }

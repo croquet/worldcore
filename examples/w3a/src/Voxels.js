@@ -6,22 +6,20 @@ import { ModelService, Constants } from "@croquet/worldcore";
 
 Constants.sizeX = 32;
 Constants.sizeY = 32;
-Constants.sizeZ = 32;
+Constants.sizeZ = 16;
 
 Constants.scaleX = 5;
 Constants.scaleY = 5;
 Constants.scaleZ = 3;
 
-Constants.air = 0;
-Constants.base = 1;
-Constants.lava = 2;
-Constants.rock = 3;
-Constants.dirt = 4;
+Constants.voxel = {};
+Constants.voxel.air = 0;
+Constants.voxel.base = 1;
+Constants.voxel.lava = 2;
+Constants.voxel.rock = 3;
+Constants.voxel.dirt = 4;
 
-Constants.lavaColor = [1.0, 0.0, 0.0];
-Constants.rockColor = [0.7, 0.7, 0.7];
-Constants.dirtColor = [0.8, 0.4, 0.2];
-Constants.grassColor = [0.4, 0.8, 0.2];
+
 
 //------------------------------------------------------------------------------------------
 //-- Utility ------------------------------------------------------------------------------
@@ -98,7 +96,7 @@ class VoxelColumn {
 
     summit() {
         let h = 0;
-        const top = this.t.findLastIndex(type => type >= Constants.lava );
+        const top = this.t.findLastIndex(type => type >= 2 );
         this.c.forEach((count, index) => {
             if (index > top) return;
             h += count;
@@ -113,6 +111,9 @@ class VoxelColumn {
 //------------------------------------------------------------------------------------------
 
 export class Voxels extends ModelService {
+
+    // -- Static --------------------------------------------------------------------------
+
 
     static types() {
         return { "W3:VoxelColumn": VoxelColumn };
@@ -147,6 +148,9 @@ export class Voxels extends ModelService {
         return out;
     }
 
+    // -- Methods ------------------------------------------------------------------------------
+
+
     init() {
         super.init('Voxels');
         console.log("Voxels");
@@ -157,7 +161,7 @@ export class Voxels extends ModelService {
     }
 
     doSetVoxel(data) {
-        if (this.isValid(...data.xyz)) {
+        if (Voxels.canEdit(...data.xyz)) {
             this.set(...data.xyz, data.type);
         }
     }

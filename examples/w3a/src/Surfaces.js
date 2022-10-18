@@ -1,4 +1,4 @@
-import { ModelService, PM_ThreeVisible, Constants } from "@croquet/worldcore";
+import { ModelService, Constants } from "@croquet/worldcore";
 import { packKey, unpackKey, Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
@@ -101,6 +101,44 @@ class Surface {
             this.doubles[3] = this.below;
         }
 
+        // Eliminate doubles where the bottom corner points to a solid voxel
+
+        if (this.doubles[0]) {
+            const corner = Voxels.adjacent(...this.xyz, [1,1,0]);
+            if (Voxels.isValid(...corner) && voxels.get(...corner)){
+                this.doubles[0] = 0
+                this.ramps[0] = 0;
+                this.ramps[1] = 0;
+            }
+        }
+
+        if (this.doubles[1]) {
+            const corner = Voxels.adjacent(...this.xyz, [-1,1,0]);
+            if (Voxels.isValid(...corner) && voxels.get(...corner)){
+                this.doubles[1] = 0
+                this.ramps[1] = 0;
+                this.ramps[2] = 0;
+            }
+        }
+
+        if (this.doubles[2]) {
+            const corner = Voxels.adjacent(...this.xyz, [-1,-1,0]);
+            if (Voxels.isValid(...corner) && voxels.get(...corner)){
+                this.doubles[2] = 0
+                this.ramps[2] = 0;
+                this.ramps[3] = 0;
+            }
+        }
+
+        if (this.doubles[3]) {
+            const corner = Voxels.adjacent(...this.xyz, [1,-1,0]);
+            if (Voxels.isValid(...corner) && voxels.get(...corner)){
+                this.doubles[3] = 0
+                this.ramps[2] = 0;
+                this.ramps[0] = 0;
+            }
+        }
+
     }
 
     findShims() {
@@ -163,7 +201,7 @@ export class Surfaces extends ModelService {
         const primary = new Set();
 
         // Build primary set
-        voxels.forEach((x,y,z, t)=> {
+        voxels.forEach((x,y,z,t)=> {
             if (t>=2) return;
             const key = packKey(x,y,z);
             voxels.forAdjacent(x,y,z, (d,x,y,z,t) => {

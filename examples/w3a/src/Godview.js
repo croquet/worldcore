@@ -70,7 +70,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         const lookQ = q_multiply(pitchQ, yawQ);
 
         const xxx = Constants.scaleX * Constants.sizeX / 2;
-        this.translation = [xxx,-50,50];
+        this.translation = [0,-50,50];
         this.rotation = lookQ;
         this.updateCamera();
 
