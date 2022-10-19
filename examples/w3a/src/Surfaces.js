@@ -16,7 +16,7 @@ export class Surfaces extends ModelService {
         this.surfaces = new Map();
 
         this.subscribe("voxels", "load", this.rebuildAll)
-        this.subscribe("voxels", "set", this.rebuildAll)
+        this.subscribe("voxels", "set", this.rebuildSome)
     }
 
     elevation(x,y,z) {
@@ -40,6 +40,42 @@ export class Surfaces extends ModelService {
     // Removes a set of surfaces
     clip(keys) {
         keys.forEach(key=>{this.surfaces.delete(key)});
+    }
+
+    rebuildSome(data) {
+        const xyz = data.xyz
+        console.log(xyz);
+
+        const voxels = this.service("Voxels");
+        const zero = Voxels.boxSet(...xyz);
+        const primary = Voxels.boxSet(...xyz,2);
+        const secondary = new Set();
+
+        // Build primary set
+        // voxels.forBox(...xyz, (x,y,z,t) => primary.add(packKey(x,y,z)));
+
+        this.clip(zero);
+        zero.forEach(key => this.surfaces.set(key, new Surface(key)));
+
+        primary.forEach(key => { this.get(key).findFaces(voxels) });
+        primary.forEach(key => { this.get(key).findRamps(voxels); });
+        primary.forEach(key => { this.get(key).findCaps(voxels,this,secondary) });
+        primary.forEach(key => { this.get(key).findSides(voxels,this,secondary)});
+
+        secondary.forEach(key => {this.get(key).findShims();});
+
+        primary.forEach(key => { this.get(key).cullUnderRamps() });
+        primary.forEach(key => { this.get(key).cullUnderDoubles() });
+
+        secondary.forEach(key => {this.get(key).cullUnderShims();});
+        secondary.forEach(key => {this.get(key).cullDuplicateSides(this,secondary);});
+
+
+        // this.rebuildAll();
+
+        this.publish("surfaces", "rebuildAll");
+
+
     }
 
     rebuildAll() {
@@ -68,7 +104,6 @@ export class Surfaces extends ModelService {
 
         primary.forEach(key => { this.get(key).cullUnderRamps() });
         primary.forEach(key => { this.get(key).cullUnderDoubles() });
-
         secondary.forEach(key => {this.get(key).cullUnderShims();});
         secondary.forEach(key => {this.get(key).cullDuplicateSides(this,secondary);});
 
@@ -98,12 +133,13 @@ class Surface {
         this.key = key;
         this.floor = 0;
         this.ceiling = 0;
-        this.faces = [0,0,0,0,0,0];
+        this.faces = [0,0,0,0,0,0]; // type of adjacent voxel
         this.ramps = [0,0,0,0];
-        this.doubles = [0,0,0,0];
-        this.caps = [0,0,0,0];
-        this.sides = [0,0,0,0];
-        this.shims = [0,0,0,0];
+        this.doubles = [0,0,0,0];   // 2 perpendicular ramps replaced with a triangle
+        this.caps = [0,0,0,0];      // voxel below has a double
+        this.sides = [0,0,0,0];     // type of adjacent voxel or ramp
+        this.shapes = [0,0,0,0];    // 1 = left triangle, 2 = right triangle, 3 = square
+        this.shims = [0,0,0,0];     // Triangles bridging 2 triangular sides
     }
 
     get west() { return this.faces[0]; }
@@ -118,8 +154,9 @@ class Surface {
     get hasDouble() {return this.doubles.some(e => e)}
     get hasCap() {return this.caps.some(e => e)}
     get hasSide() {return this.sides.some(e => e)}
+    get hasShape() {return this.shapes.some(e => e)}
     get hasShim() {return this.shims.some(e => e)}
-    get isEmpty() { return !(this.floor || this.ceiling || this.hasFace || this.hasRamp || this.hasDouble || this.hasCap || this.hasSide || this.hasShim); }
+    get isEmpty() { return !(this.floor || this.ceiling || this.hasFace || this.hasRamp || this.hasDouble || this.hasCap || this.hasSide || hasShape || this.hasShim); }
 
     elevation(x,y) {
         const xx = 1-x;
@@ -145,10 +182,12 @@ class Surface {
 
     // Find adjacent solid voxels
     findFaces(voxels) {
+        if (voxels.get(...this.xyz) >=2) return; // Only air has faces
         voxels.forAdjacent(...this.xyz, (d,x,y,z,t) => {
             if(t<2) return;
             this.faces[d] = t
             this.sides[d] = t;
+            this.shapes[d] = 3;
             this.floor = this.below;
             this.ceiling = this.above;
         });
@@ -270,8 +309,8 @@ class Surface {
                 const left = surfaces.get(leftKey);
                 surfaces.set(leftKey, left);
                 secondary.add(leftKey);
-                left.faces[3] = this.below;
-                left.sides[3] = 1;
+                left.sides[3] = this.below;
+                left.shapes[3] = 1;
             }
 
             if (Voxels.isValid(...rightXYZ) && voxels.get(...rightXYZ)<2){
@@ -279,8 +318,8 @@ class Surface {
                 const right = surfaces.get(rightKey);
                 surfaces.set(rightKey, right);
                 secondary.add(rightKey);
-                right.faces[1] = this.below;
-                right.sides[1] = 2;
+                right.sides[1] = this.below;
+                right.shapes[1] = 2;
             }
 
         }
@@ -294,8 +333,8 @@ class Surface {
                 const left = surfaces.get(leftKey);
                 surfaces.set(leftKey, left);
                 secondary.add(leftKey);
-                left.faces[2] = this.below;
-                left.sides[2] = 2;
+                left.sides[2] = this.below;
+                left.shapes[2] = 2;
             }
 
             if (Voxels.isValid(...rightXYZ) && voxels.get(...rightXYZ)<2){
@@ -303,8 +342,8 @@ class Surface {
                 const right = surfaces.get(rightKey);
                 surfaces.set(rightKey, right);
                 secondary.add(rightKey);
-                right.faces[0] = this.below;
-                right.sides[0] = 1;
+                right.sides[0] = this.below;
+                right.shapes[0] = 1;
             }
         }
 
@@ -317,8 +356,8 @@ class Surface {
                 const left = surfaces.get(leftKey);
                 surfaces.set(leftKey, left);
                 secondary.add(leftKey);
-                left.faces[3] = this.below;
-                left.sides[3] = 2;
+                left.sides[3] = this.below;
+                left.shapes[3] = 2;
             }
 
             if (Voxels.isValid(...rightXYZ) && voxels.get(...rightXYZ)<2){
@@ -326,8 +365,8 @@ class Surface {
                 const right = surfaces.get(rightKey);
                 surfaces.set(rightKey, right);
                 secondary.add(rightKey);
-                right.faces[1] = this.below;
-                right.sides[1] = 1;
+                right.sides[1] = this.below;
+                right.shapes[1] = 1;
             }
         }
 
@@ -340,8 +379,8 @@ class Surface {
                 const left = surfaces.get(leftKey);
                 surfaces.set(leftKey, left);
                 secondary.add(leftKey);
-                left.faces[2] = this.below;
-                left.sides[2] = 1;
+                left.sides[2] = this.below;
+                left.shapes[2] = 1;
             }
 
             if (Voxels.isValid(...rightXYZ) && voxels.get(...rightXYZ)<2){
@@ -349,8 +388,8 @@ class Surface {
                 const right = surfaces.get(rightKey);
                 surfaces.set(rightKey, right);
                 secondary.add(rightKey);
-                right.faces[0] = this.below;
-                right.sides[0] = 2;
+                right.sides[0] = this.below;
+                right.shapes[0] = 2;
             }
         }
 
@@ -359,60 +398,64 @@ class Surface {
     // Add shims to connect two triangular sides
     findShims() {
         if (this.floor) {
-            if (this.sides[0] == 1  && this.sides[1] ==2) this.shims[0] = this.floor;
-            if (this.sides[1] == 1  && this.sides[2] ==2) this.shims[1] = this.floor;
-            if (this.sides[2] == 1 && this.sides[3] ==2) this.shims[2] = this.floor;
-            if (this.sides[3] == 1 && this.sides[0] ==2) this.shims[3] = this.floor;
+            if (this.shapes[0] == 1  && this.shapes[1] == 2) this.shims[0] = this.floor;
+            if (this.shapes[1] == 1  && this.shapes[2] == 2) this.shims[1] = this.floor;
+            if (this.shapes[2] == 1 && this.shapes[3] == 2) this.shims[2] = this.floor;
+            if (this.shapes[3] == 1 && this.shapes[0] == 2) this.shims[3] = this.floor;
         }
-        if (this.caps[0] && this.sides[0] == 1  && this.sides[1] == 2) this.shims[0] = this.caps[0];
-        if (this.caps[1] && this.sides[1] == 1  && this.sides[2] == 2) this.shims[1] = this.caps[1];
-        if (this.caps[2] && this.sides[2] == 1 && this.sides[3] == 2) this.shims[2] = this.caps[2];
-        if (this.caps[3] && this.sides[3] == 1 && this.sides[0] == 2) this.shims[3] = this.caps[3];
+        if (this.caps[0] && this.shapes[0] == 1  && this.shapes[1] == 2) this.shims[0] = this.caps[0];
+        if (this.caps[1] && this.shapes[1] == 1  && this.shapes[2] == 2) this.shims[1] = this.caps[1];
+        if (this.caps[2] && this.shapes[2] == 1 && this.shapes[3] == 2) this.shims[2] = this.caps[2];
+        if (this.caps[3] && this.shapes[3] == 1 && this.shapes[0] == 2) this.shims[3] = this.caps[3];
     }
 
     //-- Culling -------------------------------------------------------------------------------
 
     // Remove walls and floors under ramps
     cullUnderRamps() {
-        if (this.ramps[0]) {this.sides[0] = 0; this.floor = 0};
-        if (this.ramps[1]) {this.sides[1] = 0; this.floor = 0};
-        if (this.ramps[2]) {this.sides[2] = 0; this.floor = 0};
-        if (this.ramps[3]) {this.sides[3] = 0; this.floor = 0};
+        if (this.ramps[0]) {this.sides[0] = this.shapes[0]= this.floor = 0};
+        if (this.ramps[1]) {this.sides[1] = this.shapes[1]= this.floor = 0};
+        if (this.ramps[2]) {this.sides[2] = this.shapes[2]= this.floor = 0};
+        if (this.ramps[3]) {this.sides[3] = this.shapes[3]= this.floor = 0};
     }
 
-    // Remove ramps and floors under double ramps
+    // Remove ramps under double ramps
     cullUnderDoubles() {
-        if (this.doubles[0]) { this.ramps[0] = 0; this.ramps[1] = 0;};
-        if (this.doubles[1]) { this.ramps[1] = 0; this.ramps[2] = 0;};
-        if (this.doubles[2]) { this.ramps[2] = 0; this.ramps[3] = 0;};
-        if (this.doubles[3]) { this.ramps[3] = 0; this.ramps[0] = 0;};
+        if (this.doubles[0]) { this.ramps[0] = this.ramps[1] = 0;};
+        if (this.doubles[1]) { this.ramps[1] = this.ramps[2] = 0;};
+        if (this.doubles[2]) { this.ramps[2] = this.ramps[3] = 0;};
+        if (this.doubles[3]) { this.ramps[3] = this.ramps[0] = 0;};
     }
 
     // Remove sides and caps under shims
     cullUnderShims(){
-        if (this.shims[0]) { this.caps[0] = 0; this.sides[0] = 0; this.sides[1] = 0;};
-        if (this.shims[1]) { this.caps[1] = 0; this.sides[1] = 0; this.sides[2] = 0;};
-        if (this.shims[2]) { this.caps[2] = 0; this.sides[2] = 0; this.sides[3] = 0;};
-        if (this.shims[3]) { this.caps[3] = 0; this.sides[3] = 0; this.sides[0] = 0;};
+        if (this.shims[0]) { this.caps[0] = this.sides[0] = this.shapes[1] = 0;};
+        if (this.shims[1]) { this.caps[1] = this.sides[1] = this.shapes[2] = 0;};
+        if (this.shims[2]) { this.caps[2] = this.sides[2] = this.shapes[3] = 0;};
+        if (this.shims[3]) { this.caps[3] = this.sides[3] = this.shapes[0] = 0;};
     }
 
     // Remove triangular sides that face each other
     cullDuplicateSides(surfaces, secondary){
-        if (this.sides[0]){
+        if (this.shapes[0]){
             const aXYZ = Voxels.adjacent(...this.xyz, [-1,0,0]);
             const aKey = packKey(...aXYZ);
             if (secondary.has(aKey)) {
                 const adjacent = surfaces.get(aKey);
-                if (this.sides[0] == 1 && adjacent.sides[2] == 2 || this.sides[0] == 2 && adjacent.sides[2] == 1) { this.sides[0] = 0; adjacent.sides[2] = 0 };
+                if (this.shapes[0] == 1 && adjacent.shapes[2] == 2 || this.shapes[0] == 2 && adjacent.shapes[2] == 1) {
+                    this.sides[0] = this.shapes[0] = adjacent.sides[2] = adjacent.shapes[2] = 0
+                };
             }
         }
 
-        if (this.sides[1]){
+        if (this.shapes[1]){
             const aXYZ = Voxels.adjacent(...this.xyz, [0,-1,0]);
             const aKey = packKey(...aXYZ);
             if (secondary.has(aKey)) {
                 const adjacent = surfaces.get(aKey);
-                if (this.sides[1] == 1 && adjacent.sides[3] == 2 || this.sides[1] == 2 && adjacent.sides[3] == 1) { this.sides[1] = 0; adjacent.sides[3] = 0 };
+                if (this.shapes[1] == 1 && adjacent.shapes[3] == 2 || this.shapes[1] == 2 && adjacent.shapes[3] == 1) {
+                    this.sides[1] = this.shapes[1] = adjacent.sides[3] = adjacent.shapes[3] = 0
+                };
             }
         }
     }

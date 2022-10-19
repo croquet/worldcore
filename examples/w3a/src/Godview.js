@@ -123,6 +123,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         if (e.button === 2) {
             this.service("InputManager").enterPointerLock();
         } else{
+            this.raycast(e.xy);
             switch (this.editMode) {
                 case "fill": this.onFill(); break;
                 case "dig": this.onDig(); break;
@@ -150,29 +151,35 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
     }
 
     doPointerMove(e) {
-        return;
-        const windowX = ( e.xy[0] / window.innerWidth ) * 2 - 1;
-        const windowY = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
+        this.raycast(e.xy);
+    }
+
+    raycast(xy) {
         const render = this.service("ThreeRenderManager");
-        const surfaces = this.modelService("Surfaces");
+        this.pointerHit = null
+
         if (!render) return;
         if (!viewRoot.mapView) return;
+
+        const x = ( xy[0] / window.innerWidth ) * 2 - 1;
+        const y = - ( xy[1] / window.innerHeight ) * 2 + 1;
+
         const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera({x: windowX, y: windowY}, render.camera);
-        this.pointerHit = null
-        let hits = raycaster.intersectObjects( viewRoot.mapView.collider );
+        raycaster.setFromCamera({x: x, y: y}, render.camera);
+        const hits = raycaster.intersectObjects( viewRoot.mapView.collider );
+
         if (hits && hits[0]) {
             const p = hits[0].point;
             const xyz = [ p.x / Constants.scaleX, p.y / Constants.scaleY, p.z / Constants.scaleZ ];
             const voxel = v3_floor(xyz);
             const fraction = v3_sub(xyz,voxel);
-            this.pointerHit = { xyz, voxel, fraction};
+            this.pointerHit = {xyz, voxel, fraction};
         }
     }
 
     onFill() {
         if (!this.pointerHit) return;
-        this.publish("edit", "setVoxel",{xyz: this.pointerHit.voxel, type: Constants.dirt});
+        this.publish("edit", "setVoxel",{xyz: this.pointerHit.voxel, type: Constants.voxel.dirt});
     }
 
     onDig() {
@@ -185,7 +192,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         if (this.pointerHit.fraction[1]+e > 1) xyz = Voxels.adjacent(...this.pointerHit.voxel, [0,1,0]);
         if (this.pointerHit.fraction[2]-e < 0) xyz = Voxels.adjacent(...this.pointerHit.voxel, [0,0,-1]);
 
-        if (Voxels.canEdit(...xyz)) this.publish("edit", "setVoxel",{xyz, type: Constants.air});
+        if (Voxels.canEdit(...xyz)) this.publish("edit", "setVoxel",{xyz, type: Constants.voxel.air});
     }
 
     onWheel(data) {

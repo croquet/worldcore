@@ -114,8 +114,8 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 0.5 );
         sun.position.set(200, 100, 200);
         sun.castShadow = true;
-        sun.shadow.mapSize.width = 2048;
-        sun.shadow.mapSize.height = 2048;
+        sun.shadow.mapSize.width = 4096;
+        sun.shadow.mapSize.height = 4096;
         sun.shadow.camera.near = 0;
         sun.shadow.camera.far = 500;
 
@@ -123,8 +123,8 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         sun.shadow.camera.bottom = -200;
         sun.shadow.camera.left = -200;
         sun.shadow.camera.right = 200;
-        sun.shadow.bias = -0.002;
-        sun.shadow.radius = 2
+        sun.shadow.bias = -0.001;
+        sun.shadow.radius = 3
         sun.shadow.blurSamples = 3
         group.add(sun);
 
@@ -150,7 +150,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model");
+        console.log("Start root model!!");
         this.level = LevelActor.create();
 
 

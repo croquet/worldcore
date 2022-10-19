@@ -148,6 +148,27 @@ export class Voxels extends ModelService {
         return out;
     }
 
+    // Returns a box of keys centered on xyz
+    static boxSet(x,y,z,s=1) {
+        const out = new Set();
+        const x0 = Math.max(0, x-s);
+        const y0 = Math.max(0, y-s);
+        const z0 = Math.max(0, z-s);
+
+        const x1 = Math.min(Constants.sizeX-1, x+s)
+        const y1 = Math.min(Constants.sizeY-1, y+s)
+        const z1 = Math.min(Constants.sizeZ-1, z+s)
+
+        for( x = x0; x<=x1; x++) {
+            for( y = y0; y<=y1; y++) {
+                for( z=z0; z<=z1; z++) {
+                    out.add(packKey(x,y,z));
+                }
+            }
+        }
+        return out;
+    }
+
     // -- Methods ------------------------------------------------------------------------------
 
 
@@ -207,6 +228,38 @@ export class Voxels extends ModelService {
         if (y1 < Constants.sizeY) callback(3, x,y1,z, this.get(x,y1,z));
         if (z0 >= 0) callback(4,  x,y,z0, this.get(x,y,z0));
         if (z1 < Constants.sizeZ) callback(5, x,y,z1, this.get(x,y,z1));
+    }
+
+    forBox(x,y,z, s=1,callback){
+        const x0 = Math.max(0, x-s);
+        const y0 = Math.max(0, y-s);
+        const z0 = Math.max(0, z-s);
+
+        const x1 = Math.min(Constants.sizeX-1, x+s)
+        const y1 = Math.min(Constants.sizeY-1, y+s)
+        const z1 = Math.min(Constants.sizeZ-1, z+s)
+
+        for( x = x0; x<=x1; x++) {
+            for( y = y0; y<=y1; y++) {
+                const e = this.voxels[x][y].expand();
+                for( z=z0; z<=z1; z++) {
+                    callback(x,y,z,e[z]);
+                }
+            }
+
+        }
+
+    }
+
+    interiorSlice(z) { // Returns a 2d array though the voxels. Only includes voxels with solid above them
+        const out = Array.from(Array(Constants.sizeX), ()=>Array.from(Array(Constants.sizeY),0));
+        for (let x = 0; x < Constants.sizeX; x++) {
+            for (let y = 0; y < Constants.sizeY; y++) {
+                const e = this.voxels[x][y].expand();
+                if (e[z+1] >= [2]) out[x][y] = e[z];
+            }
+        }
+        return out;
     }
 
     edgeSummit() { // Finds the maximum height of the voxels on the outside border
