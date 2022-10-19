@@ -1,7 +1,35 @@
 import { viewRoot, WorldcoreView, Constants, THREE, v3_add, v3_multiply, ThreeRenderManager } from "@croquet/worldcore";
 
 import { LineBuilder, TriangleBuilder, TriBuilder } from "./Tools";
-import paper from ".././assets/paper.jpg";;
+import paper from ".././assets/paper.jpg";
+
+//------------------------------------------------------------------------------------------
+//-- Globals -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+const triangleMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(1,1,1)});
+triangleMaterial.polygonOffset = true;
+triangleMaterial.polygonOffsetFactor = 1;
+triangleMaterial.polygonOffsetUnits = 1;
+triangleMaterial.side = THREE.DoubleSide;
+triangleMaterial.shadowSide = THREE.DoubleSide;
+triangleMaterial.vertexColors = true;
+
+const lineMaterial = new THREE.LineBasicMaterial( {color: new THREE.Color(0.9,0.9,0.9)} );
+lineMaterial.blending = THREE.MultiplyBlending;
+lineMaterial.blendSrc = THREE.OneMinusSrcColorFactor;
+lineMaterial.blendDst = THREE.DstColorFactor;
+lineMaterial.polygonOffset = true;
+lineMaterial.polygonOffsetFactor = -1;
+lineMaterial.polygonOffsetUnits = -1;
+
+//------------------------------------------------------------------------------------------
+//-- Helper Functions ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+const e = 0.00001; // Offset to prevent floor error at voxel edges
+const a = e;
+const b = 1-e;
 
 Constants.color = {};
 Constants.color.lava = [1.0, 0.0, 0.0];
@@ -9,9 +37,553 @@ Constants.color.rock = [0.7, 0.7, 0.7];
 Constants.color.dirt = [0.8, 0.4, 0.2];
 Constants.color.grass = [0.4, 0.8, 0.2];
 
-const e = 0.00001; // Offset to prevent floor error at voxel edges
-const a = e;
-const b = 1-e;
+function sideColor(type) {
+    switch (type) {
+        case Constants.voxel.lava: return Constants.color.lava;
+        case Constants.voxel.rock: return Constants.color.rock;
+        case Constants.voxel.dirt: return Constants.color.dirt;
+        default: return [1,0,1]; // Magenta for error
+    }
+}
+
+function topColor(type) {
+    switch (type) {
+        case Constants.voxel.lava: return Constants.color.lava;
+        case Constants.voxel.rock: return Constants.color.rock;
+        case Constants.voxel.dirt: return Constants.color.grass;
+        default: return [1,0,1]; // Magenta for error
+    }
+}
+
+//------------------------------------------------------------------------------------------
+//-- MapLayer ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class MapLayer extends WorldcoreView {
+    constructor(z) {
+        super(viewRoot.model)
+        this.z = z;
+        this.keys = new Set();
+
+        this.tb = new TriangleBuilder();
+        this.lb = new LineBuilder();
+    }
+
+    destroy() {
+        super.destroy();
+        this.disposeMesh();
+    }
+
+    clear() {
+        this.keys.clear();
+        this.disposeMesh();
+    }
+
+    addKey(key) {
+        this.keys.add(key)
+    }
+
+    disposeMesh(){
+        const render = this.service("ThreeRenderManager");
+        if (this.mesh) render.scene.remove(this.mesh);
+        if (this.lines) render.scene.remove(this.lines);
+        if (this.triangleGeometry) this.triangleGeometry.dispose();
+        if (this.lineGeometry) this.lineGeometry.dispose();
+    }
+
+    build() {
+        const surfaces = this.modelService("Surfaces");
+        const render = this.service("ThreeRenderManager");
+
+        this.disposeMesh();
+
+        this.tb.clear();
+        this.lb.clear();
+
+        this.keys.forEach(key=>{
+            const surface = surfaces.get(key)
+            this.buildFloor(surface);
+            this.buildCeiling(surface);
+            this.buildRamps(surface);
+            this.buildDoubles(surface);
+            this.buildCaps(surface);
+            this.buildSides(surface);
+            this.buildShims(surface);
+        });
+
+        this.triangleGeometry = this.tb.build();
+        this.lineGeometry = this.lb.build();
+
+        this.mesh = new THREE.Mesh( this.triangleGeometry, triangleMaterial );
+        this.mesh.receiveShadow = true;
+        this.mesh.castShadow = true;
+        this.lines  = new THREE.LineSegments(this.lineGeometry, lineMaterial);
+
+        render.scene.add(this.mesh);
+        render.scene.add(this.lines);
+    }
+
+    buildFloor(surface) {
+        if (!surface.floor) return;
+        const xyz = surface.xyz;
+        const color = topColor(surface.floor);
+        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+        const vertices = [];
+        const uvs = [];
+        vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+        vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+        vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+        vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+        uvs.push([0,0]);
+        uvs.push([1,0]);
+        uvs.push([1,1]);
+        uvs.push([0,1]);
+        this.tb.addFace(vertices, uvs, color);
+        this.lb.addLoop(vertices);
+    }
+
+    buildCeiling(surface) {
+        if (!surface.ceiling) return;
+        const xyz = surface.xyz;
+        const color = sideColor(surface.ceiling);
+        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+        const vertices = [];
+        const uvs = [];
+        vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+        vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+        vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+        vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+        uvs.push([0,0]);
+        uvs.push([1,0]);
+        uvs.push([1,1]);
+        uvs.push([0,1]);
+        this.tb.addFace(vertices, uvs, color);
+        this.lb.addLoop(vertices);
+    }
+
+    buildRamps(surface) {
+        const xyz = surface.xyz;
+        const color = topColor(surface.below);
+        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+
+        if (surface.ramps[0]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([1,1]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        };
+        if (surface.ramps[1]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[0,b,a]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([1,1]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        };
+        if (surface.ramps[2]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([1,1]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        };
+        if (surface.ramps[3]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([1,1]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        };
+    }
+
+    buildDoubles(surface) {
+        const xyz = surface.xyz;
+        const color = topColor(surface.below);
+        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+
+        if (surface.doubles[0]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        };
+
+        if (surface.doubles[1]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        };
+
+        if (surface.doubles[2]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[0,b,b]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        };
+
+        if (surface.doubles[3]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        };
+    }
+
+    buildCaps(surface) {
+        const xyz = surface.xyz;
+        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+
+        if (surface.caps[0]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, topColor(surface.caps[0]));
+            this.lb.addLoop(vertices);
+        }
+
+        if (surface.caps[1]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, topColor(surface.caps[1]));
+            this.lb.addLoop(vertices);
+        }
+
+        if (surface.caps[2]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, topColor(surface.caps[2]));
+            this.lb.addLoop(vertices);
+        }
+
+        if (surface.caps[3]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, topColor(surface.caps[3]));
+            this.lb.addLoop(vertices);
+        }
+
+    }
+
+    buildSides(surface) {
+        const xyz = surface.xyz;
+        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+
+        if (surface.sides[0]) {
+            const vertices = [];
+            const uvs = [];
+            if (surface.sides[0] === 1 ) {
+                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+                uvs.push([0,0]);
+                uvs.push([1,0]);
+                uvs.push([0,1]);
+            } else if (surface.sides[0] === 2 ) {
+                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+                uvs.push([0,0]);
+                uvs.push([1,0]);
+                uvs.push([0,1]);
+            } else {
+                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+                uvs.push([0,0]);
+                uvs.push([1,0]);
+                uvs.push([1,1]);
+                uvs.push([0,1]);
+            }
+            this.tb.addFace(vertices, uvs, sideColor(surface.faces[0]));
+            this.lb.addLoop(vertices);
+        }
+
+        if (surface.sides[1]) {
+            const vertices = [];
+            const uvs = [];
+            if (surface.sides[1] === 1 ) {
+                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+                uvs.push([0,0]);
+                uvs.push([1,0]);
+                uvs.push([0,1]);
+            } else if (surface.sides[1] === 2 ) {
+                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+                uvs.push([0,0]);
+                uvs.push([1,0]);
+                uvs.push([0,1]);
+            } else {
+                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+                uvs.push([0,0]);
+                uvs.push([1,0]);
+                uvs.push([1,1]);
+                uvs.push([0,1]);
+            }
+            this.tb.addFace(vertices, uvs, sideColor(surface.faces[1]));
+            this.lb.addLoop(vertices);
+        }
+
+        if (surface.sides[2]) {
+            const vertices = [];
+            const uvs = [];
+            if (surface.sides[2] === 1 ) {
+                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+                uvs.push([0,0]);
+                uvs.push([1,0]);
+                uvs.push([0,1]);
+            } else if (surface.sides[2] === 2 ) {
+                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+                uvs.push([0,0]);
+                uvs.push([1,0]);
+                uvs.push([0,1]);
+            } else {
+                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+                uvs.push([0,0]);
+                uvs.push([1,0]);
+                uvs.push([1,1]);
+                uvs.push([0,1]);
+            }
+            this.tb.addFace(vertices, uvs, sideColor(surface.faces[2]));
+            this.lb.addLoop(vertices);
+        }
+
+        if (surface.sides[3]) {
+            const vertices = [];
+            const uvs = [];
+            if (surface.sides[3] === 1 ) {
+                vertices.push(v3_multiply(v3_add(xyz,[0,b,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+                uvs.push([0,0]);
+                uvs.push([1,0]);
+                uvs.push([0,1]);
+            } else if (surface.sides[3] === 2 ) {
+                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+                uvs.push([0,0]);
+                uvs.push([1,0]);
+                uvs.push([0,1]);
+            } else {
+                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+                vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+                uvs.push([0,0]);
+                uvs.push([1,0]);
+                uvs.push([1,1]);
+                uvs.push([0,1]);
+            }
+            this.tb.addFace(vertices, uvs, sideColor(surface.faces[3]));
+            this.lb.addLoop(vertices);
+        }
+
+    }
+
+    buildShims(surface) {
+        const xyz = surface.xyz;
+        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+
+        if (surface.shims[0]) {
+            const vertices = [];
+            const uvs = [];
+
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, topColor(surface.shims[0]));
+            this.lb.addLoop(vertices);
+        }
+
+        if (surface.shims[1]) {
+            const vertices = [];
+            const uvs = [];
+
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, topColor(surface.shims[1]));
+            this.lb.addLoop(vertices);
+        }
+
+        if (surface.shims[2]) {
+            const vertices = [];
+            const uvs = [];
+
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, topColor(surface.shims[2]));
+            this.lb.addLoop(vertices);
+        }
+
+        if (surface.shims[3]) {
+            const vertices = [];
+            const uvs = [];
+
+            vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, topColor(surface.shims[3]));
+            this.lb.addLoop(vertices);
+        }
+
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- MapView -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class MapViewX extends WorldcoreView {
+    constructor() {
+        super(viewRoot.model)
+        console.log("map view");
+        this.layers = [Constants.sizeZ];
+        for (let z = 0; z < Constants.sizeZ; z++) {
+            this.layers[z] = new MapLayer(z);
+        }
+
+        this.subscribe("surfaces", "rebuildAll", this.buildAll);
+    }
+
+    destroy() {
+        super.destroy()
+        this.layers.forEach(layer => layer.destroy());
+    }
+
+    buildAll() {
+        const surfaces = this.modelService("Surfaces");
+        surfaces.surfaces.forEach((surface, key) => {
+            const z = key & 0x3FF;
+            this.layers[z].addKey(key)
+        });
+        this.layers.forEach(layer => layer.build());
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export class MapView extends WorldcoreView {
     constructor() {
@@ -282,421 +854,421 @@ export class MapView extends WorldcoreView {
         render.scene.add( this.frameLines);
     }
 
-    buildFloor(surface) {
-        if (!surface.floor) return;
-        const xyz = surface.xyz;
-        const color = this.topColor(surface.floor);
-        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
-        const vertices = [];
-        const uvs = [];
-        vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-        vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-        vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-        vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-        uvs.push([0,0]);
-        uvs.push([1,0]);
-        uvs.push([1,1]);
-        uvs.push([0,1]);
-        this.tb.addFace(vertices, uvs, color);
-        this.lb.addLoop(vertices);
-    }
+    // buildFloor(surface) {
+    //     if (!surface.floor) return;
+    //     const xyz = surface.xyz;
+    //     const color = this.topColor(surface.floor);
+    //     const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+    //     const vertices = [];
+    //     const uvs = [];
+    //     vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //     vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //     vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //     vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+    //     uvs.push([0,0]);
+    //     uvs.push([1,0]);
+    //     uvs.push([1,1]);
+    //     uvs.push([0,1]);
+    //     this.tb.addFace(vertices, uvs, color);
+    //     this.lb.addLoop(vertices);
+    // }
 
-    buildCeiling(surface) {
-        if (!surface.ceiling) return;
-        const xyz = surface.xyz;
-        const color = this.color(surface.ceiling);
-        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
-        const vertices = [];
-        const uvs = [];
-        vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-        vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-        vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-        vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-        uvs.push([0,0]);
-        uvs.push([1,0]);
-        uvs.push([1,1]);
-        uvs.push([0,1]);
-        this.tb.addFace(vertices, uvs, color);
-        this.lb.addLoop(vertices);
-    }
+    // buildCeiling(surface) {
+    //     if (!surface.ceiling) return;
+    //     const xyz = surface.xyz;
+    //     const color = this.color(surface.ceiling);
+    //     const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+    //     const vertices = [];
+    //     const uvs = [];
+    //     vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+    //     vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+    //     vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+    //     vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+    //     uvs.push([0,0]);
+    //     uvs.push([1,0]);
+    //     uvs.push([1,1]);
+    //     uvs.push([0,1]);
+    //     this.tb.addFace(vertices, uvs, color);
+    //     this.lb.addLoop(vertices);
+    // }
 
-    buildRamps(surface) {
-        const xyz = surface.xyz;
-        const color = this.topColor(surface.below);
-        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+    // buildRamps(surface) {
+    //     const xyz = surface.xyz;
+    //     const color = this.topColor(surface.below);
+    //     const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
 
-        if (surface.ramps[0]) {
-            const vertices = [];
-            const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([1,1]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, color);
-            this.lb.addLoop(vertices);
-        };
-        if (surface.ramps[1]) {
-            const vertices = [];
-            const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[0,b,a]),s));
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([1,1]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, color);
-            this.lb.addLoop(vertices);
-        };
-        if (surface.ramps[2]) {
-            const vertices = [];
-            const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([1,1]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, color);
-            this.lb.addLoop(vertices);
-        };
-        if (surface.ramps[3]) {
-            const vertices = [];
-            const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([1,1]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, color);
-            this.lb.addLoop(vertices);
-        };
-    }
+    //     if (surface.ramps[0]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([1,1]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, color);
+    //         this.lb.addLoop(vertices);
+    //     };
+    //     if (surface.ramps[1]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[0,b,a]),s));
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([1,1]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, color);
+    //         this.lb.addLoop(vertices);
+    //     };
+    //     if (surface.ramps[2]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([1,1]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, color);
+    //         this.lb.addLoop(vertices);
+    //     };
+    //     if (surface.ramps[3]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([1,1]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, color);
+    //         this.lb.addLoop(vertices);
+    //     };
+    // }
 
-    buildDoubles(surface) {
-        const xyz = surface.xyz;
-        const color = this.topColor(surface.below);
-        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+    // buildDoubles(surface) {
+    //     const xyz = surface.xyz;
+    //     const color = this.topColor(surface.below);
+    //     const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
 
-        if (surface.doubles[0]) {
-            const vertices = [];
-            const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s)); // xxx
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, color);
-            this.lb.addLoop(vertices);
-        };
+    //     if (surface.doubles[0]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s)); // xxx
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, color);
+    //         this.lb.addLoop(vertices);
+    //     };
 
-        if (surface.doubles[1]) {
-            const vertices = [];
-            const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, color);
-            this.lb.addLoop(vertices);
-        };
+    //     if (surface.doubles[1]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, color);
+    //         this.lb.addLoop(vertices);
+    //     };
 
-        if (surface.doubles[2]) {
-            const vertices = [];
-            const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[0,b,b]),s));
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, color);
-            this.lb.addLoop(vertices);
-        };
+    //     if (surface.doubles[2]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[0,b,b]),s));
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, color);
+    //         this.lb.addLoop(vertices);
+    //     };
 
-        if (surface.doubles[3]) {
-            const vertices = [];
-            const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, color);
-            this.lb.addLoop(vertices);
-        };
-    }
+    //     if (surface.doubles[3]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, color);
+    //         this.lb.addLoop(vertices);
+    //     };
+    // }
 
-    buildCaps(surface) {
-        const xyz = surface.xyz;
-        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+    // buildCaps(surface) {
+    //     const xyz = surface.xyz;
+    //     const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
 
-        if (surface.caps[0]) {
-            const vertices = [];
-            const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, this.topColor(surface.caps[0]));
-            this.lb.addLoop(vertices);
-        }
+    //     if (surface.caps[0]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, this.topColor(surface.caps[0]));
+    //         this.lb.addLoop(vertices);
+    //     }
 
-        if (surface.caps[1]) {
-            const vertices = [];
-            const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, this.topColor(surface.caps[1]));
-            this.lb.addLoop(vertices);
-        }
+    //     if (surface.caps[1]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, this.topColor(surface.caps[1]));
+    //         this.lb.addLoop(vertices);
+    //     }
 
-        if (surface.caps[2]) {
-            const vertices = [];
-            const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, this.topColor(surface.caps[2]));
-            this.lb.addLoop(vertices);
-        }
+    //     if (surface.caps[2]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, this.topColor(surface.caps[2]));
+    //         this.lb.addLoop(vertices);
+    //     }
 
-        if (surface.caps[3]) {
-            const vertices = [];
-            const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, this.topColor(surface.caps[3]));
-            this.lb.addLoop(vertices);
-        }
+    //     if (surface.caps[3]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, this.topColor(surface.caps[3]));
+    //         this.lb.addLoop(vertices);
+    //     }
 
-    }
+    // }
 
-    buildSides(surface) {
-        const xyz = surface.xyz;
-        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+    // buildSides(surface) {
+    //     const xyz = surface.xyz;
+    //     const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
 
-        if (surface.sides[0]) {
-            const vertices = [];
-            const uvs = [];
-            if (surface.sides[0] === 1 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-                uvs.push([0,0]);
-                uvs.push([1,0]);
-                uvs.push([0,1]);
-            } else if (surface.sides[0] === 2 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-                uvs.push([0,0]);
-                uvs.push([1,0]);
-                uvs.push([0,1]);
-            } else {
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-                uvs.push([0,0]);
-                uvs.push([1,0]);
-                uvs.push([1,1]);
-                uvs.push([0,1]);
-            }
-            this.tb.addFace(vertices, uvs, this.color(surface.faces[0]));
-            this.lb.addLoop(vertices);
-        }
+    //     if (surface.sides[0]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         if (surface.sides[0] === 1 ) {
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+    //             uvs.push([0,0]);
+    //             uvs.push([1,0]);
+    //             uvs.push([0,1]);
+    //         } else if (surface.sides[0] === 2 ) {
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+    //             uvs.push([0,0]);
+    //             uvs.push([1,0]);
+    //             uvs.push([0,1]);
+    //         } else {
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+    //             uvs.push([0,0]);
+    //             uvs.push([1,0]);
+    //             uvs.push([1,1]);
+    //             uvs.push([0,1]);
+    //         }
+    //         this.tb.addFace(vertices, uvs, this.color(surface.faces[0]));
+    //         this.lb.addLoop(vertices);
+    //     }
 
-        if (surface.sides[1]) {
-            const vertices = [];
-            const uvs = [];
-            if (surface.sides[1] === 1 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-                uvs.push([0,0]);
-                uvs.push([1,0]);
-                uvs.push([0,1]);
-            } else if (surface.sides[1] === 2 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-                uvs.push([0,0]);
-                uvs.push([1,0]);
-                uvs.push([0,1]);
-            } else {
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-                uvs.push([0,0]);
-                uvs.push([1,0]);
-                uvs.push([1,1]);
-                uvs.push([0,1]);
-            }
-            this.tb.addFace(vertices, uvs, this.color(surface.faces[1]));
-            this.lb.addLoop(vertices);
-        }
+    //     if (surface.sides[1]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         if (surface.sides[1] === 1 ) {
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+    //             uvs.push([0,0]);
+    //             uvs.push([1,0]);
+    //             uvs.push([0,1]);
+    //         } else if (surface.sides[1] === 2 ) {
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //             uvs.push([0,0]);
+    //             uvs.push([1,0]);
+    //             uvs.push([0,1]);
+    //         } else {
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+    //             uvs.push([0,0]);
+    //             uvs.push([1,0]);
+    //             uvs.push([1,1]);
+    //             uvs.push([0,1]);
+    //         }
+    //         this.tb.addFace(vertices, uvs, this.color(surface.faces[1]));
+    //         this.lb.addLoop(vertices);
+    //     }
 
-        if (surface.sides[2]) {
-            const vertices = [];
-            const uvs = [];
-            if (surface.sides[2] === 1 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-                uvs.push([0,0]);
-                uvs.push([1,0]);
-                uvs.push([0,1]);
-            } else if (surface.sides[2] === 2 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-                uvs.push([0,0]);
-                uvs.push([1,0]);
-                uvs.push([0,1]);
-            } else {
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-                uvs.push([0,0]);
-                uvs.push([1,0]);
-                uvs.push([1,1]);
-                uvs.push([0,1]);
-            }
-            this.tb.addFace(vertices, uvs, this.color(surface.faces[2]));
-            this.lb.addLoop(vertices);
-        }
+    //     if (surface.sides[2]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         if (surface.sides[2] === 1 ) {
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+    //             uvs.push([0,0]);
+    //             uvs.push([1,0]);
+    //             uvs.push([0,1]);
+    //         } else if (surface.sides[2] === 2 ) {
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+    //             uvs.push([0,0]);
+    //             uvs.push([1,0]);
+    //             uvs.push([0,1]);
+    //         } else {
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+    //             uvs.push([0,0]);
+    //             uvs.push([1,0]);
+    //             uvs.push([1,1]);
+    //             uvs.push([0,1]);
+    //         }
+    //         this.tb.addFace(vertices, uvs, this.color(surface.faces[2]));
+    //         this.lb.addLoop(vertices);
+    //     }
 
-        if (surface.sides[3]) {
-            const vertices = [];
-            const uvs = [];
-            if (surface.sides[3] === 1 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[0,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-                uvs.push([0,0]);
-                uvs.push([1,0]);
-                uvs.push([0,1]);
-            } else if (surface.sides[3] === 2 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-                uvs.push([0,0]);
-                uvs.push([1,0]);
-                uvs.push([0,1]);
-            } else {
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-                uvs.push([0,0]);
-                uvs.push([1,0]);
-                uvs.push([1,1]);
-                uvs.push([0,1]);
-            }
-            this.tb.addFace(vertices, uvs, this.color(surface.faces[3]));
-            this.lb.addLoop(vertices);
-        }
-
-
-    }
-
-    buildShims(surface) {
-        const xyz = surface.xyz;
-        const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
-
-        if (surface.shims[0]) {
-            const vertices = [];
-            const uvs = [];
-
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, this.topColor(surface.shims[0]));
-            this.lb.addLoop(vertices);
-        }
-
-        if (surface.shims[1]) {
-            const vertices = [];
-            const uvs = [];
-
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, this.topColor(surface.shims[1]));
-            this.lb.addLoop(vertices);
-        }
-
-        if (surface.shims[2]) {
-            const vertices = [];
-            const uvs = [];
-
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, this.topColor(surface.shims[2]));
-            this.lb.addLoop(vertices);
-        }
-
-        if (surface.shims[3]) {
-            const vertices = [];
-            const uvs = [];
-
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-
-            uvs.push([0,0]);
-            uvs.push([1,0]);
-            uvs.push([0,1]);
-            this.tb.addFace(vertices, uvs, this.topColor(surface.shims[3]));
-            this.lb.addLoop(vertices);
-        }
+    //     if (surface.sides[3]) {
+    //         const vertices = [];
+    //         const uvs = [];
+    //         if (surface.sides[3] === 1 ) {
+    //             vertices.push(v3_multiply(v3_add(xyz,[0,b,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+    //             uvs.push([0,0]);
+    //             uvs.push([1,0]);
+    //             uvs.push([0,1]);
+    //         } else if (surface.sides[3] === 2 ) {
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+    //             uvs.push([0,0]);
+    //             uvs.push([1,0]);
+    //             uvs.push([0,1]);
+    //         } else {
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+    //             vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+    //             uvs.push([0,0]);
+    //             uvs.push([1,0]);
+    //             uvs.push([1,1]);
+    //             uvs.push([0,1]);
+    //         }
+    //         this.tb.addFace(vertices, uvs, this.color(surface.faces[3]));
+    //         this.lb.addLoop(vertices);
+    //     }
 
 
+    // }
 
-    }
+    // buildShims(surface) {
+    //     const xyz = surface.xyz;
+    //     const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
+
+    //     if (surface.shims[0]) {
+    //         const vertices = [];
+    //         const uvs = [];
+
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, this.topColor(surface.shims[0]));
+    //         this.lb.addLoop(vertices);
+    //     }
+
+    //     if (surface.shims[1]) {
+    //         const vertices = [];
+    //         const uvs = [];
+
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, this.topColor(surface.shims[1]));
+    //         this.lb.addLoop(vertices);
+    //     }
+
+    //     if (surface.shims[2]) {
+    //         const vertices = [];
+    //         const uvs = [];
+
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, this.topColor(surface.shims[2]));
+    //         this.lb.addLoop(vertices);
+    //     }
+
+    //     if (surface.shims[3]) {
+    //         const vertices = [];
+    //         const uvs = [];
+
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+    //         vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+
+    //         uvs.push([0,0]);
+    //         uvs.push([1,0]);
+    //         uvs.push([0,1]);
+    //         this.tb.addFace(vertices, uvs, this.topColor(surface.shims[3]));
+    //         this.lb.addLoop(vertices);
+    //     }
+
+
+
+    // }
 
 
 

@@ -150,6 +150,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
     }
 
     doPointerMove(e) {
+        return;
         const windowX = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         const windowY = - ( e.xy[1] / window.innerHeight ) * 2 + 1;
         const render = this.service("ThreeRenderManager");

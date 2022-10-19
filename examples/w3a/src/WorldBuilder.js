@@ -30,6 +30,7 @@ export class WorldBuilder extends ModelService {
         }
         // landMatrix[2][2][2] = Constants.voxel.rock;
         // landMatrix[3][3][2] = Constants.voxel.rock;
+        // landMatrix[2][2][5] = Constants.voxel.rock;
 
 
         voxels.load(landMatrix);

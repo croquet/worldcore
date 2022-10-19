@@ -13,7 +13,7 @@ import { Surfaces } from "./src/Surfaces";
 import { Stress } from "./src/Stress";
 import { WorldBuilder } from "./src/WorldBuilder";
 import { GodView } from "./src/GodView";
-import { MapView } from "./src/MapView";
+import { MapView, MapViewX } from "./src/MapView";
 
 //------------------------------------------------------------------------------------------
 //-- Helper Functions -----------------------------------------------------------------------------
@@ -150,7 +150,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!");
+        console.log("Start root model");
         this.level = LevelActor.create();
 
 
@@ -193,7 +193,9 @@ class MyViewRoot extends ViewRoot {
         three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
 
         this.godView = new GodView(this.model);
-        this.mapView = new MapView(this.model);
+        // this.mapView = new MapView(this.model);
+
+        this.mapView  = new MapViewX();
 
         document.body.style.cursor = "crosshair";
     }
