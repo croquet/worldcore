@@ -94,7 +94,23 @@ class MapLayer extends WorldcoreView {
     }
 
     addKey(key) {
-        this.keys.add(key)
+        if (this.keys.has(key)) return;
+        console.log("addKey: " + this.z)
+        this.keys.add(key);
+        this.dirty = true;
+    }
+
+    removeKey(key) {
+        if (!this.keys.has(key)) return;
+        this.keys.delete(key);
+        this.dirty = true;
+    }
+
+    rebuild() {
+        if (!this.dirty) return;
+        console.log("rebuild layer: " + this.z)
+        this.build();
+        this.dirty = false;
     }
 
     disposeMesh(){
@@ -577,11 +593,16 @@ export class MapViewX extends WorldcoreView {
         this.buildAll();
 
         this.subscribe("surfaces", "rebuildAll", this.buildAll);
+        this.subscribe("surfaces", "rebuildSome", this.buildSome);
     }
 
     destroy() {
         super.destroy()
         this.layers.forEach(layer => layer.destroy());
+    }
+
+    clear() {
+        this.layers.forEach(layer => layer.clear());
     }
 
     get collider() {
@@ -592,14 +613,30 @@ export class MapViewX extends WorldcoreView {
         return out;
     }
 
+    layerZ(key) { return key & 0x3FF }
+
+    buildSome(data) {
+        const add = data.add;
+        const remove = data.remove;
+        add.forEach(key => {
+            this.layers[this.layerZ(key)].addKey(key);
+        });
+
+        remove.forEach(key => {
+            this.layers[this.layerZ(key)].removeKey(key);
+        });
+
+        this.layers.forEach(layer => layer.rebuild());
+    }
+
     buildAll() {
         const surfaces = this.modelService("Surfaces");
+        this.clear();
         surfaces.surfaces.forEach((surface, key) => {
-            const z = key & 0x3FF;
-            this.layers[z].addKey(key)
+            this.layers[this.layerZ(key)].addKey(key)
         });
         this.layers.forEach(layer => layer.build());
-        // this.buildFrame();
+        this.buildFrame();
     }
 
     buildFrame() {

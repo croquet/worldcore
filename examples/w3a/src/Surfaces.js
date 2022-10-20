@@ -46,6 +46,8 @@ export class Surfaces extends ModelService {
         const xyz = data.xyz
         console.log(xyz);
 
+        console.log("before:" + this.surfaces.size);
+
         const voxels = this.service("Voxels");
         const zero = Voxels.boxSet(...xyz);
         const primary = Voxels.boxSet(...xyz,2);
@@ -70,10 +72,23 @@ export class Surfaces extends ModelService {
         secondary.forEach(key => {this.get(key).cullUnderShims();});
         secondary.forEach(key => {this.get(key).cullDuplicateSides(this,secondary);});
 
+        const add = new Set([...primary, ...secondary]);
+        const remove = new Set();
+        add.forEach(key => { if (this.get(key).isEmpty) remove.add(key) });
+
+        this.clip(remove);
+
+        // remove.forEach(key => {
+        //     if (this.surfaces.has(key)) console.log("error!");
+        // });
+
+        console.log("after:" + this.surfaces.size);
+
 
         // this.rebuildAll();
 
-        this.publish("surfaces", "rebuildAll");
+        // this.publish("surfaces", "rebuildAll");
+        this.publish("surfaces", "rebuildSome", {add,remove});
 
 
     }
@@ -156,7 +171,7 @@ class Surface {
     get hasSide() {return this.sides.some(e => e)}
     get hasShape() {return this.shapes.some(e => e)}
     get hasShim() {return this.shims.some(e => e)}
-    get isEmpty() { return !(this.floor || this.ceiling || this.hasFace || this.hasRamp || this.hasDouble || this.hasCap || this.hasSide || hasShape || this.hasShim); }
+    get isEmpty() { return !(this.floor || this.ceiling || this.hasFace || this.hasRamp || this.hasDouble || this.hasCap || this.hasSide || this.hasShape || this.hasShim); }
 
     elevation(x,y) {
         const xx = 1-x;
