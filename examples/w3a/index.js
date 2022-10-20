@@ -195,7 +195,7 @@ class MyViewRoot extends ViewRoot {
         this.godView = new GodView(this.model);
         // this.mapView = new MapView(this.model);
 
-        this.mapView  = new MapViewX();
+        this.mapView  = new MapView();
 
         document.body.style.cursor = "crosshair";
     }

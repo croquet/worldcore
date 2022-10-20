@@ -25,12 +25,12 @@ export class Stress extends ModelService {
 
     init() {
         super.init('Stress');
-        // this.surfaces = new Map();
-        // this.collapsing = new Set();
-        // this.subscribe("voxels", "load", this.rebuildAll)
-        // // this.subscribe("voxels", "set", this.rebuildAll)
-        // this.rebuildAll();
-        // this.future(2000).tick();
+        this.surfaces = new Map();
+        this.collapsing = new Set();
+        this.subscribe("voxels", "load", this.rebuildAll)
+        this.subscribe("voxels", "set", this.rebuildAll)
+        this.rebuildAll();
+        this.future(2000).tick();
     }
 
     tick() {
@@ -86,7 +86,7 @@ export class Stress extends ModelService {
             set0 = set1;
         }
 
-        // console.log(this.stress);
+        console.log(this.stress);
 
         this.stress.forEach((value,key) => { // Check for collapse at start.
             if (value > 2) { this.collapsing.add(key);}

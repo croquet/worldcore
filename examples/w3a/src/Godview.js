@@ -1,4 +1,4 @@
-import { WorldcoreView, mix, m4_rotationX, toRad, m4_scaleRotationTranslation, q_axisAngle, PM_WidgetPointer, v2_sub, Constants, q_multiply, TAU, v3_scale, v3_add, v3_normalize, v3_rotate, v3_magnitude, THREE, viewRoot, v3_sub, v3_floor, PM_ThreeVisible, Widget2, CanvasWidget2, ToggleWidget2, ToggleSet2, ImageWidget2 } from "@croquet/worldcore";
+import { WorldcoreView, mix, m4_rotationX, toRad, m4_scaleRotationTranslation, q_axisAngle, PM_WidgetPointer, v2_sub, Constants, q_multiply, TAU, v3_scale, v3_add, v3_normalize, v3_rotate, v3_magnitude, THREE, viewRoot, v3_sub, v3_floor, PM_ThreeVisible, Widget2, CanvasWidget2, ToggleWidget2, ToggleSet2, ImageWidget2, SliderWidget2 } from "@croquet/worldcore";
 import { Voxels} from  "./Voxels";
 
 let time0 = 0;
@@ -103,6 +103,8 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         const digToggle = new ImageToggleWidget2({name: "dig", parent: hud, size:[30,30], translation: [15,50], toggleSet: toggleSet, offURL: digOffIcon, onURL: digOnIcon});
         this.subscribe(toggleSet.id, "pick", this.setEditMode);
         toggleSet.pick(fillToggle);
+
+        const layerSlider = new SliderWidget2({name: "layerSlider", autoSize:[0,1], size: [10,0], parent: hud, anchor:[1,0.5], pivot:[1,0.5],})
     }
 
     setEditMode(mode) {

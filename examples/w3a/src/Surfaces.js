@@ -44,17 +44,11 @@ export class Surfaces extends ModelService {
 
     rebuildSome(data) {
         const xyz = data.xyz
-        console.log(xyz);
-
-        console.log("before:" + this.surfaces.size);
 
         const voxels = this.service("Voxels");
         const zero = Voxels.boxSet(...xyz);
         const primary = Voxels.boxSet(...xyz,2);
         const secondary = new Set();
-
-        // Build primary set
-        // voxels.forBox(...xyz, (x,y,z,t) => primary.add(packKey(x,y,z)));
 
         this.clip(zero);
         zero.forEach(key => this.surfaces.set(key, new Surface(key)));
@@ -78,16 +72,6 @@ export class Surfaces extends ModelService {
 
         this.clip(remove);
 
-        // remove.forEach(key => {
-        //     if (this.surfaces.has(key)) console.log("error!");
-        // });
-
-        console.log("after:" + this.surfaces.size);
-
-
-        // this.rebuildAll();
-
-        // this.publish("surfaces", "rebuildAll");
         this.publish("surfaces", "rebuildSome", {add,remove});
 
 
