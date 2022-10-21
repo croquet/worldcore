@@ -103,6 +103,11 @@ defineSmoothedPawnProperty from PM_Smoothed
 - Initial release
 
 ## Pending
+### Added
+- Actor.set() has a "noSnap" option to suppress automatic "propertySnap" messages
+- Actor.set() automatically calls this.propertySet() if the actor has that method.
+
+
 
 
 

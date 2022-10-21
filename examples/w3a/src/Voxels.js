@@ -1,4 +1,4 @@
-import { ModelService, Constants } from "@croquet/worldcore";
+import { ModelService, Constants, Actor, v3_multiply, mix, AM_Smoothed, v3_add, v3_floor, v3_min, v3_max, v3_sub} from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- Constants -----------------------------------------------------------------------------
@@ -31,6 +31,10 @@ export function packKey(x,y,z) {
 
 export function unpackKey(key) {
     return [(key >>> 20) & 0x3FF, (key >>> 10) & 0x3FF, key & 0x3FF];
+}
+
+export function toWorld(v) {
+    return v3_multiply(v,[Constants.scaleX, Constants.scaleY, Constants.scaleZ]);
 }
 
 //------------------------------------------------------------------------------------------
@@ -218,19 +222,19 @@ export class Voxels extends ModelService {
         }
     }
 
-    forAdjacent(x,y,z, callback){
+    forAdjacent(x,y,z, callback){ // (x,y,z,t,d) // where d: 0=west, 1=south, 2=east, 3=north, 4=below, 5=above
         const x0 = x-1, x1 = x+1;
         const y0 = y-1, y1 = y+1;
         const z0 = z-1, z1 = z+1;
-        if (x0 >= 0) callback(0, x0,y,z, this.get(x0,y,z));
-        if (y0 >= 0) callback(1, x,y0,z, this.get(x,y0,z));
-        if (x1 < Constants.sizeX) callback(2, x1,y,z, this.get(x1,y,z));
-        if (y1 < Constants.sizeY) callback(3, x,y1,z, this.get(x,y1,z));
-        if (z0 >= 0) callback(4,  x,y,z0, this.get(x,y,z0));
-        if (z1 < Constants.sizeZ) callback(5, x,y,z1, this.get(x,y,z1));
+        if (x0 >= 0) callback(x0,y,z, this.get(x0,y,z),0);
+        if (y0 >= 0) callback(x,y0,z, this.get(x,y0,z),1);
+        if (x1 < Constants.sizeX) callback(x1,y,z, this.get(x1,y,z),2);
+        if (y1 < Constants.sizeY) callback(x,y1,z, this.get(x,y1,z),3);
+        if (z0 >= 0) callback(x,y,z0, this.get(x,y,z0),4);
+        if (z1 < Constants.sizeZ) callback(x,y,z1, this.get(x,y,z1),5);
     }
 
-    forBox(x,y,z, s=1,callback){
+    forBox(x,y,z, s=1, callback){ // (x,y,z,t)
         const x0 = Math.max(0, x-s);
         const y0 = Math.max(0, y-s);
         const z0 = Math.max(0, z-s);
@@ -279,3 +283,27 @@ export class Voxels extends ModelService {
 
 }
 Voxels.register('Voxels');
+
+//------------------------------------------------------------------------------------------
+//-- VoxelActor ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class VoxelActor extends mix(Actor).with(AM_Smoothed) {
+
+    voxelSet(v, noSnap) { this.set({translation: toWorld(v3_add(v, this.fraction))},noSnap)}
+    fractionSet(v, noSnap) { this.set({translation: toWorld(v3_add(v, this.voxel))},noSnap)}
+
+    get voxel() { return this._voxel || [0,0,0]}
+    get fraction() { return this._fraction || [0,0,0]}
+
+    clamp() {
+        const floor = v3_floor(this.fraction);
+        const fraction = v3_sub(this.fraction, floor);
+        const voxel = v3_add(this.voxel, floor);
+        this.set({voxel,fraction});
+    }
+
+    voxelTranslateTo(voxel,fraction) { this.set({voxel,fraction}, true); }
+
+}
+VoxelActor.register("VoxelActor");

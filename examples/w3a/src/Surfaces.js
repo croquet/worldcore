@@ -88,7 +88,7 @@ export class Surfaces extends ModelService {
         voxels.forEach((x,y,z,t)=> {
             if (t>=2) return;
             const key = packKey(x,y,z);
-            voxels.forAdjacent(x,y,z, (d,x,y,z,t) => {
+            voxels.forAdjacent(x,y,z, (x,y,z,t,d) => {
                 if (t<2) return;
                 this.surfaces.set(key, new Surface(key));
                 primary.add(key);
@@ -182,7 +182,7 @@ class Surface {
     // Find adjacent solid voxels
     findFaces(voxels) {
         if (voxels.get(...this.xyz) >=2) return; // Only air has faces
-        voxels.forAdjacent(...this.xyz, (d,x,y,z,t) => {
+        voxels.forAdjacent(...this.xyz, (x,y,z,t,d) => {
             if(t<2) return;
             this.faces[d] = t
             this.sides[d] = t;

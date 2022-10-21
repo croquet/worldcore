@@ -1,11 +1,11 @@
 import { ModelService, Constants } from "@croquet/worldcore";
 import { packKey, unpackKey, Voxels } from "./Voxels";
 
-const max = 10000;
+const max = 1000;
 
 Constants.stress = {};
-Constants.stress.lava = 2;
-Constants.stress.rock = 2;
+Constants.stress.lava = 1;
+Constants.stress.rock = 3;
 Constants.stress.dirt = 3;
 
 function maxStress(type) {
@@ -28,9 +28,9 @@ export class Stress extends ModelService {
         this.surfaces = new Map();
         this.collapsing = new Set();
         this.subscribe("voxels", "load", this.rebuildAll)
-        this.subscribe("voxels", "set", this.rebuildAll)
+        this.subscribe("voxels", "set", this.rebuildSome)
         this.rebuildAll();
-        this.future(2000).tick();
+        this.future(100).tick();
     }
 
     tick() {
@@ -40,7 +40,7 @@ export class Stress extends ModelService {
             this.collapsing.clear();
             doomed.forEach(key => { voxels.set(...unpackKey(key), Constants.voxel.air); });
         }
-        this.future(2000).tick();
+        this.future(100).tick();
     }
 
     rebuildAll () {
@@ -61,8 +61,6 @@ export class Stress extends ModelService {
         this.stress.forEach((value, key) => {
             if (this.minAdjacent(...unpackKey(key)) === 0) set0.add(key);
         });
-
-        // console.log(set0);
 
         // Flood-fill stresses
         let s = 0;
@@ -86,12 +84,57 @@ export class Stress extends ModelService {
             set0 = set1;
         }
 
-        console.log(this.stress);
-
-        this.stress.forEach((value,key) => { // Check for collapse at start.
-            if (value > 2) { this.collapsing.add(key);}
+        this.stress.forEach((stress,key) => { // Check for collapse at start.
+            if (this.tooHigh(stress,key)) this.collapsing.add(key);
         })
 
+    }
+
+    rebuildSome(data) {
+        const xyz = data.xyz
+        const t = data.type;
+        if (t<2) {
+            this.stress.delete(packKey(...xyz));
+            this.updateAdjacent(...xyz);
+        } else {
+            this.updateStress(...xyz);
+        }
+
+    }
+
+    updateStress(x,y,z) {
+        const key = packKey(x,y,z);
+        const voxels = this.service("Voxels");
+        const stress0 = this.get(x,y,z);
+
+        let stress1 = 0;
+        if (voxels.get(x,y,z-1)<2) stress1 = Math.min(max, this.minAdjacent(x,y,z)+1);
+
+        if (stress0 === stress1 ) return; // No change
+
+        this.stress.set(key, stress1);
+
+        if (this.tooHigh(stress1, key)) {
+            this.collapsing.add(key);
+        } else {
+            this.updateAdjacent(x,y,z);
+        }
+    }
+
+    updateAdjacent(x,y,z) {
+        const voxels = this.service("Voxels");
+        voxels.forAdjacent(x,y,z, (x,y,z,t) => {
+            if (t>2) this.updateStress(x,y,z)
+        });
+    }
+
+    tooHigh(stress,key) {
+        if (stress <2 ) return false;
+        const voxels = this.service("Voxels");
+        const xyz = unpackKey(key);
+        const type = voxels.get(...xyz);
+        if (stress <= maxStress(type)) return false;
+        return true;
     }
 
     // Returns the minimum stress in the horizontally adjacent voxels.

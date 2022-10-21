@@ -8,7 +8,7 @@ import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
 import { Avatar, FPSAvatar } from "./src/Avatar";
-import { Voxels } from "./src/Voxels";
+import { VoxelActor, Voxels } from "./src/Voxels";
 import { Surfaces } from "./src/Surfaces";
 import { Stress } from "./src/Stress";
 import { WorldBuilder } from "./src/WorldBuilder";
@@ -162,15 +162,23 @@ class MyModelRoot extends ModelRoot {
         // surfaces.rebuildAll();
 
 
-        this.subscribe("input", "nDown", this.test)
+        this.subscribe("input", "nDown", this.test0)
+        this.subscribe("input", "pDown", this.test1)
     }
 
-    test() {
-        // console.log("test");
+    test0() {
+        console.log("test0");
         const wb = this.service("WorldBuilder");
         wb.build();
-        const voxels = this.service("Voxels");
-        // voxels.set(3,2,1, 4);
+    }
+
+    test1() {
+        console.log("test1");
+        const xxx = VoxelActor.create({voxel:[1,1,1], fraction:[0.5,0.5,0.5], noSnap: true});
+        xxx.voxelTranslateTo([2,2,2],[-1.5,-1.5,-1.5]);
+        xxx.clamp();
+        console.log(xxx.translation);
+        // console.log(xxx);
 
     }
 

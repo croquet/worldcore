@@ -2,6 +2,7 @@ import { viewRoot, WorldcoreView, Constants, THREE, v3_add, v3_multiply, ThreeRe
 
 import { LineBuilder, TriangleBuilder, TriBuilder } from "./Tools";
 import paper from ".././assets/paper.jpg";
+import { toWorld } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
 //-- Globals -------------------------------------------------------------------------------
@@ -198,10 +199,10 @@ class MapLayer extends WorldcoreView {
         const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
         const vertices = [];
         const uvs = [];
-        vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-        vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-        vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-        vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+        vertices.push(toWorld(v3_add(xyz,[a,a,a])));
+        vertices.push(toWorld(v3_add(xyz,[b,a,a])));
+        vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+        vertices.push(toWorld(v3_add(xyz,[a,b,a])));
         uvs.push([0,0]);
         uvs.push([1,0]);
         uvs.push([1,1]);
@@ -217,10 +218,10 @@ class MapLayer extends WorldcoreView {
         const s = [Constants.scaleX, Constants.scaleY, Constants.scaleZ];
         const vertices = [];
         const uvs = [];
-        vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-        vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-        vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-        vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+        vertices.push(toWorld(v3_add(xyz,[a,a,b])));
+        vertices.push(toWorld(v3_add(xyz,[a,b,b])));
+        vertices.push(toWorld(v3_add(xyz,[b,b,b])));
+        vertices.push(toWorld(v3_add(xyz,[b,a,b])));
         uvs.push([0,0]);
         uvs.push([1,0]);
         uvs.push([1,1]);
