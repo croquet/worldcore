@@ -49,6 +49,9 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.park();
         this.drive();
     }
+
+    drive() {}
+    park() {}
 }
 
 

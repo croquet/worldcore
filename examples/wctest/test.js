@@ -22,10 +22,11 @@ class MoveActor extends mix(Actor).with(AM_Smoothed) {
     get pawn() {return MovePawn}
 
     init(options = {}) {
+        console.log("move actor");
         super.init(options);
         this.child = SpinActor.create({zzz: 123, parent: this, translation: [0,1.5,0]});
 
-        // console.log(this.children);
+        console.log(this.translation);
         this.tick();
 
         // this.subscribe("input", "bDown", this.test0);
@@ -63,6 +64,7 @@ MoveActor.register('MoveActor');
 class MovePawn extends mix(Pawn).with(PM_Smoothed, PM_WebGLVisible) {
     constructor(...args) {
         super(...args);
+        console.log("move pawn");
 
         this.setDrawCall(this.buildDraw());
 
@@ -132,6 +134,8 @@ class SpinActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
     init(options) {
         super.init(options);
+
+        console.log(this.translation);
 
     this.startBehavior(SpinBehavior);
 

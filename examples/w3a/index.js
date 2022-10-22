@@ -1,7 +1,7 @@
 // Microverse Base
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2 } from "@croquet/worldcore";
+    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2, v3_THREE } from "@croquet/worldcore";
 
 import paper from "./assets/paper.jpg";
 import diana from "./assets/diana.jpg";
@@ -174,11 +174,13 @@ class MyModelRoot extends ModelRoot {
 
     test1() {
         console.log("test1");
-        const xxx = VoxelActor.create({voxel:[1,1,1], fraction:[0.5,0.5,0.5], noSnap: true});
-        xxx.voxelTranslateTo([2,2,2],[-1.5,-1.5,-1.5]);
-        xxx.clamp();
-        console.log(xxx.translation);
-        // console.log(xxx);
+        // const xxx = VoxelActor.create({voxel:[1,1,1], fraction:[0.5,0.5,0.5], noSnap: true});
+        // xxx.voxelTranslateTo([2,2,2],[-1.5,-1.5,-1.5]);
+        // xxx.clamp();
+        // console.log(xxx.translation);
+        const xxx = v3_THREE(...[2,4,5]);
+
+        console.log(xxx);
 
     }
 

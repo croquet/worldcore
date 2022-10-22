@@ -104,8 +104,9 @@ defineSmoothedPawnProperty from PM_Smoothed
 
 ## Pending
 ### Added
-- Actor.set() has a "noSnap" option to suppress automatic "propertySnap" messages
+- Actor.snap() sets properties without smoothing
 - Actor.set() automatically calls this.propertySet() if the actor has that method.
+- ScaleTo, RotateTo & TranslateTo deprecated
 
 
 

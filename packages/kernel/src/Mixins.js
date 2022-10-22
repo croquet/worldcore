@@ -112,11 +112,23 @@ class MixinFactory  {
 
 export const AM_Spatial = superclass => class extends superclass {
 
-    init(options) {
-        super.init(options);
-        this.listen("scaleSet", this.localChanged);
-        this.listen("rotationSet", this.localChanged);
-        this.listen("translationSet", this.localChanged);
+    // init(options) {
+    //     super.init(options);
+    // }
+
+    scaleSet(v) {
+        this._scale = v;
+        this.localChanged;
+    }
+
+    rotationSet(q) {
+        this._rotation = q;
+        this.localChanged;
+    }
+
+    translationSet(v) {
+        this._translation = v;
+        this.localChanged;
     }
 
     localChanged() {
@@ -194,43 +206,29 @@ export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
     init(...args) {
         super.init(...args);
-        this.listen("scaleTo", this.scaleTo);
-        this.listen("rotateTo", this.rotateTo);
-        this.listen("translateTo", this.translateTo);
-        this.listen("positionTo", this.positionTo);
+        this.listen("setScale", this.scaleTo);
+        this.listen("setRotation", this.rotateTo);
+        this.listen("setTranslation", this.translateTo);
+        this.listen("setPosition", this.positionTo);
     }
 
     scaleTo(v) {
-        // this._scale = v;
-        this.set({scale:v}, true);
-        this.$local = null;
-        this.$global = null;
-        // this.say("scaleTo", v);
+        this.set({scale:v});
     }
 
     rotateTo(q) {
-        // this._rotation = q;
-        this.set({rotation:q}, true);
-        this.$local = null;
-        this.$global = null;
+        this.set({rotation:q});
     }
 
     translateTo(v) {
-        // this._translation = v;
         this.set({translation:v}, true);
-        this.$local = null;
-        this.$global = null;
     }
 
     positionTo(data) {
-        // this._translation = data.v;
-        // this._rotation = data.q;
-        this.set({translation:data.v, rotation: data.q}, true)
-        this.$local = null;
-        this.$global = null;
+        this.set({translation:data[0], rotation: data[1]})
     }
 
-    moveTo(v) { this.translateTo(v)}
+    moveTo(v) { this.translateTo(v)} // deprecated;
 
 };
 RegisterMixin(AM_Smoothed);
@@ -282,21 +280,21 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this.driving = true;
         this._scale = v;
         this.localChanged();
-        this.say("scaleTo", v, this.throttle)
+        this.say("setScale", v, this.throttle)
     }
 
     rotateTo(q) {
         this.driving = true;
         this._rotation = q;
         this.localChanged();
-        this.say("rotateTo", q, this.throttle)
+        this.say("setRotation", q, this.throttle)
     }
 
     translateTo(v) {
         this.driving = true;
         this._translation = v;
         this.localChanged();
-        this.say("translateTo", v, this.throttle)
+        this.say("setTranslation", v, this.throttle)
     }
 
     positionTo(v, q) {
@@ -304,7 +302,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this._translation = v;
         this._rotation = q;
         this.localChanged();
-        this.say("positionTo", {v,q}, this.throttle)
+        this.say("setPosition", [v,q], this.throttle)
     }
 
     onScaleSnap() {

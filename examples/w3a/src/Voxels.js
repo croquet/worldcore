@@ -290,8 +290,8 @@ Voxels.register('Voxels');
 
 export class VoxelActor extends mix(Actor).with(AM_Smoothed) {
 
-    voxelSet(v, noSnap) { this.set({translation: toWorld(v3_add(v, this.fraction))},noSnap)}
-    fractionSet(v, noSnap) { this.set({translation: toWorld(v3_add(v, this.voxel))},noSnap)}
+    voxelSet(v, noSnap) { this._voxel = v; this.set({translation: toWorld(v3_add(v, this.fraction))}, noSnap)}
+    fractionSet(v, noSnap) { this._fraction = v; this.set({translation: toWorld(v3_add(v, this.voxel))}, noSnap)}
 
     get voxel() { return this._voxel || [0,0,0]}
     get fraction() { return this._fraction || [0,0,0]}
