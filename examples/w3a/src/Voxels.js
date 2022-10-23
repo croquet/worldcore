@@ -12,6 +12,8 @@ Constants.scaleX = 5;
 Constants.scaleY = 5;
 Constants.scaleZ = 3;
 
+Constants.gravity = 9.8; // m/s/s
+
 Constants.voxel = {};
 Constants.voxel.air = 0;
 Constants.voxel.base = 1;
@@ -106,6 +108,15 @@ class VoxelColumn {
             h += count;
         })
         return h;
+    }
+
+    solidBelow(z) {
+        const e = this.expand();
+        while (--z > 0) {
+            if (e[z] >=2) return z;
+        }
+        return 0;
+
     }
 
 }
@@ -266,6 +277,11 @@ export class Voxels extends ModelService {
         return out;
     }
 
+    solidBelow(x,y,z) { // Returns next solid voxel below z
+        return this.voxels[x][y].solidBelow(z);
+
+    }
+
     edgeSummit() { // Finds the maximum height of the voxels on the outside border
         let h = 0
         for (let x = 0; x < Constants.sizeX; x++) {
@@ -284,26 +300,4 @@ export class Voxels extends ModelService {
 }
 Voxels.register('Voxels');
 
-//------------------------------------------------------------------------------------------
-//-- VoxelActor ----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
 
-export class VoxelActor extends mix(Actor).with(AM_Smoothed) {
-
-    voxelSet(v, noSnap) { this._voxel = v; this.set({translation: toWorld(v3_add(v, this.fraction))}, noSnap)}
-    fractionSet(v, noSnap) { this._fraction = v; this.set({translation: toWorld(v3_add(v, this.voxel))}, noSnap)}
-
-    get voxel() { return this._voxel || [0,0,0]}
-    get fraction() { return this._fraction || [0,0,0]}
-
-    clamp() {
-        const floor = v3_floor(this.fraction);
-        const fraction = v3_sub(this.fraction, floor);
-        const voxel = v3_add(this.voxel, floor);
-        this.set({voxel,fraction});
-    }
-
-    voxelTranslateTo(voxel,fraction) { this.set({voxel,fraction}, true); }
-
-}
-VoxelActor.register("VoxelActor");

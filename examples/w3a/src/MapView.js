@@ -238,10 +238,10 @@ class MapLayer extends WorldcoreView {
         if (surface.ramps[0]) {
             const vertices = [];
             const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+            vertices.push(toWorld(v3_add(xyz,[a,a,b])));
+            vertices.push(toWorld(v3_add(xyz,[b,a,a])));
+            vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+            vertices.push(toWorld(v3_add(xyz,[a,b,b])));
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([1,1]);
@@ -252,10 +252,10 @@ class MapLayer extends WorldcoreView {
         if (surface.ramps[1]) {
             const vertices = [];
             const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[0,b,a]),s));
+            vertices.push(toWorld(v3_add(xyz,[a,a,b])));
+            vertices.push(toWorld(v3_add(xyz,[b,a,b])));
+            vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+            vertices.push(toWorld(v3_add(xyz,[0,b,a])));
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([1,1]);
@@ -266,10 +266,10 @@ class MapLayer extends WorldcoreView {
         if (surface.ramps[2]) {
             const vertices = [];
             const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+            vertices.push(toWorld(v3_add(xyz,[b,a,b])));
+            vertices.push(toWorld(v3_add(xyz,[b,b,b])));
+            vertices.push(toWorld(v3_add(xyz,[a,b,a])));
+            vertices.push(toWorld(v3_add(xyz,[a,a,a])));
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([1,1]);
@@ -280,10 +280,10 @@ class MapLayer extends WorldcoreView {
         if (surface.ramps[3]) {
             const vertices = [];
             const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+            vertices.push(toWorld(v3_add(xyz,[b,b,b])));
+            vertices.push(toWorld(v3_add(xyz,[a,b,b])));
+            vertices.push(toWorld(v3_add(xyz,[a,a,a])));
+            vertices.push(toWorld(v3_add(xyz,[b,a,a])));
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([1,1]);
@@ -301,9 +301,9 @@ class MapLayer extends WorldcoreView {
         if (surface.doubles[0]) {
             const vertices = [];
             const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+            vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+            vertices.push(toWorld(v3_add(xyz,[a,b,b])));
+            vertices.push(toWorld(v3_add(xyz,[b,a,b])));
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([0,1]);
@@ -314,9 +314,9 @@ class MapLayer extends WorldcoreView {
         if (surface.doubles[1]) {
             const vertices = [];
             const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+            vertices.push(toWorld(v3_add(xyz,[a,b,a])));
+            vertices.push(toWorld(v3_add(xyz,[a,a,b])));
+            vertices.push(toWorld(v3_add(xyz,[b,b,b])));
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([0,1]);
@@ -327,9 +327,9 @@ class MapLayer extends WorldcoreView {
         if (surface.doubles[2]) {
             const vertices = [];
             const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[0,b,b]),s));
+            vertices.push(toWorld(v3_add(xyz,[a,a,a])));
+            vertices.push(toWorld(v3_add(xyz,[b,a,b])));
+            vertices.push(toWorld(v3_add(xyz,[0,b,b])));
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([0,1]);
@@ -340,9 +340,9 @@ class MapLayer extends WorldcoreView {
         if (surface.doubles[3]) {
             const vertices = [];
             const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+            vertices.push(toWorld(v3_add(xyz,[b,a,a])));
+            vertices.push(toWorld(v3_add(xyz,[b,b,b])));
+            vertices.push(toWorld(v3_add(xyz,[a,a,b])));
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([0,1]);
@@ -358,9 +358,9 @@ class MapLayer extends WorldcoreView {
         if (surface.caps[0]) {
             const vertices = [];
             const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+            vertices.push(toWorld(v3_add(xyz,[a,a,a])));
+            vertices.push(toWorld(v3_add(xyz,[b,a,a])));
+            vertices.push(toWorld(v3_add(xyz,[a,b,a])));
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([0,1]);
@@ -371,9 +371,9 @@ class MapLayer extends WorldcoreView {
         if (surface.caps[1]) {
             const vertices = [];
             const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+            vertices.push(toWorld(v3_add(xyz,[b,a,a])));
+            vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+            vertices.push(toWorld(v3_add(xyz,[a,a,a])));
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([0,1]);
@@ -384,9 +384,9 @@ class MapLayer extends WorldcoreView {
         if (surface.caps[2]) {
             const vertices = [];
             const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+            vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+            vertices.push(toWorld(v3_add(xyz,[a,b,a])));
+            vertices.push(toWorld(v3_add(xyz,[b,a,a])));
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([0,1]);
@@ -397,9 +397,9 @@ class MapLayer extends WorldcoreView {
         if (surface.caps[3]) {
             const vertices = [];
             const uvs = [];
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+            vertices.push(toWorld(v3_add(xyz,[a,b,a])));
+            vertices.push(toWorld(v3_add(xyz,[a,a,a])));
+            vertices.push(toWorld(v3_add(xyz,[b,b,a])));
             uvs.push([0,0]);
             uvs.push([1,0]);
             uvs.push([0,1]);
@@ -417,24 +417,24 @@ class MapLayer extends WorldcoreView {
             const vertices = [];
             const uvs = [];
             if (surface.shapes[0] === 1 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+                vertices.push(toWorld(v3_add(xyz,[a,a,a])));
+                vertices.push(toWorld(v3_add(xyz,[a,b,a])));
+                vertices.push(toWorld(v3_add(xyz,[a,a,b])));
                 uvs.push([0,0]);
                 uvs.push([1,0]);
                 uvs.push([0,1]);
             } else if (surface.shapes[0] === 2 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+                vertices.push(toWorld(v3_add(xyz,[a,a,a])));
+                vertices.push(toWorld(v3_add(xyz,[a,b,a])));
+                vertices.push(toWorld(v3_add(xyz,[a,b,b])));
                 uvs.push([0,0]);
                 uvs.push([1,0]);
                 uvs.push([0,1]);
             } else {
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
+                vertices.push(toWorld(v3_add(xyz,[a,a,a])));
+                vertices.push(toWorld(v3_add(xyz,[a,b,a])));
+                vertices.push(toWorld(v3_add(xyz,[a,b,b])));
+                vertices.push(toWorld(v3_add(xyz,[a,a,b])));
                 uvs.push([0,0]);
                 uvs.push([1,0]);
                 uvs.push([1,1]);
@@ -448,24 +448,24 @@ class MapLayer extends WorldcoreView {
             const vertices = [];
             const uvs = [];
             if (surface.shapes[1] === 1 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+                vertices.push(toWorld(v3_add(xyz,[b,a,a])));
+                vertices.push(toWorld(v3_add(xyz,[a,a,a])));
+                vertices.push(toWorld(v3_add(xyz,[b,a,b])));
                 uvs.push([0,0]);
                 uvs.push([1,0]);
                 uvs.push([0,1]);
             } else if (surface.shapes[1] === 2 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+                vertices.push(toWorld(v3_add(xyz,[a,a,a])));
+                vertices.push(toWorld(v3_add(xyz,[a,a,b])));
+                vertices.push(toWorld(v3_add(xyz,[b,a,a])));
                 uvs.push([0,0]);
                 uvs.push([1,0]);
                 uvs.push([0,1]);
             } else {
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+                vertices.push(toWorld(v3_add(xyz,[b,a,a])));
+                vertices.push(toWorld(v3_add(xyz,[a,a,a])));
+                vertices.push(toWorld(v3_add(xyz,[a,a,b])));
+                vertices.push(toWorld(v3_add(xyz,[b,a,b])));
                 uvs.push([0,0]);
                 uvs.push([1,0]);
                 uvs.push([1,1]);
@@ -479,24 +479,24 @@ class MapLayer extends WorldcoreView {
             const vertices = [];
             const uvs = [];
             if (surface.shapes[2] === 1 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+                vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+                vertices.push(toWorld(v3_add(xyz,[b,a,a])));
+                vertices.push(toWorld(v3_add(xyz,[b,b,b])));
                 uvs.push([0,0]);
                 uvs.push([1,0]);
                 uvs.push([0,1]);
             } else if (surface.shapes[2] === 2 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
+                vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+                vertices.push(toWorld(v3_add(xyz,[b,a,a])));
+                vertices.push(toWorld(v3_add(xyz,[b,a,b])));
                 uvs.push([0,0]);
                 uvs.push([1,0]);
                 uvs.push([0,1]);
             } else {
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+                vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+                vertices.push(toWorld(v3_add(xyz,[b,a,a])));
+                vertices.push(toWorld(v3_add(xyz,[b,a,b])));
+                vertices.push(toWorld(v3_add(xyz,[b,b,b])));
                 uvs.push([0,0]);
                 uvs.push([1,0]);
                 uvs.push([1,1]);
@@ -510,24 +510,24 @@ class MapLayer extends WorldcoreView {
             const vertices = [];
             const uvs = [];
             if (surface.shapes[3] === 1 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[0,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+                vertices.push(toWorld(v3_add(xyz,[0,b,a])));
+                vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+                vertices.push(toWorld(v3_add(xyz,[a,b,b])));
                 uvs.push([0,0]);
                 uvs.push([1,0]);
                 uvs.push([0,1]);
             } else if (surface.shapes[3] === 2 ) {
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
+                vertices.push(toWorld(v3_add(xyz,[a,b,a])));
+                vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+                vertices.push(toWorld(v3_add(xyz,[b,b,b])));
                 uvs.push([0,0]);
                 uvs.push([1,0]);
                 uvs.push([0,1]);
             } else {
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-                vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
+                vertices.push(toWorld(v3_add(xyz,[a,b,a])));
+                vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+                vertices.push(toWorld(v3_add(xyz,[b,b,b])));
+                vertices.push(toWorld(v3_add(xyz,[a,b,b])));
                 uvs.push([0,0]);
                 uvs.push([1,0]);
                 uvs.push([1,1]);
@@ -547,9 +547,9 @@ class MapLayer extends WorldcoreView {
             const vertices = [];
             const uvs = [];
 
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
+            vertices.push(toWorld(v3_add(xyz,[a,a,b])));
+            vertices.push(toWorld(v3_add(xyz,[b,a,a])));
+            vertices.push(toWorld(v3_add(xyz,[a,b,a])));
 
             uvs.push([0,0]);
             uvs.push([1,0]);
@@ -562,9 +562,9 @@ class MapLayer extends WorldcoreView {
             const vertices = [];
             const uvs = [];
 
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
+            vertices.push(toWorld(v3_add(xyz,[b,a,b])));
+            vertices.push(toWorld(v3_add(xyz,[b,b,a])));
+            vertices.push(toWorld(v3_add(xyz,[a,a,a])));
 
             uvs.push([0,0]);
             uvs.push([1,0]);
@@ -577,9 +577,9 @@ class MapLayer extends WorldcoreView {
             const vertices = [];
             const uvs = [];
 
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,a,a]),s));
+            vertices.push(toWorld(v3_add(xyz,[b,b,b])));
+            vertices.push(toWorld(v3_add(xyz,[a,b,a])));
+            vertices.push(toWorld(v3_add(xyz,[b,a,a])));
 
             uvs.push([0,0]);
             uvs.push([1,0]);
@@ -592,9 +592,9 @@ class MapLayer extends WorldcoreView {
             const vertices = [];
             const uvs = [];
 
-            vertices.push(v3_multiply(v3_add(xyz,[a,b,b]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[a,a,a]),s));
-            vertices.push(v3_multiply(v3_add(xyz,[b,b,a]),s));
+            vertices.push(toWorld(v3_add(xyz,[a,b,b])));
+            vertices.push(toWorld(v3_add(xyz,[a,a,a])));
+            vertices.push(toWorld(v3_add(xyz,[b,b,a])));
 
             uvs.push([0,0]);
             uvs.push([1,0]);

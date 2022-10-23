@@ -14,7 +14,7 @@ import * as Worldcore from "@croquet/worldcore-kernel";
 
     init(...args) {
         super.init(...args);
-        this.listen("setBehaviorCode", this.setBehaviorCode);
+        // this.listen("setBehaviorCode", this.setBehaviorCode);
     }
 
     destroy() {
@@ -29,20 +29,20 @@ import * as Worldcore from "@croquet/worldcore-kernel";
         this.behavior = target;
     }
 
-    setBehaviorCode(code) {
-        this.behavior.set({code: code});
-    }
+    // setBehaviorCode(code) {
+    //     this.behavior.set({code: code});
+    // }
 
 }
 RegisterMixin(AM_Behavioral);
 
 //Mixin to allow view-side access of the behavior tree.
 
-export const PM_Behavioral = superclass => class extends superclass {
+// export const PM_Behavioral = superclass => class extends superclass {
 
-    get behavior() { if(this.actor.behavior) return GetPawn(this.actor.behavior.id) }
+//     get behavior() { if(this.actor.behavior) return GetPawn(this.actor.behavior.id) }
 
-}
+// }
 
 //------------------------------------------------------------------------------------------
 //-- BehaviorHandler -----------------------------------------------------------------------
@@ -52,23 +52,23 @@ export const PM_Behavioral = superclass => class extends superclass {
 // and uses the code snippet instead. If you want to call the base methods from the code snippet,
 // you can with "super.onStart()" (for example)
 
-class BehaviorHandler  {
+// class BehaviorHandler  {
 
-    get(target, prop, receiver) {
-        if(this[prop]) return this[prop];
-        if(prop === "base") return target;
-        return Reflect.get(...arguments);
-    }
+//     get(target, prop, receiver) {
+//         if(this[prop]) return this[prop];
+//         if(prop === "base") return target;
+//         return Reflect.get(...arguments);
+//     }
 
-    onStart() {
-        this.base.onStart(); // Fall thru to the behavior.
-    }
+//     onStart() {
+//         this.base.onStart(); // Fall thru to the behavior.
+//     }
 
-    do(delta) {
-        this.base.do(delta); // Fall thru to the behavior.
-    }
+//     do(delta) {
+//         this.base.do(delta); // Fall thru to the behavior.
+//     }
 
-}
+// }
 
 //------------------------------------------------------------------------------------------
 //-- Behavior ------------------------------------------------------------------------------
@@ -76,7 +76,7 @@ class BehaviorHandler  {
 
 export class Behavior extends Actor {
 
-    get pawn() { return BehaviorPawn; }
+    // get pawn() { return BehaviorPawn; }
 
     init(options) {
         super.init(options);
@@ -127,12 +127,12 @@ Behavior.register('Behavior');
 // Behaviors don't have to have pawns. BehaviorPawn just provides a view-side interface for changing the code snippet.
 // The BehaviorPawns replicate the structure of the behavior tree so you can use this to inspect the current state of the tree.
 
-export class BehaviorPawn extends Pawn {
+// export class BehaviorPawn extends Pawn {
 
-    get code() { return this.actor.code }
-    set code(code) { this.set( {code: code}) }
+//     get code() { return this.actor.code }
+//     set code(code) { this.set( {code: code}) }
 
-}
+// }
 
 //------------------------------------------------------------------------------------------
 //-- CompositeBehavior ---------------------------------------------------------------------

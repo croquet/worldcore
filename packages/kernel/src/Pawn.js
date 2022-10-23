@@ -95,12 +95,21 @@ export class Pawn extends WorldcoreView {
     }
 
     onParent(d) {
-        if (d.o) {
-            this._parent = null;
-            GetPawn(d.o.id).removeChild(this);
-        }
+        if (this.parent) this.parent.removeChild(this);
+        // if (d.o) {
+        //     this._parent = null;
+        //     GetPawn(d.o.id).removeChild(this);
+        // }
         if(this.parent) this.parent.addChild(this);
     }
+
+    // onParent(d) {
+    //     if (d.o) {
+    //         this._parent = null;
+    //         GetPawn(d.o.id).removeChild(this);
+    //     }
+    //     if(this.parent) this.parent.addChild(this);
+    // }
 
     say(event, data, throttle = 0) {
         if (this.time < this._sayNext[event]) {

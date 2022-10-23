@@ -1,4 +1,5 @@
 import { ModelService, Constants } from "@croquet/worldcore";
+import { VoxelActor } from "./VoxelActor";
 import { packKey, unpackKey, Voxels } from "./Voxels";
 
 const max = 1000;
@@ -38,8 +39,12 @@ export class Stress extends ModelService {
         if (this.collapsing.size > 0) {
             const doomed = new Set(this.collapsing);
             this.collapsing.clear();
-            doomed.forEach(key => { voxels.set(...unpackKey(key), Constants.voxel.air); });
-        }
+            doomed.forEach(key => {
+                const xyz = unpackKey(key);
+                voxels.set(...xyz, Constants.voxel.air);
+                VoxelActor.create({voxel: xyz, fraction: [0.5,0.5,0.5]})
+            });
+        };
         this.future(100).tick();
     }
 

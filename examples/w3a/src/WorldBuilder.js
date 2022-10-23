@@ -21,9 +21,9 @@ export class WorldBuilder extends ModelService {
             for (let y = 0; y < Constants.sizeY; y++) {
                 landMatrix[x][y][0] = Constants.voxel.lava;
                 landMatrix[x][y][1] = Constants.voxel.rock;
-                if (Math.random() < 0.7) landMatrix[x][y][2] = Constants.voxel.rock;
-                if (Math.random() < 0.5) landMatrix[x][y][3] = Constants.voxel.dirt;
-                if (Math.random() < 0.1) landMatrix[x][y][4] = Constants.voxel.dirt;
+                // if (Math.random() < 0.7) landMatrix[x][y][2] = Constants.voxel.rock;
+                // if (Math.random() < 0.5) landMatrix[x][y][3] = Constants.voxel.dirt;
+                // if (Math.random() < 0.1) landMatrix[x][y][4] = Constants.voxel.dirt;
 
 
             }

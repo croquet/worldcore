@@ -16,7 +16,7 @@ export class Surfaces extends ModelService {
         this.surfaces = new Map();
 
         this.subscribe("voxels", "load", this.rebuildAll)
-        this.subscribe("voxels", "set", this.rebuildSome)
+        this.subscribe("voxels", "set", this.rebuildAll)
     }
 
     elevation(x,y,z) {
@@ -158,6 +158,9 @@ class Surface {
     get isEmpty() { return !(this.floor || this.ceiling || this.hasFace || this.hasRamp || this.hasDouble || this.hasCap || this.hasSide || this.hasShape || this.hasShim); }
 
     elevation(x,y) {
+
+        if (!this.below && !this.hasCap) return undefined;
+
         const xx = 1-x;
         const yy = 1-y
         if (this.ramps[0]) return xx;
@@ -174,6 +177,8 @@ class Surface {
         if (this.shims[1]) return Math.max(0, -1 + x+yy);
         if (this.shims[2]) return Math.max(0, -1 + x+y);
         if (this.shims[3]) return Math.max(0, -1 + xx+y);
+
+
 
         return 0;
 

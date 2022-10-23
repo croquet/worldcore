@@ -42,7 +42,7 @@ export class Actor extends WorldcoreModel {
 
     init(options) {
         super.init();
-        this.listen("parentSet", this.onParent);
+        // this.listen("parentSet", this.onParent);
         this.listen("_set", this.set);
         this.set(options);
         this.service('ActorManager').add(this);
@@ -86,6 +86,12 @@ export class Actor extends WorldcoreModel {
         }
     }
 
+    parentSet(p) {
+        if(this.parent) this.parent.removeChild(this);
+        this._parent = p;
+        if(this.parent) this.parent.addChild(this);
+    }
+
     get name() {return this._name || "Actor"}
 
     addChild(child) {
@@ -97,10 +103,10 @@ export class Actor extends WorldcoreModel {
         if (this.children) this.children.delete(child);
     }
 
-    onParent(d) {
-        if (d.o) d.o.removeChild(this);
-        if (d.v) d.v.addChild(this);
-    }
+    // onParent(d) {
+    //     if (d.o) d.o.removeChild(this);
+    //     if (d.v) d.v.addChild(this);
+    // }
 
     say(event, data) {
         this.publish(this.id, event, data);
