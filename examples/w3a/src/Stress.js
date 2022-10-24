@@ -24,17 +24,22 @@ function maxStress(type) {
 
 export class Stress extends ModelService {
 
-    init() {
-        super.init('Stress');
+    init(options) {
+        super.init("Stress");
         this.surfaces = new Map();
         this.collapsing = new Set();
         this.subscribe("voxels", "load", this.rebuildAll)
         this.subscribe("voxels", "set", this.rebuildSome)
         this.rebuildAll();
-        this.future(100).tick();
+        this.tick();
     }
 
     tick() {
+        this.collapse();
+        this.future(100).tick();
+    }
+
+    collapse() {
         const voxels = this.service("Voxels");
         if (this.collapsing.size > 0) {
             const doomed = new Set(this.collapsing);
@@ -42,16 +47,18 @@ export class Stress extends ModelService {
             doomed.forEach(key => {
                 const xyz = unpackKey(key);
                 voxels.set(...xyz, Constants.voxel.air);
-                VoxelActor.create({voxel: xyz, fraction: [0.5,0.5,0.5]})
+                // VoxelActor.create({voxel: xyz, fraction: [0.25,0.25,0.5]})
+                // VoxelActor.create({voxel: xyz, fraction: [0.75,0.25,0.5]})
+                // VoxelActor.create({voxel: xyz, fraction: [0.25,0.75,0.5]})
+                // VoxelActor.create({voxel: xyz, fraction: [0.75,0.75,0.5]})
             });
         };
-        this.future(100).tick();
     }
 
     rebuildAll () {
-        console.log("Building stress");
         const voxels = this.service("Voxels");
         this.stress = new Map();
+        this.collapsing = new Set();
 
         // Set all unsupported solid voxels to max
         voxels.forEach( (x,y,z,t) => {
@@ -92,6 +99,8 @@ export class Stress extends ModelService {
         this.stress.forEach((stress,key) => { // Check for collapse at start.
             if (this.tooHigh(stress,key)) this.collapsing.add(key);
         })
+
+        this.collapse();
 
     }
 

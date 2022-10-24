@@ -65,12 +65,14 @@ export class Actor extends WorldcoreModel {
             const value = option[1];
             const ul = "_" + name;
             const nameSet = name+'Set';
+            const old = this[ul];
             if (this[nameSet]) {
                 this[nameSet](value)
             } else {
                 this[ul] = value;
             }
-            this.say(nameSet, value);
+            const data = {old, value, o: old, v: value}
+            this.say(nameSet, data);
         }
         return sorted;
     }

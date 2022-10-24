@@ -95,6 +95,10 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
 
     }
 
+    destroy() {
+        super.destroy();
+    }
+
     buildHUD() {
         const wm = this.service("WidgetManager2");
         const hud = new Widget2({parent: wm.root, autoSize: [1,1]});

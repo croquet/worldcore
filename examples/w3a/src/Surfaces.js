@@ -16,7 +16,7 @@ export class Surfaces extends ModelService {
         this.surfaces = new Map();
 
         this.subscribe("voxels", "load", this.rebuildAll)
-        this.subscribe("voxels", "set", this.rebuildAll)
+        this.subscribe("voxels", "set", this.rebuildSome)
     }
 
     elevation(x,y,z) {
@@ -192,9 +192,9 @@ class Surface {
             this.faces[d] = t
             this.sides[d] = t;
             this.shapes[d] = 3;
-            this.floor = this.below;
-            this.ceiling = this.above;
         });
+        this.floor = this.below;
+        this.ceiling = this.above;
     }
 
     // Add ramps if there's a wall next to a floor

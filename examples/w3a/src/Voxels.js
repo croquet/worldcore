@@ -4,9 +4,9 @@ import { ModelService, Constants, Actor, v3_multiply, mix, AM_Smoothed, v3_add, 
 //-- Constants -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-Constants.sizeX = 32;
-Constants.sizeY = 32;
-Constants.sizeZ = 16;
+Constants.sizeX = 64;
+Constants.sizeY = 64;
+Constants.sizeZ = 32;
 
 Constants.scaleX = 5;
 Constants.scaleY = 5;

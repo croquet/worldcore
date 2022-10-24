@@ -16,16 +16,16 @@ const triangleMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color
 triangleMaterial.polygonOffset = true;
 triangleMaterial.polygonOffsetFactor = 1;
 triangleMaterial.polygonOffsetUnits = 1;
-triangleMaterial.side = THREE.DoubleSide;
-triangleMaterial.shadowSide = THREE.DoubleSide;
+triangleMaterial.side = THREE.FrontSide;
+triangleMaterial.shadowSide = THREE.FrontSide;
 triangleMaterial.vertexColors = true;
 
 const ghostMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(0.8,0.8,0)});
 ghostMaterial.polygonOffset = true;
 ghostMaterial.polygonOffsetFactor = 1;
 ghostMaterial.polygonOffsetUnits = 1;
-ghostMaterial.side = THREE.DoubleSide;
-ghostMaterial.shadowSide = THREE.DoubleSide;
+ghostMaterial.side = THREE.FrontSide;
+ghostMaterial.shadowSide = THREE.FrontSide;
 // ghostMaterial.vertexColors = true;
 ghostMaterial.transparent = true;
 ghostMaterial.opacity = 0.3;
@@ -99,19 +99,16 @@ class MapLayer extends WorldcoreView {
     }
 
     clear() {
-        this.keys.clear();
+        this.keys = new Set();
         this.disposeMesh();
     }
 
     addKey(key) {
-        if (this.keys.has(key)) return;
-
         this.keys.add(key);
         this.dirty = true;
     }
 
     removeKey(key) {
-        if (!this.keys.has(key)) return;
         this.keys.delete(key);
         this.dirty = true;
     }

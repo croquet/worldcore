@@ -175,11 +175,11 @@ class MyModelRoot extends ModelRoot {
 
     test1() {
         console.log("test1");
-        const xxx = VoxelActor.create({voxel:[0,0,7], fraction:[0.5,0.5,0.75]});
+        // const xxx = VoxelActor.create({voxel:[0,0,7], fraction:[0.5,0.5,0.75]});
 
         // console.log(xxx);
 
-        const surfaces = this.service("Surfaces");
+        // const surfaces = this.service("Surfaces");
         // const key = packKey(0,0,2);
         // const s = surfaces.get(key);
         // console.log(s.below);
@@ -206,11 +206,17 @@ class MyViewRoot extends ViewRoot {
         three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
 
         this.godView = new GodView(this.model);
-        // this.mapView = new MapView(this.model);
+        this.mapView = new MapView(this.model);
 
         this.mapView  = new MapView();
 
         document.body.style.cursor = "crosshair";
+    }
+
+    detach() {
+        super.detach();
+        if (this.godView) this.godView.destroy();
+        if (this.mapView) this.mapView.destroy();
     }
 
     update(time) {

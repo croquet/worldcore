@@ -1,7 +1,28 @@
 import { ModelService, Constants, Actor, Pawn, v3_multiply, mix, AM_Smoothed, v3_add, v3_floor, v3_min, v3_max, v3_sub, PM_Smoothed,
-    PM_ThreeVisible, THREE, Behavior, AM_Behavioral, q_multiply, q_axisAngle, v3_normalize, q_normalize} from "@croquet/worldcore";
+    PM_ThreeVisible, THREE, Behavior, AM_Behavioral, q_multiply, q_axisAngle, v3_normalize, q_normalize, CompositeBehavior, sphericalRandom, RegisterMixin} from "@croquet/worldcore";
 
 import { toWorld, packKey} from "./Voxels";
+
+//------------------------------------------------------------------------------------------
+//-- HopBehavior ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class HopBehavior extends Behavior {
+
+    init(options) {
+        super.init(options);
+    }
+
+    get velocity() { return this.actor._velocity || 0}
+    set velocity(v) { this.actor._velocity = v}
+
+    onStart() {
+        this.velocity = -0.5;
+        this.tickRate = 0;
+    }
+
+}
+HopBehavior.register("HopBehavior");
 
 //------------------------------------------------------------------------------------------
 //-- FallBehavior --------------------------------------------------------------------------
@@ -11,16 +32,17 @@ export class FallBehavior extends Behavior {
 
     init(options) {
         super.init(options);
+        this.tickRate = 15;
         const voxels = this.service("Voxels");
         this.bottom = voxels.solidBelow(...this.actor.voxel);
     }
 
-    get velocity() { return this._velocity || 0}
-    set velocity(v) { this._velocity = v}
+    get velocity() { return this.actor._velocity || 0}
+    set velocity(v) { this.actor._velocity = v}
 
     do(delta) {
-
-        const gravity = Constants.gravity;
+        const gravity = Constants.gravity/2;
+        // const gravity = 0.1;
         this.velocity = this.velocity + gravity *  delta/1000;
         const fraction = this.actor.fraction;
         const z = fraction[2] - this.velocity/Constants.scaleZ;
@@ -43,14 +65,15 @@ FallBehavior.register("FallBehavior");
 class SpinBehavior extends Behavior {
     init(options) {
         super.init(options);
+        this.tickRate = 15;
     }
 
-    get axis() { return this._axis || v3_normalize([2,1,3])}
-    get speed() { return this._speed || 1}
+    get axis() { return this._axis || sphericalRandom()}
+    get speed() { return this._speed || 0.1 + this.random() * 0.9}
 
     do(delta) {
         let q = this.actor.rotation;
-        q = q_multiply(q, q_axisAngle(this.axis, 0.13 * delta * this.speed / 50));
+        q = q_multiply(q, q_axisAngle(this.axis, 0.13 * delta * this.speed / 1000));
         q = q_normalize(q);
         this.actor.rotateTo(q);
     }
@@ -65,18 +88,11 @@ export class VoxelActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
     init(options) {
         super.init(options);
-        this.startBehavior(FallBehavior, {name: "fall"})
-        // this.startBehavior(SpinBehavior, {name: "spin"})
-
-        this.xxx = SpinBehavior;
-
-        this.subscribe("input", "oDown", this.vvv);
+        this.startBehavior("CompositeBehavior", {parallel: true, behaviorNames: ["HopBehavior","FallBehavior", "SpinBehavior"]});
+        // this.startBehavior("FallBehavior");
     }
 
-    vvv() {
-        console.log(this.xxx);
-        this.xxx = FallBehavior;
-    }
+
 
     get pawn() {return VoxelPawn}
 
@@ -108,8 +124,7 @@ class VoxelPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         super(actor);
 
         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        this.geometry.translate(0,0,0.5)
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color( 0xff0000 )} );
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...Constants.color.dirt)} );
 
         this.material.side = THREE.DoubleSide;
         this.material.shadowSide = THREE.DoubleSide;
@@ -120,3 +135,4 @@ class VoxelPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     }
 }
+

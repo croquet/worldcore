@@ -1,6 +1,8 @@
-import { RegisterMixin, WorldcoreModel, Shuffle, Actor,  Pawn, GetPawn } from "@croquet/worldcore-kernel";
+import { RegisterMixin, WorldcoreModel, Shuffle, Actor,  Pawn, GetPawn,Constants } from "@croquet/worldcore-kernel";
 
-import * as Worldcore from "@croquet/worldcore-kernel";
+Constants.WC_BEHAVIORS = new Map();
+
+// import * as Worldcore from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
 //-- Behavioral ----------------------------------------------------------------------------
@@ -22,53 +24,15 @@ import * as Worldcore from "@croquet/worldcore-kernel";
         if (this.behavior) this.behavior.destroy();
     }
 
-    startBehavior(behavior, options = {}) {
+    startBehavior(behaviorName, options = {}) {
+        const behavior = Constants.WC_BEHAVIORS.get(behaviorName);
         if (this.behavior) this.behavior.destroy();
         options.actor = this;
-        const target = behavior.create(options);
-        this.behavior = target;
+        this.behavior = behavior.create(options);
     }
-
-    // setBehaviorCode(code) {
-    //     this.behavior.set({code: code});
-    // }
 
 }
 RegisterMixin(AM_Behavioral);
-
-//Mixin to allow view-side access of the behavior tree.
-
-// export const PM_Behavioral = superclass => class extends superclass {
-
-//     get behavior() { if(this.actor.behavior) return GetPawn(this.actor.behavior.id) }
-
-// }
-
-//------------------------------------------------------------------------------------------
-//-- BehaviorHandler -----------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-//This is the default handler for the behavior proxies. It traps all method calls
-// and uses the code snippet instead. If you want to call the base methods from the code snippet,
-// you can with "super.onStart()" (for example)
-
-// class BehaviorHandler  {
-
-//     get(target, prop, receiver) {
-//         if(this[prop]) return this[prop];
-//         if(prop === "base") return target;
-//         return Reflect.get(...arguments);
-//     }
-
-//     onStart() {
-//         this.base.onStart(); // Fall thru to the behavior.
-//     }
-
-//     do(delta) {
-//         this.base.do(delta); // Fall thru to the behavior.
-//     }
-
-// }
 
 //------------------------------------------------------------------------------------------
 //-- Behavior ------------------------------------------------------------------------------
@@ -76,31 +40,34 @@ RegisterMixin(AM_Behavioral);
 
 export class Behavior extends Actor {
 
-    // get pawn() { return BehaviorPawn; }
+    static register(name) {
+        super.register(name);
+        Constants.WC_BEHAVIORS.set(name, this);
+    }
 
     init(options) {
         super.init(options);
+
+        this.onStart();
 
         if (this.tickRate) {
             const firstDelta = Math.random() * this.tickRate;
             this.future(firstDelta).tick(firstDelta);
         }
-         this.onStart();
-
     }
 
-    get code() { return this._code}
     get actor() { return this._actor}
     get tickRate() { return this._tickRate || 100}
+    set tickRate(t) { this._tickRate = t}
 
     tick(delta) {
         if (this.doomed) return;
-        // this.proxy.do(delta);
         this.do(delta);
         if (!this.doomed) this.future(this.tickRate).tick(this.tickRate);
     }
 
-    startChild(behavior, options = {}) {
+    startChild(behaviorName, options = {}) {
+        const behavior = Constants.WC_BEHAVIORS.get(behaviorName);
         options.actor = this.actor;
         options.parent = this;
         behavior.create(options);
@@ -124,15 +91,6 @@ export class Behavior extends Actor {
 }
 Behavior.register('Behavior');
 
-// Behaviors don't have to have pawns. BehaviorPawn just provides a view-side interface for changing the code snippet.
-// The BehaviorPawns replicate the structure of the behavior tree so you can use this to inspect the current state of the tree.
-
-// export class BehaviorPawn extends Pawn {
-
-//     get code() { return this.actor.code }
-//     set code(code) { this.set( {code: code}) }
-
-// }
 
 //------------------------------------------------------------------------------------------
 //-- CompositeBehavior ---------------------------------------------------------------------
@@ -144,27 +102,28 @@ Behavior.register('Behavior');
 export class CompositeBehavior extends Behavior {
 
     get tickRate() { return 0 }
-    get behaviors() {return []}
+    // get behaviors() {return []}
+     get behaviorNames() {return this._behaviorNames || []}
     get isParallel() { return this._parallel }
     get isShuffle() { return this._shuffle }
 
     onStart() {
         this.n = 0;
-        this.pending = this.behaviors.length;
-        if (this.isShuffle) this.deck = Shuffle(this.behaviors.length);
+        this.pending = this.behaviorNames.length;
+        if (this.isShuffle) this.deck = Shuffle(this.behaviorNames.length);
         this.isParallel ? this.startAll() : this.startNext();
     }
 
     startAll() {
-        for (let i = 0; i < this.behaviors.length; i++ ) {
+        for (let i = 0; i < this.behaviorNames.length; i++ ) {
             if (this.doomed) return;
-            this.isShuffle ? this.startChild(this.behaviors[this.deck[i]]) : this.startChild(this.behaviors[i]);
+            this.isShuffle ? this.startChild(this.behaviorNames[this.deck[i]]) : this.startChild(this.behaviorNames[i]);
         }
     }
 
     startNext() {
         if (this.isParallel) return;
-        this.isShuffle ? this.startChild(this.behaviors[this.deck[this.n++]]) : this.startChild(this.behaviors[this.n++]);
+        this.isShuffle ? this.startChild(this.behaviorNames[this.deck[this.n++]]) : this.startChild(this.behaviorNames[this.n++]);
     }
 
 }
@@ -214,9 +173,9 @@ SelectorBehavior.register('SelectorBehavior');
 export class DecoratorBehavior extends Behavior {
 
     get tickRate() { return 0 }
-    get behavior() { return null }
+    get behaviorName() { return this._behaviorName }
 
-    onStart() { this.startChild(this.behavior); }
+    onStart() { this.startChild(this.behaviorName); }
 
 }
 DecoratorBehavior.register('DecoratorBehavior');
@@ -292,7 +251,7 @@ export class LoopBehavior extends DecoratorBehavior {
 
     onStart() {
         this.n = 0;
-        this.startChild(this.behavior);
+        this.startChild(this.behaviorName);
     }
 
     onSucceed() { ++this.n === this.count ? this.succeed() : this.startChild(this.behavior);   }
@@ -302,3 +261,4 @@ export class LoopBehavior extends DecoratorBehavior {
 LoopBehavior.register('LoopBehavior');
 
 
+// console.log(Constants.WC_BEHAVIORS);

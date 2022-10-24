@@ -1,9 +1,9 @@
 import { Constants } from "@croquet/croquet";
-import { m4_identity } from "..";
 // import { Constants } from "@croquet/worldcore-kernel";
 // import { GetPawn } from "./Pawn";
 import { v3_zero, q_identity, v3_unit, m4_scaleRotationTranslation, m4_translation, m4_rotationX, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, v3_transform, q_euler, TAU, clampRad, q_axisAngle } from  "./Vector";
+    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, v3_transform, q_euler, TAU, clampRad, q_axisAngle,
+    v3_THREE,q_THREE } from  "./Vector";
 
 // Mixin
 //
@@ -166,6 +166,15 @@ export const AM_Spatial = superclass => class extends superclass {
 
     get scale() { return this._scale?[...this._scale] : [1,1,1] };
     set scale(v) { this.set({scale: v}) };
+
+    get translationXYZ() { return this.translation }
+    get rotationQ() { return this.rotation }
+    get scaleXYZ() { return this.scale }
+
+    get translationTHREE() { return v3_THREE(...this.translation) }
+    get rotationTHREE() { return q_THREE(...this.rotation) }
+    get scaleTHREE() { return v3_THREE(...this.scale) }
+
 };
 RegisterMixin(AM_Spatial);
 
@@ -187,6 +196,14 @@ export const PM_Spatial = superclass => class extends superclass {
     get local() { return this.actor.local; }
     get global() { return this.actor.global; }
     get lookGlobal() { return this.global; } // Allows objects to have an offset camera position
+
+    get translationXYZ() { return this.translation }
+    get rotationQ() { return this.rotation }
+    get scaleXYZ() { return this.scale }
+
+    get translationTHREE() { return v3_THREE(...this.translation) }
+    get rotationTHREE() { return q_THREE(...this.rotation) }
+    get scaleTHREE() { return v3_THREE(...this.scale) }
 
 };
 
