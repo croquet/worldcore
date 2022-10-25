@@ -146,10 +146,10 @@ export class Voxels extends ModelService {
 
     // The top and bottom layer of voxels can't be changed to keep edge conditions simple.
     static canEdit(x, y, z) {
-        if (x < 0) return false;
-        if (x >= Constants.sizeX) return false;
-        if (y < 0) return false;
-        if (y >= Constants.sizeY) return false;
+        if (x < 1) return false;
+        if (x >= Constants.sizeX-1) return false;
+        if (y < 1) return false;
+        if (y >= Constants.sizeY-1) return false;
         if (z < 1) return false;
         if (z >= Constants.sizeZ-1) return false;
         return true;

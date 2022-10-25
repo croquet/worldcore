@@ -78,6 +78,7 @@ export class Surfaces extends ModelService {
     }
 
     rebuildAll() {
+        // console.log("Building surfaces ...");
         this.surfaces = new Map();
 
         const voxels = this.service("Voxels");
@@ -111,6 +112,7 @@ export class Surfaces extends ModelService {
         this.clip(cull);
 
         this.publish("surfaces", "rebuildAll");
+        // console.log("Building surfaces done");
 
     }
 

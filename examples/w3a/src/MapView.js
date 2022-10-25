@@ -10,7 +10,7 @@ import { toWorld } from "./Voxels";
 
 const frameMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(0.49,0.40,0.03)});
 frameMaterial.side = THREE.DoubleSide;
-frameMaterial.shadowSide = THREE.DoubleSide;
+// frameMaterial.shadowSide = THREE.DoubleSide;
 
 const triangleMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(1,1,1)});
 triangleMaterial.polygonOffset = true;
@@ -143,8 +143,6 @@ class MapLayer extends WorldcoreView {
         this.disposeMesh();
 
         if (!this.keys.size) return;
-
-        // console.log("layer: " + this.z + " keys: " + this.keys.size);
 
         this.tb.clear();
         this.lb.clear();
@@ -656,6 +654,7 @@ export class MapView extends WorldcoreView {
     }
 
     buildAll() {
+        // console.log("Building map view ... ");
         const surfaces = this.modelService("Surfaces");
         this.clear();
         surfaces.surfaces.forEach((surface, key) => {
@@ -663,13 +662,15 @@ export class MapView extends WorldcoreView {
         });
         this.layers.forEach(layer => layer.build());
         this.buildFrame();
+        // console.log("Building map view done");
     }
 
     buildFrame() {
         const render = this.service("ThreeRenderManager");
         if (!render) return;
         const voxels = this.modelService("Voxels");
-        const h = voxels.edgeSummit();
+        // const h = voxels.edgeSummit();
+        const h = 2;
         const t = 0.5
         const tb = new TriBuilder();
         const lb = new LineBuilder();
@@ -679,118 +680,116 @@ export class MapView extends WorldcoreView {
         if (this.frameMesh) render.scene.remove(this.frameMesh);
         if (this.frameLines) render.scene.remove(this.frameLines);
 
-        const x = Constants.sizeX;
-        const y = Constants.sizeY;
+        const x = Constants.sizeX-1;
+        const y = Constants.sizeY-1;
 
         // -- South --
 
         tb.addFace([
-            v3_multiply([-t,0,0],s),
-            v3_multiply([x+t,0,0],s),
-            v3_multiply([x+t,0,h],s),
-            v3_multiply([-t,0,h],s)
+            v3_multiply([1-t,1,0],s),
+            v3_multiply([x+t,1,0],s),
+            v3_multiply([x+t,1,h],s),
+            v3_multiply([1-t,1,h],s)
         ]);
 
         tb.addFace([
-            v3_multiply([-t,-t,0],s),
-            v3_multiply([x+t,-t,0],s),
-            v3_multiply([x+t,-t,h],s),
-            v3_multiply([-t,-t,h],s)
+            v3_multiply([1-t,1-t,0],s),
+            v3_multiply([x+t,1-t,0],s),
+            v3_multiply([x+t,1-t,h],s),
+            v3_multiply([1-t,1-t,h],s)
         ]);
 
         tb.addFace([
-            v3_multiply([-t,-t,h],s),
-            v3_multiply([x+t,-t,h],s),
-            v3_multiply([x+t,0,h],s),
-            v3_multiply([-t,0,h],s)
+            v3_multiply([1-t,1-t,h],s),
+            v3_multiply([x+t,1-t,h],s),
+            v3_multiply([x+t,1,h],s),
+            v3_multiply([1-t,1,h],s)
         ]);
-
-
 
         // -- West --
 
         tb.addFace([
-            v3_multiply([0,-t,0],s),
-            v3_multiply([0,-t,h],s),
-            v3_multiply([0,y+t,h],s),
-            v3_multiply([0,y+t,0],s)
+            v3_multiply([1,1-t,0],s),
+            v3_multiply([1,1-t,h],s),
+            v3_multiply([1,y+t,h],s),
+            v3_multiply([1,y+t,0],s)
         ]);
 
         tb.addFace([
-            v3_multiply([-t,-t,0],s),
-            v3_multiply([-t,-t,h],s),
-            v3_multiply([-t,y+t,h],s),
-            v3_multiply([-t,y+t,0],s)
+            v3_multiply([1-t,1-t,0],s),
+            v3_multiply([1-t,1-t,h],s),
+            v3_multiply([1-t,y+t,h],s),
+            v3_multiply([1-t,y+t,0],s)
         ]);
 
         tb.addFace([
-            v3_multiply([-t,-t,h],s),
-            v3_multiply([0,-t,h],s),
-            v3_multiply([0,y+t,h],s),
-            v3_multiply([-t,y+t,h],s)
+            v3_multiply([1-t,1-t,h],s),
+            v3_multiply([1,1-t,h],s),
+            v3_multiply([1,y+t,h],s),
+            v3_multiply([1-t,y+t,h],s)
         ]);
 
-            // -- East --
+        // -- East --
 
-            tb.addFace([
-                v3_multiply([x,-t,0],s),
-                v3_multiply([x,-t,h],s),
-                v3_multiply([x,y+t,h],s),
-                v3_multiply([x,y+t,0],s)
-            ]);
+        tb.addFace([
+            v3_multiply([x,1-t,0],s),
+            v3_multiply([x,1-t,h],s),
+            v3_multiply([x,y+t,h],s),
+            v3_multiply([x,y+t,0],s)
+        ]);
 
-            tb.addFace([
-                v3_multiply([x+t,-t,0],s),
-                v3_multiply([x+t,-t,h],s),
-                v3_multiply([x+t,y+t,h],s),
-                v3_multiply([x+t,y+t,0],s)
-            ]);
+        tb.addFace([
+            v3_multiply([x+t,1-t,0],s),
+            v3_multiply([x+t,1-t,h],s),
+            v3_multiply([x+t,y+t,h],s),
+            v3_multiply([x+t,y+t,0],s)
+        ]);
 
-            tb.addFace([
-                v3_multiply([x+t,-t,h],s),
-                v3_multiply([x,-t,h],s),
-                v3_multiply([x,y+t,h],s),
-                v3_multiply([x+t,y+t,h],s)
-            ]);
+        tb.addFace([
+            v3_multiply([x+t,1-t,h],s),
+            v3_multiply([x,1-t,h],s),
+            v3_multiply([x,y+t,h],s),
+            v3_multiply([x+t,y+t,h],s)
+        ]);
 
 
         // -- North --
 
         tb.addFace([
-            v3_multiply([-t,y,0],s),
+            v3_multiply([1-t,y,0],s),
             v3_multiply([x+t,y,0],s),
             v3_multiply([x+t,y,h],s),
-            v3_multiply([-t,y,h],s)
+            v3_multiply([1-t,y,h],s)
         ]);
 
         tb.addFace([
-            v3_multiply([-t,y+t,0],s),
+            v3_multiply([1-t,y+t,0],s),
             v3_multiply([x+t,y+t,0],s),
             v3_multiply([x+t,y+t,h],s),
-            v3_multiply([-t,y+t,h],s)
+            v3_multiply([1-t,y+t,h],s)
         ]);
 
         tb.addFace([
-            v3_multiply([-t,y,h],s),
+            v3_multiply([1-t,y,h],s),
             v3_multiply([x+t,y,h],s),
             v3_multiply([x+t,y+t,h],s),
-            v3_multiply([-t,y+t,h],s)
+            v3_multiply([1-t,y+t,h],s)
         ]);
 
         // -- Lines --
 
         lb.addLoop([
-            v3_multiply([0,0,h],s),
-            v3_multiply([x,0,h],s),
+            v3_multiply([1,1,h],s),
+            v3_multiply([x,1,h],s),
             v3_multiply([x,y,h],s),
-            v3_multiply([0,y,h],s)
+            v3_multiply([1,y,h],s)
         ])
 
         lb.addLoop([
-            v3_multiply([-t,-t,h],s),
-            v3_multiply([x+t,-t,h],s),
+            v3_multiply([1-t,1-t,h],s),
+            v3_multiply([x+t,1-t,h],s),
             v3_multiply([x+t,y+t,h],s),
-            v3_multiply([-t,y+t,h],s)
+            v3_multiply([1-t,y+t,h],s)
         ])
 
         this.frameGeometry = tb.build();
@@ -798,7 +797,7 @@ export class MapView extends WorldcoreView {
 
         this.frameMesh = new THREE.Mesh( this.frameGeometry, frameMaterial );
         this.frameLines = new THREE.LineSegments(this.frameLinesGeometry, lineMaterial);
-        this.frameMesh.receiveShadow = true;
+        // this.frameMesh.receiveShadow = true;
 
         render.scene.add(this.frameMesh);
         render.scene.add( this.frameLines);

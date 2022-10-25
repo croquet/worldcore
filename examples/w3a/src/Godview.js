@@ -5,7 +5,7 @@ let time0 = 0;
 let time1 = 0;
 let fov = 60;
 
-import diana from "../assets/diana.jpg";
+// import diana from "../assets/diana.jpg";
 import fillOffIcon from "../assets/fillOffIcon.png";
 import fillOnIcon from "../assets/fillOnIcon.png";
 import digOffIcon from "../assets/digOffIcon.png";
@@ -58,7 +58,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         this.left = 0;
 
         this.buildHUD();
-        this.moveSpeed = 0.02;
+        this.moveSpeed = 0.1;
         this.turnSpeed = 0.002;
 
         this.pitch = toRad(45)
@@ -70,7 +70,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         const lookQ = q_multiply(pitchQ, yawQ);
 
         const xxx = Constants.scaleX * Constants.sizeX / 2;
-        this.translation = [0,-50,50];
+        this.translation = [0,-100,100];
         this.rotation = lookQ;
         this.updateCamera();
 

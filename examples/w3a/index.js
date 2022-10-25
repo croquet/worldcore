@@ -120,10 +120,10 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         sun.shadow.camera.near = 0;
         sun.shadow.camera.far = 500;
 
-        sun.shadow.camera.top = 200;
-        sun.shadow.camera.bottom = -200;
-        sun.shadow.camera.left = -200;
-        sun.shadow.camera.right = 200;
+        sun.shadow.camera.top = 400;
+        sun.shadow.camera.bottom = -400;
+        sun.shadow.camera.left = -400;
+        sun.shadow.camera.right = 400;
         sun.shadow.bias = -0.001;
         sun.shadow.radius = 3
         sun.shadow.blurSamples = 3

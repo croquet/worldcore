@@ -47,15 +47,16 @@ export class Stress extends ModelService {
             doomed.forEach(key => {
                 const xyz = unpackKey(key);
                 voxels.set(...xyz, Constants.voxel.air);
-                // VoxelActor.create({voxel: xyz, fraction: [0.25,0.25,0.5]})
-                // VoxelActor.create({voxel: xyz, fraction: [0.75,0.25,0.5]})
-                // VoxelActor.create({voxel: xyz, fraction: [0.25,0.75,0.5]})
-                // VoxelActor.create({voxel: xyz, fraction: [0.75,0.75,0.5]})
+                VoxelActor.create({voxel: xyz, fraction: [0.25,0.25,0.5]})
+                VoxelActor.create({voxel: xyz, fraction: [0.75,0.25,0.5]})
+                VoxelActor.create({voxel: xyz, fraction: [0.25,0.75,0.5]})
+                VoxelActor.create({voxel: xyz, fraction: [0.75,0.75,0.5]})
             });
         };
     }
 
     rebuildAll () {
+        // console.log("Building stress");
         const voxels = this.service("Voxels");
         this.stress = new Map();
         this.collapsing = new Set();
