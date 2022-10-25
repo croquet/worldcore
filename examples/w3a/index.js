@@ -124,9 +124,9 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         sun.shadow.camera.bottom = -400;
         sun.shadow.camera.left = -400;
         sun.shadow.camera.right = 400;
-        sun.shadow.bias = -0.001;
-        sun.shadow.radius = 3
-        sun.shadow.blurSamples = 3
+        sun.shadow.bias = -0.002;
+        sun.shadow.radius = 4
+        sun.shadow.blurSamples = 5
         group.add(sun);
 
         this.setRenderObject(group);
@@ -151,7 +151,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!");
+        console.log("Start root model!!!!");
         this.level = LevelActor.create();
 
 

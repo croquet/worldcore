@@ -401,18 +401,32 @@ class Surface {
 
     }
 
-    // Add shims to connect two triangular sides
+    // Add shims to connect two triangular sides, or a square & a triangle
     findShims() {
+
         if (this.floor) {
+
+            if (this.shapes[1] == 3 && this.shapes[0] == 1) this.shims[0] = this.floor;
+            if (this.shapes[0] == 3 && this.shapes[1] == 2) this.shims[0] = this.floor;
+
+            if (this.shapes[2] == 3 && this.shapes[1] == 1) this.shims[1] = this.floor;
+            if (this.shapes[1] == 3 && this.shapes[2] == 2) this.shims[1] = this.floor;
+
+            if (this.shapes[3] == 3 && this.shapes[2] == 1) this.shims[2] = this.floor;
+            if (this.shapes[2] == 3 && this.shapes[3] == 2) this.shims[2] = this.floor;
+
+            if (this.shapes[0] == 3 && this.shapes[3] == 1) this.shims[3] = this.floor;
+            if (this.shapes[3] == 3 && this.shapes[0] == 2) this.shims[3] = this.floor;
+
             if (this.shapes[0] == 1  && this.shapes[1] == 2) this.shims[0] = this.floor;
             if (this.shapes[1] == 1  && this.shapes[2] == 2) this.shims[1] = this.floor;
             if (this.shapes[2] == 1 && this.shapes[3] == 2) this.shims[2] = this.floor;
             if (this.shapes[3] == 1 && this.shapes[0] == 2) this.shims[3] = this.floor;
         }
-        if (this.caps[0] && this.shapes[0] == 1  && this.shapes[1] == 2) this.shims[0] = this.caps[0];
-        if (this.caps[1] && this.shapes[1] == 1  && this.shapes[2] == 2) this.shims[1] = this.caps[1];
-        if (this.caps[2] && this.shapes[2] == 1 && this.shapes[3] == 2) this.shims[2] = this.caps[2];
-        if (this.caps[3] && this.shapes[3] == 1 && this.shapes[0] == 2) this.shims[3] = this.caps[3];
+        if (this.caps[0] && (this.shapes[0] == 1  && this.shapes[1] == 2)) this.shims[0] = this.caps[0];
+        if (this.caps[1] && (this.shapes[1] == 1  && this.shapes[2] == 2)) this.shims[1] = this.caps[1];
+        if (this.caps[2] && (this.shapes[2] == 1 && this.shapes[3] == 2)) this.shims[2] = this.caps[2];
+        if (this.caps[3] && (this.shapes[3] == 1 && this.shapes[0] == 2)) this.shims[3] = this.caps[3];
     }
 
     //-- Culling -------------------------------------------------------------------------------
@@ -435,10 +449,29 @@ class Surface {
 
     // Remove sides and caps under shims
     cullUnderShims(){
-        if (this.shims[0]) { this.caps[0] = this.sides[0] = this.shapes[1] = 0;};
-        if (this.shims[1]) { this.caps[1] = this.sides[1] = this.shapes[2] = 0;};
-        if (this.shims[2]) { this.caps[2] = this.sides[2] = this.shapes[3] = 0;};
-        if (this.shims[3]) { this.caps[3] = this.sides[3] = this.shapes[0] = 0;};
+        if (this.shims[0]) {
+            this.caps[0] = 0;
+            if (this.shapes[0] !== 3) this.shapes[0] = 0;
+            if (this.shapes[1] !== 3) this.shapes[1] = 0;
+        };
+
+        if (this.shims[1]) {
+            this.caps[1] = 0;
+            if (this.shapes[1] !== 3) this.shapes[1] = 0;
+            if (this.shapes[2] !== 3) this.shapes[2] = 0;
+        };
+
+        if (this.shims[2]) {
+            this.caps[2] = 0;
+            if (this.shapes[2] !== 3) this.shapes[2] = 0;
+            if (this.shapes[3] !== 3) this.shapes[3] = 0;
+        };
+
+        if (this.shims[3]) {
+            this.caps[3] = 0;
+            if (this.shapes[3] !== 3) this.shapes[3] = 0;
+            if (this.shapes[0] !== 3) this.shapes[0] = 0;
+        };
     }
 
     // Remove triangular sides that face each other

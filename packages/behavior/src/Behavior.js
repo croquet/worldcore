@@ -96,6 +96,13 @@ Behavior.register('Behavior');
 //-- CompositeBehavior ---------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+const b = {
+    behavior: "FallBehavior",
+    options: {gravity: 9.8}
+}
+
+// if You set the behaviors, do kill all children and do onStart again.
+
 // Behaviors with multiple child behaviors. They don't tick themselves, but respond to reported success or
 // failure by their children who are ticking.
 

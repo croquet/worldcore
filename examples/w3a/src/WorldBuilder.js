@@ -19,7 +19,6 @@ export class WorldBuilder extends ModelService {
 
         const perlin = new PerlinNoise();
 
-        // let minHeight0 = Constants.sizeZ;
         for (let x = 0; x < Constants.sizeX; x++) {
             for (let y = 0; y < Constants.sizeY; y++) {
                 let height = 2;
@@ -52,6 +51,7 @@ export class WorldBuilder extends ModelService {
         for (let x = 0; x < Constants.sizeX; x++) {
             for (let y = 0; y < Constants.sizeY; y++) {
                 landMatrix[x][y][0] = Constants.voxel.lava;
+                // landMatrix[x][y][1] = Constants.voxel.rock;
             }
         }
 
