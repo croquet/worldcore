@@ -16,8 +16,8 @@ const triangleMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color
 triangleMaterial.polygonOffset = true;
 triangleMaterial.polygonOffsetFactor = 1;
 triangleMaterial.polygonOffsetUnits = 1;
-triangleMaterial.side = THREE.FrontSide;
-triangleMaterial.shadowSide = THREE.FrontSide;
+triangleMaterial.side = THREE.DoubleSide;
+triangleMaterial.shadowSide = THREE.DoubleSide;
 triangleMaterial.vertexColors = true;
 
 const ghostMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(0.8,0.8,0)});
@@ -61,7 +61,7 @@ Constants.color.rock = [0.7, 0.7, 0.7];
 Constants.color.dirt = [0.8, 0.4, 0.2];
 Constants.color.grass = [0.4, 0.8, 0.2];
 
-function sideColor(type) {
+export function sideColor(type) {
     switch (type) {
         case Constants.voxel.lava: return Constants.color.lava;
         case Constants.voxel.rock: return Constants.color.rock;

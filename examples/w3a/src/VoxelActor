@@ -86,15 +86,16 @@ SpinBehavior.register("SpinBehavior");
 
 export class VoxelActor extends mix(Actor).with(AM_Smoothed, AM_Behavioral) {
 
+    get pawn() {return VoxelPawn}
+
     init(options) {
         super.init(options);
-        this.startBehavior("CompositeBehavior", {parallel: true, behaviorNames: ["HopBehavior","FallBehavior", "SpinBehavior"]});
-        // this.startBehavior("FallBehavior");
+        this.startBehavior({name: "SequenceBehavior", options: {parallel: true, behaviors:[
+            {name: "HopBehavior"},
+            {name: "FallBehavior"},
+            {name: "SpinBehavior"}]
+        }});
     }
-
-
-
-    get pawn() {return VoxelPawn}
 
     voxelSet(v) { this._voxel = v; this.set({translation: toWorld(v3_add(v, this.fraction))})}
     fractionSet(v) { this._fraction = v; this.set({translation: toWorld(v3_add(v, this.voxel))})}

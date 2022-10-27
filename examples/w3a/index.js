@@ -1,7 +1,7 @@
 // Microverse Base
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2, v3_THREE } from "@croquet/worldcore";
+    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2, v3_THREE, behaviorRegistry, m4_identity, m4_translation, m4_THREE } from "@croquet/worldcore";
 
 import paper from "./assets/paper.jpg";
 import diana from "./assets/diana.jpg";
@@ -9,12 +9,13 @@ import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
 import { Avatar, FPSAvatar } from "./src/Avatar";
 import { packKey, Voxels } from "./src/Voxels";
-import { VoxelActor } from "./src/VoxelActor";
+import { PropManager, VoxelActor } from "./src/Props";
 import { Surfaces } from "./src/Surfaces";
 import { Stress } from "./src/Stress";
 import { WorldBuilder } from "./src/WorldBuilder";
 import { GodView } from "./src/GodView";
 import { MapView, MapViewX } from "./src/MapView";
+import { InstanceManager } from "./src/Instances";
 
 //------------------------------------------------------------------------------------------
 //-- Helper Functions -----------------------------------------------------------------------------
@@ -146,12 +147,12 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [Voxels, Stress, Surfaces, WorldBuilder];
+        return [Voxels, Stress, Surfaces, WorldBuilder, PropManager];
     }
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!");
+        console.log("Start root model!");
         this.level = LevelActor.create();
 
 
@@ -175,16 +176,6 @@ class MyModelRoot extends ModelRoot {
 
     test1() {
         console.log("test1");
-        // const xxx = VoxelActor.create({voxel:[0,0,7], fraction:[0.5,0.5,0.75]});
-
-        // console.log(xxx);
-
-        // const surfaces = this.service("Surfaces");
-        // const key = packKey(0,0,2);
-        // const s = surfaces.get(key);
-        // console.log(s.below);
-        // console.log(s.elevation(0.5,0.5));
-
     }
 
 }
@@ -197,7 +188,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, {service:ThreeRenderManager, options: {antialias: true}}, WidgetManager, WidgetManager2];
+        return [InputManager, {service:ThreeRenderManager, options: {antialias: true}}, InstanceManager, WidgetManager, WidgetManager2];
     }
 
     constructor(model) {
@@ -208,9 +199,13 @@ class MyViewRoot extends ViewRoot {
         this.godView = new GodView(this.model);
         this.mapView = new MapView(this.model);
 
-        this.mapView  = new MapView();
+        // this.mapView  = new MapView();
 
         document.body.style.cursor = "crosshair";
+
+        this.subscribe("input", "zDown", this.zTest);
+        this.subscribe("input", "xDown", this.xTest);
+
     }
 
     detach() {
@@ -223,6 +218,46 @@ class MyViewRoot extends ViewRoot {
         super.update(time);
         if (this.godView) this.godView.update(time);
     }
+
+    zTest() {
+        const render = this.service("ThreeRenderManager");
+        console.log("zTest");
+        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
+        // this.mesh = new THREE.Mesh( this.geometry, this.material );
+        this.mesh = new THREE.InstancedMesh( this.geometry, this.material, 10 );
+
+        const m = new THREE.Matrix4();
+
+        m.makeTranslation(0,0,10);
+
+        this.mesh.setMatrixAt(0, m);
+        m.makeTranslation(0,0,20);
+        this.mesh.setMatrixAt(1, m);
+
+        this.mesh.instanceMatrix.needsUpdate = true;
+        render.scene.add(this.mesh)
+
+
+    }
+
+    xTest() {
+        console.log("xTest");
+
+        const m4 = m4_translation([1,2,3]);
+
+        console.log(m4);
+        console.log(m4_THREE(m4).elements);
+
+        // const m = new THREE.Matrix4();
+
+        // m.makeTranslation(0,0,50);
+        // this.mesh.setMatrixAt(5, m);
+        // this.mesh.instanceMatrix.needsUpdate = true;
+
+    }
+
+
 
 
 }

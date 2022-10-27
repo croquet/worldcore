@@ -10,6 +10,7 @@ export function v2_THREE(x=0,y=0) { return new THREE.Vector2(x,y) }
 export function v3_THREE(x=0,y=0,z=0) { return new THREE.Vector3(x,y,z) }
 export function v4_THREE(x=0,y=0,z=0,w=1) { return new THREE.Vector4(x,y,z,w) }
 export function q_THREE(x=0,y=0,z=0,w=1) { return new THREE.Quaternion(x,y,z,w) }
+export function m4_THREE(m) { return (new THREE.Matrix4()).fromArray(m) }
 
 //--------------------------------------------------------------------------------
 //-- Math Utilities --------------------------------------------------------------

@@ -10,6 +10,8 @@ import fillOffIcon from "../assets/fillOffIcon.png";
 import fillOnIcon from "../assets/fillOnIcon.png";
 import digOffIcon from "../assets/digOffIcon.png";
 import digOnIcon from "../assets/digOnIcon.png";
+import treeOffIcon from "../assets/treeOffIcon.png";
+import treeOnIcon from "../assets/treeOnIcon.png";
 
 //------------------------------------------------------------------------------------------
 //-- Widgets -------------------------------------------------------------------------------
@@ -104,7 +106,9 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         const hud = new Widget2({parent: wm.root, autoSize: [1,1]});
         const toggleSet = new ToggleSet2;
         const fillToggle = new ImageToggleWidget2({name: "fill", parent: hud, size:[30,30], translation: [15,15], toggleSet: toggleSet, offURL: fillOffIcon, onURL: fillOnIcon});
-        const digToggle = new ImageToggleWidget2({name: "dig", parent: hud, size:[30,30], translation: [15,50], toggleSet: toggleSet, offURL: digOffIcon, onURL: digOnIcon});
+        const digToggle = new ImageToggleWidget2({name: "dig", parent: hud, size:[30,30], translation: [50,15], toggleSet: toggleSet, offURL: digOffIcon, onURL: digOnIcon});
+        const treeToggle = new ImageToggleWidget2({name: "tree", parent: hud, size:[30,30], translation: [15,50], toggleSet: toggleSet, offURL: treeOffIcon, onURL: treeOnIcon});
+
         this.subscribe(toggleSet.id, "pick", this.setEditMode);
         toggleSet.pick(fillToggle);
 
@@ -133,6 +137,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
             switch (this.editMode) {
                 case "fill": this.onFill(); break;
                 case "dig": this.onDig(); break;
+                case "tree": this.onTree(); break;s
             }
 
         };
@@ -199,6 +204,12 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         if (this.pointerHit.fraction[2]-e < 0) xyz = Voxels.adjacent(...this.pointerHit.voxel, [0,0,-1]);
 
         if (Voxels.canEdit(...xyz)) this.publish("edit", "setVoxel",{xyz, type: Constants.voxel.air});
+    }
+
+    onTree() {
+        if (!this.pointerHit) return;
+        console.log("Plant tree: " +  this.pointerHit.voxel);
+        this.publish("edit", "plantTree",{xyz: this.pointerHit.voxel});
     }
 
     onWheel(data) {

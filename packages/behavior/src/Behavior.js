@@ -1,8 +1,7 @@
 import { RegisterMixin, WorldcoreModel, Shuffle, Actor,  Pawn, GetPawn,Constants } from "@croquet/worldcore-kernel";
 
+// const behaviorRegistry = new Map();
 Constants.WC_BEHAVIORS = new Map();
-
-// import * as Worldcore from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
 //-- Behavioral ----------------------------------------------------------------------------
@@ -24,11 +23,20 @@ Constants.WC_BEHAVIORS = new Map();
         if (this.behavior) this.behavior.destroy();
     }
 
-    startBehavior(behaviorName, options = {}) {
-        const behavior = Constants.WC_BEHAVIORS.get(behaviorName);
+    startBehavior(behavior) {
+        if (!behavior) return;
         if (this.behavior) this.behavior.destroy();
+        const name = behavior.name;
+        const options = behavior.options || {};
         options.actor = this;
-        this.behavior = behavior.create(options);
+        const b = Constants.WC_BEHAVIORS.get(name);
+        if (b) {
+            this.behavior = b.create(options);
+        } else{
+            console.warn("Behavior "+ name + " not found!")
+        }
+
+
     }
 
 }
@@ -66,11 +74,18 @@ export class Behavior extends Actor {
         if (!this.doomed) this.future(this.tickRate).tick(this.tickRate);
     }
 
-    startChild(behaviorName, options = {}) {
-        const behavior = Constants.WC_BEHAVIORS.get(behaviorName);
+    startChild(behavior) {
+        if (!behavior) return;
+        const name = behavior.name;
+        const options = behavior.options || {};
         options.actor = this.actor;
         options.parent = this;
-        behavior.create(options);
+        const b = Constants.WC_BEHAVIORS.get(name);
+        if (b) {
+            this.behavior = b.create(options);
+        } else{
+            console.warn("Behavior "+ name + " not found!")
+        }
     }
 
     succeed(data) {
@@ -91,15 +106,27 @@ export class Behavior extends Actor {
 }
 Behavior.register('Behavior');
 
+//------------------------------------------------------------------------------------------
+//-- DestroyBehavior -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Immediately destroys the actor (and itself)
+
+export class DestroyBehavior extends Behavior {
+
+    onStart() { this.actor.destroy();}
+
+}
+DestroyBehavior.register('DestroyBehavior');
 
 //------------------------------------------------------------------------------------------
 //-- CompositeBehavior ---------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-const b = {
-    behavior: "FallBehavior",
-    options: {gravity: 9.8}
-}
+// const b = {
+//     name: "FallBehavior",
+//     options: {gravity: 9.8}
+// }
 
 // if You set the behaviors, do kill all children and do onStart again.
 
@@ -109,28 +136,34 @@ const b = {
 export class CompositeBehavior extends Behavior {
 
     get tickRate() { return 0 }
-    // get behaviors() {return []}
-     get behaviorNames() {return this._behaviorNames || []}
+    get behaviors() {return this._behaviors || []}
     get isParallel() { return this._parallel }
     get isShuffle() { return this._shuffle }
 
+    behaviorsSet(b) { // Changing the behaviors in a composite while its running destroys all the old children and starts the new ones.
+        if (this.children && this.children.size ) {
+            new Set(this.children).forEach(child => child.destroy());
+            this.onStart();
+        }
+    }
+
     onStart() {
         this.n = 0;
-        this.pending = this.behaviorNames.length;
-        if (this.isShuffle) this.deck = Shuffle(this.behaviorNames.length);
+        this.pending = this.behaviors.length;
+        if (this.isShuffle) this.deck = Shuffle(this.behaviors.length);
         this.isParallel ? this.startAll() : this.startNext();
     }
 
     startAll() {
-        for (let i = 0; i < this.behaviorNames.length; i++ ) {
+        for (let i = 0; i < this.behaviors.length; i++ ) {
             if (this.doomed) return;
-            this.isShuffle ? this.startChild(this.behaviorNames[this.deck[i]]) : this.startChild(this.behaviorNames[i]);
+            this.isShuffle ? this.startChild(this.behaviors[this.deck[i]]) : this.startChild(this.behaviors[i]);
         }
     }
 
     startNext() {
         if (this.isParallel) return;
-        this.isShuffle ? this.startChild(this.behaviorNames[this.deck[this.n++]]) : this.startChild(this.behaviorNames[this.n++]);
+        this.isShuffle ? this.startChild(this.behaviors[this.deck[this.n++]]) : this.startChild(this.behaviors[this.n++]);
     }
 
 }
@@ -180,9 +213,16 @@ SelectorBehavior.register('SelectorBehavior');
 export class DecoratorBehavior extends Behavior {
 
     get tickRate() { return 0 }
-    get behaviorName() { return this._behaviorName }
+    get behavior() { return this._behavior }
 
-    onStart() { this.startChild(this.behaviorName); }
+    behaviorSet(b) { // Changing the behavior in a decorator while it's running destroys the old children and starts the new one.
+        if (this.children && this.children.size ) {
+            new Set(this.children).forEach(child => child.destroy());
+            this.onStart();
+        }
+    }
+
+    onStart() { this.startChild(this.behavior); }
 
 }
 DecoratorBehavior.register('DecoratorBehavior');
@@ -268,4 +308,4 @@ export class LoopBehavior extends DecoratorBehavior {
 LoopBehavior.register('LoopBehavior');
 
 
-// console.log(Constants.WC_BEHAVIORS);
+// console.log(behaviorRegistry);

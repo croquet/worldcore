@@ -1,5 +1,5 @@
 import { ModelService, Constants } from "@croquet/worldcore";
-import { VoxelActor } from "./VoxelActor";
+import { RubbleActor } from "./Props";
 import { packKey, unpackKey, Voxels } from "./Voxels";
 
 const max = 1000;
@@ -46,11 +46,12 @@ export class Stress extends ModelService {
             this.collapsing.clear();
             doomed.forEach(key => {
                 const xyz = unpackKey(key);
+                const type = voxels.get(...xyz);
                 voxels.set(...xyz, Constants.voxel.air);
-                VoxelActor.create({voxel: xyz, fraction: [0.25,0.25,0.5]})
-                VoxelActor.create({voxel: xyz, fraction: [0.75,0.25,0.5]})
-                VoxelActor.create({voxel: xyz, fraction: [0.25,0.75,0.5]})
-                VoxelActor.create({voxel: xyz, fraction: [0.75,0.75,0.5]})
+                RubbleActor.create({type, voxel: xyz, fraction: [0.25,0.25,0.5], velocity: 0.2 + 0.3 * this.random()});
+                RubbleActor.create({type, voxel: xyz, fraction: [0.75,0.25,0.5], velocity: 0.2 + 0.3 * this.random()})
+                RubbleActor.create({type, voxel: xyz, fraction: [0.25,0.75,0.5], velocity: 0.2 + 0.3 * this.random()})
+                RubbleActor.create({type, voxel: xyz, fraction: [0.75,0.75,0.5], velocity: 0.2 + 0.3 * this.random()})
             });
         };
     }
