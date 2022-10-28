@@ -1,7 +1,9 @@
 // Microverse Base
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2, v3_THREE, behaviorRegistry, m4_identity, m4_translation, m4_THREE } from "@croquet/worldcore";
+    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2, v3_THREE, behaviorRegistry, m4_identity, m4_translation, m4_THREE, ThreeRenderManagerX, PM_ThreeVisibleX } from "@croquet/worldcore";
+
+
 
 import paper from "./assets/paper.jpg";
 import diana from "./assets/diana.jpg";
@@ -16,6 +18,8 @@ import { WorldBuilder } from "./src/WorldBuilder";
 import { GodView } from "./src/GodView";
 import { MapView, MapViewX } from "./src/MapView";
 import { InstanceManager } from "./src/Instances";
+
+// import { mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils';
 
 //------------------------------------------------------------------------------------------
 //-- Helper Functions -----------------------------------------------------------------------------
@@ -56,7 +60,7 @@ TestActor.register('TestActor');
 //-- TestPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleX) {
     constructor(...args) {
         super(...args);
 
@@ -103,7 +107,7 @@ LevelActor.register('LevelActor');
 //-- LevelPawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisibleX) {
     constructor(...args) {
         super(...args);
 
@@ -152,7 +156,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
+        console.log("Start root model!!!");
         this.level = LevelActor.create();
 
 
@@ -188,7 +192,7 @@ MyModelRoot.register("MyModelRoot");
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, {service:ThreeRenderManager, options: {antialias: true}}, InstanceManager, WidgetManager, WidgetManager2];
+        return [InputManager, {service:ThreeRenderManagerX, options: {antialias: true}}, InstanceManager, WidgetManager, WidgetManager2];
     }
 
     constructor(model) {
@@ -220,23 +224,39 @@ class MyViewRoot extends ViewRoot {
     }
 
     zTest() {
-        const render = this.service("ThreeRenderManager");
         console.log("zTest");
-        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
-        // this.mesh = new THREE.Mesh( this.geometry, this.material );
-        this.mesh = new THREE.InstancedMesh( this.geometry, this.material, 10 );
+        const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        console.log(geometry);
+        const p = geometry.getAttribute("position");
+        const n = p.count;
+        console.log(p.count);
 
-        const m = new THREE.Matrix4();
+        const colors = [];
+        for (let i = 0; i < n; i++) {
+            colors.push(...[0,0,1]);
+        }
 
-        m.makeTranslation(0,0,10);
+        console.log(colors);
 
-        this.mesh.setMatrixAt(0, m);
-        m.makeTranslation(0,0,20);
-        this.mesh.setMatrixAt(1, m);
+        geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3) );
 
-        this.mesh.instanceMatrix.needsUpdate = true;
-        render.scene.add(this.mesh)
+        console.log(geometry);
+
+
+        // this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
+        // // this.mesh = new THREE.Mesh( this.geometry, this.material );
+        // this.mesh = new THREE.InstancedMesh( this.geometry, this.material, 10 );
+
+        // const m = new THREE.Matrix4();
+
+        // m.makeTranslation(0,0,10);
+
+        // this.mesh.setMatrixAt(0, m);
+        // m.makeTranslation(0,0,20);
+        // this.mesh.setMatrixAt(1, m);
+
+        // this.mesh.instanceMatrix.needsUpdate = true;
+        // render.scene.add(this.mesh)
 
 
     }
@@ -244,16 +264,14 @@ class MyViewRoot extends ViewRoot {
     xTest() {
         console.log("xTest");
 
-        const m4 = m4_translation([1,2,3]);
+        // const trunk = new THREE.CylinderGeometry( 0.5,0.5, 10, 7);
+        // const top = new THREE.ConeGeometry( 2,15, 8);
+        // top.translate(0,10,0);
 
-        console.log(m4);
-        console.log(m4_THREE(m4).elements);
+        // console.log(mergeBufferGeometries);
 
-        // const m = new THREE.Matrix4();
-
-        // m.makeTranslation(0,0,50);
-        // this.mesh.setMatrixAt(5, m);
-        // this.mesh.instanceMatrix.needsUpdate = true;
+        // let  geometry;
+        // geometry = mergeBufferGeometries([trunk, top]);
 
     }
 

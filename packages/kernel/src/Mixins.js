@@ -1,4 +1,5 @@
 import { Constants } from "@croquet/croquet";
+import { CineonToneMapping } from "three";
 // import { Constants } from "@croquet/worldcore-kernel";
 // import { GetPawn } from "./Pawn";
 import { v3_zero, q_identity, v3_unit, m4_scaleRotationTranslation, m4_translation, m4_rotationX, m4_multiply, v3_lerp, v3_equals,
@@ -118,22 +119,22 @@ export const AM_Spatial = superclass => class extends superclass {
 
     scaleSet(v) {
         this._scale = v;
-        this.localChanged;
+        this.localChanged();
     }
 
     rotationSet(q) {
         this._rotation = q;
-        this.localChanged;
+        this.localChanged();
     }
 
     translationSet(v) {
         this._translation = v;
-        this.localChanged;
+        this.localChanged();
     }
 
     localChanged() {
         this.$local = null;
-        this.say("localChanged");
+        // this.say("localChanged");
         this.globalChanged();
     }
 
@@ -188,14 +189,16 @@ export const PM_Spatial = superclass => class extends superclass {
         this.listenOnce("globalChanged", this.onGlobalChanged);
     }
 
-    onGlobalChanged() { this.say("viewGlobalChanged"); }
+    onGlobalChanged() {
+        this.say("viewGlobalChanged");
+    }
 
     get scale() { return this.actor.scale; }
     get translation() { return this.actor.translation; }
     get rotation() { return this.actor.rotation; }
     get local() { return this.actor.local; }
     get global() { return this.actor.global; }
-    get lookGlobal() { return this.global; } // Allows objects to have an offset camera position
+    get lookGlobal() { return this.global; } // Allows objects to have an offset camera position -- obsolete?
 
     get translationXYZ() { return this.translation }
     get rotationQ() { return this.rotation }

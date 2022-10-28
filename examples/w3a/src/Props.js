@@ -1,5 +1,5 @@
 import { ModelService, Constants, Actor, Pawn, v3_multiply, mix, AM_Smoothed, v3_add, v3_floor, v3_min, v3_max, v3_sub, PM_Smoothed,
-    PM_ThreeVisible, THREE, Behavior, AM_Behavioral, q_multiply, q_axisAngle, v3_normalize, q_normalize, CompositeBehavior, sphericalRandom, RegisterMixin, AM_Spatial, toRad, ViewRoot, viewRoot} from "@croquet/worldcore";
+    PM_ThreeVisible, THREE, Behavior, AM_Behavioral, q_multiply, q_axisAngle, v3_normalize, q_normalize, CompositeBehavior, sphericalRandom, RegisterMixin, AM_Spatial, toRad, ViewRoot, viewRoot, PM_Spatial, PM_ThreeVisibleX} from "@croquet/worldcore";
 
 import { toWorld, packKey} from "./Voxels";
 import * as BEHAVIORS from "./SharedBehaviors";
@@ -16,6 +16,7 @@ export class PropManager extends ModelService {
         super.init("PropManager");
         this.props = new Map();
         this.subscribe("edit", "plantTree", this.onPlantTree);
+        this.subscribe("edit", "clear", this.onClear);
     }
 
     add(prop) {
@@ -35,11 +36,18 @@ export class PropManager extends ModelService {
         doomed.forEach(prop => prop.destroy());
     }
 
+    onClear(data) {
+        const voxel = data.xyz
+        const key = packKey(...voxel);
+        const prop = this.props.get(key);
+        if (prop) prop.destroy();
+    }
+
     onPlantTree(data) {
         const voxel = data.xyz
         const surfaces = this.service("Surfaces");
-        const x = this.random();
-        const y = this.random();
+        const x = 0.1 + 0.8 * this.random();
+        const y = 0.1+ 0.8 * this.random();
         const v =[...voxel];
         v[0] += x;
         v[1] += y;
@@ -138,7 +146,7 @@ RubbleActor.register("RubbleActor");
 //------------------------------------------------------------------------------------------
 
 
-class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleX) {
     constructor(actor) {
         super(actor);
 
@@ -165,6 +173,7 @@ export class TreeActor extends mix(VoxelActor).with(AM_Behavioral) {
 
     init(options) {
         super.init(options);
+        this.startBehavior({name: "GrowBehavior"});
     }
 
 }
@@ -176,7 +185,7 @@ TreeActor.register("TreeActor");
 //------------------------------------------------------------------------------------------
 
 
-class TreePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+class TreePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisibleX) {
     constructor(actor) {
         super(actor);
         const im = this.service("InstanceManager");
@@ -184,51 +193,21 @@ class TreePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.mesh = im.get("yellow");
         this.index = this.mesh.use(this);
 
-        console.log(this.mesh);
-        console.log(this.index);
+        this.updateMatrix()
 
+        this.listenOnce("viewGlobalChanged", this.updateMatrix);
+
+    }
+
+    updateMatrix() {
         this.mesh.updateMatrix(this.index, this.global)
+    }
 
-
-
-        // this.geometry = new THREE.CylinderGeometry( 0.5,0.5, 10, 7);
-        // // this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        // this.geometry.rotateX(toRad(90));
-        // this.geometry.translate(0,0,5-1); // Extend below surface.
-
-        // this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
-
-        // this.material.side = THREE.DoubleSide;
-        // this.material.shadowSide = THREE.DoubleSide;
-        // this.mesh = new THREE.Mesh( this.geometry, this.material );
-        // // this.mesh = new THREE.InstancedMesh( this.geometry, this.material, 5 );
-        // this.mesh.receiveShadow = true;
-        // this.mesh.castShadow = true;
-        // this.setRenderObject(this.mesh);
-
+    destroy() {
+        super.destroy();
+        this.mesh.release(this.index);
     }
 }
 
-// class InstancedMesh {
-//     constructor(geometry, material, count=10){
-//         this.mesh = new THREE.InstancedMesh( geometry, material, count );
-//         this.pawns = [];
-//         this.free = [];
-//         for (let n = count-1; n>= 0; n--) {
-//             this.free.push(n);
-//         }
-//     }
-
-//     use(pawn) {
-//         const n = this.free.pop();
-//         this.pawns[n] = pawn;
-//         return n;
-//     }
-
-// }
-
-// const xxx = new InstancedMesh();
-
-// console.log(xxx);
 
 

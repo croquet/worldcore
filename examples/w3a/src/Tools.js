@@ -116,3 +116,14 @@ export class LineBuilder {
         }
     }
 }
+
+export function setGeometryColor(geometry, color) {
+
+    const count = geometry.getAttribute("position").count;
+    const colors = [];
+    for (let i = 0; i < count; i++) {
+        colors.push(...color);
+    }
+    geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3) );
+
+}

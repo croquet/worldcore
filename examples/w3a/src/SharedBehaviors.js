@@ -55,5 +55,29 @@ class TumbleBehavior extends Behavior {
 }
 TumbleBehavior.register("TumbleBehavior");
 
+//------------------------------------------------------------------------------------------
+//-- GrowBehavior --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class GrowBehavior extends Behavior {
+    init(options) {
+        super.init(options);
+        this.tickRate = 100;
+    }
+
+    onStart() {
+        this.size = 0.2;
+        this.actor.scale = [this.size, this.size, this.size];
+    }
+
+    do(delta) {
+        const growth = 1 + 0.1 * (delta/1000)
+        this.size = Math.min(1, this.size * growth);
+        this.actor.scale = [this.size, this.size, this.size];
+        if (this.size > 1) this.succeed();
+    }
+}
+GrowBehavior.register("GrowBehavior");
+
 
 

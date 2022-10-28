@@ -40,7 +40,7 @@ texture.onload = () => {
 texture.src = paper;
 
 const lineMaterial = new THREE.LineBasicMaterial( {color: new THREE.Color(0.9,0.9,0.9)} );
-lineMaterial.blending = THREE.MultiplyBlending;
+lineMaterial.blending = THREE.MultiplyBlending; // xxx Causes heavylines when lines overlap
 lineMaterial.blendSrc = THREE.OneMinusSrcColorFactor;
 lineMaterial.blendDst = THREE.DstColorFactor;
 lineMaterial.polygonOffset = true;

@@ -1,6 +1,8 @@
 
 
 import { ViewService, Constants, THREE, m4_THREE, toRad} from "@croquet/worldcore";
+import { mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils';
+import { setGeometryColor } from "./Tools";
 
 class InstancedMesh {
     constructor(geometry, material, count=10){
@@ -39,7 +41,7 @@ export class InstanceManager extends ViewService {
 
         this.buildAll();
 
-        console.log(this.instances.get("yellow"));
+        // console.log(this.instances.get("yellow"));
     }
 
     destroy() {
@@ -60,18 +62,26 @@ export class InstanceManager extends ViewService {
     }
 
     buildAll() {
-        // const geometry = new THREE.BoxGeometry( 1, 1, 1 );
 
-        const geometry = new THREE.CylinderGeometry( 0.5,0.5, 10, 7);
+        const trunk = new THREE.CylinderGeometry( 0.5,0.5, 10, 7);
+        setGeometryColor(trunk, [0.7, 0.5, 0.3]);
+        const top = new THREE.ConeGeometry( 2,15, 8);
+        setGeometryColor(top, [0.4, 0.8, 0.4]);
+        top.translate(0,10,0);
+
+        let  geometry;
+        geometry = mergeBufferGeometries([trunk, top]);
+        // geometry = trunk;
         geometry.rotateX(toRad(90));
         geometry.translate(0,0,5-1); // Extend below surface.
 
-        const material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
+        const material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
 
         material.side = THREE.DoubleSide;
         material.shadowSide = THREE.DoubleSide;
+        material.vertexColors = true;
 
-        const m = this.build("yellow", geometry, material);
+        const m = this.build("yellow", geometry, material, 100);
         m.receiveShadow = true;
         m.castShadow = true;
     }
