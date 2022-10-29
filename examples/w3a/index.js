@@ -156,7 +156,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!");
+        console.log("Start root model!!!!");
         this.level = LevelActor.create();
 
 

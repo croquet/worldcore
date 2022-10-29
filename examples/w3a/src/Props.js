@@ -1,7 +1,7 @@
 import { ModelService, Constants, Actor, Pawn, v3_multiply, mix, AM_Smoothed, v3_add, v3_floor, v3_min, v3_max, v3_sub, PM_Smoothed,
-    PM_ThreeVisible, THREE, Behavior, AM_Behavioral, q_multiply, q_axisAngle, v3_normalize, q_normalize, CompositeBehavior, sphericalRandom, RegisterMixin, AM_Spatial, toRad, ViewRoot, viewRoot, PM_Spatial, PM_ThreeVisibleX} from "@croquet/worldcore";
+    PM_ThreeVisible, THREE, Behavior, AM_Behavioral, q_multiply, q_axisAngle, v3_normalize, q_normalize, CompositeBehavior, sphericalRandom, RegisterMixin, AM_Spatial, toRad, ViewRoot, viewRoot, PM_Spatial, PM_ThreeVisibleX, PM_InstancedMesh} from "@croquet/worldcore";
 
-import { toWorld, packKey} from "./Voxels";
+import { toWorld, packKey, Voxels} from "./Voxels";
 import * as BEHAVIORS from "./SharedBehaviors";
 import { sideColor } from "./MapView";
 
@@ -17,6 +17,7 @@ export class PropManager extends ModelService {
         this.props = new Map();
         this.subscribe("edit", "plantTree", this.onPlantTree);
         this.subscribe("edit", "clear", this.onClear);
+        this.subscribe("voxels", "set", this.validate);
     }
 
     add(prop) {
@@ -24,7 +25,6 @@ export class PropManager extends ModelService {
         const old = this.props.get(key);
         if (old) old.destroy();
         this.props.set(key, prop);
-
     }
 
     remove(prop) {
@@ -36,6 +36,14 @@ export class PropManager extends ModelService {
         doomed.forEach(prop => prop.destroy());
     }
 
+    validate(data) { // A voxel has changed, check nearby
+        const box = Voxels.boxSet(...data.xyz);
+        box.forEach(key => {
+            const prop = this.props.get(key);
+            if (prop) prop.validate();
+        });
+    }
+
     onClear(data) {
         const voxel = data.xyz
         const key = packKey(...voxel);
@@ -45,14 +53,11 @@ export class PropManager extends ModelService {
 
     onPlantTree(data) {
         const voxel = data.xyz
-        const surfaces = this.service("Surfaces");
+        // const surfaces = this.service("Surfaces");
         const x = 0.1 + 0.8 * this.random();
-        const y = 0.1+ 0.8 * this.random();
-        const v =[...voxel];
-        v[0] += x;
-        v[1] += y;
-        const z = surfaces.elevation(v) || 0;
-        TreeActor.create({voxel, fraction:[x,y,z]});
+        const y = 0.1 + 0.8 * this.random();
+        const tree = TreeActor.create({voxel, fraction:[x,y,0]});
+        tree.validate();
     }
 }
 PropManager.register("PropManager");
@@ -66,11 +71,9 @@ PropManager.register("PropManager");
 export class VoxelActor extends mix(Actor).with(AM_Spatial) {
 
 
-    init(options) {
-        super.init(options);
-        const pm = this.service("PropManager");
-        pm.add(this);
-    }
+    // init(options) {
+    //     super.init(options);
+    // }
 
     destroy() {
         super.destroy();
@@ -84,6 +87,7 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
     get voxel() { return this._voxel || [0,0,0]}
     get key() { return packKey(...this.voxel)}
     get fraction() { return this._fraction || [0,0,0]}
+    get xyz() { return v3_add(this.voxel, this.fraction)}
 
     clamp() {
         const floor = v3_floor(this.fraction);
@@ -116,6 +120,8 @@ export class PropActor extends VoxelActor {
         pm.remove(this.key);
     }
 
+    validate() {} // Check to see if the prop is affected by changing terrain
+
 }
 PropActor.register("PropActor");
 
@@ -129,10 +135,8 @@ export class RubbleActor extends mix(VoxelActor).with(AM_Behavioral) {
 
     init(options) {
         super.init(options);
-        this.startBehavior({name: "SequenceBehavior", options: {parallel: true, behaviors:[
-            {name: "FallBehavior"},
-            {name: "TumbleBehavior"}]
-        }});
+        const FallAndDestroy = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "DestroyBehavior"]}}
+        this.startBehavior({name: "CompositeBehavior", options: {parallel: true, behaviors:["TumbleBehavior", FallAndDestroy]}});
     }
 
     get type() {return this._type || Constants.voxel.dirt};
@@ -140,26 +144,19 @@ export class RubbleActor extends mix(VoxelActor).with(AM_Behavioral) {
 }
 RubbleActor.register("RubbleActor");
 
-
 //------------------------------------------------------------------------------------------
 //-- RubblePawn-----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 
-class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleX) {
+class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
     constructor(actor) {
         super(actor);
-
-        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...sideColor(this.actor.type))} );
-
-        this.material.side = THREE.DoubleSide;
-        this.material.shadowSide = THREE.DoubleSide;
-        this.mesh = new THREE.Mesh( this.geometry, this.material );
-        this.mesh.receiveShadow = true;
-        this.mesh.castShadow = true;
-        this.setRenderObject(this.mesh);
-
+        switch (this.actor.type) {
+            case Constants.voxel.dirt: this.useInstance("dirtRubble"); break;
+            case Constants.voxel.rock: this.useInstance("rockRubble"); break;
+            default: this.useInstance("dirtRubble");
+        }
     }
 }
 
@@ -167,13 +164,31 @@ class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleX) {
 //-- TreeActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class TreeActor extends mix(VoxelActor).with(AM_Behavioral) {
+/// xxx Bug with trees on shims atop cap & double ramps
+
+export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
 
     get pawn() {return TreePawn}
 
     init(options) {
         super.init(options);
-        this.startBehavior({name: "GrowBehavior"});
+        this.startBehavior("GrowBehavior");
+    }
+
+    validate() { // Check to see if the prop is affected by changing terrain
+        const voxels = this.service("Voxels");
+        const surfaces = this.service("Surfaces");
+        const type = voxels.get(...this.voxel);
+        if (type >=2 ) this.destroy();
+        const belowXYZ = Voxels.adjacent(...this.voxel,[0,0,-1]);
+        const belowType = voxels.get(...belowXYZ);
+        if (belowType <2 ) this.destroy();
+
+        const e = surfaces.elevation(...this.xyz) || 0;
+        if (e === undefined) this.destroy();
+        const fraction = [...this.fraction];
+        fraction[2] = e;
+        this.set({fraction});
     }
 
 }
@@ -185,28 +200,13 @@ TreeActor.register("TreeActor");
 //------------------------------------------------------------------------------------------
 
 
-class TreePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisibleX) {
+class TreePawn extends mix(Pawn).with(PM_Spatial, PM_InstancedMesh) {
     constructor(actor) {
         super(actor);
-        const im = this.service("InstanceManager");
-
-        this.mesh = im.get("yellow");
-        this.index = this.mesh.use(this);
-
-        this.updateMatrix()
-
-        this.listenOnce("viewGlobalChanged", this.updateMatrix);
-
+        this.useInstance("pineTree");
     }
 
-    updateMatrix() {
-        this.mesh.updateMatrix(this.index, this.global)
-    }
 
-    destroy() {
-        super.destroy();
-        this.mesh.release(this.index);
-    }
 }
 
 

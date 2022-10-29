@@ -145,6 +145,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
                 case "dig": this.onDig(); break;
                 case "tree": this.onTree(); break;
                 case "clear": this.onClear(); break;
+                case "base": this.onBase(); break;
             }
 
         };
@@ -215,7 +216,6 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
 
     onTree() {
         if (!this.pointerHit) return;
-        console.log("Plant tree: " +  this.pointerHit.voxel);
         this.publish("edit", "plantTree",{xyz: this.pointerHit.voxel});
     }
 
@@ -223,6 +223,18 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         if (!this.pointerHit) return;
         console.log("Clear: " +  this.pointerHit.voxel);
         this.publish("edit", "clear",{xyz: this.pointerHit.voxel});
+    }
+
+    onBase() {
+        if (!this.pointerHit) return;
+        // console.log("base: " +  this.pointerHit.voxel);
+        const voxel = this.pointerHit.voxel;
+        const fraction = this.pointerHit.fraction;
+        const surfaces = this.modelService("Surfaces");
+        const xyz = v3_add(voxel, fraction);
+        console.log(xyz);
+        console.log(surfaces.elevation(...xyz));
+        // this.publish("edit", "clear",{xyz: this.pointerHit.voxel});
     }
 
     onWheel(data) {

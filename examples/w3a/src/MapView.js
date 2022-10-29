@@ -10,7 +10,6 @@ import { toWorld } from "./Voxels";
 
 const frameMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(0.49,0.40,0.03)});
 frameMaterial.side = THREE.DoubleSide;
-// frameMaterial.shadowSide = THREE.DoubleSide;
 
 const triangleMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(1,1,1)});
 triangleMaterial.polygonOffset = true;
@@ -39,10 +38,9 @@ texture.onload = () => {
 }
 texture.src = paper;
 
-const lineMaterial = new THREE.LineBasicMaterial( {color: new THREE.Color(0.9,0.9,0.9)} );
-lineMaterial.blending = THREE.MultiplyBlending; // xxx Causes heavylines when lines overlap
-lineMaterial.blendSrc = THREE.OneMinusSrcColorFactor;
-lineMaterial.blendDst = THREE.DstColorFactor;
+const lineMaterial = new THREE.LineBasicMaterial( {color: new THREE.Color(0.3,0.3,0.3)} );
+lineMaterial.opacity = 0.1;
+lineMaterial.transparent = true;
 lineMaterial.polygonOffset = true;
 lineMaterial.polygonOffsetFactor = -1;
 lineMaterial.polygonOffsetUnits = -1;

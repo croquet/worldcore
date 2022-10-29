@@ -157,32 +157,32 @@ class Surface {
     get hasSide() {return this.sides.some(e => e)}
     get hasShape() {return this.shapes.some(e => e)}
     get hasShim() {return this.shims.some(e => e)}
-    get isEmpty() { return !(this.floor || this.ceiling || this.hasFace || this.hasRamp || this.hasDouble || this.hasCap || this.hasSide || this.hasShape || this.hasShim); }
+    get isEmpty() { return !(this.floor || this.ceiling || this.hasFace || this.hasRamp || this.hasDouble || this.hasCap || this.hasShape || this.hasShim); }
 
     elevation(x,y) {
 
         if (!this.below && !this.hasCap) return undefined;
 
+        let e = 0;
+
         const xx = 1-x;
         const yy = 1-y
-        if (this.ramps[0]) return xx;
-        if (this.ramps[1]) return yy;
-        if (this.ramps[2]) return x;
-        if (this.ramps[3]) return y;
+        if (this.ramps[0]) e = Math.max(e,xx);
+        if (this.ramps[1]) e = Math.max(e,yy);
+        if (this.ramps[2]) e = Math.max(e,x);
+        if (this.ramps[3]) e = Math.max(e,y);
 
-        if (this.doubles[0]) return Math.min(1, xx+yy);
-        if (this.doubles[1]) return Math.min(1, x+yy);
-        if (this.doubles[2]) return Math.min(1, x+y);
-        if (this.doubles[3]) return Math.min(1, xx+y);
+        if (this.doubles[0]) e = Math.max(e,xx+yy);
+        if (this.doubles[1]) e = Math.max(e,x+yy);
+        if (this.doubles[2]) e = Math.max(e,x+y);
+        if (this.doubles[3]) e = Math.max(e,xx+y);
 
-        if (this.shims[0]) return Math.max(0, -1 + xx+yy);
-        if (this.shims[1]) return Math.max(0, -1 + x+yy);
-        if (this.shims[2]) return Math.max(0, -1 + x+y);
-        if (this.shims[3]) return Math.max(0, -1 + xx+y);
+        if (this.shims[0]) e = Math.max(e, xx+yy-1);
+        if (this.shims[1]) e = Math.max(e,x+yy-1);
+        if (this.shims[2]) e = Math.max(e,x+y-1);
+        if (this.shims[3]) e = Math.max(e,xx+y-1);
 
-
-
-        return 0;
+        return Math.max(0, Math.min(1, e));
 
     }
 

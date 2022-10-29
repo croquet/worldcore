@@ -2,8 +2,8 @@ import { ViewService } from "./Root";
 import * as THREE from 'three';
 
 
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+// import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+// import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 
 
 //------------------------------------------------------------------------------------------
@@ -80,6 +80,60 @@ export class RenderManager extends ViewService {
 //-- XXX  ----------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------------
 
+//------------------------------------------------------------------------------------------
+//-- ThreeVisible  -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export const PM_InstancedMesh = superclass => class extends superclass {
+
+    constructor(...args) {
+        super(...args);
+        this.listen("viewGlobalChanged", this.updateMatrix);
+    }
+
+    destroy() {
+        super.destroy();
+        this.mesh.release(this.meshIndex);
+    }
+
+    useInstance(name) {
+        const im = this.service("InstanceManager");
+        this.mesh = im.get(name);
+        this.meshIndex = this.mesh.use(this);
+        this.updateMatrix()
+    }
+
+    updateMatrix() {
+        if (this.meshIndex === undefined) return;
+        this.mesh.updateMatrix(this.meshIndex, this.global)
+    }
+
+    // destroy() {
+    //     super.destroy();
+    //     this.mesh.release(this.meshIndex);
+    // }
+
+    // refreshDrawTransform() {
+    //     if(this.renderObject){
+    //         this.renderObject.matrix.fromArray(this.global);
+    //         this.renderObject.matrixWorldNeedsUpdate = true;
+    //     }
+    // }
+
+    // setRenderObject(renderObject) {
+    //     const render = this.service("ThreeRenderManager");
+    //     renderObject.wcPawn = this;
+    //     this.renderObject = renderObject;
+    //     this.renderObject.matrixAutoUpdate = false;
+    //     this.renderObject.matrix.fromArray(this.global);
+    //     this.renderObject.matrixWorldNeedsUpdate = true;
+    //     if (render && render.scene) render.scene.add(this.renderObject);
+    //     if (this.onSetRenderObject) this.onSetRenderObject(renderObject);
+    // }
+
+
+};
+
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------
@@ -105,15 +159,10 @@ export const PM_ThreeVisibleX = superclass => class extends superclass {
             this.renderObject.matrix.fromArray(this.global);
             this.renderObject.matrixWorldNeedsUpdate = true;
         }
-        // if(this.colliderObject){
-        //     this.colliderObject.matrix.fromArray(this.global);
-        //     this.colliderObject.matrixWorldNeedsUpdate = true;
-        // }
     }
 
     setRenderObject(renderObject) {
         const render = this.service("ThreeRenderManager");
-        // if (render) render.dirtyAllLayers();
         renderObject.wcPawn = this;
         this.renderObject = renderObject;
         this.renderObject.matrixAutoUpdate = false;
@@ -123,16 +172,7 @@ export const PM_ThreeVisibleX = superclass => class extends superclass {
         if (this.onSetRenderObject) this.onSetRenderObject(renderObject);
     }
 
-    // setColliderObject(colliderObject) {
-    //     const render = this.service("ThreeRenderManager");
-    //     if (render) render.dirtyAllLayers();
-    //     colliderObject.wcPawn = this;
-    //     this.colliderObject = colliderObject;
-    //     this.colliderObject.matrixAutoUpdate = false;
-    //     this.colliderObject.matrix.fromArray(this.global);
-    //     this.colliderObject.matrixWorldNeedsUpdate = true;
-    //     if (render && render.scene) render.scene.add(this.colliderObject);
-    // }
+
 };
 
 
@@ -146,7 +186,7 @@ export class ThreeRenderManagerX extends RenderManager {
     constructor(options = {}, name) {
         super(options, name || "ThreeRenderManager");
 
-        this.threeLayers = {}; // Three-specific layers
+        // this.threeLayers = {}; // Three-specific layers
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);

@@ -241,7 +241,7 @@ export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
     }
 
     translateTo(v) {
-        this.set({translation:v}, true);
+        this.set({translation:v});
     }
 
     positionTo(data) {

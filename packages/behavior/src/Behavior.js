@@ -26,7 +26,7 @@ Constants.WC_BEHAVIORS = new Map();
     startBehavior(behavior) {
         if (!behavior) return;
         if (this.behavior) this.behavior.destroy();
-        const name = behavior.name;
+        const name = behavior.name || behavior;
         const options = behavior.options || {};
         options.actor = this;
         const b = Constants.WC_BEHAVIORS.get(name);
@@ -35,8 +35,6 @@ Constants.WC_BEHAVIORS = new Map();
         } else{
             console.warn("Behavior "+ name + " not found!")
         }
-
-
     }
 
 }
@@ -76,7 +74,7 @@ export class Behavior extends Actor {
 
     startChild(behavior) {
         if (!behavior) return;
-        const name = behavior.name;
+        const name = behavior.name || behavior;
         const options = behavior.options || {};
         options.actor = this.actor;
         options.parent = this;
