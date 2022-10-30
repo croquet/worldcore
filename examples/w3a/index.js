@@ -18,6 +18,7 @@ import { WorldBuilder } from "./src/WorldBuilder";
 import { GodView } from "./src/GodView";
 import { MapView, MapViewX } from "./src/MapView";
 import { InstanceManager } from "./src/Instances";
+import { BotManager } from "./src/Bots";
 
 // import { mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils';
 
@@ -114,7 +115,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisibleX) {
         const group = new THREE.Group()
 
 
-        const ambient = new THREE.AmbientLight( 0xffffff, 0.5 );
+        const ambient = new THREE.AmbientLight( 0xffffff, 0.5);
         group.add(ambient);
 
         const sun = new THREE.DirectionalLight(new THREE.Color(1,1,1), 0.5 );
@@ -151,7 +152,7 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisibleX) {
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [Voxels, Stress, Surfaces, WorldBuilder, PropManager];
+        return [Voxels, Stress, Surfaces, WorldBuilder, PropManager, BotManager];
     }
 
     init(...args) {

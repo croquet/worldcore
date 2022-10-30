@@ -77,7 +77,13 @@ export class InstanceManager extends ViewService {
     }
 
     buildAll() {
+        this.buildRubble();
+        this.buildBase();
+        this.buildTrees()
+        this.buildBots()
+    }
 
+    buildRubble() {
         const dirt = new THREE.BoxGeometry( 1, 1, 1 );
         setGeometryColor(dirt, Constants.color.dirt);
         const dirtMesh = this.build("dirtRubble", dirt, instanceMaterial);
@@ -89,8 +95,34 @@ export class InstanceManager extends ViewService {
         const rockMesh = this.build("rockRubble", rock, instanceMaterial);
         rockMesh.receiveShadow = true;
         rockMesh.castShadow = true;
+    }
 
+    buildBase() {
+        const base = new THREE.BoxGeometry( 5, 5, 0.5 );
+        base.translate(0,0,0.25);
+        const column0 = new THREE.CylinderGeometry( 0.5,0.5, 3, 7);
+        const column1 = new THREE.CylinderGeometry( 0.5,0.5, 3, 7);
+        const column2 = new THREE.CylinderGeometry( 0.5,0.5, 3, 7);
+        const column3 = new THREE.CylinderGeometry( 0.5,0.5, 3, 7);
+        column0.rotateX(toRad(90));
+        column1.rotateX(toRad(90));
+        column2.rotateX(toRad(90));
+        column3.rotateX(toRad(90));
+        column0.translate(-1.5,-1.5,-1.5);
+        column1.translate(1.5,-1.5,-1.5);
+        column2.translate(-1.5,1.5,-1.5);
+        column3.translate(1.5,1.5,-1.5);
 
+        const geometry = mergeBufferGeometries([base, column0, column1, column2, column3]);
+
+        setGeometryColor(geometry, Constants.color.rock);
+
+        const mesh = this.build("base", geometry, instanceMaterial);
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
+    }
+
+    buildTrees() {
         const trunk = new THREE.CylinderGeometry( 0.5,0.5, 10, 7);
         setGeometryColor(trunk, [0.7, 0.5, 0.3]);
         const top = new THREE.ConeGeometry( 2,15, 8);
@@ -105,5 +137,17 @@ export class InstanceManager extends ViewService {
         mesh.receiveShadow = true;
         mesh.castShadow = true;
     }
+
+    buildBots() {
+        const geometry = new THREE.BoxGeometry( 0.5, 0.5, 2 );
+        setGeometryColor(geometry, [1, 1, 0]);
+        geometry.translate(0,0,1);
+
+        const mesh = this.build("bot", geometry, instanceMaterial);
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
+    }
+
+
 
 }

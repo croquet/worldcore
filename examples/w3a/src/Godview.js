@@ -16,6 +16,8 @@ import clearOffIcon from "../assets/clearOffIcon.png";
 import clearOnIcon from "../assets/clearOnIcon.png";
 import baseOffIcon from "../assets/baseOffIcon.png";
 import baseOnIcon from "../assets/baseOnIcon.png";
+import spawnOffIcon from "../assets/spawnOffIcon.png";
+import spawnOnIcon from "../assets/spawnOnIcon.png";
 
 //------------------------------------------------------------------------------------------
 //-- Widgets -------------------------------------------------------------------------------
@@ -111,9 +113,12 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         const toggleSet = new ToggleSet2;
         const fillToggle = new ImageToggleWidget2({name: "fill", parent: hud, size:[30,30], translation: [15,15], toggleSet: toggleSet, offURL: fillOffIcon, onURL: fillOnIcon});
         const digToggle = new ImageToggleWidget2({name: "dig", parent: hud, size:[30,30], translation: [50,15], toggleSet: toggleSet, offURL: digOffIcon, onURL: digOnIcon});
-        const treeToggle = new ImageToggleWidget2({name: "tree", parent: hud, size:[30,30], translation: [15,50], toggleSet: toggleSet, offURL: treeOffIcon, onURL: treeOnIcon});
+
+        const baseToggle = new ImageToggleWidget2({name: "base", parent: hud, size:[30,30], translation: [15,50], toggleSet: toggleSet, offURL: baseOffIcon, onURL: baseOnIcon});
         const clearToggle = new ImageToggleWidget2({name: "clear", parent: hud, size:[30,30], translation: [50,50], toggleSet: toggleSet, offURL: clearOffIcon, onURL: clearOnIcon});
-        const baseToggle = new ImageToggleWidget2({name: "base", parent: hud, size:[30,30], translation: [15,85], toggleSet: toggleSet, offURL: baseOffIcon, onURL: baseOnIcon});
+
+        const treeToggle = new ImageToggleWidget2({name: "tree", parent: hud, size:[30,30], translation: [15,85], toggleSet: toggleSet, offURL: treeOffIcon, onURL: treeOnIcon});
+        const spawnToggle = new ImageToggleWidget2({name: "spawn", parent: hud, size:[30,30], translation: [50,85], toggleSet: toggleSet, offURL: spawnOffIcon, onURL: spawnOnIcon});
 
         this.subscribe(toggleSet.id, "pick", this.setEditMode);
         toggleSet.pick(fillToggle);
@@ -146,6 +151,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
                 case "tree": this.onTree(); break;
                 case "clear": this.onClear(); break;
                 case "base": this.onBase(); break;
+                case "spawn": this.onSpawn(); break;
             }
 
         };
@@ -211,6 +217,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         if (this.pointerHit.fraction[1]+e > 1) xyz = Voxels.adjacent(...this.pointerHit.voxel, [0,1,0]);
         if (this.pointerHit.fraction[2]-e < 0) xyz = Voxels.adjacent(...this.pointerHit.voxel, [0,0,-1]);
 
+        // Maybe also dig down if the voxels itself is currently empty
         if (Voxels.canEdit(...xyz)) this.publish("edit", "setVoxel",{xyz, type: Constants.voxel.air});
     }
 
@@ -219,22 +226,20 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         this.publish("edit", "plantTree",{xyz: this.pointerHit.voxel});
     }
 
+    onSpawn() {
+        if (!this.pointerHit) return;
+        console.log("Spawn: " +  this.pointerHit.voxel);
+        this.publish("edit", "spawn",{xyz: this.pointerHit.voxel});
+    }
+
     onClear() {
         if (!this.pointerHit) return;
-        console.log("Clear: " +  this.pointerHit.voxel);
         this.publish("edit", "clear",{xyz: this.pointerHit.voxel});
     }
 
     onBase() {
         if (!this.pointerHit) return;
-        // console.log("base: " +  this.pointerHit.voxel);
-        const voxel = this.pointerHit.voxel;
-        const fraction = this.pointerHit.fraction;
-        const surfaces = this.modelService("Surfaces");
-        const xyz = v3_add(voxel, fraction);
-        console.log(xyz);
-        console.log(surfaces.elevation(...xyz));
-        // this.publish("edit", "clear",{xyz: this.pointerHit.voxel});
+        this.publish("edit", "buildBase",{xyz: this.pointerHit.voxel});
     }
 
     onWheel(data) {

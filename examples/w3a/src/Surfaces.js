@@ -58,7 +58,7 @@ export class Surfaces extends ModelService {
         primary.forEach(key => { this.get(key).findCaps(voxels,this,secondary) });
         primary.forEach(key => { this.get(key).findSides(voxels,this,secondary)});
 
-        secondary.forEach(key => {this.get(key).findShims();});
+        secondary.forEach(key => {this.get(key).findShims(voxels);});
 
         primary.forEach(key => { this.get(key).cullUnderRamps() });
         primary.forEach(key => { this.get(key).cullUnderDoubles() });
@@ -100,7 +100,7 @@ export class Surfaces extends ModelService {
         primary.forEach(key => { this.get(key).findRamps(voxels); });
         primary.forEach(key => { this.get(key).findCaps(voxels,this,secondary) });
         primary.forEach(key => { this.get(key).findSides(voxels,this,secondary)});
-        secondary.forEach(key => {this.get(key).findShims();});
+        secondary.forEach(key => {this.get(key).findShims(voxels);});
 
         primary.forEach(key => { this.get(key).cullUnderRamps() });
         primary.forEach(key => { this.get(key).cullUnderDoubles() });
@@ -202,8 +202,11 @@ class Surface {
     // Add ramps if there's a wall next to a floor
     findRamps(voxels) {
 
-        // No floor or low ceiling = no ramp
-        if (!this.below || this.above|| this.below == Constants.lava) return;
+        // Base = no ramp
+        if(voxels.get(...this.xyz) === Constants.voxel.base) return;
+
+        // No floor or low ceiling or lava = no ramp
+        if (!this.below || this.above|| this.below === Constants.lava) return;
 
         // Add a ramp if there's a face opposite a non-face.
 
@@ -402,7 +405,10 @@ class Surface {
     }
 
     // Add shims to connect two triangular sides, or a square & a triangle
-    findShims() {
+    findShims(voxels) {
+
+        // Base = no shim
+        if(voxels.get(...this.xyz) === Constants.voxel.base) return;
 
         if (this.floor) {
 

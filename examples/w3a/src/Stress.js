@@ -1,5 +1,6 @@
 import { ModelService, Constants } from "@croquet/worldcore";
-import { RubbleActor } from "./Props";
+// import { RubbleActor } from "./Props";
+import { RubbleActor } from "./Bots";
 import { packKey, unpackKey, Voxels } from "./Voxels";
 
 const max = 1000;

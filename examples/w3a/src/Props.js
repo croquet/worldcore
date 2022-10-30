@@ -17,7 +17,9 @@ export class PropManager extends ModelService {
         this.props = new Map();
         this.subscribe("edit", "plantTree", this.onPlantTree);
         this.subscribe("edit", "clear", this.onClear);
+        this.subscribe("edit", "buildBase", this.onBuildBase);
         this.subscribe("voxels", "set", this.validate);
+        this.subscribe("voxels", "load", this.destroyAll);
     }
 
     add(prop) {
@@ -45,6 +47,8 @@ export class PropManager extends ModelService {
     }
 
     onClear(data) {
+        const voxels = this.service("Voxels");
+        voxels.set(...data.xyz, Constants.voxel.aur);
         const voxel = data.xyz
         const key = packKey(...voxel);
         const prop = this.props.get(key);
@@ -53,11 +57,20 @@ export class PropManager extends ModelService {
 
     onPlantTree(data) {
         const voxel = data.xyz
-        // const surfaces = this.service("Surfaces");
         const x = 0.1 + 0.8 * this.random();
         const y = 0.1 + 0.8 * this.random();
         const tree = TreeActor.create({voxel, fraction:[x,y,0]});
         tree.validate();
+    }
+
+    onBuildBase(data) {
+        const voxels = this.service("Voxels");
+        voxels.set(...data.xyz, Constants.voxel.base);
+        const voxel = data.xyz
+        const x = 0.5;
+        const y = 0.5;
+        const base = BaseActor.create({voxel, fraction:[x,y,0]});
+        base.validate();
     }
 }
 PropManager.register("PropManager");
@@ -70,19 +83,11 @@ PropManager.register("PropManager");
 
 export class VoxelActor extends mix(Actor).with(AM_Spatial) {
 
+    voxelSet(v) { this.set({translation: toWorld(v3_add(v, this.fraction))})}
+    voxelSnap(v) { this.snap({translation: toWorld(v3_add(v, this.voxel))})}
 
-    // init(options) {
-    //     super.init(options);
-    // }
-
-    destroy() {
-        super.destroy();
-        const pm = this.service("PropManager");
-        pm.remove(this.key);
-    }
-
-    voxelSet(v) { this._voxel = v; this.set({translation: toWorld(v3_add(v, this.fraction))})}
-    fractionSet(v) { this._fraction = v; this.set({translation: toWorld(v3_add(v, this.voxel))})}
+    fractionSet(v) { this.set({translation: toWorld(v3_add(v, this.voxel))})}
+    fractionSnap(v) { this.snap({translation: toWorld(v3_add(v, this.voxel))})}
 
     get voxel() { return this._voxel || [0,0,0]}
     get key() { return packKey(...this.voxel)}
@@ -124,41 +129,6 @@ export class PropActor extends VoxelActor {
 
 }
 PropActor.register("PropActor");
-
-//------------------------------------------------------------------------------------------
-//-- RubbleActor ----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-export class RubbleActor extends mix(VoxelActor).with(AM_Behavioral) {
-
-    get pawn() {return RubblePawn}
-
-    init(options) {
-        super.init(options);
-        const FallAndDestroy = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "DestroyBehavior"]}}
-        this.startBehavior({name: "CompositeBehavior", options: {parallel: true, behaviors:["TumbleBehavior", FallAndDestroy]}});
-    }
-
-    get type() {return this._type || Constants.voxel.dirt};
-
-}
-RubbleActor.register("RubbleActor");
-
-//------------------------------------------------------------------------------------------
-//-- RubblePawn-----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-
-class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
-    constructor(actor) {
-        super(actor);
-        switch (this.actor.type) {
-            case Constants.voxel.dirt: this.useInstance("dirtRubble"); break;
-            case Constants.voxel.rock: this.useInstance("rockRubble"); break;
-            default: this.useInstance("dirtRubble");
-        }
-    }
-}
 
 //------------------------------------------------------------------------------------------
 //-- TreeActor -----------------------------------------------------------------------------
@@ -205,8 +175,40 @@ class TreePawn extends mix(Pawn).with(PM_Spatial, PM_InstancedMesh) {
         super(actor);
         this.useInstance("pineTree");
     }
+}
+
+//------------------------------------------------------------------------------------------
+//-- BaseActor-------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class BaseActor extends PropActor {
+
+    get pawn() {return BasePawn}
+
+    validate() {
+        const voxels = this.service("Voxels");
+        const type = voxels.get(...this.voxel);
+        if (type >=2 ) this.destroy();
+
+        const belowXYZ = Voxels.adjacent(...this.voxel,[0,0,-1]);
+        const belowType = voxels.get(...belowXYZ);
+        if (belowType <2 ) this.destroy();
+    }
+
+}
+BaseActor.register("BaseActor");
 
 
+//------------------------------------------------------------------------------------------
+//-- BasePawn -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+
+class BasePawn extends mix(Pawn).with(PM_Spatial, PM_InstancedMesh) {
+    constructor(actor) {
+        super(actor);
+        this.useInstance("base");
+    }
 }
 
 

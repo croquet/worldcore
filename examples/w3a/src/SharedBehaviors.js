@@ -1,4 +1,5 @@
 import { Constants, Behavior,  q_multiply, q_axisAngle,  q_normalize,  sphericalRandom, } from "@croquet/worldcore";
+import { Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
 //-- FallBehavior --------------------------------------------------------------------------
@@ -80,6 +81,47 @@ class GrowBehavior extends Behavior {
     }
 }
 GrowBehavior.register("GrowBehavior");
+
+//------------------------------------------------------------------------------------------
+//-- GroundTestBehavior --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class GroundTestBehavior extends Behavior {
+    init(options) {
+        super.init(options);
+        this.tickRate = 100;
+    }
+
+    onStart() {
+        this.testElevation();
+    }
+
+    do(delta) {
+        this.testElevation();
+    }
+
+    // Handle double ramp edges & falling
+
+    testElevation() {
+        const voxels = this.service("Voxels");
+        const surfaces = this.service("Surfaces");
+        const type = voxels.get(...this.actor.voxel);
+        if (type >=2 ) { // Buried
+            console.log("Buried!")
+            this.actor.destroy();
+        }
+        const belowXYZ = Voxels.adjacent(...this.actor.voxel,[0,0,-1]);
+        const belowType = voxels.get(...belowXYZ);
+        if (belowType <2 ) this.actor.destroy(); // should fall
+
+        const e = surfaces.elevation(...this.actor.xyz) || 0;
+        if (e === undefined) this.destroy();
+        const fraction = [...this.actor.fraction];
+        fraction[2] = e;
+        this.actor.snap({fraction});
+    }
+}
+GroundTestBehavior.register("GroundTestBehavior");
 
 
 
