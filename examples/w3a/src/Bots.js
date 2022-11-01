@@ -1,4 +1,4 @@
-import { ModelService, Constants, Actor, Pawn, mix, PM_Smoothed, AM_Behavioral, PM_InstancedMesh } from "@croquet/worldcore";
+import { ModelService, Constants, Actor, Pawn, mix, PM_Smoothed, AM_Behavioral, PM_InstancedMesh, SequenceBehavior } from "@croquet/worldcore";
 
 import { toWorld, packKey, Voxels} from "./Voxels";
 import * as BEHAVIORS from "./SharedBehaviors";
@@ -75,8 +75,10 @@ export class RubbleActor extends BotActor {
 
     init(options) {
         super.init(options);
-        const FallAndDestroy = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "DestroyBehavior"]}}
-        this.startBehavior({name: "CompositeBehavior", options: {parallel: true, behaviors:["TumbleBehavior", FallAndDestroy]}});
+
+        const FallThenDestroy = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "DestroyBehavior"]}}
+        this.startBehavior({name: "CompositeBehavior", options: {parallel: true, behaviors:["TumbleBehavior", FallThenDestroy]}});
+        // this.startBehavior("FallBehavior");
     }
 
     get type() {return this._type || Constants.voxel.dirt};
@@ -97,7 +99,9 @@ class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
             case Constants.voxel.rock: this.useInstance("rockRubble"); break;
             default: this.useInstance("dirtRubble");
         }
+
     }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -110,10 +114,11 @@ export class PersonActor extends BotActor {
 
     init(options) {
         super.init(options);
-        // const FallAndDestroy = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "DestroyBehavior"]}}
+        // const FallThenBot = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "BotBehavior"]}}
         // this.startBehavior({name: "CompositeBehavior", options: {parallel: true, behaviors:["TumbleBehavior", FallAndDestroy]}});
-        this.startBehavior("GroundTestBehavior");
+        this.startBehavior("BotBehavior");
     }
+
 
 }
 PersonActor.register("PersonActor");

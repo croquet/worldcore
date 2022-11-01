@@ -67,8 +67,9 @@ export class Behavior extends Actor {
     set tickRate(t) { this._tickRate = t}
 
     tick(delta) {
+        if (this.actor && this.actor.doomed) return;
         if (this.doomed) return;
-        this.do(delta);
+        this.do(delta); //dies here
         if (!this.doomed) this.future(this.tickRate).tick(this.tickRate);
     }
 
@@ -112,7 +113,9 @@ Behavior.register('Behavior');
 
 export class DestroyBehavior extends Behavior {
 
-    onStart() { this.actor.destroy();}
+    get tickRate() { return 0 }
+
+    onStart() { this.actor.destroy(); }
 
 }
 DestroyBehavior.register('DestroyBehavior');
@@ -139,7 +142,7 @@ export class CompositeBehavior extends Behavior {
     get isShuffle() { return this._shuffle }
 
     behaviorsSet(b) { // Changing the behaviors in a composite while its running destroys all the old children and starts the new ones.
-        if (this.children && this.children.size ) {
+        if (this.children && this.children.size) {
             new Set(this.children).forEach(child => child.destroy());
             this.onStart();
         }

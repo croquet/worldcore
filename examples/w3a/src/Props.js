@@ -57,6 +57,7 @@ export class PropManager extends ModelService {
 
     onPlantTree(data) {
         const voxel = data.xyz
+        // xxx if elevation < 0 pick a new spot.
         const x = 0.1 + 0.8 * this.random();
         const y = 0.1 + 0.8 * this.random();
         const tree = TreeActor.create({voxel, fraction:[x,y,0]});
@@ -134,7 +135,6 @@ PropActor.register("PropActor");
 //-- TreeActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-/// xxx Bug with trees on shims atop cap & double ramps
 
 export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
 
@@ -149,13 +149,13 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
         const voxels = this.service("Voxels");
         const surfaces = this.service("Surfaces");
         const type = voxels.get(...this.voxel);
-        if (type >=2 ) this.destroy();
-        const belowXYZ = Voxels.adjacent(...this.voxel,[0,0,-1]);
-        const belowType = voxels.get(...belowXYZ);
-        if (belowType <2 ) this.destroy();
+        if (type >=2 ) this.destroy(); // Buried
+        // const belowXYZ = Voxels.adjacent(...this.voxel,[0,0,-1]);
+        // const belowType = voxels.get(...belowXYZ);
+        // if (belowType <2 ) this.destroy();
 
-        const e = surfaces.elevation(...this.xyz) || 0;
-        if (e === undefined) this.destroy();
+        const e = surfaces.elevation(...this.xyz);
+        if (e<0) this.destroy();
         const fraction = [...this.fraction];
         fraction[2] = e;
         this.set({fraction});

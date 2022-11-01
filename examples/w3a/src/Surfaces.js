@@ -25,7 +25,7 @@ export class Surfaces extends ModelService {
         const zz = Math.floor(z);
         const key = packKey(xx,yy,zz);
         const s = this.get(key);
-        if (!s) return undefined;
+        if (!s) return -1;
         return s.elevation(x-xx, y-yy);
     }
 
@@ -161,12 +161,26 @@ class Surface {
 
     elevation(x,y) {
 
-        if (!this.below && !this.hasCap) return undefined;
-
-        let e = 0;
-
         const xx = 1-x;
         const yy = 1-y
+        let e = 0;
+
+        // if (!this.below && !this.hasCap) return undefined;
+        if (!this.below) {
+            if (!this.hasCap && ! !this.hasShim) return -1 // No surface
+
+            if (this.caps[0] && x+y>1) return -1;
+            if (this.caps[1] && xx+y>1) return -1;
+            if (this.caps[2] && xx+yy>1) return -1;
+            if (this.caps[3] && x+yy>1) return -1;
+
+
+            if (this.shims[0]) e = Math.max(e, xx+yy-1);
+            if (this.shims[1]) e = Math.max(e,x+yy-1);
+            if (this.shims[2]) e = Math.max(e,x+y-1);
+            if (this.shims[3]) e = Math.max(e,xx+y-1);
+        }
+
         if (this.ramps[0]) e = Math.max(e,xx);
         if (this.ramps[1]) e = Math.max(e,yy);
         if (this.ramps[2]) e = Math.max(e,x);
@@ -182,7 +196,7 @@ class Surface {
         if (this.shims[2]) e = Math.max(e,x+y-1);
         if (this.shims[3]) e = Math.max(e,xx+y-1);
 
-        return Math.max(0, Math.min(1, e));
+        return Math.max(0.001, Math.min(0.999, e));
 
     }
 
@@ -411,7 +425,6 @@ class Surface {
         if(voxels.get(...this.xyz) === Constants.voxel.base) return;
 
         if (this.floor) {
-
             if (this.shapes[1] == 3 && this.shapes[0] == 1) this.shims[0] = this.floor;
             if (this.shapes[0] == 3 && this.shapes[1] == 2) this.shims[0] = this.floor;
 

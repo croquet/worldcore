@@ -42,15 +42,14 @@ export class Actor extends WorldcoreModel {
 
     init(options) {
         super.init();
-        // this.listen("parentSet", this.onParent);
-        this.listen("_set", this.set);
         this.set(options);
+        this.listen("_set", this.set);
         this.service('ActorManager').add(this);
         this.publish("actor", "createActor", this);
     }
 
     destroy() {
-        new Set(this.children).forEach(child => child.destroy());
+        if (this.children) new Set(this.children).forEach(child => child.destroy());
         this.set({parent: null});
         this._doomed = true; // About to be destroyed. This is used to prevent creating new future messages.
         this.say("destroyActor");
@@ -86,9 +85,10 @@ export class Actor extends WorldcoreModel {
     }
 
     parentSet(p) {
+        // console.log("parentSet");
         if(this.parent) this.parent.removeChild(this);
         // this._parent = p;
-        if(this.parent) this.parent.addChild(this);
+        if(p) p.addChild(this);
     }
 
     get name() {return this._name || "Actor"}

@@ -157,7 +157,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!");
+        console.log("Start root model!!");
         this.level = LevelActor.create();
 
 
@@ -181,6 +181,13 @@ class MyModelRoot extends ModelRoot {
 
     test1() {
         console.log("test1");
+        const aaa = Actor.create({name: "a"});
+        const bbb = Actor.create({name: "b", parent: aaa});
+        aaa.destroy();
+        console.log(aaa.children);
+        console.log(bbb.parent);
+        aaa.destroy();
+
     }
 
 }

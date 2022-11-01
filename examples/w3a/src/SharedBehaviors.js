@@ -7,15 +7,14 @@ import { Voxels } from "./Voxels";
 
 export class FallBehavior extends Behavior {
 
-    init(options) {
-        super.init(options);
-        this.tickRate = 15;
+    get velocity() { return this.actor._velocity || 0}
+    set velocity(v) { this.actor._velocity = v}
+
+    onStart() {
+        this.tickRate = 50;
         const voxels = this.service("Voxels");
         this.bottom = voxels.solidBelow(...this.actor.voxel);
     }
-
-    get velocity() { return this.actor._velocity || 0}
-    set velocity(v) { this.actor._velocity = v}
 
     do(delta) {
         const gravity = Constants.gravity/ Constants.scaleZ;
@@ -25,7 +24,13 @@ export class FallBehavior extends Behavior {
         fraction[2] = z;
         this.actor.set({fraction});
         this.actor.clamp();
-        if (this.actor.voxel[2] < this.bottom) this.succeed();
+        if (this.actor.voxel[2] < this.bottom) {
+            const final = [...this.actor.voxel];
+            final[2] = this.bottom;
+            this.actor.set({voxel: final});
+            // this.actor.destroy();
+            this.succeed();
+        }
     }
 
 }
@@ -36,15 +41,12 @@ FallBehavior.register("FallBehavior");
 //------------------------------------------------------------------------------------------
 
 class TumbleBehavior extends Behavior {
-    init(options) {
-        super.init(options);
-        this.tickRate = 50;
-    }
 
     get axis() { return this._axis}
     get speed() { return this._speed} // Radians per second
 
     onStart() {
+        this.tickRate = 50;
         if (this.speed === undefined) this._speed = 0.9 + this.random() * 0.9;
         if (this.axis === undefined) this._axis = sphericalRandom();
     }
@@ -63,12 +65,9 @@ TumbleBehavior.register("TumbleBehavior");
 //------------------------------------------------------------------------------------------
 
 class GrowBehavior extends Behavior {
-    init(options) {
-        super.init(options);
-        this.tickRate = 100;
-    }
 
     onStart() {
+        this.tickRate = 500;
         this.size = 0.2;
         this.actor.scale = [this.size, this.size, this.size];
     }
@@ -83,16 +82,13 @@ class GrowBehavior extends Behavior {
 GrowBehavior.register("GrowBehavior");
 
 //------------------------------------------------------------------------------------------
-//-- GroundTestBehavior --------------------------------------------------------------------------
+//-- GroundTestBehavior --------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class GroundTestBehavior extends Behavior {
-    init(options) {
-        super.init(options);
-        this.tickRate = 100;
-    }
 
     onStart() {
+        this.tickRate = 100;
         this.testElevation();
     }
 
@@ -112,16 +108,37 @@ class GroundTestBehavior extends Behavior {
         }
         const belowXYZ = Voxels.adjacent(...this.actor.voxel,[0,0,-1]);
         const belowType = voxels.get(...belowXYZ);
-        if (belowType <2 ) this.actor.destroy(); // should fall
-
-        const e = surfaces.elevation(...this.actor.xyz) || 0;
-        if (e === undefined) this.destroy();
+        if (belowType <2 ) {
+            console.log("fall");
+            const FallThenBot = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "BotBehavior"]}}
+            // this.actor.startBehavior("FallBehavior");
+            this.actor.startBehavior(FallThenBot);
+        }
+        const e = surfaces.elevation(...this.actor.xyz);
         const fraction = [...this.actor.fraction];
         fraction[2] = e;
         this.actor.snap({fraction});
     }
 }
 GroundTestBehavior.register("GroundTestBehavior");
+
+//------------------------------------------------------------------------------------------
+//-- BotBehavior ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class BotBehavior extends Behavior {
+    // init(options) {
+    //     super.init(options);
+    // }
+
+    onStart() {
+        this.startChild("GroundTestBehavior");
+    }
+
+
+}
+BotBehavior.register("BotBehavior");
+
 
 
 
