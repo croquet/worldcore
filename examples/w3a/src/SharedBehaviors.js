@@ -26,9 +26,8 @@ export class FallBehavior extends Behavior {
         this.actor.clamp();
         if (this.actor.voxel[2] < this.bottom) {
             const final = [...this.actor.voxel];
-            final[2] = this.bottom;
+            final[2] = this.bottom+1;
             this.actor.set({voxel: final});
-            // this.actor.destroy();
             this.succeed();
         }
     }
@@ -89,7 +88,7 @@ class GroundTestBehavior extends Behavior {
 
     onStart() {
         this.tickRate = 100;
-        this.testElevation();
+        // this.testElevation(); // Causes bug
     }
 
     do(delta) {
@@ -111,7 +110,6 @@ class GroundTestBehavior extends Behavior {
         if (belowType <2 ) {
             console.log("fall");
             const FallThenBot = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "BotBehavior"]}}
-            // this.actor.startBehavior("FallBehavior");
             this.actor.startBehavior(FallThenBot);
         }
         const e = surfaces.elevation(...this.actor.xyz);
@@ -127,14 +125,10 @@ GroundTestBehavior.register("GroundTestBehavior");
 //------------------------------------------------------------------------------------------
 
 class BotBehavior extends Behavior {
-    // init(options) {
-    //     super.init(options);
-    // }
 
     onStart() {
         this.startChild("GroundTestBehavior");
     }
-
 
 }
 BotBehavior.register("BotBehavior");

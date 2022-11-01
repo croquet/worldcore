@@ -1,6 +1,5 @@
 import { RegisterMixin, WorldcoreModel, Shuffle, Actor,  Pawn, GetPawn,Constants } from "@croquet/worldcore-kernel";
 
-// const behaviorRegistry = new Map();
 Constants.WC_BEHAVIORS = new Map();
 
 //------------------------------------------------------------------------------------------
@@ -13,10 +12,10 @@ Constants.WC_BEHAVIORS = new Map();
 
  export const AM_Behavioral = superclass => class extends superclass {
 
-    init(...args) {
-        super.init(...args);
-        // this.listen("setBehaviorCode", this.setBehaviorCode);
-    }
+    // init(...args) {
+    //     super.init(...args);
+    //     // this.listen("setBehaviorCode", this.setBehaviorCode);
+    // }
 
     destroy() {
         super.destroy();
@@ -69,7 +68,7 @@ export class Behavior extends Actor {
     tick(delta) {
         if (this.actor && this.actor.doomed) return;
         if (this.doomed) return;
-        this.do(delta); //dies here
+        this.do(delta);
         if (!this.doomed) this.future(this.tickRate).tick(this.tickRate);
     }
 
@@ -123,13 +122,6 @@ DestroyBehavior.register('DestroyBehavior');
 //------------------------------------------------------------------------------------------
 //-- CompositeBehavior ---------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-// const b = {
-//     name: "FallBehavior",
-//     options: {gravity: 9.8}
-// }
-
-// if You set the behaviors, do kill all children and do onStart again.
 
 // Behaviors with multiple child behaviors. They don't tick themselves, but respond to reported success or
 // failure by their children who are ticking.
@@ -307,6 +299,3 @@ export class LoopBehavior extends DecoratorBehavior {
 
 }
 LoopBehavior.register('LoopBehavior');
-
-
-// console.log(behaviorRegistry);

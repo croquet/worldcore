@@ -37,7 +37,7 @@ export class BotManager extends ModelService {
         const voxel = data.xyz
         const x = 0.5
         const y = 0.5
-        const bot = PersonActor.create({voxel, fraction:[x,y,1]});
+        const bot = PersonActor.create({voxel, fraction:[x,y,0]});
 
     }
 }
@@ -76,9 +76,8 @@ export class RubbleActor extends BotActor {
     init(options) {
         super.init(options);
 
-        const FallThenDestroy = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "DestroyBehavior"]}}
+        const FallThenDestroy = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "DestroyBehavior"]}};
         this.startBehavior({name: "CompositeBehavior", options: {parallel: true, behaviors:["TumbleBehavior", FallThenDestroy]}});
-        // this.startBehavior("FallBehavior");
     }
 
     get type() {return this._type || Constants.voxel.dirt};
@@ -114,8 +113,6 @@ export class PersonActor extends BotActor {
 
     init(options) {
         super.init(options);
-        // const FallThenBot = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "BotBehavior"]}}
-        // this.startBehavior({name: "CompositeBehavior", options: {parallel: true, behaviors:["TumbleBehavior", FallAndDestroy]}});
         this.startBehavior("BotBehavior");
     }
 
