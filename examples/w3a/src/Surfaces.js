@@ -29,6 +29,26 @@ export class Surfaces extends ModelService {
         return s.elevation(x-xx, y-yy);
     }
 
+    tangent(x,y,z) {
+        const xx = Math.floor(x);
+        const yy = Math.floor(y);
+        const zz = Math.floor(z);
+        const key = packKey(xx,yy,zz);
+        const s = this.get(key);
+        if (!s) return null;
+        return s.tangent(x-xx, y-yy);
+    }
+
+    slope(x,y,z) {
+        const xx = Math.floor(x);
+        const yy = Math.floor(y);
+        const zz = Math.floor(z);
+        const key = packKey(xx,yy,zz);
+        const s = this.get(key);
+        if (!s) return null;
+        return s.slope(x-xx, y-yy);
+    }
+
     get(key) {
         return this.surfaces.get(key) || new Surface(key);
     }
@@ -174,7 +194,6 @@ class Surface {
             if (this.caps[2] && xx+yy>1) return -1;
             if (this.caps[3] && x+yy>1) return -1;
 
-
             if (this.shims[0]) e = Math.max(e, xx+yy-1);
             if (this.shims[1]) e = Math.max(e,x+yy-1);
             if (this.shims[2]) e = Math.max(e,x+y-1);
@@ -196,9 +215,126 @@ class Surface {
         if (this.shims[2]) e = Math.max(e,x+y-1);
         if (this.shims[3]) e = Math.max(e,xx+y-1);
 
-        return Math.max(0.001, Math.min(0.999, e));
+        // return Math.max(0, Math.min(0.999, e));
+        return Math.max(0, Math.min(1, e));
 
     }
+
+    tangent(x,y) {
+
+        const sw = x + y < 1;
+        const ne = !sw
+        const nw = x - y < 0;
+        const se = !nw
+
+        const xx = 1-x;
+        const yy = 1-y
+
+        let e = 0;
+        let xt = 0;
+        let yt = 0;
+
+        if (this.ramps[0]){
+            e = xx;
+            xt = -1;
+        }
+
+        if (this.ramps[1]){
+            e = yy;
+            yt = -1;
+        }
+
+        if (this.ramps[2]){
+            e = x;
+            xt = 1;
+        }
+
+        if (this.ramps[3]){
+            e = y;
+            yt = 1;
+        }
+
+//--------------------------------------------
+
+        if (this.doubles[0]) {
+            e = xx+yy;
+            if(ne) {xt=-1; yt=-1}
+        }
+        if (this.doubles[1]) {
+            e = x+yy;
+            if(nw) {xt=1; yt=-1};
+        }
+
+        if (this.doubles[2]) {
+            e = x+yy;
+            if(sw) {xt=1; yt=1};
+        }
+
+        if (this.doubles[3]) {
+            e = xx+y;
+            if(se) {xt=-1; yt=1};
+        }
+
+        //--------------------------------------------
+
+        if (this.shims[0]) {
+            const ee = xx+yy-1;
+            if(sw && ee>e) {xt=-1; yt=-1}
+
+        }
+        if (this.shims[1]) {
+            const ee = x+yy-1;
+            if(se && ee>e) {xt=1; yt=-1}
+
+        }
+        if (this.shims[2]) {
+            const ee = x+y-1;
+            if(ne && ee>e) {xt=1; yt=1}
+
+        }
+        if (this.shims[3]) {
+            const ee = xx+y-1;
+            if(nw && ee>e) {xt=-1; yt=1}
+        }
+
+        return [xt, yt];
+
+    }
+
+    slope(x,y) {
+        const t = this.tangent(x,y);
+        return t[0] + t[1];
+    }
+
+    // tangentOld(x,y) {
+    //     const sw = x + y < 1;
+    //     const ne = !sw
+    //     const nw = x - y < 0;
+    //     const se = !nw
+
+    //     let xt = 0;
+    //     let yt = 0;
+
+    //     if (this.ramps[0]) xt = -1;
+    //     if (this.ramps[1]) yt = -1
+    //     if (this.ramps[2]) xt = 1;
+    //     if (this.ramps[3]) yt = 1
+
+    //     if (this.doubles[0]) { xt = sw?0:-1; yt = sw?0:-1 }
+    //     if (this.doubles[1]) { xt = se?0:1; yt = se?0:-1 }
+    //     if (this.doubles[2]) { xt = ne?0:1; yt = ne?0:1 }
+    //     if (this.doubles[3]) { xt = nw?0:-1; yt = nw?0:1 }
+
+    //     if (this.shims[0]) { xt = ne?0:-1; yt = ne?0:-1 }
+    //     if (this.shims[1]) { xt = nw?0:1; yt = nw?0:-1 }
+    //     if (this.shims[2]) { xt = sw?0:1; yt = sw?0:1 }
+    //     if (this.shims[3]) { xt = se?0:-1; yt = se?0:1 }
+
+    //     // Also need to handle ramp + shim and double shims ("cuban")
+
+    //     return [xt, yt];
+
+    // }
 
     // Find adjacent solid voxels
     findFaces(voxels) {
@@ -228,6 +364,11 @@ class Surface {
         if (this.south && !this.north) this.ramps[1] = this.below;
         if (this.east && !this.west) this.ramps[2] = this.below;
         if (this.north && !this.south) this.ramps[3] = this.below;
+
+        // if (this.west) this.ramps[0] = this.below;
+        // if (this.south) this.ramps[1] = this.below;
+        // if (this.east) this.ramps[2] = this.below;
+        // if (this.north) this.ramps[3] = this.below;
 
         // No ramps to nowhere -- ramps must lead up to empty voxels
 
@@ -271,41 +412,41 @@ class Surface {
 
         // Eliminate doubles where the bottom corner points to a solid voxel
 
-        if (this.doubles[0]) {
-            const corner = Voxels.adjacent(...this.xyz, [1,1,0]);
-            if (Voxels.isValid(...corner) && voxels.get(...corner)>=2){
-                this.doubles[0] = 0
-                this.ramps[0] = 0;
-                this.ramps[1] = 0;
-            }
-        }
+        // if (this.doubles[0]) {
+        //     const corner = Voxels.adjacent(...this.xyz, [1,1,0]);
+        //     if (Voxels.isValid(...corner) && voxels.get(...corner)>=2){
+        //         this.doubles[0] = 0
+        //         this.ramps[0] = 0;
+        //         this.ramps[1] = 0;
+        //     }
+        // }
 
-        if (this.doubles[1]) {
-            const corner = Voxels.adjacent(...this.xyz, [-1,1,0]);
-            if (Voxels.isValid(...corner) && voxels.get(...corner)>=2){
-                this.doubles[1] = 0
-                this.ramps[1] = 0;
-                this.ramps[2] = 0;
-            }
-        }
+        // if (this.doubles[1]) {
+        //     const corner = Voxels.adjacent(...this.xyz, [-1,1,0]);
+        //     if (Voxels.isValid(...corner) && voxels.get(...corner)>=2){
+        //         this.doubles[1] = 0
+        //         this.ramps[1] = 0;
+        //         this.ramps[2] = 0;
+        //     }
+        // }
 
-        if (this.doubles[2]) {
-            const corner = Voxels.adjacent(...this.xyz, [-1,-1,0]);
-            if (Voxels.isValid(...corner) && voxels.get(...corner)>=2){
-                this.doubles[2] = 0
-                this.ramps[2] = 0;
-                this.ramps[3] = 0;
-            }
-        }
+        // if (this.doubles[2]) {
+        //     const corner = Voxels.adjacent(...this.xyz, [-1,-1,0]);
+        //     if (Voxels.isValid(...corner) && voxels.get(...corner)>=2){
+        //         this.doubles[2] = 0
+        //         this.ramps[2] = 0;
+        //         this.ramps[3] = 0;
+        //     }
+        // }
 
-        if (this.doubles[3]) {
-            const corner = Voxels.adjacent(...this.xyz, [1,-1,0]);
-            if (Voxels.isValid(...corner) && voxels.get(...corner)>=2){
-                this.doubles[3] = 0
-                this.ramps[2] = 0;
-                this.ramps[0] = 0;
-            }
-        }
+        // if (this.doubles[3]) {
+        //     const corner = Voxels.adjacent(...this.xyz, [1,-1,0]);
+        //     if (Voxels.isValid(...corner) && voxels.get(...corner)>=2){
+        //         this.doubles[3] = 0
+        //         this.ramps[2] = 0;
+        //         this.ramps[0] = 0;
+        //     }
+        // }
     }
 
     // Add half floors above double ramps

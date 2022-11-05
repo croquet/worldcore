@@ -1,9 +1,10 @@
-import { ModelService, Constants, Actor, Pawn, v3_multiply, mix, AM_Smoothed, v3_add, v3_floor, v3_min, v3_max, v3_sub, PM_Smoothed,
-    PM_ThreeVisible, THREE, Behavior, AM_Behavioral, q_multiply, q_axisAngle, v3_normalize, q_normalize, CompositeBehavior, sphericalRandom, RegisterMixin, AM_Spatial, toRad, ViewRoot, viewRoot, PM_Spatial, PM_ThreeVisibleX, PM_InstancedMesh} from "@croquet/worldcore";
+import { ModelService, Constants, Pawn, mix, AM_Behavioral, PM_Spatial, PM_InstancedMesh} from "@croquet/worldcore";
 
 import { toWorld, packKey, Voxels} from "./Voxels";
+import { VoxelActor } from "./VoxelActor";
 import * as BEHAVIORS from "./SharedBehaviors";
-import { sideColor } from "./MapView";
+// import { sideColor } from "./MapView";
+import { LogActor } from "./Bots";
 
 //------------------------------------------------------------------------------------------
 //-- PropManager ---------------------------------------------------------------------------------
@@ -77,35 +78,6 @@ export class PropManager extends ModelService {
 PropManager.register("PropManager");
 
 //------------------------------------------------------------------------------------------
-//-- VoxelActor ----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// Actors that store their voxel coordinates and automatically convert to world world translation.
-
-export class VoxelActor extends mix(Actor).with(AM_Spatial) {
-
-    voxelSet(v) { this.set({translation: toWorld(v3_add(v, this.fraction))})}
-    voxelSnap(v) { this.snap({translation: toWorld(v3_add(v, this.voxel))})}
-
-    fractionSet(v) { this.set({translation: toWorld(v3_add(v, this.voxel))})}
-    fractionSnap(v) { this.snap({translation: toWorld(v3_add(v, this.voxel))})}
-
-    get voxel() { return this._voxel || [0,0,0]}
-    get key() { return packKey(...this.voxel)}
-    get fraction() { return this._fraction || [0,0,0]}
-    get xyz() { return v3_add(this.voxel, this.fraction)}
-
-    clamp() {
-        const floor = v3_floor(this.fraction);
-        const fraction = v3_sub(this.fraction, floor);
-        const voxel = v3_add(this.voxel, floor);
-        this.set({voxel,fraction});
-    }
-
-}
-VoxelActor.register("VoxelActor");
-
-//------------------------------------------------------------------------------------------
 //-- PropActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -142,23 +114,49 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
 
     init(options) {
         super.init(options);
+        this.maxSize = 0.6 + 0.4*this.random();
         this.startBehavior("GrowBehavior");
     }
+
+    get size() { return this._size }
+    set size(s) { this._size = s}
 
     validate() { // Check to see if the prop is affected by changing terrain
         const voxels = this.service("Voxels");
         const surfaces = this.service("Surfaces");
         const type = voxels.get(...this.voxel);
         if (type >=2 ) this.destroy(); // Buried
-        // const belowXYZ = Voxels.adjacent(...this.voxel,[0,0,-1]);
-        // const belowType = voxels.get(...belowXYZ);
-        // if (belowType <2 ) this.destroy();
+        const belowXYZ = Voxels.adjacent(...this.voxel,[0,0,-1]);
+        const belowType = voxels.get(...belowXYZ);
+        if (belowType <2 ) {
+            this.fell();
+            this.destroy()
+        };
 
         const e = surfaces.elevation(...this.xyz);
         if (e<0) this.destroy();
         const fraction = [...this.fraction];
         fraction[2] = e;
         this.set({fraction});
+    }
+
+    fell() { // Breaks the tree into falling logs
+        const voxel  = this.voxel;
+        const fraction0 = [...this.fraction];
+        const fraction1 = [...this.fraction];
+        const fraction2 = [...this.fraction];
+
+        fraction0[2] = 1.5 / Constants.scaleZ
+        fraction1[2] = 3.0 / Constants.scaleZ
+        fraction2[2] = 4.5 / Constants.scaleZ
+
+        const log0 = LogActor.create({voxel: voxel, fraction: fraction0});
+        const log1 = LogActor.create({voxel: voxel, fraction: fraction1});
+        const log2 = LogActor.create({voxel: voxel, fraction: fraction2});
+
+        log0.clamp();
+        log1.clamp();
+        log2.clamp();
     }
 
 }

@@ -65,6 +65,9 @@ TumbleBehavior.register("TumbleBehavior");
 
 class GrowBehavior extends Behavior {
 
+    get size() { return this.actor.size }
+    set size(s) { this.actor.size = s}
+
     onStart() {
         this.tickRate = 500;
         this.size = 0.2;
@@ -73,9 +76,9 @@ class GrowBehavior extends Behavior {
 
     do(delta) {
         const growth = 1 + 0.1 * (delta/1000)
-        this.size = Math.min(1, this.size * growth);
+        this.size = Math.min(this.actor.maxSize, this.size * growth);
         this.actor.scale = [this.size, this.size, this.size];
-        if (this.size > 1) this.succeed();
+        if (this.size === this.actor.maxSize) this.succeed();
     }
 }
 GrowBehavior.register("GrowBehavior");
@@ -87,8 +90,8 @@ GrowBehavior.register("GrowBehavior");
 class GroundTestBehavior extends Behavior {
 
     onStart() {
-        this.tickRate = 100;
-        // this.testElevation(); // Causes bug
+        this.tickRate = 15;
+        // this.testElevation(); // Causes bug order of set options?
     }
 
     do(delta) {

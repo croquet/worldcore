@@ -181,13 +181,7 @@ class MyModelRoot extends ModelRoot {
 
     test1() {
         console.log("test1");
-        const aaa = Actor.create({name: "a"});
-        const bbb = Actor.create({name: "b", parent: aaa});
-        aaa.destroy();
-        console.log(aaa.children);
-        console.log(bbb.parent);
-        aaa.destroy();
-
+        console.log(clamp([0,0.5,1]))
     }
 
 }

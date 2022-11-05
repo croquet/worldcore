@@ -79,8 +79,9 @@ export class InstanceManager extends ViewService {
     buildAll() {
         this.buildRubble();
         this.buildBase();
-        this.buildTrees()
-        this.buildBots()
+        this.buildTree()
+        this.buildLog()
+        this.buildBot()
     }
 
     buildRubble() {
@@ -122,7 +123,7 @@ export class InstanceManager extends ViewService {
         mesh.castShadow = true;
     }
 
-    buildTrees() {
+    buildTree() {
         const trunk = new THREE.CylinderGeometry( 0.5,0.5, 10, 7);
         setGeometryColor(trunk, [0.7, 0.5, 0.3]);
         const top = new THREE.ConeGeometry( 2,15, 8);
@@ -138,7 +139,17 @@ export class InstanceManager extends ViewService {
         mesh.castShadow = true;
     }
 
-    buildBots() {
+    buildLog() {
+        const geometry = new THREE.CylinderGeometry(0.5,0.5, 3, 7);
+        setGeometryColor(geometry, [0.7, 0.5, 0.3]);
+        geometry.rotateX(toRad(90));
+
+        const mesh = this.build("log", geometry, instanceMaterial);
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
+    }
+
+    buildBot() {
         const geometry = new THREE.BoxGeometry( 0.5, 0.5, 2 );
         setGeometryColor(geometry, [1, 1, 0]);
         geometry.translate(0,0,1);
@@ -147,7 +158,5 @@ export class InstanceManager extends ViewService {
         mesh.receiveShadow = true;
         mesh.castShadow = true;
     }
-
-
 
 }

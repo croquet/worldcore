@@ -1,8 +1,8 @@
-import { ModelService, Constants, Actor, Pawn, mix, PM_Smoothed, AM_Behavioral, PM_InstancedMesh, SequenceBehavior } from "@croquet/worldcore";
+import { ModelService, Constants, Actor, Pawn, mix, PM_Smoothed, AM_Behavioral, PM_InstancedMesh, SequenceBehavior, v3_add, v2_multiply, v3_floor } from "@croquet/worldcore";
 
-import { toWorld, packKey, Voxels} from "./Voxels";
+import { toWorld, packKey, Voxels, clamp} from "./Voxels";
 import * as BEHAVIORS from "./SharedBehaviors";
-import { VoxelActor } from "./Props";
+import { VoxelActor } from "./VoxelActor";
 
 //------------------------------------------------------------------------------------------
 //-- BotManager ----------------------------------------------------------------------------
@@ -37,7 +37,8 @@ export class BotManager extends ModelService {
         const voxel = data.xyz
         const x = 0.5
         const y = 0.5
-        const bot = PersonActor.create({voxel, fraction:[x,y,0]});
+        // const bot = PersonActor.create({voxel, fraction:[x,y,0]});
+        const bot = AvatarActor.create({voxel, fraction:[x,y,0]});
 
     }
 }
@@ -98,9 +99,39 @@ class RubblePawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
             case Constants.voxel.rock: this.useInstance("rockRubble"); break;
             default: this.useInstance("dirtRubble");
         }
+    }
+}
 
+//------------------------------------------------------------------------------------------
+//-- LogActor ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class LogActor extends BotActor {
+
+    get pawn() {return LogPawn}
+
+    init(options) {
+        super.init(options);
+
+        const FallThenDestroy = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "DestroyBehavior"]}};
+        this.startBehavior({name: "CompositeBehavior", options: {parallel: true, behaviors:["TumbleBehavior", FallThenDestroy]}});
     }
 
+    get type() {return this._type || Constants.voxel.dirt};
+
+}
+LogActor.register("LogActor");
+
+//------------------------------------------------------------------------------------------
+//-- LogPawn--------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+
+class LogPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
+    constructor(actor) {
+        super(actor);
+        this.useInstance("log");
+    }
 }
 
 //------------------------------------------------------------------------------------------
@@ -115,8 +146,6 @@ export class PersonActor extends BotActor {
         super.init(options);
         this.startBehavior("BotBehavior");
     }
-
-
 }
 PersonActor.register("PersonActor");
 
@@ -131,3 +160,191 @@ class PersonPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
         this.useInstance("bot");
     }
 }
+
+
+//------------------------------------------------------------------------------------------
+//-- AvatarActor ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class AvatarActor extends PersonActor {
+
+    // get pawn() {return AvatarPawn}
+
+    init(options) {
+        super.init(options);
+        console.log("new avatar");
+        this.subscribe("input", "ArrowUpDown", this.fore);
+        this.subscribe("input", "ArrowDownDown", this.back);
+        this.subscribe("input", "ArrowLeftDown", this.left);
+        this.subscribe("input", "ArrowRightDown", this.right);
+    }
+
+    fore() {
+        console.log("fore!");
+        const voxels = this.service("Voxels");
+        const surfaces = this.service("Surfaces");
+        const tangent = surfaces.tangent(...this.xyz);
+
+        const x = 0;
+        const y = 0.1;
+        const rise = v2_multiply(tangent, [x,y]);
+        const z = rise[0] + rise[1];
+
+        const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
+        const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
+
+        const levelIsEmpty = voxels.get(...level) < 2;
+        const belowIsEmpty = voxels.get(...below) < 2;
+
+
+        if (z>0) {
+            this.fraction = v3_add(this.fraction, [x,y,z]);
+        } else if (z<0 && belowIsEmpty) {
+            this.fraction = v3_add(this.fraction, [x,y,z]);
+        } else {
+            if (!levelIsEmpty) { console.log("Blocked!"); return; };
+            if (belowIsEmpty) {
+                this.fraction = v3_add(this.fraction, [x,y,-1]);
+            } else {
+                this.fraction = v3_add(this.fraction, [x,y,0]);
+            }
+        }
+
+        this.clamp();
+        this.ground();
+    }
+
+
+    back() {
+        console.log("back");
+        const voxels = this.service("Voxels");
+        const surfaces = this.service("Surfaces");
+        const tangent = surfaces.tangent(...this.xyz);
+
+        const x = 0;
+        const y = -0.1;
+        const rise = v2_multiply(tangent, [x,y]);
+        const z = rise[0] + rise[1];
+
+        const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
+        const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
+
+        const levelIsEmpty = voxels.get(...level) < 2;
+        const belowIsEmpty = voxels.get(...below) < 2;
+
+
+        if (z>0) {
+            this.fraction = v3_add(this.fraction, [x,y,z]);
+        } else if (z<0 && belowIsEmpty) {
+            this.fraction = v3_add(this.fraction, [x,y,z]);
+        } else {
+            if (!levelIsEmpty) { console.log("Blocked!"); return; };
+            if (belowIsEmpty) {
+                this.fraction = v3_add(this.fraction, [x,y,-1]);
+            } else {
+                this.fraction = v3_add(this.fraction, [x,y,0]);
+            }
+        }
+
+        this.clamp();
+        this.ground();
+    }
+
+    left() {
+        console.log("left");
+        const voxels = this.service("Voxels");
+        const surfaces = this.service("Surfaces");
+        const tangent = surfaces.tangent(...this.xyz);
+
+        const x = -0.1;
+        const y = 0;
+        const rise = v2_multiply(tangent, [x,y]);
+        const z = rise[0] + rise[1];
+
+        const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
+        const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
+
+        const levelIsEmpty = voxels.get(...level) < 2;
+        const belowIsEmpty = voxels.get(...below) < 2;
+
+
+        if (z>0) {
+            this.fraction = v3_add(this.fraction, [x,y,z]);
+        } else if (z<0 && belowIsEmpty) {
+            this.fraction = v3_add(this.fraction, [x,y,z]);
+        } else {
+            if (!levelIsEmpty) { console.log("Blocked!"); return; };
+            if (belowIsEmpty) {
+                this.fraction = v3_add(this.fraction, [x,y,-1]);
+            } else {
+                this.fraction = v3_add(this.fraction, [x,y,0]);
+            }
+        }
+
+        this.clamp();
+        this.ground();
+    }
+
+    right() {
+        console.log("right");
+        const voxels = this.service("Voxels");
+        const surfaces = this.service("Surfaces");
+        const tangent = surfaces.tangent(...this.xyz);
+
+        const x = 0.1;
+        const y = 0;
+        const rise = v2_multiply(tangent, [x,y]);
+        const z = rise[0] + rise[1];
+
+        const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
+        const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
+
+        const levelIsEmpty = voxels.get(...level) < 2;
+        const belowIsEmpty = voxels.get(...below) < 2;
+
+
+        if (z>0) {
+            this.fraction = v3_add(this.fraction, [x,y,z]);
+        } else if (z<0 && belowIsEmpty) {
+            this.fraction = v3_add(this.fraction, [x,y,z]);
+        } else {
+            if (!levelIsEmpty) { console.log("Blocked!"); return; };
+            if (belowIsEmpty) {
+                this.fraction = v3_add(this.fraction, [x,y,-1]);
+            } else {
+                this.fraction = v3_add(this.fraction, [x,y,0]);
+            }
+        }
+
+        this.clamp();
+        this.ground();
+    }
+
+
+}
+AvatarActor.register('AvatarActor');
+
+//------------------------------------------------------------------------------------------
+//-- AvatarPawn-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+
+// class AvatarPawn extends PersonPawn {
+//     constructor(actor) {
+//         super(actor);
+
+//     }
+
+//     update(time, delta) {
+//         super.update(time,delta);
+//         // console.log("pawn update2");
+//     }
+
+//     foreDown() {
+//         console.log("fore down");
+//     }
+
+//     foreUp() {
+//         console.log("fore up");
+//     }
+// }

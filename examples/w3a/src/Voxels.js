@@ -184,6 +184,10 @@ export class Voxels extends ModelService {
         return out;
     }
 
+    static clamp(voxel, fraction) {
+        return v3_add(voxel, v3_floor(fraction));
+    }
+
     // -- Methods ------------------------------------------------------------------------------
 
 
