@@ -110,15 +110,17 @@ class GroundTestBehavior extends Behavior {
         }
         const belowXYZ = Voxels.adjacent(...this.actor.voxel,[0,0,-1]);
         const belowType = voxels.get(...belowXYZ);
-        if (belowType <2 ) {
+        const e = surfaces.elevation(...this.actor.xyz);
+        if ( e < 0 ) {
             console.log("fall");
             const FallThenBot = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "BotBehavior"]}}
             this.actor.startBehavior(FallThenBot);
         }
-        const e = surfaces.elevation(...this.actor.xyz);
-        const fraction = [...this.actor.fraction];
-        fraction[2] = e;
-        this.actor.snap({fraction});
+        this.actor.ground();
+        // const e = surfaces.elevation(...this.actor.xyz);
+        // const fraction = [...this.actor.fraction];
+        // fraction[2] = e;
+        // this.actor.snap({fraction});
     }
 }
 GroundTestBehavior.register("GroundTestBehavior");

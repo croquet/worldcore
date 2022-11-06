@@ -121,20 +121,23 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
     get size() { return this._size }
     set size(s) { this._size = s}
 
-    validate() { // Check to see if the prop is affected by changing terrain
+    validate() { // Check to see if the prop is affected by changing terrain Better use of ground
         const voxels = this.service("Voxels");
         const surfaces = this.service("Surfaces");
         const type = voxels.get(...this.voxel);
         if (type >=2 ) this.destroy(); // Buried
         const belowXYZ = Voxels.adjacent(...this.voxel,[0,0,-1]);
         const belowType = voxels.get(...belowXYZ);
-        if (belowType <2 ) {
+
+        const e = Math.max(0,surfaces.elevation(...this.xyz));
+        // const e = surfaces.elevation(...this.xyz);
+        if (e<0 ) {
             this.fell();
             this.destroy()
         };
 
-        const e = surfaces.elevation(...this.xyz);
-        if (e<0) this.destroy();
+        // const e = surfaces.elevation(...this.xyz);
+        // if (e<0) this.destroy();
         const fraction = [...this.fraction];
         fraction[2] = e;
         this.set({fraction});

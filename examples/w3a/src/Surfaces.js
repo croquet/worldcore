@@ -29,25 +29,25 @@ export class Surfaces extends ModelService {
         return s.elevation(x-xx, y-yy);
     }
 
-    tangent(x,y,z) {
-        const xx = Math.floor(x);
-        const yy = Math.floor(y);
-        const zz = Math.floor(z);
-        const key = packKey(xx,yy,zz);
-        const s = this.get(key);
-        if (!s) return null;
-        return s.tangent(x-xx, y-yy);
-    }
+    // tangent(x,y,z) {
+    //     const xx = Math.floor(x);
+    //     const yy = Math.floor(y);
+    //     const zz = Math.floor(z);
+    //     const key = packKey(xx,yy,zz);
+    //     const s = this.get(key);
+    //     if (!s) return null;
+    //     return s.tangent(x-xx, y-yy);
+    // }
 
-    slope(x,y,z) {
-        const xx = Math.floor(x);
-        const yy = Math.floor(y);
-        const zz = Math.floor(z);
-        const key = packKey(xx,yy,zz);
-        const s = this.get(key);
-        if (!s) return null;
-        return s.slope(x-xx, y-yy);
-    }
+    // slope(x,y,z) {
+    //     const xx = Math.floor(x);
+    //     const yy = Math.floor(y);
+    //     const zz = Math.floor(z);
+    //     const key = packKey(xx,yy,zz);
+    //     const s = this.get(key);
+    //     if (!s) return null;
+    //     return s.slope(x-xx, y-yy);
+    // }
 
     get(key) {
         return this.surfaces.get(key) || new Surface(key);
@@ -173,11 +173,11 @@ class Surface {
     get hasFace() { return this.faces.some(e => e)}
     get hasRamp() { return this.ramps.some(e => e)}
     get hasDouble() {return this.doubles.some(e => e)}
-    get hasCap() {return this.caps.some(e => e)}
+    // get hasCap() {return this.caps.some(e => e)}
     get hasSide() {return this.sides.some(e => e)}
     get hasShape() {return this.shapes.some(e => e)}
     get hasShim() {return this.shims.some(e => e)}
-    get isEmpty() { return !(this.floor || this.ceiling || this.hasFace || this.hasRamp || this.hasDouble || this.hasCap || this.hasShape || this.hasShim); }
+    get isEmpty() { return !(this.floor || this.ceiling || this.hasFace || this.hasRamp || this.hasDouble || this.hasShape || this.hasShim); }
 
     elevation(x,y) {
 
@@ -187,12 +187,13 @@ class Surface {
 
         // if (!this.below && !this.hasCap) return undefined;
         if (!this.below) {
-            if (!this.hasCap && ! !this.hasShim) return -1 // No surface
+            // if (!this.hasCap && !this.hasShim) return -1 // No surface
+            if (!this.hasShim) return -1 // No surface
 
-            if (this.caps[0] && x+y>1) return -1;
-            if (this.caps[1] && xx+y>1) return -1;
-            if (this.caps[2] && xx+yy>1) return -1;
-            if (this.caps[3] && x+yy>1) return -1;
+            // if (this.caps[0] && x+y>1) return -1;
+            // if (this.caps[1] && xx+y>1) return -1;
+            // if (this.caps[2] && xx+yy>1) return -1;
+            // if (this.caps[3] && x+yy>1) return -1;
 
             if (this.shims[0]) e = Math.max(e, xx+yy-1);
             if (this.shims[1]) e = Math.max(e,x+yy-1);
@@ -220,121 +221,91 @@ class Surface {
 
     }
 
-    tangent(x,y) {
+//     tangent(x,y) {
 
-        const sw = x + y < 1;
-        const ne = !sw
-        const nw = x - y < 0;
-        const se = !nw
+//         const sw = x + y < 1;
+//         const ne = !sw
+//         const nw = x - y < 0;
+//         const se = !nw
 
-        const xx = 1-x;
-        const yy = 1-y
+//         const xx = 1-x;
+//         const yy = 1-y
 
-        let e = 0;
-        let xt = 0;
-        let yt = 0;
+//         let e = 0;
+//         let xt = 0;
+//         let yt = 0;
 
-        if (this.ramps[0]){
-            e = xx;
-            xt = -1;
-        }
+//         if (this.ramps[0]){
+//             e = xx;
+//             xt = -1;
+//         }
 
-        if (this.ramps[1]){
-            e = yy;
-            yt = -1;
-        }
+//         if (this.ramps[1]){
+//             e = yy;
+//             yt = -1;
+//         }
 
-        if (this.ramps[2]){
-            e = x;
-            xt = 1;
-        }
+//         if (this.ramps[2]){
+//             e = x;
+//             xt = 1;
+//         }
 
-        if (this.ramps[3]){
-            e = y;
-            yt = 1;
-        }
+//         if (this.ramps[3]){
+//             e = y;
+//             yt = 1;
+//         }
 
-//--------------------------------------------
+// //--------------------------------------------
 
-        if (this.doubles[0]) {
-            e = xx+yy;
-            if(ne) {xt=-1; yt=-1}
-        }
-        if (this.doubles[1]) {
-            e = x+yy;
-            if(nw) {xt=1; yt=-1};
-        }
+//         if (this.doubles[0]) {
+//             e = xx+yy;
+//             if(ne) {xt=-1; yt=-1}
+//         }
+//         if (this.doubles[1]) {
+//             e = x+yy;
+//             if(nw) {xt=1; yt=-1};
+//         }
 
-        if (this.doubles[2]) {
-            e = x+yy;
-            if(sw) {xt=1; yt=1};
-        }
+//         if (this.doubles[2]) {
+//             e = x+yy;
+//             if(sw) {xt=1; yt=1};
+//         }
 
-        if (this.doubles[3]) {
-            e = xx+y;
-            if(se) {xt=-1; yt=1};
-        }
+//         if (this.doubles[3]) {
+//             e = xx+y;
+//             if(se) {xt=-1; yt=1};
+//         }
 
-        //--------------------------------------------
+//         //--------------------------------------------
 
-        if (this.shims[0]) {
-            const ee = xx+yy-1;
-            if(sw && ee>e) {xt=-1; yt=-1}
+//         if (this.shims[0]) {
+//             const ee = xx+yy-1;
+//             if(sw && ee>e) {xt=-1; yt=-1}
 
-        }
-        if (this.shims[1]) {
-            const ee = x+yy-1;
-            if(se && ee>e) {xt=1; yt=-1}
+//         }
+//         if (this.shims[1]) {
+//             const ee = x+yy-1;
+//             if(se && ee>e) {xt=1; yt=-1}
 
-        }
-        if (this.shims[2]) {
-            const ee = x+y-1;
-            if(ne && ee>e) {xt=1; yt=1}
+//         }
+//         if (this.shims[2]) {
+//             const ee = x+y-1;
+//             if(ne && ee>e) {xt=1; yt=1}
 
-        }
-        if (this.shims[3]) {
-            const ee = xx+y-1;
-            if(nw && ee>e) {xt=-1; yt=1}
-        }
+//         }
+//         if (this.shims[3]) {
+//             const ee = xx+y-1;
+//             if(nw && ee>e) {xt=-1; yt=1}
+//         }
 
-        return [xt, yt];
+//         return [xt, yt];
 
-    }
+//     }
 
-    slope(x,y) {
-        const t = this.tangent(x,y);
-        return t[0] + t[1];
-    }
-
-    // tangentOld(x,y) {
-    //     const sw = x + y < 1;
-    //     const ne = !sw
-    //     const nw = x - y < 0;
-    //     const se = !nw
-
-    //     let xt = 0;
-    //     let yt = 0;
-
-    //     if (this.ramps[0]) xt = -1;
-    //     if (this.ramps[1]) yt = -1
-    //     if (this.ramps[2]) xt = 1;
-    //     if (this.ramps[3]) yt = 1
-
-    //     if (this.doubles[0]) { xt = sw?0:-1; yt = sw?0:-1 }
-    //     if (this.doubles[1]) { xt = se?0:1; yt = se?0:-1 }
-    //     if (this.doubles[2]) { xt = ne?0:1; yt = ne?0:1 }
-    //     if (this.doubles[3]) { xt = nw?0:-1; yt = nw?0:1 }
-
-    //     if (this.shims[0]) { xt = ne?0:-1; yt = ne?0:-1 }
-    //     if (this.shims[1]) { xt = nw?0:1; yt = nw?0:-1 }
-    //     if (this.shims[2]) { xt = sw?0:1; yt = sw?0:1 }
-    //     if (this.shims[3]) { xt = se?0:-1; yt = se?0:1 }
-
-    //     // Also need to handle ramp + shim and double shims ("cuban")
-
-    //     return [xt, yt];
-
-    // }
+//     slope(x,y) {
+//         const t = this.tangent(x,y);
+//         return t[0] + t[1];
+//     }
 
     // Find adjacent solid voxels
     findFaces(voxels) {

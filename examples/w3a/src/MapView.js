@@ -151,7 +151,7 @@ class MapLayer extends WorldcoreView {
             this.buildCeiling(surface);
             this.buildRamps(surface);
             this.buildDoubles(surface);
-            this.buildCaps(surface);
+            // this.buildCaps(surface);
             this.buildSides(surface);
             this.buildShims(surface);
         });
@@ -304,6 +304,19 @@ class MapLayer extends WorldcoreView {
             this.lb.addLoop(vertices);
         };
 
+        if (surface.doubles[0]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(toWorld(v3_add(xyz,[a,a,b])));
+            vertices.push(toWorld(v3_add(xyz,[b,a,b])));
+            vertices.push(toWorld(v3_add(xyz,[a,b,b])));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        }
+
         if (surface.doubles[1]) {
             const vertices = [];
             const uvs = [];
@@ -316,6 +329,19 @@ class MapLayer extends WorldcoreView {
             this.tb.addFace(vertices, uvs, color);
             this.lb.addLoop(vertices);
         };
+
+        if (surface.doubles[1]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(toWorld(v3_add(xyz,[b,a,b])));
+            vertices.push(toWorld(v3_add(xyz,[b,b,b])));
+            vertices.push(toWorld(v3_add(xyz,[a,a,b])));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        }
 
         if (surface.doubles[2]) {
             const vertices = [];
@@ -330,6 +356,19 @@ class MapLayer extends WorldcoreView {
             this.lb.addLoop(vertices);
         };
 
+        if (surface.doubles[2]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(toWorld(v3_add(xyz,[b,b,b])));
+            vertices.push(toWorld(v3_add(xyz,[a,b,b])));
+            vertices.push(toWorld(v3_add(xyz,[b,a,b])));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        }
+
         if (surface.doubles[3]) {
             const vertices = [];
             const uvs = [];
@@ -342,6 +381,19 @@ class MapLayer extends WorldcoreView {
             this.tb.addFace(vertices, uvs, color);
             this.lb.addLoop(vertices);
         };
+
+        if (surface.doubles[3]) {
+            const vertices = [];
+            const uvs = [];
+            vertices.push(toWorld(v3_add(xyz,[a,b,b])));
+            vertices.push(toWorld(v3_add(xyz,[a,a,b])));
+            vertices.push(toWorld(v3_add(xyz,[b,b,b])));
+            uvs.push([0,0]);
+            uvs.push([1,0]);
+            uvs.push([0,1]);
+            this.tb.addFace(vertices, uvs, color);
+            this.lb.addLoop(vertices);
+        }
     }
 
     buildCaps(surface) {

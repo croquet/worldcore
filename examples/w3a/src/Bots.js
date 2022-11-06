@@ -182,69 +182,66 @@ export class AvatarActor extends PersonActor {
     fore() {
         console.log("fore!");
         const voxels = this.service("Voxels");
-        const surfaces = this.service("Surfaces");
-        const tangent = surfaces.tangent(...this.xyz);
 
         const x = 0;
         const y = 0.1;
-        const rise = v2_multiply(tangent, [x,y]);
-        const z = rise[0] + rise[1];
 
         const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
+        const above = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,1])));
         const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
 
         const levelIsEmpty = voxels.get(...level) < 2;
+        const aboveIsEmpty = voxels.get(...above) < 2;
         const belowIsEmpty = voxels.get(...below) < 2;
 
-
-        if (z>0) {
-            this.fraction = v3_add(this.fraction, [x,y,z]);
-        } else if (z<0 && belowIsEmpty) {
-            this.fraction = v3_add(this.fraction, [x,y,z]);
+        let z = 0;
+        if (levelIsEmpty) {
+            if (belowIsEmpty) z = -1;
         } else {
-            if (!levelIsEmpty) { console.log("Blocked!"); return; };
-            if (belowIsEmpty) {
-                this.fraction = v3_add(this.fraction, [x,y,-1]);
+            if (aboveIsEmpty) {
+                z = 1;
             } else {
-                this.fraction = v3_add(this.fraction, [x,y,0]);
+                console.log("Blocked!");
+                return;
             }
         }
 
+        this.fraction = v3_add(this.fraction, [x,y,z]);
+
         this.clamp();
-        this.ground();
+        this.ground(); // xxx Ground needs to handle shims above doubles
+
     }
 
 
     back() {
         console.log("back");
         const voxels = this.service("Voxels");
-        const surfaces = this.service("Surfaces");
-        const tangent = surfaces.tangent(...this.xyz);
 
         const x = 0;
         const y = -0.1;
-        const rise = v2_multiply(tangent, [x,y]);
-        const z = rise[0] + rise[1];
 
         const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
+        const above = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,1])));
         const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
 
         const levelIsEmpty = voxels.get(...level) < 2;
+        const aboveIsEmpty = voxels.get(...above) < 2;
         const belowIsEmpty = voxels.get(...below) < 2;
 
-
-        if (z>0) {
-            this.fraction = v3_add(this.fraction, [x,y,z]);
-        } else if (z<0 && belowIsEmpty) {
-            this.fraction = v3_add(this.fraction, [x,y,z]);
+        let z = 0;
+        if (levelIsEmpty) {
+            if (belowIsEmpty) z = -1;
         } else {
-            if (!levelIsEmpty) { console.log("Blocked!"); return; };
-            if (belowIsEmpty) {
-                this.fraction = v3_add(this.fraction, [x,y,-1]);
+            if (aboveIsEmpty) {
+                z = 1;
             } else {
-                this.fraction = v3_add(this.fraction, [x,y,0]);
+                console.log("Blocked!");
+                return;
             }
         }
+
+        this.fraction = v3_add(this.fraction, [x,y,z]);
 
         this.clamp();
         this.ground();
@@ -253,33 +250,31 @@ export class AvatarActor extends PersonActor {
     left() {
         console.log("left");
         const voxels = this.service("Voxels");
-        const surfaces = this.service("Surfaces");
-        const tangent = surfaces.tangent(...this.xyz);
 
         const x = -0.1;
         const y = 0;
-        const rise = v2_multiply(tangent, [x,y]);
-        const z = rise[0] + rise[1];
 
         const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
+        const above = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,1])));
         const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
 
         const levelIsEmpty = voxels.get(...level) < 2;
+        const aboveIsEmpty = voxels.get(...above) < 2;
         const belowIsEmpty = voxels.get(...below) < 2;
 
-
-        if (z>0) {
-            this.fraction = v3_add(this.fraction, [x,y,z]);
-        } else if (z<0 && belowIsEmpty) {
-            this.fraction = v3_add(this.fraction, [x,y,z]);
+        let z = 0;
+        if (levelIsEmpty) {
+            if (belowIsEmpty) z = -1;
         } else {
-            if (!levelIsEmpty) { console.log("Blocked!"); return; };
-            if (belowIsEmpty) {
-                this.fraction = v3_add(this.fraction, [x,y,-1]);
+            if (aboveIsEmpty) {
+                z = 1;
             } else {
-                this.fraction = v3_add(this.fraction, [x,y,0]);
+                console.log("Blocked!");
+                return;
             }
         }
+
+        this.fraction = v3_add(this.fraction, [x,y,z]);
 
         this.clamp();
         this.ground();
@@ -287,34 +282,69 @@ export class AvatarActor extends PersonActor {
 
     right() {
         console.log("right");
+
         const voxels = this.service("Voxels");
-        const surfaces = this.service("Surfaces");
-        const tangent = surfaces.tangent(...this.xyz);
 
         const x = 0.1;
         const y = 0;
-        const rise = v2_multiply(tangent, [x,y]);
-        const z = rise[0] + rise[1];
 
         const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
+        const above = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,1])));
         const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
 
         const levelIsEmpty = voxels.get(...level) < 2;
+        const aboveIsEmpty = voxels.get(...above) < 2;
         const belowIsEmpty = voxels.get(...below) < 2;
 
-
-        if (z>0) {
-            this.fraction = v3_add(this.fraction, [x,y,z]);
-        } else if (z<0 && belowIsEmpty) {
-            this.fraction = v3_add(this.fraction, [x,y,z]);
+        let z = 0;
+        if (levelIsEmpty) {
+            if (belowIsEmpty) z = -1;
         } else {
-            if (!levelIsEmpty) { console.log("Blocked!"); return; };
-            if (belowIsEmpty) {
-                this.fraction = v3_add(this.fraction, [x,y,-1]);
+            if (aboveIsEmpty) {
+                z = 1;
             } else {
-                this.fraction = v3_add(this.fraction, [x,y,0]);
+                console.log("Blocked!");
+                return;
             }
         }
+
+        this.fraction = v3_add(this.fraction, [x,y,z]);
+
+
+        // const voxels = this.service("Voxels");
+        // const surfaces = this.service("Surfaces");
+        // const tangent = surfaces.tangent(...this.xyz);
+
+        // const x = 0.1;
+        // const y = 0;
+        // const rise = v2_multiply(tangent, [x,y]);
+        // const z = rise[0] + rise[1];
+
+        // const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
+        // const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
+
+        // const levelIsEmpty = voxels.get(...level) < 2;
+        // const belowIsEmpty = voxels.get(...below) < 2;
+
+
+        // if (z>0) {
+        //     this.fraction = v3_add(this.fraction, [x,y,z]);
+        // } else if (z<0 && belowIsEmpty) {
+        //     this.fraction = v3_add(this.fraction, [x,y,z]);
+        // } else { // z = 0
+        //     if (belowIsEmpty) {
+        //         console.log("descend");
+        //         this.fraction = v3_add(this.fraction, [x,y,-1]);
+        //     } else if (levelIsEmpty) {
+        //         this.fraction = v3_add(this.fraction, [x,y,0]);
+        //     } else if (aboveIsEmpty) {
+        //         console.log("ascend");
+        //         this.fraction = v3_add(this.fraction, [x,y,1]);
+        //     } else {
+        //         console.log("Blocked!");
+        //         return;
+        //     }
+        // }
 
         this.clamp();
         this.ground();

@@ -1,6 +1,6 @@
 import { Actor, mix, v3_add, v3_floor, v3_sub, AM_Spatial} from "@croquet/worldcore";
 
-import { toWorld, packKey} from "./Voxels";
+import { toWorld, packKey, Voxels} from "./Voxels";
 
 //------------------------------------------------------------------------------------------
 //-- VoxelActor ----------------------------------------------------------------------------
@@ -40,12 +40,22 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
         return f;
     }
 
-    ground() {
+    ground() { // can't clamp props it changes their voxels! xxx
         const surfaces = this.service("Surfaces");
+        // const elevation = Math.max(0,surfaces.elevation(...this.xyz));
+        const above = Voxels.adjacent(...this.xyz, [0,0,1])
         const elevation = surfaces.elevation(...this.xyz);
+        const aboveElevation = surfaces.elevation(...above);
+        // console.log(aboveElevation);
         const fraction = this.fraction;
         fraction[2] = elevation;
-        this.fraction = fraction;
+        if (aboveElevation>0) {
+            fraction[2] = 1+aboveElevation;
+            this.clamp();
+        } else {
+            this.fraction = this.clampFraction(fraction);
+        }
+
     }
 
 }
