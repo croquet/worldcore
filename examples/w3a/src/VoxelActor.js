@@ -24,14 +24,14 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
     set voxel(v) {this.set({voxel: v})};
     set fraction(f) {this.set({fraction: f})};
 
-    clamp() {
+    clamp() { // Move to an adjacent voxel if the faction is outside the current one.
         const floor = v3_floor(this.fraction);
         const fraction = this.clampFraction(v3_sub(this.fraction, floor));
         const voxel = v3_add(this.voxel, floor);
         this.set({voxel,fraction});
     }
 
-    clampFraction(f) {
+    clampFraction(f) { // Ensure the fraction is inside the voxel.
         const e = 0.0001
         const ee = 1-e;
         f[0] = Math.min(ee, Math.max(e, f[0]))
@@ -40,15 +40,16 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
         return f;
     }
 
-    ground() { // can't clamp props as it changes their voxels! xxx
+    ground() { // Adjust the fraction to position the actor on the surface
         const surfaces = this.service("Surfaces");
         const elevation = Math.max(0,surfaces.elevation(...this.xyz));
+        // const elevation = surfaces.elevation(...this.xyz);
         const fraction = this.fraction;
         fraction[2] = elevation;
         this.fraction = this.clampFraction(fraction);
     }
 
-    hop() {
+    hop() { // Move up a voxel if there's a solid surface above
         const surfaces = this.service("Surfaces");
         const above = Voxels.adjacent(...this.xyz, [0,0,1])
         const aboveElevation = surfaces.elevation(...above);

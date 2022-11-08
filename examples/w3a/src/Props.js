@@ -32,7 +32,6 @@ export class PropManager extends ModelService { // add & delete not working! xxx
 
     remove(prop) {
         this.props.delete(prop.key);
-        console.log(this.props);
     }
 
     destroyAll() {
@@ -58,10 +57,18 @@ export class PropManager extends ModelService { // add & delete not working! xxx
     }
 
     onPlantTree(data) {
+        const surfaces = this.service("Surfaces");
         const voxel = data.xyz
-        // xxx if elevation < 0 pick a new spot.
-        const x = 0.1 + 0.8 * this.random();
-        const y = 0.1 + 0.8 * this.random();
+
+        let x = 0;
+        let y = 0;
+        let z = 0;
+        do {
+            x = 0.1 + 0.8 * this.random();
+            y = 0.1 + 0.8 * this.random();
+            z = surfaces.elevation(voxel[0] + x,voxel[1] + y,voxel[2]);
+        } while(z < 0)
+
         const tree = TreeActor.create({voxel, fraction:[x,y,0]});
         tree.validate();
     }
@@ -96,10 +103,16 @@ export class PropActor extends VoxelActor {
     destroy() {
         super.destroy();
         const pm = this.service("PropManager");
-        pm.remove(this.key);
+        pm.remove(this);
+    }
+
+    clamp() {
+        super.clamp();
+        console.warn("Don't clamp props!")
     }
 
     validate() {} // Check to see if the prop is affected by changing terrain
+
 
 }
 PropActor.register("PropActor");
@@ -127,25 +140,13 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
         const surfaces = this.service("Surfaces");
         const type = voxels.get(...this.voxel);
         if (type >=2 ) this.destroy(); // Buried
-        const belowXYZ = Voxels.adjacent(...this.voxel,[0,0,-1]);
-        const belowType = voxels.get(...belowXYZ);
-
-        // const e = Math.max(0,surfaces.elevation(...this.xyz));
         const e = surfaces.elevation(...this.xyz);
         if (e < 0 ) {
-            console.log("fell " + this.xyz);
             this.fell();
             this.destroy()
         } else {
             this.ground;
         }
-
-        // const e = surfaces.elevation(...this.xyz);
-        // if (e<0) this.destroy();
-        // this.ground();
-        // const fraction = [...this.fraction];
-        // fraction[2] = e;
-        // this.set({fraction});
     }
 
     fell() { // Breaks the tree into falling logs
@@ -174,7 +175,6 @@ TreeActor.register("TreeActor");
 //------------------------------------------------------------------------------------------
 //-- TreePawn-------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
 
 class TreePawn extends mix(Pawn).with(PM_Spatial, PM_InstancedMesh) {
     constructor(actor) {

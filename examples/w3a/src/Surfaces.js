@@ -126,11 +126,6 @@ export class Surfaces extends ModelService {
 
     }
 
-
-
-
-
-
 }
 Surfaces.register('Surfaces');
 

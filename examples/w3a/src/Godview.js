@@ -201,7 +201,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
             this.pointerHit = {xyz, voxel, fraction};
 
             const surfaces = this.modelService("Surfaces");
-            // console.log(surfaces.normal(...xyz));
+            // console.log(surfaces.elevation(...xyz));
         }
     }
 
