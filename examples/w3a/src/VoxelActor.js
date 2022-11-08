@@ -40,22 +40,24 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
         return f;
     }
 
-    ground() { // can't clamp props it changes their voxels! xxx
+    ground() { // can't clamp props as it changes their voxels! xxx
         const surfaces = this.service("Surfaces");
-        // const elevation = Math.max(0,surfaces.elevation(...this.xyz));
-        const above = Voxels.adjacent(...this.xyz, [0,0,1])
-        const elevation = surfaces.elevation(...this.xyz);
-        const aboveElevation = surfaces.elevation(...above);
-        // console.log(aboveElevation);
+        const elevation = Math.max(0,surfaces.elevation(...this.xyz));
         const fraction = this.fraction;
         fraction[2] = elevation;
+        this.fraction = this.clampFraction(fraction);
+    }
+
+    hop() {
+        const surfaces = this.service("Surfaces");
+        const above = Voxels.adjacent(...this.xyz, [0,0,1])
+        const aboveElevation = surfaces.elevation(...above);
+        const fraction = this.fraction;
         if (aboveElevation>0) {
             fraction[2] = 1+aboveElevation;
+            this.fraction = fraction;
             this.clamp();
-        } else {
-            this.fraction = this.clampFraction(fraction);
         }
-
     }
 
 }

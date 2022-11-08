@@ -1,4 +1,5 @@
-import { ModelService, Constants, Actor, Pawn, mix, PM_Smoothed, AM_Behavioral, PM_InstancedMesh, SequenceBehavior, v3_add, v2_multiply, v3_floor } from "@croquet/worldcore";
+import { ModelService, Constants, Actor, Pawn, mix, PM_Smoothed, AM_Behavioral, PM_InstancedMesh, SequenceBehavior, v3_add, v2_multiply, v3_floor,
+    v3_rotate, q_axisAngle, v3_normalize, v3_magnitude, v3_scale, toDeg, toRad, q_multiply, q_identity, v3_angle } from "@croquet/worldcore";
 
 import { toWorld, packKey, Voxels, clamp} from "./Voxels";
 import * as BEHAVIORS from "./SharedBehaviors";
@@ -173,90 +174,70 @@ export class AvatarActor extends PersonActor {
     init(options) {
         super.init(options);
         console.log("new avatar");
-        this.subscribe("input", "ArrowUpDown", this.fore);
-        this.subscribe("input", "ArrowDownDown", this.back);
-        this.subscribe("input", "ArrowLeftDown", this.left);
-        this.subscribe("input", "ArrowRightDown", this.right);
+
+        this.left = this.right = 0;
+        this.fore = this.back = 0;
+        this.yaw = 0;
+
+        this.subscribe("input", "ArrowUpDown", this.foreDown);
+        this.subscribe("input", "ArrowUpUp", this.foreUp);
+        this.subscribe("input", "ArrowDownDown", this.backDown);
+        this.subscribe("input", "ArrowDownUp", this.backUp)
+
+        this.subscribe("input", "ArrowRightDown", this.rightDown);
+        this.subscribe("input", "ArrowRightUp", this.rightUp);
+        this.subscribe("input", "ArrowLeftDown", this.leftDown);
+        this.subscribe("input", "ArrowLeftUp", this.leftUp)
+
+        this.future(100).moveTick(100);
     }
 
-    fore() {
-        console.log("fore!");
-        const voxels = this.service("Voxels");
+    foreDown() { this.fore = 1; }
+    foreUp() {  this.fore = 0; }
+    backDown() {this.back = -1; }
+    backUp() { this.back = 0; }
 
-        const x = 0;
-        const y = 0.1;
+    rightDown() { this.right = -1;}
+    rightUp() {  this.right = 0; }
+    leftDown() {this.left = 1; }
+    leftUp() { this.left = 0; }
+
+    moveTick(delta) {
+        const surfaces = this.service("Surfaces");
+        const normal = surfaces.normal(...this.xyz);
+
+
+        this.yaw += 0.002 * delta * (this.left + this.right);
+
+        const yawQ = q_axisAngle([0,0,1], this.yaw);
+
+
+        const front = v3_rotate([0,1,0], yawQ);
+        const pitch = v3_angle(front,normal) + toRad(-90);
+        const pitchQ = q_axisAngle([1,0,0], pitch);
+
+        const rot = q_multiply(pitchQ, yawQ);
+
+        this.set({rotation: rot});
+
+        const mmm = [0, (this.fore + this.back) * delta * 0.002,0];
+        const vvv = v3_rotate(mmm, yawQ);
+        this.go(vvv[0], vvv[1]);
+
+        this.future(100).moveTick(100);
+    }
+
+    go(x,y) {
+        const voxels = this.service("Voxels");
 
         const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
         const above = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,1])));
         const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
 
-        const levelIsEmpty = voxels.get(...level) < 2;
-        const aboveIsEmpty = voxels.get(...above) < 2;
-        const belowIsEmpty = voxels.get(...below) < 2;
-
-        let z = 0;
-        if (levelIsEmpty) {
-            if (belowIsEmpty) z = -1;
-        } else {
-            if (aboveIsEmpty) {
-                z = 1;
-            } else {
-                console.log("Blocked!");
-                return;
-            }
+        if (!Voxels.canEdit(...level)) {
+            console.log("Edge Blocked!");
+            return;
         }
-
-        this.fraction = v3_add(this.fraction, [x,y,z]);
-
-        this.clamp();
-        this.ground(); // xxx Ground needs to handle shims above doubles
-
-    }
-
-
-    back() {
-        console.log("back");
-        const voxels = this.service("Voxels");
-
-        const x = 0;
-        const y = -0.1;
-
-        const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
-        const above = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,1])));
-        const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
-
-        const levelIsEmpty = voxels.get(...level) < 2;
-        const aboveIsEmpty = voxels.get(...above) < 2;
-        const belowIsEmpty = voxels.get(...below) < 2;
-
-        let z = 0;
-        if (levelIsEmpty) {
-            if (belowIsEmpty) z = -1;
-        } else {
-            if (aboveIsEmpty) {
-                z = 1;
-            } else {
-                console.log("Blocked!");
-                return;
-            }
-        }
-
-        this.fraction = v3_add(this.fraction, [x,y,z]);
-
-        this.clamp();
-        this.ground();
-    }
-
-    left() {
-        console.log("left");
-        const voxels = this.service("Voxels");
-
-        const x = -0.1;
-        const y = 0;
-
-        const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
-        const above = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,1])));
-        const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
 
         const levelIsEmpty = voxels.get(...level) < 2;
         const aboveIsEmpty = voxels.get(...above) < 2;
@@ -278,76 +259,8 @@ export class AvatarActor extends PersonActor {
 
         this.clamp();
         this.ground();
-    }
+        this.hop();
 
-    right() {
-        console.log("right");
-
-        const voxels = this.service("Voxels");
-
-        const x = 0.1;
-        const y = 0;
-
-        const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
-        const above = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,1])));
-        const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
-
-        const levelIsEmpty = voxels.get(...level) < 2;
-        const aboveIsEmpty = voxels.get(...above) < 2;
-        const belowIsEmpty = voxels.get(...below) < 2;
-
-        let z = 0;
-        if (levelIsEmpty) {
-            if (belowIsEmpty) z = -1;
-        } else {
-            if (aboveIsEmpty) {
-                z = 1;
-            } else {
-                console.log("Blocked!");
-                return;
-            }
-        }
-
-        this.fraction = v3_add(this.fraction, [x,y,z]);
-
-
-        // const voxels = this.service("Voxels");
-        // const surfaces = this.service("Surfaces");
-        // const tangent = surfaces.tangent(...this.xyz);
-
-        // const x = 0.1;
-        // const y = 0;
-        // const rise = v2_multiply(tangent, [x,y]);
-        // const z = rise[0] + rise[1];
-
-        // const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
-        // const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
-
-        // const levelIsEmpty = voxels.get(...level) < 2;
-        // const belowIsEmpty = voxels.get(...below) < 2;
-
-
-        // if (z>0) {
-        //     this.fraction = v3_add(this.fraction, [x,y,z]);
-        // } else if (z<0 && belowIsEmpty) {
-        //     this.fraction = v3_add(this.fraction, [x,y,z]);
-        // } else { // z = 0
-        //     if (belowIsEmpty) {
-        //         console.log("descend");
-        //         this.fraction = v3_add(this.fraction, [x,y,-1]);
-        //     } else if (levelIsEmpty) {
-        //         this.fraction = v3_add(this.fraction, [x,y,0]);
-        //     } else if (aboveIsEmpty) {
-        //         console.log("ascend");
-        //         this.fraction = v3_add(this.fraction, [x,y,1]);
-        //     } else {
-        //         console.log("Blocked!");
-        //         return;
-        //     }
-        // }
-
-        this.clamp();
-        this.ground();
     }
 
 

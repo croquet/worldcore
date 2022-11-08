@@ -12,7 +12,7 @@ import { LogActor } from "./Bots";
 
 // Holds all the large static objects in the world. Only one prop can exist per voxel.
 
-export class PropManager extends ModelService {
+export class PropManager extends ModelService { // add & delete not working! xxx
     init() {
         super.init("PropManager");
         this.props = new Map();
@@ -32,6 +32,7 @@ export class PropManager extends ModelService {
 
     remove(prop) {
         this.props.delete(prop.key);
+        console.log(this.props);
     }
 
     destroyAll() {
@@ -129,18 +130,22 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
         const belowXYZ = Voxels.adjacent(...this.voxel,[0,0,-1]);
         const belowType = voxels.get(...belowXYZ);
 
-        const e = Math.max(0,surfaces.elevation(...this.xyz));
-        // const e = surfaces.elevation(...this.xyz);
-        if (e<0 ) {
+        // const e = Math.max(0,surfaces.elevation(...this.xyz));
+        const e = surfaces.elevation(...this.xyz);
+        if (e < 0 ) {
+            console.log("fell " + this.xyz);
             this.fell();
             this.destroy()
-        };
+        } else {
+            this.ground;
+        }
 
         // const e = surfaces.elevation(...this.xyz);
         // if (e<0) this.destroy();
-        const fraction = [...this.fraction];
-        fraction[2] = e;
-        this.set({fraction});
+        // this.ground();
+        // const fraction = [...this.fraction];
+        // fraction[2] = e;
+        // this.set({fraction});
     }
 
     fell() { // Breaks the tree into falling logs

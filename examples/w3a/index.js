@@ -157,7 +157,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!");
+        console.log("Start root model!!!!");
         this.level = LevelActor.create();
 
 
@@ -181,7 +181,13 @@ class MyModelRoot extends ModelRoot {
 
     test1() {
         console.log("test1");
-        console.log(clamp([0,0.5,1]))
+        const mmm = new Map();
+        console.log(mmm);
+        mmm.set(111,111);
+        mmm.set(222,222);
+        console.log(mmm);
+        mmm.delete(111);
+        console.log(mmm);
     }
 
 }
