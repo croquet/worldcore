@@ -9,7 +9,6 @@ import paper from "./assets/paper.jpg";
 import diana from "./assets/diana.jpg";
 import llama from "./assets/llama.jpg";
 import kwark from "./assets/kwark.otf";
-import { Avatar, FPSAvatar } from "./src/Avatar";
 import { packKey, Voxels } from "./src/Voxels";
 import { PropManager, VoxelActor } from "./src/Props";
 import { Surfaces } from "./src/Surfaces";
@@ -19,8 +18,6 @@ import { GodView } from "./src/GodView";
 import { MapView, MapViewX } from "./src/MapView";
 import { InstanceManager } from "./src/Instances";
 import { BotManager } from "./src/Bots";
-
-// import { mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils';
 
 //------------------------------------------------------------------------------------------
 //-- Helper Functions -----------------------------------------------------------------------------
@@ -47,52 +44,52 @@ import { BotManager } from "./src/Bots";
 
 
 
-//------------------------------------------------------------------------------------------
-//-- WorldActor -----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+// //-- WorldActor -----------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Smoothed) {
-    get pawn() {return TestPawn}
+// class TestActor extends mix(Actor).with(AM_Smoothed) {
+//     get pawn() {return TestPawn}
 
-}
-TestActor.register('TestActor');
+// }
+// TestActor.register('TestActor');
 
-//------------------------------------------------------------------------------------------
-//-- TestPawn ------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+// //-- TestPawn ------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
 
-class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleX) {
-    constructor(...args) {
-        super(...args);
+// class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleX) {
+//     constructor(...args) {
+//         super(...args);
 
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
-        this.material.shadowSide = THREE.FrontSide;
-        this.material.vertexColors = true;
+//         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
+//         this.material.shadowSide = THREE.FrontSide;
+//         this.material.vertexColors = true;
 
-        this.image = new Image();
-        this.image.onload = () => {
-            if (this.material.map) this.material.map.dispose();
-            this.material.map = new THREE.CanvasTexture(this.image);
-            this.material.needsUpdate = true;
-        }
+//         this.image = new Image();
+//         this.image.onload = () => {
+//             if (this.material.map) this.material.map.dispose();
+//             this.material.map = new THREE.CanvasTexture(this.image);
+//             this.material.needsUpdate = true;
+//         }
 
-        this.image.src = paper;
+//         this.image.src = paper;
 
-        const mb  = new MeshBuilder();
-        mb.addFace(
-            [[0,0,0], [5,0,0], [5,5,0], [0,5,0]],
-            [[0,0], [1,0], [1,1], [0,1]],
-            [1,1,0]
-        )
-        const mesh =  mb.build(this.material);
+//         const mb  = new MeshBuilder();
+//         mb.addFace(
+//             [[0,0,0], [5,0,0], [5,5,0], [0,5,0]],
+//             [[0,0], [1,0], [1,1], [0,1]],
+//             [1,1,0]
+//         )
+//         const mesh =  mb.build(this.material);
 
-        mesh.castShadow = true;
+//         mesh.castShadow = true;
 
-        this.setRenderObject(mesh);
+//         this.setRenderObject(mesh);
 
-    }
+//     }
 
-}
+// }
 
 
 //------------------------------------------------------------------------------------------
@@ -144,15 +141,38 @@ class LevelPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisibleX) {
 }
 
 //------------------------------------------------------------------------------------------
-//-- MyModelRoot ---------------------------------------------------------------------------
+//-- MyUserManager ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+class MyUserManager extends UserManager {
+    get defaultUser() {return MyUser;}
+}
+MyUserManager.register("MyUserManager");
 
+//------------------------------------------------------------------------------------------
+//-- MyUser ---------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class MyUser extends User {
+
+    get pawn() {return GodView;}
+
+    init(options){
+        super.init(options);
+        console.log("new user: " + this.userId)
+    }
+}
+MyUser.register("MyUser");
+
+
+//------------------------------------------------------------------------------------------
+//-- MyModelRoot ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [Voxels, Stress, Surfaces, WorldBuilder, PropManager, BotManager];
+        return [MyUserManager, Voxels, Stress, Surfaces, WorldBuilder, PropManager, BotManager];
     }
 
     init(...args) {
@@ -162,12 +182,8 @@ class MyModelRoot extends ModelRoot {
 
 
         const wb = this.service("WorldBuilder");
-        const voxels = this.service("Voxels");
+        // const voxels = this.service("Voxels");
         wb.build();
-
-        // const surfaces = this.service("Surfaces");
-        // surfaces.rebuildAll();
-
 
         this.subscribe("input", "nDown", this.test0)
         this.subscribe("input", "pDown", this.test1)
@@ -181,13 +197,6 @@ class MyModelRoot extends ModelRoot {
 
     test1() {
         console.log("test1");
-        const mmm = new Map();
-        console.log(mmm);
-        mmm.set(111,111);
-        mmm.set(222,222);
-        console.log(mmm);
-        mmm.delete(111);
-        console.log(mmm);
     }
 
 }
@@ -208,10 +217,8 @@ class MyViewRoot extends ViewRoot {
         const three = this.service("ThreeRenderManager");
         three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
 
-        this.godView = new GodView(this.model);
+        // this.godView = new GodView(this.model);
         this.mapView = new MapView(this.model);
-
-        // this.mapView  = new MapView();
 
         document.body.style.cursor = "crosshair";
 
@@ -222,7 +229,7 @@ class MyViewRoot extends ViewRoot {
 
     detach() {
         super.detach();
-        if (this.godView) this.godView.destroy();
+        // if (this.godView) this.godView.destroy();
         if (this.mapView) this.mapView.destroy();
     }
 
@@ -233,54 +240,10 @@ class MyViewRoot extends ViewRoot {
 
     zTest() {
         console.log("zTest");
-        const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        console.log(geometry);
-        const p = geometry.getAttribute("position");
-        const n = p.count;
-        console.log(p.count);
-
-        const colors = [];
-        for (let i = 0; i < n; i++) {
-            colors.push(...[0,0,1]);
-        }
-
-        console.log(colors);
-
-        geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3) );
-
-        console.log(geometry);
-
-
-        // this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
-        // // this.mesh = new THREE.Mesh( this.geometry, this.material );
-        // this.mesh = new THREE.InstancedMesh( this.geometry, this.material, 10 );
-
-        // const m = new THREE.Matrix4();
-
-        // m.makeTranslation(0,0,10);
-
-        // this.mesh.setMatrixAt(0, m);
-        // m.makeTranslation(0,0,20);
-        // this.mesh.setMatrixAt(1, m);
-
-        // this.mesh.instanceMatrix.needsUpdate = true;
-        // render.scene.add(this.mesh)
-
-
     }
 
     xTest() {
         console.log("xTest");
-
-        // const trunk = new THREE.CylinderGeometry( 0.5,0.5, 10, 7);
-        // const top = new THREE.ConeGeometry( 2,15, 8);
-        // top.translate(0,10,0);
-
-        // console.log(mergeBufferGeometries);
-
-        // let  geometry;
-        // geometry = mergeBufferGeometries([trunk, top]);
-
     }
 
 

@@ -20,7 +20,6 @@ export class UserManager extends ModelService {
 
     get defaultUser() {return User;}
 
-
     init(options) {
         super.init('UserManager');
         this.users = new Map();

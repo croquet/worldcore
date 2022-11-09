@@ -1,18 +1,39 @@
-import { ModelRoot  } from "@croquet/worldcore";
-import { PersonActor } from "./Bots";
+import { RegisterMixin  } from "@croquet/worldcore";
 
 
-// //------------------------------------------------------------------------------------------
-// //-- AvatarActor ---------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+//-- AM_Avatar -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
-// export class AvatarActor extends PersonActor {
+export const AM_Avatar = superclass => class extends superclass {
 
-//     init(options) {
-//         super.init(options);
-//     }
+    get driver() { return this._driver} // The user that is controlling this avatar.
+
+};
+RegisterMixin(AM_Avatar);
 
 
-// }
-// AvatarActor.register('AvatarActor');
+//-- Pawn ----------------------------------------------------------------------------------
 
+export const PM_Avatar = superclass => class extends superclass {
+
+    constructor(actor) {
+        super(actor);
+        this.listenOnce("driverSet", this.onDriverSet);
+        this.drive();
+    }
+
+    get isMyAvatarPawn() {
+        if (this.actor.driver) return this.actor.driver.userId === this.viewId;
+        return false;
+    }
+
+    onDriverSet(e) {
+        this.park();
+        this.drive();
+    }
+
+    drive() {}
+    park() {}
+
+};

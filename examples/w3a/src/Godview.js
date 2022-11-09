@@ -1,4 +1,4 @@
-import { WorldcoreView, mix, m4_rotationX, toRad, m4_scaleRotationTranslation, q_axisAngle, PM_WidgetPointer, v2_sub, Constants, q_multiply, TAU, v3_scale, v3_add, v3_normalize, v3_rotate, v3_magnitude, THREE, viewRoot, v3_sub, v3_floor, PM_ThreeVisible, Widget2, CanvasWidget2, ToggleWidget2, ToggleSet2, ImageWidget2, SliderWidget2 } from "@croquet/worldcore";
+import { WorldcoreView, Pawn, mix, m4_rotationX, toRad, m4_scaleRotationTranslation, q_axisAngle, PM_WidgetPointer, v2_sub, Constants, q_multiply, TAU, v3_scale, v3_add, v3_normalize, v3_rotate, v3_magnitude, THREE, viewRoot, v3_sub, v3_floor, PM_ThreeVisible, Widget2, CanvasWidget2, ToggleWidget2, ToggleSet2, ImageWidget2, SliderWidget2 } from "@croquet/worldcore";
 import { Voxels} from  "./Voxels";
 
 let time0 = 0;
@@ -18,6 +18,10 @@ import baseOffIcon from "../assets/baseOffIcon.png";
 import baseOnIcon from "../assets/baseOnIcon.png";
 import spawnOffIcon from "../assets/spawnOffIcon.png";
 import spawnOnIcon from "../assets/spawnOnIcon.png";
+import sheepOffIcon from "../assets/sheepOffIcon.png";
+import sheepOnIcon from "../assets/sheepOnIcon.png";
+import walkOffIcon from "../assets/walkOffIcon.png";
+import walkOnIcon from "../assets/walkOnIcon.png";
 
 //------------------------------------------------------------------------------------------
 //-- Widgets -------------------------------------------------------------------------------
@@ -56,9 +60,12 @@ class ImageToggleWidget2 extends ToggleWidget2 {
 //------------------------------------------------------------------------------------------
 
 
-export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
-    constructor(model) {
-        super(model)
+export class GodView extends mix(Pawn).with(PM_WidgetPointer) {
+    constructor(actor) {
+        super(actor)
+
+        console.log("GodView start!")
+        console.log(this.actor.userId);
 
         this.fore = 0;
         this.back = 0;
@@ -77,7 +84,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         const yawQ = q_axisAngle([0,0,1], this.yaw);
         const lookQ = q_multiply(pitchQ, yawQ);
 
-        const xxx = Constants.scaleX * Constants.sizeX / 2;
+        // const xxx = Constants.scaleX * Constants.sizeX / 2;
         this.translation = [0,-100,100];
         this.rotation = lookQ;
         this.updateCamera();
@@ -118,7 +125,9 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         const clearToggle = new ImageToggleWidget2({name: "clear", parent: hud, size:[30,30], translation: [50,50], toggleSet: toggleSet, offURL: clearOffIcon, onURL: clearOnIcon});
 
         const treeToggle = new ImageToggleWidget2({name: "tree", parent: hud, size:[30,30], translation: [15,85], toggleSet: toggleSet, offURL: treeOffIcon, onURL: treeOnIcon});
-        const spawnToggle = new ImageToggleWidget2({name: "spawn", parent: hud, size:[30,30], translation: [50,85], toggleSet: toggleSet, offURL: spawnOffIcon, onURL: spawnOnIcon});
+        const spawnToggle = new ImageToggleWidget2({name: "sheep", parent: hud, size:[30,30], translation: [50,85], toggleSet: toggleSet, offURL: sheepOffIcon, onURL: sheepOnIcon});
+
+        const walkToggle = new ImageToggleWidget2({name: "walk", parent: hud, size:[30,30], translation: [15,120], toggleSet: toggleSet, offURL: walkOffIcon, onURL: walkOnIcon});
 
         this.subscribe(toggleSet.id, "pick", this.setEditMode);
         toggleSet.pick(fillToggle);
@@ -130,7 +139,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         this.editMode = mode;
     }
 
-    foreDown() { this.fore = 1; }
+    foreDown() { console.log("w"); this.fore = 1; }
     foreUp() {  this.fore = 0; }
     backDown() {this.back = -1; }
     backUp() { this.back = 0; }
@@ -151,7 +160,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
                 case "tree": this.onTree(); break;
                 case "clear": this.onClear(); break;
                 case "base": this.onBase(); break;
-                case "spawn": this.onSpawn(); break;
+                case "sheep": this.onSpawnSheep(); break;
             }
 
         };
@@ -229,10 +238,10 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         this.publish("edit", "plantTree",{xyz: this.pointerHit.voxel});
     }
 
-    onSpawn() {
+    onSpawnSheep() {
         if (!this.pointerHit) return;
-        console.log("Spawn: " +  this.pointerHit.voxel);
-        this.publish("edit", "spawn",{xyz: this.pointerHit.voxel});
+        // console.log("Spawn: " +  this.pointerHit.voxel);
+        this.publish("edit", "sheep",{xyz: this.pointerHit.voxel});
     }
 
     onClear() {

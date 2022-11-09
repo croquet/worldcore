@@ -4,6 +4,7 @@ import { ModelService, Constants, Actor, Pawn, mix, PM_Smoothed, AM_Behavioral, 
 import { toWorld, packKey, Voxels, clamp} from "./Voxels";
 import * as BEHAVIORS from "./SharedBehaviors";
 import { VoxelActor } from "./VoxelActor";
+import { AM_Avatar } from "./Avatar";
 
 //------------------------------------------------------------------------------------------
 //-- BotManager ----------------------------------------------------------------------------
@@ -16,7 +17,7 @@ export class BotManager extends ModelService {
         super.init("BotManager");
         console.log("Bot Manager");
         this.bots = new Set();
-        this.subscribe("edit", "spawn", this.onSpawnBot);
+        this.subscribe("edit", "sheep", this.onSpawnSheep);
         this.subscribe("voxels", "load", this.destroyAll);
     }
 
@@ -33,8 +34,8 @@ export class BotManager extends ModelService {
         doomed.forEach(bot => bot.destroy());
     }
 
-    onSpawnBot(data) {
-        console.log("Spawn bot!")
+    onSpawnSheep(data) {
+        console.log("Spawn sheep!")
         const voxel = data.xyz
         const x = 0.5
         const y = 0.5
@@ -136,29 +137,29 @@ class LogPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
 }
 
 //------------------------------------------------------------------------------------------
-//-- PersonActor ---------------------------------------------------------------------------
+//-- SheepActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class PersonActor extends BotActor {
+export class SheepActor extends BotActor {
 
-    get pawn() {return PersonPawn}
+    get pawn() {return SheepPawn}
 
     init(options) {
         super.init(options);
         this.startBehavior("BotBehavior");
     }
 }
-PersonActor.register("PersonActor");
+SheepActor.register("SheepActor");
 
 //------------------------------------------------------------------------------------------
-//-- PersonPawn-----------------------------------------------------------------------------
+//-- SheepPawn-----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 
-class PersonPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
+class SheepPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
     constructor(actor) {
         super(actor);
-        this.useInstance("bot");
+        this.useInstance("sheep");
     }
 }
 
@@ -167,13 +168,14 @@ class PersonPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
 //-- AvatarActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class AvatarActor extends PersonActor {
+export class AvatarActor extends mix(SheepActor).with(AM_Avatar) {
 
-    // get pawn() {return AvatarPawn}
+    get pawn() {return AvatarPawn}
 
     init(options) {
         super.init(options);
         console.log("new avatar");
+        console.log(this.driver);
 
         this.left = this.right = 0;
         this.fore = this.back = 0;
@@ -272,22 +274,22 @@ AvatarActor.register('AvatarActor');
 //------------------------------------------------------------------------------------------
 
 
-// class AvatarPawn extends PersonPawn {
-//     constructor(actor) {
-//         super(actor);
+class AvatarPawn extends SheepPawn {
+    // constructor(actor) {
+    //     super(actor);
 
-//     }
+    // }
 
-//     update(time, delta) {
-//         super.update(time,delta);
-//         // console.log("pawn update2");
-//     }
+    // update(time, delta) {
+    //     super.update(time,delta);
+    //     // console.log("pawn update2");
+    // }
 
-//     foreDown() {
-//         console.log("fore down");
-//     }
+    // foreDown() {
+    //     console.log("fore down");
+    // }
 
-//     foreUp() {
-//         console.log("fore up");
-//     }
-// }
+    // foreUp() {
+    //     console.log("fore up");
+    // }
+}

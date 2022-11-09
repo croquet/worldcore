@@ -155,10 +155,10 @@ export class InstanceManager extends ViewService {
         // geometry.translate(0,0,1);
 
         const geometry = new THREE.BoxGeometry( 1, 2, 1 );
-        setGeometryColor(geometry, [1, 1, 0]);
+        setGeometryColor(geometry, [1, 1, 1]);
         geometry.translate(0,0,0.5);
 
-        const mesh = this.build("bot", geometry, instanceMaterial);
+        const mesh = this.build("sheep", geometry, instanceMaterial);
         mesh.receiveShadow = true;
         mesh.castShadow = true;
     }
