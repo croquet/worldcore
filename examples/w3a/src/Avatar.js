@@ -2,33 +2,35 @@ import { RegisterMixin  } from "@croquet/worldcore";
 
 
 //------------------------------------------------------------------------------------------
-//-- AM_Avatar -------------------------------------------------------------------------------
+//-- AM_Avatar -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export const AM_Avatar = superclass => class extends superclass {
 
-    get driver() { return this._driver} // The user that is controlling this avatar.
+    get driverId() { return this._driverId} // The userId of the user controlling this avatar
 
 };
 RegisterMixin(AM_Avatar);
 
 
-//-- Pawn ----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+//-- PM_Avatar -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
 export const PM_Avatar = superclass => class extends superclass {
 
     constructor(actor) {
         super(actor);
-        this.listenOnce("driverSet", this.onDriverSet);
+        console.log("PM_Avatar");
+        this.listenOnce("driverIdSet", this.onDriverIdSet);
         this.drive();
     }
 
     get isMyAvatarPawn() {
-        if (this.actor.driver) return this.actor.driver.userId === this.viewId;
-        return false;
+        return this.actor.driverId === this.viewId;
     }
 
-    onDriverSet(e) {
+    onDriverIdSet(e) {
         this.park();
         this.drive();
     }

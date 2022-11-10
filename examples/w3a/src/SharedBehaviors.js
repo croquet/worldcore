@@ -117,10 +117,6 @@ class GroundTestBehavior extends Behavior {
             this.actor.startBehavior(FallThenBot);
         }
         this.actor.ground();
-        // const e = surfaces.elevation(...this.actor.xyz);
-        // const fraction = [...this.actor.fraction];
-        // fraction[2] = e;
-        // this.actor.snap({fraction});
     }
 }
 GroundTestBehavior.register("GroundTestBehavior");

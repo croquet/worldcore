@@ -93,12 +93,16 @@ export const PM_InstancedMesh = superclass => class extends superclass {
 
     destroy() {
         super.destroy();
-        this.mesh.release(this.meshIndex);
+        if (this.mesh) this.mesh.release(this.meshIndex);
     }
 
     useInstance(name) {
         const im = this.service("InstanceManager");
         this.mesh = im.get(name);
+        if (!this.mesh) {
+            console.warn("no mesh named " + name)
+            return;
+        }
         this.meshIndex = this.mesh.use(this);
         this.updateMatrix()
     }

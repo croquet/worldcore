@@ -237,6 +237,19 @@ export class Voxels extends ModelService {
         }
     }
 
+    forEachWalkable(callback) { // executes a callback on every air voxel with a solid voxel below it.
+        for (let x = 0; x < Constants.sizeX; x++) {
+            for (let y = 0; y < Constants.sizeY; y++) {
+                const expanded = this.voxels[x][y].expand();
+                expanded.forEach((t, z) => {
+                    if (t>=2) return; // solid
+                    const b = expanded[z-1]
+                    if (b>=2) callback(x, y, z)
+                })
+            }
+        }
+    }
+
     forAdjacent(x,y,z, callback){ // (x,y,z,t,d) // where d: 0=west, 1=south, 2=east, 3=north, 4=below, 5=above
         const x0 = x-1, x1 = x+1;
         const y0 = y-1, y1 = y+1;
@@ -249,7 +262,8 @@ export class Voxels extends ModelService {
         if (z1 < Constants.sizeZ) callback(x,y,z1, this.get(x,y,z1),5);
     }
 
-    forBox(x,y,z, s=1, callback){ // (x,y,z,t)
+    forBox(x,y,z,callback){ // (x,y,z,t)
+        const s = 1;
         const x0 = Math.max(0, x-s);
         const y0 = Math.max(0, y-s);
         const z0 = Math.max(0, z-s);

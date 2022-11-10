@@ -18,6 +18,7 @@ import { GodView } from "./src/GodView";
 import { MapView, MapViewX } from "./src/MapView";
 import { InstanceManager } from "./src/Instances";
 import { BotManager } from "./src/Bots";
+import { Paths} from "./src/Paths";
 
 //------------------------------------------------------------------------------------------
 //-- Helper Functions -----------------------------------------------------------------------------
@@ -155,11 +156,11 @@ MyUserManager.register("MyUserManager");
 
 class MyUser extends User {
 
-    get pawn() {return GodView;}
+    // get pawn() {return GodView;}
 
     init(options){
         super.init(options);
-        console.log("new user: " + this.userId)
+        // console.log("new user: " + this.userId)
     }
 }
 MyUser.register("MyUser");
@@ -172,7 +173,7 @@ MyUser.register("MyUser");
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [MyUserManager, Voxels, Stress, Surfaces, WorldBuilder, PropManager, BotManager];
+        return [MyUserManager, Voxels, Stress, Surfaces, Paths, WorldBuilder, PropManager, BotManager];
     }
 
     init(...args) {
@@ -197,6 +198,9 @@ class MyModelRoot extends ModelRoot {
 
     test1() {
         console.log("test1");
+        const paths = this.service("Paths");
+        paths.rebuildAll();
+        // console.log(paths);
     }
 
 }
@@ -217,7 +221,7 @@ class MyViewRoot extends ViewRoot {
         const three = this.service("ThreeRenderManager");
         three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
 
-        // this.godView = new GodView(this.model);
+        this.godView = new GodView(this.model);
         this.mapView = new MapView(this.model);
 
         document.body.style.cursor = "crosshair";

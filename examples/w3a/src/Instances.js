@@ -81,7 +81,8 @@ export class InstanceManager extends ViewService {
         this.buildBase();
         this.buildTree()
         this.buildLog()
-        this.buildBot()
+        this.buildSheep()
+        this.buildPerson()
     }
 
     buildRubble() {
@@ -149,7 +150,7 @@ export class InstanceManager extends ViewService {
         mesh.castShadow = true;
     }
 
-    buildBot() {
+    buildSheep() {
         // const geometry = new THREE.BoxGeometry( 0.5, 0.5, 2 );
         // setGeometryColor(geometry, [1, 1, 0]);
         // geometry.translate(0,0,1);
@@ -159,6 +160,20 @@ export class InstanceManager extends ViewService {
         geometry.translate(0,0,0.5);
 
         const mesh = this.build("sheep", geometry, instanceMaterial);
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
+    }
+
+    buildPerson() {
+        const geometry = new THREE.BoxGeometry( 0.5, 0.5, 2 );
+        setGeometryColor(geometry, [1, 1, 0]);
+        geometry.translate(0,0,1);
+
+        // const geometry = new THREE.BoxGeometry( 1, 2, 1 );
+        // setGeometryColor(geometry, [1, 1, 1]);
+        // geometry.translate(0,0,0.5);
+
+        const mesh = this.build("person", geometry, instanceMaterial);
         mesh.receiveShadow = true;
         mesh.castShadow = true;
     }

@@ -16,8 +16,6 @@ import clearOffIcon from "../assets/clearOffIcon.png";
 import clearOnIcon from "../assets/clearOnIcon.png";
 import baseOffIcon from "../assets/baseOffIcon.png";
 import baseOnIcon from "../assets/baseOnIcon.png";
-import spawnOffIcon from "../assets/spawnOffIcon.png";
-import spawnOnIcon from "../assets/spawnOnIcon.png";
 import sheepOffIcon from "../assets/sheepOffIcon.png";
 import sheepOnIcon from "../assets/sheepOnIcon.png";
 import walkOffIcon from "../assets/walkOffIcon.png";
@@ -59,13 +57,16 @@ class ImageToggleWidget2 extends ToggleWidget2 {
 //-- GodView -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+let translation = [0,-100,100];
+let pitch = toRad(45)
+let yaw = toRad(0)
 
-export class GodView extends mix(Pawn).with(PM_WidgetPointer) {
+export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
     constructor(actor) {
         super(actor)
 
         console.log("GodView start!")
-        console.log(this.actor.userId);
+        // console.log(this.actor.userId);
 
         this.fore = 0;
         this.back = 0;
@@ -76,17 +77,6 @@ export class GodView extends mix(Pawn).with(PM_WidgetPointer) {
         this.moveSpeed = 0.1;
         this.turnSpeed = 0.002;
 
-        this.pitch = toRad(45)
-        this.yaw = toRad(-90)
-        this.yaw = toRad(0)
-
-        const pitchQ = q_axisAngle([1,0,0], this.pitch);
-        const yawQ = q_axisAngle([0,0,1], this.yaw);
-        const lookQ = q_multiply(pitchQ, yawQ);
-
-        // const xxx = Constants.scaleX * Constants.sizeX / 2;
-        this.translation = [0,-100,100];
-        this.rotation = lookQ;
         this.updateCamera();
 
         this.subscribe("input", "wDown", this.foreDown);
@@ -105,13 +95,24 @@ export class GodView extends mix(Pawn).with(PM_WidgetPointer) {
         this.subscribe("input", "pointerMove", this.doPointerMove);
         this.subscribe("input", 'wheel', this.onWheel);
 
-        this.subscribe("input", 'zDown', this.onFill);
-        this.subscribe("input", 'xDown', this.onDig);
+        this.subscribe("input", 'zDown', this.zTest);
+        this.subscribe("input", 'xDown', this.xTest);
 
     }
 
     destroy() {
         super.destroy();
+    }
+
+    zTest() {
+        console.log("pause")
+        this.isPaused = true;
+
+    }
+
+    xTest() {
+        console.log("resume")
+        this.isPaused = false;
     }
 
     buildHUD() {
@@ -139,7 +140,7 @@ export class GodView extends mix(Pawn).with(PM_WidgetPointer) {
         this.editMode = mode;
     }
 
-    foreDown() { console.log("w"); this.fore = 1; }
+    foreDown() { this.fore = 1; }
     foreUp() {  this.fore = 0; }
     backDown() {this.back = -1; }
     backUp() { this.back = 0; }
@@ -150,6 +151,7 @@ export class GodView extends mix(Pawn).with(PM_WidgetPointer) {
     leftUp() { this.left = 0; }
 
     doPointerDown(e) {
+        if (this.isPaused) return;
         if (e.button === 2) {
             this.service("InputManager").enterPointerLock();
         } else{
@@ -161,6 +163,7 @@ export class GodView extends mix(Pawn).with(PM_WidgetPointer) {
                 case "clear": this.onClear(); break;
                 case "base": this.onBase(); break;
                 case "sheep": this.onSpawnSheep(); break;
+                case "walk": this.onSpawnPerson(); break;
             }
 
         };
@@ -169,22 +172,22 @@ export class GodView extends mix(Pawn).with(PM_WidgetPointer) {
     doPointerUp(e) {
         if (e.button === 2) {
             this.service("InputManager").exitPointerLock();
-        } else{
-
         };
     }
 
     doPointerDelta(e) {
+        if (this.isPaused) return;
         if (this.service("InputManager").inPointerLock) {
-            this.yaw += (-this.turnSpeed * e.xy[0]) % TAU;
-            this.pitch += (-this.turnSpeed * e.xy[1]) % TAU;
-            this.pitch = Math.max(-Math.PI/2, this.pitch);
-            this.pitch = Math.min(Math.PI/2, this.pitch);
+            yaw += (-this.turnSpeed * e.xy[0]) % TAU;
+            pitch += (-this.turnSpeed * e.xy[1]) % TAU;
+            pitch = Math.max(-Math.PI/2, pitch);
+            pitch = Math.min(Math.PI/2, pitch);
             this.updateCamera();
         };
     }
 
     doPointerMove(e) {
+        if (this.isPaused) return;
         this.raycast(e.xy);
     }
 
@@ -240,8 +243,12 @@ export class GodView extends mix(Pawn).with(PM_WidgetPointer) {
 
     onSpawnSheep() {
         if (!this.pointerHit) return;
-        // console.log("Spawn: " +  this.pointerHit.voxel);
-        this.publish("edit", "sheep",{xyz: this.pointerHit.voxel});
+        this.publish("edit", "spawnSheep",{xyz: this.pointerHit.voxel, driverId: this.viewId});
+    }
+
+    onSpawnPerson() {
+        if (!this.pointerHit) return;
+        this.publish("edit", "spawnPerson",{xyz: this.pointerHit.voxel, driverId: this.viewId});
     }
 
     onClear() {
@@ -255,6 +262,7 @@ export class GodView extends mix(Pawn).with(PM_WidgetPointer) {
     }
 
     onWheel(data) {
+        if (this.isPaused) return;
         const render = this.service("ThreeRenderManager");
         fov = Math.max(10, Math.min(80, fov + data.deltaY / 100));
         render.camera.fov = fov;
@@ -262,14 +270,15 @@ export class GodView extends mix(Pawn).with(PM_WidgetPointer) {
     }
 
     updateCamera() {
+        if (this.isPaused) return;
         const render = this.service("ThreeRenderManager");
 
-        const pitchQ = q_axisAngle([1,0,0], this.pitch);
-        const yawQ = q_axisAngle([0,0,1], this.yaw);
+        const pitchQ = q_axisAngle([1,0,0], pitch);
+        const yawQ = q_axisAngle([0,0,1], yaw);
         const lookQ = q_multiply(pitchQ, yawQ);
         this.rotation = lookQ;
 
-        const cameraMatrix = m4_scaleRotationTranslation([1,1,1], this.rotation, this.translation);
+        const cameraMatrix = m4_scaleRotationTranslation([1,1,1], this.rotation, translation);
         render.camera.matrix.fromArray(cameraMatrix);
         render.camera.matrixAutoUpdate = false;
         render.camera.matrixWorldNeedsUpdate = true;
@@ -278,14 +287,15 @@ export class GodView extends mix(Pawn).with(PM_WidgetPointer) {
     update(time) {
         time0 = time1;
         time1 = time;
+        if (this.isPaused) return;
         const delta = time1 - time0;
 
-        const yawQ = q_axisAngle([0,0,1], this.yaw);
+        const yawQ = q_axisAngle([0,0,1], yaw);
         let forward = [0,0,0];
         const v = v3_rotate([this.right + this.left, this.fore + this.back,0], yawQ);
         if (v3_magnitude(v)) forward = v3_normalize(v);
         const move = v3_scale(forward, delta * this.moveSpeed);
-        this.translation = v3_add(this.translation,move)
+        translation = v3_add(translation,move)
         this.updateCamera();
     }
 

@@ -1,10 +1,10 @@
 import { ModelService, Constants, Actor, Pawn, mix, PM_Smoothed, AM_Behavioral, PM_InstancedMesh, SequenceBehavior, v3_add, v2_multiply, v3_floor,
-    v3_rotate, q_axisAngle, v3_normalize, v3_magnitude, v3_scale, toDeg, toRad, q_multiply, q_identity, v3_angle } from "@croquet/worldcore";
+    v3_rotate, q_axisAngle, v3_normalize, v3_magnitude, v3_scale, toDeg, toRad, q_multiply, q_identity, v3_angle, TAU, m4_scaleRotationTranslation } from "@croquet/worldcore";
 
 import { toWorld, packKey, Voxels, clamp} from "./Voxels";
 import * as BEHAVIORS from "./SharedBehaviors";
 import { VoxelActor } from "./VoxelActor";
-import { AM_Avatar } from "./Avatar";
+import { AM_Avatar, PM_Avatar } from "./Avatar";
 
 //------------------------------------------------------------------------------------------
 //-- BotManager ----------------------------------------------------------------------------
@@ -17,7 +17,8 @@ export class BotManager extends ModelService {
         super.init("BotManager");
         console.log("Bot Manager");
         this.bots = new Set();
-        this.subscribe("edit", "sheep", this.onSpawnSheep);
+        this.subscribe("edit", "spawnSheep", this.onSpawnSheep);
+        this.subscribe("edit", "spawnPerson", this.onSpawnPerson);
         this.subscribe("voxels", "load", this.destroyAll);
     }
 
@@ -40,7 +41,17 @@ export class BotManager extends ModelService {
         const x = 0.5
         const y = 0.5
         // const bot = PersonActor.create({voxel, fraction:[x,y,0]});
-        const bot = AvatarActor.create({voxel, fraction:[x,y,0]});
+        const sheep = AvatarActor.create({voxel, fraction:[x,y,0], driverId: data.driverId});
+
+    }
+
+    onSpawnPerson(data) {
+        console.log("Spawn person!")
+        console.log(data.driverId);
+        const voxel = data.xyz
+        const x = 0.5
+        const y = 0.5
+        const bot = PersonActor.create({voxel, fraction:[x,y,0], driverId: data.driverId});
 
     }
 }
@@ -57,6 +68,8 @@ export class BotActor extends mix(VoxelActor).with(AM_Behavioral) {
         const bm = this.service("BotManager");
         bm.add(this);
     }
+
+    get conform() { return this._conform} // Align pitch with terrain
 
     destroy() {
         super.destroy();
@@ -148,6 +161,8 @@ export class SheepActor extends BotActor {
         super.init(options);
         this.startBehavior("BotBehavior");
     }
+
+    get conform() {return true}
 }
 SheepActor.register("SheepActor");
 
@@ -163,6 +178,36 @@ class SheepPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
     }
 }
 
+//------------------------------------------------------------------------------------------
+//-- PersonActor ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class PersonActor extends BotActor {
+
+    get pawn() {return PersonPawn}
+
+    init(options) {
+        super.init(options);
+        console.log("new person!");
+        console.log(options);
+        console.log(this._driverId);
+        this.startBehavior("BotBehavior");
+    }
+}
+PersonActor.register("PersonActor");
+
+//------------------------------------------------------------------------------------------
+//-- PersonPawn-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+
+class PersonPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
+    constructor(actor) {
+        super(actor);
+        this.useInstance("person");
+    }
+}
+
 
 //------------------------------------------------------------------------------------------
 //-- AvatarActor ---------------------------------------------------------------------------
@@ -174,57 +219,41 @@ export class AvatarActor extends mix(SheepActor).with(AM_Avatar) {
 
     init(options) {
         super.init(options);
-        console.log("new avatar");
-        console.log(this.driver);
+        console.log("aaa!");
 
         this.left = this.right = 0;
         this.fore = this.back = 0;
+        this.velocity = [0,0,0];
         this.yaw = 0;
 
-        this.subscribe("input", "ArrowUpDown", this.foreDown);
-        this.subscribe("input", "ArrowUpUp", this.foreUp);
-        this.subscribe("input", "ArrowDownDown", this.backDown);
-        this.subscribe("input", "ArrowDownUp", this.backUp)
+        this.subscribe("input", "pDown", this.destroy);
 
-        this.subscribe("input", "ArrowRightDown", this.rightDown);
-        this.subscribe("input", "ArrowRightUp", this.rightUp);
-        this.subscribe("input", "ArrowLeftDown", this.leftDown);
-        this.subscribe("input", "ArrowLeftUp", this.leftUp)
-
+        this.listen("avatar", this.onAvatar)
         this.future(100).moveTick(100);
     }
 
-    foreDown() { this.fore = 1; }
-    foreUp() {  this.fore = 0; }
-    backDown() {this.back = -1; }
-    backUp() { this.back = 0; }
 
-    rightDown() { this.right = -1;}
-    rightUp() {  this.right = 0; }
-    leftDown() {this.left = 1; }
-    leftUp() { this.left = 0; }
+    onAvatar(data) {
+        this.yaw = data.yaw;
+        this.velocity = data.velocity;
+    }
 
     moveTick(delta) {
-        const surfaces = this.service("Surfaces");
-        const normal = surfaces.normal(...this.xyz);
-
-
-        this.yaw += 0.002 * delta * (this.left + this.right);
-
         const yawQ = q_axisAngle([0,0,1], this.yaw);
 
-
-        const front = v3_rotate([0,1,0], yawQ);
-        const pitch = v3_angle(front,normal) + toRad(-90);
-        const pitchQ = q_axisAngle([1,0,0], pitch);
-
-        const rot = q_multiply(pitchQ, yawQ);
-
-        this.set({rotation: rot});
-
-        const mmm = [0, (this.fore + this.back) * delta * 0.002,0];
-        const vvv = v3_rotate(mmm, yawQ);
-        this.go(vvv[0], vvv[1]);
+        let rotation = yawQ;
+        if (this.conform) {
+            const surfaces = this.service("Surfaces");
+            const normal = surfaces.normal(...this.xyz);
+            const front = v3_rotate([0,1,0], yawQ);
+            const pitch = v3_angle(front,normal) + toRad(-90);
+            const pitchQ = q_axisAngle([1,0,0], pitch);
+            rotation = q_multiply(pitchQ, yawQ);
+        }
+        this.set({rotation});
+        // const move = v3_scale(this.velocity, delta * 0.005);
+        const move = v3_scale(this.velocity, delta * 0.002);
+        this.go(...v3_rotate(move, yawQ));
 
         this.future(100).moveTick(100);
     }
@@ -262,7 +291,6 @@ export class AvatarActor extends mix(SheepActor).with(AM_Avatar) {
         this.clamp();
         this.ground();
         this.hop();
-
     }
 
 
@@ -274,22 +302,127 @@ AvatarActor.register('AvatarActor');
 //------------------------------------------------------------------------------------------
 
 
-class AvatarPawn extends SheepPawn {
-    // constructor(actor) {
-    //     super(actor);
+class AvatarPawn extends mix(SheepPawn).with(PM_Avatar) {
+    constructor(actor) {
+        super(actor);
 
-    // }
+        this.left = this.right = 0;
+        this.fore = this.back = 0;
+        this.yaw = 0;
+        this.pitch = toRad(90);
+        this.moveSpeed = 0.1;
+        this.turnSpeed = 0.002;
+    }
 
-    // update(time, delta) {
-    //     super.update(time,delta);
-    //     // console.log("pawn update2");
-    // }
+    drive() {
+        if (!this.isMyAvatarPawn) return;
+        this.subscribe("input", "ArrowUpDown", this.foreDown);
+        this.subscribe("input", "ArrowUpUp", this.foreUp);
+        this.subscribe("input", "ArrowDownDown", this.backDown);
+        this.subscribe("input", "ArrowDownUp", this.backUp)
 
-    // foreDown() {
-    //     console.log("fore down");
-    // }
+        this.subscribe("input", "ArrowRightDown", this.rightDown);
+        this.subscribe("input", "ArrowRightUp", this.rightUp);
+        this.subscribe("input", "ArrowLeftDown", this.leftDown);
+        this.subscribe("input", "ArrowLeftUp", this.leftUp)
 
-    // foreUp() {
-    //     console.log("fore up");
-    // }
+
+
+        // this.subscribe("input", "wDown", this.foreDown);
+        // this.subscribe("input", "wUp", this.foreUp);
+        // this.subscribe("input", "sDown", this.backDown);
+        // this.subscribe("input", "sUp", this.backUp)
+
+        // this.subscribe("input", "dDown", this.rightDown);
+        // this.subscribe("input", "dUp", this.rightUp);
+        // this.subscribe("input", "aDown", this.leftDown);
+        // this.subscribe("input", "aUp", this.leftUp)
+
+        // this.subscribe("ui", "pointerDown", this.doPointerDown);
+        // this.subscribe("input", "pointerUp", this.doPointerUp);
+        // this.subscribe("input", "pointerDelta", this.doPointerDelta);
+        // this.subscribe("input", "pointerMove", this.doPointerMove);
+    }
+
+    park() {
+        this.unsubscribe("input", "ArrowUpDown", this.foreDown);
+        this.unsubscribe("input", "ArrowUpUp", this.foreUp);
+        this.unsubscribe("input", "ArrowDownDown", this.backDown);
+        this.unsubscribe("input", "ArrowDownUp", this.backUp)
+
+        this.unsubscribe("input", "ArrowRightDown", this.rightDown);
+        this.unsubscribe("input", "ArrowRightUp", this.rightUp);
+        this.unsubscribe("input", "ArrowLeftDown", this.leftDown);
+        this.unsubscribe("input", "ArrowLeftUp", this.leftUp)
+    }
+
+    foreDown() { this.fore = 1; }
+    foreUp() {  this.fore = 0; }
+    backDown() {this.back = -1; }
+    backUp() { this.back = 0; }
+
+    rightDown() { this.right = 1;}
+    rightUp() {  this.right = 0; }
+    leftDown() {this.left = -1; }
+    leftUp() { this.left = 0; }
+
+    doPointerDown(e) {
+        if (e.button === 2) {
+            this.service("InputManager").enterPointerLock();
+        };
+    }
+
+    doPointerUp(e) {
+        if (e.button === 2) {
+            this.service("InputManager").exitPointerLock();
+        };
+    }
+
+    doPointerDelta(e) {
+        if (this.service("InputManager").inPointerLock) {
+            this.yaw += (-this.turnSpeed * e.xy[0]) % TAU;
+            this.pitch += (-this.turnSpeed * e.xy[1]) % TAU;
+            // this.pitch = Math.max(-Math.PI/2, this.pitch);
+            // this.pitch = Math.min(Math.PI/2, this.pitch);
+
+            this.pitch = Math.max(0, this.pitch);
+            this.pitch = Math.min(Math.PI, this.pitch);
+            this.updateCamera();
+        };
+    }
+
+    doPointerMove(e) {
+        // if (this.isPaused) return;
+        // this.raycast(e.xy);
+    }
+
+    update(time, delta) {
+        super.update(time,delta);
+        if (this.isMyAvatarPawn) {
+            this.yaw += 0.001 * delta * (-this.left + -this.right);
+            // const velocity = [(this.right + this.left), (this.fore + this.back),0];
+            const velocity = [0, (this.fore + this.back),0];
+            this.say("avatar", {velocity, yaw:this.yaw},50);
+            // this.updateCamera()
+        }
+    }
+
+    updateCamera() {
+        const render = this.service("ThreeRenderManager");
+
+        const pitchQ = q_axisAngle([1,0,0], this.pitch);
+        const yawQ = q_axisAngle([0,0,1], this.yaw);
+        const lookQ = q_multiply(pitchQ, yawQ);
+
+        const ttt = v3_add(this.translation, [0,0,5]);
+
+        const cameraMatrix = m4_scaleRotationTranslation([1,1,1], lookQ, ttt);
+        render.camera.matrix.fromArray(cameraMatrix);
+        render.camera.matrixAutoUpdate = false;
+        render.camera.matrixWorldNeedsUpdate = true;
+    }
+
+
+
+
 }
