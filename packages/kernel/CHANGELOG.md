@@ -108,6 +108,9 @@ defineSmoothedPawnProperty from PM_Smoothed
 - Actor.set() automatically calls this.propertySet() if the actor has that method.
 - ScaleTo, RotateTo & TranslateTo deprecated
 
+### Fixed
+- m4_getRotation() correctly ignores scale
+
 
 
 

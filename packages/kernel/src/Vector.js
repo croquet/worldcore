@@ -750,40 +750,99 @@ export function m4_rotationQ(q) {
 }
 
 // Extracts the rotation component and returns it as a quaternion
+// ignores scale, result is normalized
 
 export function m4_getRotation(m) {
-    const trace = m[0] + m[5] + m[10];
-    let s = 0;
-    const q = [0,0,0,0];
+    const s0 = v3_magnitude([m[0], m[4], m[8]]);
+    const s1 = v3_magnitude([m[1], m[5], m[9]]);
+    const s2 = v3_magnitude([m[2], m[6], m[10]]);
 
-    if (trace > 0) {
-      s = Math.sqrt(trace + 1.0) * 2;
-      q[3] = 0.25 * s;
-      q[0] = (m[6] - m[9]) / s;
-      q[1] = (m[8] - m[2]) / s;
-      q[2] = (m[1] - m[4]) / s;
-    } else if ((m[0] > m[5]) && (m[0] > m[10])) {
-      s = Math.sqrt(1.0 + m[0] - m[5] - m[10]) * 2;
-      q[3] = (m[6] - m[9]) / s;
-      q[0] = 0.25 * s;
-      q[1] = (m[1] + m[4]) / s;
-      q[2] = (m[8] + m[2]) / s;
-    } else if (m[5] > m[10]) {
-      s = Math.sqrt(1.0 + m[5] - m[0] - m[10]) * 2;
-      q[3] = (m[8] - m[2]) / s;
-      q[0] = (m[1] + m[4]) / s;
-      q[1] = 0.25 * s;
-      q[2] = (m[6] + m[9]) / s;
+    const m00 = m[0] / s0;
+    const m01 = m[1] / s1;
+    const m02 = m[2] / s2;
+
+    const m10 = m[4] / s0;
+    const m11 = m[5] / s1;
+    const m12 = m[6] / s2;
+
+    const m20 = m[8] / s0;
+    const m21 = m[9] / s1;
+    const m22 = m[10] / s2;
+
+    let t;
+    let x;
+    let y;
+    let z;
+    let w;
+
+    if (m22 < 0) {
+        if (m00 > m11) {
+            t = 1 + m00 - m11 - m22;
+            x = t;
+            y = m01+m10;
+            z = m20+m02;
+            w = m12-m21;
+        } else {
+            t = 1 - m00 + m11 - m22;
+            x = m01+m10;
+            y = t;
+            z = m12+m21;
+            w = m20-m02;
+        }
     } else {
-      s = Math.sqrt(1.0 + m[10] - m[0] - m[5]) * 2;
-      q[3] = (m[1] - m[4]) / s;
-      q[0] = (m[8] + m[2]) / s;
-      q[1] = (m[6] + m[9]) / s;
-      q[2] = 0.25 * s;
+        if (m00 < -m11) {
+            t = 1 - m00 - m11 + m22;
+            x = m20+m02;
+            y = m12+m21;
+            z = t;
+            w = m01-m10;
+        } else {
+            t = 1 + m00 + m11 + m22;
+            x = m12-m21;
+            y = m20-m02;
+            z = m01-m10;
+            w = t;
+        }
     }
 
-    return q;
-  }
+    const f = 0.5 / Math.sqrt(t);
+    return [f*x, f*y, f*z, f*w];
+
+}
+
+// export function m4_getRotation(m) {
+//     const trace = m[0] + m[5] + m[10];
+//     let s = 0;
+//     const q = [0,0,0,0];
+
+//     if (trace > 0) {
+//       s = Math.sqrt(trace + 1.0) * 2;
+//       q[3] = 0.25 * s;
+//       q[0] = (m[6] - m[9]) / s;
+//       q[1] = (m[8] - m[2]) / s;
+//       q[2] = (m[1] - m[4]) / s;
+//     } else if ((m[0] > m[5]) && (m[0] > m[10])) {
+//       s = Math.sqrt(1.0 + m[0] - m[5] - m[10]) * 2;
+//       q[3] = (m[6] - m[9]) / s;
+//       q[0] = 0.25 * s;
+//       q[1] = (m[1] + m[4]) / s;
+//       q[2] = (m[8] + m[2]) / s;
+//     } else if (m[5] > m[10]) {
+//       s = Math.sqrt(1.0 + m[5] - m[0] - m[10]) * 2;
+//       q[3] = (m[8] - m[2]) / s;
+//       q[0] = (m[1] + m[4]) / s;
+//       q[1] = 0.25 * s;
+//       q[2] = (m[6] + m[9]) / s;
+//     } else {
+//       s = Math.sqrt(1.0 + m[10] - m[0] - m[5]) * 2;
+//       q[3] = (m[1] - m[4]) / s;
+//       q[0] = (m[8] + m[2]) / s;
+//       q[1] = (m[6] + m[9]) / s;
+//       q[2] = 0.25 * s;
+//     }
+
+//     return q;
+//   }
 
 // Applied in that order. Scale can be either a 3-vector or a scaler. Rotation is a quaternion.
 export function m4_scaleRotationTranslation(s, q, v) {
