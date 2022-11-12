@@ -65,8 +65,8 @@ export class Actor extends WorldcoreModel {
             const ul = "_" + name;
             const nameSet = name+'Set';
             const old = this[ul];
-            if (this[nameSet]) this[nameSet](value)
             this[ul] = value;
+            if (this[nameSet]) this[nameSet](value,old);
             const data = {old, value, o: old, v: value}
             this.say(nameSet, data);
         }
@@ -84,11 +84,9 @@ export class Actor extends WorldcoreModel {
         }
     }
 
-    parentSet(p) {
-        // console.log("parentSet");
-        if(this.parent) this.parent.removeChild(this);
-        // this._parent = p;
-        if(p) p.addChild(this);
+    parentSet(value, old) {
+        if(old) old.removeChild(this);
+        if(value) value.addChild(this);
     }
 
     get name() {return this._name || "Actor"}

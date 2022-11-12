@@ -1,7 +1,7 @@
 // Microverse Base
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2, v3_THREE, behaviorRegistry, m4_identity, m4_translation, m4_THREE, ThreeRenderManagerX, PM_ThreeVisibleX } from "@croquet/worldcore";
+    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2, v3_THREE, behaviorRegistry, m4_identity, m4_translation, m4_THREE, ThreeRenderManagerX, PM_ThreeVisibleX, q_axisAngle, toRad, m4_scaleRotationTranslation, m4_getRotation, q_normalize, m4_toNormal4, v3_magnitude, toDeg, q_pitch, q_yaw, q_roll, v3_normalize, m4_multiply } from "@croquet/worldcore";
 
 
 
@@ -18,7 +18,7 @@ import { GodView } from "./src/GodView";
 import { MapView, MapViewX } from "./src/MapView";
 import { InstanceManager } from "./src/Instances";
 import { BotManager } from "./src/Bots";
-import { Paths} from "./src/Paths";
+import { PathDebug, Paths} from "./src/Paths";
 
 //------------------------------------------------------------------------------------------
 //-- Helper Functions -----------------------------------------------------------------------------
@@ -41,56 +41,6 @@ import { Paths} from "./src/Paths";
 
 // THREE.Vector3.prototype.elements = function() { return [this.x, this.y, this.z]};
 // THREE.Quaternion.prototype.elements = function() { return [this.x, this.y, this.z, this.w ]};
-
-
-
-
-// //------------------------------------------------------------------------------------------
-// //-- WorldActor -----------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
-
-// class TestActor extends mix(Actor).with(AM_Smoothed) {
-//     get pawn() {return TestPawn}
-
-// }
-// TestActor.register('TestActor');
-
-// //------------------------------------------------------------------------------------------
-// //-- TestPawn ------------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
-
-// class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleX) {
-//     constructor(...args) {
-//         super(...args);
-
-//         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
-//         this.material.shadowSide = THREE.FrontSide;
-//         this.material.vertexColors = true;
-
-//         this.image = new Image();
-//         this.image.onload = () => {
-//             if (this.material.map) this.material.map.dispose();
-//             this.material.map = new THREE.CanvasTexture(this.image);
-//             this.material.needsUpdate = true;
-//         }
-
-//         this.image.src = paper;
-
-//         const mb  = new MeshBuilder();
-//         mb.addFace(
-//             [[0,0,0], [5,0,0], [5,5,0], [0,5,0]],
-//             [[0,0], [1,0], [1,1], [0,1]],
-//             [1,1,0]
-//         )
-//         const mesh =  mb.build(this.material);
-
-//         mesh.castShadow = true;
-
-//         this.setRenderObject(mesh);
-
-//     }
-
-// }
 
 
 //------------------------------------------------------------------------------------------
@@ -165,7 +115,6 @@ class MyUser extends User {
 }
 MyUser.register("MyUser");
 
-
 //------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -187,7 +136,8 @@ class MyModelRoot extends ModelRoot {
         wb.build();
 
         this.subscribe("input", "nDown", this.test0)
-        this.subscribe("input", "pDown", this.test1)
+        this.subscribe("input", "oDown", this.test1)
+        this.subscribe("input", "pDown", this.test2)
     }
 
     test0() {
@@ -198,9 +148,12 @@ class MyModelRoot extends ModelRoot {
 
     test1() {
         console.log("test1");
+    }
+
+    test2() {
+        console.log("test2");
         const paths = this.service("Paths");
         paths.rebuildAll();
-        // console.log(paths);
     }
 
 }
@@ -223,6 +176,7 @@ class MyViewRoot extends ViewRoot {
 
         this.godView = new GodView(this.model);
         this.mapView = new MapView(this.model);
+        this.pathDebug = new PathDebug(this.model);
 
         document.body.style.cursor = "crosshair";
 
@@ -244,6 +198,7 @@ class MyViewRoot extends ViewRoot {
 
     zTest() {
         console.log("zTest");
+        this.pathDebug.draw();
     }
 
     xTest() {

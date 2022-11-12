@@ -95,8 +95,8 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         this.subscribe("input", "pointerMove", this.doPointerMove);
         this.subscribe("input", 'wheel', this.onWheel);
 
-        this.subscribe("input", 'zDown', this.zTest);
-        this.subscribe("input", 'xDown', this.xTest);
+        // this.subscribe("input", 'zDown', this.zTest);
+        // this.subscribe("input", 'xDown', this.xTest);
 
     }
 

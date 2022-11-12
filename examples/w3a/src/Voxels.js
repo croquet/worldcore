@@ -262,6 +262,15 @@ export class Voxels extends ModelService {
         if (z1 < Constants.sizeZ) callback(x,y,z1, this.get(x,y,z1),5);
     }
 
+    forHorizontal(x,y,z, callback){ // (x,y,z,t,d) // where d: 0=west, 1=south, 2=east, 3=north
+        const x0 = x-1, x1 = x+1;
+        const y0 = y-1, y1 = y+1;
+        if (x0 >= 0) callback(x0,y,z, this.get(x0,y,z),0);
+        if (y0 >= 0) callback(x,y0,z, this.get(x,y0,z),1);
+        if (x1 < Constants.sizeX) callback(x1,y,z, this.get(x1,y,z),2);
+        if (y1 < Constants.sizeY) callback(x,y1,z, this.get(x,y1,z),3);
+    }
+
     forBox(x,y,z,callback){ // (x,y,z,t)
         const s = 1;
         const x0 = Math.max(0, x-s);
