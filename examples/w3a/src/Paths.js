@@ -128,7 +128,7 @@ class Node {
         this.xyz = unpackKey(key);
         this.key = key;
         this.edges = [0,0,0,0,0];
-        this.exits = [0,0,0,0.0];
+        this.exits = [0,0,0,0,0];
     }
 
     get west() { return this.edges[0]; }
@@ -287,6 +287,23 @@ export class PathDebug extends WorldcoreView {
                 if (node.north >1) material = this.redMaterial;
                 let p0 = v3_add(node.xyz,[0,1,0]);
                 let p1 = v3_add(node.xyz,[1,1,0]);
+                p0 = v3_multiply(p0, [Constants.scaleX, Constants.scaleY, Constants.scaleZ]);
+                p1 = v3_multiply(p1, [Constants.scaleX, Constants.scaleY, Constants.scaleZ]);
+
+                const geometry = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(...p0),
+                    new THREE.Vector3(...p1)
+                ]);
+                const line = new THREE.Line( geometry, material );
+
+                this.group.add(line);
+            }
+
+            if (node.center) {
+                // if (node.center <0) material = this.yellowMaterial;
+                // if (node.center >1) material = this.greenMaterial;
+                let p0 = v3_add(node.xyz,[0.5,0.5,0]);
+                let p1 = v3_add(node.xyz,[0.5,0.5,1]);
                 p0 = v3_multiply(p0, [Constants.scaleX, Constants.scaleY, Constants.scaleZ]);
                 p1 = v3_multiply(p1, [Constants.scaleX, Constants.scaleY, Constants.scaleZ]);
 

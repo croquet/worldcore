@@ -19,11 +19,16 @@ export class FallBehavior extends Behavior {
     do(delta) {
         const gravity = Constants.gravity/ Constants.scaleZ;
         this.velocity = this.velocity - gravity * delta/1000;
-        const fraction = this.actor.fraction;
-        const z = fraction[2] + this.velocity/Constants.scaleZ;
-        fraction[2] = z;
-        this.actor.set({fraction});
-        this.actor.clamp();
+        // const fraction = this.actor.fraction;
+        // const z = fraction[2] + this.velocity/Constants.scaleZ;
+        // fraction[2] = z;
+        // this.actor.set({fraction});
+        // this.actor.clamp();
+
+        const xyz = this.actor.xyz;
+        xyz[2] += this.velocity/Constants.scaleZ;
+        this.actor.set({xyz});
+
         if (this.actor.voxel[2] < this.bottom) {
             const final = [...this.actor.voxel];
             final[2] = this.bottom+1;

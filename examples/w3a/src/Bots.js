@@ -219,19 +219,17 @@ export class AvatarActor extends mix(SheepActor).with(AM_Avatar) {
 
     init(options) {
         super.init(options);
-        console.log("aaa!");
 
         this.left = this.right = 0;
         this.fore = this.back = 0;
         this.velocity = [0,0,0];
         this.yaw = 0;
 
-        this.subscribe("input", "pDown", this.destroy);
+        this.subscribe("input", "lDown", this.destroy);
 
         this.listen("avatar", this.onAvatar)
         this.future(100).moveTick(100);
     }
-
 
     onAvatar(data) {
         this.yaw = data.yaw;
@@ -286,10 +284,7 @@ export class AvatarActor extends mix(SheepActor).with(AM_Avatar) {
             }
         }
 
-        this.fraction = v3_add(this.fraction, [x,y,z]);
-
-        this.clamp();
-        this.ground();
+        this.xyz = v3_add(this.xyz, [x,y,z])
         this.hop();
     }
 
