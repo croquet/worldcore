@@ -1,7 +1,7 @@
 // Microverse Base
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2, v3_THREE, behaviorRegistry, m4_identity, m4_translation, m4_THREE, ThreeRenderManagerX, PM_ThreeVisibleX, q_axisAngle, toRad, m4_scaleRotationTranslation, m4_getRotation, q_normalize, m4_toNormal4, v3_magnitude, toDeg, q_pitch, q_yaw, q_roll, v3_normalize, m4_multiply } from "@croquet/worldcore";
+    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2, v3_THREE, behaviorRegistry, m4_identity, m4_translation, m4_THREE, ThreeRenderManagerX, PM_ThreeVisibleX, q_axisAngle, toRad, m4_scaleRotationTranslation, m4_getRotation, q_normalize, m4_toNormal4, v3_magnitude, toDeg, q_pitch, q_yaw, q_roll, v3_normalize, m4_multiply, Behavior } from "@croquet/worldcore";
 
 
 
@@ -19,6 +19,7 @@ import { MapView, MapViewX } from "./src/MapView";
 import { InstanceManager } from "./src/Instances";
 import { BotManager } from "./src/Bots";
 import { PathDebug, Paths} from "./src/Paths";
+import { TestBehavior } from "./src/SharedBehaviors";
 
 //------------------------------------------------------------------------------------------
 //-- Helper Functions -----------------------------------------------------------------------------
@@ -41,6 +42,8 @@ import { PathDebug, Paths} from "./src/Paths";
 
 // THREE.Vector3.prototype.elements = function() { return [this.x, this.y, this.z]};
 // THREE.Quaternion.prototype.elements = function() { return [this.x, this.y, this.z, this.w ]};
+
+
 
 
 //------------------------------------------------------------------------------------------
@@ -116,6 +119,26 @@ class MyUser extends User {
 MyUser.register("MyUser");
 
 //------------------------------------------------------------------------------------------
+//-- TestActor----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class TestActor extends Actor {
+
+    init(options) {
+        super.init(options);
+        console.log("TestActor init");
+        this.bing = [9];
+        this.destroy();
+    }
+
+    destroy() {
+        super.destroy();
+        console.log("TestActor destroy");
+    }
+}
+TestActor.register('TestActor');
+
+//------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -127,7 +150,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!");
+        console.log("Start root model!!!!!abc");
         this.level = LevelActor.create();
 
 
@@ -152,8 +175,8 @@ class MyModelRoot extends ModelRoot {
 
     test2() {
         console.log("test2");
-        const paths = this.service("Paths");
-        paths.rebuildAll();
+        const xxx = TestActor.create();
+        console.log(xxx);
     }
 
 }
@@ -198,7 +221,7 @@ class MyViewRoot extends ViewRoot {
 
     zTest() {
         console.log("zTest");
-        this.pathDebug.draw();
+        // this.pathDebug.draw();
     }
 
     xTest() {

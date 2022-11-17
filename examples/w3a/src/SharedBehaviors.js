@@ -1,5 +1,6 @@
-import { Constants, Behavior,  q_multiply, q_axisAngle,  q_normalize,  sphericalRandom, } from "@croquet/worldcore";
-import { Voxels } from "./Voxels";
+import { Constants, Behavior,  q_multiply, q_axisAngle,  q_normalize,  sphericalRandom, v3_equals, v3_floor, q_lookAt, v3_normalize, v3_sub, v3_magnitude,
+    v3_scale, v3_add, v3_rotate, v3_angle, toRad, toDeg } from "@croquet/worldcore";
+import { packKey, unpackKey, Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
 //-- FallBehavior --------------------------------------------------------------------------
@@ -19,11 +20,6 @@ export class FallBehavior extends Behavior {
     do(delta) {
         const gravity = Constants.gravity/ Constants.scaleZ;
         this.velocity = this.velocity - gravity * delta/1000;
-        // const fraction = this.actor.fraction;
-        // const z = fraction[2] + this.velocity/Constants.scaleZ;
-        // fraction[2] = z;
-        // this.actor.set({fraction});
-        // this.actor.clamp();
 
         const xyz = this.actor.xyz;
         xyz[2] += this.velocity/Constants.scaleZ;
@@ -127,6 +123,68 @@ class GroundTestBehavior extends Behavior {
 GroundTestBehavior.register("GroundTestBehavior");
 
 //------------------------------------------------------------------------------------------
+//-- WalkToBehavior --------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class WalkToBehavior extends Behavior {
+
+    onStart() {
+        const paths = this.service("Paths");
+        const endKey = packKey(...v3_floor(this.destination));
+        this.step = 0;
+        this.path = paths.findPath(this.actor.key, endKey);
+        if (this.path.length === 0) {
+            console.log("no path!")
+            this.fail();
+        }
+        this.path.forEach(key => {
+            console.log(unpackKey(key));
+        })
+    }
+
+    get destination() {return this._destination}
+    get speed() {return this._speed || 1 } // m/s
+
+    do(delta) {
+        if (this.step < this.path.length) { // move toward next voxel
+            const nextVoxel = unpackKey(this.path[this.step]);
+            const destination = v3_add(nextVoxel, [0.5,0.5,0]);
+            const remaining = v3_sub(destination, this.actor.xyz)
+            const left = v3_magnitude(remaining)
+            const distance = Math.min(left, delta * this.speed / 1000);
+            const forward = v3_normalize(remaining);
+            const yaw = v3_angle([0,1,0], forward)
+            console.log(toDeg(yaw));
+            const move = v3_scale(forward, distance);
+            const xyz = v3_add(this.actor.xyz, move);
+            this.actor.set({xyz, yaw});
+            if (v3_equals(this.actor.voxel, nextVoxel)) this.step++;
+        } else { // finish last voxel
+            console.log("final voxel");
+            const remaining = v3_sub(this.destination, this.actor.xyz)
+            const left = v3_magnitude(remaining)
+            if (left<0.01) {
+                this.succeed();
+                return;
+            }
+            const distance = Math.min(left, delta * this.speed / 1000);
+            const forward = v3_normalize(remaining);
+            const yaw = v3_angle([0,1,0], forward)
+            console.log(toDeg(yaw));
+            // const rotation = q_lookAt([0,1,0], [0,0,1], forward);
+            const move = v3_scale(forward, distance);
+            const xyz = v3_add(this.actor.xyz, move);
+            this.actor.set({xyz, yaw});
+            this.actor.hop();
+        }
+
+
+    }
+
+}
+WalkToBehavior.register("WalkToBehavior");
+
+//------------------------------------------------------------------------------------------
 //-- BotBehavior ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -138,6 +196,28 @@ class BotBehavior extends Behavior {
 
 }
 BotBehavior.register("BotBehavior");
+
+// //------------------------------------------------------------------------------------------
+// //-- TestBehavior----------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+
+// export class TestBehavior extends Behavior {
+
+//     init(options) {
+//         super.init(options);
+//         // this.fail();
+//     }
+
+//     onStart() {
+//         this.fail();
+//     }
+
+//     destroy() {
+//         super.destroy();
+//         console.log("TestBehavior destroy");
+//     }
+// }
+// TestBehavior.register('TestBehavior');
 
 
 

@@ -1,4 +1,4 @@
-import { Actor, mix, v3_add, v3_floor, v3_sub, AM_Spatial} from "@croquet/worldcore";
+import { Actor, mix, v3_add, v3_floor, v3_sub,q_axisAngle,q_multiply, AM_Spatial, toRad, v3_rotate, v3_angle, toDeg} from "@croquet/worldcore";
 
 import { toWorld, packKey, Voxels} from "./Voxels";
 
@@ -11,10 +11,23 @@ import { toWorld, packKey, Voxels} from "./Voxels";
 export class VoxelActor extends mix(Actor).with(AM_Spatial) {
 
     voxelSet(v) { this.set({translation: toWorld(v3_add(v, this.fraction))})}
-    voxelSnap(v) { this.snap({translation: toWorld(v3_add(v, this.voxel))})}
+    voxelSnap(v) { this.snap({translation: toWorld(v3_add(v, this.fraction))})}
 
-    fractionSet(v) { this.set({translation: toWorld(v3_add(v, this.voxel))})}
-    fractionSnap(v) { this.snap({translation: toWorld(v3_add(v, this.voxel))})}
+    fractionSet(f) { this.set({translation: toWorld(v3_add(f, this.voxel))})}
+    fractionSnap(f) { this.snap({translation: toWorld(v3_add(f, this.voxel))})}
+
+    pitchSet(pitch) {
+        const pitchQ = q_axisAngle([1,0,0], pitch);
+        const yawQ = q_axisAngle([0,1,0], this.yaw);
+        const rotation = q_multiply(pitchQ, yawQ);
+        this.set({rotation});
+    }
+    yawSet(yaw) {
+        const pitchQ = q_axisAngle([1,0,0], this.pitch);
+        const yawQ = q_axisAngle([0,0,1], yaw);
+        const rotation = q_multiply(pitchQ, yawQ);
+        this.set({rotation});
+    }
 
     xyzSet(xyz) {
         const voxel = v3_floor(xyz);
@@ -27,6 +40,12 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
     get key() { return packKey(...this.voxel)}
     get fraction() { return this._fraction || [0,0,0]}
     get xyz() { return v3_add(this.voxel, this.fraction)}
+
+    get pitch() { return this._pitch || 0};
+    get yaw() { return this._yaw || 0};
+
+    set pitch(pitch) { this.set({pitch})};
+    set yaw(yaw) { this.set({yaw})};
 
     set voxel(voxel) {this.set({voxel})};
     set fraction(fraction) {this.set({fraction})};
@@ -55,6 +74,18 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
         const fraction = this.fraction;
         fraction[2] = elevation;
         this.fraction = this.clampFraction(fraction);
+
+        if (this.conform) {
+            const yawQ = q_axisAngle([0,0,1], this.yaw);
+            const normal = surfaces.normal(...this.xyz);
+            const front = v3_rotate([0,1,0], yawQ);
+            console.log(front);
+            console.log(normal);
+            console.log(toDeg(v3_angle(front,normal)));
+            const pitch = v3_angle(front,normal) + toRad(0);
+            this.set({pitch});
+            // this.pitch = pitch;
+        }
     }
 
     hop() { // Move up a voxel if there's a solid surface above

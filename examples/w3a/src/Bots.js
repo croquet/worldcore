@@ -41,7 +41,7 @@ export class BotManager extends ModelService {
         const x = 0.5
         const y = 0.5
         // const bot = PersonActor.create({voxel, fraction:[x,y,0]});
-        const sheep = AvatarActor.create({voxel, fraction:[x,y,0], driverId: data.driverId});
+        const sheep = SheepActor.create({voxel, fraction:[x,y,0], pitch: toRad(0)});
 
     }
 
@@ -160,9 +160,22 @@ export class SheepActor extends BotActor {
     init(options) {
         super.init(options);
         this.startBehavior("BotBehavior");
+        this.subscribe("edit", "goto", this.onGoto);
+        // this.subscribe("input", "qDown", this.ttt);
     }
 
     get conform() {return true}
+
+    onGoto(voxel) {
+        // console.log("Actor Goto");
+        // console.log(voxel);
+        this.startBehavior({name: "WalkToBehavior", options: {destination: voxel}})
+    }
+
+    ttt() {
+        console.log("qqq");
+        this.yaw = toRad(45);
+    }
 }
 SheepActor.register("SheepActor");
 
@@ -176,6 +189,7 @@ class SheepPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
         super(actor);
         this.useInstance("sheep");
     }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -227,8 +241,9 @@ export class AvatarActor extends mix(SheepActor).with(AM_Avatar) {
 
         this.subscribe("input", "lDown", this.destroy);
 
-        this.listen("avatar", this.onAvatar)
-        this.future(100).moveTick(100);
+
+        // this.listen("avatar", this.onAvatar)
+        // this.future(100).moveTick(100);
     }
 
     onAvatar(data) {
@@ -236,57 +251,61 @@ export class AvatarActor extends mix(SheepActor).with(AM_Avatar) {
         this.velocity = data.velocity;
     }
 
-    moveTick(delta) {
-        const yawQ = q_axisAngle([0,0,1], this.yaw);
 
-        let rotation = yawQ;
-        if (this.conform) {
-            const surfaces = this.service("Surfaces");
-            const normal = surfaces.normal(...this.xyz);
-            const front = v3_rotate([0,1,0], yawQ);
-            const pitch = v3_angle(front,normal) + toRad(-90);
-            const pitchQ = q_axisAngle([1,0,0], pitch);
-            rotation = q_multiply(pitchQ, yawQ);
-        }
-        this.set({rotation});
-        // const move = v3_scale(this.velocity, delta * 0.005);
-        const move = v3_scale(this.velocity, delta * 0.002);
-        this.go(...v3_rotate(move, yawQ));
 
-        this.future(100).moveTick(100);
-    }
+    // moveTick(delta) {
+    //     const yawQ = q_axisAngle([0,0,1], this.yaw);
 
-    go(x,y) {
-        const voxels = this.service("Voxels");
+    //     let rotation = yawQ;
+    //     if (this.conform) {
+    //         const surfaces = this.service("Surfaces");
+    //         const normal = surfaces.normal(...this.xyz);
+    //         const front = v3_rotate([0,1,0], yawQ);
+    //         const pitch = v3_angle(front,normal) + toRad(-90);
+    //         const pitchQ = q_axisAngle([1,0,0], pitch);
+    //         rotation = q_multiply(pitchQ, yawQ);
+    //     }
+    //     this.set({rotation});
+    //     // const move = v3_scale(this.velocity, delta * 0.005);
+    //     const move = v3_scale(this.velocity, delta * 0.002);
+    //     this.go(...v3_rotate(move, yawQ));
 
-        const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
-        const above = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,1])));
-        const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
+    //     this.future(100).moveTick(100);
+    // }
 
-        if (!Voxels.canEdit(...level)) {
-            console.log("Edge Blocked!");
-            return;
-        }
 
-        const levelIsEmpty = voxels.get(...level) < 2;
-        const aboveIsEmpty = voxels.get(...above) < 2;
-        const belowIsEmpty = voxels.get(...below) < 2;
 
-        let z = 0;
-        if (levelIsEmpty) {
-            if (belowIsEmpty) z = -1;
-        } else {
-            if (aboveIsEmpty) {
-                z = 1;
-            } else {
-                console.log("Blocked!");
-                return;
-            }
-        }
+    // go(x,y) {
+    //     const voxels = this.service("Voxels");
 
-        this.xyz = v3_add(this.xyz, [x,y,z])
-        this.hop();
-    }
+    //     const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
+    //     const above = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,1])));
+    //     const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
+
+    //     if (!Voxels.canEdit(...level)) {
+    //         console.log("Edge Blocked!");
+    //         return;
+    //     }
+
+    //     const levelIsEmpty = voxels.get(...level) < 2;
+    //     const aboveIsEmpty = voxels.get(...above) < 2;
+    //     const belowIsEmpty = voxels.get(...below) < 2;
+
+    //     let z = 0;
+    //     if (levelIsEmpty) {
+    //         if (belowIsEmpty) z = -1;
+    //     } else {
+    //         if (aboveIsEmpty) {
+    //             z = 1;
+    //         } else {
+    //             console.log("Blocked!");
+    //             return;
+    //         }
+    //     }
+
+    //     this.xyz = v3_add(this.xyz, [x,y,z])
+    //     this.hop();
+    // }
 
 
 }

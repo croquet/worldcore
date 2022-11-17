@@ -1,5 +1,6 @@
 import { RegisterMixin, WorldcoreModel, Shuffle, Actor,  Pawn, GetPawn,Constants } from "@croquet/worldcore-kernel";
 
+
 Constants.WC_BEHAVIORS = new Map();
 
 //------------------------------------------------------------------------------------------
@@ -52,10 +53,8 @@ export class Behavior extends Actor {
 
     init(options) {
         super.init(options);
-
         this.onStart();
-
-        if (this.tickRate) {
+        if (!this.doomed && this.tickRate) {
             const firstDelta = Math.random() * this.tickRate;
             this.future(firstDelta).tick(firstDelta);
         }
