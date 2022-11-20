@@ -18,7 +18,7 @@ export class BotManager extends ModelService {
         console.log("Bot Manager");
         this.bots = new Set();
         this.subscribe("edit", "spawnSheep", this.onSpawnSheep);
-        this.subscribe("edit", "spawnPerson", this.onSpawnPerson);
+        this.subscribe("edit", "spawnAvatar", this.onSpawnAvatar);
         this.subscribe("voxels", "load", this.destroyAll);
     }
 
@@ -45,13 +45,13 @@ export class BotManager extends ModelService {
 
     }
 
-    onSpawnPerson(data) {
-        console.log("Spawn person!")
+    onSpawnAvatar(data) {
+        console.log("Spawn avatar!")
         console.log(data.driverId);
         const voxel = data.xyz
         const x = 0.5
         const y = 0.5
-        const bot = PersonActor.create({voxel, fraction:[x,y,0], driverId: data.driverId});
+        const bot = AvatarActor.create({voxel, fraction:[x,y,0], driverId: data.driverId});
 
     }
 }
@@ -161,7 +161,7 @@ export class SheepActor extends BotActor {
         super.init(options);
         this.startBehavior("BotBehavior");
         this.subscribe("edit", "goto", this.onGoto);
-        // this.subscribe("input", "qDown", this.ttt);
+        this.subscribe("input", "lDown", this.destroy);
     }
 
     get conform() {return true}
@@ -172,10 +172,6 @@ export class SheepActor extends BotActor {
         this.startBehavior({name: "WalkToBehavior", options: {destination: voxel}})
     }
 
-    ttt() {
-        console.log("qqq");
-        this.yaw = toRad(45);
-    }
 }
 SheepActor.register("SheepActor");
 
@@ -189,6 +185,11 @@ class SheepPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
         super(actor);
         this.useInstance("sheep");
     }
+
+    // update(time,delta) {
+    //     super.update(time,delta);
+    //     console.log("sheep!");
+    // }
 
 }
 
@@ -237,13 +238,13 @@ export class AvatarActor extends mix(SheepActor).with(AM_Avatar) {
         this.left = this.right = 0;
         this.fore = this.back = 0;
         this.velocity = [0,0,0];
-        this.yaw = 0;
+        // this.yaw = 0;
 
         this.subscribe("input", "lDown", this.destroy);
 
 
-        // this.listen("avatar", this.onAvatar)
-        // this.future(100).moveTick(100);
+        this.listen("avatar", this.onAvatar)
+        this.future(100).moveTick(100);
     }
 
     onAvatar(data) {
@@ -253,59 +254,60 @@ export class AvatarActor extends mix(SheepActor).with(AM_Avatar) {
 
 
 
-    // moveTick(delta) {
-    //     const yawQ = q_axisAngle([0,0,1], this.yaw);
+    moveTick(delta) {
+        const yawQ = q_axisAngle([0,0,1], this.yaw);
 
-    //     let rotation = yawQ;
-    //     if (this.conform) {
-    //         const surfaces = this.service("Surfaces");
-    //         const normal = surfaces.normal(...this.xyz);
-    //         const front = v3_rotate([0,1,0], yawQ);
-    //         const pitch = v3_angle(front,normal) + toRad(-90);
-    //         const pitchQ = q_axisAngle([1,0,0], pitch);
-    //         rotation = q_multiply(pitchQ, yawQ);
-    //     }
-    //     this.set({rotation});
-    //     // const move = v3_scale(this.velocity, delta * 0.005);
-    //     const move = v3_scale(this.velocity, delta * 0.002);
-    //     this.go(...v3_rotate(move, yawQ));
+        // let rotation = yawQ;
+        // if (this.conform) {
+        //     const surfaces = this.service("Surfaces");
+        //     const normal = surfaces.normal(...this.xyz);
+        //     const front = v3_rotate([0,1,0], yawQ);
+        //     const pitch = v3_angle(front,normal) + toRad(-90);
+        //     const pitchQ = q_axisAngle([1,0,0], pitch);
+        //     rotation = q_multiply(pitchQ, yawQ);
+        // }
+        // this.set({rotation});
+        // const move = v3_scale(this.velocity, delta * 0.005);
+        const move = v3_scale(this.velocity, delta * 0.002);
+        this.go(...v3_rotate(move, yawQ));
 
-    //     this.future(100).moveTick(100);
-    // }
+        this.future(100).moveTick(100);
+    }
 
 
 
-    // go(x,y) {
-    //     const voxels = this.service("Voxels");
+    go(x,y) {
+        const voxels = this.service("Voxels");
 
-    //     const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
-    //     const above = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,1])));
-    //     const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
+        const level = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,0])));
+        const above = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,1])));
+        const below = v3_add(this.voxel, v3_floor(v3_add(this.fraction,[x,y,-1])));
 
-    //     if (!Voxels.canEdit(...level)) {
-    //         console.log("Edge Blocked!");
-    //         return;
-    //     }
+        if (!Voxels.canEdit(...level)) {
+            console.log("Edge Blocked!");
+            return;
+        }
 
-    //     const levelIsEmpty = voxels.get(...level) < 2;
-    //     const aboveIsEmpty = voxels.get(...above) < 2;
-    //     const belowIsEmpty = voxels.get(...below) < 2;
+        const levelIsEmpty = voxels.get(...level) < 2;
+        const aboveIsEmpty = voxels.get(...above) < 2;
+        const belowIsEmpty = voxels.get(...below) < 2;
 
-    //     let z = 0;
-    //     if (levelIsEmpty) {
-    //         if (belowIsEmpty) z = -1;
-    //     } else {
-    //         if (aboveIsEmpty) {
-    //             z = 1;
-    //         } else {
-    //             console.log("Blocked!");
-    //             return;
-    //         }
-    //     }
+        let z = 0;
+        if (levelIsEmpty) {
+            if (belowIsEmpty) z = -1;
+        } else {
+            if (aboveIsEmpty) {
+                z = 1;
+            } else {
+                console.log("Blocked!");
+                return;
+            }
+        }
 
-    //     this.xyz = v3_add(this.xyz, [x,y,z])
-    //     this.hop();
-    // }
+        this.xyz = v3_add(this.xyz, [x,y,z])
+        this.hop();
+        this.ground();
+    }
 
 
 }
@@ -323,7 +325,7 @@ class AvatarPawn extends mix(SheepPawn).with(PM_Avatar) {
         this.left = this.right = 0;
         this.fore = this.back = 0;
         this.yaw = 0;
-        this.pitch = toRad(90);
+        // this.pitch = toRad(90);
         this.moveSpeed = 0.1;
         this.turnSpeed = 0.002;
     }
@@ -416,7 +418,7 @@ class AvatarPawn extends mix(SheepPawn).with(PM_Avatar) {
             this.yaw += 0.001 * delta * (-this.left + -this.right);
             // const velocity = [(this.right + this.left), (this.fore + this.back),0];
             const velocity = [0, (this.fore + this.back),0];
-            this.say("avatar", {velocity, yaw:this.yaw},50);
+            this.say("avatar", {velocity, yaw:this.yaw},100);
             // this.updateCamera()
         }
     }

@@ -4,6 +4,7 @@ import { packKey, Voxels} from  "./Voxels";
 let time0 = 0;
 let time1 = 0;
 let fov = 60;
+let editMode;
 
 // import diana from "../assets/diana.jpg";
 import fillOffIcon from "../assets/fillOffIcon.png";
@@ -105,24 +106,22 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
     }
 
     iTest() {
-        // console.log("in")
-        // console.log(this.pointerHit.voxel);
-        // this.inKey = packKey(...this.pointerHit.voxel);
+        console.log("in")
+        console.log(this.pointerHit.voxel);
+        this.inKey = packKey(...this.pointerHit.voxel);
     }
 
     oTest() {
-        // const paths = this.modelService("Paths");
-        // const voxel = v3_add(this.pointerHit.voxel,[0.5, 0.5, 0]);
-        // console.log("goto: " + voxel)
-        // this.publish("edit", "goto", voxel)
+        const voxel = v3_add(this.pointerHit.voxel,[0.5, 0.5, 0]);
+        console.log("goto: " + voxel);
+        this.publish("edit", "goto", voxel);
 
-        // console.log("angle");
-        console.log(toDeg(v3_angle([0,1,0], v3_normalize([0,0,1]))));
-        // // console.log(this.pointerHit.voxel);
-        // this.outKey = packKey(...this.pointerHit.voxel);
-        // const path = paths.findPath(this.inKey, this.outKey);
-        // // console.log(path);
-        // viewRoot.pathDebug.drawPath(path);
+        const paths = this.modelService("Paths");
+        const inKey = this.outKey;
+        this.outKey = packKey(...this.pointerHit.voxel);
+        const path = paths.findPath(inKey, this.outKey);
+        console.log(path);
+        viewRoot.pathDebug.drawPath(path);
     }
 
     buildHUD() {
@@ -140,14 +139,14 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
 
         const walkToggle = new ImageToggleWidget2({name: "walk", parent: hud, size:[30,30], translation: [15,120], toggleSet: toggleSet, offURL: walkOffIcon, onURL: walkOnIcon});
 
-        this.subscribe(toggleSet.id, "pick", this.setEditMode);
+        this.subscribe(toggleSet.id, "pick", this.setEditMode); // need to automate this
         toggleSet.pick(fillToggle);
 
         const layerSlider = new SliderWidget2({name: "layerSlider", autoSize:[0,1], size: [10,0], parent: hud, anchor:[1,0.5], pivot:[1,0.5],})
     }
 
     setEditMode(mode) {
-        this.editMode = mode;
+        editMode = mode;
     }
 
     foreDown() { this.fore = 1; }
@@ -166,14 +165,14 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
             this.service("InputManager").enterPointerLock();
         } else{
             this.raycast(e.xy);
-            switch (this.editMode) {
+            switch (editMode) {
                 case "fill": this.onFill(); break;
                 case "dig": this.onDig(); break;
                 case "tree": this.onTree(); break;
                 case "clear": this.onClear(); break;
                 case "base": this.onBase(); break;
                 case "sheep": this.onSpawnSheep(); break;
-                case "walk": this.onSpawnPerson(); break;
+                case "walk": this.onSpawnAvatar(); break;
             }
 
         };
@@ -256,9 +255,9 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         this.publish("edit", "spawnSheep",{xyz: this.pointerHit.voxel, driverId: this.viewId});
     }
 
-    onSpawnPerson() {
+    onSpawnAvatar() {
         if (!this.pointerHit) return;
-        this.publish("edit", "spawnPerson",{xyz: this.pointerHit.voxel, driverId: this.viewId});
+        this.publish("edit", "spawnAvatar",{xyz: this.pointerHit.voxel, driverId: this.viewId});
     }
 
     onClear() {

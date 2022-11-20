@@ -1,5 +1,5 @@
 import { Constants, Behavior,  q_multiply, q_axisAngle,  q_normalize,  sphericalRandom, v3_equals, v3_floor, q_lookAt, v3_normalize, v3_sub, v3_magnitude,
-    v3_scale, v3_add, v3_rotate, v3_angle, toRad, toDeg } from "@croquet/worldcore";
+    v3_scale, v3_add, v3_rotate, v3_angle, toRad, toDeg, v2_signedAngle, v2_add, v2_sub, v2_normalize, v2_scale, v2_magnitude } from "@croquet/worldcore";
 import { packKey, unpackKey, Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ class GroundTestBehavior extends Behavior {
     }
 
     do(delta) {
-        this.testElevation();
+        // this.testElevation();
     }
 
     // Handle double ramp edges & falling
@@ -131,7 +131,9 @@ class WalkToBehavior extends Behavior {
     onStart() {
         const paths = this.service("Paths");
         const endKey = packKey(...v3_floor(this.destination));
-        this.step = 0;
+        // console.log(this.actor.voxel);
+        // console.log(this.destination);
+        this.step = 1;
         this.path = paths.findPath(this.actor.key, endKey);
         if (this.path.length === 0) {
             console.log("no path!")
@@ -140,45 +142,100 @@ class WalkToBehavior extends Behavior {
         this.path.forEach(key => {
             console.log(unpackKey(key));
         })
+        console.log("start walk");
     }
 
     get destination() {return this._destination}
-    get speed() {return this._speed || 1 } // m/s
+    get speed() {return this._speed || 0.1 } // m/s
+
+    // Do it all in 2d
+
+    // do(delta) {
+
+    //     if (this.step < this.path.length) { // move toward next voxel
+    //         const voxel = unpackKey(this.path[this.step]);
+    //         const target = v2_add(nextVoxel, [0.5,0.5]);
+    //         const remaining = v2_sub(target, this.actor.xyz)
+    //         const distance = Math.max(0.1, delta * this.speed / 1000);
+    //         const forward = v2_normalize(remaining);
+    //         const yaw = v2_signedAngle([0,1], forward);
+    //         const move = v2_scale(forward, distance);
+    //         const xyz = v3_add(this.actor.xyz, [...move,0]);
+    //         this.actor.set({xyz, yaw});
+    //         // this.actor.ground();
+    //         // this.actor.hop();
+    //         console.log(this.actor.voxel);
+    //         console.log(nextVoxel);
+
+    //         if (v3_equals(this.actor.voxel, nextVoxel)) {
+    //             console.log("step!");
+    //             console.log(nextVoxel);
+    //             this.step++;
+    //         }
+
+    //          this.step++;
+    //     } else { // finish last voxel
+    //         console.log("final voxel");
+    //         const remaining = v2_sub(this.destination, this.actor.xyz)
+    //         const left = v2_magnitude(remaining)
+    //         if (left<0.01) {
+    //             this.succeed();
+    //             return;
+    //         }
+    //         const distance = Math.min(left, delta * this.speed / 1000);
+    //         const forward = v2_normalize(remaining);
+    //         const yaw = v2_signedAngle([0,1,0], forward);
+    //         const move = v2_scale(forward, distance);
+    //         const xyz = v3_add(this.actor.xyz, [...move,0]);
+    //         this.actor.set({xyz, yaw});
+    //         this.actor.ground();
+    //         this.actor.hop();
+    //     }
+
+
+    //     console.log("actor voxel: " + this.actor.voxel);
+
+
+
+    // }
 
     do(delta) {
-        if (this.step < this.path.length) { // move toward next voxel
+        console.log(this.step);
+        if (this.step < this.path.length) {
             const nextVoxel = unpackKey(this.path[this.step]);
-            const destination = v3_add(nextVoxel, [0.5,0.5,0]);
-            const remaining = v3_sub(destination, this.actor.xyz)
-            const left = v3_magnitude(remaining)
-            const distance = Math.min(left, delta * this.speed / 1000);
-            const forward = v3_normalize(remaining);
-            const yaw = v3_angle([0,1,0], forward)
-            console.log(toDeg(yaw));
-            const move = v3_scale(forward, distance);
-            const xyz = v3_add(this.actor.xyz, move);
-            this.actor.set({xyz, yaw});
-            if (v3_equals(this.actor.voxel, nextVoxel)) this.step++;
-        } else { // finish last voxel
-            console.log("final voxel");
-            const remaining = v3_sub(this.destination, this.actor.xyz)
-            const left = v3_magnitude(remaining)
-            if (left<0.01) {
-                this.succeed();
-                return;
-            }
-            const distance = Math.min(left, delta * this.speed / 1000);
-            const forward = v3_normalize(remaining);
-            const yaw = v3_angle([0,1,0], forward)
-            console.log(toDeg(yaw));
-            // const rotation = q_lookAt([0,1,0], [0,0,1], forward);
-            const move = v3_scale(forward, distance);
-            const xyz = v3_add(this.actor.xyz, move);
-            this.actor.set({xyz, yaw});
-            this.actor.hop();
+            const target = v3_add(nextVoxel, [0.5, 0.5, 0]);
+            this.goto(target,delta);
+            this.step++;
+        } else { // final voxel;
+            this.goto(this.destination,delta)
+            this.succeed();
+            console.log("done!");
         }
 
+    }
 
+    // xxx too fast
+
+    goto(target, delta) {
+
+        // console.log("target: " + target);
+        const remaining = v2_sub(target, this.actor.xyz);
+        const left = v2_magnitude(remaining)
+        if (left<0.0001) {
+            this.actor.set({xyz:target});
+            return;
+        }
+        const distance = Math.max(left, delta * this.speed / 1000);
+        const forward = v2_normalize(remaining);
+        const move = v2_scale(forward, distance);
+        const yaw = v2_signedAngle([0,1], forward);
+        const xyz = v3_add(this.actor.xyz, [...move,0]);
+
+        this.actor.set({xyz, yaw});
+        this.actor.ground();
+        this.actor.hop();
+
+        // this.actor.set({xyz: target});
     }
 
 }

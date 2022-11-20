@@ -18,10 +18,11 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
 
     pitchSet(pitch) {
         const pitchQ = q_axisAngle([1,0,0], pitch);
-        const yawQ = q_axisAngle([0,1,0], this.yaw);
+        const yawQ = q_axisAngle([0,0,1], this.yaw);
         const rotation = q_multiply(pitchQ, yawQ);
         this.set({rotation});
     }
+
     yawSet(yaw) {
         const pitchQ = q_axisAngle([1,0,0], this.pitch);
         const yawQ = q_axisAngle([0,0,1], yaw);
@@ -51,13 +52,13 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
     set fraction(fraction) {this.set({fraction})};
     set xyz(xyz) {this.set({xyz})}
 
-    clamp() { // Move to an adjacent voxel if the faction is outside the current one.
-        console.log("old clamp");
-        const floor = v3_floor(this.fraction);
-        const fraction = this.clampFraction(v3_sub(this.fraction, floor));
-        const voxel = v3_add(this.voxel, floor);
-        this.set({voxel,fraction});
-    }
+    // clamp() { // Move to an adjacent voxel if the faction is outside the current one.
+    //     console.log("old clamp");
+    //     const floor = v3_floor(this.fraction);
+    //     const fraction = this.clampFraction(v3_sub(this.fraction, floor));
+    //     const voxel = v3_add(this.voxel, floor);
+    //     this.set({voxel,fraction});
+    // }
 
     clampFraction(f) { // Ensure the fraction is inside the voxel.
         const e = 0.0001
@@ -74,17 +75,12 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
         const fraction = this.fraction;
         fraction[2] = elevation;
         this.fraction = this.clampFraction(fraction);
-
-        if (this.conform) {
-            const yawQ = q_axisAngle([0,0,1], this.yaw);
+        if (this.conform) { // Align pitch to surface normal.
             const normal = surfaces.normal(...this.xyz);
-            const front = v3_rotate([0,1,0], yawQ);
-            console.log(front);
-            console.log(normal);
-            console.log(toDeg(v3_angle(front,normal)));
-            const pitch = v3_angle(front,normal) + toRad(0);
-            this.set({pitch});
-            // this.pitch = pitch;
+            const yawQ = q_axisAngle([0,0,1], this.yaw);
+            const forward = v3_rotate([0,1,0], yawQ);
+            const pitch = v3_angle(forward,normal) - toRad(90);
+            this.pitch = pitch;
         }
     }
 
@@ -96,7 +92,7 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
         if (aboveElevation>0) {
             xyz[2] += 1;
             this.xyz = xyz;
-            this.ground();
+            // this.ground();
         }
     }
 

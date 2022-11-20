@@ -1,7 +1,7 @@
 // Microverse Base
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2, v3_THREE, behaviorRegistry, m4_identity, m4_translation, m4_THREE, ThreeRenderManagerX, PM_ThreeVisibleX, q_axisAngle, toRad, m4_scaleRotationTranslation, m4_getRotation, q_normalize, m4_toNormal4, v3_magnitude, toDeg, q_pitch, q_yaw, q_roll, v3_normalize, m4_multiply, Behavior } from "@croquet/worldcore";
+    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2, v3_THREE, behaviorRegistry, m4_identity, m4_translation, m4_THREE, ThreeRenderManagerX, PM_ThreeVisibleX, q_axisAngle, toRad, m4_scaleRotationTranslation, m4_getRotation, q_normalize, m4_toNormal4, v3_magnitude, toDeg, q_pitch, q_yaw, q_roll, v3_normalize, m4_multiply, Behavior, v3_angle, v3_signedAngle, v3_cross, v2_signedAngle } from "@croquet/worldcore";
 
 
 
@@ -159,7 +159,7 @@ class MyModelRoot extends ModelRoot {
         wb.build();
 
         this.subscribe("input", "nDown", this.test0)
-        this.subscribe("input", "oDown", this.test1)
+        // this.subscribe("input", "oDown", this.test1)
         this.subscribe("input", "pDown", this.test2)
     }
 
@@ -171,13 +171,15 @@ class MyModelRoot extends ModelRoot {
 
     test1() {
         console.log("test1");
+        // console.log(toDeg(v3_angle([0,0,1], [0,1,1])));
+        // console.log(toDeg(v3_angle([0,0,1], [0,-1,1])));
     }
 
     test2() {
         console.log("test2");
-        const xxx = TestActor.create();
-        console.log(xxx);
+
     }
+
 
 }
 MyModelRoot.register("MyModelRoot");
@@ -221,7 +223,7 @@ class MyViewRoot extends ViewRoot {
 
     zTest() {
         console.log("zTest");
-        // this.pathDebug.draw();
+        this.pathDebug.draw();
     }
 
     xTest() {

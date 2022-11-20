@@ -170,6 +170,10 @@ export function v2_angle(a,b) {
     return Math.acos(Math.min(1,(Math.max(-1, v2_dot(v2_normalize(a), v2_normalize(b))))));
 }
 
+export function v2_signedAngle(a,b) {
+    return Math.atan2(a[0]* b[1]-a[1]*b[0], a[0]*b[0]+a[1]*b[1]);
+}
+
 export function v2_lerp(a,b,t) {
     return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 }
@@ -239,7 +243,7 @@ export function v3_inverse(v) {
 }
 
 export function v3_abs(v) {
-    return [Math.abs(v[0]), Math.v3_abs(v[1]), Math.abs(v[2])];
+    return [Math.abs(v[0]), Math.abs(v[1]), Math.abs(v[2])];
 }
 
 export function v3_ceil(v) {
@@ -300,7 +304,10 @@ export function v3_dot(a,b) {
 export function v3_cross(a,b) {
     const a0 = a[0], a1 = a[1], a2 = a[2];
     const b0 = b[0], b1 = b[1], b2 = b[2];
-    return [a1 * b2 - a2 * b1, a2 * b0 - a0 * b2, a0 * b1 - a1 * b0];
+    return [
+        a1 * b2 - a2 * b1,
+        a2 * b0 - a0 * b2,
+        a0 * b1 - a1 * b0];
 }
 
 export function v3_min(a,b) {
@@ -319,6 +326,29 @@ export function v3_manhattan(a, b) {
 export function v3_angle(a,b) {
     return Math.acos(Math.min(1,(Math.max(-1, v3_dot(v3_normalize(a), v3_normalize(b))))));
 }
+
+export function v3_signedAngle(a,b) {
+    const x = v3_cross(a,b);
+    const y = v3_dot(a,b);
+    return Math.atan2(v3_dot(x,v3_abs(x)),y);
+}
+
+// export function v3_angle(a,b) {
+//     const epsilon = 0.00001;
+//     const dot = v3_dot(v3_normalize(a),v3_normalize(b));
+//     // if (Math.abs(dot+1) < epsilon) return q_axisAngle(u, Math.PI)
+//     // if (Math.abs(dot-1) < epsilon) return q_identity();
+//     const axis = v3_normalize(v3_cross(a,b));
+//     console.log(axis[0]);
+//     const angle = Math.acos(dot);
+
+//     return angle;
+// }
+
+// export function v3_signedAngle(a, b, n) {
+//     const cross = v3_cross(a,b);
+//     const dot = v3_dot(cross,n);
+// }
 
 export function v3_lerp(a,b,t) {
     return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];

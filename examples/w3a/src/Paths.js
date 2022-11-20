@@ -159,26 +159,26 @@ class Node {
     }
 
     findExits() {
-        if (this.west<3) this.exits[0] = packKey(...(Voxels.adjacent(...this.xyz, [-1,0,this.west])));
-        if (this.south<3) this.exits[1] = packKey(...(Voxels.adjacent(...this.xyz, [0,-1,this.south])));
-        if (this.east<3) this.exits[2] = packKey(...(Voxels.adjacent(...this.xyz, [1,0,this.east])));
-        if (this.north<3) this.exits[3] = packKey(...(Voxels.adjacent(...this.xyz, [0,1,this.north])));
+        if (this.west<2) this.exits[0] = packKey(...(Voxels.adjacent(...this.xyz, [-1,0,this.west])));
+        if (this.south<2) this.exits[1] = packKey(...(Voxels.adjacent(...this.xyz, [0,-1,this.south])));
+        if (this.east<2) this.exits[2] = packKey(...(Voxels.adjacent(...this.xyz, [1,0,this.east])));
+        if (this.north<2) this.exits[3] = packKey(...(Voxels.adjacent(...this.xyz, [0,1,this.north])));
 
-        if (this.southwest<3) this.exits[4] = packKey(...(Voxels.adjacent(...this.xyz, [-1,-1,this.southwest])));
-        if (this.southeast<3) this.exits[5] = packKey(...(Voxels.adjacent(...this.xyz, [1,-1,this.southeast])));
-        if (this.northeast<3) this.exits[6] = packKey(...(Voxels.adjacent(...this.xyz, [1,1,this.northeast])));
-        if (this.northwest<3) this.exits[7] = packKey(...(Voxels.adjacent(...this.xyz, [-1,1,this.northwest])));
+        if (this.southwest<2) this.exits[4] = packKey(...(Voxels.adjacent(...this.xyz, [-1,-1,this.southwest])));
+        if (this.southeast<2) this.exits[5] = packKey(...(Voxels.adjacent(...this.xyz, [1,-1,this.southeast])));
+        if (this.northeast<2) this.exits[6] = packKey(...(Voxels.adjacent(...this.xyz, [1,1,this.northeast])));
+        if (this.northwest<2) this.exits[7] = packKey(...(Voxels.adjacent(...this.xyz, [-1,1,this.northwest])));
 
     }
 
     weight(n) {
         if (n>3) {
-            return 0.7
+            return 1.5
         }
         if (this.edges[n] > 0) { // ascending
             return 2;
         } else if (this.edges[n] <0) { // descending
-            return 1.5
+            return 1.9
         }
     return 1; // level
     }
@@ -356,7 +356,7 @@ export class PathDebug extends WorldcoreView {
 
         path.forEach(key=> {
             const xyz = unpackKey(key);
-            let p = v3_add(xyz,[0.5,0.5,1]);
+            let p = v3_add(xyz,[0.5,0.5,0.5]);
             p = v3_multiply(p, [Constants.scaleX, Constants.scaleY, Constants.scaleZ]);
             points.push(new THREE.Vector3(...p));
         })
