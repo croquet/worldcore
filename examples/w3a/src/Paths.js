@@ -356,7 +356,7 @@ export class PathDebug extends WorldcoreView {
 
         path.forEach(key=> {
             const xyz = unpackKey(key);
-            let p = v3_add(xyz,[0.5,0.5,0.5]);
+            let p = v3_add(xyz,[0.5,0.5,1]);
             p = v3_multiply(p, [Constants.scaleX, Constants.scaleY, Constants.scaleZ]);
             points.push(new THREE.Vector3(...p));
         })

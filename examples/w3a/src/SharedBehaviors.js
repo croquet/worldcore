@@ -129,113 +129,72 @@ GroundTestBehavior.register("GroundTestBehavior");
 class WalkToBehavior extends Behavior {
 
     onStart() {
+        this.tickRate = 20;
         const paths = this.service("Paths");
         const endKey = packKey(...v3_floor(this.destination));
-        // console.log(this.actor.voxel);
-        // console.log(this.destination);
+        // console.log("destination: " + this.destination);
         this.step = 1;
         this.path = paths.findPath(this.actor.key, endKey);
         if (this.path.length === 0) {
-            console.log("no path!")
+            // console.log("no path!")
             this.fail();
         }
-        this.path.forEach(key => {
-            console.log(unpackKey(key));
-        })
-        console.log("start walk");
+        // this.path.forEach(key => {
+        //     console.log(unpackKey(key));
+        // })
+        // console.log("start walk");
     }
 
     get destination() {return this._destination}
-    get speed() {return this._speed || 0.1 } // m/s
+    get speed() {return this._speed || 3 } // m/s
 
-    // Do it all in 2d
-
-    // do(delta) {
-
-    //     if (this.step < this.path.length) { // move toward next voxel
-    //         const voxel = unpackKey(this.path[this.step]);
-    //         const target = v2_add(nextVoxel, [0.5,0.5]);
-    //         const remaining = v2_sub(target, this.actor.xyz)
-    //         const distance = Math.max(0.1, delta * this.speed / 1000);
-    //         const forward = v2_normalize(remaining);
-    //         const yaw = v2_signedAngle([0,1], forward);
-    //         const move = v2_scale(forward, distance);
-    //         const xyz = v3_add(this.actor.xyz, [...move,0]);
-    //         this.actor.set({xyz, yaw});
-    //         // this.actor.ground();
-    //         // this.actor.hop();
-    //         console.log(this.actor.voxel);
-    //         console.log(nextVoxel);
-
-    //         if (v3_equals(this.actor.voxel, nextVoxel)) {
-    //             console.log("step!");
-    //             console.log(nextVoxel);
-    //             this.step++;
-    //         }
-
-    //          this.step++;
-    //     } else { // finish last voxel
-    //         console.log("final voxel");
-    //         const remaining = v2_sub(this.destination, this.actor.xyz)
-    //         const left = v2_magnitude(remaining)
-    //         if (left<0.01) {
-    //             this.succeed();
-    //             return;
-    //         }
-    //         const distance = Math.min(left, delta * this.speed / 1000);
-    //         const forward = v2_normalize(remaining);
-    //         const yaw = v2_signedAngle([0,1,0], forward);
-    //         const move = v2_scale(forward, distance);
-    //         const xyz = v3_add(this.actor.xyz, [...move,0]);
-    //         this.actor.set({xyz, yaw});
-    //         this.actor.ground();
-    //         this.actor.hop();
-    //     }
-
-
-    //     console.log("actor voxel: " + this.actor.voxel);
-
-
-
-    // }
 
     do(delta) {
-        console.log(this.step);
+        // console.log(this.step);
         if (this.step < this.path.length) {
             const nextVoxel = unpackKey(this.path[this.step]);
-            const target = v3_add(nextVoxel, [0.5, 0.5, 0]);
-            this.goto(target,delta);
-            this.step++;
+            this.nextXYZ = v3_add(nextVoxel, [0.5, 0.5, 0]);
+            this.goto(delta);
+            if( v3_equals(this.actor.voxel, nextVoxel)) {
+                // console.log("next step!");
+                this.step++;
+            }
         } else { // final voxel;
-            this.goto(this.destination,delta)
-            this.succeed();
-            console.log("done!");
+            // console.log("final!");
+            this.nextXYZ = this.destination;
+            const arrived = this.goto(delta);
+
+            if(arrived) {
+                // console.log("arrived!");
+                this.succeed();
+            }
         }
 
     }
 
-    // xxx too fast
+    goto(delta) {
+        const z = this.nextXYZ[2] - this.actor.xyz[2]
+        let arrived = false;
 
-    goto(target, delta) {
 
-        // console.log("target: " + target);
-        const remaining = v2_sub(target, this.actor.xyz);
+        const remaining = v2_sub(this.nextXYZ, this.actor.xyz);
         const left = v2_magnitude(remaining)
         if (left<0.0001) {
-            this.actor.set({xyz:target});
-            return;
+            this.actor.set({xyz:this.nextXYZ});
+            arrived = true;
+        } else {
+            const distance = Math.min(left, delta * this.speed / 1000);
+            const forward = v2_normalize(remaining);
+            const move = v2_scale(forward, distance);
+            const yaw = v2_signedAngle([0,1], forward);
+            const xyz = v3_add(this.actor.xyz, [...move,0]);
+            this.actor.set({xyz, yaw});
         }
-        const distance = Math.max(left, delta * this.speed / 1000);
-        const forward = v2_normalize(remaining);
-        const move = v2_scale(forward, distance);
-        const yaw = v2_signedAngle([0,1], forward);
-        const xyz = v3_add(this.actor.xyz, [...move,0]);
-
-        this.actor.set({xyz, yaw});
-        this.actor.ground();
         this.actor.hop();
+        this.actor.ground();
 
-        // this.actor.set({xyz: target});
+        return arrived;
+
     }
 
 }
@@ -254,27 +213,7 @@ class BotBehavior extends Behavior {
 }
 BotBehavior.register("BotBehavior");
 
-// //------------------------------------------------------------------------------------------
-// //-- TestBehavior----------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
 
-// export class TestBehavior extends Behavior {
-
-//     init(options) {
-//         super.init(options);
-//         // this.fail();
-//     }
-
-//     onStart() {
-//         this.fail();
-//     }
-
-//     destroy() {
-//         super.destroy();
-//         console.log("TestBehavior destroy");
-//     }
-// }
-// TestBehavior.register('TestBehavior');
 
 
 

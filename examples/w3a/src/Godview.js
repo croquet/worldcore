@@ -116,12 +116,12 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         console.log("goto: " + voxel);
         this.publish("edit", "goto", voxel);
 
-        const paths = this.modelService("Paths");
-        const inKey = this.outKey;
-        this.outKey = packKey(...this.pointerHit.voxel);
-        const path = paths.findPath(inKey, this.outKey);
-        console.log(path);
-        viewRoot.pathDebug.drawPath(path);
+        // const paths = this.modelService("Paths");
+        // const inKey = this.outKey;
+        // this.outKey = packKey(...this.pointerHit.voxel);
+        // const path = paths.findPath(inKey, this.outKey);
+        // console.log(path);
+        // viewRoot.pathDebug.drawPath(path);
     }
 
     buildHUD() {

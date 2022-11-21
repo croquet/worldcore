@@ -167,8 +167,6 @@ export class SheepActor extends BotActor {
     get conform() {return true}
 
     onGoto(voxel) {
-        // console.log("Actor Goto");
-        // console.log(voxel);
         this.startBehavior({name: "WalkToBehavior", options: {destination: voxel}})
     }
 
@@ -185,11 +183,6 @@ class SheepPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
         super(actor);
         this.useInstance("sheep");
     }
-
-    // update(time,delta) {
-    //     super.update(time,delta);
-    //     console.log("sheep!");
-    // }
 
 }
 

@@ -86,14 +86,14 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
 
     hop() { // Move up a voxel if there's a solid surface above
         const surfaces = this.service("Surfaces");
-        const above = Voxels.adjacent(...this.xyz, [0,0,1])
+        const above = Voxels.adjacent(...this.xyz, [0,0,1]);
+        const below = Voxels.adjacent(...this.xyz, [0,0,-1])
         const aboveElevation = surfaces.elevation(...above);
+        const belowElevation = surfaces.elevation(...below);
         const xyz = this.xyz;
-        if (aboveElevation>0) {
-            xyz[2] += 1;
-            this.xyz = xyz;
-            // this.ground();
-        }
+        if (aboveElevation>-1) xyz[2] += 1;
+        if (belowElevation>-1) xyz[2] += -1;
+        this.xyz = xyz;
     }
 
 }
