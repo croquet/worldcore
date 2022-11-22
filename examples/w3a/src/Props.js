@@ -12,7 +12,7 @@ import { LogActor } from "./Bots";
 
 // Holds all the large static objects in the world. Only one prop can exist per voxel.
 
-export class PropManager extends ModelService { // add & delete not working! xxx
+export class PropManager extends ModelService {
     init() {
         super.init("PropManager");
         this.props = new Map();
@@ -32,6 +32,10 @@ export class PropManager extends ModelService { // add & delete not working! xxx
 
     remove(prop) {
         this.props.delete(prop.key);
+    }
+
+    get(key) {
+        return this.props.get(key);
     }
 
     destroyAll() {
@@ -128,7 +132,7 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
 
     init(options) {
         super.init(options);
-        this.maxSize = 0.6 + 0.4*this.random();
+        this.maxSize = 0.4 + 0.6*this.random();
         this.startBehavior("GrowBehavior");
     }
 
@@ -163,9 +167,6 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
         const log1 = LogActor.create({voxel: voxel, fraction: fraction1});
         const log2 = LogActor.create({voxel: voxel, fraction: fraction2});
 
-        log0.clamp();
-        log1.clamp();
-        log2.clamp();
     }
 
 }

@@ -13,10 +13,14 @@ export class Paths extends ModelService {
 
     init() {
         super.init('Paths');
-        this.nodes = new Map();
 
         this.subscribe("voxels", "load", this.rebuildAll)
         this.subscribe("voxels", "set", this.rebuildAll)
+    }
+
+    get nodes() {
+        if (!this.$nodes) this.rebuildAll();
+        return this.$nodes;
     }
 
     get(key) {
@@ -29,10 +33,9 @@ export class Paths extends ModelService {
 
     rebuildAll() {
         console.log("Building path nodes ...");
-        this.nodes = new Map();
+        this.$nodes = new Map();
 
         const voxels = this.service("Voxels");
-        // const surfaces = this.service("Surfaces");
 
         const primary = new Set();
 

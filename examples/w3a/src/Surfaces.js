@@ -1,4 +1,4 @@
-import { ModelService, Constants, v3_normalize } from "@croquet/worldcore";
+import { ModelService, Constants, v3_normalize, ThreeRenderManager } from "@croquet/worldcore";
 import { packKey, unpackKey, Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
@@ -13,10 +13,20 @@ export class Surfaces extends ModelService {
 
     init() {
         super.init('Surfaces');
-        this.surfaces = new Map();
+        this.$surfaces = new Map();
 
-        this.subscribe("voxels", "load", this.rebuildAll)
+        this.subscribe("voxels", "load", this.onVoxelLoad)
         this.subscribe("voxels", "set", this.rebuildSome)
+    }
+
+    onVoxelLoad() {
+        this.rebuildAll();
+        this.publish("surfaces", "rebuildAll");
+    }
+
+    get surfaces() {
+        if (!this.$surfaces) this.rebuildAll();
+        return this.$surfaces
     }
 
     elevation(x,y,z) {
@@ -84,12 +94,13 @@ export class Surfaces extends ModelService {
 
         this.publish("surfaces", "rebuildSome", {add,remove});
 
-
     }
 
+
+
     rebuildAll() {
-        // console.log("Building surfaces ...");
-        this.surfaces = new Map();
+        console.log("Building all surfaces ...");
+        this.$surfaces = new Map();
 
         const voxels = this.service("Voxels");
         const primary = new Set();
@@ -120,9 +131,6 @@ export class Surfaces extends ModelService {
         const cull = new Set();
         primary.forEach(key => { if (this.surfaces.get(key).isEmpty) cull.add(key) });
         this.clip(cull);
-
-        this.publish("surfaces", "rebuildAll");
-        // console.log("Building surfaces done");
 
     }
 

@@ -92,7 +92,7 @@ class GroundTestBehavior extends Behavior {
 
     onStart() {
         this.tickRate = 15;
-        // this.testElevation(); // Causes bug order of set options?
+        this.testElevation();
     }
 
     do(delta) {
@@ -129,54 +129,36 @@ GroundTestBehavior.register("GroundTestBehavior");
 class WalkToBehavior extends Behavior {
 
     onStart() {
-        this.tickRate = 20;
         const paths = this.service("Paths");
         const endKey = packKey(...v3_floor(this.destination));
-        // console.log("destination: " + this.destination);
         this.step = 1;
         this.path = paths.findPath(this.actor.key, endKey);
-        if (this.path.length === 0) {
-            // console.log("no path!")
-            this.fail();
-        }
-        // this.path.forEach(key => {
-        //     console.log(unpackKey(key));
-        // })
-        // console.log("start walk");
+        if (this.path.length === 0) this.fail(); // No path to destination
     }
 
+    get tickRate() { return this._tickRate || 20} // More than 15ms for smooth movement
     get destination() {return this._destination}
-    get speed() {return this._speed || 3 } // m/s
+    get speed() {return this._speed || 0.5 } // m/s
+
+    //Jitter on a shim above a double.
 
 
     do(delta) {
-        // console.log(this.step);
+        // this.avoid();
         if (this.step < this.path.length) {
             const nextVoxel = unpackKey(this.path[this.step]);
             this.nextXYZ = v3_add(nextVoxel, [0.5, 0.5, 0]);
-            this.goto(delta);
-            if( v3_equals(this.actor.voxel, nextVoxel)) {
-                // console.log("next step!");
-                this.step++;
-            }
+            const arrived = this.goto(delta);
+            if (arrived) this.step++;
         } else { // final voxel;
-            // console.log("final!");
             this.nextXYZ = this.destination;
             const arrived = this.goto(delta);
-
-            if(arrived) {
-                // console.log("arrived!");
-                this.succeed();
-            }
+            if(arrived) this.succeed();
         }
-
     }
 
     goto(delta) {
-        const z = this.nextXYZ[2] - this.actor.xyz[2]
         let arrived = false;
-
-
         const remaining = v2_sub(this.nextXYZ, this.actor.xyz);
         const left = v2_magnitude(remaining)
         if (left<0.0001) {
@@ -190,10 +172,29 @@ class WalkToBehavior extends Behavior {
             const xyz = v3_add(this.actor.xyz, [...move,0]);
             this.actor.set({xyz, yaw});
         }
-        this.actor.hop();
-        this.actor.ground();
 
+        this.actor.hop();
         return arrived;
+    }
+
+    avoid() {
+        const pm = this.service("PropManager")
+        const prop = pm.get(this.actor.key);
+        if (!prop) return;
+        const center = prop.fraction
+        const radius = v2_sub(this.actor.fraction, center);
+        const distance = v2_magnitude(radius);
+        if (distance>0) {
+            console.log("distance: "+ distance);
+            const closest = this.actor.radius+prop.radius;
+            console.log("closest: "+ closest);
+
+            // const approach = Math.max(distance, closest);
+            // const xy = v2_add(center, v2_scale(radius, approach/distance))
+            // const fraction = [...xy, 0]
+            // this.actor.set({fraction});
+
+        }
 
     }
 

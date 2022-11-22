@@ -327,29 +327,6 @@ export function v3_angle(a,b) {
     return Math.acos(Math.min(1,(Math.max(-1, v3_dot(v3_normalize(a), v3_normalize(b))))));
 }
 
-export function v3_signedAngle(a,b) {
-    const x = v3_cross(a,b);
-    const y = v3_dot(a,b);
-    return Math.atan2(v3_dot(x,v3_abs(x)),y);
-}
-
-// export function v3_angle(a,b) {
-//     const epsilon = 0.00001;
-//     const dot = v3_dot(v3_normalize(a),v3_normalize(b));
-//     // if (Math.abs(dot+1) < epsilon) return q_axisAngle(u, Math.PI)
-//     // if (Math.abs(dot-1) < epsilon) return q_identity();
-//     const axis = v3_normalize(v3_cross(a,b));
-//     console.log(axis[0]);
-//     const angle = Math.acos(dot);
-
-//     return angle;
-// }
-
-// export function v3_signedAngle(a, b, n) {
-//     const cross = v3_cross(a,b);
-//     const dot = v3_dot(cross,n);
-// }
-
 export function v3_lerp(a,b,t) {
     return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 }

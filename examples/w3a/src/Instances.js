@@ -127,13 +127,13 @@ export class InstanceManager extends ViewService {
     buildTree() {
         const trunk = new THREE.CylinderGeometry( 0.5,0.5, 10, 7);
         setGeometryColor(trunk, [0.7, 0.5, 0.3]);
-        const top = new THREE.ConeGeometry( 2,15, 8);
+        const top = new THREE.ConeGeometry(2, 15, 8);
         setGeometryColor(top, [0.4, 0.8, 0.4]);
-        top.translate(0,10,0);
+        top.translate(0,12.5,0);
 
         const geometry = mergeBufferGeometries([trunk, top]);
         geometry.rotateX(toRad(90));
-        geometry.translate(0,0,-1); // Extend below surface.
+        geometry.translate(0,0,4);
 
         const mesh = this.build("pineTree", geometry, instanceMaterial);
         mesh.receiveShadow = true;

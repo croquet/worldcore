@@ -41,6 +41,7 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
     get key() { return packKey(...this.voxel)}
     get fraction() { return this._fraction || [0,0,0]}
     get xyz() { return v3_add(this.voxel, this.fraction)}
+    get radius() { return this._radius || 0.1} // collision in voxel coordinates
 
     get pitch() { return this._pitch || 0};
     get yaw() { return this._yaw || 0};
@@ -51,14 +52,6 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
     set voxel(voxel) {this.set({voxel})};
     set fraction(fraction) {this.set({fraction})};
     set xyz(xyz) {this.set({xyz})}
-
-    // clamp() { // Move to an adjacent voxel if the faction is outside the current one.
-    //     console.log("old clamp");
-    //     const floor = v3_floor(this.fraction);
-    //     const fraction = this.clampFraction(v3_sub(this.fraction, floor));
-    //     const voxel = v3_add(this.voxel, floor);
-    //     this.set({voxel,fraction});
-    // }
 
     clampFraction(f) { // Ensure the fraction is inside the voxel.
         const e = 0.0001
@@ -84,16 +77,17 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
         }
     }
 
-    hop() { // Move up a voxel if there's a solid surface above
+    hop() { // Move up or down if there are surfaces to stand on
         const surfaces = this.service("Surfaces");
-        const above = Voxels.adjacent(...this.xyz, [0,0,1]);
-        const below = Voxels.adjacent(...this.xyz, [0,0,-1])
+        const above = Voxels.adjacent(...this.voxel, [0,0,1]);
+        const below = Voxels.adjacent(...this.voxel, [0,0,-1])
         const aboveElevation = surfaces.elevation(...above);
         const belowElevation = surfaces.elevation(...below);
         const xyz = this.xyz;
         if (aboveElevation>-1) xyz[2] += 1;
         if (belowElevation>-1) xyz[2] += -1;
         this.xyz = xyz;
+        this.ground();
     }
 
 }

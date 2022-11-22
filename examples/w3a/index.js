@@ -1,14 +1,8 @@
-// Microverse Base
+// Wide Wide World
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager, Constants, WorldcoreView, viewRoot, WidgetManager2, v3_THREE, behaviorRegistry, m4_identity, m4_translation, m4_THREE, ThreeRenderManagerX, PM_ThreeVisibleX, q_axisAngle, toRad, m4_scaleRotationTranslation, m4_getRotation, q_normalize, m4_toNormal4, v3_magnitude, toDeg, q_pitch, q_yaw, q_roll, v3_normalize, m4_multiply, Behavior, v3_angle, v3_signedAngle, v3_cross, v2_signedAngle } from "@croquet/worldcore";
+    WidgetManager, User, UserManager, WidgetManager2, ThreeRenderManagerX, PM_ThreeVisibleX } from "@croquet/worldcore";
 
-
-
-import paper from "./assets/paper.jpg";
-import diana from "./assets/diana.jpg";
-import llama from "./assets/llama.jpg";
-import kwark from "./assets/kwark.otf";
 import { packKey, Voxels } from "./src/Voxels";
 import { PropManager, VoxelActor } from "./src/Props";
 import { Surfaces } from "./src/Surfaces";
@@ -122,21 +116,21 @@ MyUser.register("MyUser");
 //-- TestActor----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class TestActor extends Actor {
+// export class TestActor extends Actor {
 
-    init(options) {
-        super.init(options);
-        console.log("TestActor init");
-        this.bing = [9];
-        this.destroy();
-    }
+//     init(options) {
+//         super.init(options);
+//         console.log("TestActor init");
+//         this.bing = [9];
+//         this.destroy();
+//     }
 
-    destroy() {
-        super.destroy();
-        console.log("TestActor destroy");
-    }
-}
-TestActor.register('TestActor');
+//     destroy() {
+//         super.destroy();
+//         console.log("TestActor destroy");
+//     }
+// }
+// TestActor.register('TestActor');
 
 //------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
@@ -171,8 +165,6 @@ class MyModelRoot extends ModelRoot {
 
     test1() {
         console.log("test1");
-        // console.log(toDeg(v3_angle([0,0,1], [0,1,1])));
-        // console.log(toDeg(v3_angle([0,0,1], [0,-1,1])));
     }
 
     test2() {
