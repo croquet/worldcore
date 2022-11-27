@@ -17,6 +17,7 @@ export class BotManager extends ModelService {
         super.init("BotManager");
         console.log("Bot Manager");
         this.bots = new Set();
+        this.bins = new Map();
         this.subscribe("edit", "spawnSheep", this.onSpawnSheep);
         this.subscribe("edit", "spawnAvatar", this.onSpawnAvatar);
         this.subscribe("voxels", "load", this.destroyAll);
@@ -24,6 +25,13 @@ export class BotManager extends ModelService {
 
     add(bot) {
         this.bots.add(bot);
+    }
+
+    addToBin(bot) {
+        const bin = this.bins.get(bot.key) || new Set();
+        this.bins.set(bot.key, bin);
+        bin.add(bot);
+        bot.bin = bin;
     }
 
     remove(bot) {
@@ -41,7 +49,8 @@ export class BotManager extends ModelService {
         const x = 0.5
         const y = 0.5
         // const bot = PersonActor.create({voxel, fraction:[x,y,0]});
-        const sheep = SheepActor.create({voxel, fraction:[x,y,0], pitch: toRad(0)});
+        const sheep = SheepActor.create({voxel, fraction:[0.5,0.5,0]});
+        // console.log(sheep.bin);
 
     }
 
@@ -74,7 +83,16 @@ export class BotActor extends mix(VoxelActor).with(AM_Behavioral) {
     destroy() {
         super.destroy();
         const bm = this.service("BotManager");
+        this.bin.delete(this);
         bm.remove(this);
+    }
+
+    voxelSet(voxel) {
+        super.voxelSet(voxel);
+        const bm = this.service("BotManager");
+        if (this.bin) this.bin.delete(this);
+        bm.addToBin(this);
+        // console.log(this.bin);
     }
 
 
@@ -167,7 +185,11 @@ export class SheepActor extends BotActor {
     get conform() {return true}
 
     onGoto(voxel) {
-        this.startBehavior({name: "WalkToBehavior", options: {destination: voxel}})
+        const x = this.random();
+        const y = this.random();
+        const destination = v3_add(voxel, [0.5,0.5,0]);
+
+        this.startBehavior({name: "WalkToBehavior", options: {destination}})
     }
 
 }

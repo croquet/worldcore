@@ -36,14 +36,19 @@ export class Paths extends ModelService {
         this.$nodes = new Map();
 
         const voxels = this.service("Voxels");
+        const surfaces = this.service("Surfaces");
 
         const primary = new Set();
 
         // Build primary set
-        voxels.forEachWalkable((x,y,z) => {
-            const key = packKey(x,y,z);
-            primary.add(key);
-        })
+        // voxels.forEachWalkable((x,y,z) => {
+        //     const key = packKey(x,y,z);
+        //     primary.add(key);
+        // })
+
+        surfaces.surfaces.forEach((surface, key) => {
+            if (surface.isWalkable) primary.add(key);
+        });
 
         primary.forEach(key => {
             const node = this.get(key)

@@ -171,6 +171,7 @@ class Surface {
     get hasShape() {return this.shapes.some(e => e)}
     get hasShim() {return this.shims.some(e => e)}
     get isEmpty() { return !(this.floor || this.ceiling || this.hasFace || this.hasRamp || this.hasDouble || this.hasShape || this.hasShim); }
+    get isWalkable() {return this.floor || this.hasRamp || this.hasShim || this.hasDouble }
 
     elevation(x,y) {
 
@@ -240,38 +241,38 @@ class Surface {
 
     }
 
-    tangent(x,y) {
+    // tangent(x,y) {
 
-        const sw = x + y < 1;
-        const ne = !sw
-        const nw = x - y < 0;
-        const se = !nw
+    //     const sw = x + y < 1;
+    //     const ne = !sw
+    //     const nw = x - y < 0;
+    //     const se = !nw
 
-        const xx = 1-x;
-        const yy = 1-y
+    //     const xx = 1-x;
+    //     const yy = 1-y
 
-        let e = 0;
-        let xt = 0;
-        let yt = 0;
+    //     let e = 0;
+    //     let xt = 0;
+    //     let yt = 0;
 
-        if (this.ramps[0]){ e = xx; xt = -1; }
-        if (this.ramps[1]){ e = yy; yt = -1; }
-        if (this.ramps[2]){ e = x; xt = 1; }
-        if (this.ramps[3]){ e = y; yt = 1; }
+    //     if (this.ramps[0]){ e = xx; xt = -1; }
+    //     if (this.ramps[1]){ e = yy; yt = -1; }
+    //     if (this.ramps[2]){ e = x; xt = 1; }
+    //     if (this.ramps[3]){ e = y; yt = 1; }
 
-        if (this.doubles[0]) { e = xx+yy; if(ne) {xt=-1; yt=-1}}
-        if (this.doubles[1]) { e = x+yy; if(nw) {xt=1; yt=-1}}
-        if (this.doubles[2]) { e = x+yy; if(sw) {xt=1; yt=1}}
-        if (this.doubles[3]) { e = xx+y; if(se) {xt=-1; yt=1}}
+    //     if (this.doubles[0]) { e = xx+yy; if(ne) {xt=-1; yt=-1}}
+    //     if (this.doubles[1]) { e = x+yy; if(nw) {xt=1; yt=-1}}
+    //     if (this.doubles[2]) { e = x+yy; if(sw) {xt=1; yt=1}}
+    //     if (this.doubles[3]) { e = xx+y; if(se) {xt=-1; yt=1}}
 
-        if (this.shims[0]) { const ee = xx+yy-1; if(sw && ee>e) {xt=-1; yt=-1}}
-        if (this.shims[1]) { const ee = x+yy-1; if(se && ee>e) {xt=1; yt=-1}}
-        if (this.shims[2]) { const ee = x+y-1; if(ne && ee>e) {xt=1; yt=1}}
-        if (this.shims[3]) { const ee = xx+y-1; if(nw && ee>e) {xt=-1; yt=1}}
+    //     if (this.shims[0]) { const ee = xx+yy-1; if(sw && ee>e) {xt=-1; yt=-1}}
+    //     if (this.shims[1]) { const ee = x+yy-1; if(se && ee>e) {xt=1; yt=-1}}
+    //     if (this.shims[2]) { const ee = x+y-1; if(ne && ee>e) {xt=1; yt=1}}
+    //     if (this.shims[3]) { const ee = xx+y-1; if(nw && ee>e) {xt=-1; yt=1}}
 
-        return [xt, yt];
+    //     return [xt, yt];
 
-    }
+    // }
 
     // Find adjacent solid voxels
     findFaces(voxels) {

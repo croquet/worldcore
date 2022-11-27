@@ -73,7 +73,7 @@ export class PropManager extends ModelService {
             z = surfaces.elevation(voxel[0] + x,voxel[1] + y,voxel[2]);
         } while(z < 0)
 
-        const tree = TreeActor.create({voxel, fraction:[x,y,0]});
+        const tree = TreeActor.create({voxel, fraction:[0.8,0.4,0]});
         tree.validate();
     }
 

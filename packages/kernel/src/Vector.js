@@ -129,17 +129,6 @@ export function v2_divide(a,b) {
     return [a[0] / b[0], a[1] / b[1]];
 }
 
-// Clockwise in radians
-// export function v2_rotate(v,a,c) {
-//     const sinA = Math.sin(a);
-//     const cosA = Math.cos(a);
-//     if (c) {
-//         const vc = v2_sub(v, c);
-//         return v2_add(c, [cosA*vc[0] - sinA*vc[1], sinA*vc[0] + cosA*vc[1]]);
-//     }
-//     return [cosA*v[0] - sinA*v[1], sinA*v[0] + cosA*v[1]];
-// }
-
 export function v2_rotate(v,a) {
     const sinA = Math.sin(a);
     const cosA = Math.cos(a);
@@ -197,6 +186,10 @@ export function v2_transform(v, m) {
         m[0] * x + m[2] * y,
         m[1] * x + m[3] * y
     ]);
+}
+
+export function v2_perpendicular(v) {
+    return[v[1], v[0]];
 }
 
 //--------------------------------------------------------------------------------

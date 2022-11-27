@@ -204,7 +204,7 @@ class MyViewRoot extends ViewRoot {
 
     detach() {
         super.detach();
-        // if (this.godView) this.godView.destroy();
+        if (this.godView) this.godView.destroy();
         if (this.mapView) this.mapView.destroy();
     }
 
