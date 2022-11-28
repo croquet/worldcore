@@ -1013,6 +1013,10 @@ export function m4_multiply(a,b) {
 
 // Extracts the scaling/rotation components and performs an inverse/transpose operation to generate a 4x4 normal transform matrix.
 export function m4_toNormal4(m) {
+    let q = m4_getRotation(m4);
+    return m4_rotationQ(q);
+
+    /*
     const a00 = m[0], a01 = m[1], a02 = m[2];
     const a10 = m[4], a11 = m[5], a12 = m[6];
     const a20 = m[8], a21 = m[9], a22 = m[10];
@@ -1038,6 +1042,7 @@ export function m4_toNormal4(m) {
         b20/d, -b21/d, b22/d, 0,
         0, 0, 0, 1
     ];
+    */
 }
 
 // Extracts the scaling/rotation components and performs an inverse/transpose operation to generate a 3x3 normal transform matrix.
@@ -1125,6 +1130,21 @@ export function q_axisAngle(axis, angle) {
     const sinH = Math.sin(half);
     const cosH = Math.cos(half);
     return [sinH * axis[0], sinH * axis[1], sinH * axis[2], cosH];
+}
+
+export function q_toAxisAngle(quat) {
+    let q = q_normalize(quat);
+    let angle = 2 * Math.acos(q[3]);
+    let axis;
+    let s = Math.sqrt( 1 - q[3] * q[3]);
+    // assuming quaternion normalised then w is less than 1, so term always positive.
+    if (s < 0.001) { // test to avoid divide by zero, s is always positive due to sqrt
+        // if s is close to zero then direction of axis not important
+        axis = [0, 1, 0];
+    } else {
+        axis = [q[0] / s, q[1] / s, q[2] / s]; // normalize vector
+    }
+    return {axis: axis, angle:angle};
 }
 
 // Given a forward vector and an up vector, generates the quaternion that will rotate
