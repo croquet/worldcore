@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "3D World Engine for Croquet (full install)",
   "keywords": [
     "croquet",
@@ -27,13 +27,13 @@
     "directory": "packages/full"
   },
   "dependencies": {
-    "@croquet/worldcore-audio": "^1.3.1",
-    "@croquet/worldcore-behavior": "^1.3.1",
-    "@croquet/worldcore-card": "^1.3.1",
-    "@croquet/worldcore-kernel": "^1.3.1",
-    "@croquet/worldcore-rapier": "^1.3.1",
-    "@croquet/worldcore-three": "^1.3.1",
-    "@croquet/worldcore-webgl": "^1.3.1",
-    "@croquet/worldcore-widget": "^1.3.1"
+    "@croquet/worldcore-audio": "^1.3.2",
+    "@croquet/worldcore-behavior": "^1.3.2",
+    "@croquet/worldcore-card": "^1.3.2",
+    "@croquet/worldcore-kernel": "^1.3.2",
+    "@croquet/worldcore-rapier": "^1.3.2",
+    "@croquet/worldcore-three": "^1.3.2",
+    "@croquet/worldcore-webgl": "^1.3.2",
+    "@croquet/worldcore-widget": "^1.3.2"
   }
 }
