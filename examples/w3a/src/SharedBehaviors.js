@@ -1,5 +1,5 @@
 import { Constants, Behavior,  q_multiply, q_axisAngle,  q_normalize,  sphericalRandom, v3_equals, v3_floor, q_lookAt, v3_normalize, v3_sub, v3_magnitude,
-    v3_scale, v3_add, v3_rotate, v3_angle, toRad, toDeg, v2_signedAngle, v2_add, v2_sub, v2_normalize, v2_scale, v2_magnitude, v2_dot, v2_perpendicular } from "@croquet/worldcore";
+    v3_scale, v3_add, v3_rotate, v3_angle, toRad, toDeg, v2_signedAngle, v2_add, v2_sub, v2_normalize, v2_scale, v2_magnitude, v2_dot, v2_perpendicular, v2_rotate, v2_closest } from "@croquet/worldcore";
 import { packKey, unpackKey, Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
@@ -133,9 +133,11 @@ class WalkToBehavior extends Behavior {
         const endKey = packKey(...v3_floor(this.destination));
         this.step = 1;
         this.path = paths.findPath(this.actor.key, endKey);
-        if (this.path.length === 0) {
+        if (this.path.length === 0) { // No path to destination
             console.log("no path!")
-            this.fail();} // No path to destination
+            this.fail();
+        }
+        this.nextStep();
     }
 
     get tickRate() { return this._tickRate || 20} // More than 15ms for smooth movement
@@ -144,83 +146,73 @@ class WalkToBehavior extends Behavior {
 
     do(delta) {
         if (this.step < this.path.length) {
-            const nextVoxel = unpackKey(this.path[this.step]);
-            const x = 0.25 + this.random()*0.5;
-            const y = 0.25 + this.random()*0.5;
-            let target = v3_add(nextVoxel, [0.5, 0.5, 0]);
-            target = this.avoid(target);
-            if (this.goto(target, delta)) this.step++;
+            if (this.goto(this.target, delta)) {
+                this.step++;
+                this.nextStep();
+            }
         } else { // final voxel;
             if(this.goto(this.destination, delta)) this.succeed();
         }
     }
 
-    avoid(target) {
-        const pm = this.service("PropManager")
-        const prop = pm.get(this.actor.key);
-        if (!prop) return target;
-        const heading = v2_sub(target, this.actor.xyz);
-        const to = v2_sub(this.actor.xyz, prop.xyz);
-        const range = v2_magnitude(to);
-        const side = v2_normalize(v2_perpendicular(to));
-        const projection =  v2_dot(heading,side);
-        const sign = Math.sign(projection) || 1;
-
-        if (range < 0.2) {
-
-            console.log("sign: " + sign);
-            // console.log('collide');
-            // target = v3_add(prop.xyz, [...v2_scale(side, sign*0.2),0]);
-        }
-
-        //Tries to swerve after you pass it.
-
-
-
-        return target
-
-        const closest = this.actor.radius+prop.radius;
-        // if ( Math.abs(projection) > 0.2 ) {
-        //     console.log("miss");
-        //     return;
-        // }
-        // console.log("swerve!");
-        // console.log("projection: " + projection);
-        // const sign = Math.sign(projection) || 1;
-
-        // const target = v2_add(prop.xyz, v2_scale(side, sign*closest));
-        // this.target = [...target,0]
-        // this.heading = v2_sub(this.target, this.actor.xyz);
-
-        // let sign = Math.sign(projection) || 1;
-        // // const target = v2_add(prop.fraction, v2_scale(side, sign*closest));
-        // this.target = v2_add(prop.xyz, v2_scale(side, sign*closest));
-        // this.heading = v2_sub(this.target, this.actor.fraction);
-        // console.log("target: " + target);
-
-        // projection > closest => no collision
-        // projection < closest ==> head to side * closet
-
-
+    nextStep() {
+        const nextVoxel = unpackKey(this.path[this.step]);
+        const x = 0.25 + this.random()*0.5;
+        const y = 0.25 + this.random()*0.5;
+        this.target = v3_add(nextVoxel, [0.5, 0.5, 0]);
     }
 
     goto(target, delta) {
-        const heading = v2_sub(target, this.actor.xyz);
+        let heading = v2_sub(target, this.actor.xyz);
         const left = v2_magnitude(heading);
         if (left<0.0001) {
             this.actor.set({xyz:target});
             this.actor.hop();
             return true;
         }
-        const distance = Math.min(left, delta * this.speed / 1000);
-        const forward = v2_normalize(heading);
-        const move = v2_scale(forward, distance);
+
+        let forward = v2_normalize(heading);
+
+
+        const pm = this.service("PropManager")
+        let prop = pm.get(this.actor.key);
+
+        if (prop) {
+            const to = v2_sub(prop.xyz, this.actor.xyz);
+            const direction = v2_dot(to,forward);
+            const closest = v2_add(v2_closest(forward, to), this.actor.xyz);
+            const approach = v2_sub(closest, prop.xyz);
+            const range = v2_magnitude(approach);
+
+            // console.log("forward: " + forward);
+            // console.log("to: " + to);
+            // console.log("closest: " + closest);
+            // console.log("approach: " + approach);
+            // console.log("range: " + range);
+
+            if (direction > 0 && range > left && range<0.2) {
+                console.log("swerve!")
+                const side = v2_normalize(approach);
+                const strafe = v2_scale(side, 0.2);
+                const pass = v3_add(prop.xyz, [...strafe,0]);
+                heading = v2_sub(pass, this.actor.xyz);
+            }
+
+        }
+
+
+        forward = v2_normalize(heading);
         const yaw = v2_signedAngle([0,1], forward);
-        const xyz = v3_add(this.actor.xyz, [...move,0]);
+        const distance = Math.min(left, delta * this.speed / 1000);
+        const move = v2_scale(forward, distance);
+        let xyz = v3_add(this.actor.xyz, [...move,0]);
+
         this.actor.set({xyz, yaw});
         this.actor.hop();
         return false;
     }
+
+
 
 
 }
@@ -238,6 +230,56 @@ class BotBehavior extends Behavior {
 
 }
 BotBehavior.register("BotBehavior");
+
+
+    // avoid(target) {
+    //     const pm = this.service("PropManager")
+    //     const prop = pm.get(this.actor.key);
+    //     if (!prop) return target;
+    //     const heading = v2_sub(target, this.actor.xyz);
+    //     const to = v2_sub(this.actor.xyz, prop.xyz);
+    //     const range = v2_magnitude(to);
+    //     const side = v2_normalize(v2_perpendicular(to));
+    //     const projection =  v2_dot(heading,side);
+    //     const sign = Math.sign(projection) || 1;
+
+    //     if (range < 0.2) {
+
+    //         console.log("sign: " + sign);
+    //         // console.log('collide');
+    //         // target = v3_add(prop.xyz, [...v2_scale(side, sign*0.2),0]);
+    //     }
+
+    //     //Tries to swerve after you pass
+
+
+
+    //     return target
+
+    //     const closest = this.actor.radius+prop.radius;
+    //     // if ( Math.abs(projection) > 0.2 ) {
+    //     //     console.log("miss");
+    //     //     return;
+    //     // }
+    //     // console.log("swerve!");
+    //     // console.log("projection: " + projection);
+    //     // const sign = Math.sign(projection) || 1;
+
+    //     // const target = v2_add(prop.xyz, v2_scale(side, sign*closest));
+    //     // this.target = [...target,0]
+    //     // this.heading = v2_sub(this.target, this.actor.xyz);
+
+    //     // let sign = Math.sign(projection) || 1;
+    //     // // const target = v2_add(prop.fraction, v2_scale(side, sign*closest));
+    //     // this.target = v2_add(prop.xyz, v2_scale(side, sign*closest));
+    //     // this.heading = v2_sub(this.target, this.actor.fraction);
+    //     // console.log("target: " + target);
+
+    //     // projection > closest => no collision
+    //     // projection < closest ==> head to side * closet
+
+
+    // }
 
 
 

@@ -187,7 +187,7 @@ export class SheepActor extends BotActor {
     onGoto(voxel) {
         const x = this.random();
         const y = this.random();
-        const destination = v3_add(voxel, [0.5,0.5,0]);
+        const destination = v3_add(voxel, [x,y,0]);
 
         this.startBehavior({name: "WalkToBehavior", options: {destination}})
     }
@@ -255,7 +255,7 @@ export class AvatarActor extends mix(SheepActor).with(AM_Avatar) {
         this.velocity = [0,0,0];
         // this.yaw = 0;
 
-        this.subscribe("input", "lDown", this.destroy);
+        // this.subscribe("input", "lDown", this.destroy);
 
 
         this.listen("avatar", this.onAvatar)

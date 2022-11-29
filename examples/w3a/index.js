@@ -1,7 +1,7 @@
 // Wide Wide World
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    WidgetManager, User, UserManager, WidgetManager2, ThreeRenderManagerX, PM_ThreeVisibleX } from "@croquet/worldcore";
+    WidgetManager, User, UserManager, WidgetManager2, ThreeRenderManagerX, PM_ThreeVisibleX, v2_normalize, v2_closest } from "@croquet/worldcore";
 
 import { packKey, Voxels } from "./src/Voxels";
 import { PropManager, VoxelActor } from "./src/Props";
@@ -220,6 +220,9 @@ class MyViewRoot extends ViewRoot {
 
     xTest() {
         console.log("xTest");
+        const v = v2_normalize([10,10]);
+        const p = [-3,1];
+        console.log(v2_closest(v,p));
     }
 
 

@@ -192,6 +192,10 @@ export function v2_perpendicular(v) {
     return[v[1], v[0]];
 }
 
+export function v2_closest(v,p) { // The closest point on vector v from point p, assumes v is normalized
+    return v2_scale(v,v2_dot(v,p));
+}
+
 //--------------------------------------------------------------------------------
 //-- 3 Vectors -------------------------------------------------------------------
 //--------------------------------------------------------------------------------
