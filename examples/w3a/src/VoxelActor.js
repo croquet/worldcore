@@ -1,4 +1,4 @@
-import { Actor, mix, v3_add, v3_floor, v3_sub,q_axisAngle,q_multiply, AM_Spatial, toRad, v3_rotate, v3_angle, toDeg} from "@croquet/worldcore";
+import { Actor, mix, v3_add, v3_floor, v3_sub,q_axisAngle,q_multiply, AM_Spatial, toRad, v3_rotate, v3_angle, toDeg, v3_sqrMag} from "@croquet/worldcore";
 
 import { toWorld, packKey, Voxels} from "./Voxels";
 
@@ -80,27 +80,63 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
     hop() { // Move up if there's a surface to stand on
         const surfaces = this.service("Surfaces");
         const above = Voxels.adjacent(...this.voxel, [0,0,1]);
-        const below = Voxels.adjacent(...this.voxel, [0,0,-1])
-        // const aboveElevation = surfaces.elevation(...above);
-        // const belowElevation = surfaces.elevation(...below);
 
         const aboveWalkable = surfaces.get(packKey(...above)).isWalkable;
-        // const belowWalkable = surfaces.get(packKey(...below)).isWalkable;
 
         const xyz = this.xyz;
         if (aboveWalkable) xyz[2] += 1;
 
-        // if (belowWalkable) {
-        //     xyz[2] += -1;}
-        // else if (aboveWalkable) {
-        //     xyz[2] += 1;
-        // }
         this.xyz = xyz;
         this.ground();
     }
 
+    get group() {
+        return this._group;
+    }
+
+    // groupSet(g, old) {
+    //     if (old)
+    // }
+
 }
 VoxelActor.register("VoxelActor");
+
+//------------------------------------------------------------------------------------------
+//-- GroupActor ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Holds collections of VoxelActors (like flocks of sheep)
+
+export class GroupActor extends Actor{
+
+    init(options) {
+        super.init(options);
+        this.group = new Set();
+    }
+
+    join(member) {
+        this.group.add(member);
+    }
+
+    leave(member) {
+        this.group.delete(member);
+    }
+
+    closest(xyz) {
+        let distance = 100000;
+        const out = null;
+        this.group.forEach(member => {
+            const d = v3_sqrMag(v3_sub(member.xyz, xyz))
+            if (d>distance) return;
+            distance = d;
+            out = member;
+        })
+        return out;
+
+    }
+
+}
+GroupActor.register("GroupActor");
 
 
 

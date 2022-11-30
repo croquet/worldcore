@@ -16,6 +16,7 @@ export class Paths extends ModelService {
 
         this.subscribe("voxels", "load", this.rebuildAll)
         this.subscribe("voxels", "set", this.rebuildAll)
+
     }
 
     get nodes() {
@@ -24,6 +25,7 @@ export class Paths extends ModelService {
     }
 
     get(key) {
+        // console.log("get: " + key);
         return this.nodes.get(key) || new Node(key);
     }
 
@@ -32,7 +34,7 @@ export class Paths extends ModelService {
     }
 
     rebuildAll() {
-        console.log("Building path nodes ...");
+        // console.log("Building path nodes ...");
         this.$nodes = new Map();
 
         const voxels = this.service("Voxels");
@@ -41,11 +43,6 @@ export class Paths extends ModelService {
         const primary = new Set();
 
         // Build primary set
-        // voxels.forEachWalkable((x,y,z) => {
-        //     const key = packKey(x,y,z);
-        //     primary.add(key);
-        // })
-
         surfaces.surfaces.forEach((surface, key) => {
             if (surface.isWalkable) primary.add(key);
         });
@@ -56,9 +53,7 @@ export class Paths extends ModelService {
             node.findExits()
             if(!node.isEmpty) this.set(key,node);
         });
-        console.log("Path done!");
-
-
+        // console.log("Path done!");
     }
 
     findPath(startKey, endKey) {
@@ -107,6 +102,65 @@ export class Paths extends ModelService {
         return path;
     }
 
+    // ping(startKey, callback) {
+    //     let range = 0;
+    //     const visited = new Set();
+    //     let test = [startKey];
+    //     do {
+    //         console.log("range: " + range);
+    //         console.log("test: " + test);
+    //         const next = [];
+    //         for( const key of test) {
+    //             if (!key || visited.has(key)) break;
+    //             const node = this.get(key);
+    //             const result = callback(node, range);
+    //             console.log(result);
+    //             visited.add(key);
+    //             next.push(...node.exits);
+    //             if(result) return result;
+    //         }
+    //         range++;
+    //         test = [next];
+
+    //     } while(range<10);
+
+    //     console.log("hit limit!");
+    //     return 999;
+
+    // }
+
+    ping(startKey, callback) {
+        let range = 0;
+        const visited = new Set();
+        let test = [startKey];
+        do {
+
+            // console.log("circumferance: " + test.length);
+            // console.log("area: " + visited.size);
+            const next = [];
+            let ttt = 0;
+            for( const key of test) {
+                if (!key || visited.has(key)) continue;
+                ttt++;
+                visited.add(key);
+                const node = this.get(key);
+                const result = callback(node, range);
+                if(result) {
+                    // console.log(result);
+                    return result;
+                }
+                next.push(...node.exits);
+            }
+            console.log("radius: " + range);
+            console.log("circumferance: " + ttt);
+            console.log("pi: " + ttt/(2*range));
+
+            range++;
+            test = next;
+
+        } while(range<100);
+
+    }
 
 
 }

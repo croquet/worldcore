@@ -177,28 +177,28 @@ class WalkToBehavior extends Behavior {
         const pm = this.service("PropManager")
         let prop = pm.get(this.actor.key);
 
-        if (prop) {
-            const to = v2_sub(prop.xyz, this.actor.xyz);
-            const direction = v2_dot(to,forward);
-            const closest = v2_add(v2_closest(forward, to), this.actor.xyz);
-            const approach = v2_sub(closest, prop.xyz);
-            const range = v2_magnitude(approach);
+        // if (prop) {
+        //     const to = v2_sub(prop.xyz, this.actor.xyz);
+        //     const direction = v2_dot(to,forward);
+        //     const closest = v2_add(v2_closest(forward, to), this.actor.xyz);
+        //     const approach = v2_sub(closest, prop.xyz);
+        //     const range = v2_magnitude(approach);
 
-            // console.log("forward: " + forward);
-            // console.log("to: " + to);
-            // console.log("closest: " + closest);
-            // console.log("approach: " + approach);
-            // console.log("range: " + range);
+        //     // console.log("forward: " + forward);
+        //     // console.log("to: " + to);
+        //     // console.log("closest: " + closest);
+        //     // console.log("approach: " + approach);
+        //     // console.log("range: " + range);
 
-            if (direction > 0 && range > left && range<0.2) {
-                console.log("swerve!")
-                const side = v2_normalize(approach);
-                const strafe = v2_scale(side, 0.2);
-                const pass = v3_add(prop.xyz, [...strafe,0]);
-                heading = v2_sub(pass, this.actor.xyz);
-            }
+        //     if (direction > 0 && range > left && range<0.2) {
+        //         console.log("swerve!")
+        //         const side = v2_normalize(approach);
+        //         const strafe = v2_scale(side, 0.2);
+        //         const pass = v3_add(prop.xyz, [...strafe,0]);
+        //         heading = v2_sub(pass, this.actor.xyz);
+        //     }
 
-        }
+        // }
 
 
         forward = v2_normalize(heading);
@@ -230,59 +230,4 @@ class BotBehavior extends Behavior {
 
 }
 BotBehavior.register("BotBehavior");
-
-
-    // avoid(target) {
-    //     const pm = this.service("PropManager")
-    //     const prop = pm.get(this.actor.key);
-    //     if (!prop) return target;
-    //     const heading = v2_sub(target, this.actor.xyz);
-    //     const to = v2_sub(this.actor.xyz, prop.xyz);
-    //     const range = v2_magnitude(to);
-    //     const side = v2_normalize(v2_perpendicular(to));
-    //     const projection =  v2_dot(heading,side);
-    //     const sign = Math.sign(projection) || 1;
-
-    //     if (range < 0.2) {
-
-    //         console.log("sign: " + sign);
-    //         // console.log('collide');
-    //         // target = v3_add(prop.xyz, [...v2_scale(side, sign*0.2),0]);
-    //     }
-
-    //     //Tries to swerve after you pass
-
-
-
-    //     return target
-
-    //     const closest = this.actor.radius+prop.radius;
-    //     // if ( Math.abs(projection) > 0.2 ) {
-    //     //     console.log("miss");
-    //     //     return;
-    //     // }
-    //     // console.log("swerve!");
-    //     // console.log("projection: " + projection);
-    //     // const sign = Math.sign(projection) || 1;
-
-    //     // const target = v2_add(prop.xyz, v2_scale(side, sign*closest));
-    //     // this.target = [...target,0]
-    //     // this.heading = v2_sub(this.target, this.actor.xyz);
-
-    //     // let sign = Math.sign(projection) || 1;
-    //     // // const target = v2_add(prop.fraction, v2_scale(side, sign*closest));
-    //     // this.target = v2_add(prop.xyz, v2_scale(side, sign*closest));
-    //     // this.heading = v2_sub(this.target, this.actor.fraction);
-    //     // console.log("target: " + target);
-
-    //     // projection > closest => no collision
-    //     // projection < closest ==> head to side * closet
-
-
-    // }
-
-
-
-
-
 

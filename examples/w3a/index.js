@@ -169,7 +169,13 @@ class MyModelRoot extends ModelRoot {
 
     test2() {
         console.log("test2");
+        const paths = this.service("Paths");
+        const startKey = packKey(20,20,2);
+        const xxx = paths.ping(startKey, (node, range) => {
+            if (range == 20) return 55;
+        });
 
+        // console.log(xxx);
     }
 
 

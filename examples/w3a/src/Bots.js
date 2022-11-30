@@ -243,7 +243,7 @@ class PersonPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
 //-- AvatarActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class AvatarActor extends mix(SheepActor).with(AM_Avatar) {
+export class AvatarActor extends mix(PersonActor).with(AM_Avatar) {
 
     get pawn() {return AvatarPawn}
 
@@ -253,10 +253,6 @@ export class AvatarActor extends mix(SheepActor).with(AM_Avatar) {
         this.left = this.right = 0;
         this.fore = this.back = 0;
         this.velocity = [0,0,0];
-        // this.yaw = 0;
-
-        // this.subscribe("input", "lDown", this.destroy);
-
 
         this.listen("avatar", this.onAvatar)
         this.future(100).moveTick(100);
