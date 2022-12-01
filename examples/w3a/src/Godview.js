@@ -1,5 +1,5 @@
 import { WorldcoreView, Pawn, mix, m4_rotationX, toRad, m4_scaleRotationTranslation, q_axisAngle, PM_WidgetPointer, v2_sub, Constants, q_multiply, TAU, v3_scale, v3_add, v3_normalize, v3_rotate, v3_magnitude, THREE, viewRoot, v3_sub, v3_floor, PM_ThreeVisible, Widget2, CanvasWidget2, ToggleWidget2, ToggleSet2, ImageWidget2, SliderWidget2, v3_angle, v4_normalize, toDeg } from "@croquet/worldcore";
-import { packKey, Voxels} from  "./Voxels";
+import { packKey, unpackKey, Voxels} from  "./Voxels";
 
 let time0 = 0;
 let time1 = 0;
@@ -108,7 +108,12 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
     iTest() {
         console.log("in")
         console.log(this.pointerHit.voxel);
-        this.inKey = packKey(...this.pointerHit.voxel);
+        // this.inKey = packKey(...this.pointerHit.voxel);
+        const key = packKey(...this.pointerHit.voxel);
+        console.log(key);
+        const paths = this.modelService("Paths");
+        const way = paths.findWay(key, [1,1]);
+        console.log(unpackKey(way));
     }
 
     oTest() {

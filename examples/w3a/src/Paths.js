@@ -102,66 +102,78 @@ export class Paths extends ModelService {
         return path;
     }
 
-    // ping(startKey, callback) {
-    //     let range = 0;
-    //     const visited = new Set();
-    //     let test = [startKey];
-    //     do {
-    //         console.log("range: " + range);
-    //         console.log("test: " + test);
-    //         const next = [];
-    //         for( const key of test) {
-    //             if (!key || visited.has(key)) break;
-    //             const node = this.get(key);
-    //             const result = callback(node, range);
-    //             console.log(result);
-    //             visited.add(key);
-    //             next.push(...node.exits);
-    //             if(result) return result;
-    //         }
-    //         range++;
-    //         test = [next];
+    findWay(startKey, direction, distance=5) {
+        let key = startKey;
+        if (!this.nodes.has(startKey)) return startKey;  // Invalid start waypoint
+        const x = direction[0];
+        const y = direction[1];
+        const xx = Math.abs(x) > 2*Math.abs(y);
+        const yy = Math.abs(y) > 2*Math.abs(x);
 
-    //     } while(range<10);
+        while(distance) {
+            const node = this.get(key)
+            key = null;
+            let d;
+            if(x>0) { // east
+                if (y>0) { // northeast
+                    d=[6,2,3,7,5];
+                    if (xx) d = [2,6,3,5,7]
+                    if (yy) d = [3,6,2,7,5]
+                } else { // southeast
+                    d=[5,1,2,6,4];
+                    if (xx) d = [2,5,1,6,4]
+                    if (yy) d = [1,5,2,4,6]
+                }
+            } else { // west
+                if (y>0) { // northwest
+                    d=[7,3,0,6,4];
+                    if (xx) d = [0,7,3,4,6]
+                    if (yy) d = [3,7,0,6,4]
+                } else { // southwest
+                    d=[4,0,1,5,7];
+                    if (xx) d = [0,4,1,7,5]
+                    if (yy) d = [1,4,0,5,7]
+                }
+            }
+            for( const n of d) {
+                const exit = node.exits[n];
+                if (exit) {
+                    key = exit;
+                    break;
+                }
+            }
 
-    //     console.log("hit limit!");
-    //     return 999;
+            if(!key) {
+                console.log("No way!");
+                return startKey;
+            }
+            distance--;
+        }
 
-    // }
+        return key;
+
+
+    }
 
     ping(startKey, callback) {
         let range = 0;
         const visited = new Set();
         let test = [startKey];
         do {
-
-            // console.log("circumferance: " + test.length);
-            // console.log("area: " + visited.size);
             const next = [];
-            let ttt = 0;
             for( const key of test) {
                 if (!key || visited.has(key)) continue;
-                ttt++;
                 visited.add(key);
                 const node = this.get(key);
                 const result = callback(node, range);
-                if(result) {
-                    // console.log(result);
-                    return result;
-                }
+                if(result) return result;
                 next.push(...node.exits);
             }
-            console.log("radius: " + range);
-            console.log("circumferance: " + ttt);
-            console.log("pi: " + ttt/(2*range));
-
             range++;
             test = next;
-
-        } while(range<100);
+        } while(range<100); // Prevent infinite loop
 
     }
-
 
 }
 Paths.register('Paths');

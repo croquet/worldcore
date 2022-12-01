@@ -151,10 +151,6 @@ export class InstanceManager extends ViewService {
     }
 
     buildSheep() {
-        // const geometry = new THREE.BoxGeometry( 0.5, 0.5, 2 );
-        // setGeometryColor(geometry, [1, 1, 0]);
-        // geometry.translate(0,0,1);
-
         const geometry = new THREE.BoxGeometry( 1, 2, 1 );
         setGeometryColor(geometry, [1, 1, 1]);
         geometry.translate(0,0,0.5);
@@ -166,12 +162,8 @@ export class InstanceManager extends ViewService {
 
     buildPerson() {
         const geometry = new THREE.BoxGeometry( 0.5, 0.5, 2 );
-        setGeometryColor(geometry, [1, 1, 0]);
+        setGeometryColor(geometry, [1, 0, 0]);
         geometry.translate(0,0,1);
-
-        // const geometry = new THREE.BoxGeometry( 1, 2, 1 );
-        // setGeometryColor(geometry, [1, 1, 1]);
-        // geometry.translate(0,0,0.5);
 
         const mesh = this.build("person", geometry, instanceMaterial);
         mesh.receiveShadow = true;

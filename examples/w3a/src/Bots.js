@@ -180,6 +180,8 @@ export class SheepActor extends BotActor {
         this.startBehavior("BotBehavior");
         this.subscribe("edit", "goto", this.onGoto);
         this.subscribe("input", "lDown", this.destroy);
+        this.subscribe("input", "fDown", this.follow);
+        this.subscribe("input", "gDown", this.avoid);
     }
 
     get conform() {return true}
@@ -190,6 +192,20 @@ export class SheepActor extends BotActor {
         const destination = v3_add(voxel, [x,y,0]);
 
         this.startBehavior({name: "WalkToBehavior", options: {destination}})
+    }
+
+    follow() {
+        const bm = this.service("BotManager");
+        const target = bm.testAvatar;
+        console.log("Follow: " + target);
+        this.startBehavior({name: "FollowBehavior", options: {target}})
+    }
+
+    avoid() {
+        const bm = this.service("BotManager");
+        const target = bm.testAvatar;
+        console.log("Avoid: " + target);
+        this.startBehavior({name: "AvoidBehavior", options: {target}})
     }
 
 }
@@ -249,13 +265,22 @@ export class AvatarActor extends mix(PersonActor).with(AM_Avatar) {
 
     init(options) {
         super.init(options);
+        const bm = this.service("BotManager");
+        bm.testAvatar = this;
 
         this.left = this.right = 0;
         this.fore = this.back = 0;
         this.velocity = [0,0,0];
 
+        this.subscribe("input", "kDown", this.destroy);
         this.listen("avatar", this.onAvatar)
         this.future(100).moveTick(100);
+    }
+
+    destroy() {
+        super.destroy();
+        const bm = this.service("BotManager");
+        bm.testAvatar = null;
     }
 
     onAvatar(data) {
@@ -263,29 +288,13 @@ export class AvatarActor extends mix(PersonActor).with(AM_Avatar) {
         this.velocity = data.velocity;
     }
 
-
-
     moveTick(delta) {
         const yawQ = q_axisAngle([0,0,1], this.yaw);
-
-        // let rotation = yawQ;
-        // if (this.conform) {
-        //     const surfaces = this.service("Surfaces");
-        //     const normal = surfaces.normal(...this.xyz);
-        //     const front = v3_rotate([0,1,0], yawQ);
-        //     const pitch = v3_angle(front,normal) + toRad(-90);
-        //     const pitchQ = q_axisAngle([1,0,0], pitch);
-        //     rotation = q_multiply(pitchQ, yawQ);
-        // }
-        // this.set({rotation});
-        // const move = v3_scale(this.velocity, delta * 0.005);
-        const move = v3_scale(this.velocity, delta * 0.002);
+        const move = v3_scale(this.velocity, delta * 0.004);
         this.go(...v3_rotate(move, yawQ));
 
         this.future(100).moveTick(100);
     }
-
-
 
     go(x,y) {
         const voxels = this.service("Voxels");
@@ -329,7 +338,7 @@ AvatarActor.register('AvatarActor');
 //------------------------------------------------------------------------------------------
 
 
-class AvatarPawn extends mix(SheepPawn).with(PM_Avatar) {
+class AvatarPawn extends mix(PersonPawn).with(PM_Avatar) {
     constructor(actor) {
         super(actor);
 
@@ -337,7 +346,7 @@ class AvatarPawn extends mix(SheepPawn).with(PM_Avatar) {
         this.fore = this.back = 0;
         this.yaw = 0;
         // this.pitch = toRad(90);
-        this.moveSpeed = 0.1;
+        this.moveSpeed = 1;
         this.turnSpeed = 0.002;
     }
 
@@ -408,12 +417,12 @@ class AvatarPawn extends mix(SheepPawn).with(PM_Avatar) {
     doPointerDelta(e) {
         if (this.service("InputManager").inPointerLock) {
             this.yaw += (-this.turnSpeed * e.xy[0]) % TAU;
-            this.pitch += (-this.turnSpeed * e.xy[1]) % TAU;
+            // this.pitch += (-this.turnSpeed * e.xy[1]) % TAU;
             // this.pitch = Math.max(-Math.PI/2, this.pitch);
             // this.pitch = Math.min(Math.PI/2, this.pitch);
 
-            this.pitch = Math.max(0, this.pitch);
-            this.pitch = Math.min(Math.PI, this.pitch);
+            // this.pitch = Math.max(0, this.pitch);
+            // this.pitch = Math.min(Math.PI, this.pitch);
             this.updateCamera();
         };
     }

@@ -19,34 +19,34 @@ export class WorldBuilder extends ModelService {
 
         const perlin = new PerlinNoise();
 
-        // for (let x = 0; x < Constants.sizeX; x++) {
-        //     for (let y = 0; y < Constants.sizeY; y++) {
-        //         let height = 2;
-        //         height += 16 * perlin.noise2D(x * 0.05, y * 0.05);
-        //         height += 8 * perlin.noise2D(x * 0.1, y * 0.1);
-        //         height += 4 * perlin.noise2D(x * 0.2, y * 0.2);
-        //         height += 1 * perlin.noise2D(x * 0.4, y * 0.4);
-        //         height = Math.floor(1* height);
-        //         for (let z = 0; z < height; z++) {
-        //             landMatrix[x][y][z] = Constants.voxel.dirt;
-        //         }
-        //     }
-        // }
+        for (let x = 0; x < Constants.sizeX; x++) {
+            for (let y = 0; y < Constants.sizeY; y++) {
+                let height = 2;
+                height += 12 * perlin.noise2D(x * 0.05, y * 0.05);
+                height += 6 * perlin.noise2D(x * 0.1, y * 0.1);
+                height += 3 * perlin.noise2D(x * 0.2, y * 0.2);
+                height += 1 * perlin.noise2D(x * 0.4, y * 0.4);
+                height = Math.floor(1* height);
+                for (let z = 0; z < height; z++) {
+                    landMatrix[x][y][z] = Constants.voxel.dirt;
+                }
+            }
+        }
 
-        // perlin.generate();
-        // for (let x = 0; x < Constants.sizeX; x++) {
-        //     for (let y = 0; y < Constants.sizeY; y++) {
-        //         let height = 2;
-        //         height += 16 * perlin.noise2D(x * 0.05, y * 0.05);
-        //         height += 8 * perlin.noise2D(x * 0.1, y * 0.1);
-        //         height += 4 * perlin.noise2D(x * 0.2, y * 0.2);
-        //         height += 1 * perlin.noise2D(x * 0.4, y * 0.4);
-        //         height = Math.floor(0.75* height);
-        //         for (let z = 0; z < height; z++) {
-        //             landMatrix[x][y][z] = Constants.voxel.rock;
-        //         }
-        //     }
-        // }
+        perlin.generate();
+        for (let x = 0; x < Constants.sizeX; x++) {
+            for (let y = 0; y < Constants.sizeY; y++) {
+                let height = 2;
+                height += 12 * perlin.noise2D(x * 0.05, y * 0.05);
+                height += 6 * perlin.noise2D(x * 0.1, y * 0.1);
+                height += 2 * perlin.noise2D(x * 0.2, y * 0.2);
+                height += 1 * perlin.noise2D(x * 0.4, y * 0.4);
+                height = Math.floor(0.75* height);
+                for (let z = 0; z < height; z++) {
+                    landMatrix[x][y][z] = Constants.voxel.rock;
+                }
+            }
+        }
 
         for (let x = 0; x < Constants.sizeX; x++) {
             for (let y = 0; y < Constants.sizeY; y++) {

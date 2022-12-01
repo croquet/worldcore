@@ -80,11 +80,17 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
     hop() { // Move up if there's a surface to stand on
         const surfaces = this.service("Surfaces");
         const above = Voxels.adjacent(...this.voxel, [0,0,1]);
+        const below = Voxels.adjacent(...this.voxel, [0,0,-1]);
 
         const aboveWalkable = surfaces.get(packKey(...above)).isWalkable;
+        const belowWalkable = surfaces.get(packKey(...below)).isWalkable;
 
         const xyz = this.xyz;
-        if (aboveWalkable) xyz[2] += 1;
+        if (aboveWalkable) {
+            xyz[2] += 1
+        } else if (belowWalkable) {
+            xyz[2] -= 1
+        };
 
         this.xyz = xyz;
         this.ground();

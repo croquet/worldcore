@@ -159,7 +159,7 @@ class WalkToBehavior extends Behavior {
         const nextVoxel = unpackKey(this.path[this.step]);
         const x = 0.25 + this.random()*0.5;
         const y = 0.25 + this.random()*0.5;
-        this.target = v3_add(nextVoxel, [0.5, 0.5, 0]);
+        this.target = v3_add(nextVoxel, [x, y, 0]);
     }
 
     goto(target, delta) {
@@ -170,53 +170,106 @@ class WalkToBehavior extends Behavior {
             this.actor.hop();
             return true;
         }
-
-        let forward = v2_normalize(heading);
-
-
-        const pm = this.service("PropManager")
-        let prop = pm.get(this.actor.key);
-
-        // if (prop) {
-        //     const to = v2_sub(prop.xyz, this.actor.xyz);
-        //     const direction = v2_dot(to,forward);
-        //     const closest = v2_add(v2_closest(forward, to), this.actor.xyz);
-        //     const approach = v2_sub(closest, prop.xyz);
-        //     const range = v2_magnitude(approach);
-
-        //     // console.log("forward: " + forward);
-        //     // console.log("to: " + to);
-        //     // console.log("closest: " + closest);
-        //     // console.log("approach: " + approach);
-        //     // console.log("range: " + range);
-
-        //     if (direction > 0 && range > left && range<0.2) {
-        //         console.log("swerve!")
-        //         const side = v2_normalize(approach);
-        //         const strafe = v2_scale(side, 0.2);
-        //         const pass = v3_add(prop.xyz, [...strafe,0]);
-        //         heading = v2_sub(pass, this.actor.xyz);
-        //     }
-
-        // }
-
-
-        forward = v2_normalize(heading);
+        const forward = v2_normalize(heading);
         const yaw = v2_signedAngle([0,1], forward);
         const distance = Math.min(left, delta * this.speed / 1000);
         const move = v2_scale(forward, distance);
         let xyz = v3_add(this.actor.xyz, [...move,0]);
-
         this.actor.set({xyz, yaw});
         this.actor.hop();
         return false;
     }
 
 
-
-
 }
 WalkToBehavior.register("WalkToBehavior");
+
+//------------------------------------------------------------------------------------------
+//-- FollowBehavior ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class FollowBehavior extends Behavior {
+
+    get target() { return this._target};
+    get distance() { return this._distance || 1};
+
+    onStart() {
+        this.startWalk();
+    }
+
+    do() {
+        if (!this.target) return;
+        const targetMove = v3_magnitude(v3_sub(this.target.xyz, this.aim));
+        if (targetMove > this.distance) this.startWalk();
+        const remaining = v3_magnitude(v3_sub(this.target.xyz, this.actor.xyz));
+        if (remaining < this.distance) this.walk.destroy();
+    }
+
+    startWalk() {
+        if (!this.target) return;
+        if (this.walk) this.walk.destroy();
+        const destination = this.target.xyz;
+        this.aim = [...destination];
+        this.walk = this.startChild({name: "WalkToBehavior", options: {destination}});
+    }
+
+    onSucceed() {
+        console.log("arrive!");
+    }
+
+    onFail() {
+        console.log("follow blocked!");
+        this.fail();
+    }
+
+}
+FollowBehavior.register("FollowBehavior");
+
+//------------------------------------------------------------------------------------------
+//-- AvoidBehavior ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class AvoidBehavior extends Behavior {
+
+    get target() { return this._target};
+    get distance() { return this._distance || 5};
+
+    onStart() {
+        this.startWalk();
+    }
+
+    do() {
+        const away = v3_sub(this.actor.xyz, this.target.xyz);
+        const range = v3_magnitude(away);
+        if (range<this.distance) this.startWalk();
+    }
+
+    startWalk() {
+        if (!this.target) return;
+        if (this.walk) this.walk.destroy();
+
+        const away = v3_sub(this.actor.xyz, this.target.xyz);
+        const paths = this.service("Paths");
+        const aim = paths.findWay(this.actor.key, away, this.distance);
+
+        const x = 0.25 + this.random()*0.5;
+        const y = 0.25 + this.random()*0.5;
+        const destination = v3_add(unpackKey(aim), [x,y,0]);
+        // console.log(destination);
+        this.walk = this.startChild({name: "WalkToBehavior", options: {destination}});
+    }
+
+    onSucceed() {
+        console.log("phew!");
+    }
+
+    onFail() {
+        console.log("avoid blocked!");
+        this.fail();
+    }
+
+}
+AvoidBehavior.register("AvoidBehavior");
 
 //------------------------------------------------------------------------------------------
 //-- BotBehavior ---------------------------------------------------------------------------

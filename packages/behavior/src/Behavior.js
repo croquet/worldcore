@@ -79,7 +79,7 @@ export class Behavior extends Actor {
         options.parent = this;
         const b = Constants.WC_BEHAVIORS.get(name);
         if (b) {
-            this.behavior = b.create(options);
+            return b.create(options);
         } else{
             console.warn("Behavior "+ name + " not found!")
         }

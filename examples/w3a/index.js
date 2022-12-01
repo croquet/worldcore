@@ -226,9 +226,6 @@ class MyViewRoot extends ViewRoot {
 
     xTest() {
         console.log("xTest");
-        const v = v2_normalize([10,10]);
-        const p = [-3,1];
-        console.log(v2_closest(v,p));
     }
 
 
