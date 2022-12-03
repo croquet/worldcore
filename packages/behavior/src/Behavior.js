@@ -54,7 +54,7 @@ export class Behavior extends Actor {
     init(options) {
         super.init(options);
         this.onStart();
-        if (!this.doomed && this.tickRate) {
+        if (!this.doomed && this.tickRate && this.do) {
             const firstDelta = Math.random() * this.tickRate;
             this.future(firstDelta).tick(firstDelta);
         }
@@ -96,9 +96,12 @@ export class Behavior extends Actor {
     }
 
     onStart() {}
-    do(delta) {}
-    onSucceed(child, data) { this.succeed(data) };
-    onFail(child, data) { this.fail(data) };
+    // do(delta) {}
+    onSucceed(child, data) {};
+    onFail(child, data) {};
+
+    // onSucceed(child, data) { this.succeed(data) };
+    // onFail(child, data) { this.fail(data) };
 
 }
 Behavior.register('Behavior');

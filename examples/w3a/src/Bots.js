@@ -5,6 +5,7 @@ import { toWorld, packKey, Voxels, clamp} from "./Voxels";
 import * as BEHAVIORS from "./SharedBehaviors";
 import { VoxelActor } from "./VoxelActor";
 import { AM_Avatar, PM_Avatar } from "./Avatar";
+import { AM_Flockable, FlockActor } from "./Flock";
 
 //------------------------------------------------------------------------------------------
 //-- BotManager ----------------------------------------------------------------------------
@@ -45,12 +46,13 @@ export class BotManager extends ModelService {
 
     onSpawnSheep(data) {
         console.log("Spawn sheep!")
+        if (!this.flock) this.flock = FlockActor.create();
         const voxel = data.xyz
         const x = 0.5
         const y = 0.5
         // const bot = PersonActor.create({voxel, fraction:[x,y,0]});
-        const sheep = SheepActor.create({voxel, fraction:[0.5,0.5,0]});
-        // console.log(sheep.bin);
+        const sheep = SheepActor.create({voxel, fraction:[0.5,0.5,0], flock:this.flock});
+        // console.log(sheep.flock);
 
     }
 
@@ -92,7 +94,23 @@ export class BotActor extends mix(VoxelActor).with(AM_Behavioral) {
         const bm = this.service("BotManager");
         if (this.bin) this.bin.delete(this);
         bm.addToBin(this);
-        // console.log(this.bin);
+    }
+
+    closestTag(tag) {
+        const bm = this.service("BotManager");
+        const paths = this.service("Paths");
+        return paths.ping(this.key, (node, range) => {
+            const nodeKey = node.key;
+            const bin = bm.bins.get(nodeKey);
+            if (!bin || bin.size == 0) return false;
+
+            let out = 0;
+            for (const bot of bin) {
+                if (bot == this) return false;
+                if(bot.tags.has(tag)) out = bot;
+            }
+            return out;
+        })
     }
 
 
@@ -171,17 +189,18 @@ class LogPawn extends mix(Pawn).with(PM_Smoothed, PM_InstancedMesh) {
 //-- SheepActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class SheepActor extends BotActor {
+export class SheepActor extends mix(BotActor).with(AM_Flockable) {
 
     get pawn() {return SheepPawn}
 
     init(options) {
         super.init(options);
-        this.startBehavior("BotBehavior");
+        this.set({tags: ["sheep", "flock"]})
         this.subscribe("edit", "goto", this.onGoto);
         this.subscribe("input", "lDown", this.destroy);
         this.subscribe("input", "fDown", this.follow);
         this.subscribe("input", "gDown", this.avoid);
+        this.subscribe("input", "hDown", this.doFlock);
     }
 
     get conform() {return true}
@@ -206,6 +225,11 @@ export class SheepActor extends BotActor {
         const target = bm.testAvatar;
         console.log("Avoid: " + target);
         this.startBehavior({name: "AvoidBehavior", options: {target}})
+    }
+
+    doFlock() {
+        // console.log("Flock: " + this);
+        this.startBehavior({name: "FlockBehavior", options: {}})
     }
 
 }
@@ -273,6 +297,7 @@ export class AvatarActor extends mix(PersonActor).with(AM_Avatar) {
         this.velocity = [0,0,0];
 
         this.subscribe("input", "kDown", this.destroy);
+        this.subscribe("input", "/Down", this.pingTest);
         this.listen("avatar", this.onAvatar)
         this.future(100).moveTick(100);
     }
@@ -283,6 +308,12 @@ export class AvatarActor extends mix(PersonActor).with(AM_Avatar) {
         bm.testAvatar = null;
     }
 
+    pingTest() {
+        console.log("ping test");
+        const ppp = this.closestTag("sheep");
+        console.log(ppp);
+    }
+
     onAvatar(data) {
         this.yaw = data.yaw;
         this.velocity = data.velocity;
@@ -290,7 +321,7 @@ export class AvatarActor extends mix(PersonActor).with(AM_Avatar) {
 
     moveTick(delta) {
         const yawQ = q_axisAngle([0,0,1], this.yaw);
-        const move = v3_scale(this.velocity, delta * 0.004);
+        const move = v3_scale(this.velocity, delta * 0.002);
         this.go(...v3_rotate(move, yawQ));
 
         this.future(100).moveTick(100);
@@ -458,7 +489,5 @@ class AvatarPawn extends mix(PersonPawn).with(PM_Avatar) {
         render.camera.matrixWorldNeedsUpdate = true;
     }
 
-
-
-
 }
+

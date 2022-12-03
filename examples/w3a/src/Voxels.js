@@ -338,6 +338,10 @@ export class Voxels extends ModelService {
         return h;
     }
 
+    summit(x,y) {
+        return this.voxels[x][y].summit();
+    }
+
 }
 Voxels.register('Voxels');
 

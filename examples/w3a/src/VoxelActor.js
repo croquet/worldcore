@@ -96,53 +96,27 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
         this.ground();
     }
 
-    get group() {
-        return this._group;
+    get tags() {
+        return this.__tags || new Set();
     }
 
-    // groupSet(g, old) {
-    //     if (old)
-    // }
+    addTag(tag) {
+        if(!this.__tags) this.__tags = new Set();
+        this.tags.add(tag);
+    }
+
+    removeTag(tag) {
+        if(!this.tags) return;
+        this.tags.delete(tag);
+    }
+
+    tagsSet(tags) {
+        for (const tag of tags) this.addTag(tag);
+    }
 
 }
 VoxelActor.register("VoxelActor");
 
-//------------------------------------------------------------------------------------------
-//-- GroupActor ----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// Holds collections of VoxelActors (like flocks of sheep)
-
-export class GroupActor extends Actor{
-
-    init(options) {
-        super.init(options);
-        this.group = new Set();
-    }
-
-    join(member) {
-        this.group.add(member);
-    }
-
-    leave(member) {
-        this.group.delete(member);
-    }
-
-    closest(xyz) {
-        let distance = 100000;
-        const out = null;
-        this.group.forEach(member => {
-            const d = v3_sqrMag(v3_sub(member.xyz, xyz))
-            if (d>distance) return;
-            distance = d;
-            out = member;
-        })
-        return out;
-
-    }
-
-}
-GroupActor.register("GroupActor");
 
 
 

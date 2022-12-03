@@ -185,10 +185,10 @@ class WalkToBehavior extends Behavior {
 WalkToBehavior.register("WalkToBehavior");
 
 //------------------------------------------------------------------------------------------
-//-- FollowBehavior ---------------------------------------------------------------------------
+//-- ApproachBehavior ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class FollowBehavior extends Behavior {
+class ApproachBehavior extends Behavior {
 
     get target() { return this._target};
     get distance() { return this._distance || 1};
@@ -199,8 +199,6 @@ class FollowBehavior extends Behavior {
 
     do() {
         if (!this.target) return;
-        const targetMove = v3_magnitude(v3_sub(this.target.xyz, this.aim));
-        if (targetMove > this.distance) this.startWalk();
         const remaining = v3_magnitude(v3_sub(this.target.xyz, this.actor.xyz));
         if (remaining < this.distance) this.walk.destroy();
     }
@@ -209,27 +207,64 @@ class FollowBehavior extends Behavior {
         if (!this.target) return;
         if (this.walk) this.walk.destroy();
         const destination = this.target.xyz;
-        this.aim = [...destination];
+        // this.aim = [...destination];
         this.walk = this.startChild({name: "WalkToBehavior", options: {destination}});
     }
 
     onSucceed() {
-        console.log("arrive!");
+        this.succeed();
     }
 
     onFail() {
-        console.log("follow blocked!");
+        console.log("approach blocked!");
         this.fail();
+    }
+
+}
+ApproachBehavior.register("ApproachBehavior");
+
+//------------------------------------------------------------------------------------------
+//-- FollowBehavior ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class FollowBehavior extends Behavior {
+
+    get target() { return this._target};
+    get distance() { return this._distance || 1};
+
+    onStart() {
+        this.startApproach();
+    }
+
+    do() {
+        if (!this.target) return;
+        const targetMove = v3_magnitude(v3_sub(this.target.xyz, this.aim));
+        if (targetMove > this.distance) this.startApproach();
+    }
+
+    startApproach() {
+        if (!this.target) return;
+        if (this.approach) this.approach.destroy();
+        this.aim = [...this.target.xyz];
+        this.approach = this.startChild({name: "ApproachBehavior", options: {target:this.target, distance: this.distance}});
+    }
+
+    onSucceed() {
+        if (this.approach) this.approach.destroy();
+    }
+
+    onFail() {
+        console.log("follow fail!");
     }
 
 }
 FollowBehavior.register("FollowBehavior");
 
 //------------------------------------------------------------------------------------------
-//-- AvoidBehavior ---------------------------------------------------------------------------
+//-- FleeBehavior --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class AvoidBehavior extends Behavior {
+class FleeBehavior extends Behavior {
 
     get target() { return this._target};
     get distance() { return this._distance || 5};
@@ -238,38 +273,104 @@ class AvoidBehavior extends Behavior {
         this.startWalk();
     }
 
-    do() {
-        const away = v3_sub(this.actor.xyz, this.target.xyz);
-        const range = v3_magnitude(away);
-        if (range<this.distance) this.startWalk();
-    }
-
     startWalk() {
         if (!this.target) return;
         if (this.walk) this.walk.destroy();
 
         const away = v3_sub(this.actor.xyz, this.target.xyz);
+        const range = v3_magnitude(away);
+        const extra = this.distance - Math.floor(range);
+
         const paths = this.service("Paths");
-        const aim = paths.findWay(this.actor.key, away, this.distance);
+        const aim = paths.findWay(this.actor.key, away, extra);
 
         const x = 0.25 + this.random()*0.5;
         const y = 0.25 + this.random()*0.5;
         const destination = v3_add(unpackKey(aim), [x,y,0]);
-        // console.log(destination);
+
         this.walk = this.startChild({name: "WalkToBehavior", options: {destination}});
     }
 
     onSucceed() {
-        console.log("phew!");
+        // console.log("phew!");
+        this.succeed();
     }
 
     onFail() {
-        console.log("avoid blocked!");
+        console.log("flee blocked!");
         this.fail();
     }
 
 }
+FleeBehavior.register("FleeBehavior");
+
+//------------------------------------------------------------------------------------------
+//-- AvoidBehavior -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class AvoidBehavior extends Behavior {
+
+    get target() { return this._target};
+    get distance() { return this._distance || 3};
+
+    onStart() {
+        this.startFlee();
+    }
+
+    do() {
+        const away = v3_sub(this.actor.xyz, this.target.xyz);
+        const range = v3_magnitude(away);
+        if (range<this.distance) this.startFlee();
+    }
+
+    startFlee() {
+        if (!this.target) return;
+        if (this.flee) this.flee.destroy();
+        this.flee = this.startChild({name: "FleeBehavior", options: {target: this.target, distance: this.distance}});
+    }
+
+}
 AvoidBehavior.register("AvoidBehavior");
+
+//------------------------------------------------------------------------------------------
+//-- FlockBehavior -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class FlockBehavior extends Behavior {
+
+    get separation() { return this._separation || 1};
+    get alignment() { return this._alignment || 0};
+    get cohesion() { return this._cohesion || 0};
+    get tickRate() { return 10};
+
+    onStart() {
+    }
+
+    do() {
+        const center = this.actor.flock.center;
+        const neighbor = this.actor.closestTag("sheep");
+        const near = v3_magnitude(v3_sub(this.actor.xyz, neighbor.xyz));
+
+        if (near < this.separation) {
+            console.log("baa!");
+            if (this.walk) this.walk = this.walk.destroy();
+            this.walk = this.startChild({name: "FleeBehavior", options: {target: neighbor, distance: this.separation}});
+        } else {
+            const range = v3_magnitude(v3_sub(this.actor.xyz, center));
+            if (range > this.cohesion){
+                if (!this.walk) this.walk = this.startChild({name: "WalkToBehavior", options: {destination: center}});
+            } else {
+                if (this.walk) this.walk = this.walk.destroy();
+            }
+        }
+
+
+
+    }
+
+
+}
+FlockBehavior.register("FlockBehavior");
 
 //------------------------------------------------------------------------------------------
 //-- BotBehavior ---------------------------------------------------------------------------

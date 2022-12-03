@@ -62,6 +62,7 @@ export class Paths extends ModelService {
 
         if (!this.nodes.has(startKey)) return path;  // Invalid start waypoint
         if (!this.nodes.has(endKey)) return path;    // Invalid end waypoint
+        // if (startKey === endKey) return [startKey] // already at destination
 
         const endXYZ = this.get(endKey).xyz;
 
@@ -102,9 +103,9 @@ export class Paths extends ModelService {
         return path;
     }
 
-    findWay(startKey, direction, distance=5) {
+    findWay(startKey, direction, distance=1) {
         let key = startKey;
-        if (!this.nodes.has(startKey)) return startKey;  // Invalid start waypoint
+        if (!this.nodes.has(startKey) || distance <1) return startKey;  // Invalid start waypoint
         const x = direction[0];
         const y = direction[1];
         const xx = Math.abs(x) > 2*Math.abs(y);
@@ -172,6 +173,7 @@ export class Paths extends ModelService {
             range++;
             test = next;
         } while(range<100); // Prevent infinite loop
+        return null;
 
     }
 
