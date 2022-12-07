@@ -215,10 +215,10 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
         this.set({tags: ["sheep", "flock"]})
         this.subscribe("edit", "goto", this.onGoto);
         this.subscribe("input", "lDown", this.destroy);
-        // this.subscribe("input", "fDown", this.follow);
-        // this.subscribe("input", "gDown", this.avoid);
+        this.subscribe("input", "fDown", this.doFollow);
+        this.subscribe("input", "gDown", this.doAvoid);
         // this.subscribe("input", "hDown", this.doFlock);
-        // this.subscribe("input", "mDown", this.doGoto);
+        this.subscribe("input", "mDown", this.doWalk);
     }
 
     get conform() {return true}
@@ -226,29 +226,36 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
     onGoto(voxel) {
         const x = this.random();
         const y = this.random();
-        const target = v3_add(voxel, [0.5,0.5,0]);
+        const destination = v3_add(voxel, [0.5,0.5,0]);
 
-        this.startBehavior({name: "GotoBehavior", options: {target}})
+        this.startBehavior({name: "WalkToBehaviorX", options: {destination}})
         // this.startBehavior("SteerBehavior");
     }
 
-    follow() {
+    doFollow() {
         const bm = this.service("BotManager");
         const target = bm.testAvatar;
         console.log("Follow: " + target);
         this.startBehavior({name: "FollowBehavior", options: {target}})
     }
 
-    avoid() {
+    doAvoid() {
         const bm = this.service("BotManager");
         const target = bm.testAvatar;
-        console.log("Avoid: " + target);
+        // console.log("Avoid: " + target);
         this.startBehavior({name: "AvoidBehavior", options: {target}})
     }
 
     doFlock() {
         // console.log("Flock: " + this);
         this.startBehavior({name: "FlockBehavior", options: {}})
+    }
+
+    doWalk() {
+        console.log("walk");
+        this.aim = [10,20];
+        this.startBehavior({name: "WalkBehavior", options: {}})
+
     }
 
 }

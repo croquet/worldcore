@@ -86,10 +86,13 @@ export class VoxelActor extends mix(Actor).with(AM_Spatial) {
         const belowWalkable = surfaces.get(packKey(...below)).isWalkable;
 
         const xyz = this.xyz;
+        // if (aboveWalkable) {
+        //     xyz[2] += 1
+        // } else if (belowWalkable) {
+        //     xyz[2] -= 1
+        // };
         if (aboveWalkable) {
             xyz[2] += 1
-        } else if (belowWalkable) {
-            xyz[2] -= 1
         };
 
         this.xyz = xyz;
