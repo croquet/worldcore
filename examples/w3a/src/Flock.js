@@ -1,4 +1,5 @@
 import { Actor, RegisterMixin } from "@croquet/worldcore";
+import { VoxelActor } from "./VoxelActor";
 
 //------------------------------------------------------------------------------------------
 //-- Flockable -----------------------------------------------------------------------------
@@ -10,6 +11,11 @@ import { Actor, RegisterMixin } from "@croquet/worldcore";
  export const AM_Flockable = superclass => class extends superclass {
 
     get flock() { return this._flock }
+
+    init(options) {
+        super.init(options);
+        this.aim = [0,0,0];
+    }
 
     destroy() {
         super.destroy();
@@ -28,42 +34,43 @@ RegisterMixin(AM_Flockable);
 //-- FlockActor ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class FlockActor extends Actor {
+export class FlockActor extends VoxelActor {
 
     init(options) {
         super.init(options);
         console.log("new flock");
-        this.set = new Set();
+        this.flock = new Set();
         this.centerTick();
     }
 
     get size() {return this.set.size}
 
     join(member) {
-        this.set.add(member);
+        this.flock.add(member);
     }
 
     leave(member) {
-        this.set.delete(member);
+        this.flock.delete(member);
     }
 
     centerTick() {
-        // console.log("flock tick")
         if (this.doomed) return;
+
+        // if (this.flock.size>0) {
         const voxels = this.service("Voxels");
-        this.center = null;
-        const s = this.size;
+        let x = 0;
+        let y = 0;
+        let s = this.flock.size;
         if (s>0) {
-            let x = 0;
-            let y = 0;
-            for (const member of this.set) {
+            for (const member of this.flock) {
                 x += member.xyz[0];
                 y += member.xyz[1];
             }
             const z = voxels.summit(Math.floor(x/s), Math.floor(y/s));
-            this.center = [x/s,y/s,z];
+            this.xyz = [x/s,y/s,z];
         }
-        // console.log("center: " + this.center);
+
+        // }
         if (!this.doomed) this.future(100).centerTick();
     }
 

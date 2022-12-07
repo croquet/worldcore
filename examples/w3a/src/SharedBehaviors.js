@@ -1,5 +1,5 @@
 import { Constants, Behavior,  q_multiply, q_axisAngle,  q_normalize,  sphericalRandom, v3_equals, v3_floor, q_lookAt, v3_normalize, v3_sub, v3_magnitude,
-    v3_scale, v3_add, v3_rotate, v3_angle, toRad, toDeg, v2_signedAngle, v2_add, v2_sub, v2_normalize, v2_scale, v2_magnitude, v2_dot, v2_perpendicular, v2_rotate, v2_closest } from "@croquet/worldcore";
+    v3_scale, v3_add, v3_rotate, v3_angle, toRad, toDeg, v2_signedAngle, v2_add, v2_sub, v2_normalize, v2_scale, v2_magnitude, v2_dot, v2_perpendicular, v2_rotate, v2_closest, v2_lerp } from "@croquet/worldcore";
 import { packKey, unpackKey, Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
@@ -185,6 +185,60 @@ class WalkToBehavior extends Behavior {
 WalkToBehavior.register("WalkToBehavior");
 
 //------------------------------------------------------------------------------------------
+//-- WalkBehavior --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Walks in a straight line along current facing until blocked
+
+class WalkBehavior extends Behavior {
+
+    get tickRate() { return this._tickRate || 20} // More than 15ms for smooth movement
+    get yaw() {return this.actor.yaw || 0 }
+    get speed() {return this.actor.speed || 3 }
+
+    do(delta) {
+        // console.log("yaw " + toDeg(this.yaw));
+        const voxels = this.service("Voxels");
+
+        const forward = v2_rotate([0,1], this.yaw);
+        const distance = delta * this.speed / 1000;
+        const x = forward[0] * distance;
+        const y = forward[1] * distance;
+
+        const level = v3_floor(v3_add(this.actor.xyz,[x,y,0]));
+        const above = v3_floor(v3_add(this.actor.xyz,[x,y,1]));
+        const below = v3_floor(v3_add(this.actor.xyz,[x,y,-1]));
+
+        const levelIsEmpty = voxels.get(...level) < 2;
+        const aboveIsEmpty = voxels.get(...above) < 2;
+        const belowIsEmpty = voxels.get(...below) < 2;
+
+        if (!Voxels.canEdit(...level)) {
+            console.log("Edge Blocked!");
+            this.fail();
+            return;
+        }
+
+        let z = 0;
+        if (levelIsEmpty) {
+            if (belowIsEmpty) z = -1;
+        } else {
+            if (aboveIsEmpty) {
+                z = 1;
+            } else {
+                console.log("Blocked!");
+                return;
+            }
+        }
+
+        this.actor.xyz = v3_add(this.actor.xyz, [x,y,z]);
+        this.actor.hop();
+    }
+
+}
+WalkBehavior.register("WalkBehavior");
+
+//------------------------------------------------------------------------------------------
 //-- ApproachBehavior ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -333,37 +387,197 @@ class AvoidBehavior extends Behavior {
 AvoidBehavior.register("AvoidBehavior");
 
 //------------------------------------------------------------------------------------------
+//-- GotoBehavior --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Moves toward a target point.
+
+class GotoBehavior extends Behavior {
+
+    get tickRate() { return this._tickRate || 20} // More than 15ms for smooth movement
+
+    get target() {return this._target || [0,0] }
+    set target(target) { this.set({target})}
+
+    targetSet(t) {
+        this.aim = v2_sub(t, this.actor.xyz);
+    }
+
+    do(delta) {
+        const voxels = this.service("Voxels");
+        const newAim = v2_sub(this.target, this.actor.xyz);
+        this.aim = v2_lerp(this.aim, newAim, 0.9);
+
+        const forward = v2_normalize(this.aim);
+        const yaw = v2_signedAngle([0,1], forward);
+
+        const distance = delta / 1000;
+        const x = this.aim[0] * distance;
+        const y = this.aim[1] * distance;
+
+        const level = v3_floor(v3_add(this.actor.xyz,[x,y,0]));
+        const above = v3_floor(v3_add(this.actor.xyz,[x,y,1]));
+        const below = v3_floor(v3_add(this.actor.xyz,[x,y,-1]));
+
+        const levelIsEmpty = voxels.get(...level) < 2;
+        const aboveIsEmpty = voxels.get(...above) < 2;
+        const belowIsEmpty = voxels.get(...below) < 2;
+
+        if (!Voxels.canEdit(...level)) {
+            console.log("Edge Blocked!");
+            this.fail();
+            return;
+        }
+
+        let z = 0;
+        if (levelIsEmpty) {
+            if (belowIsEmpty) z = -1;
+        } else {
+            if (aboveIsEmpty) {
+                z = 1;
+            } else {
+                console.log("Blocked!");
+                this.fail();
+                return;
+            }
+        }
+
+        const xyz = v3_add(this.actor.xyz, [x,y,z])
+        this.actor.set({xyz,yaw});
+        this.actor.hop();
+
+        const to = v2_sub(this.target, xyz);
+        const left = v2_magnitude(to)
+        if (left<0.1) {
+            console.log("arrived!");
+            this.actor.set({xyz:this.target});
+            this.actor.hop();
+            this.succeed();
+        }
+
+
+
+    }
+
+}
+GotoBehavior.register("GotoBehavior");
+
+//------------------------------------------------------------------------------------------
+//-- WalkToBehavior ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Don't do a sub-behavior
+
+class WalkToBehaviorX extends Behavior {
+
+    get destination() {return this._destination}
+
+    onStart() {
+        const paths = this.service("Paths");
+        const endKey = packKey(...v3_floor(this.destination));
+        this.path = paths.findPath(this.actor.key, endKey);
+
+        if (this.path.length === 0) { // No path to destination
+            console.log("no path!")
+            this.fail();
+        }
+
+        this.target =  this.destination
+
+        this.step = 0;
+        if (this.path.length > 1) this.nextStep();
+
+        this.goto = this.startChild({name: "GotoBehavior", options:{target: this.target}});
+    }
+
+    do() {
+        if (this.actor.key === this.path[this.step] ) this.step++;
+        if (this.step < this.path.length) {
+            this.nextStep();
+        } else {
+            this.goto.target = this.destination;
+        }
+    }
+
+    nextStep() {
+        this.step ++;
+        const nextVoxel = unpackKey(this.path[this.step]);
+        this.target = v3_add(nextVoxel, [0.5, 0.5, 0]);
+    }
+
+    onSucceed(waypoint)
+
+
+}
+WalkToBehaviorX.register("WalkToBehaviorX");
+
+//------------------------------------------------------------------------------------------
 //-- FlockBehavior -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class FlockBehavior extends Behavior {
 
-    get separation() { return this._separation || 1};
-    get alignment() { return this._alignment || 0};
-    get cohesion() { return this._cohesion || 0};
-    get tickRate() { return 10};
+    get range() { return this._range || 10};
+    get separation() { return this._separation || 10};
+    get alignment() { return this._alignment || 0.99};
+    get cohesion() { return this._cohesion || 30};
+    get tickRate() { return 20};
 
     onStart() {
+        this.walk = this.startChild("SteerBehavior");
     }
 
     do() {
-        const center = this.actor.flock.center;
-        const neighbor = this.actor.closestTag("sheep");
-        const near = v3_magnitude(v3_sub(this.actor.xyz, neighbor.xyz));
+        const neighbors = this.actor.neighbors(this.range,"sheep");
 
-        if (near < this.separation) {
-            console.log("baa!");
-            if (this.walk) this.walk = this.walk.destroy();
-            this.walk = this.startChild({name: "FleeBehavior", options: {target: neighbor, distance: this.separation}});
-        } else {
-            const range = v3_magnitude(v3_sub(this.actor.xyz, center));
-            if (range > this.cohesion){
-                if (!this.walk) this.walk = this.startChild({name: "WalkToBehavior", options: {destination: center}});
-            } else {
-                if (this.walk) this.walk = this.walk.destroy();
+        let dx = 0;
+        let dy = 0;
+
+        const toCenter = v2_sub(this.actor.flock.xyz, this.actor.xyz);
+
+        dx += toCenter[0] * this.cohesion;
+        dy += toCenter[1] * this.cohesion;
+
+        //---------------------------
+
+        let mx = 0;
+        let my = 0;
+
+        for( const bot of neighbors) {
+            const fromBot = v2_sub(this.actor.xyz, bot.xyz);
+            const range = v2_magnitude(fromBot);
+            if (range<5) {
+                mx += fromBot[0];
+                my += fromBot[1];
             }
         }
 
+        dx += mx * this.separation;
+        dy += my * this.separation;
+
+        //---------------------------
+
+        let ax = 0;
+        let ay = 0;
+        let s = 1;
+
+        for( const bot of neighbors) {
+            ax += bot.aim[0];
+            ay += bot.aim[1];
+            s++;
+        }
+
+        ax = ax/s ;
+        ay = ay/s;
+
+        dx += (ax-dx) * this.alignment;
+        dy += (ay-dy) * this.alignment;
+
+        //---------------------------
+
+        const aim = [dx, dy, 0];
+
+        this.actor.aim = aim;
 
 
     }

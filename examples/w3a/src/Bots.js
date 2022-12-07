@@ -1,5 +1,5 @@
 import { ModelService, Constants, Actor, Pawn, mix, PM_Smoothed, AM_Behavioral, PM_InstancedMesh, SequenceBehavior, v3_add, v2_multiply, v3_floor,
-    v3_rotate, q_axisAngle, v3_normalize, v3_magnitude, v3_scale, toDeg, toRad, q_multiply, q_identity, v3_angle, TAU, m4_scaleRotationTranslation } from "@croquet/worldcore";
+    v3_rotate, q_axisAngle, v3_normalize, v3_magnitude, v3_scale, toDeg, toRad, q_multiply, q_identity, v3_angle, TAU, m4_scaleRotationTranslation, v3_sub } from "@croquet/worldcore";
 
 import { toWorld, packKey, Voxels, clamp} from "./Voxels";
 import * as BEHAVIORS from "./SharedBehaviors";
@@ -46,7 +46,7 @@ export class BotManager extends ModelService {
 
     onSpawnSheep(data) {
         console.log("Spawn sheep!")
-        if (!this.flock) this.flock = FlockActor.create();
+        // if (!this.flock) this.flock = FlockActor.create();
         const voxel = data.xyz
         const x = 0.5
         const y = 0.5
@@ -111,6 +111,23 @@ export class BotActor extends mix(VoxelActor).with(AM_Behavioral) {
             }
             return out;
         })
+    }
+
+    neighbors(radius, tag) {
+        const bm = this.service("BotManager");
+        const paths = this.service("Paths");
+        const out = [];
+        paths.ping(this.key, (node, range) => {
+            if (range>radius) return true;
+            const nodeKey = node.key;
+            const bin = bm.bins.get(nodeKey);
+            if (!bin || bin.size == 0) return false;
+            for (const bot of bin) {
+                if (bot == this) continue;
+                if (bot.tags.has(tag)) out.push(bot)
+            }
+        })
+        return out;
     }
 
 
@@ -198,9 +215,10 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
         this.set({tags: ["sheep", "flock"]})
         this.subscribe("edit", "goto", this.onGoto);
         this.subscribe("input", "lDown", this.destroy);
-        this.subscribe("input", "fDown", this.follow);
-        this.subscribe("input", "gDown", this.avoid);
-        this.subscribe("input", "hDown", this.doFlock);
+        // this.subscribe("input", "fDown", this.follow);
+        // this.subscribe("input", "gDown", this.avoid);
+        // this.subscribe("input", "hDown", this.doFlock);
+        // this.subscribe("input", "mDown", this.doGoto);
     }
 
     get conform() {return true}
@@ -208,9 +226,10 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
     onGoto(voxel) {
         const x = this.random();
         const y = this.random();
-        const destination = v3_add(voxel, [x,y,0]);
+        const target = v3_add(voxel, [0.5,0.5,0]);
 
-        this.startBehavior({name: "WalkToBehavior", options: {destination}})
+        this.startBehavior({name: "GotoBehavior", options: {target}})
+        // this.startBehavior("SteerBehavior");
     }
 
     follow() {
@@ -310,7 +329,7 @@ export class AvatarActor extends mix(PersonActor).with(AM_Avatar) {
 
     pingTest() {
         console.log("ping test");
-        const ppp = this.closestTag("sheep");
+        const ppp = this.neighbors(5,"sheep");
         console.log(ppp);
     }
 
