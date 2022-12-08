@@ -16,7 +16,7 @@ import { AM_Flockable, FlockActor } from "./Flock";
 export class BotManager extends ModelService {
     init() {
         super.init("BotManager");
-        console.log("Bot Manager");
+        console.log("Bot Manager!");
         this.bots = new Set();
         this.bins = new Map();
         this.subscribe("edit", "spawnSheep", this.onSpawnSheep);
@@ -46,18 +46,17 @@ export class BotManager extends ModelService {
 
     onSpawnSheep(data) {
         console.log("Spawn sheep!")
-        // if (!this.flock) this.flock = FlockActor.create();
+        if (!this.flock) this.flock = FlockActor.create();
         const voxel = data.xyz
         const x = 0.5
         const y = 0.5
-        // const bot = PersonActor.create({voxel, fraction:[x,y,0]});
-        const sheep = SheepActor.create({voxel, fraction:[0.5,0.5,0], flock:this.flock});
-        // console.log(sheep.flock);
-
+        for (let i = 0; i<10; i++) {
+            const sheep = SheepActor.create({voxel, fraction:[0.5,0.5,0], flock:this.flock});
+        }
     }
 
     onSpawnAvatar(data) {
-        console.log("Spawn avatar!")
+        console.log("Spawn avatar!!")
         console.log(data.driverId);
         const voxel = data.xyz
         const x = 0.5
@@ -217,8 +216,9 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
         this.subscribe("input", "lDown", this.destroy);
         this.subscribe("input", "fDown", this.doFollow);
         this.subscribe("input", "gDown", this.doAvoid);
-        // this.subscribe("input", "hDown", this.doFlock);
+        this.subscribe("input", "hDown", this.doFlock);
         this.subscribe("input", "mDown", this.doWalk);
+        this.subscribe("input", "jDown", this.doBot);
     }
 
     get conform() {return true}
@@ -228,8 +228,7 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
         const y = this.random();
         const destination = v3_add(voxel, [0.5,0.5,0]);
 
-        this.startBehavior({name: "WalkToBehaviorX", options: {destination}})
-        // this.startBehavior("SteerBehavior");
+        this.startBehavior({name: "WalkToBehavior", options: {destination}})
     }
 
     doFollow() {
@@ -247,7 +246,7 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
     }
 
     doFlock() {
-        // console.log("Flock: " + this);
+        console.log("flock");
         this.startBehavior({name: "FlockBehavior", options: {}})
     }
 
@@ -255,7 +254,14 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
         console.log("walk");
         this.aim = [10,20];
         this.startBehavior({name: "WalkBehavior", options: {}})
+    }
 
+    doBot() {
+        console.log("bot");
+        const bm = this.service("BotManager");
+        const target = bm.testAvatar;
+        this.aim = [10,20];
+        this.startBehavior({name: "BotBehavior", options: {target}})
     }
 
 }
@@ -287,7 +293,7 @@ export class PersonActor extends BotActor {
         console.log("new person!");
         console.log(options);
         console.log(this._driverId);
-        this.startBehavior("BotBehavior");
+        // this.startBehavior("BotBehavior");
     }
 }
 PersonActor.register("PersonActor");

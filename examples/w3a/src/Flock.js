@@ -71,7 +71,7 @@ export class FlockActor extends VoxelActor {
         }
 
         // }
-        if (!this.doomed) this.future(100).centerTick();
+        if (!this.doomed) this.future(2000).centerTick();
     }
 
 }

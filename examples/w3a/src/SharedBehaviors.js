@@ -123,270 +123,6 @@ class GroundTestBehavior extends Behavior {
 GroundTestBehavior.register("GroundTestBehavior");
 
 //------------------------------------------------------------------------------------------
-//-- WalkToBehavior --------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// class WalkToBehavior extends Behavior {
-
-//     onStart() {
-//         const paths = this.service("Paths");
-//         const endKey = packKey(...v3_floor(this.destination));
-//         this.step = 1;
-//         this.path = paths.findPath(this.actor.key, endKey);
-//         if (this.path.length === 0) { // No path to destination
-//             console.log("no path!")
-//             this.fail();
-//         }
-//         this.nextStep();
-//     }
-
-//     get tickRate() { return this._tickRate || 20} // More than 15ms for smooth movement
-//     get destination() {return this._destination}
-//     get speed() {return this._speed || 3 } // m/s
-
-//     do(delta) {
-//         if (this.step < this.path.length) {
-//             if (this.goto(this.target, delta)) {
-//                 this.step++;
-//                 this.nextStep();
-//             }
-//         } else { // final voxel;
-//             if(this.goto(this.destination, delta)) this.succeed();
-//         }
-//     }
-
-//     nextStep() {
-//         const nextVoxel = unpackKey(this.path[this.step]);
-//         const x = 0.25 + this.random()*0.5;
-//         const y = 0.25 + this.random()*0.5;
-//         this.target = v3_add(nextVoxel, [x, y, 0]);
-//     }
-
-//     goto(target, delta) {
-//         let heading = v2_sub(target, this.actor.xyz);
-//         const left = v2_magnitude(heading);
-//         if (left<0.0001) {
-//             this.actor.set({xyz:target});
-//             this.actor.hop();
-//             return true;
-//         }
-//         const forward = v2_normalize(heading);
-//         const yaw = v2_signedAngle([0,1], forward);
-//         const distance = Math.min(left, delta * this.speed / 1000);
-//         const move = v2_scale(forward, distance);
-//         let xyz = v3_add(this.actor.xyz, [...move,0]);
-//         this.actor.set({xyz, yaw});
-//         this.actor.hop();
-//         return false;
-//     }
-
-
-// }
-// WalkToBehavior.register("WalkToBehavior");
-
-//------------------------------------------------------------------------------------------
-//-- WalkBehavior --------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// Walks in a straight line along current facing until blocked
-
-// class WalkBehavior extends Behavior {
-
-//     get tickRate() { return this._tickRate || 20} // More than 15ms for smooth movement
-//     get yaw() {return this.actor.yaw || 0 }
-//     get speed() {return this.actor.speed || 3 }
-
-//     do(delta) {
-//         // console.log("yaw " + toDeg(this.yaw));
-//         const voxels = this.service("Voxels");
-
-//         const forward = v2_rotate([0,1], this.yaw);
-//         const distance = delta * this.speed / 1000;
-//         const x = forward[0] * distance;
-//         const y = forward[1] * distance;
-
-//         const level = v3_floor(v3_add(this.actor.xyz,[x,y,0]));
-//         const above = v3_floor(v3_add(this.actor.xyz,[x,y,1]));
-//         const below = v3_floor(v3_add(this.actor.xyz,[x,y,-1]));
-
-//         const levelIsEmpty = voxels.get(...level) < 2;
-//         const aboveIsEmpty = voxels.get(...above) < 2;
-//         const belowIsEmpty = voxels.get(...below) < 2;
-
-//         if (!Voxels.canEdit(...level)) {
-//             console.log("Edge Blocked!");
-//             this.fail();
-//             return;
-//         }
-
-//         let z = 0;
-//         if (levelIsEmpty) {
-//             if (belowIsEmpty) z = -1;
-//         } else {
-//             if (aboveIsEmpty) {
-//                 z = 1;
-//             } else {
-//                 console.log("Blocked!");
-//                 return;
-//             }
-//         }
-
-//         this.actor.xyz = v3_add(this.actor.xyz, [x,y,z]);
-//         this.actor.hop();
-//     }
-
-// }
-// WalkBehavior.register("WalkBehavior");
-
-//------------------------------------------------------------------------------------------
-//-- ApproachBehavior ----------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// class ApproachBehavior extends Behavior {
-
-//     get target() { return this._target};
-//     get distance() { return this._distance || 1};
-
-//     onStart() {
-//         this.startWalk();
-//     }
-
-//     do() {
-//         if (!this.target) return;
-//         const remaining = v3_magnitude(v3_sub(this.target.xyz, this.actor.xyz));
-//         if (remaining < this.distance) this.walk.destroy();
-//     }
-
-//     startWalk() {
-//         if (!this.target) return;
-//         if (this.walk) this.walk.destroy();
-//         const destination = this.target.xyz;
-//         // this.aim = [...destination];
-//         this.walk = this.startChild({name: "WalkToBehavior", options: {destination}});
-//     }
-
-//     onSucceed() {
-//         this.succeed();
-//     }
-
-//     onFail() {
-//         console.log("approach blocked!");
-//         this.fail();
-//     }
-
-// }
-// ApproachBehavior.register("ApproachBehavior");
-
-// //------------------------------------------------------------------------------------------
-// //-- FollowBehavior ------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
-
-// class FollowBehavior extends Behavior {
-
-//     get target() { return this._target};
-//     get distance() { return this._distance || 1};
-
-//     onStart() {
-//         this.startApproach();
-//     }
-
-//     do() {
-//         if (!this.target) return;
-//         const targetMove = v3_magnitude(v3_sub(this.target.xyz, this.aim));
-//         if (targetMove > this.distance) this.startApproach();
-//     }
-
-//     startApproach() {
-//         if (!this.target) return;
-//         if (this.approach) this.approach.destroy();
-//         this.aim = [...this.target.xyz];
-//         this.approach = this.startChild({name: "ApproachBehavior", options: {target:this.target, distance: this.distance}});
-//     }
-
-//     onSucceed() {
-//         if (this.approach) this.approach.destroy();
-//     }
-
-//     onFail() {
-//         console.log("follow fail!");
-//     }
-
-// }
-// FollowBehavior.register("FollowBehavior");
-
-//------------------------------------------------------------------------------------------
-//-- FleeBehavior --------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// class FleeBehavior extends Behavior {
-
-//     get target() { return this._target};
-//     get distance() { return this._distance || 5};
-
-//     onStart() {
-//         this.startWalk();
-//     }
-
-//     startWalk() {
-//         if (!this.target) return;
-//         if (this.walk) this.walk.destroy();
-
-//         const away = v3_sub(this.actor.xyz, this.target.xyz);
-//         const range = v3_magnitude(away);
-//         const extra = this.distance - Math.floor(range);
-
-//         const paths = this.service("Paths");
-//         const aim = paths.findWay(this.actor.key, away, extra);
-
-//         const x = 0.25 + this.random()*0.5;
-//         const y = 0.25 + this.random()*0.5;
-//         const destination = v3_add(unpackKey(aim), [x,y,0]);
-
-//         this.walk = this.startChild({name: "WalkToBehavior", options: {destination}});
-//     }
-
-//     onSucceed() {
-//         // console.log("phew!");
-//         this.succeed();
-//     }
-
-//     onFail() {
-//         console.log("flee blocked!");
-//         this.fail();
-//     }
-
-// }
-// FleeBehavior.register("FleeBehavior");
-
-//------------------------------------------------------------------------------------------
-//-- AvoidBehavior -------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// class AvoidBehavior extends Behavior {
-
-//     get target() { return this._target};
-//     get distance() { return this._distance || 3};
-
-//     onStart() {
-//         this.startFlee();
-//     }
-
-//     do() {
-//         const away = v3_sub(this.actor.xyz, this.target.xyz);
-//         const range = v3_magnitude(away);
-//         if (range<this.distance) this.startFlee();
-//     }
-
-//     startFlee() {
-//         if (!this.target) return;
-//         if (this.flee) this.flee.destroy();
-//         this.flee = this.startChild({name: "FleeBehavior", options: {target: this.target, distance: this.distance}});
-//     }
-
-// }
-// AvoidBehavior.register("AvoidBehavior");
-
-//------------------------------------------------------------------------------------------
 //-- WalkBehavior --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -397,7 +133,7 @@ class WalkBehavior extends Behavior {
     get tickRate() { return this._tickRate || 20} // More than 15ms for smooth movement
 
     get aim() {return this.actor.aim || [0,0] }
-    get maxSpeed() {return this._maxSpeed || 3 } // m/s
+    get maxSpeed() {return this._maxSpeed || 4 } // m/s
 
 
     do(delta) {
@@ -405,7 +141,7 @@ class WalkBehavior extends Behavior {
 
         const forward = v2_normalize(this.aim);
         const yaw = v2_signedAngle([0,1], forward);
-        const mag = v2_magnitude(this.aim);
+        const mag = v2_magnitude(this.aim)*3;
         if (mag === 0) return;
 
         const distance = Math.min(this.maxSpeed, mag) * delta / 1000;
@@ -452,9 +188,10 @@ WalkBehavior.register("WalkBehavior");
 //-- WalkToBehavior ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class WalkToBehaviorX extends Behavior {
+class WalkToBehavior extends Behavior {
 
     get destination() {return this._destination}
+    get tickRate() { return this._tickRate || 10}
 
     onStart() {
         const paths = this.service("Paths");
@@ -493,6 +230,7 @@ class WalkToBehaviorX extends Behavior {
 
         const to = v2_sub(this.destination, this.actor.xyz);
         const left = v2_magnitude(to)
+        // console.log(left);
         if (left<0.1) {
             console.log("arrived!");
             this.actor.set({xyz:this.destination});
@@ -503,7 +241,7 @@ class WalkToBehaviorX extends Behavior {
 
 
 }
-WalkToBehaviorX.register("WalkToBehaviorX");
+WalkToBehavior.register("WalkToBehavior");
 
 //------------------------------------------------------------------------------------------
 //-- FollowBehavior ------------------------------------------------------------------------
@@ -579,18 +317,18 @@ AvoidBehavior.register("AvoidBehavior");
 
 class FlockBehavior extends Behavior {
 
-    get range() { return this._range || 10};
-    get separation() { return this._separation || 10};
-    get alignment() { return this._alignment || 0.99};
-    get cohesion() { return this._cohesion || 30};
-    get tickRate() { return 20};
+    // get range() { return this._range || 0.3};
+    get separation() { return this._separation || 5};
+    get alignment() { return this._alignment || 0.9};
+    get cohesion() { return this._cohesion || 1};
+    get tickRate() { return 500};
 
     onStart() {
-        this.walk = this.startChild("SteerBehavior");
+    this.walk = this.startChild({name: "WalkBehavior", options: {tickRate: 100}});
     }
 
     do() {
-        const neighbors = this.actor.neighbors(this.range,"sheep");
+        const neighbors = this.actor.neighbors(3,"sheep");
 
         let dx = 0;
         let dy = 0;
@@ -608,9 +346,9 @@ class FlockBehavior extends Behavior {
         for( const bot of neighbors) {
             const fromBot = v2_sub(this.actor.xyz, bot.xyz);
             const range = v2_magnitude(fromBot);
-            if (range<5) {
-                mx += fromBot[0];
-                my += fromBot[1];
+            if (range<1) {
+                mx += fromBot[0] + this.random()*2 - 1;
+                my += fromBot[1] + this.random()*2 - 1;
             }
         }
 
@@ -621,25 +359,40 @@ class FlockBehavior extends Behavior {
 
         let ax = 0;
         let ay = 0;
-        let s = 1;
+        let s = 0;
 
         for( const bot of neighbors) {
-            ax += bot.aim[0];
-            ay += bot.aim[1];
-            s++;
+            const fromBot = v2_sub(this.actor.xyz, bot.xyz);
+            const range = v2_magnitude(fromBot);
+            if (range<2) {
+                ax += bot.aim[0];
+                ay += bot.aim[1];
+                s++;
+            }
         }
 
-        ax = ax/s ;
-        ay = ay/s;
+        if(s>0) {
+            ax = ax/s ;
+            ay = ay/s;
 
-        dx += (ax-dx) * this.alignment;
-        dy += (ay-dy) * this.alignment;
+            dx += (ax-dx) * this.alignment;
+            dy += (ay-dy) * this.alignment;
+        }
 
         //---------------------------
 
-        const aim = [dx, dy, 0];
+        const vx = this.actor.voxel[0]
+        const vy = this.actor.voxel[1]
 
-        this.actor.aim = aim;
+        if (vx <= 2) dx = 5;
+        if (vy <= 2) dy = 5;
+
+        if (vx >= Constants.sizeX-2) dx = -5;
+        if (vy >= Constants.sizeY-2) dy = -5;
+
+        const aim = [dx, dy];
+
+        this.actor.aim = v2_lerp(this.actor.aim, aim, 0.01);
 
 
     }
@@ -654,8 +407,12 @@ FlockBehavior.register("FlockBehavior");
 
 class BotBehavior extends Behavior {
 
+    get target() { return this._target};
+
     onStart() {
-        this.startChild("GroundTestBehavior");
+        this.startChild("FlockBehavior");
+        this.startChild({name:"AvoidBehavior", options: {target: this.target}});
+        this.startChild("WalkBehavior");
     }
 
 }
