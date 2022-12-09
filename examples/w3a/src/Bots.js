@@ -1,5 +1,5 @@
 import { ModelService, Constants, Actor, Pawn, mix, PM_Smoothed, AM_Behavioral, PM_InstancedMesh, SequenceBehavior, v3_add, v2_multiply, v3_floor,
-    v3_rotate, q_axisAngle, v3_normalize, v3_magnitude, v3_scale, toDeg, toRad, q_multiply, q_identity, v3_angle, TAU, m4_scaleRotationTranslation, v3_sub } from "@croquet/worldcore";
+    v3_rotate, q_axisAngle, v3_normalize, v3_magnitude, v3_scale, toDeg, toRad, q_multiply, q_identity, v3_angle, TAU, m4_scaleRotationTranslation, v3_sub, v2_sub, Behavior, v2_magnitude, v2_distance } from "@croquet/worldcore";
 
 import { toWorld, packKey, Voxels, clamp} from "./Voxels";
 import * as BEHAVIORS from "./SharedBehaviors";
@@ -50,7 +50,7 @@ export class BotManager extends ModelService {
         const voxel = data.xyz
         const x = 0.5
         const y = 0.5
-        for (let i = 0; i<10; i++) {
+        for (let i = 0; i<1; i++) {
             const sheep = SheepActor.create({voxel, fraction:[0.5,0.5,0], flock:this.flock});
         }
     }
@@ -95,22 +95,23 @@ export class BotActor extends mix(VoxelActor).with(AM_Behavioral) {
         bm.addToBin(this);
     }
 
-    closestTag(tag) {
-        const bm = this.service("BotManager");
-        const paths = this.service("Paths");
-        return paths.ping(this.key, (node, range) => {
-            const nodeKey = node.key;
-            const bin = bm.bins.get(nodeKey);
-            if (!bin || bin.size == 0) return false;
+    // closestTag(radius,tag) {
+    //     const bm = this.service("BotManager");
+    //     const paths = this.service("Paths");
+    //     return paths.ping(this.key, (node, range) => {
+    //         const nodeKey = node.key;
+    //         const bin = bm.bins.get(nodeKey);
+    //         if (!bin || bin.size == 0) return false;
 
-            let out = 0;
-            for (const bot of bin) {
-                if (bot == this) return false;
-                if(bot.tags.has(tag)) out = bot;
-            }
-            return out;
-        })
-    }
+    //         let out = 0;
+    //         for (const bot of bin) {
+    //             if (bot == this) return false;
+    //             if(bot.tags.has(tag)) out = bot;
+    //         }
+    //         return out;
+
+    //     });
+    // }
 
     neighbors(radius, tag) {
         const bm = this.service("BotManager");
@@ -125,8 +126,23 @@ export class BotActor extends mix(VoxelActor).with(AM_Behavioral) {
                 if (bot == this) continue;
                 if (bot.tags.has(tag)) out.push(bot)
             }
-        })
+        });
         return out;
+    }
+
+    close(radius,tag) {
+        const neighbors = this.neighbors(radius, tag);
+        return neighbors.sort((a,b) => {
+            const aDistance = v2_distance(this.xyz, a.xyz);
+            const bDistance = v2_distance(this.xyz, b.xyz);
+            return aDistance-bDistance;
+        });
+    }
+
+    closest(radius,tag) {
+        const a = this.close(radius, tag);
+        if (a.length>0) return a[0];
+        return null;
     }
 
 
@@ -217,8 +233,8 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
         this.subscribe("input", "fDown", this.doFollow);
         this.subscribe("input", "gDown", this.doAvoid);
         this.subscribe("input", "hDown", this.doFlock);
-        this.subscribe("input", "mDown", this.doWalk);
-        this.subscribe("input", "jDown", this.doBot);
+        this.subscribe("input", "mDown", this.doPing);
+        // this.subscribe("input", "jDown", this.doBot);
     }
 
     get conform() {return true}
@@ -228,32 +244,43 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
         const y = this.random();
         const destination = v3_add(voxel, [0.5,0.5,0]);
 
-        this.startBehavior({name: "WalkToBehavior", options: {destination}})
+        this.behavior.start({name: "WalkToBehavior", options: {destination}})
     }
 
     doFollow() {
         const bm = this.service("BotManager");
         const target = bm.testAvatar;
-        console.log("Follow: " + target);
-        this.startBehavior({name: "FollowBehavior", options: {target}})
+        if (!target) return;
+        if (this.follow) {
+            console.log("stop follow");
+            this.follow = null;
+            this.behavior.kill("FollowBehavior");
+        } else {
+            console.log("follow");
+            this.follow = this.behavior.start({name: "FollowBehavior", options: {target}})
+        }
     }
 
     doAvoid() {
-        const bm = this.service("BotManager");
-        const target = bm.testAvatar;
-        // console.log("Avoid: " + target);
-        this.startBehavior({name: "AvoidBehavior", options: {target}})
+        if (this.avoid) {
+            console.log("stop avoid");
+            this.avoid = null;
+            this.behavior.kill("AvoidBehavior");
+        } else {
+            console.log("avoid");
+            this.avoid = this.behavior.start({name: "AvoidBehavior", options: {}})
+        }
     }
 
     doFlock() {
         console.log("flock");
-        this.startBehavior({name: "FlockBehavior", options: {}})
+        this.xxx = this.behavior.start({name: "FlockBehavior", options: {}})
+        // this.startBehavior({name: "FlockBehavior", options: {}})
     }
 
-    doWalk() {
-        console.log("walk");
-        this.aim = [10,20];
-        this.startBehavior({name: "WalkBehavior", options: {}})
+    doPing() {
+        console.log("ping");
+        console.log(this.closest(5, "sheep"));
     }
 
     doBot() {
@@ -290,10 +317,8 @@ export class PersonActor extends BotActor {
 
     init(options) {
         super.init(options);
-        console.log("new person!");
-        console.log(options);
-        console.log(this._driverId);
-        // this.startBehavior("BotBehavior");
+        this.set({tags: ["threat","bait"]})
+        console.log(this.tags);
     }
 }
 PersonActor.register("PersonActor");
@@ -342,8 +367,11 @@ export class AvatarActor extends mix(PersonActor).with(AM_Avatar) {
 
     pingTest() {
         console.log("ping test");
-        const ppp = this.neighbors(5,"sheep");
-        console.log(ppp);
+        const ppp = this.close(5, "sheep");
+        ppp.forEach( s => {
+            console.log(s.xyz);
+        });
+        console.log(this.closest(5, "sheep"));
     }
 
     onAvatar(data) {

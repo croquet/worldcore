@@ -13,28 +13,32 @@ Constants.WC_BEHAVIORS = new Map();
 
  export const AM_Behavioral = superclass => class extends superclass {
 
-    // init(...args) {
-    //     super.init(...args);
-    //     // this.listen("setBehaviorCode", this.setBehaviorCode);
-    // }
+    init(options) {
+        super.init(options);
+        this.behavior = Behavior.create({actor: this});
+    }
 
     destroy() {
         super.destroy();
         if (this.behavior) this.behavior.destroy();
     }
 
+    // startBehavior(behavior) {
+    //     if (!behavior) return;
+    //     if (this.behavior) this.behavior.destroy();
+    //     const name = behavior.name || behavior;
+    //     const options = behavior.options || {};
+    //     options.actor = this;
+    //     const b = Constants.WC_BEHAVIORS.get(name);
+    //     if (b) {
+    //         this.behavior = b.create(options);
+    //     } else{
+    //         console.warn("Behavior "+ name + " not found!")
+    //     }
+    // }
+
     startBehavior(behavior) {
-        if (!behavior) return;
-        if (this.behavior) this.behavior.destroy();
-        const name = behavior.name || behavior;
-        const options = behavior.options || {};
-        options.actor = this;
-        const b = Constants.WC_BEHAVIORS.get(name);
-        if (b) {
-            this.behavior = b.create(options);
-        } else{
-            console.warn("Behavior "+ name + " not found!")
-        }
+        console.log("obsolete");
     }
 
 }
@@ -60,6 +64,11 @@ export class Behavior extends Actor {
         }
     }
 
+    destroy() {
+        this.onDestroy();
+        super.destroy();
+    }
+
     get actor() { return this._actor}
     get tickRate() { return this._tickRate || 100}
     set tickRate(t) { this._tickRate = t}
@@ -71,18 +80,38 @@ export class Behavior extends Actor {
         if (!this.doomed) this.future(this.tickRate).tick(this.tickRate);
     }
 
-    startChild(behavior) {
+    kill(behavior) {
+        const name = behavior.name || behavior;
+        const b = Constants.WC_BEHAVIORS.get(name);
+        if (!b || !this.children) return;
+
+        for (const child of this.children) {
+            if (child instanceof b) {
+                child.destroy();
+            }
+        }
+    }
+
+    isRunning(behavior) {
+        if (!this.children) return false;
+        for (const child of this.children) if (child instanceof behavior) return child;;
+        return false;
+    }
+
+    start(behavior) {
         if (!behavior) return;
         const name = behavior.name || behavior;
         const options = behavior.options || {};
         options.actor = this.actor;
         options.parent = this;
         const b = Constants.WC_BEHAVIORS.get(name);
+        let out;
         if (b) {
-            return b.create(options);
+            out = this.isRunning(b) || b.create(options);
         } else{
             console.warn("Behavior "+ name + " not found!")
         }
+        return out;
     }
 
     succeed(data) {
@@ -96,12 +125,9 @@ export class Behavior extends Actor {
     }
 
     onStart() {}
-    // do(delta) {}
+    onDestroy() {}
     onSucceed(child, data) {};
     onFail(child, data) {};
-
-    // onSucceed(child, data) { this.succeed(data) };
-    // onFail(child, data) { this.fail(data) };
 
 }
 Behavior.register('Behavior');

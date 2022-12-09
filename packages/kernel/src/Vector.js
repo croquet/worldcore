@@ -92,6 +92,8 @@ export function v2_magnitude(v) {
     return Math.sqrt(v[0] * v[0] + v[1] * v[1]);
 }
 
+
+
 export function v2_sqrMag(v) { // Squared magnitude
     return (v[0] * v[0] + v[1] * v[1]);
 }
@@ -174,6 +176,12 @@ export function v2_equals(a,b,e = 0) { // e is an epsilon
 
 export function v2_isZero(v) {
     return v[0] === 0 && v[1] === 0;
+}
+
+export function v2_distance(a,b) {
+    const dx = a[0] - b[0];
+    const dy = a[1] - b[1];
+    return Math.sqrt(dx*dx+dy*dy);
 }
 
 export function v2_manhattan(a, b) {
