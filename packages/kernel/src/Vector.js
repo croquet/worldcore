@@ -28,6 +28,13 @@ export function clampRad(x) {
     return x % TAU;
 }
 
+export function slerp(a,b,t) {
+    const cc = (1-t)*Math.cos(a) + t*Math.cos(b);
+    const ss = (1-t)*Math.sin(a) + t*Math.sin(b);
+    return Math.atan2(ss,cc);
+}
+
+
 export function gaussian(count, step = 1, standardDeviation = 1) {
     const sd = 2 * standardDeviation * standardDeviation;
     const a = 1/Math.sqrt(Math.PI * sd);

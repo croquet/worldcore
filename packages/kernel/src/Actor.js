@@ -38,7 +38,7 @@ export class Actor extends WorldcoreModel {
     get pawn() {return null;}
     get doomed() {return this._doomed} // About to be destroyed. This is used to prevent creating new future messages.
     get parent() { return this._parent; }
-
+    get name() {return this._name || "Actor"}
 
     init(options) {
         super.init();
@@ -88,8 +88,6 @@ export class Actor extends WorldcoreModel {
         if(old) old.removeChild(this);
         if(value) value.addChild(this);
     }
-
-    get name() {return this._name || "Actor"}
 
     addChild(child) {
         if (!this.children) this.children = new Set();

@@ -1,5 +1,5 @@
 import { ModelService, Constants, Actor, Pawn, mix, PM_Smoothed, AM_Behavioral, PM_InstancedMesh, SequenceBehavior, v3_add, v2_multiply, v3_floor,
-    v3_rotate, q_axisAngle, v3_normalize, v3_magnitude, v3_scale, toDeg, toRad, q_multiply, q_identity, v3_angle, TAU, m4_scaleRotationTranslation, v3_sub, v2_sub, Behavior, v2_magnitude, v2_distance } from "@croquet/worldcore";
+    v3_rotate, q_axisAngle, v3_normalize, v3_magnitude, v3_scale, toDeg, toRad, q_multiply, q_identity, v3_angle, TAU, m4_scaleRotationTranslation, v3_sub, v2_sub, Behavior, v2_magnitude, v2_distance, slerp } from "@croquet/worldcore";
 
 import { toWorld, packKey, Voxels, clamp} from "./Voxels";
 import * as BEHAVIORS from "./SharedBehaviors";
@@ -114,6 +114,7 @@ export class BotActor extends mix(VoxelActor).with(AM_Behavioral) {
     // }
 
     neighbors(radius, tag) {
+        radius = Math.floor(radius);
         const bm = this.service("BotManager");
         const paths = this.service("Paths");
         const out = [];
@@ -234,7 +235,6 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
         this.subscribe("input", "gDown", this.doAvoid);
         this.subscribe("input", "hDown", this.doFlock);
         this.subscribe("input", "mDown", this.doPing);
-        // this.subscribe("input", "jDown", this.doBot);
     }
 
     get conform() {return true}
@@ -262,33 +262,21 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
     }
 
     doAvoid() {
-        if (this.avoid) {
-            console.log("stop avoid");
-            this.avoid = null;
-            this.behavior.kill("AvoidBehavior");
-        } else {
-            console.log("avoid");
-            this.avoid = this.behavior.start({name: "AvoidBehavior", options: {}})
-        }
+        console.log("avoid");
+        this.behavior.start({name: "AvoidBehavior", options: {tag: "threat"}})
     }
 
     doFlock() {
         console.log("flock");
-        this.xxx = this.behavior.start({name: "FlockBehavior", options: {}})
-        // this.startBehavior({name: "FlockBehavior", options: {}})
+        this.behavior.start("FlockBehavior");
+        // this.behavior.start({name: "CohereBehavior", options: {weight: 0.5}})
+        // this.behavior.start({name: "AvoidBehavior", options: {tag: "sheep", distance: 1, weight: 0.2}})
+        // this.behavior.start({name: "AlignBehavior", options: {tag: "sheep", distance: 3, weight: 0.99}})
     }
 
     doPing() {
         console.log("ping");
         console.log(this.closest(5, "sheep"));
-    }
-
-    doBot() {
-        console.log("bot");
-        const bm = this.service("BotManager");
-        const target = bm.testAvatar;
-        this.aim = [10,20];
-        this.startBehavior({name: "BotBehavior", options: {target}})
     }
 
 }
@@ -367,10 +355,6 @@ export class AvatarActor extends mix(PersonActor).with(AM_Avatar) {
 
     pingTest() {
         console.log("ping test");
-        const ppp = this.close(5, "sheep");
-        ppp.forEach( s => {
-            console.log(s.xyz);
-        });
         console.log(this.closest(5, "sheep"));
     }
 

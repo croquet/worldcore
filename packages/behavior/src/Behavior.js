@@ -58,6 +58,7 @@ export class Behavior extends Actor {
     init(options) {
         super.init(options);
         this.onStart();
+        this.elapsed = 0; // ms since start
         if (!this.doomed && this.tickRate && this.do) {
             const firstDelta = Math.random() * this.tickRate;
             this.future(firstDelta).tick(firstDelta);
@@ -69,14 +70,22 @@ export class Behavior extends Actor {
         super.destroy();
     }
 
+    get name() {return this._name || "Behavior"}
     get actor() { return this._actor}
     get tickRate() { return this._tickRate || 100}
+    get timeout() { return this._timeout || 60000} // one minute default
+
     set tickRate(t) { this._tickRate = t}
 
     tick(delta) {
         if (this.actor && this.actor.doomed) return;
         if (this.doomed) return;
         this.do(delta);
+        this.elapsed += delta;
+        if (this.elapsed > this.timeout) {
+            console.log(this.name + " timeout!");
+            this.destroy();
+        }
         if (!this.doomed) this.future(this.tickRate).tick(this.tickRate);
     }
 
@@ -92,7 +101,7 @@ export class Behavior extends Actor {
         }
     }
 
-    isRunning(behavior) {
+    get(behavior) {
         if (!this.children) return false;
         for (const child of this.children) if (child instanceof behavior) return child;;
         return false;
@@ -107,7 +116,7 @@ export class Behavior extends Actor {
         const b = Constants.WC_BEHAVIORS.get(name);
         let out;
         if (b) {
-            out = this.isRunning(b) || b.create(options);
+            out = this.get(b) || b.create(options);
         } else{
             console.warn("Behavior "+ name + " not found!")
         }

@@ -56,7 +56,6 @@ export class FlockActor extends VoxelActor {
     centerTick() {
         if (this.doomed) return;
 
-        // if (this.flock.size>0) {
         const voxels = this.service("Voxels");
         let x = 0;
         let y = 0;
@@ -69,9 +68,7 @@ export class FlockActor extends VoxelActor {
             const z = voxels.summit(Math.floor(x/s), Math.floor(y/s));
             this.xyz = [x/s,y/s,z];
         }
-
-        // }
-        if (!this.doomed) this.future(2000).centerTick();
+        if (!this.doomed) this.future(1000).centerTick();
     }
 
 }
