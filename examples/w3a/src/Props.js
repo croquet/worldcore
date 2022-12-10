@@ -64,8 +64,8 @@ export class PropManager extends ModelService {
         const surfaces = this.service("Surfaces");
         const voxel = data.xyz
 
-        let x = 0;
-        let y = 0;
+        let x = 0.5;
+        let y = 0.5;
         let z = 0;
         do {
             x = 0.1 + 0.8 * this.random();
@@ -132,8 +132,10 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
 
     init(options) {
         super.init(options);
+        this.set({tags: ["tree", "obstacle"]})
+        console.log(this.tags);
         this.maxSize = 0.4 + 0.6*this.random();
-        this.startBehavior("GrowBehavior");
+        this.behavior.start("GrowBehavior");
     }
 
     get size() { return this._size }

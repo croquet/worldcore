@@ -188,6 +188,70 @@ export class Voxels extends ModelService {
         return v3_add(voxel, v3_floor(fraction));
     }
 
+    // Maps a vector onto one of the 8 direction indices
+    static direction(v) {
+        const x = v[0];
+        const y = v[1];
+        const xx = Math.abs(x) > 2*Math.abs(y);
+        const yy = Math.abs(y) > 2*Math.abs(x);
+
+        let out;
+        if(x>0) { // east
+            if (y>0) { // northeast
+                out=6;
+                if (xx) out = 2;
+                if (yy) out = 3;
+            } else { // southeast
+                out=5;
+                if (xx) out = 2;
+                if (yy) out = 1;
+            }
+        } else { // west
+            if (y>0) { // northwest
+                out=7;
+                if (xx) out = 0;
+                if (yy) out = 3;
+            } else { // southwest
+                out=4;
+                if (xx) out = 0;
+                if (yy) out = 1;
+            }
+        }
+        return out;
+    }
+
+        // Maps a vector onto 1-2 of the 8 direction indices
+        static arc(v) {
+            const x = v[0];
+            const y = v[1];
+            const xx = Math.abs(x) > 2*Math.abs(y);
+            const yy = Math.abs(y) > 2*Math.abs(x);
+
+            let out;
+            if(x>0) { // east
+                if (y>0) { // northeast
+                    out=[6];
+                    if (xx) out = [2,6];
+                    if (yy) out = [3,6];
+                } else { // southeast
+                    out=[5];
+                    if (xx) out = [2,5];
+                    if (yy) out = [1,5];
+                }
+            } else { // west
+                if (y>0) { // northwest
+                    out=[7];
+                    if (xx) out = [0,7];
+                    if (yy) out = [3,7];
+                } else { // southwest
+                    out=[4];
+                    if (xx) out = [0,4];
+                    if (yy) out = [1,4];
+                }
+            }
+            return out;
+        }
+
     // -- Methods ------------------------------------------------------------------------------
 
 

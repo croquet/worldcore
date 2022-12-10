@@ -215,6 +215,7 @@ class WalkToBehavior extends Behavior {
         this.actor.aim = v2_sub(this.target, this.actor.xyz);
 
         this.actor.behavior.start("WalkBehavior");
+        this.start("AvoidBehavior");
     }
 
     onDestroy() {
@@ -226,7 +227,7 @@ class WalkToBehavior extends Behavior {
         const pathVoxel = unpackKey(pathStep);
         const cc = this.actor.voxel[0] === pathVoxel[0] && this.actor.voxel[1] === pathVoxel[1];
 
-        if (cc ) { // this can get missed
+        if (cc ) { // this can get missed!!!
             // console.log("step");
             this.step++
             if (this.step < this.path.length) { // not at end
@@ -235,7 +236,7 @@ class WalkToBehavior extends Behavior {
             } else {
                 this.target = this.destination;
             }
-            this.actor.aim = v2_scale(v2_sub(this.target, this.actor.xyz), 5);
+            this.actor.aim = v2_scale(v2_sub(this.target, this.actor.xyz), 3);
         }
 
         const to = v2_sub(this.destination, this.actor.xyz);
@@ -251,6 +252,47 @@ class WalkToBehavior extends Behavior {
 
 }
 WalkToBehavior.register("WalkToBehavior");
+
+//------------------------------------------------------------------------------------------
+//-- AvoidBehavior -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class AvoidBehavior extends Behavior {
+
+    get name() {return this._name || "AvoidBehavior"}
+    get tag() { return this._tag || "obstacle"};
+    get distance() { return this._distance || 1};
+    get weight() { return this._weight || 0.5};
+
+    onStart() {
+        console.log("avoid start");
+    }
+
+    // onDestroy() { this.actor.aim = [0,0] }
+
+    do() {
+        const obstacles = this.actor.see(this.distance+1, this.tag);
+        for (const o of obstacles) {
+            const to = v2_sub(o.xyz, this.actor.xyz);
+            const range = v2_magnitude(to);
+            if (range>this.distance) continue;
+            const toward = v2_dot(to, this.actor.aim);
+            if (toward<0) continue;
+            console.log("range: " +range);
+            console.log("toward: " +toward);
+
+            const norm = v2_normalize(to);
+            const side = v2_perpendicular(norm);
+            const dx = side[0]
+            const dy = side[1]
+            const aim = [dx,dy]
+            this.actor.aim = v2_lerp(this.actor.aim, aim, this.weight);
+        }
+
+    }
+
+}
+AvoidBehavior.register("AvoidBehavior");
 
 //------------------------------------------------------------------------------------------
 //-- FollowBehavior ------------------------------------------------------------------------
@@ -287,12 +329,12 @@ class FollowBehavior extends Behavior {
 FollowBehavior.register("FollowBehavior");
 
 //------------------------------------------------------------------------------------------
-//-- AvoidBehavior -------------------------------------------------------------------------
+//-- FleeBehavior -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class AvoidBehavior extends Behavior {
+class FleeBehavior extends Behavior {
 
-    get name() {return this._name || "AvoidBehavior"}
+    get name() {return this._name || "FleeBehavior"}
     get tag() { return this._tag || "threat"};
     get distance() { return this._distance || 2};
     get weight() { return this._weight || 0.5};
@@ -332,7 +374,7 @@ class AvoidBehavior extends Behavior {
     }
 
 }
-AvoidBehavior.register("AvoidBehavior");
+FleeBehavior.register("FleeBehavior");
 
 //------------------------------------------------------------------------------------------
 //-- CohereBehavior ------------------------------------------------------------------------

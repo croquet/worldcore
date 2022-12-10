@@ -1,5 +1,5 @@
 import { ModelService, Constants, Actor, Pawn, mix, PM_Smoothed, AM_Behavioral, PM_InstancedMesh, SequenceBehavior, v3_add, v2_multiply, v3_floor,
-    v3_rotate, q_axisAngle, v3_normalize, v3_magnitude, v3_scale, toDeg, toRad, q_multiply, q_identity, v3_angle, TAU, m4_scaleRotationTranslation, v3_sub, v2_sub, Behavior, v2_magnitude, v2_distance, slerp } from "@croquet/worldcore";
+    v3_rotate, q_axisAngle, v3_normalize, v3_magnitude, v3_scale, toDeg, toRad, q_multiply, q_identity, v3_angle, TAU, m4_scaleRotationTranslation, v3_sub, v2_sub, Behavior, v2_magnitude, v2_distance, slerp, v2_rotate } from "@croquet/worldcore";
 
 import { toWorld, packKey, Voxels, clamp} from "./Voxels";
 import * as BEHAVIORS from "./SharedBehaviors";
@@ -95,24 +95,6 @@ export class BotActor extends mix(VoxelActor).with(AM_Behavioral) {
         bm.addToBin(this);
     }
 
-    // closestTag(radius,tag) {
-    //     const bm = this.service("BotManager");
-    //     const paths = this.service("Paths");
-    //     return paths.ping(this.key, (node, range) => {
-    //         const nodeKey = node.key;
-    //         const bin = bm.bins.get(nodeKey);
-    //         if (!bin || bin.size == 0) return false;
-
-    //         let out = 0;
-    //         for (const bot of bin) {
-    //             if (bot == this) return false;
-    //             if(bot.tags.has(tag)) out = bot;
-    //         }
-    //         return out;
-
-    //     });
-    // }
-
     neighbors(radius, tag) {
         radius = Math.floor(radius);
         const bm = this.service("BotManager");
@@ -144,6 +126,28 @@ export class BotActor extends mix(VoxelActor).with(AM_Behavioral) {
         const a = this.close(radius, tag);
         if (a.length>0) return a[0];
         return null;
+    }
+
+    see(far, tag) {
+        far = Math.floor(far);
+        const forward = v2_rotate([0,1], this.yaw);
+        const pm = this.service("PropManager");
+        const bm = this.service("BotManager");
+        const paths = this.service("Paths");
+        const out = [];
+        paths.look(this.key, forward, (key, range) => {
+            if (range>far) return true;
+            // console.log(range);
+            const prop = pm.get(key);
+            if (prop && prop.tags.has(tag)) out.push(prop);
+            const bin = bm.bins.get(key);
+            if (!bin || bin.size == 0) return false;
+            for (const bot of bin) {
+                if (bot == this) continue;
+                if (bot.tags.has(tag)) out.push(bot)
+            }
+        });
+        return out;
     }
 
 
@@ -228,7 +232,7 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
 
     init(options) {
         super.init(options);
-        this.set({tags: ["sheep", "flock"]})
+        this.set({tags: ["sheep", "obstacle"]});
         this.subscribe("edit", "goto", this.onGoto);
         this.subscribe("input", "lDown", this.destroy);
         this.subscribe("input", "fDown", this.doFollow);
@@ -355,7 +359,8 @@ export class AvatarActor extends mix(PersonActor).with(AM_Avatar) {
 
     pingTest() {
         console.log("ping test");
-        console.log(this.closest(5, "sheep"));
+        // console.log(this.closest(5, "sheep"));
+        console.log(this.see(5, "obstacle"));
     }
 
     onAvatar(data) {
