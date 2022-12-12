@@ -128,6 +128,10 @@ export class Behavior extends Actor {
         this.destroy();
     }
 
+    progess(data) {
+        if (this.parent) this.parent.onProgress(this, data);
+    }
+
     fail(data) {
         if (this.parent) this.parent.onFail(this, data);
         this.destroy();
@@ -136,6 +140,7 @@ export class Behavior extends Actor {
     onStart() {}
     onDestroy() {}
     onSucceed(child, data) {};
+    onProgress(child, data) {};
     onFail(child, data) {};
 
 }

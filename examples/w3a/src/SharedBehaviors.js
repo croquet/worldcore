@@ -123,34 +123,42 @@ class GroundTestBehavior extends Behavior {
 GroundTestBehavior.register("GroundTestBehavior");
 
 //------------------------------------------------------------------------------------------
-//-- WalkBehavior --------------------------------------------------------------------------
+//-- GotoBehavior --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Moves toward an aim point
+// Moves toward a target point
 
-class WalkBehavior extends Behavior {
+class GotoBehavior extends Behavior {
 
-    get tickRate() { return this._tickRate || 20} // More than 15ms for smooth movement
+    get tickRate() { return this._tickRate || 50} // More than 15ms for smooth movement
 
     get name() {return this._name || "WalkBehavior"}
+    get target() {return this._target || [0,0]}
+    set target(target) {this.set({target})};
     get aim() {return this.actor.aim || [0,0] }
-    get maxSpeed() {return this._maxSpeed || 4 } // m/s
     get steer() { return this._steer || 0.9}
-    get timeout() { return this._timeout || 60000}
+    get speed() { return this._speed || 3}
 
+    // onStart() {
+
+    // }
 
     do(delta) {
-        const mag = v2_magnitude(this.aim)*3;
-        if (mag === 0) return;
+        const distance = this.speed * delta / 1000;
+        const to = v2_sub(this.target, this.actor.xyz);
+        const left = v2_magnitude(to)
+        if (distance>left) {
+            console.log("goto arrived!");
+            this.actor.set({xyz:this.target});
+            this.actor.hop();
+            this.progess(this.target);
+            return;
+        }
         this.elapsed = 0; // reset timeout
 
-        const voxels = this.service("Voxels");
-        let forward = v2_normalize(this.aim);
-        let yaw = v2_signedAngle([0,1], forward);
+        const forward = v2_normalize(to);
+        const yaw = v2_signedAngle([0,1], forward);
 
-        yaw = slerp(this.actor.yaw, yaw, this.steer);
-
-        const distance = Math.min(this.maxSpeed, mag) * delta / 1000;
         const x = forward[0] * distance;
         const y = forward[1] * distance;
 
@@ -158,6 +166,7 @@ class WalkBehavior extends Behavior {
         const above = v3_floor(v3_add(this.actor.xyz,[x,y,1]));
         const below = v3_floor(v3_add(this.actor.xyz,[x,y,-1]));
 
+        const voxels = this.service("Voxels");
         const levelIsEmpty = voxels.get(...level) < 2;
         const aboveIsEmpty = voxels.get(...above) < 2;
         const belowIsEmpty = voxels.get(...below) < 2;
@@ -188,7 +197,7 @@ class WalkBehavior extends Behavior {
     }
 
 }
-WalkBehavior.register("WalkBehavior");
+GotoBehavior.register("GotoBehavior");
 
 //------------------------------------------------------------------------------------------
 //-- WalkToBehavior ------------------------------------------------------------------------
@@ -197,7 +206,6 @@ WalkBehavior.register("WalkBehavior");
 class WalkToBehavior extends Behavior {
 
     get destination() {return this._destination}
-    get tickRate() { return this._tickRate || 50}
     get name() {return this._name || "WalkToBehavior"}
 
     onStart() {
@@ -210,45 +218,33 @@ class WalkToBehavior extends Behavior {
             this.fail();
         }
 
+        this.goto = this.start({name: "GotoBehavior", options: {target: this.destination}});
+
         this.step = 0;
-        this.target = this.destination;
-        this.actor.aim = v2_sub(this.target, this.actor.xyz);
-
-        this.actor.behavior.start("WalkBehavior");
-        this.start("AvoidBehavior");
+        this.nextStep();
     }
 
-    onDestroy() {
-        this.actor.aim = [0,0]
-    }
-
-    do() {
-        const pathStep = this.path[this.step];
-        const pathVoxel = unpackKey(pathStep);
-        const cc = this.actor.voxel[0] === pathVoxel[0] && this.actor.voxel[1] === pathVoxel[1];
-
-        if (cc ) { // this can get missed!!!
-            // console.log("step");
-            this.step++
-            if (this.step < this.path.length) { // not at end
-                const nextVoxel = unpackKey(this.path[this.step]);
-                this.target = v3_add(nextVoxel, [0.5, 0.5, 0]);
-            } else {
-                this.target = this.destination;
-            }
-            this.actor.aim = v2_scale(v2_sub(this.target, this.actor.xyz), 3);
-        }
-
-        const to = v2_sub(this.destination, this.actor.xyz);
-        const left = v2_magnitude(to)
-        if (left<0.1) {
-            console.log("arrived!");
-            this.actor.set({xyz:this.destination});
-            this.actor.hop();
+    onProgress(child, data) {
+        // console.log(data);
+        if (this.step<this.path.length) {
+            this.nextStep();
+        } else {
+            // console.log("walk to success!")
             this.succeed();
         }
     }
 
+    nextStep() {
+        let target = this.destination;
+        this.step++
+        if (this.step < this.path.length) { // not at end
+            const nextVoxel = unpackKey(this.path[this.step]);
+            const x = this.random();
+            const y = this.random();
+            target = v3_add(nextVoxel, [x, y, 0]);
+        }
+        this.goto.target = target;
+    }
 
 }
 WalkToBehavior.register("WalkToBehavior");
