@@ -74,13 +74,17 @@ export class Behavior extends Actor {
     get actor() { return this._actor}
     get tickRate() { return this._tickRate || 100}
     get timeout() { return this._timeout || 60000} // one minute default
+    get isPaused() { return this._pause};
+
+    pause() { this.set({pause:true})}
+    resume() { this.set({pause:false})}
 
     set tickRate(t) { this._tickRate = t}
 
     tick(delta) {
         if (this.actor && this.actor.doomed) return;
         if (this.doomed) return;
-        this.do(delta);
+        if (!this.isPaused) this.do(delta);
         this.elapsed += delta;
         if (this.elapsed > this.timeout) {
             console.log(this.name + " timeout!");

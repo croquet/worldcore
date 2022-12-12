@@ -248,6 +248,7 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
         const y = this.random();
         const destination = v3_add(voxel, [0.5,0.5,0]);
 
+        this.behavior.kill("WalkToBehavior");
         this.behavior.start({name: "WalkToBehavior", options: {destination}})
     }
 

@@ -139,9 +139,11 @@ class GotoBehavior extends Behavior {
     get steer() { return this._steer || 0.9}
     get speed() { return this._speed || 3}
 
-    // onStart() {
+    onStart() {
+        this.subscribe("input", "1Down", this.pause);
+        this.subscribe("input", "2Down", this.resume);
 
-    // }
+    }
 
     do(delta) {
         const distance = this.speed * delta / 1000;
@@ -219,19 +221,21 @@ class WalkToBehavior extends Behavior {
         }
 
         this.goto = this.start({name: "GotoBehavior", options: {target: this.destination}});
+        this.avoid = this.start({name: "AvoidBehavior", options: {}});
 
         this.step = 0;
         this.nextStep();
     }
 
     onProgress(child, data) {
-        // console.log(data);
-        if (this.step<this.path.length) {
-            this.nextStep();
-        } else {
-            // console.log("walk to success!")
-            this.succeed();
+        if (child === this.goto) {
+            if (this.step<this.path.length) {
+                this.nextStep();
+            } else {
+                this.succeed();
+            }
         }
+
     }
 
     nextStep() {
@@ -239,8 +243,8 @@ class WalkToBehavior extends Behavior {
         this.step++
         if (this.step < this.path.length) { // not at end
             const nextVoxel = unpackKey(this.path[this.step]);
-            const x = this.random();
-            const y = this.random();
+            const x = 0.25 + this.random()*0.5;
+            const y = 0.25 + this.random()*0.5;
             target = v3_add(nextVoxel, [x, y, 0]);
         }
         this.goto.target = target;
@@ -269,20 +273,30 @@ class AvoidBehavior extends Behavior {
     do() {
         const obstacles = this.actor.see(this.distance+1, this.tag);
         for (const o of obstacles) {
+            // console.log(o);
             const to = v2_sub(o.xyz, this.actor.xyz);
-            const range = v2_magnitude(to);
-            if (range>this.distance) continue;
-            const toward = v2_dot(to, this.actor.aim);
-            if (toward<0) continue;
-            console.log("range: " +range);
-            console.log("toward: " +toward);
+            const forward = v2_rotate([0,1], this.actor.yaw)
+            const toward = v2_dot(to, forward);
+            if (toward<0) {
+                // console.log("pass");
+                // this.parent.goto.pause();
+                continue;
+            }
 
-            const norm = v2_normalize(to);
-            const side = v2_perpendicular(norm);
-            const dx = side[0]
-            const dy = side[1]
-            const aim = [dx,dy]
-            this.actor.aim = v2_lerp(this.actor.aim, aim, this.weight);
+            console.log(o);
+            // const range = v2_magnitude(to);
+            // if (range>this.distance) continue;
+            // const toward = v2_dot(to, this.actor.aim);
+            // if (toward<0) continue;
+            // console.log("range: " +range);
+            // console.log("toward: " +toward);
+
+            // const norm = v2_normalize(to);
+            // const side = v2_perpendicular(norm);
+            // const dx = side[0]
+            // const dy = side[1]
+            // const aim = [dx,dy]
+            // this.actor.aim = v2_lerp(this.actor.aim, aim, this.weight);
         }
 
     }
