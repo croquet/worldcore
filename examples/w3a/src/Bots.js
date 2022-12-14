@@ -165,8 +165,8 @@ export class RubbleActor extends BotActor {
     init(options) {
         super.init(options);
 
-        const FallThenDestroy = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "DestroyBehavior"]}};
-        this.startBehavior({name: "CompositeBehavior", options: {parallel: true, behaviors:["TumbleBehavior", FallThenDestroy]}});
+        this.behavior.start("TumbleBehavior");
+        this.behavior.start({name: "SequenceBehavior", behaviors:["FallBehavior", "DestroyBehavior"]});
     }
 
     get type() {return this._type || Constants.voxel.dirt};
@@ -201,8 +201,8 @@ export class LogActor extends BotActor {
     init(options) {
         super.init(options);
 
-        const FallThenDestroy = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "DestroyBehavior"]}};
-        this.startBehavior({name: "CompositeBehavior", options: {parallel: true, behaviors:["TumbleBehavior", FallThenDestroy]}});
+        this.behavior.start("TumbleBehavior");
+        this.behavior.start({name: "SequenceBehavior", behaviors:["FallBehavior", "DestroyBehavior"]});
     }
 
     get type() {return this._type || Constants.voxel.dirt};
@@ -232,11 +232,14 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
 
     init(options) {
         super.init(options);
+
+        this.behavior.start({name: "BranchBehavior", condition: "GroundTestBehavior", else: "FallBehavior"});
+
         this.set({tags: ["sheep", "obstacle"]});
         this.subscribe("edit", "goto", this.onGoto);
         this.subscribe("input", "lDown", this.destroy);
         this.subscribe("input", "fDown", this.doFollow);
-        this.subscribe("input", "gDown", this.doAvoid);
+        this.subscribe("input", "gDown", this.doFlee);
         this.subscribe("input", "hDown", this.doFlock);
         this.subscribe("input", "mDown", this.doPing);
     }
@@ -249,26 +252,32 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
         const destination = v3_add(voxel, [0.5,0.5,0]);
 
         this.behavior.kill("WalkToBehavior");
-        this.behavior.start({name: "WalkToBehavior", options: {destination}})
+        this.behavior.start({name: "WalkToBehavior", destination})
     }
 
     doFollow() {
+        console.log("follow");
         const bm = this.service("BotManager");
         const target = bm.testAvatar;
         if (!target) return;
-        if (this.follow) {
-            console.log("stop follow");
-            this.follow = null;
-            this.behavior.kill("FollowBehavior");
-        } else {
-            console.log("follow");
-            this.follow = this.behavior.start({name: "FollowBehavior", options: {target}})
-        }
+        this.behavior.start({name: "FollowBehavior", target})
+
+        // const bm = this.service("BotManager");
+        // const target = bm.testAvatar;
+        // if (!target) return;
+        // if (this.follow) {
+        //     console.log("stop follow");
+        //     this.follow = null;
+        //     this.behavior.kill("FollowBehavior");
+        // } else {
+        //     console.log("follow");
+        //     this.follow = this.behavior.start({name: "FollowBehavior", options: {target}})
+        // }
     }
 
-    doAvoid() {
-        console.log("avoid");
-        this.behavior.start({name: "AvoidBehavior", options: {tag: "threat"}})
+    doFlee() {
+        console.log("flee");
+        this.behavior.start("FleeBehavior");
     }
 
     doFlock() {
@@ -360,8 +369,7 @@ export class AvatarActor extends mix(PersonActor).with(AM_Avatar) {
 
     pingTest() {
         console.log("ping test");
-        // console.log(this.closest(5, "sheep"));
-        console.log(this.see(5, "obstacle"));
+        this.behavior.start("KeyBehavior");
     }
 
     onAvatar(data) {

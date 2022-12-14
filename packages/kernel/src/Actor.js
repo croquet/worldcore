@@ -38,6 +38,7 @@ export class Actor extends WorldcoreModel {
     get pawn() {return null;}
     get doomed() {return this._doomed} // About to be destroyed. This is used to prevent creating new future messages.
     get parent() { return this._parent; }
+    get children() { return this._children || new Set(); }
     get name() {return this._name || "Actor"}
 
     init(options) {
@@ -49,7 +50,8 @@ export class Actor extends WorldcoreModel {
     }
 
     destroy() {
-        if (this.children) new Set(this.children).forEach(child => child.destroy());
+        // if (this.children) new Set(this.children).forEach(child => child.destroy());
+        new Set(this.children).forEach(child => child.destroy());
         this.set({parent: null});
         this._doomed = true; // About to be destroyed. This is used to prevent creating new future messages.
         this.say("destroyActor");
@@ -90,12 +92,13 @@ export class Actor extends WorldcoreModel {
     }
 
     addChild(child) {
-        if (!this.children) this.children = new Set();
-        this.children.add(child);
+        if (!this._children) this._children = new Set();
+        this._children.add(child);
     }
 
     removeChild(child) {
-        if (this.children) this.children.delete(child);
+        // if (this.children) this.children.delete(child);
+        this.children.delete(child);
     }
 
     // onParent(d) {

@@ -1,5 +1,5 @@
 import { Constants, Behavior,  q_multiply, q_axisAngle,  q_normalize,  sphericalRandom, v3_equals, v3_floor, q_lookAt, v3_normalize, v3_sub, v3_magnitude,
-    v3_scale, v3_add, v3_rotate, v3_angle, toRad, toDeg, v2_signedAngle, v2_add, v2_sub, v2_normalize, v2_scale, v2_magnitude, v2_dot, v2_perpendicular, v2_rotate, v2_closest, v2_lerp, TAU, slerp } from "@croquet/worldcore";
+    v3_scale, v3_add, v3_rotate, v3_angle, toRad, toDeg, v2_signedAngle, v2_add, v2_sub, v2_normalize, v2_scale, v2_magnitude, v2_dot, v2_perpendicular, v2_rotate, v2_closest, v2_lerp, v3_lerp, TAU, slerp } from "@croquet/worldcore";
 import { packKey, unpackKey, Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
@@ -8,27 +8,24 @@ import { packKey, unpackKey, Voxels } from "./Voxels";
 
 export class FallBehavior extends Behavior {
 
-    get velocity() { return this.actor._velocity || 0}
-    set velocity(v) { this.actor._velocity = v}
-
     onStart() {
+        this.velocity = 0;
         this.tickRate = 50;
-        const voxels = this.service("Voxels");
-        this.bottom = voxels.solidBelow(...this.actor.voxel);
     }
 
     do(delta) {
+        const voxels = this.service("Voxels");
         const gravity = Constants.gravity/ Constants.scaleZ;
         this.velocity = this.velocity - gravity * delta/1000;
 
         const xyz = this.actor.xyz;
         xyz[2] += this.velocity/Constants.scaleZ;
         this.actor.set({xyz});
-
-        if (this.actor.voxel[2] < this.bottom) {
-            const final = [...this.actor.voxel];
-            final[2] = this.bottom+1;
-            this.actor.set({voxel: final});
+        const landing = voxels.get(...this.actor.voxel);
+        if (landing>=2) { // solid
+            const voxel = [...this.actor.voxel];
+            voxel[2] +=1
+            this.actor.set({voxel});
             this.succeed();
         }
     }
@@ -91,34 +88,29 @@ GrowBehavior.register("GrowBehavior");
 class GroundTestBehavior extends Behavior {
 
     onStart() {
-        this.tickRate = 15;
-        this.testElevation();
+        this.tickRate = 100;
     }
 
-    do(delta) {
-        // this.testElevation();
-    }
-
-    // Handle double ramp edges & falling
-
-    testElevation() {
+    do() {
         const voxels = this.service("Voxels");
         const surfaces = this.service("Surfaces");
         const type = voxels.get(...this.actor.voxel);
         if (type >=2 ) { // Buried
             console.log("Buried!")
             this.actor.destroy();
+            return;
         }
-        const belowXYZ = Voxels.adjacent(...this.actor.voxel,[0,0,-1]);
-        const belowType = voxels.get(...belowXYZ);
         const e = surfaces.elevation(...this.actor.xyz);
         if ( e < 0 ) {
-            console.log("fall");
-            const FallThenBot = {name: "SequenceBehavior", options: {behaviors:["FallBehavior", "BotBehavior"]}}
-            this.actor.startBehavior(FallThenBot);
+            this.fail();
+            return;
         }
         this.actor.ground();
+
     }
+
+
+
 }
 GroundTestBehavior.register("GroundTestBehavior");
 
@@ -132,17 +124,14 @@ class GotoBehavior extends Behavior {
 
     get tickRate() { return this._tickRate || 50} // More than 15ms for smooth movement
 
-    get name() {return this._name || "WalkBehavior"}
-    get target() {return this._target || [0,0]}
+    get target() {return this._target || this.actor.xyz}
     set target(target) {this.set({target})};
-    get aim() {return this.actor.aim || [0,0] }
-    get steer() { return this._steer || 0.9}
+    get ease() { return this._ease || 0.9}
     get speed() { return this._speed || 3}
 
     onStart() {
-        this.subscribe("input", "1Down", this.pause);
-        this.subscribe("input", "2Down", this.resume);
-
+        // this.subscribe("input", "1Down", this.pause);
+        // this.subscribe("input", "2Down", this.resume);
     }
 
     do(delta) {
@@ -150,10 +139,9 @@ class GotoBehavior extends Behavior {
         const to = v2_sub(this.target, this.actor.xyz);
         const left = v2_magnitude(to)
         if (distance>left) {
-            console.log("goto arrived!");
             this.actor.set({xyz:this.target});
             this.actor.hop();
-            this.progess(this.target);
+            this.progress(this.target);
             return;
         }
         this.elapsed = 0; // reset timeout
@@ -192,7 +180,8 @@ class GotoBehavior extends Behavior {
             }
         }
 
-        const xyz = v3_add(this.actor.xyz, [x,y,z])
+        let  xyz = v3_add(this.actor.xyz, [x,y,z]);
+        xyz = v3_lerp(this.actor.xyz, xyz, this.ease);
         this.actor.set({xyz,yaw});
         this.actor.hop();
 
@@ -205,10 +194,12 @@ GotoBehavior.register("GotoBehavior");
 //-- WalkToBehavior ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Need to repath if goto is blocked.
+
 class WalkToBehavior extends Behavior {
 
     get destination() {return this._destination}
-    get name() {return this._name || "WalkToBehavior"}
+    // get name() {return this._name || "WalkToBehavior"}
 
     onStart() {
         const paths = this.service("Paths");
@@ -220,8 +211,8 @@ class WalkToBehavior extends Behavior {
             this.fail();
         }
 
-        this.goto = this.start({name: "GotoBehavior", options: {target: this.destination}});
-        this.avoid = this.start({name: "AvoidBehavior", options: {}});
+        // this.goto = this.start({name: "GotoBehavior", target: this.destination});
+        this.goto = this.start("GotoBehavior");
 
         this.step = 0;
         this.nextStep();
@@ -312,27 +303,19 @@ class FollowBehavior extends Behavior {
 
     get target() { return this._target}
     get distance() { return this._distance || 3}
-    get tickRate() { return this._tickRate || 50}
-    get name() {return this._name || "FollowBehavior"}
 
     onStart() {
-        this.updateAim();
-        // this.actor.behavior.start("WalkBehavior");
-    }
-
-    onDestroy() {
-        this.actor.aim = [0,0]
+        this.tickRate = 100;
+        this.goto = this.start({name: "GotoBehavior", ease: 0.5});
     }
 
     do() {
-        this.updateAim();
-    }
-
-    updateAim() {
-        let aim = [0,0];
+        this.resetTimeout();
+        this.goto.resetTimeout();
         const to = v2_sub(this.target.xyz, this.actor.xyz);
-        if (v2_magnitude(to) > this.distance) aim = to;
-        this.actor.aim = v2_lerp(this.actor.aim, aim, 0.5);
+        const pause = v2_magnitude(to) < this.distance
+        const target = this.target.xyz;
+        this.goto.set({target,pause});
     }
 
 }
@@ -344,43 +327,45 @@ FollowBehavior.register("FollowBehavior");
 
 class FleeBehavior extends Behavior {
 
-    get name() {return this._name || "FleeBehavior"}
     get tag() { return this._tag || "threat"};
-    get distance() { return this._distance || 2};
-    get weight() { return this._weight || 0.5};
+    get distance() { return this._distance || 5};
+    get startle() { return this._startle || 2};
 
     onStart() {
-        this.updateAim();
-        // this.actor.behavior.start("WalkBehavior");
+        this.tickRate = 200;
+        this.goto = this.start({name: "GotoBehavior", ease: 1, speed: 5});
     }
-
-    onDestroy() { this.actor.aim = [0,0] }
 
     do() {
-        this.updateAim();
-    }
+        this.resetTimeout();
+        this.goto.resetTimeout();
 
-    updateAim() {
         const neighbors = this.actor.neighbors(this.distance+1, this.tag);
-        let aim = [0,0];
 
-        let dx = 0;
-        let dy = 0;
+        let x = 0;
+        let y = 0;
         let s = 0;
 
         for( const bot of neighbors) {
-            const fromBot = v2_sub(this.actor.xyz, bot.xyz);
-            const range = v2_magnitude(fromBot);
-            if (range<this.distance) {
-                dx += fromBot[0];
-                dy += fromBot[1];
+            const from = v2_sub(this.actor.xyz, bot.xyz);
+            const range = v2_magnitude(from);
+            if (range<this.startle) {
+                x += from[0];
+                y += from[1];
                 s++;
             }
         }
 
-        if (s>0) aim = [dx/s, dy/s];
+        if (!s) {
+            // this.goto.pause();
+            return;
+        }
+        // this.goto.resume();
 
-        this.actor.aim = v2_lerp(this.actor.aim, aim, this.weight);
+        const away = v3_normalize([x/s, y/s, 0])
+        const aim = v3_scale(away, this.distance);
+        const target = v3_add(this.actor.xyz, aim);
+        this.goto.set({target});
     }
 
 }

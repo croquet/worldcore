@@ -23,20 +23,6 @@ Constants.WC_BEHAVIORS = new Map();
         if (this.behavior) this.behavior.destroy();
     }
 
-    // startBehavior(behavior) {
-    //     if (!behavior) return;
-    //     if (this.behavior) this.behavior.destroy();
-    //     const name = behavior.name || behavior;
-    //     const options = behavior.options || {};
-    //     options.actor = this;
-    //     const b = Constants.WC_BEHAVIORS.get(name);
-    //     if (b) {
-    //         this.behavior = b.create(options);
-    //     } else{
-    //         console.warn("Behavior "+ name + " not found!")
-    //     }
-    // }
-
     startBehavior(behavior) {
         console.log("obsolete");
     }
@@ -73,11 +59,16 @@ export class Behavior extends Actor {
     get name() {return this._name || "Behavior"}
     get actor() { return this._actor}
     get tickRate() { return this._tickRate || 100}
-    get timeout() { return this._timeout || 60000} // one minute default
+    // get timeout() { return this._timeout || 60000} // one minute default
     get isPaused() { return this._pause};
 
     pause() { this.set({pause:true})}
     resume() { this.set({pause:false})}
+    // resetTimeout() {this.elapsed = 0}
+
+    pauseSet(pause) {
+        this._children.forEach(child => child.set({pause}));
+    }
 
     set tickRate(t) { this._tickRate = t}
 
@@ -85,18 +76,19 @@ export class Behavior extends Actor {
         if (this.actor && this.actor.doomed) return;
         if (this.doomed) return;
         if (!this.isPaused) this.do(delta);
-        this.elapsed += delta;
-        if (this.elapsed > this.timeout) {
-            console.log(this.name + " timeout!");
-            this.destroy();
-        }
+        // this.elapsed += delta;
+        // if (this.elapsed > this.timeout) {
+        //     console.log(this.name + " timeout!");
+        //     this.destroy();
+        // }
         if (!this.doomed) this.future(this.tickRate).tick(this.tickRate);
     }
 
     kill(behavior) {
         const name = behavior.name || behavior;
         const b = Constants.WC_BEHAVIORS.get(name);
-        if (!b || !this.children) return;
+        // if (!b || !this.children) return;
+        if (!b ) return;
 
         for (const child of this.children) {
             if (child instanceof b) {
@@ -105,22 +97,31 @@ export class Behavior extends Actor {
         }
     }
 
-    get(behavior) {
-        if (!this.children) return false;
-        for (const child of this.children) if (child instanceof behavior) return child;;
+    get(behaviorClass) {
+        // if (!this.children) return false;
+        for (const child of this.children) if (child instanceof behaviorClass) return child;
         return false;
     }
 
     start(behavior) {
         if (!behavior) return;
-        const name = behavior.name || behavior;
-        const options = behavior.options || {};
+        let name = behavior;
+        let options = {};
+        if (behavior.name) {
+            name = behavior.name;
+            options = behavior;
+        }
         options.actor = this.actor;
         options.parent = this;
+
+        // const options = behavior.options || {};
+        // behavior.actor = this.actor;
+        // behavior.parent = this;
         const b = Constants.WC_BEHAVIORS.get(name);
         let out;
         if (b) {
-            out = this.get(b) || b.create(options);
+            // out = this.get(b) || b.create(options);
+            out = b.create(options);
         } else{
             console.warn("Behavior "+ name + " not found!")
         }
@@ -132,7 +133,7 @@ export class Behavior extends Actor {
         this.destroy();
     }
 
-    progess(data) {
+    progress(data) {
         if (this.parent) this.parent.onProgress(this, data);
     }
 
@@ -144,7 +145,7 @@ export class Behavior extends Actor {
     onStart() {}
     onDestroy() {}
     onSucceed(child, data) {};
-    onProgress(child, data) {};
+    onProgress(child, data) { this.progress(data)};
     onFail(child, data) {};
 
 }
@@ -158,12 +159,45 @@ Behavior.register('Behavior');
 
 export class DestroyBehavior extends Behavior {
 
-    get tickRate() { return 0 }
-
     onStart() { this.actor.destroy(); }
 
 }
 DestroyBehavior.register('DestroyBehavior');
+
+//------------------------------------------------------------------------------------------
+//-- PrintBehavior -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Prints to the console
+
+export class PrintBehavior extends Behavior {
+
+    get text() { return this._text || "test"}
+
+    onStart() {
+        console.log(this.text);
+        this.succeed();
+    }
+
+}
+PrintBehavior.register('PrintBehavior');
+
+//------------------------------------------------------------------------------------------
+//-- KeyBehavior -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Succeeds when a key is pressed
+
+export class KeyBehavior extends Behavior {
+
+    get key() { return this._key || " "}
+
+    onStart() {
+        this.subscribe("input", this.key + "Down", this.succeed);
+    }
+
+}
+KeyBehavior.register('KeyBehavior');
 
 //------------------------------------------------------------------------------------------
 //-- CompositeBehavior ---------------------------------------------------------------------
@@ -174,17 +208,14 @@ DestroyBehavior.register('DestroyBehavior');
 
 export class CompositeBehavior extends Behavior {
 
-    get tickRate() { return 0 }
     get behaviors() {return this._behaviors || []}
     get isParallel() { return this._parallel }
     get isShuffle() { return this._shuffle }
 
-    behaviorsSet(b) { // Changing the behaviors in a composite while its running destroys all the old children and starts the new ones.
-        if (this.children && this.children.size) {
-            new Set(this.children).forEach(child => child.destroy());
-            this.onStart();
-        }
-    }
+    // behaviorsSet(b) { // Changing the behaviors in a composite while its running destroys all the old children and starts the new ones.
+    //     new Set(this.children).forEach(child => child.destroy());
+    //     this.onStart();
+    // }
 
     onStart() {
         this.n = 0;
@@ -196,13 +227,13 @@ export class CompositeBehavior extends Behavior {
     startAll() {
         for (let i = 0; i < this.behaviors.length; i++ ) {
             if (this.doomed) return;
-            this.isShuffle ? this.startChild(this.behaviors[this.deck[i]]) : this.startChild(this.behaviors[i]);
+            this.isShuffle ? this.start(this.behaviors[this.deck[i]]) : this.start(this.behaviors[i]);
         }
     }
 
     startNext() {
         if (this.isParallel) return;
-        this.isShuffle ? this.startChild(this.behaviors[this.deck[this.n++]]) : this.startChild(this.behaviors[this.n++]);
+        this.isShuffle ? this.start(this.behaviors[this.deck[this.n++]]) : this.start(this.behaviors[this.n++]);
     }
 
 }
@@ -239,7 +270,6 @@ export class SelectorBehavior extends CompositeBehavior {
     onSucceed() { this.succeed(); }
     onFail() { --this.pending ? this.startNext() : this.fail(); }
 
-
 }
 SelectorBehavior.register('SelectorBehavior');
 
@@ -251,17 +281,14 @@ SelectorBehavior.register('SelectorBehavior');
 
 export class DecoratorBehavior extends Behavior {
 
-    get tickRate() { return 0 }
     get behavior() { return this._behavior }
 
-    behaviorSet(b) { // Changing the behavior in a decorator while it's running destroys the old children and starts the new one.
-        if (this.children && this.children.size ) {
-            new Set(this.children).forEach(child => child.destroy());
-            this.onStart();
-        }
-    }
+    // behaviorSet(b) { // Changing the behavior in a decorator while its running destroys the old child and starts the new one.
+    //     new Set(this.children).forEach(child => child.destroy());
+    //     this.onStart();
+    // }
 
-    onStart() { this.startChild(this.behavior); }
+    onStart() { this.start(this.behavior); }
 
 }
 DecoratorBehavior.register('DecoratorBehavior');
@@ -329,19 +356,62 @@ DelayBehavior.register("DelayBehavior");
 //------------------------------------------------------------------------------------------
 
 // Repeatedly executes a child behavior until count is reached, as long
-// as it succeeds. If it fails, the loop returns failure. If the count is set to 0, it executes indefinitely.
+// as it succeeds. If it fails, the loop returns failure.
+// If the count is set to 0, it executes indefinitely. BEWARE: if the behavior succeeds on start in an infinite loop you will exceed thr call stack
 
 export class LoopBehavior extends DecoratorBehavior {
 
     get count() {return this._count || 0}
 
     onStart() {
-        this.n = 0;
-        this.startChild(this.behaviorName);
+        this.n = 1;
+        this.start(this.behavior);
     }
 
-    onSucceed() { ++this.n === this.count ? this.succeed() : this.startChild(this.behavior);   }
+    onSucceed() {
+        this.progress(this.n);
+        if (!this.count || this.n < this.count) {
+            this.n++
+            this.start(this.behavior)
+        } else { this.succeed()}
+    }
+
     onFail() { this.fail(); }
 
 }
 LoopBehavior.register('LoopBehavior');
+
+//------------------------------------------------------------------------------------------
+//-- BranchBehavior ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class BranchBehavior extends Behavior {
+
+    get condition() { return this._condition}
+    get then() { return this._then}
+    get else() { return this._else}
+
+    onStart() {
+        this.conditionChild = this.start(this.condition);
+    }
+
+    onSucceed(child) {
+        if (child === this.conditionChild) {
+            this.conditionChild === null;
+            if (this.then) this.start(this.then)
+        } else {
+            this.onStart();
+        }
+    }
+
+    onFail(child) {
+        if (child === this.conditionChild){
+            this.conditionChild === null;
+            if (this.else) this.start(this.else)
+        } else {
+            this.onStart();
+        }
+    }
+
+}
+BranchBehavior.register('BranchBehavior');
