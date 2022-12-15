@@ -4,6 +4,15 @@ import { RegisterMixin, WorldcoreModel, Shuffle, Actor,  Pawn, GetPawn,Constants
 Constants.WC_BEHAVIORS = new Map();
 
 //------------------------------------------------------------------------------------------
+//-- Utilities -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export function fromS(s) {return 1000*s}
+export function fromM(m) {return 60000*m}
+export function fromH(h) {return 60*fromM(h)}
+export function fromD(d) {return 24*fromH(d)}
+
+//------------------------------------------------------------------------------------------
 //-- Behavioral ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -59,12 +68,10 @@ export class Behavior extends Actor {
     get name() {return this._name || "Behavior"}
     get actor() { return this._actor}
     get tickRate() { return this._tickRate || 100}
-    // get timeout() { return this._timeout || 60000} // one minute default
     get isPaused() { return this._pause};
 
     pause() { this.set({pause:true})}
     resume() { this.set({pause:false})}
-    // resetTimeout() {this.elapsed = 0}
 
     pauseSet(pause) {
         this._children.forEach(child => child.set({pause}));
@@ -76,31 +83,19 @@ export class Behavior extends Actor {
         if (this.actor && this.actor.doomed) return;
         if (this.doomed) return;
         if (!this.isPaused) this.do(delta);
-        // this.elapsed += delta;
-        // if (this.elapsed > this.timeout) {
-        //     console.log(this.name + " timeout!");
-        //     this.destroy();
-        // }
         if (!this.doomed) this.future(this.tickRate).tick(this.tickRate);
     }
 
-    kill(behavior) {
-        const name = behavior.name || behavior;
-        const b = Constants.WC_BEHAVIORS.get(name);
-        // if (!b || !this.children) return;
-        if (!b ) return;
-
-        for (const child of this.children) {
-            if (child instanceof b) {
-                child.destroy();
-            }
-        }
+    kill(name) {
+        // const b = Constants.WC_BEHAVIORS.get(name);
+        const victim = this.get(name)
+        if (victim) victim.destroy();
     }
 
-    get(behaviorClass) {
-        // if (!this.children) return false;
-        for (const child of this.children) if (child instanceof behaviorClass) return child;
-        return false;
+    get(name) {
+        const b = Constants.WC_BEHAVIORS.get(name);
+        if (!b) return;
+        for (const child of this.children) if (child instanceof b) return child;
     }
 
     start(behavior) {
@@ -113,19 +108,12 @@ export class Behavior extends Actor {
         }
         options.actor = this.actor;
         options.parent = this;
-
-        // const options = behavior.options || {};
-        // behavior.actor = this.actor;
-        // behavior.parent = this;
         const b = Constants.WC_BEHAVIORS.get(name);
-        let out;
         if (b) {
-            // out = this.get(b) || b.create(options);
-            out = b.create(options);
+            return b.create(options);
         } else{
             console.warn("Behavior "+ name + " not found!")
         }
-        return out;
     }
 
     succeed(data) {
@@ -145,7 +133,7 @@ export class Behavior extends Actor {
     onStart() {}
     onDestroy() {}
     onSucceed(child, data) {};
-    onProgress(child, data) { this.progress(data)};
+    onProgress(child, percent) { this.progress(percent)};
     onFail(child, data) {};
 
 }
@@ -382,6 +370,44 @@ export class LoopBehavior extends DecoratorBehavior {
 LoopBehavior.register('LoopBehavior');
 
 //------------------------------------------------------------------------------------------
+//-- TryBehavior ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Repeatedly tries a child until it succeeds. Delays between each trial
+
+export class TryBehavior extends DecoratorBehavior {
+
+    get delay() {return this._delay || fromS(1)} // one second
+
+    onStart() {
+        this.start(this.behavior);
+    }
+
+    onSucceed() { this.succeed()}
+    onFail() { this.future(this.delay).onStart(); }
+}
+TryBehavior.register('TryBehavior');
+
+//------------------------------------------------------------------------------------------
+//-- RetryBehavior ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Keeps trying a child until it fails. Delays between each trial
+
+export class RetryBehavior extends DecoratorBehavior {
+
+    get delay() {return this._delay || fromS(1)} // one second
+
+    onStart() {
+        this.start(this.behavior);
+    }
+
+    onSucceed() { this.future(this.delay).onStart();}
+    onFail() { this.fail(); }
+}
+RetryBehavior.register('RetryBehavior');
+
+//------------------------------------------------------------------------------------------
 //-- BranchBehavior ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -400,7 +426,8 @@ export class BranchBehavior extends Behavior {
             this.conditionChild === null;
             if (this.then) this.start(this.then)
         } else {
-            this.onStart();
+            // this.onStart();
+            this.succeed();
         }
     }
 
@@ -409,7 +436,8 @@ export class BranchBehavior extends Behavior {
             this.conditionChild === null;
             if (this.else) this.start(this.else)
         } else {
-            this.onStart();
+            // this.onStart();
+            this.fail();
         }
     }
 

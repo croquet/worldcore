@@ -233,7 +233,10 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
     init(options) {
         super.init(options);
 
-        this.behavior.start({name: "BranchBehavior", condition: "GroundTestBehavior", else: "FallBehavior"});
+        this.behavior.start({
+            name:"LoopBehavior",
+            behavior: {name: "BranchBehavior", condition: "GroundTestBehavior", else: "FallBehavior"}
+        })
 
         this.set({tags: ["sheep", "obstacle"]});
         this.subscribe("edit", "goto", this.onGoto);
@@ -241,7 +244,7 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
         this.subscribe("input", "fDown", this.doFollow);
         this.subscribe("input", "gDown", this.doFlee);
         this.subscribe("input", "hDown", this.doFlock);
-        this.subscribe("input", "mDown", this.doPing);
+        this.subscribe("input", "jDown", this.doJostle);
     }
 
     get conform() {return true}
@@ -261,18 +264,6 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
         const target = bm.testAvatar;
         if (!target) return;
         this.behavior.start({name: "FollowBehavior", target})
-
-        // const bm = this.service("BotManager");
-        // const target = bm.testAvatar;
-        // if (!target) return;
-        // if (this.follow) {
-        //     console.log("stop follow");
-        //     this.follow = null;
-        //     this.behavior.kill("FollowBehavior");
-        // } else {
-        //     console.log("follow");
-        //     this.follow = this.behavior.start({name: "FollowBehavior", options: {target}})
-        // }
     }
 
     doFlee() {
@@ -282,15 +273,12 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
 
     doFlock() {
         console.log("flock");
-        this.behavior.start("FlockBehavior");
-        // this.behavior.start({name: "CohereBehavior", options: {weight: 0.5}})
-        // this.behavior.start({name: "AvoidBehavior", options: {tag: "sheep", distance: 1, weight: 0.2}})
-        // this.behavior.start({name: "AlignBehavior", options: {tag: "sheep", distance: 3, weight: 0.99}})
+        this.behavior.start("CohereBehavior");
     }
 
-    doPing() {
-        console.log("ping");
-        console.log(this.closest(5, "sheep"));
+    doJostle() {
+        console.log("jostle");
+        this.behavior.start("JostleBehavior");
     }
 
 }
