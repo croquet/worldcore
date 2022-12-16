@@ -233,18 +233,18 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
     init(options) {
         super.init(options);
 
-        this.behavior.start({
-            name:"LoopBehavior",
-            behavior: {name: "BranchBehavior", condition: "GroundTestBehavior", else: "FallBehavior"}
-        })
+        // this.behavior.start({
+        //     name:"LoopBehavior",
+        //     behavior: {name: "BranchBehavior", condition: "GroundTestBehavior", else: "FallBehavior"}
+        // })
 
         this.set({tags: ["sheep", "obstacle"]});
         this.subscribe("edit", "goto", this.onGoto);
         this.subscribe("input", "lDown", this.destroy);
-        this.subscribe("input", "fDown", this.doFollow);
-        this.subscribe("input", "gDown", this.doFlee);
+        // this.subscribe("input", "fDown", this.doFollow);
+        // this.subscribe("input", "gDown", this.doFlee);
         this.subscribe("input", "hDown", this.doFlock);
-        this.subscribe("input", "jDown", this.doJostle);
+        // this.subscribe("input", "jDown", this.doJostle);
     }
 
     get conform() {return true}
@@ -267,19 +267,21 @@ export class SheepActor extends mix(BotActor).with(AM_Flockable) {
     }
 
     doFlee() {
-        console.log("flee");
-        this.behavior.start("FleeBehavior");
+        console.log("avoid");
+        this.behavior.start("AvoidBehavior");
     }
 
     doFlock() {
         console.log("flock");
-        this.behavior.start("CohereBehavior");
+        // this.behavior.start({name:"InterruptBehavior", behavior:"Behavior", interrupt: "AvoidBehavior"});
+        this.behavior.start({name:"InterruptBehavior", behavior:"CohereBehavior", interrupt: "AvoidBehavior"});
+        // this.behavior.start("CohereBehavior");
     }
 
-    doJostle() {
-        console.log("jostle");
-        this.behavior.start("JostleBehavior");
-    }
+    // doJostle() {
+    //     console.log("jostle");
+    //     this.behavior.start("JostleBehavior");
+    // }
 
 }
 SheepActor.register("SheepActor");
@@ -307,7 +309,7 @@ export class PersonActor extends BotActor {
 
     init(options) {
         super.init(options);
-        this.set({tags: ["threat","bait"]})
+        this.set({tags: ["threat"]})
         console.log(this.tags);
     }
 }

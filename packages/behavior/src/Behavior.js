@@ -52,8 +52,8 @@ export class Behavior extends Actor {
 
     init(options) {
         super.init(options);
-        this.onStart();
-        this.elapsed = 0; // ms since start
+        this.future(0).onStart();
+        // this.elapsed = 0; // ms since start
         if (!this.doomed && this.tickRate && this.do) {
             const firstDelta = Math.random() * this.tickRate;
             this.future(firstDelta).tick(firstDelta);
@@ -108,7 +108,10 @@ export class Behavior extends Actor {
         }
         options.actor = this.actor;
         options.parent = this;
+        // console.log("start: " + name);
+
         const b = Constants.WC_BEHAVIORS.get(name);
+        // console.log("b: " + b);
         if (b) {
             return b.create(options);
         } else{
@@ -200,11 +203,6 @@ export class CompositeBehavior extends Behavior {
     get isParallel() { return this._parallel }
     get isShuffle() { return this._shuffle }
 
-    // behaviorsSet(b) { // Changing the behaviors in a composite while its running destroys all the old children and starts the new ones.
-    //     new Set(this.children).forEach(child => child.destroy());
-    //     this.onStart();
-    // }
-
     onStart() {
         this.n = 0;
         this.pending = this.behaviors.length;
@@ -271,12 +269,10 @@ export class DecoratorBehavior extends Behavior {
 
     get behavior() { return this._behavior }
 
-    // behaviorSet(b) { // Changing the behavior in a decorator while its running destroys the old child and starts the new one.
-    //     new Set(this.children).forEach(child => child.destroy());
-    //     this.onStart();
-    // }
+    onStart() { this.child = this.start(this.behavior); }
 
-    onStart() { this.start(this.behavior); }
+    onSucceed(child, data) {if (this.child = child) this.succeed(data)}
+    onFail(child, data) {if (this.child = child) this.fail(data)}
 
 }
 DecoratorBehavior.register('DecoratorBehavior');
@@ -379,9 +375,9 @@ export class TryBehavior extends DecoratorBehavior {
 
     get delay() {return this._delay || fromS(1)} // one second
 
-    onStart() {
-        this.start(this.behavior);
-    }
+    // onStart() {
+    //     this.start(this.behavior);
+    // }
 
     onSucceed() { this.succeed()}
     onFail() { this.future(this.delay).onStart(); }
@@ -396,11 +392,7 @@ TryBehavior.register('TryBehavior');
 
 export class RetryBehavior extends DecoratorBehavior {
 
-    get delay() {return this._delay || fromS(1)} // one second
-
-    onStart() {
-        this.start(this.behavior);
-    }
+    get delay() {return this._delay || 1000} //
 
     onSucceed() { this.future(this.delay).onStart();}
     onFail() { this.fail(); }
@@ -411,14 +403,14 @@ RetryBehavior.register('RetryBehavior');
 //-- BranchBehavior ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BranchBehavior extends Behavior {
+export class BranchBehavior extends DecoratorBehavior {
 
-    get condition() { return this._condition}
+    // get condition() { return this._condition}
     get then() { return this._then}
     get else() { return this._else}
 
     onStart() {
-        this.conditionChild = this.start(this.condition);
+        this.conditionChild = this.start(this.behavior);
     }
 
     onSucceed(child) {
@@ -426,20 +418,62 @@ export class BranchBehavior extends Behavior {
             this.conditionChild === null;
             if (this.then) this.start(this.then)
         } else {
-            // this.onStart();
             this.succeed();
         }
     }
 
     onFail(child) {
         if (child === this.conditionChild){
-            this.conditionChild === null;
+            this.condition === null;
             if (this.else) this.start(this.else)
         } else {
-            // this.onStart();
             this.fail();
         }
     }
 
 }
 BranchBehavior.register('BranchBehavior');
+
+//------------------------------------------------------------------------------------------
+//-- InterruptBehavior ---------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class InterruptBehavior extends DecoratorBehavior {
+
+    get interrupt() { return this._interrupt}
+
+    onStart() {
+        this.primaryChild = this.start(this.behavior);
+        this.interruptChild = this.start(this.interrupt);
+    }
+
+    onProgress(child, percent) {
+        if (child === this.interruptChild) {
+            // console.log("on progress: " + percent)
+            if (percent===0) {
+                // console.log("interrupt!")
+                this.primaryChild.destroy();
+            }
+            if (percent===1) {
+                // console.log("resume!")
+                this.primaryChild = this.start(this.behavior);
+            }
+        } else {
+            this.progress(this, percent);
+        }
+
+    }
+
+    // onSucceed(child, data) {
+    //     // console.log("s:" + child);
+    //     super.onSucceed(child, data);
+
+    // }
+
+    // onFail(child, data) {
+    //     // console.log("f:" + child);
+    //     super.onFail(child, data);
+    // }
+
+}
+InterruptBehavior.register('InterruptBehavior');

@@ -183,7 +183,6 @@ class GotoBehavior extends Behavior {
 
     }
 
-
 }
 GotoBehavior.register("GotoBehavior");
 
@@ -196,6 +195,7 @@ GotoBehavior.register("GotoBehavior");
 class WalkToBehavior extends Behavior {
 
     get destination() {return this._destination}
+    get speed() { return this._speed || 3}
 
     onStart() {
         const paths = this.service("Paths");
@@ -207,10 +207,11 @@ class WalkToBehavior extends Behavior {
             this.fail();
         }
 
-        this.goto = this.start("GotoBehavior");
-        // this.jostle = this.start("JostleBehavior");
+        const speed = this.speed;
+        this.goto = this.start({name: "GotoBehavior", speed});
 
         this.step = 0;
+        this.progress(0);
         this.nextStep();
     }
 
@@ -277,9 +278,11 @@ FollowBehavior.register("FollowBehavior");
 class FleeBehavior extends Behavior {
 
     get tag() { return this._tag || "threat"};
-    get distance() { return this._distance || 5};
+    get distance() { return this._distance || 1};
+    get speed() { return this._speed || 7};
 
     onStart() {
+        // console.log("flee start");
         const neighbors = this.actor.neighbors(this.distance+1, this.tag);
         let x = 0;
         let y = 0
@@ -295,14 +298,17 @@ class FleeBehavior extends Behavior {
         }
 
         if (s>0) {
+            // console.log("flee now");
             const paths = this.service("Paths");
             const endKey = paths.findWay(this.actor.key, [x,y], this.distance)
             const endVoxel = unpackKey(endKey);
             const xx = 0.25 + this.random()*0.5;
             const yy = 0.25 + this.random()*0.5;
             const destination = v3_add(endVoxel, [xx, yy, 0]);
-            this.start({name: "WalkToBehavior", destination});
+            const speed = this.speed;
+            this.start({name: "WalkToBehavior", speed, destination});
         } else {
+            // console.log("flee nothing to flee from")
             this.succeed(); // Nothing to flee from;
         }
     }
@@ -321,11 +327,12 @@ FleeBehavior.register("FleeBehavior");
 class AvoidBehavior extends Behavior {
 
     get tag() { return this._tag || "threat"};
-    get distance() { return this._distance || 5};
+    get distance() { return this._distance || 3};
 
     onStart() {
-        const distance = this.distance;
-        this.start({name: "RetryBehavior", behavior: {name: "FleeBehavior", distance}});;
+        // console.log("avoid start");
+        const distance = this.distance + 1;
+        this.start({name: "RetryBehavior", delay:500, behavior: {name: "FleeBehavior", distance}});
     }
 
 }
@@ -337,61 +344,62 @@ AvoidBehavior.register("AvoidBehavior");
 
 class CohereBehavior extends Behavior {
 
-    get radius() { return this._radius || 2};
+    get radius() { return this._radius || 0.5};
 
     onStart() {
+        // console.log("cohere start");
         if(!this.actor.flock) return;
-        this.tickRate = fromS(1);
+        this.tickRate = 100;
         this.center = this.actor.flock.xyz;
         const destination = this.center;
-        this.start({name: "WalkToBehavior", destination});
+        this.start({name: "WalkToBehavior", speed: 2, destination});
     }
 
     do() {
         const range = v2_distance(this.center, this.actor.xyz);
-        if (range < this.radius) this.succeed();
+        if (range < this.radius) this.kill("WalkToBehavior");
     }
 
 }
 CohereBehavior.register("CohereBehavior");
 
 
-//------------------------------------------------------------------------------------------
-//-- JostleBehavior ------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+// //-- JostleBehavior ------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
 
-class JostleBehavior extends Behavior {
+// class JostleBehavior extends Behavior {
 
-    get radius() { return this._radius|| 0.5};
+//     get radius() { return this._radius|| 0.5};
 
-    onStart() {
-        this.tickRate = 50;
-    }
+//     onStart() {
+//         this.tickRate = 50;
+//     }
 
-    do() {
-        const neighbors = this.actor.neighbors( 2, "obstacle");
-        let x = 0;
-        let y = 0
-        let s = 0;
-        for (const bot of neighbors) {
-            const from = v2_sub(this.actor.xyz, bot.xyz);
-            const range = v2_magnitude(from);
-            if (range<this.radius) {
-                x += from[0]
-                y += from[1]
-                s++;
-            }
-        }
+//     do() {
+//         const neighbors = this.actor.neighbors( 2, "obstacle");
+//         let x = 0;
+//         let y = 0
+//         let s = 0;
+//         for (const bot of neighbors) {
+//             const from = v2_sub(this.actor.xyz, bot.xyz);
+//             const range = v2_magnitude(from);
+//             if (range<this.radius) {
+//                 x += from[0]
+//                 y += from[1]
+//                 s++;
+//             }
+//         }
 
-        if (s>0) {
-            const xyz = v3_add(this.actor.xyz,[x/s,y/s,0])
-            this.actor.set({xyz});
-        };
-    }
+//         if (s>0) {
+//             const xyz = v3_add(this.actor.xyz,[x/s,y/s,0])
+//             this.actor.set({xyz});
+//         };
+//     }
 
 
-}
-JostleBehavior.register("JostleBehavior");
+// }
+// JostleBehavior.register("JostleBehavior");
 
 
 
