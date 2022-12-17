@@ -53,7 +53,6 @@ export class Behavior extends Actor {
     init(options) {
         super.init(options);
         this.future(0).onStart();
-        // this.elapsed = 0; // ms since start
         if (!this.doomed && this.tickRate && this.do) {
             const firstDelta = Math.random() * this.tickRate;
             this.future(firstDelta).tick(firstDelta);
@@ -87,7 +86,6 @@ export class Behavior extends Actor {
     }
 
     kill(name) {
-        // const b = Constants.WC_BEHAVIORS.get(name);
         const victim = this.get(name)
         if (victim) victim.destroy();
     }
@@ -108,10 +106,8 @@ export class Behavior extends Actor {
         }
         options.actor = this.actor;
         options.parent = this;
-        // console.log("start: " + name);
 
         const b = Constants.WC_BEHAVIORS.get(name);
-        // console.log("b: " + b);
         if (b) {
             return b.create(options);
         } else{
