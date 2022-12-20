@@ -299,6 +299,7 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
     }
 
     update(time) {
+        // console.log("gv");
         time0 = time1;
         time1 = time;
         if (this.isPaused) return;

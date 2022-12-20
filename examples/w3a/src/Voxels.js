@@ -258,6 +258,7 @@ export class Voxels extends ModelService {
     init() {
         super.init('Voxels');
         console.log("Voxels");
+        this.watertable = 1; // Voxel height of water surface
 
         this.voxels = Array.from(Array(Constants.sizeX), ()=>Array.from(Array(Constants.sizeY), ()=>new VoxelColumn()));
 
@@ -273,7 +274,6 @@ export class Voxels extends ModelService {
     get(x, y, z) {
         return this.voxels[x][y].get(z);
     }
-
 
     set(x, y, z, type) {
         const column = this.voxels[x][y];
@@ -404,6 +404,10 @@ export class Voxels extends ModelService {
 
     summit(x,y) {
         return this.voxels[x][y].summit();
+    }
+
+    setWatertable(depth) {
+        this.watertable = depth;
     }
 
 }

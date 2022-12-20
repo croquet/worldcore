@@ -1,4 +1,6 @@
 import { ModelService, Constants, PerlinNoise } from "@croquet/worldcore";
+import { unpackKey } from "./Voxels";
+import { TreeActor } from "./Props";
 // import { Voxels } from "./Voxels";
 
 //------------------------------------------------------------------------------------------
@@ -67,24 +69,37 @@ export class WorldBuilder extends ModelService {
         }
 
 
-
-
-        // landMatrix[2][2][1] = Constants.voxel.dirt;
-        // landMatrix[2][2][2] = Constants.voxel.dirt;
-        // landMatrix[2][2][3] = Constants.voxel.dirt;
-        // landMatrix[3][2][3] = Constants.voxel.rock;
-        // landMatrix[4][2][3] = Constants.voxel.rock;
-        // landMatrix[5][2][3] = Constants.voxel.rock;
-
-        // landMatrix[2][4][2] = Constants.voxel.rock;
-        // landMatrix[4][2][2] = Constants.voxel.rock;
-
-
+        voxels.setWatertable(8.3);
         voxels.load(landMatrix);
 
+        perlin.generate();
+        const surfaces = this.service("Surfaces");
+        const walkable = [];
+        surfaces.surfaces.forEach((surface, key) => {
+            if (surface.isWalkable) walkable.push(key);
+        });
 
+        for (let i = 0; i < 2000; i++) {
+            const n = Math.floor(this.random() * walkable.length);
+            const key = walkable[n]
+            const xyz = unpackKey(key)
+            let x = xyz[0];
+            let y = xyz[1];
+            let z = xyz[2];
+            if (z < voxels.watertable) continue;
+            if (landMatrix[x][y][z-1] !== Constants.voxel.dirt) continue; // Only plant trees in dirt.
+            if (perlin.noise2D(x * 0.1, y*0.1) > 0.4) continue // Clump
+
+            x += 0.1 + 0.8 * this.random();
+            y += 0.1 + 0.8 * this.random();
+            const size = 0.2 + 0.8 * this.random();
+            const tree = TreeActor.create({xyz:[x,y,z], size});
+            tree.validate();
+        }
 
     }
+
+
 
 }
 WorldBuilder.register('WorldBuilder');

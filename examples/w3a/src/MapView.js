@@ -19,6 +19,16 @@ triangleMaterial.side = THREE.DoubleSide;
 triangleMaterial.shadowSide = THREE.DoubleSide;
 triangleMaterial.vertexColors = true;
 
+const waterMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(0,0,0.8)});
+waterMaterial.polygonOffset = true;
+waterMaterial.polygonOffsetFactor = 2;
+waterMaterial.polygonOffsetUnits = 2;
+// waterMaterial.side = THREE.FrontSide;
+// waterMaterial.shadowSide = THREE.FrontSide;
+// ghostMaterial.vertexColors = true;
+waterMaterial.transparent = true;
+waterMaterial.opacity = 0.25;
+
 const ghostMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(0.8,0.8,0)});
 ghostMaterial.polygonOffset = true;
 ghostMaterial.polygonOffsetFactor = 1;
@@ -712,6 +722,7 @@ export class MapView extends WorldcoreView {
         });
         this.layers.forEach(layer => layer.build());
         this.buildFrame();
+        this.buildWater();
         // console.log("Building map view done");
     }
 
@@ -851,6 +862,20 @@ export class MapView extends WorldcoreView {
 
         render.scene.add(this.frameMesh);
         render.scene.add( this.frameLines);
+    }
+
+    buildWater() {
+        const depth = 8.35
+        const render = this.service("ThreeRenderManager");
+        if (!render) return;
+        const voxels = this.modelService("Voxels");
+        const x = (Constants.sizeX-2) * Constants.scaleX;
+        const y = (Constants.sizeY-2) * Constants.scaleY;
+        const z = voxels.watertable * Constants.scaleZ;
+        this.waterGeometry = new THREE.BoxGeometry( x, y, z );
+        this.waterGeometry.translate(x/2+Constants.scaleX,y/2+Constants.scaleY,z/2);
+        this.waterMesh = new THREE.Mesh( this.waterGeometry, waterMaterial );
+        render.scene.add( this.waterMesh);
     }
 }
 

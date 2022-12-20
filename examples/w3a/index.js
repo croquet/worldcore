@@ -14,6 +14,7 @@ import { InstanceManager } from "./src/Instances";
 import { BotManager } from "./src/Bots";
 import { PathDebug, Paths} from "./src/Paths";
 import { TestBehavior } from "./src/SharedBehaviors";
+import { AvatarManager } from "./src/Avatar";
 
 //------------------------------------------------------------------------------------------
 //-- Helper Functions -----------------------------------------------------------------------------
@@ -139,7 +140,7 @@ MyUser.register("MyUser");
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [MyUserManager, Voxels, Stress, Surfaces, Paths, WorldBuilder, PropManager, BotManager];
+        return [MyUserManager, Voxels, Stress, Surfaces, Paths, WorldBuilder, PropManager, BotManager, AvatarManager];
     }
 
     init(...args) {
@@ -226,6 +227,7 @@ class MyViewRoot extends ViewRoot {
 
     xTest() {
         console.log("xTest");
+        this.godView.isPaused = !this.godView.isPaused
     }
 
 

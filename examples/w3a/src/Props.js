@@ -133,12 +133,12 @@ export class TreeActor extends mix(PropActor).with(AM_Behavioral) {
     init(options) {
         super.init(options);
         this.set({tags: ["tree", "obstacle"]})
-        console.log(this.tags);
+        // console.log(this.tags);
         this.maxSize = 0.4 + 0.6*this.random();
         this.behavior.start("GrowBehavior");
     }
 
-    get size() { return this._size }
+    get size() { return this._size || 0.2 }
     set size(s) { this._size = s}
 
     validate() { // Check to see if the prop is affected by changing terrain Better use of ground

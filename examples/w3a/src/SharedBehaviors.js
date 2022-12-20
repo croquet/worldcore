@@ -68,13 +68,13 @@ class GrowBehavior extends Behavior {
     set size(s) { this.actor.size = s}
 
     onStart() {
-        this.tickRate = 500;
-        this.size = 0.2;
+        this.tickRate = 1000;
+        // this.size = 0.2;
         this.actor.scale = [this.size, this.size, this.size];
     }
 
     do(delta) {
-        const growth = 1 + 0.1 * (delta/1000)
+        const growth = 1 + 0.01 * (delta/1000)
         this.size = Math.min(this.actor.maxSize, this.size * growth);
         this.actor.scale = [this.size, this.size, this.size];
         if (this.size === this.actor.maxSize) this.succeed();

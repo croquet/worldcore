@@ -436,15 +436,15 @@ BranchBehavior.register('BranchBehavior');
 
 export class InterruptBehavior extends DecoratorBehavior {
 
-    get interrupt() { return this._interrupt}
+    get watch() { return this._interrupt}
 
     onStart() {
         this.primaryChild = this.start(this.behavior);
-        this.interruptChild = this.start(this.interrupt);
+        this.watchChild = this.start(this.watch);
     }
 
     onProgress(child, percent) {
-        if (child === this.interruptChild) {
+        if (child === this.watchChild) {
             // console.log("on progress: " + percent)
             if (percent===0) {
                 // console.log("interrupt!")
