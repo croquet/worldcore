@@ -130,7 +130,11 @@ class GotoBehavior extends Behavior {
     get speed() { return this._speed || 3}
 
     do(delta) {
-        const distance = this.speed * delta / 1000;
+        const voxels = this.service("Voxels");
+        let distance = this.speed * delta / 1000;
+        if(this.actor.xyz[2] < voxels.watertable) { // wading
+            distance *= 0.5;
+        }
         const to = v2_sub(this.target, this.actor.xyz);
         const left = v2_magnitude(to)
         if (distance>left) {
@@ -151,7 +155,6 @@ class GotoBehavior extends Behavior {
         const above = v3_floor(v3_add(this.actor.xyz,[x,y,1]));
         const below = v3_floor(v3_add(this.actor.xyz,[x,y,-1]));
 
-        const voxels = this.service("Voxels");
         const levelIsEmpty = voxels.get(...level) < 2;
         const aboveIsEmpty = voxels.get(...above) < 2;
         const belowIsEmpty = voxels.get(...below) < 2;
@@ -205,6 +208,7 @@ class WalkToBehavior extends Behavior {
         if (this.path.length === 0) { // No path to destination
             console.log("no path!")
             this.fail();
+            return;
         }
 
         const speed = this.speed;
@@ -347,7 +351,6 @@ class CohereBehavior extends Behavior {
     get radius() { return this._radius || 0.5};
 
     onStart() {
-        // console.log("cohere start");
         if(!this.actor.flock) return;
         this.tickRate = 100;
         this.center = this.actor.flock.xyz;

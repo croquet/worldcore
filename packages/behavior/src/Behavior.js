@@ -170,21 +170,44 @@ export class PrintBehavior extends Behavior {
 PrintBehavior.register('PrintBehavior');
 
 //------------------------------------------------------------------------------------------
-//-- KeyBehavior -----------------------------------------------------------------------
+//-- SubscribeBehavior ---------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Succeeds when a key is pressed
+// Succeeds when an event is received.
 
-export class KeyBehavior extends Behavior {
+export class SubscribeBehavior extends Behavior {
 
-    get key() { return this._key || " "}
+    get scope() { return this._scope || this.actor.id}
+    get event() { return this._event || "event"}
+    get data() { return this._data}
 
     onStart() {
-        this.subscribe("input", this.key + "Down", this.succeed);
+        this.subscribe(this.scope, this.event, this.succeed);
+    }
+
+
+}
+SubscribeBehavior.register('SubscribeBehavior');
+
+//------------------------------------------------------------------------------------------
+//-- PublishBehavior -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Publishes an event and immediately succeeds
+
+export class PublishBehavior extends Behavior {
+
+    get scope() { return this._scope || this.actor.id}
+    get event() { return this._event || "event"}
+    get data() { return this._data}
+
+    onStart() {
+        this.publish(this.scope, this.event, this.data);
+        this.succeed();
     }
 
 }
-KeyBehavior.register('KeyBehavior');
+PublishBehavior.register('PublishBehavior');
 
 //------------------------------------------------------------------------------------------
 //-- CompositeBehavior ---------------------------------------------------------------------
@@ -401,7 +424,6 @@ RetryBehavior.register('RetryBehavior');
 
 export class BranchBehavior extends DecoratorBehavior {
 
-    // get condition() { return this._condition}
     get then() { return this._then}
     get else() { return this._else}
 

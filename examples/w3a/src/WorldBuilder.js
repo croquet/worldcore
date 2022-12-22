@@ -69,7 +69,7 @@ export class WorldBuilder extends ModelService {
         }
 
 
-        voxels.setWatertable(8.3);
+        voxels.setWatertable(8.2);
         voxels.load(landMatrix);
 
         perlin.generate();
@@ -79,7 +79,7 @@ export class WorldBuilder extends ModelService {
             if (surface.isWalkable) walkable.push(key);
         });
 
-        for (let i = 0; i < 2000; i++) {
+        for (let i = 0; i < 8000; i++) {
             const n = Math.floor(this.random() * walkable.length);
             const key = walkable[n]
             const xyz = unpackKey(key)

@@ -19,23 +19,12 @@ triangleMaterial.side = THREE.DoubleSide;
 triangleMaterial.shadowSide = THREE.DoubleSide;
 triangleMaterial.vertexColors = true;
 
-const waterMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(0,0,0.8)});
-waterMaterial.polygonOffset = true;
-waterMaterial.polygonOffsetFactor = 2;
-waterMaterial.polygonOffsetUnits = 2;
-// waterMaterial.side = THREE.FrontSide;
-// waterMaterial.shadowSide = THREE.FrontSide;
-// ghostMaterial.vertexColors = true;
-waterMaterial.transparent = true;
-waterMaterial.opacity = 0.25;
-
 const ghostMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(0.8,0.8,0)});
 ghostMaterial.polygonOffset = true;
 ghostMaterial.polygonOffsetFactor = 1;
 ghostMaterial.polygonOffsetUnits = 1;
 ghostMaterial.side = THREE.FrontSide;
 ghostMaterial.shadowSide = THREE.FrontSide;
-// ghostMaterial.vertexColors = true;
 ghostMaterial.transparent = true;
 ghostMaterial.opacity = 0.3;
 
@@ -51,9 +40,18 @@ texture.src = paper;
 const lineMaterial = new THREE.LineBasicMaterial( {color: new THREE.Color(0.3,0.3,0.3)} );
 lineMaterial.opacity = 0.1;
 lineMaterial.transparent = true;
+// lineMaterial.lineWidth = 0.1;
 lineMaterial.polygonOffset = true;
 lineMaterial.polygonOffsetFactor = -1;
 lineMaterial.polygonOffsetUnits = -1;
+
+const waterMaterial = new THREE.MeshStandardMaterial({ color: new THREE.Color(0,0,0.8)});
+waterMaterial.polygonOffset = true;
+waterMaterial.polygonOffsetFactor = 2;
+waterMaterial.polygonOffsetUnits = 2;
+waterMaterial.side = THREE.FrontSide;
+waterMaterial.transparent = true;
+waterMaterial.opacity = 0.25;
 
 //------------------------------------------------------------------------------------------
 //-- Helper Functions ----------------------------------------------------------------------
@@ -182,16 +180,6 @@ class MapLayer extends WorldcoreView {
             render.scene.add(this.mesh);
             render.scene.add(this.lines);
         }
-
-
-            // this.mesh = new THREE.Mesh( this.triangleGeometry, triangleMaterial );
-            // this.mesh.receiveShadow = true;
-            // this.mesh.castShadow = true;
-            // this.lines  = new THREE.LineSegments(this.lineGeometry, lineMaterial);
-
-            // render.scene.add(this.mesh);
-            // render.scene.add(this.lines);
-
 
     }
 
@@ -683,6 +671,8 @@ export class MapView extends WorldcoreView {
     destroy() {
         super.destroy()
         this.layers.forEach(layer => layer.destroy());
+        if (this.frameGeometry) this.frameGeometry.dispose();
+        if (this.waterGeometry) this.waterGeometry.dispose();
     }
 
     clear() {
@@ -714,7 +704,6 @@ export class MapView extends WorldcoreView {
     }
 
     buildAll() {
-        // console.log("Building map view ... ");
         const surfaces = this.modelService("Surfaces");
         this.clear();
         surfaces.surfaces.forEach((surface, key) => {
@@ -723,14 +712,11 @@ export class MapView extends WorldcoreView {
         this.layers.forEach(layer => layer.build());
         this.buildFrame();
         this.buildWater();
-        // console.log("Building map view done");
     }
 
     buildFrame() {
         const render = this.service("ThreeRenderManager");
         if (!render) return;
-        const voxels = this.modelService("Voxels");
-        // const h = voxels.edgeSummit();
         const h = 2;
         const t = 0.5
         const tb = new TriBuilder();
@@ -865,13 +851,16 @@ export class MapView extends WorldcoreView {
     }
 
     buildWater() {
-        const depth = 8.35
         const render = this.service("ThreeRenderManager");
         if (!render) return;
         const voxels = this.modelService("Voxels");
         const x = (Constants.sizeX-2) * Constants.scaleX;
         const y = (Constants.sizeY-2) * Constants.scaleY;
         const z = voxels.watertable * Constants.scaleZ;
+
+        if (this.waterGeometry) this.waterGeometry.dispose();
+        if (this.waterMesh) render.scene.remove(this.waterMesh);
+
         this.waterGeometry = new THREE.BoxGeometry( x, y, z );
         this.waterGeometry.translate(x/2+Constants.scaleX,y/2+Constants.scaleY,z/2);
         this.waterMesh = new THREE.Mesh( this.waterGeometry, waterMaterial );

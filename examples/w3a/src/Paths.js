@@ -154,30 +154,6 @@ export class Paths extends ModelService {
         return key;
     }
 
-    // look(startKey, to, callback) {
-    //     if (!this.nodes.has(startKey)) return null;
-    //     let keys = [startKey];
-    //     const arc = Voxels.arc(to);
-    //     let range = 0;
-    //     do {
-    //         const next = [];
-    //         for (const key of keys) {
-    //             const result = callback(key, range);
-    //             if(result) return result;
-    //             const node = this.get(key);
-
-    //             arc.forEach(n=> {
-    //                 const exit = node.exits[n];
-    //                 if (exit) next.push(exit);
-    //             })
-    //         }
-    //         if (next.length===0) return null; // view blocked
-    //         keys = next;
-    //         range++;
-    //     } while(range<100); // Prevent infinite loop
-    //     return null;
-    // }
-
     look(startKey, to, callback) {
         if (!this.nodes.has(startKey)) return null;
         let keys = new Set([startKey]);
@@ -259,6 +235,14 @@ class Node {
                 return;
             }
 
+            if(z<voxels.watertable-1) {
+                this.edges[d] = 3;
+                return;
+            }
+
+            this.effort = 1;
+            if(z<voxels.watertable) this.effort = 1.5;
+
             if( t >= 2) { // side voxel is solid
                 const above = Voxels.adjacent(x,y,z,[0,0,1])
                 const aboveType = voxels.get(...above);
@@ -295,14 +279,14 @@ class Node {
 
     weight(n) {
         if (n>3) {
-            return 1.5
+            return 1.5 * this.effort
         }
         if (this.edges[n] > 0) { // ascending
-            return 2;
+            return 2 * this.effort;
         } else if (this.edges[n] <0) { // descending
-            return 1.9
+            return 1.9 * this.effort
         }
-    return 1; // level
+    return 1* this.effort; // level
     }
 
 }

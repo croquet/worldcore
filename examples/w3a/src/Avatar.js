@@ -25,8 +25,8 @@ export class AvatarManager extends ModelService {
         const voxel = data.xyz
         const x = 0.5
         const y = 0.5
-        // const avatar = ThirdPersonActor.create({voxel, fraction:[x,y,0], driverId: data.driverId});
-        const avatar = FirstPersonActor.create({voxel, fraction:[x,y,0], driverId: data.driverId});
+        const avatar = ThirdPersonActor.create({voxel, fraction:[x,y,0], driverId: data.driverId});
+        // const avatar = FirstPersonActor.create({voxel, fraction:[x,y,0], driverId: data.driverId});
     }
 }
 AvatarManager.register("AvatarManager");

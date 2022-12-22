@@ -724,6 +724,37 @@ export class ToggleSet2 extends WorldcoreView  {
 }
 
 //------------------------------------------------------------------------------------------
+//-- ImageToggleWidget2 --------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class ImageToggleWidget2 extends ToggleWidget2 {
+
+    buildDefault() {
+        this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.5,0.5]});
+        this.label = new ImageWidget2({parent: this.frame, autoSize: [1,1], border: [2.5, 2.5, 2.5, 2.5], color: [0.6,0.6,0.6], url: this.offURL});
+    }
+
+    get offURL() {return this._offURL}
+    get onURL() {return this._onURL}
+
+    onHover() {
+        this.frame.set({color: [0.4,0.4,0.4]});
+    }
+
+    onPress() {
+        this.frame.set({color: [0.8,0.8,0.8]});
+    }
+
+    onNormal() {
+        this.frame.set({color: [0.6,0.6,0.6]});
+    }
+
+    onToggle() {
+        this.isOn ? this.label.set({url: this.onURL}) : this.label.set({url: this.offURL});
+    }
+}
+
+//------------------------------------------------------------------------------------------
 //-- SliderWidget2 -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 

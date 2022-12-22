@@ -1,4 +1,4 @@
-import { WorldcoreView, Pawn, mix, m4_rotationX, toRad, m4_scaleRotationTranslation, q_axisAngle, PM_WidgetPointer, v2_sub, Constants, q_multiply, TAU, v3_scale, v3_add, v3_normalize, v3_rotate, v3_magnitude, THREE, viewRoot, v3_sub, v3_floor, PM_ThreeVisible, Widget2, CanvasWidget2, ToggleWidget2, ToggleSet2, ImageWidget2, SliderWidget2, v3_angle, v4_normalize, toDeg } from "@croquet/worldcore";
+import { WorldcoreView, Pawn, mix, m4_rotationX, toRad, m4_scaleRotationTranslation, q_axisAngle, PM_WidgetPointer, v2_sub, Constants, q_multiply, TAU, v3_scale, v3_add, v3_normalize, v3_rotate, v3_magnitude, THREE, viewRoot, v3_sub, v3_floor, PM_ThreeVisible, Widget2, CanvasWidget2, ToggleWidget2, ImageToggleWidget2, ToggleSet2, ImageWidget2, SliderWidget2, v3_angle, v4_normalize, toDeg } from "@croquet/worldcore";
 import { packKey, unpackKey, Voxels} from  "./Voxels";
 
 let time0 = 0;
@@ -16,6 +16,8 @@ import treeOnIcon from "../assets/treeOnIcon.png";
 import clearOffIcon from "../assets/clearOffIcon.png";
 import clearOnIcon from "../assets/clearOnIcon.png";
 import baseOffIcon from "../assets/baseOffIcon.png";
+import roadOnIcon from "../assets/roadOnIcon.png";
+import roadOffIcon from "../assets/roadOffIcon.png";
 import baseOnIcon from "../assets/baseOnIcon.png";
 import sheepOffIcon from "../assets/sheepOffIcon.png";
 import sheepOnIcon from "../assets/sheepOnIcon.png";
@@ -26,32 +28,32 @@ import walkOnIcon from "../assets/walkOnIcon.png";
 //-- Widgets -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class ImageToggleWidget2 extends ToggleWidget2 {
+// class ImageToggleWidget2 extends ToggleWidget2 {
 
-    buildDefault() {
-        this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.5,0.5]});
-        this.label = new ImageWidget2({parent: this.frame, autoSize: [1,1], border: [2.5, 2.5, 2.5, 2.5], color: [0.6,0.6,0.6], url: this.offURL});
-    }
+//     buildDefault() {
+//         this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.5,0.5]});
+//         this.label = new ImageWidget2({parent: this.frame, autoSize: [1,1], border: [2.5, 2.5, 2.5, 2.5], color: [0.6,0.6,0.6], url: this.offURL});
+//     }
 
-    get offURL() {return this._offURL}
-    get onURL() {return this._onURL}
+//     get offURL() {return this._offURL}
+//     get onURL() {return this._onURL}
 
-    onHover() {
-        this.frame.set({color: [0.4,0.4,0.4]});
-    }
+//     onHover() {
+//         this.frame.set({color: [0.4,0.4,0.4]});
+//     }
 
-    onPress() {
-        this.frame.set({color: [0.8,0.8,0.8]});
-    }
+//     onPress() {
+//         this.frame.set({color: [0.8,0.8,0.8]});
+//     }
 
-    onNormal() {
-        this.frame.set({color: [0.6,0.6,0.6]});
-    }
+//     onNormal() {
+//         this.frame.set({color: [0.6,0.6,0.6]});
+//     }
 
-    onToggle() {
-        this.isOn ? this.label.set({url: this.onURL}) : this.label.set({url: this.offURL});
-    }
-}
+//     onToggle() {
+//         this.isOn ? this.label.set({url: this.onURL}) : this.label.set({url: this.offURL});
+//     }
+// }
 
 
 //------------------------------------------------------------------------------------------
@@ -140,14 +142,15 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         const clearToggle = new ImageToggleWidget2({name: "clear", parent: hud, size:[30,30], translation: [50,50], toggleSet: toggleSet, offURL: clearOffIcon, onURL: clearOnIcon});
 
         const treeToggle = new ImageToggleWidget2({name: "tree", parent: hud, size:[30,30], translation: [15,85], toggleSet: toggleSet, offURL: treeOffIcon, onURL: treeOnIcon});
-        const spawnToggle = new ImageToggleWidget2({name: "sheep", parent: hud, size:[30,30], translation: [50,85], toggleSet: toggleSet, offURL: sheepOffIcon, onURL: sheepOnIcon});
+        const roadToggle = new ImageToggleWidget2({name: "road", parent: hud, size:[30,30], translation: [50,85], toggleSet: toggleSet, offURL: roadOffIcon, onURL: roadOnIcon});
 
-        const walkToggle = new ImageToggleWidget2({name: "walk", parent: hud, size:[30,30], translation: [15,120], toggleSet: toggleSet, offURL: walkOffIcon, onURL: walkOnIcon});
+        const sheepToggle = new ImageToggleWidget2({name: "sheep", parent: hud, size:[30,30], translation: [15,120], toggleSet: toggleSet, offURL: sheepOffIcon, onURL: sheepOnIcon});
+        const walkToggle = new ImageToggleWidget2({name: "walk", parent: hud, size:[30,30], translation: [50,120], toggleSet: toggleSet, offURL: walkOffIcon, onURL: walkOnIcon});
 
         this.subscribe(toggleSet.id, "pick", this.setEditMode); // need to automate this
         toggleSet.pick(fillToggle);
 
-        const layerSlider = new SliderWidget2({name: "layerSlider", autoSize:[0,1], size: [10,0], parent: hud, anchor:[1,0.5], pivot:[1,0.5],})
+        // const layerSlider = new SliderWidget2({name: "layerSlider", autoSize:[0,1], size: [10,0], parent: hud, anchor:[1,0.5], pivot:[1,0.5],})
     }
 
     setEditMode(mode) {
@@ -174,10 +177,11 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
                 case "fill": this.onFill(); break;
                 case "dig": this.onDig(); break;
                 case "tree": this.onTree(); break;
+                case "road": this.onRoad(); break;
                 case "clear": this.onClear(); break;
                 case "base": this.onBase(); break;
-                case "sheep": this.onSpawnSheep(); break;
-                case "walk": this.onSpawnAvatar(); break;
+                case "sheep": this.onSheep(); break;
+                case "walk": this.onAvatar(); break;
             }
 
         };
@@ -255,12 +259,17 @@ export class GodView extends mix(WorldcoreView).with(PM_WidgetPointer) {
         this.publish("edit", "plantTree",{xyz: this.pointerHit.voxel});
     }
 
-    onSpawnSheep() {
+    onRoad() {
+        if (!this.pointerHit) return;
+        this.publish("edit", "buildRoad",{xyz: this.pointerHit.voxel});
+    }
+
+    onSheep() {
         if (!this.pointerHit) return;
         this.publish("edit", "spawnSheep",{xyz: this.pointerHit.voxel, driverId: this.viewId});
     }
 
-    onSpawnAvatar() {
+    onAvatar() {
         if (!this.pointerHit) return;
         this.publish("edit", "spawnAvatar",{xyz: this.pointerHit.voxel, driverId: this.viewId});
     }
