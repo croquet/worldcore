@@ -2,8 +2,8 @@ import { Constants } from "@croquet/croquet";
 import { CineonToneMapping } from "three";
 // import { Constants } from "@croquet/worldcore-kernel";
 // import { GetPawn } from "./Pawn";
-import { v3_zero, q_identity, v3_unit, m4_scaleRotationTranslation, m4_translation, m4_rotationX, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals, v3_isZero, q_isZero, q_normalize, q_multiply, v3_add, v3_scale, m4_rotationQ, v3_transform, q_euler, TAU, clampRad, q_axisAngle,
+import { v3_zero, q_identity, m4_scaleRotationTranslation, m4_getScaleRotationTranslation, m4_multiply, v3_lerp, v3_equals,
+    q_slerp, q_equals,
     v3_THREE,q_THREE } from  "./Vector";
 
 // Mixin
@@ -147,6 +147,11 @@ export const AM_Spatial = superclass => class extends superclass {
     get local() {
         if (!this.$local) this.$local = m4_scaleRotationTranslation(this.scale, this.rotation, this.translation);
         return [...this.$local];
+    }
+    set local(v) {
+        const [scale, rotation, translation] = m4_getScaleRotationTranslation(v);
+        this.set({scale, rotation, translation});
+        this.$local = v;
     }
 
     get global() {

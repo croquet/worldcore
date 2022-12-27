@@ -107,6 +107,8 @@ defineSmoothedPawnProperty from PM_Smoothed
 - Actor.snap() sets properties without smoothing
 - Actor.set() automatically calls this.propertySet() if the actor has that method.
 - ScaleTo, RotateTo & TranslateTo deprecated
+- AM_Spatial.local setter added
+- m4_getScale(), m4_getScaleRotationTranslation() added
 
 ### Fixed
 - m4_getRotation() correctly ignores scale

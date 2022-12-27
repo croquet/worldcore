@@ -666,6 +666,14 @@ export function m4_scale(s) {
     ];
 }
 
+export function m4_getScale(m) {
+    return [
+        v3_magnitude([m[0], m[4], m[8]]),
+        v3_magnitude([m[1], m[5], m[9]]),
+        v3_magnitude([m[2], m[6], m[10]])
+    ];
+}
+
 // Clockwise in radians looking along axis.
 export function m4_rotation(axis, angle) {
     const n = v3_normalize(axis);
@@ -900,6 +908,63 @@ export function m4_scaleRotationTranslation(s, q, v) {
   ];
 
 
+}
+
+export function m4_getScaleRotationTranslation(m) {
+    const s0 = v3_magnitude([m[0], m[4], m[8]]);
+    const s1 = v3_magnitude([m[1], m[5], m[9]]);
+    const s2 = v3_magnitude([m[2], m[6], m[10]]);
+
+    const m00 = m[0] / s0;
+    const m01 = m[1] / s1;
+    const m02 = m[2] / s2;
+
+    const m10 = m[4] / s0;
+    const m11 = m[5] / s1;
+    const m12 = m[6] / s2;
+
+    const m20 = m[8] / s0;
+    const m21 = m[9] / s1;
+    const m22 = m[10] / s2;
+
+    let t;
+    let x;
+    let y;
+    let z;
+    let w;
+
+    if (m22 < 0) {
+        if (m00 > m11) {
+            t = 1 + m00 - m11 - m22;
+            x = t;
+            y = m01+m10;
+            z = m20+m02;
+            w = m12-m21;
+        } else {
+            t = 1 - m00 + m11 - m22;
+            x = m01+m10;
+            y = t;
+            z = m12+m21;
+            w = m20-m02;
+        }
+    } else {
+        if (m00 < -m11) {
+            t = 1 - m00 - m11 + m22;
+            x = m20+m02;
+            y = m12+m21;
+            z = t;
+            w = m01-m10;
+        } else {
+            t = 1 + m00 + m11 + m22;
+            x = m12-m21;
+            y = m20-m02;
+            z = m01-m10;
+            w = t;
+        }
+    }
+
+    const f = 0.5 / Math.sqrt(t);
+    return [[s0, s1, s2], [f*x, f*y, f*z, f*w], [m[12], m[13], m[14]]];
 }
 
 // FOV is vertical field of view in radians
