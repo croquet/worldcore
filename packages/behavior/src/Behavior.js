@@ -210,6 +210,58 @@ export class PublishBehavior extends Behavior {
 PublishBehavior.register('PublishBehavior');
 
 //------------------------------------------------------------------------------------------
+//-- RandomBehavior -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Runs a random behavior from its list of descriptors
+
+export class RandomBehavior extends Behavior {
+
+    get behaviors() {return this._behaviors || []}
+
+    onStart() {
+        if (this.behaviors.length === 0) {
+            this.fail();
+            return;
+        }
+
+        let total = 0;
+        for (let i = 0; i < this.behaviors.length; i++) {
+            let weight = this.behaviors[i].weight;
+            if (weight===undefined) weight = 1;
+            total += weight;
+        }
+
+        if (total === 0) {
+            console.warn("RandomBehavior: All weights are 0!")
+            this.start(this.behaviors[0]);
+            return;
+        }
+
+        const pick = total * this.random();
+
+        total = 0;
+        for (let i = 0; i < this.behaviors.length; i++) {
+            let weight = this.behaviors[i].weight;
+            if (weight===undefined) weight = 1;
+            total += weight;
+            if (pick <= total) {
+                this.start(this.behaviors[i]);
+                return;
+            }
+        }
+
+        this.fail();
+
+    }
+
+    onSucceed() { this.succeed() }
+    onFail() { this.fail(); }
+
+}
+RandomBehavior.register('RandomBehavior');
+
+//------------------------------------------------------------------------------------------
 //-- CompositeBehavior ---------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
