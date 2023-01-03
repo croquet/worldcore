@@ -10,9 +10,14 @@ module.exports = {
         chunkFilename: 'chunk-[name]-[contenthash:8].js',
     },
     devServer: {
-        disableHostCheck: true,
-        contentBase: path.join(__dirname, 'dist'),
+        allowedHosts: 'all',
         port: 1234
+    },
+    resolve: {
+        fallback: { "crypto": false }
+    },
+    experiments: {
+        asyncWebAssembly: true,
     },
     module: {
         rules: [
