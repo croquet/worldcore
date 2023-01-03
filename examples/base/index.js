@@ -3,9 +3,6 @@
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
     UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3, TextWidget3, SliderWidget3, User, UserManager } from "@croquet/worldcore";
 
-import diana from "./assets/diana.jpg";
-import llama from "./assets/llama.jpg";
-import kwark from "./assets/kwark.otf";
 import { Avatar, FPSAvatar } from "./src/Avatar";
 // import { User, UserManager } from "./src/User";
 
@@ -34,90 +31,8 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Widget3) 
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
         const cube = new THREE.Mesh( this.geometry, this.material );
         this.setRenderObject(cube);
-
-        this.subscribe("input", "bDown", this.test);
-        this.subscribe("input", "nDown", this.test2);
-        // this.subscribe("input", "mDown", this.test3);
     }
 
-    test() {
-        console.log("bTest");
-        if (this.ui) return;
-
-
-
-        this.ui = new Widget3({parent: this.rootWidget})
-
-        // this.editor = new EditorWidget3({name: "editor", pawn: this, billboard: false});
-
-        this.panel = new ImageWidget3({name: "panel", parent: this.ui, color: [1,1,1], size: [6,4], translation: [5,1,0], url: llama, opacity: 1});
-
-        const ts = new ToggleSet3();
-        // this.toggle1 = new ToggleWidget3({name: "toggle1", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.2,-0.2,0], opacity: 1});
-        // this.toggle2 = new ToggleWidget3({name: "toggle2", parent: this.panel, toggleSet: ts, size: [1.5, 1], anchor: [0,1], pivot: [0,1], translation: [0.2,-1.7,0], opacity: 1});
-
-        this.slider = new SliderWidget3({name: "slider", parent: this.panel, anchor: [1,1], pivot: [1,1], translation: [-0.1,-0.1,0], step: 0, size: [0.2, 3], percent: 1, opacity: 1});
-
-        this.pt = new TextWidget3({
-            parent: this.panel,
-            translation: [-0.5, -0.1, 0],
-            point: 96,
-            text: "100%",
-            font: "sans-serif",
-            size: [1,1],
-            anchor: [1,1],
-            pivot: [1,1]
-        });
-
-        this.pt.subscribe(this.slider.id, "percent", p => {
-            this.pt.text = (p*100).toFixed() + "%";
-        });
-
-
-        this.text = new TextWidget3({name: "canvas", parent: this.ui, translation: [-2,0.5,0], point: 48, font: "sans-serif", resolution: 300, size: [1,1.5], text: "Alpha\nBeta\nGamma", billboard: false, noWrap: true, fgColor: [1,1,1], bgColor: [0,0,0], color: [1,0,0], alpha: true});
-
-        // this.textField = new TextFieldWidget3({name: "textField", parent: this.panel, anchor: [0,0], pivot: [0,0],  translation: [0.1,0.1,0], point: 48, size: [3,1.5], text: "12345"});
-
-        // this.menu= new MenuWidget3({
-        //     name: "menu",
-        //     parent: this.panel,
-        //     size: [2, 0.5],
-        //     anchor: [0,0],
-        //     pivot: [0,0],
-        //     translation: [1,1,0],
-        //     list: ["Alpha", "Beta", "Gamma", "Delta"]
-        //     // list: ["Alpha"]
-        // });
-
-        // this.menu2= new MenuWidget3({
-        //     name: "menu2",
-        //     parent: this.panel,
-        //     size: [2, 0.5],
-        //     anchor: [1,0],
-        //     pivot: [1,0],
-        //     translation: [-1,1,0],
-        //     list: ["Alpha", "Beta", "Gamma", "Delta"]
-        //     // list: ["Alpha"]
-        // });
-
-        // console.log(this.menu.list);
-
-
-        this.billboard = new ImageWidget3({name: "billboard", parent: this.ui, color: [1,1,1], size: [1,1], translation: [-2, 0,-2], url: diana, billboard: true, opacity: 0.8});
-
-        // this.drag = new DragWidget3({name: "drag", parent: this.editor, translation: [-3,2,0]});
-        // this.spin = new SpinWidget3({name: "spin", parent: this.editor, translation: [-3,2,0]});
-    }
-
-    test2() {
-        console.log("nTest");
-        this.text.size = [1,4]; // Distorted text!
-    }
-
-    test3() {
-        console.log("mTest");
-
-    }
 }
 
 

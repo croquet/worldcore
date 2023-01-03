@@ -570,7 +570,7 @@ export class TextWidget2 extends CanvasWidget2 {
 //-- ControlWidget -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export function ParentControl(w) {
+export function ParentControl2(w) {
     do {
         if (w instanceof ControlWidget3) return w;
         w = w.parent
