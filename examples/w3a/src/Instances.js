@@ -1,7 +1,7 @@
 
 
 import { ViewService, Constants, THREE, m4_THREE, toRad} from "@croquet/worldcore";
-import { mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils';
+// import { mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils';
 import { setGeometryColor } from "./Tools";
 
 //------------------------------------------------------------------------------------------
@@ -78,7 +78,7 @@ export class InstanceManager extends ViewService {
 
     buildAll() {
         this.buildRubble();
-        this.buildBase();
+        // this.buildBase();
         this.buildTree()
         this.buildLog()
         this.buildSheep()
@@ -99,30 +99,30 @@ export class InstanceManager extends ViewService {
         rockMesh.castShadow = true;
     }
 
-    buildBase() {
-        const base = new THREE.BoxGeometry( 5, 5, 0.5 );
-        base.translate(0,0,0.25);
-        const column0 = new THREE.CylinderGeometry( 0.5,0.5, 3, 7);
-        const column1 = new THREE.CylinderGeometry( 0.5,0.5, 3, 7);
-        const column2 = new THREE.CylinderGeometry( 0.5,0.5, 3, 7);
-        const column3 = new THREE.CylinderGeometry( 0.5,0.5, 3, 7);
-        column0.rotateX(toRad(90));
-        column1.rotateX(toRad(90));
-        column2.rotateX(toRad(90));
-        column3.rotateX(toRad(90));
-        column0.translate(-1.5,-1.5,-1.5);
-        column1.translate(1.5,-1.5,-1.5);
-        column2.translate(-1.5,1.5,-1.5);
-        column3.translate(1.5,1.5,-1.5);
+    // buildBase() {
+    //     const base = new THREE.BoxGeometry( 5, 5, 0.5 );
+    //     base.translate(0,0,0.25);
+    //     const column0 = new THREE.CylinderGeometry( 0.5,0.5, 3, 7);
+    //     const column1 = new THREE.CylinderGeometry( 0.5,0.5, 3, 7);
+    //     const column2 = new THREE.CylinderGeometry( 0.5,0.5, 3, 7);
+    //     const column3 = new THREE.CylinderGeometry( 0.5,0.5, 3, 7);
+    //     column0.rotateX(toRad(90));
+    //     column1.rotateX(toRad(90));
+    //     column2.rotateX(toRad(90));
+    //     column3.rotateX(toRad(90));
+    //     column0.translate(-1.5,-1.5,-1.5);
+    //     column1.translate(1.5,-1.5,-1.5);
+    //     column2.translate(-1.5,1.5,-1.5);
+    //     column3.translate(1.5,1.5,-1.5);
 
-        const geometry = mergeBufferGeometries([base, column0, column1, column2, column3]);
+    //     const geometry = mergeBufferGeometries([base, column0, column1, column2, column3]);
 
-        setGeometryColor(geometry, Constants.color.rock);
+    //     setGeometryColor(geometry, Constants.color.rock);
 
-        const mesh = this.build("base", geometry, instanceMaterial);
-        mesh.receiveShadow = true;
-        mesh.castShadow = true;
-    }
+    //     const mesh = this.build("base", geometry, instanceMaterial);
+    //     mesh.receiveShadow = true;
+    //     mesh.castShadow = true;
+    // }
 
     buildTree() {
         const trunk = new THREE.CylinderGeometry( 0.5,0.5, 10, 7);
@@ -131,7 +131,8 @@ export class InstanceManager extends ViewService {
         setGeometryColor(top, [0.4, 0.8, 0.4]);
         top.translate(0,12.5,0);
 
-        const geometry = mergeBufferGeometries([trunk, top]);
+        const geometry = top;
+        // const geometry = mergeBufferGeometries([trunk, top]);
         geometry.rotateX(toRad(90));
         geometry.translate(0,0,4);
 

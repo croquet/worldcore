@@ -4,7 +4,7 @@
   "description": "Widw Wide World",
   "private": true,
   "scripts": {
-    "start": "webpack serve --no-live-reload --no-hot --mode development --devtool source-map",
+    "start": "webpack serve --no-hot --mode development --devtool source-map",
     "build": "webpack --mode production"
   },
   "author": "Croquet Corporation",
