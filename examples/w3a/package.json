@@ -11,7 +11,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@croquet/worldcore": "^1.4.0",
-    "three-buffer-geometry-utils": "^1.0.0"
+    "three": "^0.138.0"
   },
   "devDependencies": {
     "file-loader": "^6.2.0",

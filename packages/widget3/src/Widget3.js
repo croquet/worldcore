@@ -154,7 +154,7 @@ export const PM_WidgetPointer = superclass => class extends superclass {
         if(hits.length > 0) {
             const hit = hits[0];
             const widget = hit.object.widget;
-            const control = ParentControl(hit.object.widget)
+            const control = ParentControl3(hit.object.widget)
             const xy = [hit.uv.x, hit.uv.y];
             out.widget = widget;
             out.control = control;
@@ -307,7 +307,7 @@ export class Widget3 extends View {
     set autoSize(v) { this._autoSize = v; }
     get collidable() { return this._collidable }
     set collidable(b) { this._collidable = b; wm.clearColliders();}
-    get collider() { if (this.collidable && ParentControl(this).visible) return this.mesh }
+    get collider() { if (this.collidable && ParentControl3(this).visible) return this.mesh }
     get billboard() { return this._billboard }
     set billboard(b) { this._billboard = b; }
 
@@ -807,7 +807,7 @@ export class TextWidget3 extends CanvasWidget3 {
 //-- ControlWidget -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export function ParentControl(w) {
+export function ParentControl3(w) {
     do {
         if (w instanceof ControlWidget3) return w;
         w = w.parent
@@ -823,7 +823,6 @@ export class ControlWidget3 extends Widget3 {
 
 
     }
-
 
     onHilite() {}
     onNormal() {}
