@@ -1,8 +1,7 @@
 
 
 import { ViewService, Constants, THREE, m4_THREE, toRad} from "@croquet/worldcore";
-import { mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils';
-import { setGeometryColor } from "./Tools";
+import { mergeBufferGeometries, setGeometryColor } from "./Tools";
 
 //------------------------------------------------------------------------------------------
 //-- Materials -----------------------------------------------------------------------------
