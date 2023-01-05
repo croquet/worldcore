@@ -29,7 +29,8 @@
   },
   "dependencies": {
     "@croquet/croquet": "^1.1.0-12",
-    "three": "^0.138.0"
+    "three": "^0.138.0",
+    "three-mesh-bvh": "^0.5.21"
   },
   "publishConfig": {
     "access": "public"

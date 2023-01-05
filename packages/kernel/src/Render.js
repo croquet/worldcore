@@ -1,9 +1,12 @@
 import { ViewService } from "./Root";
-import * as THREE from 'three';
+import * as THREE from "three";
+import * as THREE_MESH_BVH from 'three-mesh-bvh';
+export { THREE, THREE_MESH_BVH };
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+export { EffectComposer, RenderPass };
 
 
-// import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-// import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 
 
 //------------------------------------------------------------------------------------------

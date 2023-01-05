@@ -1,8 +1,5 @@
-import * as THREE from 'three';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { PM_Visible, PM_Camera, RenderManager } from "@croquet/worldcore-kernel";
 
+import { THREE, PM_Visible, PM_Camera, RenderManager, EffectComposer, RenderPass } from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------

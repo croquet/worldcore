@@ -1,5 +1,4 @@
 import { Constants } from "@croquet/croquet";
-import { CineonToneMapping } from "three";
 // import { Constants } from "@croquet/worldcore-kernel";
 // import { GetPawn } from "./Pawn";
 import { v3_zero, q_identity, m4_scaleRotationTranslation, m4_getScaleRotationTranslation, m4_multiply, v3_lerp, v3_equals,
