@@ -1,4 +1,4 @@
-import { RegisterMixin, ModelService, q_identity, v3_multiply, v3_zero, ActorManager  } from "@croquet/worldcore";
+import { RegisterMixin, ModelService, q_identity, v3_multiply, v3_zero, ActorManager, q_axisAngle, WorldcoreModel, Actor  } from "@croquet/worldcore";
 
 export let RAPIER;
 
@@ -7,10 +7,8 @@ export function RapierVersion() {
 }
 
 //------------------------------------------------------------------------------------------
-//-- RapierManager ------------------------------------------------------------------
+//-- RapierManager -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-// Maintains a list of players connected to the session.
 
 export class RapierManager extends ModelService {
 
@@ -35,86 +33,119 @@ export class RapierManager extends ModelService {
         };
     }
 
-    init(options = {}) {
+    init(options) {
         super.init('RapierManager');
         console.log("Starting RapierManager");
+        console.log(RAPIER.version());
+        this.worlds = new Map();
 
-        this.eventQueue = new RAPIER.EventQueue(true);
-        this.world = new RAPIER.World(new RAPIER.Vector3(0, -0.1,0));
+        this.createWorld({ name: "default", gravity:[0,-9.8,0]});
+        this.createWorld({ name: "bob", gravity:[0,-0.8,0]});
+    }
 
-        console.log(this.world.gravity);
+    createWorld(options = {}) {
+        options.name = options.name || "default";
+        const world = RapierWorld.create(options);
+        this.worlds.set(options.name, world);
+        return world;
+    }
 
-        this.timeStep = 50; // In ms
-        this.world.timestep = this.timeStep / 1000;
-        this.rigidBodies = new Map();
-
-        this.future(0).tick();
+    getWorld(name) {
+        if (!this.worlds.has(name)) {
+            console.error( name + " is not a valid physics world! Using the default world instead")
+            name = "default";
+        }
+        return this.worlds.get(name)
     }
 
     destroy() {
         super.destroy();
-        if (this.eventQueue) this.eventQueue.free();
-        if (this.world) this.world.free();
+        this.worlds.forEach(world => world.destroy());
     }
 
-
-    tick() {
-        // console.log("Rapier tick");
-        this.world.step(this.eventQueue); // may be undefined
-        this.world.forEachActiveRigidBody(rb => {
-            // const h = rb.handle;
-            const actor = this.rigidBodies.get(rb.handle);
-            // console.log(actor);
-            const t = rb.translation();
-            const translation = [t.x, t.y, t.z]
-            // console.log(translation);
-            actor.set({translation});
-            // console.log(actor.translation);
-        });
-
-        // this.world.forEachActiveRigidBodyHandle(h => {
-        //     const rb = this.rigidBodies[h];
-        //     const t = rb.rigidBody.translation();
-        //     const r = rb.rigidBody.rotation();
-
-        //     const v = [t.x, t.y, t.z];
-        //     const q = [r.x, r.y, r.z, r.w];
-
-        //     rb.moveTo(v);
-        //     rb.say("translating", v);
-        //     rb.rotateTo(q);
-        // });
-        // if (this.queue) {
-        //     if (this.contactEventHandler) {
-        //         queue.drainContactEvents((handle1, handle2, started) => {
-        //             let rb1 = this.rigidBodies[handle1];
-        //             let rb2 = this.rigidBodies[handle2];
-        //             this.contactEventHandler.contactEvent(rb1, rb2, started);
-        //         });
-        //     }
-        //     if (this.intersectionEventHandler) {
-        //         queue.drainIntersectionEvents((handle1, handle2, intersecting) => {
-        //             let rb1 = this.rigidBodies[handle1];
-        //             let rb2 = this.rigidBodies[handle2];
-        //             this.intersectionEventHandler.intersectionEvent(rb1, rb2, intersecting);
-        //         });
-        //     }
-        // }
-
-        this.future(this.timeStep).tick();
-    }
 
 }
 RapierManager.register("RapierManager");
 
+//------------------------------------------------------------------------------------------
+//-- RapierWorld ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Maintains a list of players connected to the session.
+
+export class RapierWorld extends Actor {
+
+    init(options) {
+        super.init(options)
+        console.log("New Rapier world: " + options.name);
+        console.log(this.gravity);
+        this.q = new RAPIER.EventQueue(true);
+        this.w = new RAPIER.World(new RAPIER.Vector3(...this.gravity));
+        this.w.timestep = this.timeStep / 1000;
+        this.rigidBodies = new Map();
+        this.future(0).tick();
+    }
+
+    get timeStep() {return this._timeStep || 50}
+    get gravity() {return this._gravity || [0,-0.5,0]}
+
+    destroy() {
+        super.destroy();
+        this.q.free();
+        this.w.free();
+    }
+
+    tick() {
+        if (this.doomed) return;
+        this.w.step(this.q);
+        this.w.forEachActiveRigidBody(rb => {
+            const actor = this.rigidBodies.get(rb.handle);
+            const t = rb.translation();
+            const r = rb.rotation();
+            const translation = [t.x, t.y, t.z];
+            const rotation = [r.x, r.y, r.z, r.w]
+            actor.set({translation, rotation});
+        });
+        if (!this.doomed) this.future(this.timeStep).tick();
+    }
+
+}
+RapierWorld.register("RapierWorld");
 
 //------------------------------------------------------------------------------------------
-//-- Rapier -------------------------------------------------------------------------
+//-- AM_Rapier -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-//-- Actor ---------------------------------------------------------------------------------
+export const AM_Rapier = superclass => class extends superclass {
 
-export const AM_RapierDynamic = superclass => class extends superclass {
+    destroy() {
+        super.destroy();
+        if (this.rigidBody) {
+            this.myWorld.removeRigidBody(this.rigidBody);
+            this.myWorld.rigidBodies.set(this.rigidBodyHandle, null);
+        }  
+    }
+
+    get world() { return this._world || "default"}
+    get myWorld() { return this.service('RapierManager').getWorld(this.world) }
+
+    get rigidBody() {
+        if (!this.$rigidBody) this.$rigidBody = this.myWorld.w.getRigidBody(this.rigidBodyHandle);
+        return this.$rigidBody;
+    }
+
+    createCollider(cd){
+        return this.myWorld.w.createCollider(cd, this.rigidBody);
+    }
+
+}
+RegisterMixin(AM_Rapier);
+
+//------------------------------------------------------------------------------------------
+//-- AM_RapierDynamic ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export const AM_RapierDynamic = superclass => class extends AM_Rapier(superclass) {
 
     init(options) {
         super.init(options);
@@ -122,79 +153,32 @@ export const AM_RapierDynamic = superclass => class extends superclass {
         const rbd = RAPIER.RigidBodyDesc.newDynamic()
         rbd.translation = new RAPIER.Vector3(...this.translation);
         rbd.rotation = new RAPIER.Quaternion(...this.rotation);
-        rbd.mass = 1;
-        const rb = rm.world.createRigidBody(rbd);
+
+        const rb = this.myWorld.w.createRigidBody(rbd);
         this.rigidBodyHandle = rb.handle;
-        rm.rigidBodies.set(this.rigidBodyHandle, this);
-        // console.log(this.rigidBody);
-        // console.log(this.rigidBody.mass());
-        // console.log(rm.rigidBodies);
+        this.myWorld.rigidBodies.set(this.rigidBodyHandle, this);
     }
-
-    get rigidBody() {
-        if (!this.$rigidBody) {
-            const rm =  this.service('RapierManager');
-            this.$rigidBody = rm.world.getRigidBody(this.rigidBodyHandle);
-        }
-        return this.$rigidBody;
-    }
-
-    destroy() {
-        super.destroy();
-    }
-
-    // createRigidBody() {
-    //     const rbd = RAPIER.RigidBodyDesc.dynamic()
-    //     rbd.translation = new RAPIER.Vector3(...this.translation);
-    //     rbd.rotation = new RAPIER.Quaternion(...this.rotation);
-    //     console.log(rbd);
-    // }
-
-
-
-    // get rigidBody() {
-    //     if (!this.$rigidBody) {
-    //         if (this.rigidBodyHandle === undefined) return undefined;
-    //         const physicsManager =  this.service('RapierPhysicsManager');
-    //         this.$rigidBody = physicsManager.world.getRigidBody(this.rigidBodyHandle);
-    //     }
-    //     return this.$rigidBody;
-    // }
-
-    // createRigidBody(rbd) {
-    //     this.removeRigidBody();
-    //     rbd.translation = new RAPIER.Vector3(...this.translation);
-    //     rbd.rotation = new RAPIER.Quaternion(...this.rotation);
-    //     const physicsManager =  this.service('RapierPhysicsManager');
-    //     this.$rigidBody = physicsManager.world.createRigidBody(rbd);
-    //     this.rigidBodyHandle = this.$rigidBody.handle;
-    //     physicsManager.rigidBodies[this.rigidBodyHandle] = this;
-
-    //     if (this.rigidBody.bodyType() === RAPIER.RigidBodyType.KinematicPositionBased) {
-    //         this.listen("setTranslation", this.setKinematicTranslation);
-    //         this.listen("setRotation", this.setKinematicRotation);
-    //         this.listen("moveTo", this.setKinematicTranslation);
-    //         this.listen("rotateTo", this.setKinematicRotation);
-    //     }
-    // }
-
-    // setKinematicTranslation(v) { this.rigidBody.setNextKinematicTranslation(new RAPIER.Vector3(...v)); }
-    // setKinematicRotation(q) { this.rigidBody.setNextKinematicRotation(new RAPIER.Quaternion(...q)); }
-
-    // removeRigidBody() {
-    //     if (!this.rigidBody) return;
-    //     const physicsManager = this.service('RapierPhysicsManager');
-    //     physicsManager.rigidBodies[this.rigidBodyHandle] = undefined;
-    //     physicsManager.world.removeRigidBody(this.rigidBody);
-    //     this.rigidBodyHandle = undefined;
-    //     this.$rigidBody = undefined;
-    // }
-
-    // createCollider(cd) {
-    //     const physicsManager = this.service('RapierPhysicsManager');
-    //     const c = physicsManager.world.createCollider(cd, this.rigidBodyHandle);
-    //     return c.handle;
-    // }
 
 };
 RegisterMixin(AM_RapierDynamic);
+
+//------------------------------------------------------------------------------------------
+//-- AM_RapierStatic ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export const AM_RapierStatic = superclass => class extends AM_Rapier(superclass) {
+
+    init(options) {
+        super.init(options);
+        const rm =  this.service('RapierManager');
+        const rbd = RAPIER.RigidBodyDesc.newStatic()
+        rbd.translation = new RAPIER.Vector3(...this.translation);
+        rbd.rotation = new RAPIER.Quaternion(...this.rotation);
+
+        const rb = this.myWorld.w.createRigidBody(rbd);
+        this.rigidBodyHandle = rb.handle;
+        this.myWorld.rigidBodies.set(this.rigidBodyHandle, this);
+    }
+
+};
+RegisterMixin(AM_RapierStatic);

@@ -5,7 +5,7 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM
      TextWidget3, SliderWidget3, User, UserManager} from "@croquet/worldcore";
 
 import { Avatar, FPSAvatar } from "./src/Avatar";
-import {AM_RapierDynamic, RapierManager} from "./src/Rapier";
+import {AM_RapierDynamic, RapierManager, RAPIER, AM_RapierStatic} from "./src/Rapier";
 // import { User, UserManager } from "./src/User";
 
 
@@ -19,7 +19,10 @@ class TestActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamic) {
     init(options) {
         super.init(options);
         console.log("TestActor");
-        console.log(this.translation);
+
+        let cd = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
+        this.createCollider(cd);
+        
     }
 
 }
@@ -32,8 +35,6 @@ TestActor.register('TestActor');
 class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
-        // console.log("test pawn constructor");
-
         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
@@ -45,12 +46,44 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.setRenderObject(cube);
     }
 
-    // update(time, delta) {
-    //     super.update(time, delta);
-    //     // console.log("pawn update");
-    //     // console.log(this.actor.translation);
+}
+
+//------------------------------------------------------------------------------------------
+//-- FixedActor -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class FixedActor extends mix(Actor).with(AM_Smoothed, AM_RapierStatic) {
+    get pawn() {return FixedPawn}
+
+    init(options) {
+        super.init(options);
+
+        let cd = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
+        this.createCollider(cd);
         
-    // }
+    }
+}
+FixedActor.register('FixedActor');
+
+//------------------------------------------------------------------------------------------
+//-- FixedPawn ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class FixedPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+    constructor(...args) {
+        super(...args);
+        // console.log("test pawn constructor");
+
+        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,0)} );
+        this.material.side = THREE.DoubleSide;
+        this.material.shadowSide = THREE.DoubleSide;
+        const cube = new THREE.Mesh( this.geometry, this.material );
+        cube.castShadow = true;
+        cube.receiveShadow = true;
+        this.setRenderObject(cube);
+    }
 
 }
 
@@ -59,8 +92,17 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 //-- LevelActor ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class LevelActor extends mix(Actor).with(AM_Spatial) {
+class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierStatic) {
     get pawn() {return LevelPawn}
+
+    init(options) {
+        super.init(options);
+        const cd = RAPIER.ColliderDesc.cuboid(30, 0.5, 30);
+        cd.translation = new RAPIER.Vector3(0,-1,0);
+        const xxx = this.createCollider(cd);
+        console.log(xxx);
+
+    }
 }
 LevelActor.register('LevelActor');
 
@@ -179,9 +221,22 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!");
-        this.level = LevelActor.create();
-        this.testActor = TestActor.create({name: "Yellow Box", translation: [0,2,0]});
+        console.log("Start root model!");
+        this.level = LevelActor.create({world: "default"});
+        this.fixed = FixedActor.create({world: "default", name: "Red Box", translation: [0,0,0]});
+
+        this.subscribe("input","vDown", this.spawn);
+        // this.subscribe("input","bDown", this.kill);
+    }
+
+    spawn() {
+        const xxx = TestActor.create({world: "default", name: "Yellow Box", translation: [0.5,3,0.6]});
+        xxx.rigidBody.applyImpulse(new RAPIER.Vector3(0,2,0), true);
+        xxx.rigidBody.applyTorqueImpulse(new RAPIER.Vector3(2,1,0), true);
+    }
+
+    kill() {
+        if (this.testActor) this.testActor.destroy();
     }
 
 
@@ -203,8 +258,6 @@ class MyViewRoot extends ViewRoot {
         super(model);
         const three = this.service("ThreeRenderManager");
         three.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
-
-
     }
 
 
