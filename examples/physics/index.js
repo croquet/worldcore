@@ -2,10 +2,10 @@
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
     UIManager, AM_Smoothed, PM_Smoothed, MenuWidget3, Widget3, PM_Widget3, PM_WidgetPointer, WidgetManager, ImageWidget3, CanvasWidget3, ToggleSet3,
-     TextWidget3, SliderWidget3, User, UserManager} from "@croquet/worldcore";
+     TextWidget3, SliderWidget3, User, UserManager, PM_ThreeVisibleX} from "@croquet/worldcore";
 
 import { Avatar, FPSAvatar } from "./src/Avatar";
-import {AM_RapierDynamic, RapierManager, RAPIER, AM_RapierStatic} from "./src/Rapier";
+import {AM_RapierDynamicRigidBody, RapierManager, RAPIER, AM_RapierStaticRigidBody, AM_RapierWorld } from "./src/Rapier";
 // import { User, UserManager } from "./src/User";
 
 
@@ -13,15 +13,13 @@ import {AM_RapierDynamic, RapierManager, RAPIER, AM_RapierStatic} from "./src/Ra
 //-- TestActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamic) {
+class TestActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody) {
     get pawn() {return TestPawn}
 
     init(options) {
         super.init(options);
-        console.log("TestActor");
-
-        let cd = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
-        this.createCollider(cd);
+        const cd = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
+        this.worldActor.world.createCollider(cd, this.rigidBody);
         
     }
 
@@ -52,14 +50,17 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 //-- FixedActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class FixedActor extends mix(Actor).with(AM_Smoothed, AM_RapierStatic) {
+class FixedActor extends mix(Actor).with(AM_Smoothed, AM_RapierStaticRigidBody) {
     get pawn() {return FixedPawn}
 
     init(options) {
         super.init(options);
 
-        let cd = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
-        this.createCollider(cd);
+        // let cd = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
+        // this.createCollider(cd);
+
+        const cd = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
+        this.worldActor.world.createCollider(cd, this.rigidBody);
         
     }
 }
@@ -92,15 +93,19 @@ class FixedPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 //-- LevelActor ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierStatic) {
+class LevelActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierStaticRigidBody) {
     get pawn() {return LevelPawn}
 
     init(options) {
         super.init(options);
+        // const cd = RAPIER.ColliderDesc.cuboid(30, 0.5, 30);
+        // cd.translation = new RAPIER.Vector3(0,-1,0);
+        // const xxx = this.createCollider(cd);
+        // console.log(xxx);
+
         const cd = RAPIER.ColliderDesc.cuboid(30, 0.5, 30);
         cd.translation = new RAPIER.Vector3(0,-1,0);
-        const xxx = this.createCollider(cd);
-        console.log(xxx);
+        this.worldActor.world.createCollider(cd, this.rigidBody);
 
     }
 }
@@ -210,9 +215,6 @@ MyUserManager.register("MyUserManager");
 //-- MyModelRoot ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-
-// console.log(RapierPhysicsManager);
-
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
@@ -221,22 +223,26 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
-        this.level = LevelActor.create({world: "default"});
-        this.fixed = FixedActor.create({world: "default", name: "Red Box", translation: [0,0,0]});
+        console.log("Start root model!!!!");
+
+        this.level = LevelActor.create();
+        this.fixed = FixedActor.create({parent: this.level, name: "Red Box", translation: [0,0,0]});
 
         this.subscribe("input","vDown", this.spawn);
         // this.subscribe("input","bDown", this.kill);
     }
 
     spawn() {
-        const xxx = TestActor.create({world: "default", name: "Yellow Box", translation: [0.5,3,0.6]});
-        xxx.rigidBody.applyImpulse(new RAPIER.Vector3(0,2,0), true);
-        xxx.rigidBody.applyTorqueImpulse(new RAPIER.Vector3(2,1,0), true);
+        const testActor = TestActor.create({parent: this.level, name: "Yellow Box", translation: [0.5,3,0.6]});
+
+        testActor.rigidBody.applyImpulse(new RAPIER.Vector3(0,2,0), true);
+        testActor.rigidBody.applyTorqueImpulse(new RAPIER.Vector3(2,1,0), true);
     }
 
     kill() {
-        if (this.testActor) this.testActor.destroy();
+        if (!this.testActor) return;
+        this.testActor.destroy();
+        this.testActor = null;
     }
 
 
