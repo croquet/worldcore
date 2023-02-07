@@ -198,6 +198,10 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
         return this.$rigidBody;
     }
 
+    createCollider(cd) {
+        this.worldActor.world.createCollider(cd, this.rigidBody);
+    }
+
 
 }
 RegisterMixin(AM_RapierRigidBody);
