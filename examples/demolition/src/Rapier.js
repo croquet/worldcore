@@ -215,6 +215,7 @@ export const AM_RapierDynamicRigidBody = superclass => class extends AM_RapierRi
     init(options) {
         super.init(options);
         const rbd = RAPIER.RigidBodyDesc.newDynamic()
+        rbd.setCcdEnabled(true);
         rbd.translation = new RAPIER.Vector3(...this.translation);
         rbd.rotation = new RAPIER.Quaternion(...this.rotation);
         rbd.mass = 1;
@@ -233,7 +234,7 @@ export const AM_RapierStaticRigidBody = superclass => class extends AM_RapierRig
 
     init(options) {
         super.init(options);
-        const rbd = RAPIER.RigidBodyDesc.newStatic()
+        const rbd = RAPIER.RigidBodyDesc.newStatic();
         rbd.translation = new RAPIER.Vector3(...this.translation);
         rbd.rotation = new RAPIER.Quaternion(...this.rotation);
 

@@ -3,7 +3,7 @@
 import { App } from "@croquet/worldcore";
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
     AM_Smoothed, PM_Smoothed, sphericalRandom, q_axisAngle, m4_scaleRotationTranslation, toRad, v3_scale, m4_rotation, m4_multiply,
-    WidgetManager2, Widget2, ButtonWidget2, q_dot, q_equals, TAU, m4_translation, v3_transform, v3_add, v3_sub, v3_normalize } from "@croquet/worldcore";
+    WidgetManager2, Widget2, ButtonWidget2, q_dot, q_equals, TAU, m4_translation, v3_transform, v3_add, v3_sub, v3_normalize, v3_magnitude } from "@croquet/worldcore";
 
 import { InstanceManager, PM_ThreeVisibleInstanced } from "./src/Instances";
 
@@ -96,6 +96,60 @@ class BulletPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced) {
     }
 }
 
+//------------------------------------------------------------------------------------------
+//-- BombActor -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class BombActor extends mix(Actor).with(AM_Smoothed, AM_RapierStaticRigidBody) {
+    get pawn() {return BombPawn}
+
+    init(options) {
+        super.init(options);
+        // this.buildCollider();
+
+        this.subscribe("input", "bDown", this.explode);
+    }
+
+    // buildCollider() {
+    //     const cd = RAPIER.ColliderDesc.ball(0.5);
+    //     cd.setDensity(3)
+    //     cd.setRestitution(0.95);
+    //     this.createCollider(cd);
+
+    // }
+
+    explode() {
+        console.log("boom!");
+        const radius = 10;
+        const world = this.getWorldActor();
+        world.active.forEach(block => {
+            const to = v3_sub(block.translation, this.translation)
+            const force = radius - v3_magnitude(to)
+            if (force < 0) return;
+            const aim = v3_normalize(to);
+            const push = v3_scale(aim, force * 20);
+            block.rigidBody.applyImpulse(new RAPIER.Vector3(...push), true);
+        })
+
+
+        this.destroy();
+    }
+
+}
+BombActor.register('BombActor');
+
+//------------------------------------------------------------------------------------------
+//-- BombPawn ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class BombPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced) {
+    constructor(...args) {
+        super(...args);
+        console.log("bomb pawn");
+        this.useInstance("ball");
+    }
+}
+
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor ------------------------------------------------------------------------
@@ -135,6 +189,8 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
         this.buildBuilding(-3,0,10)
         this.buildBuilding(3,0,-10)
         this.buildBuilding(3,0,10)
+
+        BombActor.create({parent: this, translation:[1.5,5,1.5]});
 
 
 
@@ -221,7 +277,7 @@ class MyModelRoot extends ModelRoot {
         console.log("Start root model!!");
         // this.seedColors();
 
-        this.base = BaseActor.create({gravity: [0,-9.8,0], timestep:10, translation: [0,0,0]});
+        this.base = BaseActor.create({gravity: [0,-9.8,0], timestep:15, translation: [0,0,0]});
     }
 
 }

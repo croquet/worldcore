@@ -181,7 +181,7 @@ export class InstanceManager extends ViewService {
 
         const geo414 = new THREE.BoxGeometry( 4, 1, 4 );
         // setGeometryColor(geo414, [0,0,0.7]);
-        setGeometryColor(geo414, this.colors[13]);
+        setGeometryColor(geo414, this.colors[5]);
         const mesh414 = this.build("414", geo414, instanceMaterial);
         mesh414.receiveShadow = true;
         mesh414.castShadow = true;
