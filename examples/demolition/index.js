@@ -7,180 +7,199 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM
 
 import { InstanceManager, PM_ThreeVisibleInstanced } from "./src/Instances";
 
-// import { FPSAvatar } from "./src/Avatar";
 import { AM_RapierDynamicRigidBody, RapierManager, RAPIER, AM_RapierStaticRigidBody, AM_RapierWorld } from "./src/Rapier";
 
 function rgb(r, g, b) {
     return [r/255, g/255, b/255];
 }
 
-
 //------------------------------------------------------------------------------------------
-//-- SprayActor ------------------------------------------------------------------------
+//-- BlockActor ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class SprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody) {
-    get pawn() {return SprayPawn}
+class BlockActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody) {
+    get pawn() {return BlockPawn}
 
-    get shape() {return this._shape || "cube"}
-    get index() { return this._index || 0 }
+    get shape() { return this._shape || "111" }
 
     init(options) {
         super.init(options);
-        this.parent.live.push(this);
-        if (this.parent.live.length > 100) this.parent.live.shift().destroy();
-
         this.buildCollider();
     }
 
     buildCollider() {
-        let cd;
+        let d = [0.5,0.5,0.5]
         switch(this.shape) {
-            case "cone":
-                cd = RAPIER.ColliderDesc.cone(0.5, 0.5);
-                cd.setDensity(4)
+            case "121":
+                d = [0.5,1,0.5];
                 break;
-            case "ball":
-                cd = RAPIER.ColliderDesc.ball(0.5);
-                cd.setDensity(2)
+            case "414":
+                d = [2,0.5,2];
                 break;
-            case "cylinder":
-                cd = RAPIER.ColliderDesc.cylinder(0.5, 0.5);
-                cd.setDensity(1.5)
-                break;
-            case"cube":
-            default:
-                cd = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
-                cd.setDensity(1)
-            break;
+                
+            case "111":
+            default:  
         }
-        
-        // cd = RAPIER.ColliderDesc.cylinder(0.5, 0.5);
+        const cd = RAPIER.ColliderDesc.cuboid(...d);
+        cd.setDensity(1)
+        cd.setRestitution(0.01);
         this.createCollider(cd);
-  
+
     }
 
 }
-SprayActor.register('SprayActor');
+BlockActor.register('BlockActor');
 
 //------------------------------------------------------------------------------------------
-//-- SprayPawn -------------------------------------------------------------------------
+//-- BlockPawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced) {
+class BlockPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced) {
     constructor(...args) {
         super(...args);
-        this.useInstance(this.actor.shape + this.actor.index);
+        this.useInstance(this.actor.shape);
     }
 }
 
 //------------------------------------------------------------------------------------------
-//-- FountainActor ------------------------------------------------------------------------
+//-- BulletActor ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierStaticRigidBody) {
-    get pawn() {return FountainPawn}
+class BulletActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody) {
+    get pawn() {return BulletPawn}
 
     init(options) {
         super.init(options);
-        this.live = [];
-
-        let cd = RAPIER.ColliderDesc.cuboid(25, 0.5, 25);
-        this.createCollider(cd);
-        cd = RAPIER.ColliderDesc.cuboid(0.5, 1, 0.5);
-        this.createCollider(cd);
-
-        cd = RAPIER.ColliderDesc.cuboid(0.5, 10, 25);
-        cd.translation = new RAPIER.Vector3(-24,0,0);
-        this.createCollider(cd);
-
-        cd = RAPIER.ColliderDesc.cuboid(0.5, 10, 25);
-        cd.translation = new RAPIER.Vector3(24,0,0);
-        this.createCollider(cd);
-
-        cd = RAPIER.ColliderDesc.cuboid(25, 10, 0.5);
-        cd.translation = new RAPIER.Vector3(0,0,24);
-        this.createCollider(cd);
-
-        cd = RAPIER.ColliderDesc.cuboid(25, 10, 0.5);
-        cd.translation = new RAPIER.Vector3(0,0,-24);
-        this.createCollider(cd);
-
-        this.subscribe("ui", "shoot", this.doShoot)
-
-
-        this.future(1000).spray();
+        this.buildCollider();
+        this.future(10000).destroy()
     }
 
-    spray() {
-        this.spawn();
-        // console.log(this.live.length);
-        if (!this.doomed) this.future(300).spray();
-    }
+    buildCollider() {
+        const cd = RAPIER.ColliderDesc.ball(0.5);
+        cd.setDensity(3)
+        cd.setRestitution(0.95);
+        this.createCollider(cd);
 
-    spawn() {
-        const type = this.random()
-        let shape = "cube";
-
-        if (type > 0.4) shape = "cylinder";
-        if (type > 0.7) shape = "ball";
-        if (type > 0.9) shape = "cone";
-
-        const index = Math.floor(this.random()*20);
-        const spray = SprayActor.create({parent: this, shape, index, translation: [0,3,0]});
-
-        const spin = v3_scale(sphericalRandom(),Math.random() * 0.5);
-        const force = [0, 17.5 + 5 * Math.random(), 0];
-
-        spray.rigidBody.applyImpulse(new RAPIER.Vector3(...force), true);
-        spray.rigidBody.applyTorqueImpulse(new RAPIER.Vector3(...spin), true);
-    }
-
-    doShoot(gun) {
-        const aim = v3_normalize(v3_sub([0,15,0], gun))
-        const shape = "cube";
-        const index = Math.floor(this.random()*20);
-        const translation = v3_add(gun, [0,0,0])
-        const bullet = SprayActor.create({parent: this, shape, index, translation});
-        const force = v3_scale(aim, 40);
-        const spin = v3_scale(sphericalRandom(),Math.random() * 0.5);
-
-        bullet.rigidBody.applyImpulse(new RAPIER.Vector3(...force), true);
-        bullet.rigidBody.applyTorqueImpulse(new RAPIER.Vector3(...spin), true);
     }
 
 }
-FountainActor.register('FountainActor');
+BulletActor.register('BulletActor');
 
 //------------------------------------------------------------------------------------------
-//-- FountainPawn -------------------------------------------------------------------------
+//-- BulletPawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class FountainPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+class BulletPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced) {
+    constructor(...args) {
+        super(...args);
+        this.useInstance("ball");
+    }
+}
+
+
+//------------------------------------------------------------------------------------------
+//-- BaseActor ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierStaticRigidBody) {
+    get pawn() {return BasePawn}
+
+    init(options) {
+        super.init(options);
+        this.active = [];
+        let cd = RAPIER.ColliderDesc.cuboid(50, 5, 50);
+        cd.translation = new RAPIER.Vector3(0,-5,0);
+        this.createCollider(cd);
+
+        this.subscribe("ui", "shoot", this.shoot)
+        this.subscribe("ui", "reset", this.reset)
+
+    }
+
+    reset() {
+        console.log("reset!")
+        this.active.forEach (b => b.destroy());
+        this.active = [];
+
+        this.buildBuilding(-3,0,-3)
+        this.buildBuilding(-3,0,3)
+        this.buildBuilding(3,0,-3)
+        this.buildBuilding(3,0,3)
+
+        this.buildBuilding(-10,0,-3)
+        this.buildBuilding(-10,0,3)
+        this.buildBuilding(10,0,-3)
+        this.buildBuilding(10,0,3)
+
+        this.buildBuilding(-3,0,-10)
+        this.buildBuilding(-3,0,10)
+        this.buildBuilding(3,0,-10)
+        this.buildBuilding(3,0,10)
+
+
+
+    }
+
+    build141(x,y,z) {
+        this.active.push(BlockActor.create({parent: this, shape: "121", translation: [x,y+1,z]}));
+        this.active.push(BlockActor.create({parent: this, shape: "121", translation: [x,y+3,z]}));
+    }
+
+    buildFloor(x,y,z) {
+        this.build141(x,y,z);
+        this.build141(x,y,z+3);
+        this.build141(x+3,y,z+3);
+        this.build141(x+3,y,z);
+
+        this.active.push(BlockActor.create({parent: this, shape: "414", translation: [x+1.5, y+4.5, z+1.5]}));
+    }
+
+    buildBuilding(x,y,z) {
+        this.buildFloor(x,y,z);
+        this.buildFloor(x,y+5.5,z);
+    }
+
+    shoot3(gun) {
+        this.shoot(gun);
+        // this.future(150).shoot(gun);
+        // this.future(300).shoot(gun);
+    }
+
+    shoot(gun) {
+        const aim = v3_normalize(v3_sub([0,0,1], gun))
+        const translation = v3_add(gun, [0,0,0]);
+        const bullet = BulletActor.create({parent: this, translation});
+        const force = v3_scale(aim, 50);
+        bullet.rigidBody.applyImpulse(new RAPIER.Vector3(...force), true);
+
+        // this.shots.push(bullet);
+    }
+
+
+
+}
+BaseActor.register('BaseActor');
+
+//------------------------------------------------------------------------------------------
+//-- BasePawn -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
-        const group = new THREE.Group();
-       
-        this.nozzleGeometry = new THREE.CylinderGeometry( 1, 0.5, 5, 10 );
-        this.nozzlematerial = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
-        this.nozzlematerial.side = THREE.DoubleSide;
-        this.nozzlematerial.shadowSide = THREE.DoubleSide;
-
-        const nozzle = new THREE.Mesh( this.nozzleGeometry, this.nozzlematerial );
-        nozzle.castShadow = true;
-        // nozzle.receiveShadow = true;
-
-        this.baseGeometry = new THREE.BoxGeometry( 50, 1, 50 );
         this.baseMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.7,0.7,0.7)} );
         this.baseMaterial.side = THREE.DoubleSide;
         this.baseMaterial.shadowSide = THREE.DoubleSide;
 
+        const group = new THREE.Group();
+       
+        this.baseGeometry = new THREE.BoxGeometry( 100, 1, 100 );
+        this.baseGeometry.translate(0,-0.5,0);
+
         const base = new THREE.Mesh( this.baseGeometry, this.baseMaterial );
         base.receiveShadow = true;
-
         group.add(base);
-        group.add(nozzle);
 
 
         this.setRenderObject(group);
@@ -200,43 +219,9 @@ class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
         console.log("Start root model!!");
-        this.seedColors();
+        // this.seedColors();
 
-        this.fountain = FountainActor.create({gravity: [0,-9.8,0], timestep:15, translation: [0,0,0]});
-    }
-
-    seedColors() {
-
-        this.colors = [
-            rgb(242, 215, 213),        // Red
-            rgb(217, 136, 128),        // Red
-            rgb(192, 57, 43),        // Red
-        
-            rgb(240, 178, 122),        // Orange
-            rgb(230, 126, 34),        // Orange
-            rgb(175, 96, 26),        // Orange
-        
-            rgb(247, 220, 111),        // Yellow
-            rgb(241, 196, 15),        // Yellow
-            rgb(183, 149, 11),        // Yellow
-        
-            rgb(125, 206, 160),        // Green
-            rgb(39, 174, 96),        // Green
-            rgb(30, 132, 73),        // Green
-        
-            rgb(133, 193, 233),         // Blue
-            rgb(52, 152, 219),        // Blue
-            rgb(40, 116, 166),        // Blue
-        
-            rgb(195, 155, 211),        // Purple
-            rgb(155, 89, 182),         // Purple
-            rgb(118, 68, 138),        // Purple
-
-            [0.9, 0.9, 0.9],        // White
-            [0.5, 0.5, 0.5],        // Gray
-            [0.2, 0.2, 0.2]        // Black
-        ];
-
+        this.base = BaseActor.create({gravity: [0,-9.8,0], timestep:10, translation: [0,0,0]});
     }
 
 }
@@ -247,9 +232,9 @@ MyModelRoot.register("MyModelRoot");
 //------------------------------------------------------------------------------------------
 
 let fov = 60;
-let pitch = toRad(-45);
-let yaw = toRad(30);
-let gun = [0,0,50];
+let pitch = toRad(-20);
+let yaw = toRad(0);
+let gun = [0,-1,50];
 
 
 class MyViewRoot extends ViewRoot {
@@ -270,7 +255,6 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", " Down", this.doShoot);
-        this.subscribe("input", "tap", this.doShoot);
 
     }
 
@@ -281,10 +265,10 @@ class MyViewRoot extends ViewRoot {
 
         const group = new THREE.Group();
 
-        const ambient = new THREE.AmbientLight( 0xffffff, 0.5 );
+        const ambient = new THREE.AmbientLight( 0xffffff, 0.8 );
         group.add(ambient);
 
-        const sun = new THREE.DirectionalLight( 0xffffff, 0.7 );
+        const sun = new THREE.DirectionalLight( 0xffffff, 0.3 );
         sun.position.set(100, 100, 100);
         sun.castShadow = true;
         sun.shadow.mapSize.width = 4096;
@@ -341,7 +325,7 @@ class MyViewRoot extends ViewRoot {
         yaw += -0.01 * e.xy[0];
         yaw = yaw % TAU;
         pitch += -0.01 * e.xy[1];
-        pitch = Math.min(pitch, toRad(-20));
+        pitch = Math.min(pitch, toRad(-5));
         pitch = Math.max(pitch, toRad(-90));
         this.updateCamera()
     }
@@ -352,30 +336,30 @@ class MyViewRoot extends ViewRoot {
             const recenter = new ButtonWidget2({parent: hud, translation: [20,20], size: [200,50]});
             recenter.label.set({text:"Recenter"});
             recenter.onClick = () => {
-                console.log("click!");
                 fov = 60;
-                pitch = toRad(-45);
-                yaw = toRad(30);
+                pitch = toRad(-20);
+                yaw = toRad(0);
                 this.updateCamera();
             }
+
+            const reset = new ButtonWidget2({parent: hud, anchor: [1,0], pivot:[1,0], translation: [-20,20], size: [200,50]});
+            reset.label.set({text:"Reset"});
+            reset.onClick = () => this.publish("ui", "reset");
     }
 
     doShoot() {
-        console.log("shoot");
         const pitchMatrix = m4_rotation([1,0,0], pitch)
         const yawMatrix = m4_rotation([0,1,0], yaw)
         const both = m4_multiply(pitchMatrix, yawMatrix);
         const shoot = v3_transform(gun, both);
-        // console.log(shoot);
         this.publish("ui", "shoot", shoot);
-
     }
 
 }
 
 App.makeWidgetDock();
 StartWorldcore({
-    appId: 'io.croquet.physics',
+    appId: 'io.croquet.demolition',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
     name: 'Physics',
     password: 'password',
