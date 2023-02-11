@@ -72,6 +72,20 @@ class BulletActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody
         super.init(options);
         this.buildCollider();
         this.future(10000).destroy()
+        // console.log("bullet");
+        // this.future(100).ttt()
+    }
+
+    ttt() {
+        if (this.doomed) return;
+        // console.log(this.velocity);
+        console.log(v3_magnitude(this.acceleration));
+        this.future(100).ttt()
+    }
+
+    accelerometer() {
+        const a = v3_magnitude(this.acceleration);
+        if (a > 20) console.log(a/9.8 + "g");
     }
 
     buildCollider() {
@@ -192,8 +206,6 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
 
         BombActor.create({parent: this, translation:[1.5,5,1.5]});
 
-
-
     }
 
     build141(x,y,z) {
@@ -215,11 +227,11 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
         this.buildFloor(x,y+5.5,z);
     }
 
-    shoot3(gun) {
-        this.shoot(gun);
-        // this.future(150).shoot(gun);
-        // this.future(300).shoot(gun);
-    }
+    // shoot3(gun) {
+    //     this.shoot(gun);
+    //     // this.future(150).shoot(gun);
+    //     // this.future(300).shoot(gun);
+    // }
 
     shoot(gun) {
         const aim = v3_normalize(v3_sub([0,0,1], gun))

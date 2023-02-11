@@ -1,4 +1,4 @@
-import { RegisterMixin, ModelService, q_identity, v3_multiply, v3_zero, ActorManager, q_axisAngle, WorldcoreModel, Actor  } from "@croquet/worldcore";
+import { RegisterMixin, ModelService, q_identity, v3_multiply, v3_zero, v3_sub, v3_scale, ActorManager, q_axisAngle, WorldcoreModel, Actor  } from "@croquet/worldcore";
 
 export let RAPIER;
 
@@ -156,6 +156,13 @@ export const AM_RapierWorld = superclass => class extends superclass {
             const t = rb.translation();
             const r = rb.rotation();
             const translation = [t.x, t.y, t.z];
+            if (actor.accelerometer) {
+                const velocity = v3_scale(v3_sub(translation, actor.translation), 1000/this.timeStep);
+                let  acceleration = v3_scale(v3_sub(velocity, actor.velocity), 1000/this.timeStep);
+                acceleration = v3_sub(acceleration, this.gravity);
+                actor.set({acceleration,velocity});
+                actor.accelerometer();
+            }
             const rotation = [r.x, r.y, r.z, r.w]
             actor.set({translation, rotation});
         });
@@ -174,14 +181,11 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
     init(options) {
         super.init(options);
         this.worldActor = this.getWorldActor();
-        // if (this.world) {this.worldActor = this;} 
-        // if (this.parent) this.worldActor = this.parent;
     }
 
     destroy() { 
         super.destroy();
-        this.worldActor.destroyRigidBody(this.rigidBodyHandle);
-        
+        this.worldActor.destroyRigidBody(this.rigidBodyHandle);   
     }
 
     getWorldActor() {
@@ -211,6 +215,10 @@ RegisterMixin(AM_RapierRigidBody);
 //------------------------------------------------------------------------------------------
 
 export const AM_RapierDynamicRigidBody = superclass => class extends AM_RapierRigidBody(superclass) {
+
+    get velocity() { return this._velocity || [0,0,0]}
+    get acceleration() { return this._acceleration || [0,0,0]}
+    get accelerometer() { return this._accelerometer}
 
     init(options) {
         super.init(options);
