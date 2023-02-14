@@ -56,7 +56,7 @@ class BlockActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody)
     }
 
     translationSet(t) {
-        if (t[1] > -30) return;
+        if (t[1] > -50) return;
         console.log("kill plane");
         this.future(0).destroy();
     }
@@ -115,116 +115,68 @@ class BulletPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced) {
 //-- BombActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BombActor extends mix(Actor).with(AM_Smoothed, AM_RapierStaticRigidBody) {
-    get pawn() {return BombPawn}
+// class BombActor extends mix(Actor).with(AM_Smoothed, AM_RapierStaticRigidBody) {
+//     get pawn() {return BombPawn}
 
-    init(options) {
-        super.init(options);
-        // this.buildCollider();
+//     init(options) {
+//         super.init(options);
+//         // this.buildCollider();
 
-        this.subscribe("input", "bDown", this.explode);
-    }
+//         this.subscribe("input", "bDown", this.explode);
+//     }
 
-    // buildCollider() {
-    //     const cd = RAPIER.ColliderDesc.ball(0.5);
-    //     cd.setDensity(3)
-    //     cd.setRestitution(0.95);
-    //     this.createCollider(cd);
+//     // buildCollider() {
+//     //     const cd = RAPIER.ColliderDesc.ball(0.5);
+//     //     cd.setDensity(3)
+//     //     cd.setRestitution(0.95);
+//     //     this.createCollider(cd);
 
-    // }
+//     // }
 
-    explode() {
-        console.log("boom!");
-        const radius = 10;
-        const world = this.getWorldActor();
-        world.blocks.forEach(block => {
-            const to = v3_sub(block.translation, this.translation)
-            const force = radius - v3_magnitude(to)
-            if (force < 0) return;
-            const aim = v3_normalize(to);
-            const push = v3_scale(aim, force * 50);
-            block.rigidBody.applyImpulse(new RAPIER.Vector3(...push), true);
-        })
+//     explode() {
+//         console.log("boom!");
+//         const radius = 10;
+//         const world = this.getWorldActor();
+//         world.blocks.forEach(block => {
+//             const to = v3_sub(block.translation, this.translation)
+//             const force = radius - v3_magnitude(to)
+//             if (force < 0) return;
+//             const aim = v3_normalize(to);
+//             const push = v3_scale(aim, force * 50);
+//             block.rigidBody.applyImpulse(new RAPIER.Vector3(...push), true);
+//         })
 
-        this.say("boom")
-        this.future(100).destroy();
-    }
+//         this.say("boom")
+//         this.future(100).destroy();
+//     }
 
-}
-BombActor.register('BombActor');
+// }
+// BombActor.register('BombActor');
 
 //------------------------------------------------------------------------------------------
 //-- BombPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BombPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced, PM_ThreeVisible) {
-    constructor(...args) {
-        super(...args);
-        console.log("bomb pawn");
-        this.useInstance("barrel");
-
-        this.blastGeometry = new THREE.SphereGeometry( 5, 10, 10 );
-
-        this.blastMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
-
-        this.blast = new THREE.Mesh( this.blastGeometry, this.blastMaterial );
-        this.blast.visible = false;
-
-        this.setRenderObject(this.blast);
-        // this.listen("boom", this.flash)
-
-    }
-
-    flash() {
-        this.blast.visible = true;
-    }
-}
-
-// //------------------------------------------------------------------------------------------
-// //-- PillarActor -----------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
-
-// class PillarActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody) {
-//     get pawn() {return PillarPawn}
-
-//     init(options) {
-//         super.init(options);
-//         this.buildCollider();
-
-//         this.worldActor.blocks.add(this);
-
-//     }
-
-//     destroy() {
-//         super.destroy();
-//         this.worldActor.blocks.delete(this);
-//     }
-
-//     translationSet(t) {
-//         if (t[1] > -20) return;
-//         console.log("kill plane");
-//         this.future(0).destroy();
-//     }
-
-//     buildCollider() {
-//         const cd = RAPIER.ColliderDesc.cylinder(2, 0.5);
-//         cd.setDensity(5)
-//         cd.setFriction(2)
-//         cd.setRestitution(0.01);
-//         this.createCollider(cd);
-//     }
-
-// }
-// PillarActor.register('PillarActor');
-
-// //------------------------------------------------------------------------------------------
-// //-- PillarPawn ------------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
-
-// class PillarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced) {
+// class BombPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced, PM_ThreeVisible) {
 //     constructor(...args) {
 //         super(...args);
-//         this.useInstance("pillar");
+//         console.log("bomb pawn");
+//         this.useInstance("barrel");
+
+//         this.blastGeometry = new THREE.SphereGeometry( 5, 10, 10 );
+
+//         this.blastMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
+
+//         this.blast = new THREE.Mesh( this.blastGeometry, this.blastMaterial );
+//         this.blast.visible = false;
+
+//         this.setRenderObject(this.blast);
+//         // this.listen("boom", this.flash)
+
+//     }
+
+//     flash() {
+//         this.blast.visible = true;
 //     }
 // }
 
@@ -265,21 +217,17 @@ class BarrelActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody
         cd.setDensity(1)
         cd.setRestitution(0.2);
         this.createCollider(cd);
-
     }
 
     accelerometer() {
         if (!this.armed) return;
         const a = v3_magnitude(this.acceleration);
-        if (a > 20) {
-            console.log("jostle");
-            // this.future(20).destroy()
+        if (a > 25) {
             this.explode();
         }
     }
 
     explode() {
-        console.log("boom!");
         const radius = 10;
         const world = this.getWorldActor();
         world.blocks.forEach(block => {
@@ -291,7 +239,6 @@ class BarrelActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody
             block.rigidBody.applyImpulse(new RAPIER.Vector3(...push), true);
         })
 
-        this.say("boom")
         this.future(10).destroy();
     }
 
@@ -302,26 +249,26 @@ BarrelActor.register('BarrelActor');
 //-- BarrelPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BarrelPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced, PM_ThreeVisible) {
+class BarrelPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced) {
     constructor(...args) {
         super(...args);
         this.useInstance("barrel");
 
-        this.blastGeometry = new THREE.SphereGeometry( 5, 10, 10 );
+        // this.blastGeometry = new THREE.SphereGeometry( 5, 10, 10 );
 
-        this.blastMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
+        // this.blastMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
 
-        this.blast = new THREE.Mesh( this.blastGeometry, this.blastMaterial );
-        this.blast.visible = false;
+        // this.blast = new THREE.Mesh( this.blastGeometry, this.blastMaterial );
+        // this.blast.visible = false;
 
-        this.setRenderObject(this.blast);
+        // this.setRenderObject(this.blast);
         // this.listen("boom", this.flash)
 
     }
 
-    flash() {
-        this.blast.visible = true;
-    }
+    // flash() {
+    //     this.blast.visible = true;
+    // }
 }
 
 
@@ -343,6 +290,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
         this.subscribe("ui", "shoot", this.shoot)
         this.subscribe("ui", "reset", this.reset)
 
+        this.reset();
     }
 
     shoot(gun) {
@@ -496,7 +444,7 @@ MyModelRoot.register("MyModelRoot");
 
 let fov = 60;
 let pitch = toRad(-20);
-let yaw = toRad(0);
+let yaw = toRad(-30);
 let gun = [0,-1,50];
 
 function IsModel(c) {
@@ -610,14 +558,14 @@ class MyViewRoot extends ViewRoot {
     buildHUD() {
             const wm = this.service("WidgetManager2");
             const hud = new Widget2({parent: wm.root, autoSize: [1,1]});
-            const recenter = new ButtonWidget2({parent: hud, translation: [20,20], size: [200,50]});
-            recenter.label.set({text:"Recenter"});
-            recenter.onClick = () => {
-                fov = 60;
-                pitch = toRad(-20);
-                yaw = toRad(0);
-                this.updateCamera();
-            }
+            // const recenter = new ButtonWidget2({parent: hud, translation: [20,20], size: [200,50]});
+            // recenter.label.set({text:"Recenter"});
+            // recenter.onClick = () => {
+            //     fov = 60;
+            //     pitch = toRad(-20);
+            //     yaw = toRad(0);
+            //     this.updateCamera();
+            // }
 
             const reset = new ButtonWidget2({parent: hud, anchor: [1,0], pivot:[1,0], translation: [-20,20], size: [200,50]});
             reset.label.set({text:"Reset"});
