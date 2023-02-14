@@ -15,15 +15,6 @@ function rgb(r, g, b) {
 }
 
 //------------------------------------------------------------------------------------------
-//-- Materials -----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-const instanceMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
-instanceMaterial.side = THREE.FrontSide;
-instanceMaterial.shadowSide = THREE.BackSide;
-instanceMaterial.vertexColors = true;
-
-//------------------------------------------------------------------------------------------
 //-- InstancedMesh --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -35,6 +26,10 @@ class InstancedMesh {
         for (let n = count-1; n>= 0; n--) {
             this.free.push(n);
         }
+    }
+
+    destroy() {
+        this.mesh.geometry.dispose();
     }
 
     use(pawn) {
@@ -98,8 +93,22 @@ export class InstanceManager extends ViewService {
     constructor() {
         super("InstanceManager");
         this.instances = new Map();
+
+        this.instanceMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
+        this.instanceMaterial.side = THREE.FrontSide;
+        this.instanceMaterial.shadowSide = THREE.BackSide;
+        this.instanceMaterial.vertexColors = true;
+
         this.seedColors();
         this.buildAll();
+    }
+
+    destroy() {
+        super.destroy();
+        this.instanceMaterial.dispose();
+        this.instances.forEach( instance => {
+            instance.destroy();
+        })
     }
 
     seedColors() {
@@ -159,7 +168,7 @@ export class InstanceManager extends ViewService {
     buildBalls() {
         const geo = new THREE.SphereGeometry( 0.5, 10, 10);
         setGeometryColor(geo, [0.2,0.2,0.2]);
-        const mesh = this.build("ball", geo, instanceMaterial);
+        const mesh = this.build("ball", geo, this.instanceMaterial);
         mesh.receiveShadow = true;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
@@ -168,21 +177,21 @@ export class InstanceManager extends ViewService {
     buildBlocks() {
         const geo111 = new THREE.BoxGeometry( 1, 1, 1 );
         setGeometryColor(geo111, [0.5,0.5,0.5]);
-        const mesh111 = this.build("111", geo111, instanceMaterial);
+        const mesh111 = this.build("111", geo111, this.instanceMaterial);
         mesh111.receiveShadow = true;
         mesh111.castShadow = true;
         mesh111.receiveShadow = true;
 
         const geo121 = new THREE.BoxGeometry( 1, 2, 1 );
         setGeometryColor(geo121, this.colors[6]);
-        const mesh121 = this.build("121", geo121, instanceMaterial);
+        const mesh121 = this.build("121", geo121, this.instanceMaterial);
         mesh121.receiveShadow = true;
         mesh121.castShadow = true;
         mesh121.receiveShadow = true;
 
         const geo414 = new THREE.BoxGeometry( 4, 1, 4 );
         setGeometryColor(geo414, this.colors[5]);
-        const mesh414 = this.build("414", geo414, instanceMaterial);
+        const mesh414 = this.build("414", geo414, this.instanceMaterial);
         mesh414.receiveShadow = true;
         mesh414.castShadow = true;
         mesh414.receiveShadow = true;
@@ -191,7 +200,7 @@ export class InstanceManager extends ViewService {
     buildBarrels() {
         const geo = new THREE.CylinderGeometry( 0.5, 0.5, 1, 10);
         setGeometryColor(geo, [0.9,0,0]);
-        const mesh = this.build("barrel", geo, instanceMaterial);
+        const mesh = this.build("barrel", geo, this.instanceMaterial);
         mesh.receiveShadow = true;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
@@ -200,7 +209,7 @@ export class InstanceManager extends ViewService {
     buildPillars() {
         const geo = new THREE.CylinderGeometry( 0.5, 0.5, 4, 10);
         setGeometryColor(geo, [0.4,0.4,0.6]);
-        const mesh = this.build("pillar", geo, instanceMaterial);
+        const mesh = this.build("pillar", geo, this.instanceMaterial);
         mesh.receiveShadow = true;
         mesh.castShadow = true;
         mesh.receiveShadow = true;
