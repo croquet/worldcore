@@ -10,9 +10,9 @@ import { InstanceManager, PM_ThreeVisibleInstanced } from "./src/Instances";
 import { AM_RapierDynamicRigidBody, RapierManager, RAPIER, AM_RapierStaticRigidBody, AM_RapierWorld } from "./src/Rapier";
 
 
-function rgb(r, g, b) {
-    return [r/255, g/255, b/255];
-}
+// function rgb(r, g, b) {
+//     return [r/255, g/255, b/255];
+// }
 
 //------------------------------------------------------------------------------------------
 //-- BlockActor ------------------------------------------------------------------------
@@ -49,14 +49,14 @@ class BlockActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody)
         }
         const cd = RAPIER.ColliderDesc.cuboid(...d);
         cd.setDensity(1)
-        cd.setFriction(1)
+        cd.setFriction(2)
         cd.setRestitution(0.01);
         this.createCollider(cd);
 
     }
 
     translationSet(t) {
-        if (t[1] > -20) return;
+        if (t[1] > -30) return;
         console.log("kill plane");
         this.future(0).destroy();
     }
@@ -142,7 +142,7 @@ class BombActor extends mix(Actor).with(AM_Smoothed, AM_RapierStaticRigidBody) {
             const force = radius - v3_magnitude(to)
             if (force < 0) return;
             const aim = v3_normalize(to);
-            const push = v3_scale(aim, force * 20);
+            const push = v3_scale(aim, force * 50);
             block.rigidBody.applyImpulse(new RAPIER.Vector3(...push), true);
         })
 
@@ -171,7 +171,7 @@ class BombPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced, PM_
         this.blast.visible = false;
 
         this.setRenderObject(this.blast);
-        this.listen("boom", this.flash)
+        // this.listen("boom", this.flash)
 
     }
 
@@ -179,6 +179,54 @@ class BombPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced, PM_
         this.blast.visible = true;
     }
 }
+
+// //------------------------------------------------------------------------------------------
+// //-- PillarActor -----------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+
+// class PillarActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody) {
+//     get pawn() {return PillarPawn}
+
+//     init(options) {
+//         super.init(options);
+//         this.buildCollider();
+
+//         this.worldActor.blocks.add(this);
+
+//     }
+
+//     destroy() {
+//         super.destroy();
+//         this.worldActor.blocks.delete(this);
+//     }
+
+//     translationSet(t) {
+//         if (t[1] > -20) return;
+//         console.log("kill plane");
+//         this.future(0).destroy();
+//     }
+
+//     buildCollider() {
+//         const cd = RAPIER.ColliderDesc.cylinder(2, 0.5);
+//         cd.setDensity(5)
+//         cd.setFriction(2)
+//         cd.setRestitution(0.01);
+//         this.createCollider(cd);
+//     }
+
+// }
+// PillarActor.register('PillarActor');
+
+// //------------------------------------------------------------------------------------------
+// //-- PillarPawn ------------------------------------------------------------------------------
+// //------------------------------------------------------------------------------------------
+
+// class PillarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced) {
+//     constructor(...args) {
+//         super(...args);
+//         this.useInstance("pillar");
+//     }
+// }
 
 //------------------------------------------------------------------------------------------
 //-- BarrelActor -----------------------------------------------------------------------------
@@ -223,7 +271,7 @@ class BarrelActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody
     accelerometer() {
         if (!this.armed) return;
         const a = v3_magnitude(this.acceleration);
-        if (a > 50) {
+        if (a > 20) {
             console.log("jostle");
             // this.future(20).destroy()
             this.explode();
@@ -239,12 +287,12 @@ class BarrelActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody
             const force = radius - v3_magnitude(to)
             if (force < 0) return;
             const aim = v3_normalize(to);
-            const push = v3_scale(aim, force * 5);
+            const push = v3_scale(aim, force * 25);
             block.rigidBody.applyImpulse(new RAPIER.Vector3(...push), true);
         })
 
         this.say("boom")
-        this.future(20).destroy();
+        this.future(10).destroy();
     }
 
 }
@@ -267,7 +315,7 @@ class BarrelPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced, P
         this.blast.visible = false;
 
         this.setRenderObject(this.blast);
-        this.listen("boom", this.flash)
+        // this.listen("boom", this.flash)
 
     }
 
@@ -315,17 +363,27 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
         this.buildBuilding(2,5,-2)
         this.buildBuilding(-2,5,-2)
 
-        this.buildBuilding(9,5,2)
-        this.buildBuilding(-9,5,2)
-        this.buildBuilding(9,5,-2)
-        this.buildBuilding(-9,5,-2)
+        this.buildBuilding(10,5,2)
+        this.buildBuilding(10,5,-2)
+        this.buildBuilding(10,5,6)
+        this.buildBuilding(10,5,-6)
 
-        this.buildBuilding(2,5,9)
-        this.buildBuilding(-2,5,9)
-        this.buildBuilding(2,5,-9)
-        this.buildBuilding(-2,5,-9)
+        this.buildBuilding(-10,5,2)
+        this.buildBuilding(-10,5,-2)
+        this.buildBuilding(-10,5,6)
+        this.buildBuilding(-10,5,-6)
 
-        BombActor.create({parent: this, translation:[0,10,0]});
+        this.buildBuilding(2,5,10)
+        this.buildBuilding(-2,5,10)
+        this.buildBuilding(6,5,10)
+        this.buildBuilding(-6,5,10)
+        this.buildBuilding(2,5,-10)
+        this.buildBuilding(-2,5,-10)
+        this.buildBuilding(6,5,-10)
+        this.buildBuilding(-6,5,-10)
+
+
+        // BombActor.create({parent: this, translation:[0,10,0]});
 
     }
 
@@ -357,10 +415,18 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
         BlockActor.create({parent: this, shape: "111", translation: [x+1.5, y+11, z-0]});
         BlockActor.create({parent: this, shape: "111", translation: [x-1.5, y+11, z+0]});
 
-        if (this.random() < 1) BarrelActor.create({parent: this, translation: [x, y+5.5, z]});
-
+        if (Math.abs(x)<4 && Math.abs(z)<4) BarrelActor.create({parent: this, translation: [x, y+5.5, z]});
 
     }
+
+    // buildWall(x,y,z) {
+    //     PillarActor.create({parent: this, translation: [x-1.5,y+2,z-1.5]});
+    //     PillarActor.create({parent: this, translation: [x-1.5,y+2,z+1.5]});
+    //     PillarActor.create({parent: this, translation: [x+1.5,y+2,z-1.5]});
+    //     PillarActor.create({parent: this, translation: [x+1.5,y+2,z+1.5]});
+
+    //     BlockActor.create({parent: this, shape: "414", translation: [x+0, y+4.5, z+0]});
+    // }
 
 
 }
@@ -460,7 +526,7 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
-        this.subscribe("input", "tDown", this.ttt);
+        this.subscribe("input", " Down", this.doShoot);
 
     }
 
@@ -537,7 +603,7 @@ class MyViewRoot extends ViewRoot {
         yaw = yaw % TAU;
         pitch += -0.01 * e.xy[1];
         pitch = Math.min(pitch, toRad(-10));
-        pitch = Math.max(pitch, toRad(-90));
+        pitch = Math.max(pitch, toRad(-60));
         this.updateCamera()
     }
 

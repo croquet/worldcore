@@ -153,6 +153,7 @@ export class InstanceManager extends ViewService {
         this.buildBalls();
         this.buildBlocks();
         this.buildBarrels();
+        this.buildPillars();
     }
 
     buildBalls() {
@@ -196,55 +197,14 @@ export class InstanceManager extends ViewService {
         mesh.receiveShadow = true;
     }
 
-    // buildCubes() {
-    //     for( let n = 0; n <viewRoot.model.colors.length; n++) {
-    //         const color = viewRoot.model.colors[n];
-    //         const geo = new THREE.BoxGeometry( 1, 1, 1 );
-    //         setGeometryColor(geo, color);
-    //         const mesh = this.build("cube" + n, geo, instanceMaterial);
-    //         mesh.receiveShadow = true;
-    //         mesh.castShadow = true;
-    //         mesh.receiveShadow = true;
-    //     }
-    // }
-
-
-
-    // buildCubes() {
-    //     for( let n = 0; n <viewRoot.model.colors.length; n++) {
-    //         const color = viewRoot.model.colors[n];
-    //         const geo = new THREE.BoxGeometry( 1, 1, 1 );
-    //         setGeometryColor(geo, color);
-    //         const mesh = this.build("cube" + n, geo, instanceMaterial);
-    //         mesh.receiveShadow = true;
-    //         mesh.castShadow = true;
-    //         mesh.receiveShadow = true;
-    //     }
-    // }
-
-    // buildBalls() {
-    //     for( let n = 0; n <viewRoot.model.colors.length; n++) {
-    //         const color = viewRoot.model.colors[n];
-    //         const geo = new THREE.SphereGeometry( 0.5, 10, 10);
-    //         setGeometryColor(geo, color);
-    //         const mesh = this.build("ball" + n, geo, instanceMaterial);
-    //         mesh.receiveShadow = true;
-    //         mesh.castShadow = true;
-    //         mesh.receiveShadow = true;
-    //     }
-    // }
-
-    // buildCones() {
-    //     for( let n = 0; n <viewRoot.model.colors.length; n++) {
-    //         const color = viewRoot.model.colors[n];
-    //         const geo = new THREE.ConeGeometry( 0.5, 1, 10, 1);
-    //         setGeometryColor(geo, color);
-    //         const mesh = this.build("cone" + n, geo, instanceMaterial);
-    //         mesh.receiveShadow = true;
-    //         mesh.castShadow = true;
-    //         mesh.receiveShadow = true;
-    //     }
-    // }
+    buildPillars() {
+        const geo = new THREE.CylinderGeometry( 0.5, 0.5, 4, 10);
+        setGeometryColor(geo, [0.4,0.4,0.6]);
+        const mesh = this.build("pillar", geo, instanceMaterial);
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+    }
 
     
 }
