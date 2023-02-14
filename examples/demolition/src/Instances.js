@@ -152,6 +152,7 @@ export class InstanceManager extends ViewService {
     buildAll() {
         this.buildBalls();
         this.buildBlocks();
+        this.buildBarrels();
     }
 
     buildBalls() {
@@ -172,7 +173,6 @@ export class InstanceManager extends ViewService {
         mesh111.receiveShadow = true;
 
         const geo121 = new THREE.BoxGeometry( 1, 2, 1 );
-        // setGeometryColor(geo121, [0.8,0.8,0]);
         setGeometryColor(geo121, this.colors[6]);
         const mesh121 = this.build("121", geo121, instanceMaterial);
         mesh121.receiveShadow = true;
@@ -180,12 +180,20 @@ export class InstanceManager extends ViewService {
         mesh121.receiveShadow = true;
 
         const geo414 = new THREE.BoxGeometry( 4, 1, 4 );
-        // setGeometryColor(geo414, [0,0,0.7]);
         setGeometryColor(geo414, this.colors[5]);
         const mesh414 = this.build("414", geo414, instanceMaterial);
         mesh414.receiveShadow = true;
         mesh414.castShadow = true;
         mesh414.receiveShadow = true;
+    }
+
+    buildBarrels() {
+        const geo = new THREE.CylinderGeometry( 0.5, 0.5, 1, 10);
+        setGeometryColor(geo, [0.9,0,0]);
+        const mesh = this.build("barrel", geo, instanceMaterial);
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
     }
 
     // buildCubes() {
@@ -200,17 +208,7 @@ export class InstanceManager extends ViewService {
     //     }
     // }
 
-    // buildCylinders() {
-    //     for( let n = 0; n <viewRoot.model.colors.length; n++) {
-    //         const color = viewRoot.model.colors[n];
-    //         const geo = new THREE.CylinderGeometry( 0.5, 0.5, 1, 10 );
-    //         setGeometryColor(geo, color);
-    //         const mesh = this.build("cylinder" + n, geo, instanceMaterial);
-    //         mesh.receiveShadow = true;
-    //         mesh.castShadow = true;
-    //         mesh.receiveShadow = true;
-    //     }
-    // }
+
 
     // buildCubes() {
     //     for( let n = 0; n <viewRoot.model.colors.length; n++) {

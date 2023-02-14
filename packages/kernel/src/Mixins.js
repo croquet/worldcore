@@ -1,9 +1,6 @@
-import { Constants } from "@croquet/croquet";
-// import { Constants } from "@croquet/worldcore-kernel";
-// import { GetPawn } from "./Pawn";
+import { Constants, Model } from "@croquet/croquet";
 import { v3_zero, q_identity, m4_scaleRotationTranslation, m4_getScaleRotationTranslation, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals,
-    v3_THREE,q_THREE } from  "./Vector";
+    q_slerp, q_equals, v3_THREE,q_THREE } from  "./Vector";
 
 // Mixin
 //
@@ -88,13 +85,22 @@ Constants.WC_MIXIN_USAGE = [];
 export const mix = superclass => new MixinFactory(superclass);
 export const RegisterMixin = mixin => Constants.WC_MIXIN_REGISTRY.push(mixin);
 
+function IsModel(c) {
+    while(c) {
+        // console.log(c);
+        if (c === Model) return true;
+        c = Object.getPrototypeOf(c);
+    }
+    return false;
+}
+
 class MixinFactory  {
     constructor(superclass) {
         this.superclass = superclass;
     }
 
     with(...mixins) {
-        Constants.WC_MIXIN_USAGE.push(mixins);
+        if (IsModel(this.superclass)) Constants.WC_MIXIN_USAGE.push(mixins);
         return mixins.reduce((c, mixin) => mixin(c), this.superclass);
     }
 };
