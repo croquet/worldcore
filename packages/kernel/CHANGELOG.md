@@ -112,6 +112,7 @@ defineSmoothedPawnProperty from PM_Smoothed
 
 ### Fixed
 - m4_getRotation() correctly ignores scale
+- Only actor mixins trigger a model change
 
 
 
