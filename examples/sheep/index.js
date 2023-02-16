@@ -232,7 +232,7 @@ class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [RapierManager];
+        return [];
     }
 
     init(...args) {
@@ -275,6 +275,14 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
+        this.subscribe("input", "pointerMove", this.doPointerMove);
+        this.subscribe("input", "xDown", this.ttt);
+    }
+
+    ttt() {
+        console.log(this.pointerXY);
+        const hit = this.raycast(this.pointerXY);
+        console.log(hit);
     }
 
     buildGround() {
@@ -290,8 +298,6 @@ class MyViewRoot extends ViewRoot {
         this.ground = new THREE.Mesh( this.groundGeometry, this.groundMaterial );
         this.ground.receiveShadow = true;
         rm.scene.add(this.ground);
-
-
     }
 
 
@@ -350,13 +356,21 @@ class MyViewRoot extends ViewRoot {
     }
 
     doPointerDown(e) {
+        this.pointerXY = e.xy;
         this.dragging = true;
-        console.log(e.xy);
-        console.log(this.ground);
+        // this.raycast(e.xy);
+        // console.log(e.xy);
+        // console.log(this.ground);
     }
 
     doPointerUp(e) {
         this.dragging = false;
+    }
+
+    doPointerMove(e) {
+        // console.log(e.xy);
+        this.pointerXY = e.xy;
+        // console.log(e.xy);
     }
 
     doPointerDelta(e) {
@@ -380,8 +394,8 @@ class MyViewRoot extends ViewRoot {
     }
 
     raycast(xy) {
+        console.log("raycast");
         const rm = this.service("ThreeRenderManager");
-        this.pointerHit = null
 
         if (!rm) return;
 
@@ -390,18 +404,13 @@ class MyViewRoot extends ViewRoot {
 
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera({x: x, y: y}, rm.camera);
-        // const hits = raycaster.intersectObjects( viewRoot.mapView.collider );
-
-        // if (hits && hits[0]) {
-        //     const p = hits[0].point;
-        //     const xyz = [ p.x / Constants.scaleX, p.y / Constants.scaleY, p.z / Constants.scaleZ ];
-        //     const voxel = v3_floor(xyz);
-        //     const fraction = v3_sub(xyz,voxel);
-        //     this.pointerHit = {xyz, voxel, fraction};
-
-        //     const surfaces = this.modelService("Surfaces");
-        //     // console.log(surfaces.elevation(...xyz));
-        // }
+        const hits = raycaster.intersectObjects( [this.ground] );
+        if (hits && hits[0]) {
+            const p = hits[0].point;
+            const out = [p.x, 0, p.z];
+            return out;
+        }
+        
     }
 
 

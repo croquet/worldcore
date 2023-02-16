@@ -47,7 +47,7 @@ class BlockActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody)
         const cd = RAPIER.ColliderDesc.cuboid(...d);
         cd.setDensity(1)
         cd.setFriction(2)
-        cd.setRestitution(0.01);
+        cd.setRestitution(0.1);
         this.createCollider(cd);
 
     }
@@ -83,7 +83,6 @@ class BulletActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody
         super.init(options);
         this.buildCollider();
         this.future(10000).destroy()
-        // this.subscribe("base", "reset", this.destroy);
     }
 
 
@@ -122,7 +121,7 @@ class BarrelActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody
 
         this.worldActor.blocks.add(this);
 
-        this.future(1000).arm();
+        this.future(2000).arm();
     }
 
     arm() {
@@ -150,7 +149,7 @@ class BarrelActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody
     accelerometer() {
         if (!this.armed) return;
         const a = v3_magnitude(this.acceleration);
-        if (a > 25) {
+        if (a > 35) {
             this.explode();
         }
     }
@@ -182,9 +181,7 @@ class BarrelPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced) {
         super(...args);
         this.useInstance("barrel");
     }
-
 }
-
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor ------------------------------------------------------------------------
@@ -263,7 +260,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
 
     buildBuilding(x,y,z) {
         this.buildFloor(x,y,z);
-        this.buildFloor(x,y+5.5,z);
+        this.buildFloor(x,y+5.6,z);
 
         BlockActor.create({parent: this, shape: "111", translation: [x-1.5, y+11, z-1.5]});
         BlockActor.create({parent: this, shape: "111", translation: [x-1.5, y+11, z+1.5]});
@@ -365,12 +362,8 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", " Down", this.doShoot);
+        // this.subscribe("input", "tap", this.doShoot);
     }
-
-    // ttt() {
-    //     console.log("test");
-    //     console.log(IsModel(BarrelPawn));
-    // }
 
     startCamera() {
         const rm = this.service("ThreeRenderManager");
@@ -448,10 +441,19 @@ class MyViewRoot extends ViewRoot {
             const wm = this.service("WidgetManager2");
             const hud = new Widget2({parent: wm.root, autoSize: [1,1]});
 
+            // const recenter = new ButtonWidget2({parent: hud, translation: [20,20], size: [200,50]});
+            // recenter.label.set({text:"Recenter"});
+            // recenter.onClick = () => {
+            //     console.log("click!");
+            //     fov = 60;
+            //     pitch = toRad(-45);
+            //     yaw = toRad(30);
+            //     this.updateCamera();
+            // }
 
-            // const reset = new ButtonWidget2({parent: hud, anchor: [1,0], pivot:[1,0], translation: [-20,20], size: [200,50]});
-            // reset.label.set({text:"Reset"});
-            // reset.onClick = () => this.publish("ui", "reset");
+            const reset = new ButtonWidget2({parent: hud, anchor: [1,0], pivot:[1,0], translation: [-20,20], size: [200,50]});
+            reset.label.set({text:"Reset"});
+            reset.onClick = () => this.publish("ui", "reset");
     }
 
     doShoot() {
@@ -471,7 +473,7 @@ StartWorldcore({
     name: 'Physics',
     password: 'password',
     model: MyModelRoot,
-    // name: App.autoSession(),
+    name: App.autoSession(),
     view: MyViewRoot,
     tps:60
 });

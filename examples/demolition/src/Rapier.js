@@ -35,78 +35,10 @@ export class RapierManager extends ModelService {
 
     init(options) {
         super.init('RapierManager');
-        // console.log("Starting RapierManager");
-        // console.log(RAPIER.version());
-        // this.worlds = new Map();
-
-        // this.createWorld({ name: "default", gravity:[0,-9.8,0]});
-        // this.createWorld({ name: "bob", gravity:[0,-0.8,0]});
     }
-
-    // createWorld(options = {}) {
-    //     options.name = options.name || "default";
-    //     const world = RapierWorld.create(options);
-    //     this.worlds.set(options.name, world);
-    //     return world;
-    // }
-
-    // getWorld(name) {
-    //     if (!this.worlds.has(name)) {
-    //         console.error( name + " is not a valid physics world! Using the default world instead")
-    //         name = "default";
-    //     }
-    //     return this.worlds.get(name)
-    // }
-
-    // destroy() {
-    //     super.destroy();
-    //     this.worlds.forEach(world => world.destroy());
-    // }
-
 
 }
 RapierManager.register("RapierManager");
-
-//------------------------------------------------------------------------------------------
-//-- RapierWorld ---------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// export class RapierWorld extends Actor {
-
-//     init(options) {
-//         super.init(options)
-//         this.rapierEventQueue = new RAPIER.EventQueue(true);
-//         this.rapierWorld = new RAPIER.World(new RAPIER.Vector3(...this.gravity));
-//         this.rapierWorld.timestep = this.timeStep / 1000;
-//         this.rigidBodies = new Map();
-//         this.future(0).tick();
-//     }
-
-//     get timeStep() {return this._timeStep || 50}
-//     get gravity() {return this._gravity || [0,-0.5,0]}
-
-//     destroy() {
-//         super.destroy();
-//         this.rapierEventQueue.free();
-//         this.rapierWorld.free();
-//     }
-
-//     tick() {
-//         if (this.doomed) return;
-//         this.rapierWorld.step(this.rapierEventQueue);
-//         this.rapierWorld.forEachActiveRigidBody(rb => {
-//             const actor = this.rigidBodies.get(rb.handle);
-//             const t = rb.translation();
-//             const r = rb.rotation();
-//             const translation = [t.x, t.y, t.z];
-//             const rotation = [r.x, r.y, r.z, r.w]
-//             actor.set({translation, rotation});
-//         });
-//         if (!this.doomed) this.future(this.timeStep).tick();
-//     }
-
-// }
-// RapierWorld.register("RapierWorld");
 
 //------------------------------------------------------------------------------------------
 //-- AM_RapierWorld ------------------------------------------------------------------------
@@ -205,8 +137,6 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
     createCollider(cd) {
         this.worldActor.world.createCollider(cd, this.rigidBody);
     }
-
-
 }
 RegisterMixin(AM_RapierRigidBody);
 
@@ -228,7 +158,7 @@ export const AM_RapierDynamicRigidBody = superclass => class extends AM_RapierRi
         rbd.rotation = new RAPIER.Quaternion(...this.rotation);
         rbd.mass = 1;
 
-        if (this.worldActor) this.rigidBodyHandle = this.worldActor.createRigidBody(this, rbd);
+        this.rigidBodyHandle = this.worldActor.createRigidBody(this, rbd);
     }
 
 };
