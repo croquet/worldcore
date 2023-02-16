@@ -54,7 +54,7 @@ export class Actor extends WorldcoreModel {
         new Set(this.children).forEach(child => child.destroy());
         this.set({parent: null});
         this._doomed = true; // About to be destroyed. This is used to prevent creating new future messages.
-        this.say("destroyActor");
+        this.publish("actor", "destroyActor", this);
         this.service('ActorManager').delete(this);
         super.destroy();
     }

@@ -19,6 +19,7 @@ export class PawnManager extends ViewService {
         for(const pawn of this.pawns.values()) { pawn.link() }; // recreate child links after all pawns are spawned
 
         this.subscribe("actor", "createActor", this.spawnPawn);
+        this.subscribe("actor", "destroyActor", this.destroyPawn);
     }
 
     destroy() {
@@ -31,6 +32,12 @@ export class PawnManager extends ViewService {
     spawnPawn(actor) { if (actor.pawn) {
         const p = new actor.pawn(actor);
         p.link();}
+    }
+
+    destroyPawn(actor) {
+        const p = this.get(actor.id);
+        this.delete(p);
+        p.destroy();
     }
 
     add(pawn) {  this.pawns.set(pawn.actor.id, pawn); }
@@ -62,7 +69,6 @@ export class Pawn extends WorldcoreView {
         pm.add(this);
         this.link();
 
-        this.listen("destroyActor", this.destroy);
         this.listen("parentSet", this.onParent);
     }
 
@@ -72,7 +78,6 @@ export class Pawn extends WorldcoreView {
 
     destroy() {
         this.doomed = true;
-        pm.delete(this);
         this.detach(); // Calling View clean-up.
     }
 

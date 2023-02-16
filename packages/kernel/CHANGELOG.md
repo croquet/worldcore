@@ -110,6 +110,9 @@ defineSmoothedPawnProperty from PM_Smoothed
 - AM_Spatial.local setter added
 - m4_getScale(), m4_getScaleRotationTranslation() added
 
+### Changed
+- Pawn destruction handled by PawnManager, not Pawn itself
+
 ### Fixed
 - m4_getRotation() correctly ignores scale
 - Only actor mixins trigger a model change
