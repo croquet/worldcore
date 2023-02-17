@@ -1,6 +1,6 @@
 import { Constants, Model } from "@croquet/croquet";
 import { v3_zero, q_identity, m4_scaleRotationTranslation, m4_getScaleRotationTranslation, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals, v3_THREE,q_THREE } from  "./Vector";
+    q_slerp, q_equals } from  "./Vector";
 
 // Mixin
 //
@@ -182,9 +182,9 @@ export const AM_Spatial = superclass => class extends superclass {
     get rotationQ() { return this.rotation }
     get scaleXYZ() { return this.scale }
 
-    get translationTHREE() { return v3_THREE(...this.translation) }
-    get rotationTHREE() { return q_THREE(...this.rotation) }
-    get scaleTHREE() { return v3_THREE(...this.scale) }
+    // get translationTHREE() { return v3_THREE(...this.translation) }
+    // get rotationTHREE() { return q_THREE(...this.rotation) }
+    // get scaleTHREE() { return v3_THREE(...this.scale) }
 
 };
 RegisterMixin(AM_Spatial);
@@ -214,9 +214,9 @@ export const PM_Spatial = superclass => class extends superclass {
     get rotationQ() { return this.rotation }
     get scaleXYZ() { return this.scale }
 
-    get translationTHREE() { return v3_THREE(...this.translation) }
-    get rotationTHREE() { return q_THREE(...this.rotation) }
-    get scaleTHREE() { return v3_THREE(...this.scale) }
+    // get translationTHREE() { return v3_THREE(...this.translation) }
+    // get rotationTHREE() { return q_THREE(...this.rotation) }
+    // get scaleTHREE() { return v3_THREE(...this.scale) }
 
 };
 

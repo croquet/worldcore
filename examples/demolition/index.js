@@ -202,7 +202,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
         this.subscribe("ui", "reset", this.reset)
         this.subscribe("input", "nDown", this.reset)
 
-        this.reset();
+        // this.reset();
     }
 
     shoot(gun) {
@@ -473,7 +473,7 @@ StartWorldcore({
     name: 'Physics',
     password: 'password',
     model: MyModelRoot,
-    name: App.autoSession(),
+    // name: App.autoSession(),
     view: MyViewRoot,
     tps:60
 });

@@ -1,4 +1,4 @@
-import { ViewService, Constants, THREE, m4_THREE, toRad, ModelRoot, viewRoot} from "@croquet/worldcore";
+import { ViewService, Constants, THREE, toRad, ModelRoot, viewRoot} from "@croquet/worldcore";
 
 function setGeometryColor(geometry, color) {
 
@@ -13,6 +13,12 @@ function setGeometryColor(geometry, color) {
 function rgb(r, g, b) {
     return [r/255, g/255, b/255];
 }
+
+function v2_THREE(x=0,y=0) { return new THREE.Vector2(x,y) }
+function v3_THREE(x=0,y=0,z=0) { return new THREE.Vector3(x,y,z) }
+function v4_THREE(x=0,y=0,z=0,w=1) { return new THREE.Vector4(x,y,z,w) }
+function q_THREE(x=0,y=0,z=0,w=1) { return new THREE.Quaternion(x,y,z,w) }
+function m4_THREE(m) { return m?(new THREE.Matrix4()).fromArray(m):new THREE.Matrix4() }
 
 //------------------------------------------------------------------------------------------
 //-- InstancedMesh --------------------------------------------------------------------------------
