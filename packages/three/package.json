@@ -23,7 +23,9 @@
     "directory": "packages/three"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^1.4.0"
+    "@croquet/worldcore-kernel": "^1.4.0",
+    "three": "^0.138.0",
+    "three-mesh-bvh": "^0.5.21"
   },
   "publishConfig": {
     "access": "public"
