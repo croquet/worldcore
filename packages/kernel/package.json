@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-kernel",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "3D World Engine for Croquet (minimal install)",
   "keywords": [
     "croquet",
@@ -28,7 +28,7 @@
     "directory": "packages/kernel"
   },
   "dependencies": {
-    "@croquet/croquet": "^1.1.0-14"
+    "@croquet/croquet": "^1.1.0-16"
   },
   "publishConfig": {
     "access": "public"
