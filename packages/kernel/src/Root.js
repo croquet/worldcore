@@ -111,10 +111,10 @@ export class ViewRoot extends WorldcoreView {
         viewServices.clear();
         ClearObjectCache();
         this.constructor.viewServices().forEach( service => {
-            let options;
-            let name = service.name; // either the class name, or the name property;
+            let options, name;
             if (service.service) { // Process extended service object
                 options = service.options;
+                name = service.name;
                 service = service.service;
             }
             new service(options, name);
