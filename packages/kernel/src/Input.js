@@ -346,6 +346,7 @@ export class InputManager extends ViewService {
         const press = this.presses.get(event.pointerId);
         let modKeys = this.modifierKeysFrom(event);
         if (press) {
+            const prevXY = press.xy;
             press.xy = [event.clientX, event.clientY];
             const duration = event.timeStamp - press.time;
             const dx = event.clientX - press.start[0];
@@ -354,11 +355,18 @@ export class InputManager extends ViewService {
             const ay = Math.abs(dy);
             if (duration > TAP_DURATION || ax > TAP_DISTANCE || ay > TAP_DISTANCE) { // Only publish pressed move events that aren't taps
                 this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.clientX, event.clientY]});
-                this.publish("input", "pointerDelta", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.movementX, event.movementY]});
+                // movementX/Y is not supported e.g. in iOS Safari
+                if (event.movementX !== undefined && event.movementY !== undefined) {
+                    this.publish("input", "pointerDelta", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.movementX, event.movementY]});
+                } else if (prevXY) {
+                    this.publish("input", "pointerDelta", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.clientX - prevXY[0], event.clientY - prevXY[1]]});
+                }
             }
         } else {
             this.publish("input", "pointerMove", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.clientX, event.clientY]});
-            this.publish("input", "pointerDelta", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.movementX, event.movementY]});
+            if (event.movementX !== undefined && event.movementY !== undefined) {
+                this.publish("input", "pointerDelta", {id: event.pointerId, type: event.pointerType, button: event.button, buttons: event.buttons, ...modKeys, xy: [event.movementX, event.movementY]});
+            }
         }
         this.zoomUpdate();
     }
