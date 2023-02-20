@@ -41,9 +41,9 @@ class BlockActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody)
             case "414":
                 d = [2,0.5,2];
                 break;
-                
+
             case "111":
-            default:  
+            default:
         }
         const cd = RAPIER.ColliderDesc.cuboid(...d);
         cd.setDensity(1)
@@ -203,7 +203,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
         this.subscribe("ui", "reset", this.reset)
         this.subscribe("input", "nDown", this.reset)
 
-        // this.reset();
+        this.reset();
     }
 
     shoot(gun) {
@@ -297,7 +297,7 @@ class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         this.originMaterial.shadowSide = THREE.DoubleSide;
 
         const group = new THREE.Group();
-       
+
         this.baseGeometry = new THREE.BoxGeometry( 100, 1, 100 );
         this.baseGeometry.translate(0,4.5,0);
 
@@ -363,7 +363,7 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", " Down", this.doShoot);
-        // this.subscribe("input", "tap", this.doShoot);
+        this.subscribe("input", "tap", this.doShoot);
     }
 
     startCamera() {
@@ -404,7 +404,7 @@ class MyViewRoot extends ViewRoot {
         let cameraMatrix = m4_translation([0,0,50]);
         cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);
         cameraMatrix = m4_multiply(cameraMatrix,yawMatrix);
-  
+
         rm.camera.matrix.fromArray(cameraMatrix);
         rm.camera.matrixAutoUpdate = false;
         rm.camera.matrixWorldNeedsUpdate = true;
@@ -467,14 +467,18 @@ class MyViewRoot extends ViewRoot {
 
 }
 
-// App.makeWidgetDock();
+// webpack will replace process.env.NODE_ENV with the actual value
+const apiKey = process.env.NODE_ENV === 'production'
+    ? '1rN7t58Mo1ani03Djcl4amvdEAnoitB6g3oNxEDrC'
+    : '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9';
+
+App.makeWidgetDock();
 StartWorldcore({
     appId: 'io.croquet.demolition',
-    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
-    name: 'Physics',
-    password: 'password',
+    apiKey,
     model: MyModelRoot,
-    // name: App.autoSession(),
+    name: App.autoSession(),
+    password: App.autoPassword(),
     view: MyViewRoot,
     tps:60
 });
