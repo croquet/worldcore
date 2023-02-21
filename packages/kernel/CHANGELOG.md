@@ -4,6 +4,29 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- Actor.snap() sets properties without smoothing
+- Actor.set() automatically calls this.propertySet() if the actor has that method.
+- ScaleTo, RotateTo & TranslateTo deprecated
+- AM_Spatial.local setter added
+- m4_getScale(), m4_getScaleRotationTranslation() added
+
+### Changed
+- Pawn destruction handled by PawnManager, not Pawn itself
+
+### Fixed
+- m4_getRotation() correctly ignores scale
+- Only actor mixins trigger a model change
+
+### Removed
+- PlayerManager (replaced by UserManager)
+- FocusManager
+- ObjectCache
+- View Asset Cache
+- Generic RenderManager
+
+
 ## [1.4.0] - 2022-10-3
 ### Added
 - Actors have a name property
@@ -102,20 +125,7 @@ defineSmoothedPawnProperty from PM_Smoothed
 ### Added
 - Initial release
 
-## Pending
-### Added
-- Actor.snap() sets properties without smoothing
-- Actor.set() automatically calls this.propertySet() if the actor has that method.
-- ScaleTo, RotateTo & TranslateTo deprecated
-- AM_Spatial.local setter added
-- m4_getScale(), m4_getScaleRotationTranslation() added
 
-### Changed
-- Pawn destruction handled by PawnManager, not Pawn itself
-
-### Fixed
-- m4_getRotation() correctly ignores scale
-- Only actor mixins trigger a model change
 
 
 

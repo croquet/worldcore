@@ -192,12 +192,3 @@ export function Shuffle(length) {
 }
 
 
-// shuffle(deck) {
-//     let size = deck.length;
-//     while (size) {
-//         const pick = Math.floor(Math.random() * size--);
-//         const swap = deck[size];
-//         deck[size] = deck[pick];
-//         deck[pick] = swap;
-//     }
-// }

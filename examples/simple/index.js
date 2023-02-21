@@ -1,24 +1,40 @@
 // Simple Testbed
 
-import { App } from "@croquet/worldcore";
+import { AM_Behavioral, App, Behavior } from "@croquet/worldcore";
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
-    PM_Smoothed, toRad, m4_rotation, m4_multiply, WidgetManager2, TAU, m4_translation,  } from "@croquet/worldcore";
+    PM_Smoothed, toRad, m4_rotation, m4_multiply, WidgetManager2, TAU, m4_translation, q_multiply, q_axisAngle  } from "@croquet/worldcore";
 
+
+//------------------------------------------------------------------------------------------
+// Behaviors -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class SpinBehavior extends Behavior {
+
+    get axis() {return this._axis || [0,1,0]}
+    get speed() {return this._speed || 1}
+
+    do(delta) {
+        const q = q_axisAngle(this.axis, 0.13 * delta * this.speed / 50);
+        const rotation = q_multiply(this.actor.rotation, q);
+        this.actor.set({rotation});
+    }
+
+}
+SpinBehavior.register("SpinBehavior");
 
 //------------------------------------------------------------------------------------------
 // TestActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Spatial) {
+class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 
     get pawn() {return  TestPawn}
 
-    init(options = {}) {
-        super.init(options);
-        console.log("testActor");
-        console.log(this.translation);
-    }
+    // init(options = {}) {
+    //     super.init(options);
+    // }
 
 }
 TestActor.register('TestActor');
@@ -31,12 +47,16 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
-        console.log("testPawn");
         this.buildMesh();
     }
 
-    buildMesh() {
-       
+    destroy() {
+        super.destroy()
+        this.geometry.dispose();
+        this.material.dispose();
+    }
+
+    buildMesh() {  
         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
         this.material.side = THREE.DoubleSide;
@@ -51,8 +71,6 @@ class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     }
 
 }
-
-
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor ------------------------------------------------------------------------
@@ -76,19 +94,14 @@ class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
-        this.baseMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2)} );
-        this.baseMaterial.side = THREE.DoubleSide;
-        this.baseMaterial.shadowSide = THREE.DoubleSide;
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2)} );
+        this.material.side = THREE.DoubleSide;
+        this.material.shadowSide = THREE.DoubleSide;
 
-        this.originMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.5,0.5,0.5)} );
-        this.originMaterial.side = THREE.DoubleSide;
-        this.originMaterial.shadowSide = THREE.DoubleSide;
+        this.geometry = new THREE.PlaneGeometry(100,100);
+        this.geometry.rotateX(toRad(90));
 
-
-        this.baseGeometry = new THREE.PlaneGeometry(100,100);
-        this.baseGeometry.rotateX(toRad(90));
-
-        const base = new THREE.Mesh( this.baseGeometry, this.baseMaterial );
+        const base = new THREE.Mesh( this.geometry, this.material );
         base.receiveShadow = true;
 
         this.setRenderObject(base);
@@ -110,8 +123,13 @@ class MyModelRoot extends ModelRoot {
         console.log("Start root model!");
 
         this.base = BaseActor.create({});
-        this.test = TestActor.create({translation:[0,5,0]});
-        this.test2 = TestActor.create({parent: this.test, translation:[5,0,2]});
+
+        this.test0 = TestActor.create({translation:[0,5,0]});
+        this.test1 = TestActor.create({parent: this.test0, translation:[5,0,0]});
+
+        this.test0.behavior.start({name: "SpinBehavior", axis:[0,1,0], speed: 2});
+        this.test1.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5})
+
     }
 
 }
