@@ -202,21 +202,33 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
         this.subscribe("ui", "shoot", this.shoot)
         this.subscribe("ui", "reset", this.reset)
         this.subscribe("input", "nDown", this.reset)
-
+        this.holdYourFire = false;
         this.reset();
     }
 
     shoot(gun) {
+        if(this.holdYourFire)return;
         const aim = v3_normalize(v3_sub([0,0,1], gun))
         const translation = v3_add(gun, [0,0,0]);
         const bullet = BulletActor.create({parent: this, translation});
         const force = v3_scale(aim, 50);
         bullet.rigidBody.applyImpulse(new RAPIER.Vector3(...force), true);
+        this.lastBullet = bullet;
+        this.holdYourFire = true; // don't shoot!
+        this.future(200).fireAway();
     }
 
     reset() {
+        if(this.lastBullet)this.lastBullet.future(0).destroy();
+        delete this.lastBullet;
         this.blocks.forEach (b => b.destroy());
-        this.buildAll()
+        this.buildAll();
+        this.holdYourFire = true; // don't shoot!
+        this.future(200).fireAway();
+    }
+
+    fireAway(){
+        this.holdYourFire = false;
     }
 
     buildAll() {
@@ -246,16 +258,16 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
 
     }
 
-    build141(x,y,z) {
+    build121(x,y,z) {
         BlockActor.create({parent: this, shape: "121", translation: [x,y+1,z]});
         BlockActor.create({parent: this, shape: "121", translation: [x,y+3,z]});
     }
 
     buildFloor(x,y,z) {
-        this.build141(x-1.5,y,z-1.5);
-        this.build141(x-1.5,y,z+1.5);
-        this.build141(x+1.5,y,z-1.5);
-        this.build141(x+1.5,y,z+ 1.5);
+        this.build121(x-1.5,y,z-1.5);
+        this.build121(x-1.5,y,z+1.5);
+        this.build121(x+1.5,y,z-1.5);
+        this.build121(x+1.5,y,z+ 1.5);
         BlockActor.create({parent: this, shape: "414", translation: [x+0, y+4.5, z+0]});
     }
 
