@@ -1,6 +1,6 @@
 // Simple Testbed
 
-import { AM_Behavioral, App, Behavior } from "@croquet/worldcore";
+import { AM_Behavioral, App, Behavior, PM_ThreeCamera } from "@croquet/worldcore";
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, WidgetManager2, TAU, m4_translation, q_multiply, q_axisAngle  } from "@croquet/worldcore";
@@ -90,7 +90,7 @@ BaseActor.register('BaseActor');
 //-- BasePawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCamera) {
     constructor(...args) {
         super(...args);
 
