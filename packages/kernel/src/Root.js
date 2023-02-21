@@ -30,12 +30,12 @@ export class ModelRoot extends WorldcoreModel {
         this.services = new Set();
         this.services.add(ActorManager.create());
         this.constructor.modelServices().forEach( service => {
-            let options;
-            if (service.service) { // Process extended service object
-                options = service.options;
-                service = service.service;
-            }
-            this.services.add(service.create(options));
+            // let options;
+            // if (service.service) { // Process extended service object
+            //     options = service.options;
+            //     service = service.service;
+            // }
+            this.services.add(service.create());
         });
 
     }
@@ -54,7 +54,7 @@ export class ModelService extends WorldcoreModel {
 
     static async asyncStart() {}
 
-    init(name, options = {}) {
+    init(name) {
         super.init();
         this.name = name;
         if (!name) console.error("All services must have public names!");
@@ -95,7 +95,7 @@ export class WorldcoreView extends View {
 export let viewRoot;
 let time0 = 0;
 let time1 = 0;
-const viewServices = new Map();
+let viewServices = new Map();
 let pawnManager;
 
 export class ViewRoot extends WorldcoreView {
@@ -108,23 +108,25 @@ export class ViewRoot extends WorldcoreView {
         viewRoot = this;
         time0 = 0;
         time1 = 0;
-        viewServices.clear();
-        ClearObjectCache();
+        // viewServices.clear();
+        viewServices = new Map();
+        // ClearObjectCache();
         this.constructor.viewServices().forEach( service => {
-            let options, name;
-            if (service.service) { // Process extended service object
-                options = service.options;
-                name = service.name;
-                service = service.service;
-            }
-            new service(options, name);
+            // let options, name;
+            // if (service.service) { // Process extended service object
+            //     options = service.options;
+            //     name = service.name;
+            //     service = service.service;
+            // }
+            // new service(options, name);
+            new service();
         });
         pawnManager = new PawnManager();
     }
 
     detach() {
         [...viewServices.values()].reverse().forEach(s => s.destroy());
-        viewServices.clear();
+        // viewServices.clear();
         super.detach();
     }
 
@@ -156,6 +158,7 @@ export class ViewService extends WorldcoreView {
     constructor(name) {
         super(viewRoot.model);
         this.model = viewRoot.model;
+        this.name = name;
         this.registerViewName(name);
     }
 
