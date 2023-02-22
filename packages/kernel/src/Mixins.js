@@ -243,18 +243,22 @@ export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
     }
 
     scaleTo(v) {
+        console.warn("scaleTo() deprecated -- use set({scale}) instead");
         this.set({scale:v});
     }
 
     rotateTo(q) {
+        console.warn("rotateTo() deprecated -- use set({rotation}) instead");
         this.set({rotation:q});
     }
 
     translateTo(v) {
+        console.warn("translateTo() deprecated -- use set({translation}) instead");
         this.set({translation:v});
     }
 
     positionTo(data) {
+        console.warn("positionTo() deprecated -- use set({translation, rotation}) instead");
         this.set({translation:data[0], rotation: data[1]})
     }
 

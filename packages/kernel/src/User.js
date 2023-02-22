@@ -20,7 +20,7 @@ export class UserManager extends ModelService {
 
     get defaultUser() {return User;}
 
-    init(options) {
+    init() {
         super.init('UserManager');
         this.users = new Map();
         this.subscribe(this.sessionId, "view-join", this.onJoin);

@@ -30,11 +30,6 @@ export class ModelRoot extends WorldcoreModel {
         this.services = new Set();
         this.services.add(ActorManager.create());
         this.constructor.modelServices().forEach( service => {
-            // let options;
-            // if (service.service) { // Process extended service object
-            //     options = service.options;
-            //     service = service.service;
-            // }
             this.services.add(service.create());
         });
 
@@ -56,6 +51,7 @@ export class ModelService extends WorldcoreModel {
 
     init(name) {
         super.init();
+        console.log("Starting " + name);
         this.name = name;
         if (!name) console.error("All services must have public names!");
         else if (this.wellKnownModel(name)) console.error("Duplicate service!");
@@ -108,17 +104,8 @@ export class ViewRoot extends WorldcoreView {
         viewRoot = this;
         time0 = 0;
         time1 = 0;
-        // viewServices.clear();
         viewServices = new Map();
-        // ClearObjectCache();
         this.constructor.viewServices().forEach( service => {
-            // let options, name;
-            // if (service.service) { // Process extended service object
-            //     options = service.options;
-            //     name = service.name;
-            //     service = service.service;
-            // }
-            // new service(options, name);
             new service();
         });
         pawnManager = new PawnManager();
@@ -126,7 +113,6 @@ export class ViewRoot extends WorldcoreView {
 
     detach() {
         [...viewServices.values()].reverse().forEach(s => s.destroy());
-        // viewServices.clear();
         super.detach();
     }
 
@@ -158,6 +144,7 @@ export class ViewService extends WorldcoreView {
     constructor(name) {
         super(viewRoot.model);
         this.model = viewRoot.model;
+        console.log("Starting " + name);
         this.name = name;
         this.registerViewName(name);
     }

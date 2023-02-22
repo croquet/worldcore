@@ -6,8 +6,8 @@ import { ModelService, WorldcoreModel } from "./Root";
 //------------------------------------------------------------------------------------------
 
 export class ActorManager extends ModelService {
-    init(name) {
-        super.init(name || 'ActorManager');
+    init() {
+        super.init('ActorManager');
         this.actors = new Map();
     }
 
@@ -50,7 +50,6 @@ export class Actor extends WorldcoreModel {
     }
 
     destroy() {
-        // if (this.children) new Set(this.children).forEach(child => child.destroy());
         new Set(this.children).forEach(child => child.destroy());
         this.set({parent: null});
         this._doomed = true; // About to be destroyed. This is used to prevent creating new future messages.

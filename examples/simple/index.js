@@ -1,6 +1,6 @@
 // Simple Testbed
 
-import { AM_Behavioral, App, Behavior, PM_ThreeCamera } from "@croquet/worldcore";
+import { AM_Behavioral, App, Behavior, PM_ThreeCamera, UserManager } from "@croquet/worldcore";
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, WidgetManager2, TAU, m4_translation, q_multiply, q_axisAngle  } from "@croquet/worldcore";
@@ -90,7 +90,7 @@ BaseActor.register('BaseActor');
 //-- BasePawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCamera) {
+class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
@@ -115,12 +115,12 @@ class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCamer
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [];
+        return [UserManager];
     }
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
+        console.log("Start root model!!");
 
         this.base = BaseActor.create({});
 
@@ -241,13 +241,13 @@ const apiKey = process.env.NODE_ENV === 'production'
     : '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9';
 
 
-// App.makeWidgetDock();
+
 StartWorldcore({
     appId: 'io.croquet.simple',
     apiKey,
     model: MyModelRoot,
-    name: 'test',
-    // name: App.autoSession(),
+    // name: 'test',
+    name: App.autoSession(),
     password: App.autoPassword(),
     view: MyViewRoot,
     tps:60
