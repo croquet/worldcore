@@ -47,8 +47,11 @@ export class WidgetManager2 extends ViewService {
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyRepeat", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
+        this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
 
     }
+
+
 
     destroy() {
         super.destroy();
@@ -57,6 +60,12 @@ export class WidgetManager2 extends ViewService {
 
     update(time,delta) {
         this.root.update(time,delta);
+    }
+
+    resize() {
+        const x = window.innerWidth;
+        const y = window.innerHeight;
+        this.root.set({size: [x,y]});
     }
 
     pointerDown(e) {

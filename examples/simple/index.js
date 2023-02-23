@@ -1,6 +1,6 @@
 // Simple Testbed
 
-import { AM_Behavioral, App, Behavior, PM_ThreeCamera, UserManager, User, ViewService, AM_Avatar, PM_Avatar, AM_Smoothed } from "@croquet/worldcore";
+import { AM_Behavioral, App, Behavior, PM_ThreeCamera, UserManager, User, ViewService, AM_Avatar, PM_Avatar, AM_Smoothed, WidgetManager2, TextWidget2 } from "@croquet/worldcore";
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add  } from "@croquet/worldcore";
@@ -350,12 +350,13 @@ class GodView extends ViewService {
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, GodView];
+        return [InputManager, ThreeRenderManager, GodView, WidgetManager2];
     }
 
     constructor(model) {
         super(model);
         this.buildLights();
+        this.buildHUD();
     }
 
     buildLights() {
@@ -388,6 +389,12 @@ class MyViewRoot extends ViewRoot {
         rm.scene.add(group);
     }
 
+    buildHUD() {
+        const wm = this.service("WidgetManager2");
+        console.log(wm.root);
+        const ddd = new TextWidget2({parent: wm.root, color:[1,0,0], translation:[-50, 0],anchor:[1,0], pivot:[1,0], size:[100,100]});
+    }
+
 }
 
 // webpack will replace process.env.NODE_ENV with the actual value
@@ -396,14 +403,16 @@ const apiKey = process.env.NODE_ENV === 'production'
     : '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9';
 
 
-
+    App.makeWidgetDock({debug: true, stats: true});
 StartWorldcore({
     appId: 'io.croquet.simple',
-    apiKey,
+    // apiKey,
+    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
     model: MyModelRoot,
-    // name: 'test',
-    name: App.autoSession(),
-    password: App.autoPassword(),
+    name: 'test',
+    // name: App.autoSession(),
+    // password: App.autoPassword(),
+    password: "password",
     view: MyViewRoot,
     tps:60
 });
