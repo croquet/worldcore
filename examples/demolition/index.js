@@ -199,10 +199,12 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
         cd.translation = new RAPIER.Vector3(0,0,0);
         this.createCollider(cd);
 
-        this.subscribe("ui", "shoot", this.shoot)
-        this.subscribe("ui", "reset", this.reset)
-        this.subscribe("input", "nDown", this.reset)
+        this.subscribe("ui", "shoot", this.shoot);
+        this.subscribe("ui", "reset", this.reset);
+        this.subscribe("input", "nDown", this.reset);
+        this.subscribe("ui", "syncPose", this.sync);
         this.holdYourFire = false;
+        this.syncPose = false;
         this.reset();
     }
 
@@ -219,16 +221,25 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierSta
     }
 
     reset() {
-        if(this.lastBullet)this.lastBullet.future(0).destroy();
-        delete this.lastBullet;
         this.blocks.forEach (b => b.destroy());
         this.buildAll();
+        if(this.lastBullet)this.lastBullet.future(0).destroy();
+        delete this.lastBullet;
         this.holdYourFire = true; // don't shoot!
         this.future(200).fireAway();
     }
 
     fireAway(){
         this.holdYourFire = false;
+    }
+
+    sync(pose){
+        // sync/desync positions for all users
+        this.publish("sync", "syncPose", pose);
+        if(this.lastBullet)this.lastBullet.future(0).destroy();
+        delete this.lastBullet;
+        this.holdYourFire = true; // don't shoot!
+        this.future(200).fireAway();
     }
 
     buildAll() {
@@ -376,6 +387,19 @@ class MyViewRoot extends ViewRoot {
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", " Down", this.doShoot);
         this.subscribe("input", "tap", this.doShoot);
+        this.subscribe("sync", "syncPose", this.syncPose);
+    }
+
+    doSync(){
+        this.publish("ui", "syncPose", [fov, yaw, pitch])
+    }
+
+    syncPose(pose){
+        console.log("syncPose", pose);
+        fov = pose[0];
+        yaw = pose[1];
+        pitch = pose[2];
+        this.updateCamera();
     }
 
     startCamera() {
@@ -467,6 +491,10 @@ class MyViewRoot extends ViewRoot {
             const reset = new ButtonWidget2({parent: hud, anchor: [1,0], pivot:[1,0], translation: [-20,20], size: [200,50]});
             reset.label.set({text:"Reset"});
             reset.onClick = () => this.publish("ui", "reset");
+
+            const syncPose = new ButtonWidget2({parent: hud, anchor: [0,0], pivot:[0,0], translation: [20,20], size: [200,50]});
+            syncPose.label.set({text:"Sync Pose"});
+            syncPose.onClick = () => this.doSync();
     }
 
     doShoot() {
