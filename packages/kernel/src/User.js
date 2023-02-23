@@ -1,5 +1,7 @@
 import { Actor } from "./Actor";
-import { ModelService } from "./Root";
+import { RegisterMixin } from "./Mixins";
+import { ModelService} from "./Root";
+
 
 // ------------------------------------------------------------------------------------------
 // -- User ----------------------------------------------------------------------------------
@@ -46,6 +48,54 @@ export class UserManager extends ModelService {
 
 }
 UserManager.register("UserManager");
+
+
+//------------------------------------------------------------------------------------------
+//-- AM_Avatar -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+
+export const AM_Avatar = superclass => class extends superclass {
+
+    get driver() { return this._driver} // The user that is controlling this avatar.
+
+};
+RegisterMixin(AM_Avatar);
+
+//------------------------------------------------------------------------------------------
+//-- PM_Avatar -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export const PM_Avatar = superclass => class extends superclass {
+
+    constructor(actor) {
+        super(actor);
+
+        this.onDriverSet();
+
+        this.listenOnce("driverSet", this.onDriverSet);
+    }
+
+    get isMyAvatarPawn() {
+        if (this.actor && this.actor.driver) return this.actor.driver.userId === this.viewId;
+        return false;
+    }
+
+    onDriverSet() {
+
+        if (this.isMyAvatarPawn) {
+            this.driving = true;
+            this.drive()
+        } else {
+            this.driving = false;
+            this.park()
+        }
+    }
+
+    drive() {}
+    park() {}
+
+};
 
 
 

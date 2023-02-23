@@ -118,9 +118,29 @@ class MixinFactory  {
 
 export const AM_Spatial = superclass => class extends superclass {
 
-    // init(options) {
-    //     super.init(options);
-    // }
+    init(...args) {
+        super.init(...args);
+        this.listen("setScale", this.scaleTo);
+        this.listen("setRotation", this.rotateTo);
+        this.listen("setTranslation", this.translateTo);
+        this.listen("setPosition", this.positionTo);
+    }
+
+    scaleTo(v) {
+        this.set({scale:v});
+    }
+
+    rotateTo(q) {
+        this.set({rotation:q});
+    }
+
+    translateTo(v) {
+        this.set({translation:v});
+    }
+
+    positionTo(data) {
+        this.set({translation:data[0], rotation: data[1]})
+    }
 
     scaleSet(v) {
         this._scale = v;
@@ -139,7 +159,6 @@ export const AM_Spatial = superclass => class extends superclass {
 
     localChanged() {
         this.$local = null;
-        // this.say("localChanged");
         this.globalChanged();
     }
 
@@ -178,13 +197,9 @@ export const AM_Spatial = superclass => class extends superclass {
     get scale() { return this._scale?[...this._scale] : [1,1,1] };
     set scale(v) { this.set({scale: v}) };
 
-    get translationXYZ() { return this.translation }
-    get rotationQ() { return this.rotation }
-    get scaleXYZ() { return this.scale }
-
-    // get translationTHREE() { return v3_THREE(...this.translation) }
-    // get rotationTHREE() { return q_THREE(...this.rotation) }
-    // get scaleTHREE() { return v3_THREE(...this.scale) }
+    // get translationXYZ() { return this.translation }
+    // get rotationQ() { return this.rotation }
+    // get scaleXYZ() { return this.scale }
 
 };
 RegisterMixin(AM_Spatial);
@@ -210,9 +225,9 @@ export const PM_Spatial = superclass => class extends superclass {
     get global() { return this.actor.global; }
     get lookGlobal() { return this.global; } // Allows objects to have an offset camera position -- obsolete?
 
-    get translationXYZ() { return this.translation }
-    get rotationQ() { return this.rotation }
-    get scaleXYZ() { return this.scale }
+    // get translationXYZ() { return this.translation }
+    // get rotationQ() { return this.rotation }
+    // get scaleXYZ() { return this.scale }
 
     // get translationTHREE() { return v3_THREE(...this.translation) }
     // get rotationTHREE() { return q_THREE(...this.rotation) }
@@ -236,33 +251,8 @@ export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
     init(...args) {
         super.init(...args);
-        this.listen("setScale", this.scaleTo);
-        this.listen("setRotation", this.rotateTo);
-        this.listen("setTranslation", this.translateTo);
-        this.listen("setPosition", this.positionTo);
+        console.warn("AM_Smoothed deprecated -- use AM_Spatial instead");
     }
-
-    scaleTo(v) {
-        console.warn("scaleTo() deprecated -- use set({scale}) instead");
-        this.set({scale:v});
-    }
-
-    rotateTo(q) {
-        console.warn("rotateTo() deprecated -- use set({rotation}) instead");
-        this.set({rotation:q});
-    }
-
-    translateTo(v) {
-        console.warn("translateTo() deprecated -- use set({translation}) instead");
-        this.set({translation:v});
-    }
-
-    positionTo(data) {
-        console.warn("positionTo() deprecated -- use set({translation, rotation}) instead");
-        this.set({translation:data[0], rotation: data[1]})
-    }
-
-    moveTo(v) { this.translateTo(v)} // deprecated;
 
 };
 RegisterMixin(AM_Smoothed);

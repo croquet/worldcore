@@ -37,13 +37,13 @@ export class PawnManager extends ViewService {
     destroyPawn(actor) {
         const p = this.get(actor.id);
         this.delete(p);
-        p.destroy();
+        if (p) p.destroy();
     }
 
     add(pawn) {  this.pawns.set(pawn.actor.id, pawn); }
     has(id) { return this.pawns.has(id); }
     get(id) { return this.pawns.get(id); }
-    delete(pawn) { this.pawns.delete(pawn.actor.id); }
+    delete(pawn) { if (pawn) this.pawns.delete(pawn.actor.id); }
 
     update(time, delta) {
         for(const pawn of this.pawns.values()) { if (!pawn.parent) pawn.fullUpdate(time, delta); };
