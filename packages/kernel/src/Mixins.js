@@ -301,28 +301,24 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     }
 
     scaleTo(v) {
-        this.driving = true;
         this._scale = v;
         this.localChanged();
         this.say("setScale", v, this.throttle)
     }
 
     rotateTo(q) {
-        this.driving = true;
         this._rotation = q;
         this.localChanged();
         this.say("setRotation", q, this.throttle)
     }
 
     translateTo(v) {
-        this.driving = true;
         this._translation = v;
         this.localChanged();
         this.say("setTranslation", v, this.throttle)
     }
 
     positionTo(v, q) {
-        this.driving = true;
         this._translation = v;
         this._rotation = q;
         this.localChanged();

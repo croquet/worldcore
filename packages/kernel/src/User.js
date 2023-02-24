@@ -70,9 +70,7 @@ export const PM_Avatar = superclass => class extends superclass {
 
     constructor(actor) {
         super(actor);
-
         this.onDriverSet();
-
         this.listenOnce("driverSet", this.onDriverSet);
     }
 
@@ -82,18 +80,24 @@ export const PM_Avatar = superclass => class extends superclass {
     }
 
     onDriverSet() {
-
         if (this.isMyAvatarPawn) {
-            this.driving = true;
-            this.drive()
-        } else {
-            this.driving = false;
             this.park()
+            this.drive()
         }
     }
 
-    drive() {}
-    park() {}
+    drive() { // Subscribes to controls
+        this.driving = true;
+    }
+    
+    park() { // Unsubscribes from  controls
+        this.driving = false; 
+    }
+
+    update(time, delta) {
+        super.update(time,delta);
+        if (this.driving) this.say("viewGlobalChanged"); // If you're driving update the renderer every frame
+    }
 
 };
 

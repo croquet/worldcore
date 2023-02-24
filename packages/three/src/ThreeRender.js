@@ -1,81 +1,8 @@
 
-import { ViewService  } from "@croquet/worldcore-kernel";
+import { m4_multiply, m4_scaleRotationTranslation, m4_translation, q_axisAngle, ViewService, toRad, m4_rotation, q_identity, m4_rotationQ  } from "@croquet/worldcore-kernel";
 import * as THREE from "three";
 export { THREE };
-// import * as THREE_MESH_BVH from 'three-mesh-bvh';
-// export { THREE, THREE_MESH_BVH };
-// import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-// import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 
-
-//------------------------------------------------------------------------------------------
-//-- PM_Visible  ---------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// export const PM_Visible = superclass => class extends superclass {
-
-//     destroy() {
-//         super.destroy();
-//         const render = this.service("RenderManager");
-//         for (const layerName in render.layers) {
-//             const layer = render.layers[layerName];
-//             if (layer.has(this)) render.dirtyLayer(layerName);
-//             render.layers[layerName].delete(this);
-//         }
-//     }
-
-//     addToLayers(...names) {
-//         const render = this.service("RenderManager");
-//         names.forEach(name => {
-//             if (!render.layers[name]) render.layers[name] = new Set();
-//             render.layers[name].add(this);
-//             render.dirtyLayer(name);
-//         });
-//     }
-
-//     removeFromLayers(...names) {
-//         const render = this.service("RenderManager");
-//         names.forEach(name => {
-//             if (!render.layers[name]) return;
-//             render.layers[name].delete(this);
-//             if (render.layers[name].size === 0) {
-//                 delete render.layers[name];
-//             }
-//             render.dirtyLayer(name);
-//         });
-//     }
-
-//     layers() {
-//         let result = [];
-//         const render = this.service("RenderManager");
-//         for (const layerName in render.layers) {
-//             const layer = render.layers[layerName];
-//             if (layer.has(this)) result.push(layerName);
-//         }
-//         return result;
-//     }
-// };
-
-//------------------------------------------------------------------------------------------
-//-- PM_Camera -----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// export const PM_Camera = superclass => class extends superclass {};
-
-//------------------------------------------------------------------------------------------
-//-- RenderManager -------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-export class RenderManager extends ViewService {
-    constructor(options = {}, name) {
-        super(name);
-        // this.registerViewName("RenderManager"); // Alternate generic name
-        // this.layers = {};
-    }
-
-    // dirtyLayer(name) {} // Renderer can use this to trigger a rebuild of renderer-specific layer data;
-
-}
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------
@@ -110,7 +37,6 @@ export const PM_ThreeVisible = superclass => class extends superclass {
         this.renderObject.matrix.fromArray(this.global);
         this.renderObject.matrixWorldNeedsUpdate = true;
         if (render && render.scene) render.scene.add(this.renderObject);
-        if (this.onSetRenderObject) this.onSetRenderObject(renderObject);
     }
 
 }
@@ -121,96 +47,30 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 //-- ThreeCamera  --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// xxx need a better mixin
-
 export const PM_ThreeCamera = superclass => class extends superclass {
     constructor(...args) {
         super(...args);
-        // console.log("ThreeCamera");
+        console.log("ThreeCamera");
 
-        // if (this.isMyPlayerPawn) { //xxx Switch to User
-        //     const render = this.service("ThreeRenderManager");
-        //     render.camera.matrix.fromArray(this.lookGlobal);
-        //     render.camera.matrixAutoUpdate = false;
-        //     render.camera.matrixWorldNeedsUpdate = true;
+        this.cameraTranslation = [0,0,0]; // position of the camera relative to the pawn
+        this.cameraRotation = q_identity();
 
-        //     this.listen("lookGlobalChanged", this.refreshCameraTransform);
-        //     this.listen("viewGlobalChanged", this.refreshCameraTransform);
-        // }
+        if (this.isMyAvatarPawn) {
+            this.refreshCameraTransform();
+            this.listen("viewGlobalChanged", this.refreshCameraTransform);
+        }
     }
 
-    // refreshCameraTransform() {
-    //     const render = this.service("ThreeRenderManager");
-    //     render.camera.matrix.fromArray(this.lookGlobal);
-    //     render.camera.matrixWorldNeedsUpdate = true;
-    // }
-
-    // setRayCast(xy){
-    //     const x = ( xy[0] / window.innerWidth ) * 2 - 1;
-    //     const y = - ( xy[1] / window.innerHeight ) * 2 + 1;
-    //     const render = this.service("ThreeRenderManager");
-    //     if (!this.raycaster) this.raycaster = new THREE.Raycaster();
-    //     this.raycaster.setFromCamera({x: x, y: y}, render.camera);
-    //     return this.raycaster;
-    // }
-
-    // pointerRaycast(xy, targets, optStrictTargets) {
-    //     this.setRayCast(xy);
-    //     const render = this.service("ThreeRenderManager");
-    //     const h = this.raycaster.intersectObjects(targets || render.threeLayer("pointer"));
-    //     if (h.length === 0) return {};
-
-    //     let hit;
-    //     let normal;
-    //     if (optStrictTargets) {
-    //         for (let i = 0; i < h.length; i++) {
-    //             let me = h[i].object;
-    //             let wcPawn = me.wcPawn;
-    //             while (!wcPawn && me) {
-    //                 me = me.parent;
-    //                 wcPawn = me.wcPawn;
-    //             }
-    //             if (wcPawn) {
-    //                 normal = wcPawn.hitNormal;
-    //                 if (Array.isArray(normal)) {
-    //                     normal = new THREE.Vector3(...normal);
-    //                 }
-    //                 hit = h[i];
-    //                 break;
-    //             }
-    //         }
-    //     }
-
-    //     if (!hit) {
-    //         hit = h[0];
-    //     }
-
-    //     if(hit.face && !normal) {
-    //         normal = hit.face.normal;
-    //     }
-    //     if (normal) {
-    //         let m = new THREE.Matrix3().getNormalMatrix( hit.object.matrixWorld );
-    //         normal = normal.clone().applyMatrix3( m ).normalize();
-    //     } /*else {
-    //         normal = new THREE.Vector3(0,1,0);
-    //     }*/
-    //     return {
-    //         pawn: this.getPawn(hit.object),
-    //         xyz: hit.point.toArray(),
-    //         uv: hit.uv?hit.uv.toArray():undefined,
-    //         normal: normal?normal.toArray():undefined,
-    //         distance: hit.distance
-    //     };
-    // }
-
-    // getPawn(object) {
-    //     let o = object;
-    //     while(!o.wcPawn) {
-    //         if (!o.parent) return null;
-    //         o = o.parent;
-    //     };
-    //     return o.wcPawn;
-    // }
+    refreshCameraTransform() {
+        if (this.driving) {
+            const rm = this.service("ThreeRenderManager");
+            const ttt = m4_translation(this.cameraTranslation);
+            const rrr = m4_rotationQ(this.cameraRotation)
+            const mmm = m4_multiply(rrr, ttt);
+            rm.camera.matrix.fromArray(m4_multiply(mmm, this.global));
+            rm.camera.matrixWorldNeedsUpdate = true;
+        }
+    }
 
 };
 

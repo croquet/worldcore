@@ -1,6 +1,6 @@
 // Simple Testbed
 
-import { AM_Behavioral, App, Behavior, PM_ThreeCamera, UserManager, User, ViewService, AM_Avatar, PM_Avatar, AM_Smoothed, WidgetManager2, TextWidget2 } from "@croquet/worldcore";
+import { AM_Behavioral, App, Behavior, PM_ThreeCamera, UserManager, User, ViewService, AM_Avatar, PM_Avatar, AM_Smoothed, WidgetManager2, TextWidget2, toDeg, v3_rotate } from "@croquet/worldcore";
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add  } from "@croquet/worldcore";
@@ -127,15 +127,35 @@ AvatorActor.register('AvatorActor');
 // AvatarPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeVisible) {
+class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeVisible, PM_ThreeCamera) {
 
     constructor(actor) {
         super(actor);
         this.buildMesh();
-        this.fore = 0;
-        this.back = 0;
-        this.left = 0;
-        this.right = 0;
+
+        this.fore = this.back = this.left = this.right = 0;
+        this.pitch = this.yaw = this.yawDelta = 0;
+        this.speed = 5;
+        this.turnSpeed = 0.002;
+
+        this.cameraTranslation = [0,5,7];
+        const pitchQ = q_axisAngle([1,0,0], this.pitch);
+        const yawQ = q_axisAngle([0,1,0], this.yawDelta);
+        this.cameraRotation = q_multiply(pitchQ, yawQ);
+
+        this.subscribe("input", "zDown", this.toggleDrive)
+
+    }
+
+    toggleDrive() {
+        console.log(this.driving);
+        if (this.isMyAvatarPawn) {
+            if (this.driving) {
+                this.park()
+            } else {
+                this.drive()
+            }
+        }
     }
 
     destroy() {
@@ -146,6 +166,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeVisible)
 
     buildMesh() {  
         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        this.geometry.translate(0,0.5,0);
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
         this.material.side = THREE.DoubleSide;
         this.material.shadowSide = THREE.DoubleSide;
@@ -159,49 +180,103 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeVisible)
     }
 
     drive() {
-        console.log("test drive");
-        this.subscribe("input", "ArrowUpDown", this.foreDown);
-        this.subscribe("input", "ArrowUpUp", this.foreUp);
-        this.subscribe("input", "ArrowDownDown", this.backDown);
-        this.subscribe("input", "ArrowDownUp", this.backUp)
+        super.drive();
+        this.service("GodView").paused = true;
 
-        this.subscribe("input", "ArrowRightDown", this.rightDown);
-        this.subscribe("input", "ArrowRightUp", this.rightUp);
-        this.subscribe("input", "ArrowLeftDown", this.leftDown);
-        this.subscribe("input", "ArrowLeftUp", this.leftUp)
+        this.subscribe("input", "keyDown", this.keyDown);
+        this.subscribe("input", "keyUp", this.keyUp);
+
+        this.subscribe("input", "pointerDown", this.doPointerDown);
+        this.subscribe("input", "pointerUp", this.doPointerUp);
+        this.subscribe("input", "pointerDelta", this.doPointerDelta);
     }
 
     park() {
-        console.log("test park");
-        this.unsubscribe("input", "ArrowUpDown", this.foreDown);
-        this.unsubscribe("input", "ArrowUpUp", this.foreUp);
-        this.unsubscribe("input", "ArrowDownDown", this.backDown);
-        this.unsubscribe("input", "ArrowDownUp", this.backUp)
+        super.park();
+        this.service("GodView").paused = false;
 
-        this.unsubscribe("input", "ArrowRightDown", this.rightDown);
-        this.unsubscribe("input", "ArrowRightUp", this.rightUp);
-        this.unsubscribe("input", "ArrowLeftDown", this.leftDown);
-        this.unsubscribe("input", "ArrowLeftUp", this.leftUp)
+        this.unsubscribe("input", "keyDown", this.keyDown);
+        this.unsubscribe("input", "keyUp", this.keyUp);
+
+        this.unsubscribe("input", "pointerDown", this.doPointerDown);
+        this.unsubscribe("input", "pointerUp", this.doPointerUp);
+        this.unsubscribe("input", "pointerDelta", this.doPointerDelta);
     }
 
-    foreDown() { this.fore = -1 }
-    foreUp() {  this.fore = 0  }
-    backDown() {this.back = 1  }
-    backUp() { this.back = 0  }
+    keyDown(e) {
+        if (this.focused) return;
+        switch(e.key) {
+            case "ArrowUp":
+            case "w":
+            case "W":
+                this.fore = -1; break;
+            case "ArrowDown":
+            case "s":
+            case "S":
+                this.back = 1; break;
+            case "ArrowLeft":
+            case "a":
+            case "A":
+                this.left = -1; break;
+            case "ArrowRight":
+            case "d":
+            case "D" :
+                this.right = 1; break;
+            default:
+        }
+    }
 
-    rightDown() { this.right = 1 }
-    rightUp() {  this.right = 0 }
-    leftDown() {this.left = -1 }
-    leftUp() { this.left = 0}
+    keyUp(e) {
+        if (this.focused) return;
+        switch(e.key) {
+            case "ArrowUp":
+            case "w":
+                this.fore = 0; break;
+            case "ArrowDown":
+            case "s":
+                this.back = 0; break;
+            case "ArrowLeft":
+            case "a":
+                this.left = 0; break;
+            case "ArrowRight":
+            case "d":
+                this.right = 0; break;
+            default:
+        }
+    }
+
+    doPointerDown(e) {
+        if (e.button === 2) this.service("InputManager").enterPointerLock();;
+    }
+
+    doPointerUp(e) {
+        if (e.button === 2) this.service("InputManager").exitPointerLock();
+    }
+
+    doPointerDelta(e) {
+        if (this.service("InputManager").inPointerLock) {
+            this.yawDelta += (-this.turnSpeed * e.xy[0]);
+            this.pitch += (-this.turnSpeed * e.xy[1]);
+            this.pitch = Math.max(-Math.PI/2, this.pitch);
+            this.pitch = Math.min(Math.PI/2, this.pitch);
+            const pitchQ = q_axisAngle([1,0,0], this.pitch);
+            const yawQ = q_axisAngle([0,1,0], this.yawDelta);
+            this.cameraRotation = q_multiply(pitchQ, yawQ);
+        };
+    }
 
     update(time, delta) {
         super.update(time,delta);
-        if (!this.driving) return;
-        const v = v3_scale([(this.left + this.right), 0, (this.fore + this.back)], 5 * delta/1000)
-        const t = v3_add(this.translation, v);
-        this.translateTo(t);
+        if (this.driving) {
+            this.yaw += this.yawDelta;
+            this.yawDelta = 0;
+            const yawQ = q_axisAngle([0,1,0], this.yaw);
+            const v = v3_scale([(this.left + this.right), 0, (this.fore + this.back)], this.speed * delta/1000)
+            const vv = v3_rotate(v, yawQ);
+            const t = v3_add(this.translation, vv);
+            this.positionTo(t,yawQ);
+        }
     }
-
 }
 
 //------------------------------------------------------------------------------------------
@@ -212,12 +287,15 @@ class MyUser extends User {
 
     init(options) {
         super.init(options);
-        this.myAvatar = AvatorActor.create({name: "Avatar", driver: this, translation: [0,0,10]})
+        this.avatar = AvatorActor.create({name: "Avatar", driver: this, translation: [0,0,20]});
+
+        const halo = TestActor.create({parent: this.avatar, translation: [0,1.5,0]})
+        halo.behavior.start({name: "SpinBehavior", axis:[1,0,0], speed:3});
     }
 
     destroy() {
         super.destroy();
-        if (this.myAvatar) this.myAvatar.destroy();
+        if (this.avatar) this.avatar.destroy();
     }
 
 
@@ -256,13 +334,19 @@ class MyModelRoot extends ModelRoot {
         this.test0.behavior.start({name: "SpinBehavior", axis:[0,1,0], speed: 2});
         this.test1.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5})
 
-        this.subscribe("input", "xDown", this.ttt)
+
+        this.test00 = TestActor.create({translation:[-5,0,0]});
+        this.test01 = TestActor.create({translation:[5,0,0]});
+        this.test10 = TestActor.create({translation:[0,0,-5]});
+        this.test11 = TestActor.create({translation:[0,0,5]});
+
+        // this.subscribe("input", "xDown", this.ttt)
     }
 
-    ttt() {
-        const um = this.service("UserManager");
-        console.log(um.users);
-    }
+    // ttt() {
+    //     const um = this.service("UserManager");
+    //     console.log(um.users);
+    // }
 
 }
 MyModelRoot.register("MyModelRoot");
@@ -289,10 +373,10 @@ class GodView extends ViewService {
         // this.subscribe("input", "zDown", this.togglePause);
     }
 
-    togglePause() {
-        console.log("ttt");
-        this.paused = !this.paused
-    }
+    // togglePause() {
+    //     console.log("ttt");
+    //     this.paused = !this.paused
+    // }
 
     updateCamera() {
         if (this.paused) return;
@@ -356,14 +440,12 @@ class MyViewRoot extends ViewRoot {
     constructor(model) {
         super(model);
         this.buildLights();
-        this.buildHUD();
+        // this.buildHUD();
     }
 
     buildLights() {
         const rm = this.service("ThreeRenderManager");
         rm.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
-
-        // this.updateCamera();
 
         const group = new THREE.Group();
 
@@ -383,7 +465,7 @@ class MyViewRoot extends ViewRoot {
         sun.shadow.camera.top = 80
         sun.shadow.camera.bottom = -80
 
-        sun.shadow.bias = -0.0001;
+        sun.shadow.bias = -0.0005;
         group.add(sun);
 
         rm.scene.add(group);
@@ -391,8 +473,6 @@ class MyViewRoot extends ViewRoot {
 
     buildHUD() {
         const wm = this.service("WidgetManager2");
-        console.log(wm.root);
-        const ddd = new TextWidget2({parent: wm.root, color:[1,0,0], translation:[-50, 0],anchor:[1,0], pivot:[1,0], size:[100,100]});
     }
 
 }
