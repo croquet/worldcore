@@ -1,5 +1,6 @@
 export * from "@croquet/croquet";
 export * from "./src/Actor";
+export * from "./src/Behavior";
 export * from "./src/Mixins";
 export * from "./src/Pawn";
 export * from "./src/Root";

@@ -1,5 +1,9 @@
-// import { RegisterMixin, WorldcoreModel, Shuffle, Actor,  Pawn, GetPawn,Constants } from "@croquet/worldcore-kernel";
-import { RegisterMixin, Shuffle, Actor,Constants } from "@croquet/worldcore-kernel";
+// import { RegisterMixin, Shuffle, Actor, Constants } from "@croquet/worldcore-kernel";
+
+import { Actor } from "./Actor";
+import { RegisterMixin } from "./Mixins";
+import { Shuffle } from "./Utilities";
+import { Constants } from "@croquet/croquet";
 
 
 Constants.WC_BEHAVIORS = new Map();

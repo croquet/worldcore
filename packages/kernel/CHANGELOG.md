@@ -8,14 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Actor.snap() sets properties without smoothing
 - Actor.set() automatically calls this.propertySet() if the actor has that method.
-- ScaleTo, RotateTo & TranslateTo deprecated
 - AM_Smoothed deprecated (Use AM_Spatial)
 - AM_Spatial.local setter added
 - m4_getScale(), m4_getScaleRotationTranslation() added
+- Behaviors added to kernel
+- Avatar mixins
 
 ### Changed
 - Pawn destruction handled by PawnManager, not Pawn itself
-- Services no longer have star-up options
+- Services no longer have start-up options
 
 ### Fixed
 - m4_getRotation() correctly ignores scale
@@ -25,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - PlayerManager (replaced by UserManager)
 - FocusManager
 - ObjectCache
-- View Asset Cache
+- ViewAssetCache
 - Generic RenderManager
 
 ## [1.4.0] - 2022-10-3
