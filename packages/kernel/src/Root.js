@@ -108,8 +108,11 @@ export class ViewRoot extends WorldcoreView {
         this.constructor.viewServices().forEach( service => {
             new service();
         });
+        this.finalize();
         pawnManager = new PawnManager();
     }
+
+    finalize() {} // A final set-up that runs before the pawns are created
 
     detach() {
         [...viewServices.values()].reverse().forEach(s => s.destroy());

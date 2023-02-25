@@ -1,6 +1,6 @@
 // Simple Testbed
 
-import { AM_Behavioral, App, Behavior, PM_ThreeCamera, UserManager, User, ViewService, AM_Avatar, PM_Avatar, AM_Smoothed, WidgetManager2, TextWidget2, toDeg, v3_rotate } from "@croquet/worldcore";
+import { AM_Behavioral, App, Behavior, PM_ThreeCamera, UserManager, User, ViewService, AM_Avatar, PM_Avatar, AM_Smoothed, WidgetManager2, TextWidget2, toDeg, v3_rotate, ThreeInstanceManager, InstancedMesh, PM_ThreeInstanced } from "@croquet/worldcore";
 
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add  } from "@croquet/worldcore";
@@ -43,17 +43,18 @@ TestActor.register('TestActor');
 // TestPawn
 //------------------------------------------------------------------------------------------
 
-class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
-        this.buildMesh();
+        // this.buildMesh();
+        this.useInstance("bing");
     }
 
     destroy() {
         super.destroy()
-        this.geometry.dispose();
-        this.material.dispose();
+        // this.geometry.dispose();
+        // this.material.dispose();
     }
 
     buildMesh() {  
@@ -105,6 +106,12 @@ class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         base.receiveShadow = true;
 
         this.setRenderObject(base);
+    }
+
+    destroy() {
+        super.destroy()
+        this.geometry.dispose();
+        this.material.dispose();
     }
 }
 
@@ -340,13 +347,8 @@ class MyModelRoot extends ModelRoot {
         this.test10 = TestActor.create({translation:[0,0,-5]});
         this.test11 = TestActor.create({translation:[0,0,5]});
 
-        // this.subscribe("input", "xDown", this.ttt)
     }
 
-    // ttt() {
-    //     const um = this.service("UserManager");
-    //     console.log(um.users);
-    // }
 
 }
 MyModelRoot.register("MyModelRoot");
@@ -370,13 +372,8 @@ class GodView extends ViewService {
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
-        // this.subscribe("input", "zDown", this.togglePause);
     }
 
-    // togglePause() {
-    //     console.log("ttt");
-    //     this.paused = !this.paused
-    // }
 
     updateCamera() {
         if (this.paused) return;
@@ -434,13 +431,13 @@ class GodView extends ViewService {
 class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, GodView, WidgetManager2];
+        return [InputManager, ThreeRenderManager, GodView, WidgetManager2, ThreeInstanceManager];
     }
 
-    constructor(model) {
-        super(model);
+    finalize() {
+        this.buildInstances()
         this.buildLights();
-        // this.buildHUD();
+        this.buildHUD();
     }
 
     buildLights() {
@@ -473,6 +470,20 @@ class MyViewRoot extends ViewRoot {
 
     buildHUD() {
         const wm = this.service("WidgetManager2");
+    }
+
+    buildInstances() {
+        const im = this.service("ThreeInstanceManager");
+
+        const  material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
+        material.side = THREE.FrontSide;
+        material.shadowSide = THREE.BackSide;
+        im.addMaterial("default", material);
+
+        const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        im.addGeometry("cube", geometry);
+
+        im.addMesh("bing", "cube", "default");
     }
 
 }
