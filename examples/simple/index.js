@@ -434,7 +434,7 @@ class MyViewRoot extends ViewRoot {
         return [InputManager, ThreeRenderManager, GodView, WidgetManager2, ThreeInstanceManager];
     }
 
-    finalize() {
+    onStart() {
         this.buildInstances()
         this.buildLights();
         this.buildHUD();
@@ -483,7 +483,7 @@ class MyViewRoot extends ViewRoot {
         const geometry = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("cube", geometry);
 
-        im.addMesh("bing", "cube", "default");
+        im.addMesh("cube", "cube", "default");
     }
 
 }

@@ -27,15 +27,10 @@
     "directory": "packages/full"
   },
   "dependencies": {
-    "@croquet/worldcore-audio": "^1.4.0",
-    "@croquet/worldcore-behavior": "^1.4.0",
-    "@croquet/worldcore-card": "^1.4.0",
     "@croquet/worldcore-kernel": "^1.4.0",
     "@croquet/worldcore-rapier": "^1.4.0",
     "@croquet/worldcore-three": "^1.4.0",
-    "@croquet/worldcore-webgl": "^1.4.0",
     "@croquet/worldcore-widget": "^1.4.0",
-    "@croquet/worldcore-widget2": "^1.4.0",
-    "@croquet/worldcore-widget3": "^1.4.0"
+    "@croquet/worldcore-widget2": "^1.4.0"
   }
 }

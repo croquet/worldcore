@@ -3,15 +3,26 @@
 import { App } from "@croquet/worldcore";
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
     AM_Smoothed, PM_Smoothed, sphericalRandom, q_axisAngle, m4_scaleRotationTranslation, toRad, v3_scale, m4_rotation, m4_multiply,
-    WidgetManager2, Widget2, ButtonWidget2, q_dot, q_equals, TAU, m4_translation, v3_transform, v3_add, v3_sub, v3_normalize } from "@croquet/worldcore";
+    WidgetManager2, Widget2, ButtonWidget2, q_dot, q_equals, TAU, m4_translation, v3_transform, v3_add, v3_sub, v3_normalize, ThreeInstanceManager,
+    PM_ThreeInstanced, ViewService, AM_RapierDynamicRigidBody, RapierManager, RAPIER, AM_RapierStaticRigidBody, AM_RapierWorld } from "@croquet/worldcore";
 
-import { InstanceManager, PM_ThreeVisibleInstanced } from "./src/Instances";
+// import { InstanceManager, PM_ThreeVisibleInstanced } from "./src/Instances";
 
 // import { FPSAvatar } from "./src/Avatar";
-import { AM_RapierDynamicRigidBody, RapierManager, RAPIER, AM_RapierStaticRigidBody, AM_RapierWorld } from "./src/Rapier";
+// import { AM_RapierDynamicRigidBody, RapierManager, RAPIER, AM_RapierStaticRigidBody, AM_RapierWorld } from "./src/Rapier";
+// import { AM_RapierDynamicRigidBody, RapierManager, RAPIER, AM_RapierStaticRigidBody, AM_RapierWorld } from "@croquet/worldcore";
 
 function rgb(r, g, b) {
     return [r/255, g/255, b/255];
+}
+
+function setGeometryColor(geometry, color) {
+    const count = geometry.getAttribute("position").count;
+    const colors = [];
+    for (let i = 0; i < count; i++) {
+        colors.push(...color);
+    }
+    geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3) );
 }
 
 
@@ -19,7 +30,7 @@ function rgb(r, g, b) {
 //-- SprayActor ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class SprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody) {
+class SprayActor extends mix(Actor).with(AM_Spatial, AM_RapierDynamicRigidBody) {
     get pawn() {return SprayPawn}
 
     get shape() {return this._shape || "cube"}
@@ -55,7 +66,6 @@ class SprayActor extends mix(Actor).with(AM_Smoothed, AM_RapierDynamicRigidBody)
             break;
         }
         
-        // cd = RAPIER.ColliderDesc.cylinder(0.5, 0.5);
         this.createCollider(cd);
   
     }
@@ -67,7 +77,7 @@ SprayActor.register('SprayActor');
 //-- SprayPawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibleInstanced) {
+class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
     constructor(...args) {
         super(...args);
         this.useInstance(this.actor.shape + this.actor.index);
@@ -107,7 +117,6 @@ class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_Rapie
         this.createCollider(cd);
 
         this.subscribe("ui", "shoot", this.doShoot)
-
 
         this.future(1000).spray();
     }
@@ -169,7 +178,6 @@ class FountainPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
         const nozzle = new THREE.Mesh( this.nozzleGeometry, this.nozzlematerial );
         nozzle.castShadow = true;
-        // nozzle.receiveShadow = true;
 
         this.baseGeometry = new THREE.BoxGeometry( 50, 1, 50 );
         this.baseMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.7,0.7,0.7)} );
@@ -243,41 +251,105 @@ class MyModelRoot extends ModelRoot {
 MyModelRoot.register("MyModelRoot");
 
 //------------------------------------------------------------------------------------------
-//-- MyViewRoot ----------------------------------------------------------------------------
+//-- GodView -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 let fov = 60;
-let pitch = toRad(-45);
-let yaw = toRad(30);
-let gun = [0,0,50];
+let pitch = toRad(-20);
+let yaw = toRad(-30);
 
+class GodView extends ViewService {
 
-class MyViewRoot extends ViewRoot {
+    constructor() {
+        super("GodView");
 
-    static viewServices() {
-        return [InputManager, ThreeRenderManager, InstanceManager, WidgetManager2];
-    }
-
-    constructor(model) {
-        super(model);
-        const rm = this.service("ThreeRenderManager");
-        rm.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
-        this.startCamera();
-        this.buildHUD();
+        this.updateCamera();
 
         this.subscribe("input", 'wheel', this.onWheel);
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
-        this.subscribe("input", " Down", this.doShoot);
-        this.subscribe("input", "tap", this.doShoot);
-
     }
 
-    startCamera() {
+
+    updateCamera() {
+        if (this.paused) return;
         const rm = this.service("ThreeRenderManager");
 
-        this.updateCamera();
+        const pitchMatrix = m4_rotation([1,0,0], pitch)
+        const yawMatrix = m4_rotation([0,1,0], yaw)
+
+        let cameraMatrix = m4_translation([0,0,50]);
+        cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);
+        cameraMatrix = m4_multiply(cameraMatrix,yawMatrix);
+
+        rm.camera.matrix.fromArray(cameraMatrix);
+        rm.camera.matrixAutoUpdate = false;
+        rm.camera.matrixWorldNeedsUpdate = true;
+
+        rm.camera.fov = fov;
+        rm.camera.updateProjectionMatrix();
+    }
+
+    onWheel(data) {
+        if (this.paused) return;
+        const rm = this.service("ThreeRenderManager");
+        fov = Math.max(10, Math.min(120, fov + data.deltaY / 50));
+        rm.camera.fov = fov;
+        rm.camera.updateProjectionMatrix();
+    }
+
+    doPointerDown() {
+        if (this.paused) return;
+        this.dragging = true;
+    }
+
+    doPointerUp() {
+        if (this.paused) return;
+        this.dragging = false;
+    }
+
+    doPointerDelta(e) {
+        if (this.paused) return;
+        if (!this.dragging) return;
+        yaw += -0.01 * e.xy[0];
+        yaw = yaw % TAU;
+        pitch += -0.01 * e.xy[1];
+        pitch = Math.min(pitch, toRad(-5));
+        pitch = Math.max(pitch, toRad(-90));
+        this.updateCamera()
+    }
+}
+
+//------------------------------------------------------------------------------------------
+//-- MyViewRoot ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+
+let gun = [0,1,50];
+
+
+class MyViewRoot extends ViewRoot {
+
+    static viewServices() {
+        return [InputManager, ThreeRenderManager, ThreeInstanceManager, WidgetManager2, GodView];
+    }
+
+    constructor(model) {
+        super(model);
+        this.subscribe("input", " Down", this.doShoot);
+    }
+
+    onStart() {
+        this.buildHUD();
+        this.buildLights();
+        this.buildInstances();  
+    }
+
+    buildLights() {
+        const rm = this.service("ThreeRenderManager");
+
+        rm.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
 
         const group = new THREE.Group();
 
@@ -297,67 +369,98 @@ class MyViewRoot extends ViewRoot {
         sun.shadow.camera.top = 80
         sun.shadow.camera.bottom = -80
 
-        sun.shadow.bias = -0.0001;
+        sun.shadow.bias = -0.001;
         group.add(sun);
 
         rm.scene.add(group);
     }
 
-    updateCamera() {
-        const rm = this.service("ThreeRenderManager");
+    buildInstances() {
+        const im = this.service("ThreeInstanceManager");
 
-        const pitchMatrix = m4_rotation([1,0,0], pitch)
-        const yawMatrix = m4_rotation([0,1,0], yaw)
+        const  material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
+        material.side = THREE.DoubleSide;
+        material.shadowSide = THREE.DoubleSide;
+        material.castShadow = true;
+        material.vertexColors = true;
 
-        let cameraMatrix = m4_translation([0,0,50]);
-        cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);
-        cameraMatrix = m4_multiply(cameraMatrix,yawMatrix);
-  
-        rm.camera.matrix.fromArray(cameraMatrix);
-        rm.camera.matrixAutoUpdate = false;
-        rm.camera.matrixWorldNeedsUpdate = true;
+        im.addMaterial("default", material);
 
-        rm.camera.fov = fov;
-        rm.camera.updateProjectionMatrix();
+        this.buildCubes();
+        this.buildCylinders();
+        this.buildBalls();
+        this.buildCones();
     }
 
-    onWheel(data) {
-        const rm = this.service("ThreeRenderManager");
-        fov = Math.max(10, Math.min(120, fov + data.deltaY / 50));
-        rm.camera.fov = fov;
-        rm.camera.updateProjectionMatrix();
+    buildCubes() {
+        const im = this.service("ThreeInstanceManager");
+        for( let n = 0; n < this.model.colors.length; n++) {
+            const color = this.model.colors[n];
+            const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+            setGeometryColor(geometry, color);
+            im.addGeometry("box" + n, geometry);
+            const mesh = im.addMesh("cube" + n, "box"+n, "default");
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+        }
     }
 
-    doPointerDown() {
-        this.dragging = true;
+    buildCylinders() {
+        const im = this.service("ThreeInstanceManager");
+        for( let n = 0; n < this.model.colors.length; n++) {
+            const color = this.model.colors[n];
+            const geometry = new THREE.CylinderGeometry( 0.5, 0.5, 1, 10 );
+            setGeometryColor(geometry, color);
+            im.addGeometry("cylinder" + n, geometry);
+            const mesh = im.addMesh("cylinder" + n, "cylinder"+n, "default");
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+        }
     }
 
-    doPointerUp() {
-        this.dragging = false;
+    buildBalls() {
+        const im = this.service("ThreeInstanceManager");
+        for( let n = 0; n < this.model.colors.length; n++) {
+            const color = this.model.colors[n];
+            const geometry = new THREE.SphereGeometry( 0.5, 10, 10);
+            setGeometryColor(geometry, color);
+            im.addGeometry("ball" + n, geometry);
+            const mesh = im.addMesh("ball" + n, "ball" + n, "default");
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+        }
     }
 
-    doPointerDelta(e) {
-        if (!this.dragging) return;
-        yaw += -0.01 * e.xy[0];
-        yaw = yaw % TAU;
-        pitch += -0.01 * e.xy[1];
-        pitch = Math.min(pitch, toRad(-20));
-        pitch = Math.max(pitch, toRad(-90));
-        this.updateCamera()
+    buildCones() {
+        const im = this.service("ThreeInstanceManager");
+        for( let n = 0; n < this.model.colors.length; n++) {
+            const color = this.model.colors[n];
+            const geometry = new THREE.ConeGeometry( 0.5, 1, 10, 1);
+            setGeometryColor(geometry, color);
+            im.addGeometry("cone" + n, geometry);
+            const mesh = im.addMesh("cone" + n, "cone" + n, "default");
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+        }
     }
 
     buildHUD() {
             const wm = this.service("WidgetManager2");
             const hud = new Widget2({parent: wm.root, autoSize: [1,1]});
-            const recenter = new ButtonWidget2({parent: hud, translation: [20,20], size: [200,50]});
+            const recenter = new ButtonWidget2({parent: hud, translation: [-20,20], size: [200,50], anchor:[1,0], pivot: [1,0]});
             recenter.label.set({text:"Recenter"});
-            recenter.onClick = () => {
-                console.log("click!");
-                fov = 60;
-                pitch = toRad(-45);
-                yaw = toRad(30);
-                this.updateCamera();
-            }
+            recenter.onClick = () => this.doRecenter();
+
+            const shoot = new ButtonWidget2({parent: hud, translation: [-20,80], size: [200,50], anchor:[1,0], pivot: [1,0]});
+            shoot.label.set({text:"Shoot"});
+            shoot.onClick = () => this.doShoot();
+    }
+
+    doRecenter() {
+        fov = 60;
+        pitch = toRad(-20);
+        yaw = toRad(-30);
+        this.service("GodView").updateCamera();  
     }
 
     doShoot() {
@@ -366,7 +469,6 @@ class MyViewRoot extends ViewRoot {
         const yawMatrix = m4_rotation([0,1,0], yaw)
         const both = m4_multiply(pitchMatrix, yawMatrix);
         const shoot = v3_transform(gun, both);
-        // console.log(shoot);
         this.publish("ui", "shoot", shoot);
 
     }

@@ -68,7 +68,7 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
 };
 
 //------------------------------------------------------------------------------------------
-//-- InstanceManager --------------------------------------------------------------------------------
+//-- ThreeInstanceManager ------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class ThreeInstanceManager extends ViewService {
@@ -116,6 +116,7 @@ export class ThreeInstanceManager extends ViewService {
         const mesh = new InstancedMesh(this.geometry(geometryName), this.material(materialName), count);
         this.meshes.set(meshName, mesh);
         rm.scene.add(mesh.mesh);
+        return mesh.mesh;
     }
    
 }

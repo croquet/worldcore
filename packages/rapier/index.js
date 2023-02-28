@@ -1,2 +1,3 @@
 
-export * from "./src/RapierPhysics";
+export * from "./src/Rapier";
+// export * from "./src/RapierPhysics";

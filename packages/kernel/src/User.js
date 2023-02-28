@@ -80,10 +80,8 @@ export const PM_Avatar = superclass => class extends superclass {
     }
 
     onDriverSet() {
-        if (this.isMyAvatarPawn) {
-            this.park()
-            this.drive()
-        }
+        this.park()
+        if (this.isMyAvatarPawn) this.drive()
     }
 
     drive() { // Subscribes to controls
