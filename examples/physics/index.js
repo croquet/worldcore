@@ -4,7 +4,7 @@ import { App } from "@croquet/worldcore";
 import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, AM_Spatial, PM_Spatial, THREE,
     AM_Smoothed, PM_Smoothed, sphericalRandom, q_axisAngle, m4_scaleRotationTranslation, toRad, v3_scale, m4_rotation, m4_multiply,
     WidgetManager2, Widget2, ButtonWidget2, q_dot, q_equals, TAU, m4_translation, v3_transform, v3_add, v3_sub, v3_normalize, ThreeInstanceManager,
-    PM_ThreeInstanced, ViewService, AM_RapierDynamicRigidBody, RapierManager, RAPIER, AM_RapierStaticRigidBody, AM_RapierWorld } from "@croquet/worldcore";
+    PM_ThreeInstanced, ViewService, RapierManager, RAPIER, AM_RapierWorld, AM_RapierRigidBody } from "@croquet/worldcore";
 
 function rgb(r, g, b) {
     return [r/255, g/255, b/255];
@@ -24,7 +24,7 @@ function setGeometryColor(geometry, color) {
 //-- SprayActor ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class SprayActor extends mix(Actor).with(AM_Spatial, AM_RapierDynamicRigidBody) {
+class SprayActor extends mix(Actor).with(AM_Spatial, AM_RapierRigidBody) {
     get pawn() {return SprayPawn}
 
     get shape() {return this._shape || "cube"}
@@ -82,7 +82,7 @@ class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 //-- FountainActor ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierStaticRigidBody) {
+class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierRigidBody) {
     get pawn() {return FountainPawn}
 
     init(options) {
@@ -130,7 +130,7 @@ class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_Rapie
         if (type > 0.9) shape = "cone";
 
         const index = Math.floor(this.random()*20);
-        const spray = SprayActor.create({parent: this, shape, index, translation: [0,3,0]});
+        const spray = SprayActor.create({parent: this, shape, index, translation: [0,3,0], rigidBodyType: "dynamic"});
 
         const spin = v3_scale(sphericalRandom(),Math.random() * 0.5);
         const force = [0, 17.5 + 5 * Math.random(), 0];
@@ -144,7 +144,7 @@ class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_Rapie
         const shape = "cube";
         const index = Math.floor(this.random()*20);
         const translation = v3_add(gun, [0,0,0])
-        const bullet = SprayActor.create({parent: this, shape, index, translation});
+        const bullet = SprayActor.create({parent: this, shape, index, translation, rigidBodyType: "dynamic"});
         const force = v3_scale(aim, 40);
         const spin = v3_scale(sphericalRandom(),Math.random() * 0.5);
 
@@ -204,7 +204,7 @@ class MyModelRoot extends ModelRoot {
         console.log("Start root model!");
         this.seedColors();
 
-        this.fountain = FountainActor.create({gravity: [0,-9.8,0], timestep:15, translation: [0,0,0]});
+        this.fountain = FountainActor.create({gravity: [0,-9.8,0], timestep:15, translation: [0,0,0], rigidBodyType: "static"});
     }
 
     seedColors() {
@@ -441,12 +441,12 @@ class MyViewRoot extends ViewRoot {
     buildHUD() {
             const wm = this.service("WidgetManager2");
             const hud = new Widget2({parent: wm.root, autoSize: [1,1]});
-            const recenter = new ButtonWidget2({parent: hud, translation: [-20,20], size: [200,50], anchor:[1,0], pivot: [1,0]});
-            recenter.label.set({text:"Recenter"});
+            const recenter = new ButtonWidget2({parent: hud, translation: [-10,10], size: [100,30], anchor:[1,0], pivot: [1,0]});
+            recenter.label.set({text:"Recenter", point:14, border: [4,4,4,4]});
             recenter.onClick = () => this.doRecenter();
 
-            const shoot = new ButtonWidget2({parent: hud, translation: [-20,80], size: [200,50], anchor:[1,0], pivot: [1,0]});
-            shoot.label.set({text:"Shoot"});
+            const shoot = new ButtonWidget2({parent: hud, translation: [-10,45], size: [100,30], anchor:[1,0], pivot: [1,0]});
+            shoot.label.set({text:"Shoot", point:14, border: [4,4,4,4]});
             shoot.onClick = () => this.doShoot();
     }
 

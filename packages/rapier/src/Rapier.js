@@ -101,17 +101,35 @@ RegisterMixin(AM_RapierWorld);
 
 export const AM_RapierRigidBody = superclass => class extends superclass {
 
+
+
     init(options) {
         super.init(options);
         this.worldActor = this.getWorldActor();
-        // if (this.world) {this.worldActor = this;} 
-        // if (this.parent) this.worldActor = this.parent;
+
+        let rbd;
+        switch (this.rigidBodyType) {
+            case "static": rbd = RAPIER.RigidBodyDesc.newStatic(); break;
+            case "dynamic":
+            default: rbd = RAPIER.RigidBodyDesc.newDynamic() 
+        }
+        rbd.translation = new RAPIER.Vector3(...this.translation);
+        rbd.rotation = new RAPIER.Quaternion(...this.rotation);
+
+        this.rigidBodyHandle = this.worldActor.createRigidBody(this, rbd);
     }
 
     destroy() { 
         super.destroy();
         this.worldActor.destroyRigidBody(this.rigidBodyHandle);
         
+    }
+
+    get rigidBodyType() { return this._rigidBodyType || "dynamic"}
+
+    get rigidBody() {
+        if (!this.$rigidBody) this.$rigidBody = this.worldActor.getRigidBody(this.rigidBodyHandle);
+        return this.$rigidBody;
     }
 
     getWorldActor() {
@@ -123,11 +141,6 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
         console.error("AM_RapierRigidBody must have an AM_RapierWorld parent");
     }
 
-    get rigidBody() {
-        if (!this.$rigidBody) this.$rigidBody = this.worldActor.getRigidBody(this.rigidBodyHandle);
-        return this.$rigidBody;
-    }
-
     createCollider(cd) {
         this.worldActor.world.createCollider(cd, this.rigidBody);
     }
@@ -135,39 +148,3 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
 }
 RegisterMixin(AM_RapierRigidBody);
 
-//------------------------------------------------------------------------------------------
-//-- AM_RapierDynamicRigidBody ----------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-export const AM_RapierDynamicRigidBody = superclass => class extends AM_RapierRigidBody(superclass) {
-
-    init(options) {
-        super.init(options);
-        const rbd = RAPIER.RigidBodyDesc.newDynamic()
-        rbd.translation = new RAPIER.Vector3(...this.translation);
-        rbd.rotation = new RAPIER.Quaternion(...this.rotation);
-        rbd.mass = 1;
-
-        if (this.worldActor) this.rigidBodyHandle = this.worldActor.createRigidBody(this, rbd);
-    }
-
-}
-RegisterMixin(AM_RapierDynamicRigidBody);
-
-//------------------------------------------------------------------------------------------
-//-- AM_RapierStaticRigidBody ----------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-export const AM_RapierStaticRigidBody = superclass => class extends AM_RapierRigidBody(superclass) {
-
-    init(options) {
-        super.init(options);
-        const rbd = RAPIER.RigidBodyDesc.newStatic()
-        rbd.translation = new RAPIER.Vector3(...this.translation);
-        rbd.rotation = new RAPIER.Quaternion(...this.rotation);
-
-        this.rigidBodyHandle = this.worldActor.createRigidBody(this, rbd);
-    }
-
-}
-RegisterMixin(AM_RapierStaticRigidBody);
