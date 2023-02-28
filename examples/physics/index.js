@@ -6,12 +6,6 @@ import { ModelRoot, ViewRoot, StartWorldcore, Actor, Pawn, mix, InputManager, PM
     WidgetManager2, Widget2, ButtonWidget2, q_dot, q_equals, TAU, m4_translation, v3_transform, v3_add, v3_sub, v3_normalize, ThreeInstanceManager,
     PM_ThreeInstanced, ViewService, AM_RapierDynamicRigidBody, RapierManager, RAPIER, AM_RapierStaticRigidBody, AM_RapierWorld } from "@croquet/worldcore";
 
-// import { InstanceManager, PM_ThreeVisibleInstanced } from "./src/Instances";
-
-// import { FPSAvatar } from "./src/Avatar";
-// import { AM_RapierDynamicRigidBody, RapierManager, RAPIER, AM_RapierStaticRigidBody, AM_RapierWorld } from "./src/Rapier";
-// import { AM_RapierDynamicRigidBody, RapierManager, RAPIER, AM_RapierStaticRigidBody, AM_RapierWorld } from "@croquet/worldcore";
-
 function rgb(r, g, b) {
     return [r/255, g/255, b/255];
 }
@@ -39,7 +33,7 @@ class SprayActor extends mix(Actor).with(AM_Spatial, AM_RapierDynamicRigidBody) 
     init(options) {
         super.init(options);
         this.parent.live.push(this);
-        if (this.parent.live.length > 100) this.parent.live.shift().destroy();
+        if (this.parent.live.length > 300) this.parent.live.shift().destroy();
 
         this.buildCollider();
     }
@@ -207,7 +201,7 @@ class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!");
+        console.log("Start root model!");
         this.seedColors();
 
         this.fountain = FountainActor.create({gravity: [0,-9.8,0], timestep:15, translation: [0,0,0]});
@@ -315,7 +309,7 @@ class GodView extends ViewService {
         yaw += -0.01 * e.xy[0];
         yaw = yaw % TAU;
         pitch += -0.01 * e.xy[1];
-        pitch = Math.min(pitch, toRad(-5));
+        pitch = Math.min(pitch, toRad(-15));
         pitch = Math.max(pitch, toRad(-90));
         this.updateCamera()
     }
@@ -479,10 +473,10 @@ App.makeWidgetDock();
 StartWorldcore({
     appId: 'io.croquet.physics',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
-    name: 'Physics',
+    // name: 'Physics',
     password: 'password',
     model: MyModelRoot,
-    // name: App.autoSession(),
+    name: App.autoSession(),
     view: MyViewRoot,
     tps:60
 });
