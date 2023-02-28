@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+Upgraded to Rapier 0.11.0
+RapierManager doesn't hold world
+
+### Added
+AM_RapierWorld
+AM_RapierRigidBody
+
 ## [1.0.3] - 2021-11-24
 ### Changed
 - RapierPhysicsManger allows inheritance
