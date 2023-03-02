@@ -1,4 +1,4 @@
-import { RegisterMixin, ModelService } from "@croquet/worldcore-kernel";
+import { RegisterMixin, ModelService, v3_sub, v3_scale } from "@croquet/worldcore-kernel";
 
 export let RAPIER;
 
@@ -87,6 +87,15 @@ export const AM_RapierWorld = superclass => class extends superclass {
             const r = rb.rotation();
             const translation = [t.x, t.y, t.z];
             const rotation = [r.x, r.y, r.z, r.w]
+
+            if (actor.hasAccelerometer) {
+                const velocity = v3_scale(v3_sub(translation, actor.translation), 1000/this.timeStep);
+                let acceleration = v3_scale(v3_sub(velocity, actor.velocity), 1000/this.timeStep);
+                acceleration = v3_sub(acceleration, this.gravity);
+                actor.set({acceleration,velocity});
+            }
+
+
             actor.set({translation, rotation});
         });
         if (!this.doomed) this.future(this.timeStep).tick();
@@ -101,8 +110,6 @@ RegisterMixin(AM_RapierWorld);
 
 export const AM_RapierRigidBody = superclass => class extends superclass {
 
-
-
     init(options) {
         super.init(options);
         this.worldActor = this.getWorldActor();
@@ -113,6 +120,7 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
             case "dynamic":
             default: rbd = RAPIER.RigidBodyDesc.newDynamic() 
         }
+        rbd.setCcdEnabled(true);
         rbd.translation = new RAPIER.Vector3(...this.translation);
         rbd.rotation = new RAPIER.Quaternion(...this.rotation);
 
@@ -126,6 +134,9 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
     }
 
     get rigidBodyType() { return this._rigidBodyType || "dynamic"}
+    get velocity() { return this._velocity || [0,0,0]}
+    get acceleration() { return this._acceleration || [0,0,0]}
+    get hasAccelerometer() { return this._hasAccelerometer}
 
     get rigidBody() {
         if (!this.$rigidBody) this.$rigidBody = this.worldActor.getRigidBody(this.rigidBodyHandle);

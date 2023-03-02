@@ -150,7 +150,6 @@ export class MyModelRoot extends ModelRoot {
     }
 
     seedColors() {
-
         this.colors = [
             rgb(242, 215, 213),        // Red
             rgb(217, 136, 128),        // Red

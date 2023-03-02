@@ -100,11 +100,6 @@ export class Actor extends WorldcoreModel {
         this.children.delete(child);
     }
 
-    // onParent(d) {
-    //     if (d.o) d.o.removeChild(this);
-    //     if (d.v) d.v.addChild(this);
-    // }
-
     say(event, data) {
         this.publish(this.id, event, data);
     }

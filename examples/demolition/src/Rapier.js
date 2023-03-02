@@ -148,7 +148,6 @@ export const AM_RapierDynamicRigidBody = superclass => class extends AM_RapierRi
 
     get velocity() { return this._velocity || [0,0,0]}
     get acceleration() { return this._acceleration || [0,0,0]}
-    get accelerometer() { return this._accelerometer}
 
     init(options) {
         super.init(options);
