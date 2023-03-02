@@ -21,7 +21,7 @@ class SprayActor extends mix(Actor).with(AM_Spatial, AM_RapierRigidBody) {
     init(options) {
         super.init(options);
         this.parent.live.push(this);
-        if (this.parent.live.length > 300) this.parent.live.shift().destroy();
+        if (this.parent.live.length > this.parent.max) this.parent.live.shift().destroy();
 
         this.buildCollider();
     }
@@ -92,6 +92,8 @@ class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_Rapie
         this.future(1000).spray();
     }
 
+    get max() { return this._max || 50};
+
     spray() {
         this.spawn();
         if (!this.doomed) this.future(300).spray();
@@ -146,7 +148,7 @@ export class MyModelRoot extends ModelRoot {
         console.log("Start root model!");
         this.seedColors();
 
-        this.fountain = FountainActor.create({gravity: [0,-9.8,0], timestep:15, translation: [0,0,0], rigidBodyType: "static"});
+        this.fountain = FountainActor.create({gravity: [0,-9.8,0], timestep:15, translation: [0,0,0], max: 200, rigidBodyType: "static"});
     }
 
     seedColors() {
