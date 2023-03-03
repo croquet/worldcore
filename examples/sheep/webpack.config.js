@@ -22,6 +22,11 @@ module.exports = {
     module: {
         rules: [
             {
+                test: /\.js$/,
+                enforce: "pre",
+                use: ["source-map-loader"],
+            },
+            {
                 test: /\.(png|svg|jpg|gif|mp3|fbx|otf)$/,
                 loader: 'file-loader',
                 options: {
