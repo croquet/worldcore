@@ -32,7 +32,7 @@ export class BlockPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 export class BulletPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
     constructor(...args) {
         super(...args);
-        this.useInstance("ball3");
+        this.useInstance("ball"+this.actor.index);
     }
 }
 
@@ -228,11 +228,14 @@ export class MyViewRoot extends ViewRoot {
     }
 
     doShoot() {
+        const um = this.modelService("UserManager");
+        const shooter = um.user(this.viewId);
+        const index = shooter.index;
         const pitchMatrix = m4_rotation([1,0,0], pitch)
         const yawMatrix = m4_rotation([0,1,0], yaw)
         const both = m4_multiply(pitchMatrix, yawMatrix);
         const shoot = v3_transform(gun, both);
-        this.publish("ui", "shoot", shoot);
+        this.publish("ui", "shoot", {shoot, index});
     }
 
     buildInstances() {

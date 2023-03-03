@@ -1,7 +1,7 @@
 // Demolition Demo
 
 import { ModelRoot,  Actor, mix, AM_Spatial, v3_scale, v3_add, v3_sub, v3_normalize, v3_magnitude, 
-    RapierManager, RAPIER, AM_RapierRigidBody, AM_RapierWorld } from "@croquet/worldcore";
+    RapierManager, RAPIER, AM_RapierRigidBody, AM_RapierWorld, User,UserManager } from "@croquet/worldcore";
 
 import { BlockPawn, BasePawn, BarrelPawn, BulletPawn } from "./Views";
 
@@ -68,6 +68,8 @@ BlockActor.register('BlockActor');
 export class BulletActor extends mix(Actor).with(AM_Spatial, AM_RapierRigidBody) {
     get pawn() {return BulletPawn}
 
+    get index() {return this._index}
+
     init(options) {
         super.init(options);
         this.buildCollider();
@@ -99,13 +101,11 @@ export class BarrelActor extends mix(Actor).with(AM_Spatial, AM_RapierRigidBody)
         this.buildCollider();
 
         this.worldActor.blocks.add(this);
-        // this.subscribe("global", "bang", this.explode);
 
-        this.future(2000).arm();
+        this.future(2000).set({hasAccelerometer: true});
     }
 
     arm() {
-        // this.armed = true;
         this.set({hasAccelerometer: true});
     }
 
@@ -128,16 +128,14 @@ export class BarrelActor extends mix(Actor).with(AM_Spatial, AM_RapierRigidBody)
     }
 
     accelerationSet(acceleration) {
-        // if (!this.armed) return;
         const a = v3_magnitude(acceleration);
         if (a > 35) {
-            // this.publish("global", "bang");
             this.explode();
         }
     }
 
     explode() {
-        // this.set({hasAccelerometer: false});
+        this.set({hasAccelerometer: false});
         const radius = 10;
         const world = this.getWorldActor();
         world.blocks.forEach(block => {
@@ -176,10 +174,12 @@ export class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_Ra
         this.subscribe("ui", "new", this.reset);
     }
 
-    shoot(gun) {
+    shoot(data) {
+        const gun = data.shoot;
+        const index = data.index;
         const aim = v3_normalize(v3_sub([0,0,1], gun))
         const translation = v3_add(gun, [0,0,0]);
-        const bullet = BulletActor.create({parent: this, translation, hasAccelerometer: true});
+        const bullet = BulletActor.create({parent: this, translation, index});
         const force = v3_scale(aim, 50);
         bullet.rigidBody.applyImpulse(new RAPIER.Vector3(...force), true);
     }
@@ -251,6 +251,30 @@ export class BaseActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_Ra
 }
 BaseActor.register('BaseActor');
 
+//------------------------------------------------------------------------------------------
+//-- MyUser --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class MyUser extends User {
+
+    init(options) {
+        super.init(options);
+        this.index = Math.floor(Math.random()*21);
+        
+    }
+
+}
+MyUser.register("MyUser");
+
+//------------------------------------------------------------------------------------------
+//-- MyUserManager -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class MyUserManager extends UserManager {
+    get defaultUser() {return MyUser;}
+}
+MyUserManager.register("MyUserManager");
+
 
 
 //------------------------------------------------------------------------------------------
@@ -260,7 +284,7 @@ BaseActor.register('BaseActor');
 export class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [RapierManager];
+        return [MyUserManager, RapierManager];
     }
 
     init(...args) {
