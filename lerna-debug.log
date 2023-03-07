@@ -1,0 +1,20 @@
+0 silly argv {
+0 silly argv   _: [ 'bootstrap' ],
+0 silly argv   lernaVersion: '4.0.0',
+0 silly argv   '$0': 'node_modules\\lerna\\cli.js'
+0 silly argv }
+1 notice cli v4.0.0
+2 verbose rootPath C:\Users\bbupt\Documents\GitHub\worldcore
+3 error JSONError: Unexpected token "}" (0x7D) in JSON at position 422 while parsing near "...core\": \"^1.4.0\",\r\n  },\r\n  \"devDependenci..." in examples\demolition\package.json
+3 error
+3 error [0m [90m 12 |[39m   [32m"dependencies"[39m[33m:[39m {[0m
+3 error [0m [90m 13 |[39m     [32m"@croquet/worldcore"[39m[33m:[39m [32m"^1.4.0"[39m[33m,[39m[0m
+3 error [0m[31m[1m>[22m[39m[90m 14 |[39m   }[33m,[39m[0m
+3 error [0m [90m    |[39m   [31m[1m^[22m[39m[0m
+3 error [0m [90m 15 |[39m   [32m"devDependencies"[39m[33m:[39m {[0m
+3 error [0m [90m 16 |[39m     [32m"file-loader"[39m[33m:[39m [32m"^6.2.0"[39m[33m,[39m[0m
+3 error [0m [90m 17 |[39m     [32m"html-webpack-plugin"[39m[33m:[39m [32m"^5.5.0"[39m[33m,[39m[0m
+3 error
+3 error     at parseJson (C:\Users\bbupt\Documents\GitHub\worldcore\node_modules\parse-json\index.js:29:21)
+3 error     at parse (C:\Users\bbupt\Documents\GitHub\worldcore\node_modules\load-json-file\index.js:15:9)
+3 error     at module.exports (C:\Users\bbupt\Documents\GitHub\worldcore\node_modules\load-json-file\index.js:18:47)

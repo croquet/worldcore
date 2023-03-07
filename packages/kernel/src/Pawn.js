@@ -99,22 +99,24 @@ export class Pawn extends WorldcoreView {
         if (this._children) this._children.delete(child);
     }
 
-    onParent(d) {
-        if (this.parent) this.parent.removeChild(this);
-        // if (d.o) {
-        //     this._parent = null;
-        //     GetPawn(d.o.id).removeChild(this);
-        // }
-        if(this.parent) this.parent.addChild(this);
-    }
-
     // onParent(d) {
-    //     if (d.o) {
-    //         this._parent = null;
-    //         GetPawn(d.o.id).removeChild(this);
-    //     }
+    //     if (this.parent) this.parent.removeChild(this);
+    //     // if (d.o) {
+    //     //     this._parent = null;
+    //     //     GetPawn(d.o.id).removeChild(this);
+    //     // }
     //     if(this.parent) this.parent.addChild(this);
     // }
+
+    // xxx ?
+
+    onParent(d) {
+        if (d.o) {
+            this._parent = null;
+            GetPawn(d.o.id).removeChild(this);
+        }
+        if(this.parent) this.parent.addChild(this);
+    }
 
     say(event, data, throttle = 0) {
         if (this.time < this._sayNext[event]) {

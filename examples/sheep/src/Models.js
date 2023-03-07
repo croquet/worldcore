@@ -44,8 +44,8 @@ class MyUser extends User {
         super.init(options);
         this.avatar = AvatarActor.create({name: "Avatar", driver: this, translation: [0,0,20]});
 
-        const halo = TestActor.create({parent: this.avatar, translation: [0,1.5,0]})
-        halo.behavior.start({name: "SpinBehavior", axis:[1,0,0], speed:3});
+        // const halo = TestActor.create({parent: this.avatar, translation: [0,1.5,0]})
+        // halo.behavior.start({name: "SpinBehavior", axis:[1,0,0], speed:3});
     }
 
     destroy() {

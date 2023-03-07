@@ -84,12 +84,14 @@ export const PM_Avatar = superclass => class extends superclass {
         if (this.isMyAvatarPawn) this.drive()
     }
 
-    drive() { // Subscribes to controls
+    drive() { // Subscribe to controls
         this.driving = true;
+        this.publish(this.viewId, "avatar", true)
     }
     
     park() { // Unsubscribes from  controls
-        this.driving = false; 
+        this.driving = false;
+        this.publish(this.viewId, "avatar", false) 
     }
 
     update(time, delta) {

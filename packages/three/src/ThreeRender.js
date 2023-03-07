@@ -16,9 +16,9 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 
     destroy() {
         super.destroy();
-        const render = this.service("ThreeRenderManager");
-        if (render && render.scene) {
-            if(this.renderObject)render.scene.remove(this.renderObject);
+        const rm = this.service("ThreeRenderManager");
+        if (rm && rm.scene && this.renderObject) {
+            rm.scene.remove(this.renderObject);
         }
     }
 
@@ -31,13 +31,14 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 
     setRenderObject(renderObject) {
         const render = this.service("ThreeRenderManager");
-        renderObject.wcPawn = this;
+        renderObject.wc = this;
         this.renderObject = renderObject;
         this.renderObject.matrixAutoUpdate = false;
         this.renderObject.matrix.fromArray(this.global);
         this.renderObject.matrixWorldNeedsUpdate = true;
         if (render && render.scene) render.scene.add(this.renderObject);
     }
+
 
 }
 

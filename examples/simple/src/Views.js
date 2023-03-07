@@ -87,7 +87,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
     }
 
     toggleDrive() {
-        console.log(this.driving);
+        // console.log(this.driving);
         if (this.isMyAvatarPawn) {
             if (this.driving) {
                 this.park()
@@ -120,7 +120,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
 
     drive() {
         super.drive();
-        this.service("GodView").paused = true;
 
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
@@ -132,8 +131,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
 
     park() {
         super.park();
-        this.service("GodView").paused = false;
-        this.service("GodView").updateCamera();
+        this.fore = this.back = this.left = this.right = 0;
 
         this.unsubscribe("input", "keyDown", this.keyDown);
         this.unsubscribe("input", "keyUp", this.keyUp);
@@ -238,6 +236,13 @@ class GodView extends ViewService {
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
+        this.subscribe(this.viewId, "avatar", this.onAvatar)
+    }
+
+    onAvatar(driving) {
+        console.log ("Avatar!");
+        this.paused = driving;
+        if(!driving) this.updateCamera();
     }
 
 

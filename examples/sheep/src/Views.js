@@ -1,12 +1,12 @@
-import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, ThreeInstanceManager, ViewRoot, Pawn, mix, 
+import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, ThreeInstanceManager, ViewRoot, Pawn, mix,
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE,
-    PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add } from "@croquet/worldcore";
+    PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, ThreeRaycast, PM_ThreeCollider } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeCollider) {
 
     constructor(actor) {
         super(actor);
@@ -19,7 +19,7 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.material.dispose();
     }
 
-    buildMesh() {  
+    buildMesh() {
         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
         this.material.side = THREE.DoubleSide;
@@ -31,6 +31,7 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         mesh.castShadow = true;
 
         this.setRenderObject(mesh);
+        this.addRenderObjectToRaycast();
     }
 }
 
@@ -103,7 +104,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
         this.material.dispose();
     }
 
-    buildMesh() {  
+    buildMesh() {
         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
         this.geometry.translate(0,0.5,0);
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
@@ -120,7 +121,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
 
     drive() {
         super.drive();
-        this.service("GodView").paused = true;
 
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
@@ -132,7 +132,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
 
     park() {
         super.park();
-        this.service("GodView").paused = false;
+        this.fore = this.back = this.left = this.right = 0;
+
         this.service("GodView").updateCamera();
 
         this.unsubscribe("input", "keyDown", this.keyDown);
@@ -185,6 +186,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
         }
     }
 
+
     doPointerDown(e) {
         if (e.button === 2) this.service("InputManager").enterPointerLock();;
     }
@@ -204,6 +206,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
             this.cameraRotation = q_multiply(pitchQ, yawQ);
         };
     }
+
 
     update(time, delta) {
         super.update(time,delta);
@@ -238,6 +241,24 @@ class GodView extends ViewService {
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
+        this.subscribe("input", "pointerMove", this.doPointerMove);
+        this.subscribe(this.viewId, "avatar", this.onAvatar)
+        this.subscribe("input", "mDown", this.test);
+    }
+
+    doPointerMove(e) {
+        this.xy = e.xy;
+    }
+
+    test() {
+        const rc = this.service("ThreeRaycast");
+        const hits = rc.cameraRaycast(this.xy);
+        console.log(hits);
+    }
+
+    onAvatar(driving) {
+        this.paused = driving;
+        if(!driving) this.updateCamera();
     }
 
 
@@ -297,13 +318,15 @@ class GodView extends ViewService {
 export class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, GodView, WidgetManager2, ThreeInstanceManager];
+        return [InputManager, ThreeRenderManager, GodView, WidgetManager2, ThreeInstanceManager, ThreeRaycast];
     }
 
     onStart() {
         this.buildInstances()
         this.buildLights();
         this.buildHUD();
+
+        this.subscribe("input", "nDown", this.ttt)
     }
 
     buildLights() {
@@ -350,6 +373,12 @@ export class MyViewRoot extends ViewRoot {
         im.addGeometry("cube", geometry);
 
         im.addMesh("cube", "cube", "default");
+    }
+
+    ttt() {
+        console.log("test");
+        const rc = this.service("ThreeRaycast");
+        console.log(rc.layers);
     }
 
 }

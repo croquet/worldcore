@@ -8,6 +8,10 @@
   "comment": "This mono repo has various sub-repositories, each of which is a separate package.  See the README.md file for more information.",
   "private": true,
   "devDependencies": {
-    "lerna": "^4.0.0"
+    "lerna": "^4.0.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint": "^7.23.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-import-resolver-parcel": "^1.10.6"
   }
 }

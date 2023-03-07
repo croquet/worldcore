@@ -10,6 +10,7 @@ function m4_THREE(m) { return m?(new THREE.Matrix4()).fromArray(m):new THREE.Mat
 export class InstancedMesh {
     constructor(geometry, material, count = 1000){
         this.mesh = new THREE.InstancedMesh( geometry, material, count);
+        this.mesh.wc = this;
         this.pawns = [];
         this.free = [];
         for (let n = count-1; n>= 0; n--) {
@@ -82,7 +83,7 @@ export class ThreeInstanceManager extends ViewService {
     destroy() {
         super.destroy();
         this.materials.forEach( m => m.dispose());
-        this.geometries.forEach( g => g.dispose());     
+        this.geometries.forEach( g => g.dispose());
     }
 
     material(name) {
@@ -118,5 +119,5 @@ export class ThreeInstanceManager extends ViewService {
         rm.scene.add(mesh.mesh);
         return mesh.mesh;
     }
-   
+
 }
