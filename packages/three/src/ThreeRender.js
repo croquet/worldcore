@@ -31,7 +31,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 
     setRenderObject(renderObject) {
         const render = this.service("ThreeRenderManager");
-        renderObject.wc = this;
+        renderObject.pawn = this;
         this.renderObject = renderObject;
         this.renderObject.matrixAutoUpdate = false;
         this.renderObject.matrix.fromArray(this.global);

@@ -23,7 +23,6 @@ export class ThreeRaycast extends ViewService {
     }
 
     cameraRaycast(xy, layer = "default") {
-        // console.log(xy);
         const x = ( xy[0] / window.innerWidth ) * 2 - 1;
         const y = - ( xy[1] / window.innerHeight ) * 2 + 1;
 
@@ -33,9 +32,14 @@ export class ThreeRaycast extends ViewService {
         const hits = raycaster.intersectObjects( this.layers.get(layer) );
         const out = [];
         hits.forEach(hit => {
+            let pawn = hit.object.pawn;
+            if (hit.object.instance) {
+                const index = hit.instanceId;
+                pawn = hit.object.instance.pawns[index];
+            }
             out.push({
+                pawn,
                 distance: hit.distance,
-                wc: hit.object.wc,
                 xyz: [hit.point.x, hit.point.y, hit.point.z],
                 uv: [hit.uv.x, hit.uv.y],
             })

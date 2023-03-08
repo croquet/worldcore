@@ -10,7 +10,7 @@ function m4_THREE(m) { return m?(new THREE.Matrix4()).fromArray(m):new THREE.Mat
 export class InstancedMesh {
     constructor(geometry, material, count = 1000){
         this.mesh = new THREE.InstancedMesh( geometry, material, count);
-        this.mesh.wc = this;
+        this.mesh.instance = this;
         this.pawns = [];
         this.free = [];
         for (let n = count-1; n>= 0; n--) {
@@ -51,19 +51,20 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
 
     destroy() {
         super.destroy();
-        if (this.mesh) this.mesh.release(this.meshIndex);
+        if (this.instance) this.instance.release(this.meshIndex);
     }
 
     useInstance(name) {
         const im = this.service("ThreeInstanceManager");
-        this.mesh = im.mesh(name);
-        this.meshIndex = this.mesh.use(this);
+        this.instance = im.mesh(name);
+        this.renderObject = this.instance.mesh;
+        this.meshIndex = this.instance.use(this);
         this.updateMatrix()
     }
 
     updateMatrix() {
         if (this.meshIndex === undefined) return;
-        this.mesh.updateMatrix(this.meshIndex, this.global)
+        this.instance.updateMatrix(this.meshIndex, this.global)
     }
 
 };
