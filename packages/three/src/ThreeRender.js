@@ -3,6 +3,9 @@ import { m4_multiply, m4_scaleRotationTranslation, m4_translation, q_axisAngle, 
 import * as THREE from "three";
 export { THREE };
 
+// import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+// import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------
