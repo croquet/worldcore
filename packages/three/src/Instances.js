@@ -1,4 +1,4 @@
-import { ViewRoot, ViewService } from "@croquet/worldcore-kernel";
+import { ViewService } from "@croquet/worldcore-kernel";
 import * as THREE from "three";
 
 function m4_THREE(m) { return m?(new THREE.Matrix4()).fromArray(m):new THREE.Matrix4() }
@@ -26,8 +26,10 @@ export class InstancedMesh {
     }
 
     release(index) {
+        const limbo = new THREE.Matrix4()
+        limbo.makeTranslation(...this.limbo);
         this.pawns[index] = null;
-        this.updateMatrix(index, null);
+        this.updateMatrix(index, limbo);
         this.free.push(index);
     }
 
@@ -79,6 +81,7 @@ export class ThreeInstanceManager extends ViewService {
         this.meshes = new Map();
         this.materials = new Map();
         this.geometries = new Map();
+        this.limbo = [0,0,0];
     }
 
     destroy() {
@@ -116,6 +119,7 @@ export class ThreeInstanceManager extends ViewService {
         const rm = this.service("ThreeRenderManager");
         if(this.meshes.has(meshName)) console.error("duplicate mesh: " + meshName);
         const mesh = new InstancedMesh(this.geometry(geometryName), this.material(materialName), count);
+        mesh.limbo = this.limbo;
         this.meshes.set(meshName, mesh);
         rm.scene.add(mesh.mesh);
         return mesh.mesh;

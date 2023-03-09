@@ -8,7 +8,7 @@ import { TestPawn, BasePawn, AvatarPawn, OtherPawn } from "./Views";
 //------------------------------------------------------------------------------------------
 
 class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
-    get pawn() {return  TestPawn}
+    // get pawn() {return  "TestPawn"}
 }
 TestActor.register('TestActor');
 
@@ -17,11 +17,10 @@ TestActor.register('TestActor');
 //------------------------------------------------------------------------------------------
 
 class OtherActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
-    get pawn() {return  OtherPawn}
+    // get pawn() {return  OtherPawn }
+    // get pawn() {return  "OtherPawn" }
 }
 OtherActor.register('OtherActor');
-
-
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor ------------------------------------------------------------------------
@@ -90,18 +89,29 @@ export class MyModelRoot extends ModelRoot {
 
         this.base = BaseActor.create({});
 
-        this.test0 = TestActor.create({translation:[0,5,0]});
-        this.test1 = TestActor.create({parent: this.test0, translation:[5,0,0]});
+        this.test0 = TestActor.create({pawn: "TestPawn",translation:[0,5,0]});
+        this.test1 = TestActor.create({pawn: "TestPawn", parent: this.test0, translation:[5,0,0]});
 
-        this.other = OtherActor.create({translation:[3,2,0]});
+        // this.other = OtherActor.create({pawn: "OtherPawn", translation:[3,2,0]});
 
         this.test0.behavior.start({name: "SpinBehavior", axis:[0,1,0], speed: 2});
         this.test1.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5})
 
-        this.test00 = TestActor.create({translation:[-5,0,0]});
-        this.test01 = TestActor.create({translation:[5,0,0]});
-        this.test10 = TestActor.create({translation:[0,0,-5]});
-        this.test11 = TestActor.create({translation:[0,0,5]});
+        this.test00 = TestActor.create({pawn: "TestPawn",translation:[-5,0,0]});
+        this.test01 = TestActor.create({pawn: "TestPawn",translation:[5,0,0]});
+        this.test10 = TestActor.create({pawn: "TestPawn",translation:[0,0,-5]});
+        this.test11 = TestActor.create({pawn: "TestPawn",translation:[0,0,5]});
+
+        this.subscribe("input", "pDown", this.pawnToggle)
+
+    }
+
+    pawnToggle() {
+        if (this.test0.pawn === "OtherPawn") {
+            this.test0.set({pawn: "TestPawn"});
+        } else {
+            this.test0.set({pawn: "OtherPawn"});
+        }
 
     }
 }

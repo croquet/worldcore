@@ -6,6 +6,7 @@ import { ViewService, WorldcoreView } from "./Root";
 //------------------------------------------------------------------------------------------
 
 let pm; // Local pointer for pawns
+const PAWN_REGISTRY = new Map();
 
 export class PawnManager extends ViewService {
     constructor(name) {
@@ -29,9 +30,21 @@ export class PawnManager extends ViewService {
         super.destroy();
     }
 
-    spawnPawn(actor) { if (actor.pawn) {
-        const p = new actor.pawn(actor);
-        p.link();}
+    spawnPawn(actor) {
+        if (!actor.pawn) return;
+        let p;
+        if (typeof actor.pawn === 'string' ) {
+            const cls = PAWN_REGISTRY.get(actor.pawn);
+            if (!cls) {
+                console.warn(actor.pawn + " does not exist in the pawn registry!");
+                return;
+            }
+            p = new cls(actor);
+        } else {
+            p = new actor.pawn(actor);
+        }
+        p.link();
+        return p;
     }
 
     destroyPawn(actor) {
@@ -58,18 +71,22 @@ export function GetPawn(actorId) { return pm.get(actorId); }
 
 export class Pawn extends WorldcoreView {
 
+    static register(name) {
+        if (PAWN_REGISTRY.has(name)) console.warn(name + " already exists in pawn registry!");
+        PAWN_REGISTRY.set(name, this);
+    }
+
     constructor(actor) {
         super(actor);
         this._sayNext = {};
         this._sayCache = {};
 
-        // this.sayLast = {};
-        // this.sayCache ={};
         this._actor = actor;
         pm.add(this);
         this.link();
 
         this.listen("parentSet", this.onParent);
+        this.listen("pawnSet", this.onPawn);
     }
 
     link() { if(this.parent) this.parent.addChild(this); }
@@ -108,7 +125,6 @@ export class Pawn extends WorldcoreView {
     //     if(this.parent) this.parent.addChild(this);
     // }
 
-    // xxx ?
 
     onParent(d) {
         if (d.o) {
@@ -116,6 +132,17 @@ export class Pawn extends WorldcoreView {
             GetPawn(d.o.id).removeChild(this);
         }
         if(this.parent) this.parent.addChild(this);
+    }
+
+    onPawn() {
+        const actor = this.actor;
+        const children = new Set(this.children);
+        pm.destroyPawn(actor);
+        pm.spawnPawn(actor);
+        children.forEach(child => {
+            child._parent = null;
+            child.link()
+        });
     }
 
     say(event, data, throttle = 0) {
@@ -202,7 +229,7 @@ export class Pawn extends WorldcoreView {
     //     if (this.children) this.children.forEach(child => child.fullUpdate(time, delta));
     // }
 
-
 }
+Pawn.register("Pawn");
 
 

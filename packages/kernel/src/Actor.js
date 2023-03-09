@@ -1,4 +1,4 @@
-import { Pawn } from "./Pawn";
+// import { Pawn } from "./Pawn";
 import { ModelService, WorldcoreModel } from "./Root";
 
 //------------------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ ActorManager.register("ActorManager");
 //------------------------------------------------------------------------------------------
 
 export class Actor extends WorldcoreModel {
-    get pawn() {return null;}
+    get pawn() {return this._pawn;}
     get doomed() {return this._doomed} // About to be destroyed. This is used to prevent creating new future messages.
     get parent() { return this._parent; }
     get children() { return this._children || new Set(); }

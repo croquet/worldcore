@@ -11,6 +11,7 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Th
     constructor(actor) {
         super(actor);
         this.buildMesh();
+        this.addRenderObjectToRaycast();
     }
 
     destroy() {
@@ -34,6 +35,7 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Th
         this.addRenderObjectToRaycast();
     }
 }
+TestPawn.register("TestPawn");
 
 //------------------------------------------------------------------------------------------
 // OtherPawn --------------------------------------------------------------------------------
@@ -48,6 +50,7 @@ export class OtherPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced, PM
     }
 
 }
+OtherPawn.register("OtherPawn");
 
 //------------------------------------------------------------------------------------------
 //-- BasePawn -------------------------------------------------------------------------
@@ -391,7 +394,8 @@ export class MyViewRoot extends ViewRoot {
         const geometry = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("cube", geometry);
 
-        im.addMesh("cube", "cube", "default");
+        const mmm = im.addMesh("cube", "cube", "default");
+        mmm.castShadow = true;
     }
 
     ttt() {

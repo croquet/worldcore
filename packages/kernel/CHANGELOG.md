@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - m4_getScale(), m4_getScaleRotationTranslation() added
 - Behaviors added to kernel
 - Avatar mixins
-- finalize() to ViewRoot
+- onStart() to ViewRoot
+- dynamic pawn binding
 
 ### Changed
 - Pawn destruction handled by PawnManager, not Pawn itself
