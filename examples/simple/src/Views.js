@@ -1,6 +1,49 @@
-import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, ThreeInstanceManager, ViewRoot, Pawn, mix, 
-    InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE,
-    PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add } from "@croquet/worldcore";
+import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, ThreeInstanceManager, ViewRoot, Pawn, mix,
+    InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE, PM_ThreeInstanced,
+    PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, PM_ThreeCollider, ThreeRaycast } from "@croquet/worldcore";
+
+    function rgb(r, g, b) {
+        return [r/255, g/255, b/255];
+    }
+
+    function setGeometryColor(geometry, color) {
+        const count = geometry.getAttribute("position").count;
+        const colors = [];
+        for (let i = 0; i < count; i++) {
+            colors.push(...color);
+        }
+        geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3) );
+    }
+
+    const Colors = [
+        rgb(242, 215, 213),        // Red
+        rgb(217, 136, 128),        // Red
+        rgb(192, 57, 43),        // Red
+
+        rgb(240, 178, 122),        // Orange
+        rgb(230, 126, 34),        // Orange
+        rgb(175, 96, 26),        // Orange
+
+        rgb(247, 220, 111),        // Yellow
+        rgb(241, 196, 15),        // Yellow
+        rgb(183, 149, 11),        // Yellow
+
+        rgb(125, 206, 160),        // Green
+        rgb(39, 174, 96),        // Green
+        rgb(30, 132, 73),        // Green
+
+        rgb(133, 193, 233),         // Blue
+        rgb(52, 152, 219),        // Blue
+        rgb(40, 116, 166),        // Blue
+
+        rgb(195, 155, 211),        // Purple
+        rgb(155, 89, 182),         // Purple
+        rgb(118, 68, 138),        // Purple
+
+        [0.9, 0.9, 0.9],        // White
+        [0.5, 0.5, 0.5],        // Gray
+        [0.2, 0.2, 0.2]        // Black
+    ]
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
@@ -19,7 +62,7 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.material.dispose();
     }
 
-    buildMesh() {  
+    buildMesh() {
         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
         this.material.side = THREE.DoubleSide;
@@ -33,6 +76,7 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.setRenderObject(mesh);
     }
 }
+TestPawn.register("TestPawn");
 
 //------------------------------------------------------------------------------------------
 //-- BasePawn -------------------------------------------------------------------------
@@ -61,16 +105,18 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         this.material.dispose();
     }
 }
+BasePawn.register("BasePawn");
 
 //------------------------------------------------------------------------------------------
 // AvatarPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeVisible, PM_ThreeCamera) {
+export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeVisible, PM_ThreeCamera, PM_ThreeCollider) {
 
     constructor(actor) {
         super(actor);
         this.buildMesh();
+        this.addRenderObjectToRaycast("avatar");
 
         this.fore = this.back = this.left = this.right = 0;
         this.pitch = this.yaw = this.yawDelta = 0;
@@ -82,20 +128,20 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
         const yawQ = q_axisAngle([0,1,0], this.yawDelta);
         this.cameraRotation = q_multiply(pitchQ, yawQ);
 
-        this.subscribe("input", "zDown", this.toggleDrive)
-
+        // this.subscribe("input", "zDown", this.toggleDrive)
+        this.subscribe("input", "pDown", this.possess)
+        this.subscribe("input", "pointerMove", this.doPointerMove);
     }
 
-    toggleDrive() {
-        // console.log(this.driving);
-        if (this.isMyAvatarPawn) {
-            if (this.driving) {
-                this.park()
-            } else {
-                this.drive()
-            }
-        }
-    }
+    // toggleDrive() {
+    //     if (this.isMyAvatarPawn) {
+    //         if (this.driving) {
+    //             this.park()
+    //         } else {
+    //             this.drive()
+    //         }
+    //     }
+    // }
 
     destroy() {
         super.destroy()
@@ -103,10 +149,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
         this.material.dispose();
     }
 
-    buildMesh() {  
+    buildMesh() {
+        // const color = Colors[this.actor.driver.index];
+        const color = [1,1,0];
+        // console.log(this.actor.driver.index + " "+ color);
         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        this.geometry.translate(0,0.5,0);
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
+        // this.geometry.translate(0,0.5,0);
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...color)} );
         this.material.side = THREE.DoubleSide;
         this.material.shadowSide = THREE.DoubleSide;
 
@@ -118,27 +167,42 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
         this.setRenderObject(mesh);
     }
 
-    drive() {
-        super.drive();
+    onDriverSet() {
+        if (this.isMyAvatar) {
+            console.log("Avatar: " + this.actor.name);
+            this.fore = this.back = this.left = this.right = 0;
 
-        this.subscribe("input", "keyDown", this.keyDown);
-        this.subscribe("input", "keyUp", this.keyUp);
+            this.subscribe("input", "keyDown", this.keyDown);
+            this.subscribe("input", "keyUp", this.keyUp);
 
-        this.subscribe("input", "pointerDown", this.doPointerDown);
-        this.subscribe("input", "pointerUp", this.doPointerUp);
-        this.subscribe("input", "pointerDelta", this.doPointerDelta);
+            this.subscribe("input", "pointerDown", this.doPointerDown);
+            this.subscribe("input", "pointerUp", this.doPointerUp);
+            this.subscribe("input", "pointerDelta", this.doPointerDelta);
+        } else {
+            // this.fore = this.back = this.left = this.right = 0;
+
+            // this.unsubscribe("input", "keyDown", this.keyDown);
+            // this.unsubscribe("input", "keyUp", this.keyUp);
+
+            // this.unsubscribe("input", "pointerDown", this.doPointerDown);
+            // this.unsubscribe("input", "pointerUp", this.doPointerUp);
+            // this.unsubscribe("input", "pointerDelta", this.doPointerDelta);
+        }
     }
 
-    park() {
-        super.park();
-        this.fore = this.back = this.left = this.right = 0;
 
-        this.unsubscribe("input", "keyDown", this.keyDown);
-        this.unsubscribe("input", "keyUp", this.keyUp);
 
-        this.unsubscribe("input", "pointerDown", this.doPointerDown);
-        this.unsubscribe("input", "pointerUp", this.doPointerUp);
-        this.unsubscribe("input", "pointerDelta", this.doPointerDelta);
+    possess() {
+        console.log("possess!");
+        const rc = this.service("ThreeRaycast");
+        const hits = rc.cameraRaycast(this.xy, "avatar");
+        if (hits.length<1) return;
+        const hit = hits[0];
+        const target = hit.pawn;
+        if (!target) return;
+        this.set({driver: null})
+        target.set({driver: this.viewId});
+        target.future(0).refreshCameraTransform();
     }
 
     keyDown(e) {
@@ -191,6 +255,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
         if (e.button === 2) this.service("InputManager").exitPointerLock();
     }
 
+    doPointerMove(e) {
+        this.xy = e.xy;
+    }
+
     doPointerDelta(e) {
         if (this.service("InputManager").inPointerLock) {
             this.yawDelta += (-this.turnSpeed * e.xy[0]);
@@ -200,12 +268,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
             const pitchQ = q_axisAngle([1,0,0], this.pitch);
             const yawQ = q_axisAngle([0,1,0], this.yawDelta);
             this.cameraRotation = q_multiply(pitchQ, yawQ);
+            this.say("headPitch", this.pitch, 200 );
         };
     }
 
     update(time, delta) {
         super.update(time,delta);
-        if (this.driving) {
+        if (this.isMyAvatar) {
             this.yaw += this.yawDelta;
             this.yawDelta = 0;
             const yawQ = q_axisAngle([0,1,0], this.yaw);
@@ -216,6 +285,31 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
         }
     }
 }
+AvatarPawn.register("AvatarPawn");
+
+//------------------------------------------------------------------------------------------
+// --HeadPawn --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class HeadPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
+
+    constructor(actor) {
+        super(actor);
+        const um = this.modelService("UserManager");
+        const user = um.user(this.actor.parent.driver);
+
+        if(user) {
+            const um = this.modelService("UserManager");
+            const user = um.user(this.actor.parent.driver);
+            this.useInstance("box" + user.index);
+        } else {
+            this.useInstance("box20");
+        }
+    }
+
+
+}
+HeadPawn.register("HeadPawn");
 
 //------------------------------------------------------------------------------------------
 //-- GodView -------------------------------------------------------------------------------
@@ -240,7 +334,7 @@ class GodView extends ViewService {
     }
 
     onAvatar(driving) {
-        console.log ("Avatar!");
+        // console.log ("Avatar!");
         this.paused = driving;
         if(!driving) this.updateCamera();
     }
@@ -302,7 +396,7 @@ class GodView extends ViewService {
 export class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, GodView, WidgetManager2, ThreeInstanceManager];
+        return [InputManager, ThreeRenderManager, WidgetManager2, ThreeInstanceManager, ThreeRaycast];
     }
 
     onStart() {
@@ -349,12 +443,31 @@ export class MyViewRoot extends ViewRoot {
         const  material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
         material.side = THREE.FrontSide;
         material.shadowSide = THREE.BackSide;
-        im.addMaterial("default", material);
+        im.addMaterial("yellow", material);
+
+        const  vc = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
+        vc.side = THREE.DoubleSide;
+        vc.shadowSide = THREE.DoubleSide;
+        vc.castShadow = true;
+        vc.vertexColors = true;
+
+        im.addMaterial("vertexColors", vc);
 
         const geometry = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("cube", geometry);
 
-        im.addMesh("cube", "cube", "default");
+        for (let n = 0; n<21; n++) {
+            const color = Colors[n];
+            const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+            setGeometryColor(geometry, color);
+            im.addGeometry("box" + n, geometry);
+            const mesh = im.addMesh("box" + n, "box"+ n, "vertexColors");
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+        }
+
+        const mmm = im.addMesh("cube", "cube", "yellow");
+        mmm.castShadow = true;
     }
 
 }

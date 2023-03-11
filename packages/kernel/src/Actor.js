@@ -35,6 +35,9 @@ ActorManager.register("ActorManager");
 //------------------------------------------------------------------------------------------
 
 export class Actor extends WorldcoreModel {
+
+    static okayToIgnore() {return ["$local", "$global"]; }
+
     get pawn() {return this._pawn;}
     get doomed() {return this._doomed} // About to be destroyed. This is used to prevent creating new future messages.
     get parent() { return this._parent; }

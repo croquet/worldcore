@@ -16,6 +16,7 @@ export class InstancedMesh {
         for (let n = count-1; n>= 0; n--) {
             this.free.push(n);
         }
+        this.limbo = [0,0,0]
     }
 
     use(pawn) {

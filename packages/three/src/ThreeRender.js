@@ -3,8 +3,11 @@ import { m4_multiply, m4_scaleRotationTranslation, m4_translation, q_axisAngle, 
 import * as THREE from "three";
 export { THREE };
 
-// import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-// import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
+
+export {OutlinePass} ;
 
 
 //------------------------------------------------------------------------------------------
@@ -20,7 +23,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
     destroy() {
         super.destroy();
         const rm = this.service("ThreeRenderManager");
-        if (rm && rm.scene && this.renderObject) {
+        if (rm && rm.scene && this.renderObject && !this.renderObject.instance) {
             rm.scene.remove(this.renderObject);
         }
     }
@@ -56,21 +59,33 @@ export const PM_ThreeCamera = superclass => class extends superclass {
         this.cameraTranslation = [0,0,0]; // position of the camera relative to the pawn
         this.cameraRotation = q_identity();
 
-        if (this.isMyAvatarPawn) {
-            this.refreshCameraTransform();
-            this.listen("viewGlobalChanged", this.refreshCameraTransform);
-        }
+        // this.refreshCameraTransform();
+        this.listen("viewGlobalChanged", this.refreshCameraTransform);
+
+        // if (this.isMyAvatarPawn) {
+        //     this.refreshCameraTransform();
+        //     this.listen("viewGlobalChanged", this.refreshCameraTransform);
+        // }
     }
 
     refreshCameraTransform() {
-        if (this.driving) {
-            const rm = this.service("ThreeRenderManager");
-            const ttt = m4_translation(this.cameraTranslation);
-            const rrr = m4_rotationQ(this.cameraRotation)
-            const mmm = m4_multiply(rrr, ttt);
-            rm.camera.matrix.fromArray(m4_multiply(mmm, this.global));
-            rm.camera.matrixWorldNeedsUpdate = true;
-        }
+        if (!this.isMyAvatar) return;
+
+        const rm = this.service("ThreeRenderManager");
+        const ttt = m4_translation(this.cameraTranslation);
+        const rrr = m4_rotationQ(this.cameraRotation)
+        const mmm = m4_multiply(rrr, ttt);
+        rm.camera.matrix.fromArray(m4_multiply(mmm, this.global));
+        rm.camera.matrixWorldNeedsUpdate = true;
+
+        // if (this.isMyAvatarPawn) {
+        //     const rm = this.service("ThreeRenderManager");
+        //     const ttt = m4_translation(this.cameraTranslation);
+        //     const rrr = m4_rotationQ(this.cameraRotation)
+        //     const mmm = m4_multiply(rrr, ttt);
+        //     rm.camera.matrix.fromArray(m4_multiply(mmm, this.global));
+        //     rm.camera.matrixWorldNeedsUpdate = true;
+        // }
     }
 
 };
@@ -95,6 +110,11 @@ export class ThreeRenderManager extends ViewService {
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
         this.camera.matrixAutoUpdate = false;
 
+        this.composer = new EffectComposer( this.renderer );
+
+        this.renderPass = new RenderPass( this.scene, this.camera );
+        this.composer.addPass( this.renderPass );
+
         this.resize();
         this.subscribe("input", "resize", () => this.resize());
     }
@@ -112,7 +132,8 @@ export class ThreeRenderManager extends ViewService {
     }
 
     update() {
-        this.renderer.render(this.scene, this.camera);
+        this.composer.render();
+        // this.renderer.render(this.scene, this.camera);
     }
 
 }

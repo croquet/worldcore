@@ -57,7 +57,7 @@ UserManager.register("UserManager");
 
 export const AM_Avatar = superclass => class extends superclass {
 
-    get driver() { return this._driver} // The user that is controlling this avatar.
+    get driver() { return this._driver} // The who that is controlling this avatar.
 
 };
 RegisterMixin(AM_Avatar);
@@ -74,29 +74,41 @@ export const PM_Avatar = superclass => class extends superclass {
         this.listenOnce("driverSet", this.onDriverSet);
     }
 
-    get isMyAvatarPawn() {
-        if (this.actor && this.actor.driver) return this.actor.driver.userId === this.viewId;
-        return false;
+    get isMyAvatar() {
+        // if (this.actor && this.actor.driver) return this.actor.driver.userId === this.viewId;
+        return this.actor.driver === this.viewId;
+        // return false;
     }
 
     onDriverSet() {
-        this.park()
-        if (this.isMyAvatarPawn) this.drive()
+        if (this.isMyAvatarPawn) {
+            // this.driving = true;
+            //sub
+        } else {
+            // this.driving = false;
+            // unsub
+        }
     }
 
-    drive() { // Subscribe to controls
-        this.driving = true;
-        this.publish(this.viewId, "avatar", true)
-    }
-    
-    park() { // Unsubscribes from  controls
-        this.driving = false;
-        this.publish(this.viewId, "avatar", false) 
-    }
+    // onDriverSet() {
+    //     if (this.driving) this.park();
+    //     if (this.isMyAvatarPawn) this.drive();
+    // }
+
+    // drive() { // Subscribe to controls
+    //     this.driving = true;
+    //     // this.publish(this.viewId, "avatar", true)
+    // }
+
+    // park() { // Unsubscribes from  controls
+    //     this.driving = false;
+    //     // this.publish(this.viewId, "avatar", false)
+    // }
 
     update(time, delta) {
         super.update(time,delta);
-        if (this.driving) this.say("viewGlobalChanged"); // If you're driving update the renderer every frame
+        // if (this.driving) this.say("viewGlobalChanged"); // If you're driving update the renderer every frame
+        if (this.isMyAvatar) this.say("viewGlobalChanged"); // If you're driving update the renderer every frame
     }
 
 };
