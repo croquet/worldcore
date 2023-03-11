@@ -362,7 +362,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
 
-        if(!this.isMyAvatar) {
+        if(!this.driving) {
             if (v3_equals(this._scale, this.actor.scale, .0001)) {
                 this._scale = this.actor.scale;
             } else {

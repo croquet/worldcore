@@ -168,7 +168,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
     }
 
     onDriverSet() {
-        if (this.isMyAvatar) {
+        this.driving = this.isMyAvatar;
+        if (this.driving) {
             console.log("Avatar: " + this.actor.name);
             this.fore = this.back = this.left = this.right = 0;
 
