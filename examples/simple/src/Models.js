@@ -109,13 +109,13 @@ export class MyModelRoot extends ModelRoot {
 
     a1(viewId) {
         console.log(viewId + " drive avatar1");
-        this.avatar1.set({driver: viewId});
+        this.avatar1.set({driver: viewId}); // This order matters!
         this.avatar2.set({driver: null});
     }
 
     a2(viewId) {
         console.log(viewId + " drive avatar2");
-        this.avatar1.set({driver: null});
+        this.avatar1.set({driver: null}); // This order matters!
         this.avatar2.set({driver: viewId});
     }
 }

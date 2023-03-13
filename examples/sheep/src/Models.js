@@ -1,6 +1,6 @@
 import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial } from "@croquet/worldcore";
 
-import { TestPawn, BasePawn, AvatarPawn, OtherPawn } from "./Views";
+import { TestPawn, BasePawn } from "./Views";
 
 
 //------------------------------------------------------------------------------------------
@@ -46,32 +46,32 @@ AvatarActor.register('AvatarActor');
 //-- MyUser --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class MyUser extends User {
+// class MyUser extends User {
 
-    init(options) {
-        super.init(options);
-        this.avatar = AvatarActor.create({name: "Avatar", driver: this, translation: [0,0,20]});
+//     init(options) {
+//         super.init(options);
+//         // this.avatar = AvatarActor.create({name: "Avatar", driver: this, translation: [0,0,20]});
 
-        // const halo = TestActor.create({parent: this.avatar, translation: [0,1.5,0]})
-        // halo.behavior.start({name: "SpinBehavior", axis:[1,0,0], speed:3});
-    }
+//         // const halo = TestActor.create({parent: this.avatar, translation: [0,1.5,0]})
+//         // halo.behavior.start({name: "SpinBehavior", axis:[1,0,0], speed:3});
+//     }
 
-    destroy() {
-        super.destroy();
-        if (this.avatar) this.avatar.destroy();
-    }
-}
-MyUser.register("MyUser");
+//     destroy() {
+//         super.destroy();
+//         if (this.avatar) this.avatar.destroy();
+//     }
+// }
+// MyUser.register("MyUser");
 
 //------------------------------------------------------------------------------------------
 //-- MyUserManager -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class MyUserManager extends UserManager {
-    get defaultUser() {return MyUser;}
+// class MyUserManager extends UserManager {
+//     get defaultUser() {return MyUser;}
 
-}
-MyUserManager.register("MyUserManager");
+// }
+// MyUserManager.register("MyUserManager");
 
 //------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
@@ -80,7 +80,7 @@ MyUserManager.register("MyUserManager");
 export class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [MyUserManager];
+        return [];
     }
 
     init(...args) {

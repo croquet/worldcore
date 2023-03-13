@@ -42,16 +42,16 @@ TestPawn.register("TestPawn");
 // OtherPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class OtherPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced, PM_ThreeCollider) {
+// export class OtherPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced, PM_ThreeCollider) {
 
-    constructor(actor) {
-        super(actor);
-        this.useInstance("cube");
-        this.addRenderObjectToRaycast();
-    }
+//     constructor(actor) {
+//         super(actor);
+//         this.useInstance("cube");
+//         this.addRenderObjectToRaycast();
+//     }
 
-}
-OtherPawn.register("OtherPawn");
+// }
+// OtherPawn.register("OtherPawn");
 
 //------------------------------------------------------------------------------------------
 //-- BasePawn -------------------------------------------------------------------------
@@ -85,161 +85,161 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 // AvatarPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeVisible, PM_ThreeCamera) {
+// export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeVisible, PM_ThreeCamera) {
 
-    constructor(actor) {
-        super(actor);
-        this.buildMesh();
+//     constructor(actor) {
+//         super(actor);
+//         this.buildMesh();
 
-        this.fore = this.back = this.left = this.right = 0;
-        this.pitch = this.yaw = this.yawDelta = 0;
-        this.speed = 5;
-        this.turnSpeed = 0.002;
+//         this.fore = this.back = this.left = this.right = 0;
+//         this.pitch = this.yaw = this.yawDelta = 0;
+//         this.speed = 5;
+//         this.turnSpeed = 0.002;
 
-        this.cameraTranslation = [0,5,7];
-        const pitchQ = q_axisAngle([1,0,0], this.pitch);
-        const yawQ = q_axisAngle([0,1,0], this.yawDelta);
-        this.cameraRotation = q_multiply(pitchQ, yawQ);
+//         this.cameraTranslation = [0,5,7];
+//         const pitchQ = q_axisAngle([1,0,0], this.pitch);
+//         const yawQ = q_axisAngle([0,1,0], this.yawDelta);
+//         this.cameraRotation = q_multiply(pitchQ, yawQ);
 
-        this.subscribe("input", "zDown", this.toggleDrive)
+//         this.subscribe("input", "zDown", this.toggleDrive)
 
-    }
+//     }
 
-    toggleDrive() {
-        console.log(this.driving);
-        if (this.isMyAvatarPawn) {
-            if (this.driving) {
-                this.park()
-            } else {
-                this.drive()
-            }
-        }
-    }
+//     toggleDrive() {
+//         console.log(this.driving);
+//         if (this.isMyAvatarPawn) {
+//             if (this.driving) {
+//                 this.park()
+//             } else {
+//                 this.drive()
+//             }
+//         }
+//     }
 
-    destroy() {
-        super.destroy()
-        this.geometry.dispose();
-        this.material.dispose();
-    }
+//     destroy() {
+//         super.destroy()
+//         this.geometry.dispose();
+//         this.material.dispose();
+//     }
 
-    buildMesh() {
-        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        this.geometry.translate(0,0.5,0);
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
-        this.material.side = THREE.DoubleSide;
-        this.material.shadowSide = THREE.DoubleSide;
+//     buildMesh() {
+//         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
+//         this.geometry.translate(0,0.5,0);
+//         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
+//         this.material.side = THREE.DoubleSide;
+//         this.material.shadowSide = THREE.DoubleSide;
 
-        const mesh = new THREE.Mesh( this.geometry, this.material );
+//         const mesh = new THREE.Mesh( this.geometry, this.material );
 
-        mesh.receiveShadow = true;
-        mesh.castShadow = true;
+//         mesh.receiveShadow = true;
+//         mesh.castShadow = true;
 
-        this.setRenderObject(mesh);
-        // this.addRenderObjectToRaycast();
-    }
+//         this.setRenderObject(mesh);
+//         // this.addRenderObjectToRaycast();
+//     }
 
-    drive() {
-        super.drive();
+//     drive() {
+//         super.drive();
 
-        this.subscribe("input", "keyDown", this.keyDown);
-        this.subscribe("input", "keyUp", this.keyUp);
+//         this.subscribe("input", "keyDown", this.keyDown);
+//         this.subscribe("input", "keyUp", this.keyUp);
 
-        this.subscribe("input", "pointerDown", this.doPointerDown);
-        this.subscribe("input", "pointerUp", this.doPointerUp);
-        this.subscribe("input", "pointerDelta", this.doPointerDelta);
-    }
+//         this.subscribe("input", "pointerDown", this.doPointerDown);
+//         this.subscribe("input", "pointerUp", this.doPointerUp);
+//         this.subscribe("input", "pointerDelta", this.doPointerDelta);
+//     }
 
-    park() {
-        super.park();
-        this.fore = this.back = this.left = this.right = 0;
+//     park() {
+//         super.park();
+//         this.fore = this.back = this.left = this.right = 0;
 
-        this.service("GodView").updateCamera();
+//         this.service("GodView").updateCamera();
 
-        this.unsubscribe("input", "keyDown", this.keyDown);
-        this.unsubscribe("input", "keyUp", this.keyUp);
+//         this.unsubscribe("input", "keyDown", this.keyDown);
+//         this.unsubscribe("input", "keyUp", this.keyUp);
 
-        this.unsubscribe("input", "pointerDown", this.doPointerDown);
-        this.unsubscribe("input", "pointerUp", this.doPointerUp);
-        this.unsubscribe("input", "pointerDelta", this.doPointerDelta);
-    }
+//         this.unsubscribe("input", "pointerDown", this.doPointerDown);
+//         this.unsubscribe("input", "pointerUp", this.doPointerUp);
+//         this.unsubscribe("input", "pointerDelta", this.doPointerDelta);
+//     }
 
-    keyDown(e) {
-        if (this.focused) return;
-        switch(e.key) {
-            case "ArrowUp":
-            case "w":
-            case "W":
-                this.fore = -1; break;
-            case "ArrowDown":
-            case "s":
-            case "S":
-                this.back = 1; break;
-            case "ArrowLeft":
-            case "a":
-            case "A":
-                this.left = -1; break;
-            case "ArrowRight":
-            case "d":
-            case "D" :
-                this.right = 1; break;
-            default:
-        }
-    }
+//     keyDown(e) {
+//         if (this.focused) return;
+//         switch(e.key) {
+//             case "ArrowUp":
+//             case "w":
+//             case "W":
+//                 this.fore = -1; break;
+//             case "ArrowDown":
+//             case "s":
+//             case "S":
+//                 this.back = 1; break;
+//             case "ArrowLeft":
+//             case "a":
+//             case "A":
+//                 this.left = -1; break;
+//             case "ArrowRight":
+//             case "d":
+//             case "D" :
+//                 this.right = 1; break;
+//             default:
+//         }
+//     }
 
-    keyUp(e) {
-        if (this.focused) return;
-        switch(e.key) {
-            case "ArrowUp":
-            case "w":
-                this.fore = 0; break;
-            case "ArrowDown":
-            case "s":
-                this.back = 0; break;
-            case "ArrowLeft":
-            case "a":
-                this.left = 0; break;
-            case "ArrowRight":
-            case "d":
-                this.right = 0; break;
-            default:
-        }
-    }
-
-
-    doPointerDown(e) {
-        if (e.button === 2) this.service("InputManager").enterPointerLock();;
-    }
-
-    doPointerUp(e) {
-        if (e.button === 2) this.service("InputManager").exitPointerLock();
-    }
-
-    doPointerDelta(e) {
-        if (this.service("InputManager").inPointerLock) {
-            this.yawDelta += (-this.turnSpeed * e.xy[0]);
-            this.pitch += (-this.turnSpeed * e.xy[1]);
-            this.pitch = Math.max(-Math.PI/2, this.pitch);
-            this.pitch = Math.min(Math.PI/2, this.pitch);
-            const pitchQ = q_axisAngle([1,0,0], this.pitch);
-            const yawQ = q_axisAngle([0,1,0], this.yawDelta);
-            this.cameraRotation = q_multiply(pitchQ, yawQ);
-        };
-    }
+//     keyUp(e) {
+//         if (this.focused) return;
+//         switch(e.key) {
+//             case "ArrowUp":
+//             case "w":
+//                 this.fore = 0; break;
+//             case "ArrowDown":
+//             case "s":
+//                 this.back = 0; break;
+//             case "ArrowLeft":
+//             case "a":
+//                 this.left = 0; break;
+//             case "ArrowRight":
+//             case "d":
+//                 this.right = 0; break;
+//             default:
+//         }
+//     }
 
 
-    update(time, delta) {
-        super.update(time,delta);
-        if (this.driving) {
-            this.yaw += this.yawDelta;
-            this.yawDelta = 0;
-            const yawQ = q_axisAngle([0,1,0], this.yaw);
-            const v = v3_scale([(this.left + this.right), 0, (this.fore + this.back)], this.speed * delta/1000)
-            const vv = v3_rotate(v, yawQ);
-            const t = v3_add(this.translation, vv);
-            this.positionTo(t,yawQ);
-        }
-    }
-}
+//     doPointerDown(e) {
+//         if (e.button === 2) this.service("InputManager").enterPointerLock();;
+//     }
+
+//     doPointerUp(e) {
+//         if (e.button === 2) this.service("InputManager").exitPointerLock();
+//     }
+
+//     doPointerDelta(e) {
+//         if (this.service("InputManager").inPointerLock) {
+//             this.yawDelta += (-this.turnSpeed * e.xy[0]);
+//             this.pitch += (-this.turnSpeed * e.xy[1]);
+//             this.pitch = Math.max(-Math.PI/2, this.pitch);
+//             this.pitch = Math.min(Math.PI/2, this.pitch);
+//             const pitchQ = q_axisAngle([1,0,0], this.pitch);
+//             const yawQ = q_axisAngle([0,1,0], this.yawDelta);
+//             this.cameraRotation = q_multiply(pitchQ, yawQ);
+//         };
+//     }
+
+
+//     update(time, delta) {
+//         super.update(time,delta);
+//         if (this.driving) {
+//             this.yaw += this.yawDelta;
+//             this.yawDelta = 0;
+//             const yawQ = q_axisAngle([0,1,0], this.yaw);
+//             const v = v3_scale([(this.left + this.right), 0, (this.fore + this.back)], this.speed * delta/1000)
+//             const vv = v3_rotate(v, yawQ);
+//             const t = v3_add(this.translation, vv);
+//             this.positionTo(t,yawQ);
+//         }
+//     }
+// }
 
 //------------------------------------------------------------------------------------------
 //-- GodView -------------------------------------------------------------------------------
@@ -261,28 +261,28 @@ class GodView extends ViewService {
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", "pointerMove", this.doPointerMove);
-        this.subscribe(this.viewId, "avatar", this.onAvatar)
-        this.subscribe("input", "mDown", this.ttt);
+        // this.subscribe(this.viewId, "avatar", this.onAvatar)
+        // this.subscribe("input", "mDown", this.ttt);
     }
 
     doPointerMove(e) {
         this.xy = e.xy;
     }
 
-    ttt() {
-        console.log("test");
-        const rc = this.service("ThreeRaycast");
-        const hits = rc.cameraRaycast(this.xy);
-        if (hits.length<1) return;
-        const hit = hits[0];
-        const pawn = hit.pawn;
-        console.log(pawn);
-    }
+    // ttt() {
+    //     console.log("test");
+    //     const rc = this.service("ThreeRaycast");
+    //     const hits = rc.cameraRaycast(this.xy);
+    //     if (hits.length<1) return;
+    //     const hit = hits[0];
+    //     const pawn = hit.pawn;
+    //     console.log(pawn);
+    // }
 
-    onAvatar(driving) {
-        this.paused = driving;
-        if(!driving) this.updateCamera();
-    }
+    // onAvatar(driving) {
+    //     this.paused = driving;
+    //     if(!driving) this.updateCamera();
+    // }
 
 
     updateCamera() {
@@ -399,10 +399,10 @@ export class MyViewRoot extends ViewRoot {
         mmm.castShadow = true;
     }
 
-    ttt() {
-        console.log("test");
-        const rc = this.service("ThreeRaycast");
-        console.log(rc.layers);
-    }
+    // ttt() {
+    //     console.log("test");
+    //     const rc = this.service("ThreeRaycast");
+    //     console.log(rc.layers);
+    // }
 
 }
