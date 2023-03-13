@@ -103,11 +103,6 @@ export const PM_Avatar = superclass => class extends superclass {
     //     // this.publish(this.viewId, "avatar", false)
     // }
 
-    // update(time, delta) {
-    //     super.update(time,delta);
-    //     // if (this.driving) this.say("viewGlobalChanged"); // If you're driving update the renderer every frame
-    //     if (this.isMyAvatar) this.say("viewGlobalChanged"); // If you're driving update the renderer every frame
-    // }
 
 };
 

@@ -29,6 +29,7 @@ BaseActor.register('BaseActor');
 class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
 
     get pawn() {return  "AvatarPawn"}
+    get color() {return  this._color || [0,0,0]}
 
     init(options) {
         super.init(options);
@@ -52,7 +53,7 @@ class MyUser extends User {
     init(options) {
         super.init(options);
         this.index = Math.floor(Math.random()*20);
-        // this.avatar = AvatarActor.create({name: "Avatar", driver: this.userId, translation: [0,0.5,20]});
+        this.avatar = AvatarActor.create({name: "Red", driver: this.userId, translation: [0,0.5,20], color: [1,0,0]});
     }
 
     destroy() {
@@ -88,35 +89,21 @@ export class MyModelRoot extends ModelRoot {
 
         this.base = BaseActor.create({});
 
-        this.test0 = TestActor.create({translation:[0,5,0]});
-        this.test1 = TestActor.create({parent: this.test0, translation:[5,0,0]});
+        // this.test0 = TestActor.create({translation:[0,5,0]});
+        // this.test1 = TestActor.create({parent: this.test0, translation:[5,0,0]});
 
-        this.test0.behavior.start({name: "SpinBehavior", axis:[0,1,0], speed: 2});
-        this.test1.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5})
+        // this.test0.behavior.start({name: "SpinBehavior", axis:[0,1,0], speed: 2});
+        // this.test1.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5})
 
         this.test00 = TestActor.create({translation:[-5,0.5,0]});
         this.test01 = TestActor.create({translation:[5,0.5,0]});
         this.test10 = TestActor.create({translation:[0,0.5,-5]});
         this.test11 = TestActor.create({translation:[0,0.5,5]});
 
-        this.avatar1 = AvatarActor.create({name: "Avatar 1", translation: [-10, 0.5, -10]})
-        this.avatar2 = AvatarActor.create({name: "Avatar 2", translation: [10, 0.5, -10]})
-
-        this.subscribe("hud", "a1", this.a1 )
-        this.subscribe("hud", "a2", this.a2 )
+        this.avatar1 = AvatarActor.create({name: "Blue", translation: [-10, 0.5, -10], color: [0,0,1]})
+        this.avatar2 = AvatarActor.create({name: "Green", translation: [10, 0.5, -10], color: [0,1,0]})
 
     }
 
-    a1(viewId) {
-        console.log(viewId + " drive avatar1");
-        this.avatar1.set({driver: viewId}); // This order matters!
-        this.avatar2.set({driver: null});
-    }
-
-    a2(viewId) {
-        console.log(viewId + " drive avatar2");
-        this.avatar1.set({driver: null}); // This order matters!
-        this.avatar2.set({driver: viewId});
-    }
 }
 MyModelRoot.register("MyModelRoot");

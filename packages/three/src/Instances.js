@@ -54,7 +54,7 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
 
     destroy() {
         super.destroy();
-        if (this.instance) this.instance.release(this.meshIndex);
+        if (this.instance) this.releaseInstance();
     }
 
     useInstance(name) {
@@ -63,6 +63,11 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
         this.renderObject = this.instance.mesh;
         this.meshIndex = this.instance.use(this);
         this.updateMatrix()
+    }
+
+    releaseInstance() {
+        if (this.instance) this.instance.release(this.meshIndex);
+        this.meshIndex = undefined;
     }
 
     updateMatrix() {

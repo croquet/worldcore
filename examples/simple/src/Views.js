@@ -111,7 +111,7 @@ BasePawn.register("BasePawn");
 // AvatarPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeVisible, PM_ThreeCollider) {
+export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeVisible,PM_ThreeCamera, PM_ThreeCollider) {
 
     constructor(actor) {
         super(actor);
@@ -128,20 +128,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
         const yawQ = q_axisAngle([0,1,0], this.yawDelta);
         this.cameraRotation = q_multiply(pitchQ, yawQ);
 
-        // this.subscribe("input", "zDown", this.toggleDrive)
         this.subscribe("input", "pDown", this.possess)
         this.subscribe("input", "pointerMove", this.doPointerMove);
     }
 
-    // toggleDrive() {
-    //     if (this.isMyAvatarPawn) {
-    //         if (this.driving) {
-    //             this.park()
-    //         } else {
-    //             this.drive()
-    //         }
-    //     }
-    // }
 
     destroy() {
         super.destroy()
@@ -150,11 +140,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
     }
 
     buildMesh() {
-        // const color = Colors[this.actor.driver.index];
-        const color = [1,1,0];
-        // console.log(this.actor.driver.index + " "+ color);
+        const color = this.actor.color;
         this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        // this.geometry.translate(0,0.5,0);
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...color)} );
         this.material.side = THREE.DoubleSide;
         this.material.shadowSide = THREE.DoubleSide;
@@ -169,42 +156,35 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
 
     onDriverSet() {
         if (this.isMyAvatar) {
-            this.driving = true;
-            this.subscribe("input", "iDown", this.doId);
-
-
-            // this.fore = this.back = this.left = this.right = 0;
-
-            // this.subscribe("input", "keyDown", this.keyDown);
-            // this.subscribe("input", "keyUp", this.keyUp);
-
-            // this.subscribe("input", "pointerDown", this.doPointerDown);
-            // this.subscribe("input", "pointerUp", this.doPointerUp);
-            // this.subscribe("input", "pointerDelta", this.doPointerDelta);
-
-
+            this.drive();
         } else {
-            this.driving = false;
-            this.unsubscribe("input", "iDown", this.doId);
-
-
-            // this.driving = false;
-            // this.fore = this.back = this.left = this.right = 0;
-
-            // this.unsubscribe("input", "keyDown", this.keyDown);
-            // this.unsubscribe("input", "keyUp", this.keyUp);
-
-            // this.unsubscribe("input", "pointerDown", this.doPointerDown);
-            // this.unsubscribe("input", "pointerUp", this.doPointerUp);
-            // this.unsubscribe("input", "pointerDelta", this.doPointerDelta);
+            this.park();
         }
+        if (this.head) this.head.rebuild();
     }
 
-    doId() {
-        console.log("Avatar: " + this.actor.name);
+    drive() {
+        this.driving = true;
+        this.fore = this.back = this.left = this.right = 0;
+
+        this.subscribe("input", "keyDown", this.keyDown);
+        this.subscribe("input", "keyUp", this.keyUp);
+
+        this.subscribe("input", "pointerDown", this.doPointerDown);
+        this.subscribe("input", "pointerUp", this.doPointerUp);
+        this.subscribe("input", "pointerDelta", this.doPointerDelta);
     }
 
+    park() {
+        this.driving = false;
+        this.fore = this.back = this.left = this.right = 0;
 
+        this.unsubscribe("input", "keyDown", this.keyDown);
+        this.unsubscribe("input", "keyUp", this.keyUp);
+        this.unsubscribe("input", "pointerDown", this.doPointerDown);
+        this.unsubscribe("input", "pointerUp", this.doPointerUp);
+        this.unsubscribe("input", "pointerDelta", this.doPointerDelta);
+    }
 
     possess() {
         console.log("possess!");
@@ -214,9 +194,9 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
         const hit = hits[0];
         const target = hit.pawn;
         if (!target) return;
+
         this.set({driver: null})
         target.set({driver: this.viewId});
-        target.future(0).refreshCameraTransform();
     }
 
     keyDown(e) {
@@ -286,18 +266,19 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_Avatar, PM_ThreeV
         };
     }
 
-    // update(time, delta) {
-    //     super.update(time,delta);
-    //     if (this.driving) {
-    //         this.yaw += this.yawDelta;
-    //         this.yawDelta = 0;
-    //         const yawQ = q_axisAngle([0,1,0], this.yaw);
-    //         const v = v3_scale([(this.left + this.right), 0, (this.fore + this.back)], this.speed * delta/1000)
-    //         const vv = v3_rotate(v, yawQ);
-    //         const t = v3_add(this.translation, vv);
-    //         this.positionTo(t,yawQ);
-    //     }
-    // }
+    update(time, delta) {
+        super.update(time,delta);
+        if (this.driving) {
+            this.yaw += this.yawDelta;
+            this.yawDelta = 0;
+            const yawQ = q_axisAngle([0,1,0], this.yaw);
+            const v = v3_scale([(this.left + this.right), 0, (this.fore + this.back)], this.speed * delta/1000)
+            const vv = v3_rotate(v, yawQ);
+            const t = v3_add(this.translation, vv);
+            this.positionTo(t,yawQ);
+            this.say("viewGlobalChanged");
+        }
+    }
 }
 AvatarPawn.register("AvatarPawn");
 
@@ -309,14 +290,16 @@ export class HeadPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
+        this.parent.head = this;
+        this.rebuild();
+    }
+
+    rebuild() {
         const um = this.modelService("UserManager");
-        // const user = um.user(this.actor.parent.driver);
+        const user = um.user(this.actor.parent.driver);
 
-        const user = false;
-
+        this.releaseInstance();
         if(user) {
-            const um = this.modelService("UserManager");
-            const user = um.user(this.actor.parent.driver);
             this.useInstance("box" + user.index);
         } else {
             this.useInstance("box20");
@@ -413,26 +396,13 @@ class GodView extends ViewService {
 export class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, GodView, WidgetManager2, ThreeInstanceManager, ThreeRaycast];
+        return [InputManager, ThreeRenderManager, WidgetManager2, ThreeInstanceManager, ThreeRaycast];
     }
 
     onStart() {
         this.buildInstances()
         this.buildLights();
         this.buildHUD();
-
-        this.subscribe("input", "1Down", this.avatar1);
-        this.subscribe("input", "2Down", this.avatar2);
-    }
-
-    avatar1() {
-        console.log("avatar 1");
-        this.publish("hud", "a1", this.viewId)
-    }
-
-    avatar2() {
-        console.log("avatar 2");
-        this.publish("hud", "a2", this.viewId);
     }
 
     buildLights() {
