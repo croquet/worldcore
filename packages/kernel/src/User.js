@@ -75,20 +75,18 @@ export const PM_Avatar = superclass => class extends superclass {
     }
 
     get isMyAvatar() {
-        // if (this.actor && this.actor.driver) return this.actor.driver.userId === this.viewId;
         return this.actor.driver === this.viewId;
-        // return false;
     }
 
-    onDriverSet() {
-        if (this.isMyAvatarPawn) {
-            // this.driving = true;
-            //sub
-        } else {
-            // this.driving = false;
-            // unsub
-        }
-    }
+    // onDriverSet() {
+    //     if (this.isMyAvatarPawn) {
+    //         // this.driving = true;
+    //         //sub
+    //     } else {
+    //         // this.driving = false;
+    //         // unsub
+    //     }
+    // }
 
     // onDriverSet() {
     //     if (this.driving) this.park();
@@ -105,11 +103,11 @@ export const PM_Avatar = superclass => class extends superclass {
     //     // this.publish(this.viewId, "avatar", false)
     // }
 
-    update(time, delta) {
-        super.update(time,delta);
-        // if (this.driving) this.say("viewGlobalChanged"); // If you're driving update the renderer every frame
-        if (this.isMyAvatar) this.say("viewGlobalChanged"); // If you're driving update the renderer every frame
-    }
+    // update(time, delta) {
+    //     super.update(time,delta);
+    //     // if (this.driving) this.say("viewGlobalChanged"); // If you're driving update the renderer every frame
+    //     if (this.isMyAvatar) this.say("viewGlobalChanged"); // If you're driving update the renderer every frame
+    // }
 
 };
 
