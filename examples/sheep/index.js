@@ -1,6 +1,7 @@
 // Sheep demo
 
 import * as BEHAVIORS from "./src/Behaviors";
+import * as VIEWS from "./src/Views";
 import { App, StartWorldcore} from "@croquet/worldcore";
 
 import {  MyViewRoot } from "./src/Views";

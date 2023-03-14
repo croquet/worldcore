@@ -308,8 +308,6 @@ export class PathDebug extends WorldcoreView {
         // this.draw();
     }
 
-
-
     draw() {
         console.log("Draw path debug");
         const paths = this.modelService("Paths");
