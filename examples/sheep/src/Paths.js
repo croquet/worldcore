@@ -1,14 +1,14 @@
 // import { ModelService, Constants, v3_normalize, WorldcoreView, THREE, v3_multiply, v3_add, PriorityQueue, v3_manhattan, v3_magnitude, v3_sub } from "@croquet/worldcore";
 // import { packKey, unpackKey, Voxels } from "./Voxels";
 
-import { ModelService, Constants, WorldcoreView, THREE, v3_add } from "@croquet/worldcore";
+import { ModelService, Constants, WorldcoreView, THREE, v3_add, v3_multiply, PriorityQueue } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- Constants -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-Constants.xSize = 8;
-Constants.zSize = 8;
+Constants.xSize = 32;
+Constants.zSize = 32;
 
 
 
@@ -46,7 +46,6 @@ export class Paths extends ModelService {
         super.init('Paths');
         this.nodes = new Map();
         this.clear();
-        console.log(this.nodes);
     }
 
 
@@ -62,7 +61,9 @@ export class Paths extends ModelService {
 
         this.addObstacle(0,0);
         this.addObstacle(7,5);
-        this.addObstacle(3,3);
+        // this.addObstacle(3,3);
+        this.addHorizontalFence(3,2,4)
+        this.addVerticalFence(3,2,4)
 
     }
 
@@ -91,7 +92,57 @@ export class Paths extends ModelService {
         if (northwest) northwest.exits[5] = 0;
     }
 
-    addHorizontalFence(x0,x1,z) {}
+    addHorizontalFence(z,x0,x1) {
+        const z0 = z-1;
+        const z1 = z;
+
+        for (let x=x0; x<=x1; x++) {
+
+            const south = this.nodes.get(packKey(x,1,z0))
+            const north = this.nodes.get(packKey(x,1,z1))
+
+            if (south) south.exits[3] = 0;
+            if (north) north.exits[1] = 0;
+
+            if (x>x0) {
+                if (south) south.exits[7] = 0;
+                if (north) north.exits[4] = 0;
+            }
+
+            if (x<x1) {
+                if (south) south.exits[6] = 0;
+                if (north) north.exits[5] = 0;
+            }
+
+        }
+
+    }
+
+    addVerticalFence(x,z0,z1) {
+        const x0 = x-1;
+        const x1 = x;
+
+        for (let z=z0; z<=z1; z++) {
+
+            const west = this.nodes.get(packKey(x0,1,z))
+            const east = this.nodes.get(packKey(x1,1,z))
+
+            if (west) west.exits[2] = 0;
+            if (east) east.exits[0] = 0;
+
+            if (z>z0) {
+                if (west) west.exits[5] = 0;
+                if (east) east.exits[4] = 0;
+            }
+
+            if (z<z1) {
+                if (west) west.exits[6] = 0;
+                if (east) east.exits[7] = 0;
+            }
+
+        }
+
+    }
 
     findPath(startKey, endKey) {
 
@@ -101,7 +152,7 @@ export class Paths extends ModelService {
         if (!this.nodes.has(endKey)) return path;    // Invalid end waypoint
         // if (startKey === endKey) return [startKey] // already at destination
 
-        const endXYZ = this.get(endKey).xyz;
+        const endXYZ = this.nodes.get(endKey).xyz;
 
         const frontier = new PriorityQueue((a, b) => a.priority < b.priority);
         const visited = new Map();
@@ -153,6 +204,7 @@ class Node {
         this.xyz = [x,y,z];
         this.key = packKey(x,y,z);
         this.exits = [0,0,0,0, 0,0,0,0];
+        this.effort = 1;
     }
 
     get west() { return this.exits[0]; }
@@ -184,6 +236,11 @@ class Node {
 
     }
 
+    weight(n) {
+        if (n>3) return 1.5 * this.effort;
+        return this.effort;
+    }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -202,6 +259,10 @@ export class PathDebug extends WorldcoreView {
         this.magentaMaterial = new THREE.LineBasicMaterial( { color: 0xff00ff } );
 
         this.draw();
+
+        const key0 = packKey(0,1,0);
+        const key1 = packKey(1,1,1);
+        this.drawPath([key0, key1])
     }
 
     draw() {
@@ -322,42 +383,6 @@ export class PathDebug extends WorldcoreView {
             line = new THREE.Line( geometry, material );
             this.group.add(line);
 
-
-
-
-
-
-
-            // if (node.northeast<3) {
-            //     let p0 = v3_add(node.xyz,[0.5,0.5,0]);
-            //     let p1 = v3_add(node.xyz,[0.75,0.75,0]);
-            //     p0 = v3_multiply(p0, [Constants.scaleX, Constants.scaleY, Constants.scaleZ]);
-            //     p1 = v3_multiply(p1, [Constants.scaleX, Constants.scaleY, Constants.scaleZ]);
-
-            //     const geometry = new THREE.BufferGeometry().setFromPoints([
-            //         new THREE.Vector3(...p0),
-            //         new THREE.Vector3(...p1)
-            //     ]);
-            //     const line = new THREE.Line( geometry, this.yellowMaterial );
-
-            //     this.group.add(line);
-            // }
-
-            // if (node.northwest<3) {
-            //     let p0 = v3_add(node.xyz,[0.5,0.5,0]);
-            //     let p1 = v3_add(node.xyz,[0.25,0.75,0]);
-            //     p0 = v3_multiply(p0, [Constants.scaleX, Constants.scaleY, Constants.scaleZ]);
-            //     p1 = v3_multiply(p1, [Constants.scaleX, Constants.scaleY, Constants.scaleZ]);
-
-            //     const geometry = new THREE.BufferGeometry().setFromPoints([
-            //         new THREE.Vector3(...p0),
-            //         new THREE.Vector3(...p1)
-            //     ]);
-            //     const line = new THREE.Line( geometry, this.yellowMaterial );
-
-            //     this.group.add(line);
-            // }
-
         })
 
         rm.scene.add(this.group);
@@ -372,13 +397,13 @@ export class PathDebug extends WorldcoreView {
 
         path.forEach(key=> {
             const xyz = unpackKey(key);
-            let p = v3_add(xyz,[0.5,0.5,1]);
-            p = v3_multiply(p, [Constants.scaleX, Constants.scaleY, Constants.scaleZ]);
+            let p = v3_add(xyz,[0.5,0,0.5]);
+            p = v3_multiply(p, [1, 0.15, 1]);
             points.push(new THREE.Vector3(...p));
         })
 
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        this.path = new THREE.Line( geometry, this.cyanMaterial );
+        this.path = new THREE.Line( geometry, this.magentaMaterial );
 
         render.scene.add(this.path);
     }

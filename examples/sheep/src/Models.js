@@ -35,16 +35,16 @@ export class MyModelRoot extends ModelRoot {
 
         this.base = BaseActor.create({});
 
-        this.test0 = TestActor.create({pawn: "TestPawn",translation:[0,5,0]});
-        this.test1 = TestActor.create({pawn: "TestPawn", parent: this.test0, translation:[5,0,0]});
+        this.test0 = TestActor.create({pawn: "TestPawn",translation:[7.5,0.5,5.5]});
+        // this.test1 = TestActor.create({pawn: "TestPawn", parent: this.test0, translation:[5,0,0]});
 
         // this.test0.behavior.start({name: "SpinBehavior", axis:[0,1,0], speed: 2});
         // this.test1.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5})
 
-        this.test00 = TestActor.create({pawn: "TestPawn",translation:[-5,0,0]});
-        this.test01 = TestActor.create({pawn: "TestPawn",translation:[5,0,0]});
-        this.test10 = TestActor.create({pawn: "TestPawn",translation:[0,0,-5]});
-        this.test11 = TestActor.create({pawn: "TestPawn",translation:[0,0,5]});
+        // this.test00 = TestActor.create({pawn: "TestPawn",translation:[-5,0,0]});
+        // this.test01 = TestActor.create({pawn: "TestPawn",translation:[5,0,0]});
+        // this.test10 = TestActor.create({pawn: "TestPawn",translation:[0,0,-5]});
+        // this.test11 = TestActor.create({pawn: "TestPawn",translation:[0,0,5]});
 
     }
 
