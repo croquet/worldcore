@@ -78,15 +78,8 @@ export const PM_Avatar = superclass => class extends superclass {
         return this.actor.driver === this.viewId;
     }
 
-    // onDriverSet() {
-    //     if (this.isMyAvatarPawn) {
-    //         // this.driving = true;
-    //         //sub
-    //     } else {
-    //         // this.driving = false;
-    //         // unsub
-    //     }
-    // }
+    onDriverSet() {
+    }
 
     // onDriverSet() {
     //     if (this.driving) this.park();

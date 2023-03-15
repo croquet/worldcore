@@ -2,6 +2,7 @@ import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, Thr
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, ThreeRaycast, PM_ThreeCollider,
     PM_ThreeInstanced, OutlinePass } from "@croquet/worldcore";
+import { PathDebug } from "./Paths";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
@@ -168,6 +169,7 @@ export class MyViewRoot extends ViewRoot {
         this.buildInstances()
         this.buildLights();
         this.buildHUD();
+        this.pathDebug = new PathDebug(this.model);
 
     }
 
