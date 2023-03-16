@@ -6,8 +6,10 @@ export { THREE };
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
+import { BloomPass } from 'three/examples/jsm/postprocessing/BloomPass.js';
 
-export {OutlinePass} ;
+export { OutlinePass } ;
+export { BloomPass } ;
 
 
 //------------------------------------------------------------------------------------------

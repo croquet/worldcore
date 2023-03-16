@@ -82,24 +82,19 @@ export class Paths extends ModelService {
             this.addVerticalFence(z,x0,x1)
         }
 
-        // const x = Math.floor(Math.random()*Constants.xSize)
-        // const z0 = Math.floor(Math.random()*Constants.zSize/2);
-        // const z1 = z0 + Math.floor(Math.random()*Constants.zSize/2);
-
-        // this.addHorizontalFence(x,z0,z1);
-
-        // const z = Math.floor(Math.random()*Constants.zSize)
-        // const x0 = Math.floor(Math.random()*Constants.xSize/2);
-        // const x1 = x0 + Math.floor(Math.random()*Constants.xSize/2);
-
-        // this.addVerticalFence(z,x0,x1)
 
 
-        // this.addObstacle(10,0);
-        // this.addObstacle(7,5);
-        // // this.addObstacle(3,3);
-        //
-        // this.addVerticalFence(3,2,4)
+
+        // this.addObstacle(5,5);
+        // this.addVerticalFence(6,3,7);
+        // this.addHorizontalFence(6,3,7);
+
+        // this.removeObstacle(5,5);
+
+        // // this.addObstacle(7,5);
+        // // // this.addObstacle(3,3);
+        // //
+        // // this.addVerticalFence(3,2,4)
 
         this.publish("paths", "new");
 
@@ -128,6 +123,76 @@ export class Paths extends ModelService {
         if (southeast) southeast.exits[7] = 0;
         if (northeast) northeast.exits[4] = 0;
         if (northwest) northwest.exits[5] = 0;
+    }
+
+    removeObstacle(x,z) { // Removing obstacles adjacent to fences may cause issues.
+        const key = packKey(x,1,z);
+        if (this.nodes.has(key)) return;
+
+        const node = new Node(x,1,z)
+        this.nodes.set(node.key, node);
+
+        const wKey = packKey(...adjacent(x,1,z,[-1,0,0]));
+        const sKey = packKey(...adjacent(x,1,z,[0,0,-1]));
+        const eKey = packKey(...adjacent(x,1,z,[1,0,0]));
+        const nKey = packKey(...adjacent(x,1,z,[0,0,1]));
+
+        const swKey = packKey(...adjacent(x,1,z,[-1,0,-1]));
+        const seKey = packKey(...adjacent(x,1,z,[1,0,-1]));
+        const neKey = packKey(...adjacent(x,1,z,[1,0,1]));
+        const nwKey = packKey(...adjacent(x,1,z,[-1,0,1]));
+
+        const west = this.nodes.get(wKey);
+        const south = this.nodes.get(sKey);
+        const east = this.nodes.get(eKey);
+        const north = this.nodes.get(nKey);
+
+        const southwest = this.nodes.get(swKey);
+        const southeast = this.nodes.get(seKey);
+        const northeast = this.nodes.get(neKey);
+        const northwest = this.nodes.get(nwKey);
+
+        if (west) {
+            node.exits[0] = wKey
+            west.exits[2] = key;
+        }
+
+        if (south) {
+            node.exits[1] = sKey
+            south.exits[3] = key;
+        }
+
+        if (east) {
+            node.exits[2] = eKey
+            east.exits[0] = key;
+        }
+
+        if (north) {
+            node.exits[3] = nKey
+            north.exits[1] = key;
+        }
+
+
+        if (southwest) {
+            node.exits[4] = swKey
+            southwest.exits[6] = key;
+        }
+
+        if (southeast) {
+            node.exits[5] = seKey
+            southeast.exits[7] = key;
+        }
+
+        if (northeast) {
+            node.exits[6] = neKey
+            northeast.exits[4] = key;
+        }
+
+        if (northwest) {
+            node.exits[7] = nwKey
+            northwest.exits[5] = key;
+        }
+
     }
 
     addHorizontalFence(z,x0,x1) {
@@ -272,7 +337,6 @@ class Node {
         if (x<Constants.xSize-1 && z>0) this.exits[5] = packKey(...adjacent(...this.xyz, [1,0,-1]));
         if (x<Constants.xSize-1 && z<Constants.zSize-1) this.exits[6] = packKey(...adjacent(...this.xyz, [1,0,1]));
         if (x>0 && z<Constants.zSize-1) this.exits[7] = packKey(...adjacent(...this.xyz, [-1,0,1]));
-
     }
 
     weight(n) {
