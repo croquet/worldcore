@@ -1,7 +1,7 @@
 import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, ThreeInstanceManager, ViewRoot, Pawn, mix,
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, ThreeRaycast, PM_ThreeCollider,
-    PM_ThreeInstanced, OutlinePass, viewRoot } from "@croquet/worldcore";
+    PM_ThreeInstanced, OutlinePass, viewRoot, Constants } from "@croquet/worldcore";
 import { PathDebug, packKey } from "./Paths";
 
 //------------------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         this.material.side = THREE.DoubleSide;
         this.material.shadowSide = THREE.DoubleSide;
 
-        this.geometry = new THREE.PlaneGeometry(100,100);
+        this.geometry = new THREE.PlaneGeometry(500,500);
         this.geometry.rotateX(toRad(90));
 
         const base = new THREE.Mesh( this.geometry, this.material );
@@ -74,8 +74,8 @@ BasePawn.register("BasePawn");
 //------------------------------------------------------------------------------------------
 
 let fov = 60;
-let pitch = toRad(-20);
-let yaw = toRad(-30);
+let pitch = toRad(-60);
+let yaw = toRad(0);
 
 class GodView extends ViewService {
 
@@ -86,9 +86,9 @@ class GodView extends ViewService {
         this.updateCamera();
 
         this.subscribe("input", 'wheel', this.onWheel);
-        this.subscribe("input", "pointerDown", this.doPointerDown);
-        this.subscribe("input", "pointerUp", this.doPointerUp);
-        this.subscribe("input", "pointerDelta", this.doPointerDelta);
+        // this.subscribe("input", "pointerDown", this.doPointerDown);
+        // this.subscribe("input", "pointerUp", this.doPointerUp);
+        // this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", "pointerMove", this.doPointerMove);
         this.subscribe("input", "mDown", this.point);
         this.subscribe("input", "nDown", this.startPoint);
@@ -112,16 +112,14 @@ class GodView extends ViewService {
     }
 
     point() {
-        // console.log("point");
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(this.xy, "ground");
         if (hits.length<1) return;
         const hit = hits[0];
         // const pawn = hit.pawn;
         // console.log([hit.xyz[0], hit.xyz[2]]);
-        const navX = Math.floor(hit.xyz[0]);
-        const navZ = Math.floor(hit.xyz[2]);
-        // console.log([navX,1,navZ]);
+        const navX = Math.floor(hit.xyz[0]/Constants.scale);
+        const navZ = Math.floor(hit.xyz[2]/Constants.scale);
 
         const paths = this.modelService("Paths");
         // const start = packKey(0,1,0);
@@ -137,8 +135,9 @@ class GodView extends ViewService {
         const pitchMatrix = m4_rotation([1,0,0], pitch)
         const yawMatrix = m4_rotation([0,1,0], yaw)
 
-        let cameraMatrix = m4_translation([0,0,50]);
-        cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);
+        let cameraMatrix = m4_translation([Constants.xSize*Constants.scale/2,200,100+Constants.zSize*Constants.scale/2 ]);
+        cameraMatrix = m4_multiply(pitchMatrix,cameraMatrix);
+        //cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);
         cameraMatrix = m4_multiply(cameraMatrix,yawMatrix);
 
         rm.camera.matrix.fromArray(cameraMatrix);

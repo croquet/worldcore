@@ -1,4 +1,5 @@
 import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial } from "@croquet/worldcore";
+import { BotActor, BotManager} from "./Bots";
 import { Paths } from "./Paths";
 
 //------------------------------------------------------------------------------------------
@@ -26,7 +27,7 @@ BaseActor.register('BaseActor');
 export class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [Paths];
+        return [Paths, BotManager];
     }
 
     init(...args) {
@@ -34,6 +35,7 @@ export class MyModelRoot extends ModelRoot {
         console.log("Start root model!!");
 
         this.base = BaseActor.create({});
+        this.bot = BotActor.create({pawn: "TestPawn", translation:[4.5,0.5,88.5]})
 
         // this.test0 = TestActor.create({pawn: "TestPawn",translation:[7.5,0.5,5.5]});
         // this.test1 = TestActor.create({pawn: "TestPawn", parent: this.test0, translation:[5,0,0]});

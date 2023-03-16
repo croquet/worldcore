@@ -1,16 +1,15 @@
 // import { ModelService, Constants, v3_normalize, WorldcoreView, THREE, v3_multiply, v3_add, PriorityQueue, v3_manhattan, v3_magnitude, v3_sub } from "@croquet/worldcore";
 // import { packKey, unpackKey, Voxels } from "./Voxels";
 
-import { ModelService, Constants, WorldcoreView, THREE, v3_add, v3_multiply, PriorityQueue, v3_manhattan } from "@croquet/worldcore";
+import { ModelService, Constants, WorldcoreView, THREE, v3_add, v3_multiply, PriorityQueue, v3_manhattan, v3_sub } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- Constants -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-Constants.xSize = 32;
-Constants.zSize = 32;
-
-
+Constants.xSize = 50;
+Constants.zSize = 50;
+Constants.scale = 3;
 
 //------------------------------------------------------------------------------------------
 //-- Utility ------------------------------------------------------------------------------
@@ -60,6 +59,8 @@ export class Paths extends ModelService {
             }
         }
 
+        // this.addObstacle(3,10);
+
         for(let n = 0; n < 50; n++) {
             const x = Math.floor(Math.random()*Constants.xSize);
             const z = Math.floor(Math.random()*Constants.zSize);
@@ -84,17 +85,6 @@ export class Paths extends ModelService {
 
 
 
-
-        // this.addObstacle(5,5);
-        // this.addVerticalFence(6,3,7);
-        // this.addHorizontalFence(6,3,7);
-
-        // this.removeObstacle(5,5);
-
-        // // this.addObstacle(7,5);
-        // // // this.addObstacle(3,3);
-        // //
-        // // this.addVerticalFence(3,2,4)
 
         this.publish("paths", "new");
 
@@ -377,13 +367,17 @@ export class PathDebug extends WorldcoreView {
         let p1;
         let line;
 
+        const center = [Constants.xSize/2, 0, Constants.zSize/2]
+
         paths.nodes.forEach(node => {
 
             // -- west --
 
             material = node.west ? this.yellowMaterial : this.redMaterial;
             p0 = v3_add(node.xyz,[0,-0.9,0]);
+            p0 = v3_multiply(p0, [Constants.scale, 1, Constants.scale]);
             p1 = v3_add(node.xyz,[0,-0.9,1]);
+            p1 = v3_multiply(p1, [Constants.scale, 1, Constants.scale]);
 
             geometry = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(...p0),
@@ -396,7 +390,9 @@ export class PathDebug extends WorldcoreView {
 
             material = node.south ? this.yellowMaterial : this.redMaterial;
             p0 = v3_add(node.xyz,[0,-0.9,0]);
+            p0 = v3_multiply(p0, [Constants.scale, 1, Constants.scale]);
             p1 = v3_add(node.xyz,[1,-0.9,0]);
+            p1 = v3_multiply(p1, [Constants.scale, 1, Constants.scale]);
 
             geometry = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(...p0),
@@ -409,7 +405,9 @@ export class PathDebug extends WorldcoreView {
 
             material = node.east ? this.yellowMaterial : this.redMaterial;
             p0 = v3_add(node.xyz,[1,-0.9,0]);
+            p0 = v3_multiply(p0, [Constants.scale, 1, Constants.scale]);
             p1 = v3_add(node.xyz,[1,-0.9,1]);
+            p1 = v3_multiply(p1, [Constants.scale, 1, Constants.scale]);
 
             geometry = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(...p0),
@@ -422,7 +420,9 @@ export class PathDebug extends WorldcoreView {
 
             material = node.north ? this.yellowMaterial : this.redMaterial;
             p0 = v3_add(node.xyz,[0,-0.9,1]);
+            p0 = v3_multiply(p0, [Constants.scale, 1, Constants.scale]);
             p1 = v3_add(node.xyz,[1,-0.9,1]);
+            p1 = v3_multiply(p1, [Constants.scale, 1, Constants.scale]);
 
             geometry = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(...p0),
@@ -435,7 +435,9 @@ export class PathDebug extends WorldcoreView {
 
             material = node.southwest ? this.cyanMaterial : this.redMaterial;
             p0 = v3_add(node.xyz,[0.5,-0.9,0.5]);
+            p0 = v3_multiply(p0, [Constants.scale, 1, Constants.scale]);
             p1 = v3_add(node.xyz,[0.25,-0.9,0.25]);
+            p1 = v3_multiply(p1, [Constants.scale, 1, Constants.scale]);
 
             geometry = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(...p0),
@@ -448,7 +450,9 @@ export class PathDebug extends WorldcoreView {
 
             material = node.southeast ? this.cyanMaterial : this.redMaterial;
             p0 = v3_add(node.xyz,[0.5,-0.9,0.5]);
+            p0 = v3_multiply(p0, [Constants.scale, 1, Constants.scale]);
             p1 = v3_add(node.xyz,[0.75,-0.9,0.25]);
+            p1 = v3_multiply(p1, [Constants.scale, 1, Constants.scale]);
 
             geometry = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(...p0),
@@ -461,7 +465,9 @@ export class PathDebug extends WorldcoreView {
 
             material = node.northeast ? this.cyanMaterial : this.redMaterial;
             p0 = v3_add(node.xyz,[0.5,-0.9,0.5]);
+            p0 = v3_multiply(p0, [Constants.scale, 1, Constants.scale]);
             p1 = v3_add(node.xyz,[0.75,-0.9,0.75]);
+            p1 = v3_multiply(p1, [Constants.scale, 1, Constants.scale]);
 
             geometry = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(...p0),
@@ -474,7 +480,9 @@ export class PathDebug extends WorldcoreView {
 
             material = node.northwest ? this.cyanMaterial : this.redMaterial;
             p0 = v3_add(node.xyz,[0.5,-0.9,0.5]);
+            p0 = v3_multiply(p0, [Constants.scale, 1, Constants.scale]);
             p1 = v3_add(node.xyz,[0.25,-0.9,0.75]);
+            p1 = v3_multiply(p1, [Constants.scale, 1, Constants.scale]);
 
             geometry = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(...p0),
@@ -493,12 +501,15 @@ export class PathDebug extends WorldcoreView {
         const rm = this.service("ThreeRenderManager");
         if (this.path) rm.scene.remove(this.path);
 
+        const center = [Constants.xSize/2, 0, Constants.zSize/2]
+
         const points = [];
 
         path.forEach(key=> {
             const xyz = unpackKey(key);
             let p = v3_add(xyz,[0.5,0,0.5]);
             p = v3_multiply(p, [1, 0.15, 1]);
+            p = v3_multiply(p, [Constants.scale, 1, Constants.scale]);
             points.push(new THREE.Vector3(...p));
         })
 

@@ -1,14 +1,11 @@
-import { ModelService } from "@croquet/worldcore";
+import { ModelService, Actor, mix, AM_Spatial, AM_Behavioral } from "@croquet/worldcore";
+import { packKey } from "./Paths";
 
 export class BotManager extends ModelService {
     init() {
         super.init("BotManager");
         this.bots = new Set();
         this.bins = new Map();
-    }
-
-    add(bot) {
-        this.bots.add(bot);
     }
 
     addToBin(bot) {
@@ -27,16 +24,34 @@ export class BotManager extends ModelService {
         doomed.forEach(bot => bot.destroy());
     }
 
-    onSpawnSheep(data) {
-        console.log("Spawn sheep!")
-        if (!this.flock) this.flock = FlockActor.create();
-        const voxel = data.xyz
-        const x = 0.5
-        const y = 0.5
-        for (let i = 0; i<1; i++) {
-            const sheep = SheepActor.create({voxel, fraction:[0.5,0.5,0], flock:this.flock});
-        }
-    }
 
 }
 BotManager.register("BotManager");
+
+//------------------------------------------------------------------------------------------
+//-- BotActor ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class BotActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
+
+    init(options) {
+        super.init(options);
+        const bm = this.service("BotManager");
+        bm.bots. add(this);
+    }
+
+    destroy() {
+        super.destroy();
+        const bm = this.service("BotManager");
+        bm.bots.delete(this);
+    }
+
+    translationSet(t) {
+        const x = t[0];
+        const z = t[2];
+        this.key = packKey(x,1,z);
+    }
+
+
+}
+BotActor.register("BotActor");
