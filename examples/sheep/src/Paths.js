@@ -1,7 +1,7 @@
 // import { ModelService, Constants, v3_normalize, WorldcoreView, THREE, v3_multiply, v3_add, PriorityQueue, v3_manhattan, v3_magnitude, v3_sub } from "@croquet/worldcore";
 // import { packKey, unpackKey, Voxels } from "./Voxels";
 
-import { ModelService, Constants, WorldcoreView, THREE, v3_add, v3_multiply, PriorityQueue } from "@croquet/worldcore";
+import { ModelService, Constants, WorldcoreView, THREE, v3_add, v3_multiply, PriorityQueue, v3_manhattan } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- Constants -----------------------------------------------------------------------------
@@ -46,6 +46,7 @@ export class Paths extends ModelService {
         super.init('Paths');
         this.nodes = new Map();
         this.clear();
+        this.subscribe("input", "xDown", this.clear);
     }
 
 
@@ -59,11 +60,48 @@ export class Paths extends ModelService {
             }
         }
 
-        this.addObstacle(0,0);
-        this.addObstacle(7,5);
-        // this.addObstacle(3,3);
-        this.addHorizontalFence(3,2,4)
-        this.addVerticalFence(3,2,4)
+        for(let n = 0; n < 50; n++) {
+            const x = Math.floor(Math.random()*Constants.xSize);
+            const z = Math.floor(Math.random()*Constants.zSize);
+            this.addObstacle(x,z);
+        }
+
+        for(let n = 0; n < 3; n++) {
+            const x = Math.floor(Math.random()*Constants.xSize)
+            const z0 = Math.floor(Math.random()*Constants.zSize/2);
+            const z1 = z0 + Math.floor(Math.random()*Constants.zSize/2);
+
+            this.addHorizontalFence(x,z0,z1);
+        }
+
+        for(let n = 0; n < 3; n++) {
+            const z = Math.floor(Math.random()*Constants.zSize)
+            const x0 = Math.floor(Math.random()*Constants.xSize/2);
+            const x1 = x0 + Math.floor(Math.random()*Constants.xSize/2);
+
+            this.addVerticalFence(z,x0,x1)
+        }
+
+        // const x = Math.floor(Math.random()*Constants.xSize)
+        // const z0 = Math.floor(Math.random()*Constants.zSize/2);
+        // const z1 = z0 + Math.floor(Math.random()*Constants.zSize/2);
+
+        // this.addHorizontalFence(x,z0,z1);
+
+        // const z = Math.floor(Math.random()*Constants.zSize)
+        // const x0 = Math.floor(Math.random()*Constants.xSize/2);
+        // const x1 = x0 + Math.floor(Math.random()*Constants.xSize/2);
+
+        // this.addVerticalFence(z,x0,x1)
+
+
+        // this.addObstacle(10,0);
+        // this.addObstacle(7,5);
+        // // this.addObstacle(3,3);
+        //
+        // this.addVerticalFence(3,2,4)
+
+        this.publish("paths", "new");
 
     }
 
@@ -150,7 +188,7 @@ export class Paths extends ModelService {
 
         if (!this.nodes.has(startKey)) return path;  // Invalid start waypoint
         if (!this.nodes.has(endKey)) return path;    // Invalid end waypoint
-        // if (startKey === endKey) return [startKey] // already at destination
+        if (startKey === endKey) return [startKey] // already at destination
 
         const endXYZ = this.nodes.get(endKey).xyz;
 
@@ -165,15 +203,16 @@ export class Paths extends ModelService {
             key = frontier.pop().key;
             if (key === endKey) break;
             const cost = visited.get(key).cost;
-            const node = this.get(key);
+            const node = this.nodes.get(key);
             node.exits.forEach((exit,n) => {
+                if (!exit) return;
                 const weight = node.weight(n);
                 if (!visited.has(exit)) visited.set(exit, {}); // First time visited
                 const next = visited.get(exit);
                 if (!next.from || next.cost > cost + weight ){ // This route is better
                     next.from = key;
                     next.cost = cost + weight;
-                    const heuristic = v3_manhattan(this.get(exit).xyz, endXYZ);
+                    const heuristic = v3_manhattan(this.nodes.get(exit).xyz, endXYZ);
                     frontier.push({priority: next.cost + heuristic, key: exit});
                 }
             })
@@ -259,16 +298,13 @@ export class PathDebug extends WorldcoreView {
         this.magentaMaterial = new THREE.LineBasicMaterial( { color: 0xff00ff } );
 
         this.draw();
-
-        const key0 = packKey(0,1,0);
-        const key1 = packKey(1,1,1);
-        this.drawPath([key0, key1])
     }
 
     draw() {
         console.log("Draw path debug");
         const paths = this.modelService("Paths");
         const rm = this.service("ThreeRenderManager");
+        if (this.path) rm.scene.remove(this.path);
         if (this.group) rm.scene.remove(this.group);
         this.group = new THREE.Group();
         let material;
@@ -390,8 +426,8 @@ export class PathDebug extends WorldcoreView {
     }
 
     drawPath(path) {
-        const render = this.service("ThreeRenderManager");
-        if (this.path) render.scene.remove(this.path);
+        const rm = this.service("ThreeRenderManager");
+        if (this.path) rm.scene.remove(this.path);
 
         const points = [];
 
@@ -405,7 +441,7 @@ export class PathDebug extends WorldcoreView {
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
         this.path = new THREE.Line( geometry, this.magentaMaterial );
 
-        render.scene.add(this.path);
+        rm.scene.add(this.path);
     }
 
 

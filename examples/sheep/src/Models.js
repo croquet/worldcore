@@ -35,7 +35,7 @@ export class MyModelRoot extends ModelRoot {
 
         this.base = BaseActor.create({});
 
-        this.test0 = TestActor.create({pawn: "TestPawn",translation:[7.5,0.5,5.5]});
+        // this.test0 = TestActor.create({pawn: "TestPawn",translation:[7.5,0.5,5.5]});
         // this.test1 = TestActor.create({pawn: "TestPawn", parent: this.test0, translation:[5,0,0]});
 
         // this.test0.behavior.start({name: "SpinBehavior", axis:[0,1,0], speed: 2});

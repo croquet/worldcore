@@ -1,8 +1,8 @@
 import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, ThreeInstanceManager, ViewRoot, Pawn, mix,
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, ThreeRaycast, PM_ThreeCollider,
-    PM_ThreeInstanced, OutlinePass } from "@croquet/worldcore";
-import { PathDebug } from "./Paths";
+    PM_ThreeInstanced, OutlinePass, viewRoot } from "@croquet/worldcore";
+import { PathDebug, packKey } from "./Paths";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
@@ -81,6 +81,7 @@ class GodView extends ViewService {
 
     constructor() {
         super("GodView");
+        this.pathStart = packKey(0,1,0);
 
         this.updateCamera();
 
@@ -90,20 +91,43 @@ class GodView extends ViewService {
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", "pointerMove", this.doPointerMove);
         this.subscribe("input", "mDown", this.point);
+        this.subscribe("input", "nDown", this.startPoint);
     }
 
     doPointerMove(e) {
         this.xy = e.xy;
+        this.point();
     }
 
-    point() {
-        console.log("point");
+    startPoint() {
+        console.log("start point");
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(this.xy, "ground");
         if (hits.length<1) return;
         const hit = hits[0];
-        const pawn = hit.pawn;
-        console.log([hit.xyz[0], hit.xyz[2]]);
+        const navX = Math.floor(hit.xyz[0]);
+        const navZ = Math.floor(hit.xyz[2]);
+        this.pathStart = packKey(navX,1,navZ);
+        console.log([navX,1,navZ]);
+    }
+
+    point() {
+        // console.log("point");
+        const rc = this.service("ThreeRaycast");
+        const hits = rc.cameraRaycast(this.xy, "ground");
+        if (hits.length<1) return;
+        const hit = hits[0];
+        // const pawn = hit.pawn;
+        // console.log([hit.xyz[0], hit.xyz[2]]);
+        const navX = Math.floor(hit.xyz[0]);
+        const navZ = Math.floor(hit.xyz[2]);
+        // console.log([navX,1,navZ]);
+
+        const paths = this.modelService("Paths");
+        // const start = packKey(0,1,0);
+        const end = packKey(navX,1,navZ);
+        const path = paths.findPath(this.pathStart, end);
+        viewRoot.pathDebug.drawPath(path);
     }
 
     updateCamera() {
@@ -171,6 +195,13 @@ export class MyViewRoot extends ViewRoot {
         this.buildHUD();
         this.pathDebug = new PathDebug(this.model);
 
+        this.subscribe("input", "pDown", this.ppp);
+        this.subscribe("paths", "new", this.onPathNew);
+
+    }
+
+    onPathNew() {
+        this.pathDebug.draw();
     }
 
     buildLights() {
@@ -218,6 +249,16 @@ export class MyViewRoot extends ViewRoot {
 
         const mmm = im.addMesh("cube", "cube", "default");
         mmm.castShadow = true;
+    }
+
+
+    ppp(){
+        console.log("path test");
+        const paths = this.modelService("Paths");
+        const start = packKey(0,1,0);
+        const end = packKey(5,1,5);
+        const path = paths.findPath(start, end);
+        this.pathDebug.drawPath(path);
     }
 
 
