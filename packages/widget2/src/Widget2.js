@@ -41,9 +41,9 @@ export class WidgetManager2 extends ViewService {
         this.root = new Widget2({size: [x,y]});
         this.topWindow = 10;
 
-        this.subscribe("input", "pointerDown", this.pointerDown);
-        this.subscribe("input", "pointerUp", this.pointerUp);
-        this.subscribe("input", "pointerMove", this.pointerMove);
+        this.subscribe("input", { event: "pointerDown", handling: "immediate" }, this.pointerDown);
+        this.subscribe("input", { event: "pointerUp", handling: "immediate" }, this.pointerUp);
+        this.subscribe("input", { event: "pointerMove", handling: "immediate" }, this.pointerMove);
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyRepeat", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
