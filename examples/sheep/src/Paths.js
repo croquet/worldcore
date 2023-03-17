@@ -343,7 +343,6 @@ class Node {
 export class PathDebug extends WorldcoreView {
     constructor(model) {
         super(model);
-        const rm = this.service("ThreeRenderManager");
 
         this.redMaterial = new THREE.LineBasicMaterial( { color: 0xff0000 } );
         this.greenMaterial = new THREE.LineBasicMaterial( { color: 0x00ff00 } );

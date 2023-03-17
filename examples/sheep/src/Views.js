@@ -8,34 +8,17 @@ import { PathDebug, packKey } from "./Paths";
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeCollider) {
+export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
-        this.buildMesh();
-        this.addRenderObjectToRaycast();
+        this.useInstance("bot");
     }
 
     destroy() {
         super.destroy()
-        this.geometry.dispose();
-        this.material.dispose();
     }
 
-    buildMesh() {
-        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
-        this.material.side = THREE.DoubleSide;
-        this.material.shadowSide = THREE.DoubleSide;
-
-        const mesh = new THREE.Mesh( this.geometry, this.material );
-
-        mesh.receiveShadow = true;
-        mesh.castShadow = true;
-
-        this.setRenderObject(mesh);
-        this.addRenderObjectToRaycast();
-    }
 }
 TestPawn.register("TestPawn");
 
@@ -76,6 +59,7 @@ BasePawn.register("BasePawn");
 let fov = 60;
 let pitch = toRad(-60);
 let yaw = toRad(0);
+const cam = [Constants.xSize*Constants.scale/2,200,100+Constants.zSize*Constants.scale/2 ];
 
 class GodView extends ViewService {
 
@@ -86,12 +70,11 @@ class GodView extends ViewService {
         this.updateCamera();
 
         this.subscribe("input", 'wheel', this.onWheel);
-        // this.subscribe("input", "pointerDown", this.doPointerDown);
-        // this.subscribe("input", "pointerUp", this.doPointerUp);
-        // this.subscribe("input", "pointerDelta", this.doPointerDelta);
+        this.subscribe("input", "pointerDown", this.doPointerDown);
+        this.subscribe("input", "pointerUp", this.doPointerUp);
+        this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", "pointerMove", this.doPointerMove);
-        this.subscribe("input", "mDown", this.point);
-        this.subscribe("input", "nDown", this.startPoint);
+        this.subscribe("input", "mDown", this.go);
     }
 
     doPointerMove(e) {
@@ -99,17 +82,17 @@ class GodView extends ViewService {
         this.point();
     }
 
-    startPoint() {
-        console.log("start point");
+    go() {
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(this.xy, "ground");
         if (hits.length<1) return;
         const hit = hits[0];
-        const navX = Math.floor(hit.xyz[0]);
-        const navZ = Math.floor(hit.xyz[2]);
-        this.pathStart = packKey(navX,1,navZ);
-        console.log([navX,1,navZ]);
+        const x = hit.xyz[0];
+        const z = hit.xyz[2];
+        this.publish("hud", "go", [x,0,z]);
     }
+
+
 
     point() {
         const rc = this.service("ThreeRaycast");
@@ -135,7 +118,7 @@ class GodView extends ViewService {
         const pitchMatrix = m4_rotation([1,0,0], pitch)
         const yawMatrix = m4_rotation([0,1,0], yaw)
 
-        let cameraMatrix = m4_translation([Constants.xSize*Constants.scale/2,200,100+Constants.zSize*Constants.scale/2 ]);
+        let cameraMatrix = m4_translation(cam);
         cameraMatrix = m4_multiply(pitchMatrix,cameraMatrix);
         //cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);
         cameraMatrix = m4_multiply(cameraMatrix,yawMatrix);
@@ -156,7 +139,8 @@ class GodView extends ViewService {
         rm.camera.updateProjectionMatrix();
     }
 
-    doPointerDown() {
+    doPointerDown(e) {
+        if (e.button !== 2) return;
         if (this.paused) return;
         this.dragging = true;
     }
@@ -169,11 +153,13 @@ class GodView extends ViewService {
     doPointerDelta(e) {
         if (this.paused) return;
         if (!this.dragging) return;
-        yaw += -0.01 * e.xy[0];
-        yaw = yaw % TAU;
-        pitch += -0.01 * e.xy[1];
-        pitch = Math.min(pitch, toRad(-5));
-        pitch = Math.max(pitch, toRad(-90));
+        cam[0] += -0.5 * e.xy[0];
+        cam[2] += -0.5 * e.xy[1];
+        // yaw += -0.01 * e.xy[0];
+        // yaw = yaw % TAU;
+        // pitch += -0.01 * e.xy[1];
+        // pitch = Math.min(pitch, toRad(-5));
+        // pitch = Math.max(pitch, toRad(-90));
         this.updateCamera()
     }
 }
@@ -194,7 +180,6 @@ export class MyViewRoot extends ViewRoot {
         this.buildHUD();
         this.pathDebug = new PathDebug(this.model);
 
-        this.subscribe("input", "pDown", this.ppp);
         this.subscribe("paths", "new", this.onPathNew);
 
     }
@@ -238,27 +223,25 @@ export class MyViewRoot extends ViewRoot {
     buildInstances() {
         const im = this.service("ThreeInstanceManager");
 
-        const  material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0,1,0)} );
+        const  material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0,1,1)} );
         material.side = THREE.FrontSide;
         material.shadowSide = THREE.BackSide;
-        im.addMaterial("default", material);
+        im.addMaterial("cyan", material);
 
-        const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        const  material2 = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
+        material2.side = THREE.FrontSide;
+        material2.shadowSide = THREE.BackSide;
+        im.addMaterial("magenta", material2);
+
+        const geometry = new THREE.BoxGeometry( 0.5, 0.5, 0.5 );
         im.addGeometry("cube", geometry);
 
-        const mmm = im.addMesh("cube", "cube", "default");
+        const mmm = im.addMesh("bot", "cube", "magenta");
         mmm.castShadow = true;
     }
 
 
-    ppp(){
-        console.log("path test");
-        const paths = this.modelService("Paths");
-        const start = packKey(0,1,0);
-        const end = packKey(5,1,5);
-        const path = paths.findPath(start, end);
-        this.pathDebug.drawPath(path);
-    }
+
 
 
 }

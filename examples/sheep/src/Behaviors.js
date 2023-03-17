@@ -1,4 +1,4 @@
-import { Behavior, q_multiply, q_axisAngle} from "@croquet/worldcore";
+import { Behavior, q_multiply, q_axisAngle, v3_sub, v3_magnitude, v3_normalize, v3_add} from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 // Behaviors -------------------------------------------------------------------------------
@@ -17,4 +17,47 @@ export class SpinBehavior extends Behavior {
 
 }
 SpinBehavior.register("SpinBehavior");
+
+//------------------------------------------------------------------------------------------
+//-- GotoBehavior --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Moves toward a target point
+
+class GotoBehavior extends Behavior {
+
+    get tickRate() { return this._tickRate || 50} // More than 15ms for smooth movement
+
+    get target() {return this._target || this.actor.xyz}
+    set target(target) {this.set({target})};
+    get speed() { return this._speed || 3}
+
+    do(delta) {
+        let distance = this.speed * delta / 1000;
+
+        const to = v3_sub(this.target, this.actor.translation);
+        const left = v3_magnitude(to)
+        if (distance>left) {
+            this.actor.set({translation:this.target});
+            // this.progress(1);
+            console.log("done!");
+            this.succeed();
+            return;
+        }
+
+        const forward = v3_normalize(to);
+        // const yaw = v2_signedAngle([0,1], forward);
+
+        const x = forward[0] * distance;
+        const y = 0;
+        const z = forward[2] * distance;
+
+        let translation = v3_add(this.actor.translation, [x,y,z]);
+
+        this.actor.set({translation});
+
+    }
+
+}
+GotoBehavior.register("GotoBehavior");
 

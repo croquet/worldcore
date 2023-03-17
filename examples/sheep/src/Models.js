@@ -35,19 +35,26 @@ export class MyModelRoot extends ModelRoot {
         console.log("Start root model!!");
 
         this.base = BaseActor.create({});
-        this.bot = BotActor.create({pawn: "TestPawn", translation:[4.5,0.5,88.5]})
+        this.bot0 = BotActor.create({pawn: "TestPawn", name: "bot 0", translation:[1,0.5,1]});
+        this.bot1 = BotActor.create({pawn: "TestPawn", name: "bot 1", translation:[2,0.5,2]});
 
-        // this.test0 = TestActor.create({pawn: "TestPawn",translation:[7.5,0.5,5.5]});
-        // this.test1 = TestActor.create({pawn: "TestPawn", parent: this.test0, translation:[5,0,0]});
+        console.log (this.bot0.bin);
+        console.log (this.bot1.bin);
 
-        // this.test0.behavior.start({name: "SpinBehavior", axis:[0,1,0], speed: 2});
-        // this.test1.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5})
+        this.subscribe("input", "gDown", this.ggg);
+        this.subscribe("hud", "go", this.go)
+    }
 
-        // this.test00 = TestActor.create({pawn: "TestPawn",translation:[-5,0,0]});
-        // this.test01 = TestActor.create({pawn: "TestPawn",translation:[5,0,0]});
-        // this.test10 = TestActor.create({pawn: "TestPawn",translation:[0,0,-5]});
-        // this.test11 = TestActor.create({pawn: "TestPawn",translation:[0,0,5]});
+    ggg() {
+        console.log("ggg");
+        this.bot0.behavior.start({name: "GotoBehavior", target: [50,0.5,50], speed: 5});
+    }
 
+    go(target) {
+        console.log("go");
+        console.log(target);
+        target[1] = 0.5;
+        this.bot1.behavior.start({name: "GotoBehavior", target, speed: 5});
     }
 
 }
