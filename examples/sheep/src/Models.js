@@ -1,13 +1,19 @@
-import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial } from "@croquet/worldcore";
-import { BotActor, BotManager} from "./Bots";
-import { Paths } from "./Paths";
+import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, Constants } from "@croquet/worldcore";
+import { BotActor, BotManager, FlockActor} from "./Bots";
+import { Paths, PackKey, packKey } from "./Paths";
 
 //------------------------------------------------------------------------------------------
 // TestActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
+
+    init(options) {
+        super.init(options);
+
+    }
 }
+
 TestActor.register('TestActor');
 
 
@@ -35,26 +41,45 @@ export class MyModelRoot extends ModelRoot {
         console.log("Start root model!!");
 
         this.base = BaseActor.create({});
-        this.bot0 = BotActor.create({pawn: "TestPawn", name: "bot 0", translation:[1,0.5,1]});
-        this.bot1 = BotActor.create({pawn: "TestPawn", name: "bot 1", translation:[2,0.5,2]});
+        // this.flock = FlockActor.create();
 
-        console.log (this.bot0.bin);
-        console.log (this.bot1.bin);
+        // this.bot0 = BotActor.create({pawn: "TestPawn", name: "bot 0", translation:[1,0,1], tags: ["bot"]});
+        // this.bot1 = BotActor.create({pawn: "TestPawn", name: "bot 1", translation:[2,0,2], tags: ["bot"]});
+        // this.bot2 = BotActor.create({pawn: "TestPawn", name: "bot 2", translation:[3,0,3], tags: ["bot"]});
+        // this.bot3 = BotActor.create({pawn: "TestPawn", name: "bot 3", translation:[4,0,4], tags: ["other"]});
 
-        this.subscribe("input", "gDown", this.ggg);
-        this.subscribe("hud", "go", this.go)
+        // console.log (this.bot0.bin);
+        // console.log (this.bot1.bin);
+
+        // this.subscribe("input", "gDown", this.ggg);
+        // this.subscribe("hud", "go", this.go)
+
+        this.reset();
+
+        this.subscribe("input", "xDown", this.reset);
+        this.subscribe("input", "zDown", this.ping);
     }
 
-    ggg() {
-        console.log("ggg");
-        this.bot0.behavior.start({name: "GotoBehavior", target: [50,0.5,50], speed: 5});
+    reset() {
+        const paths = this.service("Paths");
+        const bm = this.service("BotManager");
+
+        paths.clear();
+        // bm.destroyAll();
+
+        // console.log(this.flock);
+
+        for(let n = 0; n<5;n++) {
+            const translation = [ Constants.xSize * Constants.scale * Math.random(), 0, Constants.zSize * Constants.scale * Math.random()];
+            // const translation = [ 0.5,0,0.5];
+            const bot = BotActor.create({pawn: "TestPawn", translation});
+        }
+
     }
 
-    go(target) {
-        console.log("go");
-        console.log(target);
-        target[1] = 0.5;
-        this.bot1.behavior.start({name: "GotoBehavior", target, speed: 5});
+    ping() {
+        const found = this.bot0.neighbors(10, "other");
+        console.log(found);
     }
 
 }

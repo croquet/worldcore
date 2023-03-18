@@ -45,7 +45,7 @@ export class Paths extends ModelService {
         super.init('Paths');
         this.nodes = new Map();
         this.clear();
-        this.subscribe("input", "xDown", this.clear);
+        // this.subscribe("input", "xDown", this.clear);
     }
 
 
@@ -58,8 +58,6 @@ export class Paths extends ModelService {
 
             }
         }
-
-        // this.addObstacle(3,10);
 
         for(let n = 0; n < 50; n++) {
             const x = Math.floor(Math.random()*Constants.xSize);
@@ -83,8 +81,7 @@ export class Paths extends ModelService {
             this.addVerticalFence(z,x0,x1)
         }
 
-
-
+        this.removeObstacle(0,0);
 
         this.publish("paths", "new");
 
@@ -283,6 +280,28 @@ export class Paths extends ModelService {
         }
 
         return path;
+    }
+
+    ping(startKey, callback) {
+        let range = 0;
+        const visited = new Set();
+        let test = [startKey];
+        do {
+            const next = [];
+            for(const key of test) {
+                if (!key || visited.has(key)) continue;
+                visited.add(key);
+                const node = this.nodes.get(key);
+                if (node) {
+                    const result = callback(node, range);
+                    if(result) return result;
+                    next.push(...node.exits);
+                }
+            }
+            range++;
+            test = next;
+        } while(range<100); // Prevent infinite loop
+        return null;
     }
 
 

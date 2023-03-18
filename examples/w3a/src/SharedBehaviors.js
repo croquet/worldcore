@@ -202,7 +202,9 @@ class WalkToBehavior extends Behavior {
 
     onStart() {
         const paths = this.service("Paths");
-        const endKey = packKey(...v3_floor(this.destination));
+        const endCell = [...v3_floor(this.destination)];
+        endCell[1] = 1;
+        const endKey = packKey(endCell);
         this.path = paths.findPath(this.actor.key, endKey);
 
         if (this.path.length === 0) { // No path to destination

@@ -74,15 +74,16 @@ class GodView extends ViewService {
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", "pointerMove", this.doPointerMove);
-        this.subscribe("input", "mDown", this.go);
+        this.subscribe("input", "gDown", this.go);
     }
 
     doPointerMove(e) {
         this.xy = e.xy;
-        this.point();
+        // this.point();
     }
 
     go() {
+        console.log("go");
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(this.xy, "ground");
         if (hits.length<1) return;
@@ -234,6 +235,7 @@ export class MyViewRoot extends ViewRoot {
         im.addMaterial("magenta", material2);
 
         const geometry = new THREE.BoxGeometry( 0.5, 0.5, 0.5 );
+        geometry.translate(0,1,0)
         im.addGeometry("cube", geometry);
 
         const mmm = im.addMesh("bot", "cube", "magenta");
