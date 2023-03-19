@@ -1,4 +1,4 @@
-import { Behavior, q_multiply, q_axisAngle, v3_sub, v3_magnitude, v3_normalize, v3_add, v3_floor, v3_scale, Constants, v3_distance, v2_random} from "@croquet/worldcore";
+import { Behavior, q_multiply, q_axisAngle, v3_sub, v3_magnitude, v3_normalize, v3_add, v3_floor, v3_scale, Constants, v3_distance, v2_random, q_lookAt} from "@croquet/worldcore";
 import { packKey, unpackKey } from "./Paths";
 
 //------------------------------------------------------------------------------------------
@@ -35,6 +35,8 @@ class GoBehavior extends Behavior {
 
     onStart() {
         this.aim = v3_normalize(v3_sub(this.target, this.actor.translation));
+        const rotation = q_lookAt([0,0,1], [0,1,0], this.aim);
+        this.actor.set({rotation});
     }
 
     do(delta) {
@@ -85,7 +87,7 @@ class GotoBehavior extends Behavior {
         }
 
         const forward = v3_normalize(to);
-        // const yaw = v2_signedAngle([0,1], forward);
+        const rotation = q_lookAt([0,0,1], [0,1,0], forward);
 
         const x = forward[0] * distance;
         const y = 0;
@@ -93,7 +95,7 @@ class GotoBehavior extends Behavior {
 
         let translation = v3_add(this.actor.translation, [x,y,z]);
 
-        this.actor.set({translation});
+        this.actor.set({translation, rotation});
 
     }
 

@@ -38,7 +38,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!");
+        console.log("Start root model!");
 
         this.base = BaseActor.create({});
         // this.flock = FlockActor.create();
@@ -66,13 +66,11 @@ export class MyModelRoot extends ModelRoot {
         const bm = this.service("BotManager");
 
         paths.clear();
-        // bm.destroyAll();
+        bm.destroyAll();
 
-        // console.log(this.flock);
 
-        for(let n = 0; n<100;n++) {
+        for(let n = 0; n<50;n++) {
             const translation = [ Constants.xSize * Constants.scale * Math.random(), 0, Constants.zSize * Constants.scale * Math.random()];
-            // const translation = [ 0.5,0,0.5];
             const bot = BotActor.create({pawn: "TestPawn", translation, tags: ["bot"]});
         }
 
