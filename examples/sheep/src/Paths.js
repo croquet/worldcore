@@ -88,8 +88,8 @@ export class Paths extends ModelService {
     }
 
     addObstacle(x,z) {
-        const noKey = packKey(x,1,z);
-        this.nodes.delete(noKey);
+        const key = packKey(x,1,z);
+        // this.nodes.delete(key);
 
         const west = this.nodes.get(packKey(...adjacent(x,1,z,[-1,0,0])));
         const south = this.nodes.get(packKey(...adjacent(x,1,z,[0,0,-1])));
@@ -113,11 +113,11 @@ export class Paths extends ModelService {
     }
 
     removeObstacle(x,z) { // Removing obstacles adjacent to fences may cause issues.
-        const key = packKey(x,1,z);
-        if (this.nodes.has(key)) return;
+        // const key = packKey(x,1,z);
+        // if (this.nodes.has(key)) return;
 
-        const node = new Node(x,1,z)
-        this.nodes.set(node.key, node);
+        // const node = new Node(x,1,z)
+        // this.nodes.set(node.key, node);
 
         const wKey = packKey(...adjacent(x,1,z,[-1,0,0]));
         const sKey = packKey(...adjacent(x,1,z,[0,0,-1]));
@@ -139,46 +139,46 @@ export class Paths extends ModelService {
         const northeast = this.nodes.get(neKey);
         const northwest = this.nodes.get(nwKey);
 
-        if (west) {
-            node.exits[0] = wKey
-            west.exits[2] = key;
-        }
+        // if (west) {
+        //     node.exits[0] = wKey
+        //     west.exits[2] = key;
+        // }
 
-        if (south) {
-            node.exits[1] = sKey
-            south.exits[3] = key;
-        }
+        // if (south) {
+        //     node.exits[1] = sKey
+        //     south.exits[3] = key;
+        // }
 
-        if (east) {
-            node.exits[2] = eKey
-            east.exits[0] = key;
-        }
+        // if (east) {
+        //     node.exits[2] = eKey
+        //     east.exits[0] = key;
+        // }
 
-        if (north) {
-            node.exits[3] = nKey
-            north.exits[1] = key;
-        }
+        // if (north) {
+        //     node.exits[3] = nKey
+        //     north.exits[1] = key;
+        // }
 
 
-        if (southwest) {
-            node.exits[4] = swKey
-            southwest.exits[6] = key;
-        }
+        // if (southwest) {
+        //     node.exits[4] = swKey
+        //     southwest.exits[6] = key;
+        // }
 
-        if (southeast) {
-            node.exits[5] = seKey
-            southeast.exits[7] = key;
-        }
+        // if (southeast) {
+        //     node.exits[5] = seKey
+        //     southeast.exits[7] = key;
+        // }
 
-        if (northeast) {
-            node.exits[6] = neKey
-            northeast.exits[4] = key;
-        }
+        // if (northeast) {
+        //     node.exits[6] = neKey
+        //     northeast.exits[4] = key;
+        // }
 
-        if (northwest) {
-            node.exits[7] = nwKey
-            northwest.exits[5] = key;
-        }
+        // if (northwest) {
+        //     node.exits[7] = nwKey
+        //     northwest.exits[5] = key;
+        // }
 
     }
 
@@ -384,6 +384,7 @@ export class PathDebug extends WorldcoreView {
         let p0
         let p1;
         let line;
+        let yy = -0.9;
 
         const center = [Constants.xSize/2, 0, Constants.zSize/2]
 
@@ -391,10 +392,11 @@ export class PathDebug extends WorldcoreView {
 
             // -- west --
 
+            yy = node.west ? -0.9 : 0;
             material = node.west ? this.yellowMaterial : this.redMaterial;
-            p0 = v3_add(node.xyz,[0,-0.9,0]);
+            p0 = v3_add(node.xyz,[0,yy,0]);
             p0 = v3_multiply(p0, [Constants.scale, 1, Constants.scale]);
-            p1 = v3_add(node.xyz,[0,-0.9,1]);
+            p1 = v3_add(node.xyz,[0,yy,1]);
             p1 = v3_multiply(p1, [Constants.scale, 1, Constants.scale]);
 
             geometry = new THREE.BufferGeometry().setFromPoints([
@@ -406,10 +408,11 @@ export class PathDebug extends WorldcoreView {
 
             // -- south --
 
+            yy = node.south ? -0.9 : 0;
             material = node.south ? this.yellowMaterial : this.redMaterial;
-            p0 = v3_add(node.xyz,[0,-0.9,0]);
+            p0 = v3_add(node.xyz,[0,yy,0]);
             p0 = v3_multiply(p0, [Constants.scale, 1, Constants.scale]);
-            p1 = v3_add(node.xyz,[1,-0.9,0]);
+            p1 = v3_add(node.xyz,[1,yy,0]);
             p1 = v3_multiply(p1, [Constants.scale, 1, Constants.scale]);
 
             geometry = new THREE.BufferGeometry().setFromPoints([
@@ -421,10 +424,11 @@ export class PathDebug extends WorldcoreView {
 
             // -- east --
 
+            yy = node.east ? -0.9 : 0;
             material = node.east ? this.yellowMaterial : this.redMaterial;
-            p0 = v3_add(node.xyz,[1,-0.9,0]);
+            p0 = v3_add(node.xyz,[1,yy,0]);
             p0 = v3_multiply(p0, [Constants.scale, 1, Constants.scale]);
-            p1 = v3_add(node.xyz,[1,-0.9,1]);
+            p1 = v3_add(node.xyz,[1,yy,1]);
             p1 = v3_multiply(p1, [Constants.scale, 1, Constants.scale]);
 
             geometry = new THREE.BufferGeometry().setFromPoints([
@@ -436,10 +440,11 @@ export class PathDebug extends WorldcoreView {
 
             // -- north --
 
+            yy = node.north ? -0.9 : 0;
             material = node.north ? this.yellowMaterial : this.redMaterial;
-            p0 = v3_add(node.xyz,[0,-0.9,1]);
+            p0 = v3_add(node.xyz,[0,yy,1]);
             p0 = v3_multiply(p0, [Constants.scale, 1, Constants.scale]);
-            p1 = v3_add(node.xyz,[1,-0.9,1]);
+            p1 = v3_add(node.xyz,[1,yy,1]);
             p1 = v3_multiply(p1, [Constants.scale, 1, Constants.scale]);
 
             geometry = new THREE.BufferGeometry().setFromPoints([

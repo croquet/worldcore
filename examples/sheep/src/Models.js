@@ -38,15 +38,16 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!");
+        console.log("Start root model!!!!");
 
         this.base = BaseActor.create({});
         // this.flock = FlockActor.create();
 
-        // this.bot0 = BotActor.create({pawn: "TestPawn", name: "bot 0", translation:[1,0,1], tags: ["bot"]});
-        // this.bot1 = BotActor.create({pawn: "TestPawn", name: "bot 1", translation:[2,0,2], tags: ["bot"]});
+        // this.bot0 = BotActor.create({pawn: "TestPawn", name: "bot 0", translation:[3,0,3], tags: ["bot"]});
+        // this.bot1 = BotActor.create({pawn: "TestPawn", name: "bot 1", translation:[6,0,3], tags: ["bot"]});
+
         // this.bot2 = BotActor.create({pawn: "TestPawn", name: "bot 2", translation:[3,0,3], tags: ["bot"]});
-        // this.bot3 = BotActor.create({pawn: "TestPawn", name: "bot 3", translation:[4,0,4], tags: ["other"]});
+        // this.bot3 = BotActor.create({pawn: "TestPawn", name: "bot 3", translation:[4,0,4], tags: ["bot"]});
 
         // console.log (this.bot0.bin);
         // console.log (this.bot1.bin);
@@ -69,10 +70,10 @@ export class MyModelRoot extends ModelRoot {
 
         // console.log(this.flock);
 
-        for(let n = 0; n<5;n++) {
+        for(let n = 0; n<100;n++) {
             const translation = [ Constants.xSize * Constants.scale * Math.random(), 0, Constants.zSize * Constants.scale * Math.random()];
             // const translation = [ 0.5,0,0.5];
-            const bot = BotActor.create({pawn: "TestPawn", translation});
+            const bot = BotActor.create({pawn: "TestPawn", translation, tags: ["bot"]});
         }
 
     }

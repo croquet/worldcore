@@ -66,6 +66,8 @@ export class ThreeRaycast extends ViewService {
             if (rc && this.renderObject) this.collisionLayers.forEach( layer => rc.removeFromLayer(this.renderObject, layer))
         }
 
+        // Bug with instances
+
         addRenderObjectToRaycast(layer = "default") {
             const rc = this.service("ThreeRaycast");
             this.collisionLayers.push(layer);
