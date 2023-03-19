@@ -63,7 +63,7 @@ export class ThreeRaycast extends ViewService {
         destroy() {
             super.destroy();
             const rc = this.service("ThreeRaycast");
-            if (rc && this.renderObject) this.collisionLayers.forEach( layer => rc.removeFromLayer(this.renderObject, layer))
+            if (rc && this.renderObject && !this.renderObject.instance) this.collisionLayers.forEach( layer => rc.removeFromLayer(this.renderObject, layer));
         }
 
         // Bug with instances
