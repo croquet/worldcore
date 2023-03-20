@@ -67,6 +67,7 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
 
     releaseInstance() {
         if (this.instance) this.instance.release(this.meshIndex);
+        this.instance = undefined;
         this.meshIndex = undefined;
     }
 
