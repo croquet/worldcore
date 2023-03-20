@@ -69,7 +69,7 @@ export class MyModelRoot extends ModelRoot {
         bm.destroyAll();
 
 
-        for(let n = 0; n<50;n++) {
+        for(let n = 0; n<200;n++) {
             const translation = [ Constants.xSize * Constants.scale * Math.random(), 0, Constants.zSize * Constants.scale * Math.random()];
             const bot = BotActor.create({pawn: "TestPawn", translation, tags: ["bot"]});
         }

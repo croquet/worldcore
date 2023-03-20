@@ -75,9 +75,8 @@ export class BotActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
         super.init(options);
         const bm = this.service("BotManager");
         bm.bots.add(this);
-        this.spread = this.behavior.start({name: "SpreadBehavior", radius: 1});
+        this.spread = this.behavior.start({name: "SpreadBehavior", radius: 0.5});
         this.subscribe("hud", "go", this.go);
-        // this.subscribe("input", "sDown", this.doSpread);
     }
 
     destroy() {
@@ -157,13 +156,15 @@ export class BotActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
     }
 
     go(target) {
-        console.log("g");
+        // console.log("g");
         target[1] = 0;
         if (this.ggg){
             this.ggg.destroy()
             this.ggg = null;
         }
-        this.ggg = this.behavior.start({name: "WalkToBehavior", destination: target, speed: 10});
+
+        const speed = 8 + 2 * Math.random();
+        this.ggg = this.behavior.start({name: "WalkToBehavior", destination: target, speed, radius:4});
     }
 
     // doSpread() {

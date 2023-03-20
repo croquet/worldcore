@@ -83,7 +83,7 @@ class GodView extends ViewService {
     }
 
     go() {
-        console.log("go");
+        // console.log("go");
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(this.xy, "ground");
         if (hits.length<1) return;

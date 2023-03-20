@@ -66,8 +66,10 @@ GoBehavior.register("GoBehavior");
 
 class GotoBehavior extends Behavior {
 
-    get tickRate() { return this._tickRate || 50} // More than 15ms for smooth movement
+    get tickRate() { return this._tickRate || 80} // More than 15ms for smooth movement
     get stop() { return this._stop } // Stop at the target
+    get radius() { return this._radius || 0}
+
 
     get target() {return this._target || this.actor.translation}
     set target(target) {this.set({target})};
@@ -78,6 +80,13 @@ class GotoBehavior extends Behavior {
 
         const to = v3_sub(this.target, this.actor.translation);
         const left = v3_magnitude(to);
+
+        if (left < this.radius) {
+            this.progress(1);
+            if (this.stop) this.succeed();
+            return;
+        }
+
         if (distance>left) {
             this.actor.set({translation:this.target});
 
@@ -106,14 +115,15 @@ GotoBehavior.register("GotoBehavior");
 //-- WalkToBehavior ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Need to repath if goto is blocked.
-
 class WalkToBehavior extends Behavior {
 
     get destination() {return this._destination}
     get speed() { return this._speed || 3}
+    get radius() { return this._radius || 0}
+
 
     onStart() {
+        this.tickRate = 500;
         const paths = this.service("Paths");
         const endCell = v3_floor(v3_scale(this.destination, 1/Constants.scale));
         endCell[1] = 1;
@@ -142,8 +152,7 @@ class WalkToBehavior extends Behavior {
     nextStep() {
         this.step++
         if (this.step === this.path.length) { // at end
-
-            this.goto.set({target: this.destination})
+            this.goto.set({target: this.destination, radius: this.radius});
         } else {
             const nextCell = unpackKey(this.path[this.step]);
             nextCell[0] += 0.25 + this.random()*0.5;
@@ -158,16 +167,18 @@ class WalkToBehavior extends Behavior {
     }
 
     onProgress(child) {
-        if (child === this.goto) {
-            // console.log(this.step + " of " + this.path.length);
-            if (this.step<this.path.length) {
-                this.nextStep();
-                this.progress(this.step/this.path.length);
-            } else {
-                // console.log("walk succeed");
-                this.succeed();
-            }
+
+        if (this.step<this.path.length) {
+            this.nextStep();
+            this.progress(this.step/this.path.length);
+        } else {
+            this.succeed();
         }
+    }
+
+    do() {
+        const range = v3_distance(this.destination, this.actor.translation);
+        if (range < this.radius) this.succeed();
     }
 
     onFail() {
