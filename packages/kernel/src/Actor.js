@@ -44,6 +44,12 @@ export class Actor extends WorldcoreModel {
     get children() { return this._children || new Set(); }
     get name() {return this._name || "Actor"}
 
+    get tags() {  return this.__tags || new Set(); }
+    set _tags(tags) {
+        if(!this.__tags) this.__tags = new Set();
+        for (const tag of tags) this.__tags.add(tag);
+    }
+
     init(options) {
         super.init();
         this.set(options);
@@ -99,8 +105,11 @@ export class Actor extends WorldcoreModel {
     }
 
     removeChild(child) {
-        // if (this.children) this.children.delete(child);
         this.children.delete(child);
+    }
+
+    removeTag(tag) {
+        this.tags.delete(tag);
     }
 
     say(event, data) {
