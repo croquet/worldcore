@@ -1,7 +1,6 @@
 import { RegisterMixin, ModelService, v3_sub, v3_scale } from "@croquet/worldcore-kernel";
 
-export let RAPIER;
-
+export let RAPIER; // eslint-disable-line import/no-mutable-exports
 export function RapierVersion() {
     return RAPIER.version();
 }
@@ -18,12 +17,26 @@ export class RapierManager extends ModelService {
     }
 
     static types() {
-        if (!RAPIER) return {};
+        if (!RAPIER) { console.error("Rapier not ready to provide snapshot reader/writer"); return {}; }
         return {
             "RAPIER.World": {
                 cls: RAPIER.World,
-                write: world => world.takeSnapshot(),
-                read:  snapshot => RAPIER.World.restoreSnapshot(snapshot)
+                write: world => {
+                    const result = world.takeSnapshot();
+                    if (result) return result;
+
+                    // if an empty Rapier snapshot is returned, crash the session rather than write a Croquet snapshot that will be unloadable
+                    console.error("empty RAPIER.World snapshot: ", JSON.stringify(result));
+                    throw Error("Failed to take Rapier snapshot");
+                },
+                read: snapshot => {
+                    const result = RAPIER.World.restoreSnapshot(snapshot);
+                    if (result) return result;
+
+                    // if our decode fails, crash the session to ensure that we don't later write a Croquet snapshot that has no RAPIER.World
+                    console.error(`Rapier ${RapierVersion()} failed to decode snapshot.`, snapshot);
+                    throw Error("Failed to decode Rapier snapshot");
+                }
             },
             "RAPIER.EventQueue": {
                 cls: RAPIER.EventQueue,
