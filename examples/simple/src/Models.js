@@ -8,7 +8,7 @@ import { TestPawn, BasePawn, AvatarPawn } from "./Views";
 //------------------------------------------------------------------------------------------
 
 class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
-    get pawn() {return this._pawn || "TestPawn"}
+    // get pawn() {return this._pawn || "TestPawn"}
 }
 TestActor.register('TestActor');
 
@@ -23,57 +23,6 @@ BaseActor.register('BaseActor');
 
 
 //------------------------------------------------------------------------------------------
-// AvatarActor -------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
-
-//     get pawn() {return  "AvatarPawn"}
-//     get color() {return  this._color || [0,0,0]}
-
-//     init(options) {
-//         super.init(options);
-//         this.head = TestActor.create({parent: this, pawn: "HeadPawn", translation: [0,1.25,0]})
-//         this.listen("headPitch", this.doHead)
-//     }
-
-//     doHead(pitch) {
-//         const pitchQ = q_axisAngle([1,0,0], pitch);
-//         this.head.set({rotation: pitchQ});
-//     }
-// }
-// AvatarActor.register('AvatarActor');
-
-//------------------------------------------------------------------------------------------
-//-- MyUser --------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// class MyUser extends User {
-
-//     init(options) {
-//         super.init(options);
-//         // this.index = Math.floor(Math.random()*20);
-//         // this.avatar = AvatarActor.create({name: "Red", driver: this.userId, translation: [0,0.5,20], color: [1,0,0]});
-//     }
-
-//     destroy() {
-//         super.destroy();
-//         if (this.avatar) this.avatar.destroy();
-//     }
-// }
-// MyUser.register("MyUser");
-
-//------------------------------------------------------------------------------------------
-//-- MyUserManager -------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// class MyUserManager extends UserManager {
-//     get defaultUser() {return MyUser;}
-
-// }
-// MyUserManager.register("MyUserManager");
-
-//------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -85,20 +34,26 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!bcd");
+        console.log("Start root model!");
 
         this.base = BaseActor.create({});
+        this.sun = TestActor.create({pawn: "TestPawn", translation:[0,2,0], });
+        this.planet = TestActor.create({pawn: "OtherPawn", parent: this.sun, translation:[5,0,0]});
 
-        this.test0 = TestActor.create({translation:[0,5,0]});
-        this.test1 = TestActor.create({parent: this.test0, translation:[5,0,0]});
+        this.sun.behavior.start({name: "SpinBehavior", axis:[0,1,0], tickRate: 1000, speed: 2});
+        this.planet.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5})
 
-        this.test0.behavior.start({name: "SpinBehavior", axis:[0,1,0], speed: 2});
-        this.test1.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5})
+        this.subscribe("input", "pointerDown", this.click);
+    }
 
-        this.test00 = TestActor.create({translation:[-5,0.5,0]});
-        this.test01 = TestActor.create({translation:[5,0.5,0]});
-        this.test10 = TestActor.create({translation:[0,0.5,-5]});
-        this.test11 = TestActor.create({translation:[0,0.5,5]});
+    click() {
+        console.log("click");
+
+        if (this.sun.pawn === "TestPawn") {
+            this.sun.set({pawn: "BallPawn"});
+        } else {
+            this.sun.set({pawn: "TestPawn"});
+        }
     }
 
 
