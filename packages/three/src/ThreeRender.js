@@ -6,10 +6,10 @@ export { THREE };
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
-import { BloomPass } from 'three/examples/jsm/postprocessing/BloomPass.js';
+import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 
-export { OutlinePass } ;
-export { BloomPass } ;
+export { Reflector };
+
 
 
 //------------------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ export class ThreeRenderManager extends ViewService {
         this.canvas.style.cssText = "position: absolute; left: 0; top: 0; z-index: 0";
         document.body.insertBefore(this.canvas, null);
 
-        this.renderer = new THREE.WebGLRenderer({canvas:this.canvas});
+        this.renderer = new THREE.WebGLRenderer({canvas:this.canvas, antialias:true});
         this.renderer.shadowMap.enabled = true;
 
         this.scene = new THREE.Scene();
