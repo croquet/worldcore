@@ -329,15 +329,15 @@ class GodView extends ViewService {
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
-        this.subscribe(this.viewId, "avatar", this.onAvatar)
+        // this.subscribe(this.viewId, "avatar", this.onAvatar)
 
     }
 
-    onAvatar(driving) {
-        // console.log ("Avatar!");
-        this.paused = driving;
-        if(!driving) this.updateCamera();
-    }
+    // onAvatar(driving) {
+    //     // console.log ("Avatar!");
+    //     this.paused = driving;
+    //     if(!driving) this.updateCamera();
+    // }
 
 
     updateCamera() {
@@ -396,7 +396,7 @@ class GodView extends ViewService {
 export class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, WidgetManager2, ThreeInstanceManager, ThreeRaycast];
+        return [InputManager, ThreeRenderManager, WidgetManager2, ThreeInstanceManager, GodView, ThreeRaycast];
     }
 
     onStart() {
