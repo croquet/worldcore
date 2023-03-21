@@ -88,7 +88,7 @@ export const AM_RapierWorld = superclass => class extends superclass {
     destroyRigidBody(handle) {
         const rb = this.getRigidBody(handle);
         this.world.removeRigidBody(rb);
-        this.rigidBodyActors.set(handle, null);
+        this.rigidBodyActors.delete(handle); // used to set null - but that just endlessly grows the collection
     }
 
     tick() {
@@ -96,6 +96,8 @@ export const AM_RapierWorld = superclass => class extends superclass {
         this.world.step(this.queue);
         this.world.forEachActiveRigidBody(rb => {
             const actor = this.rigidBodyActors.get(rb.handle);
+            if (!actor) return; // ael: not sure this is possible, but just in case
+
             const t = rb.translation();
             const r = rb.rotation();
             const translation = [t.x, t.y, t.z];
