@@ -1,7 +1,6 @@
 import { RegisterMixin, ModelService, v3_sub, v3_scale } from "@croquet/worldcore-kernel";
 
-export let RAPIER;
-
+export let RAPIER; // eslint-disable-line import/no-mutable-exports
 export function RapierVersion() {
     return RAPIER.version();
 }
@@ -18,12 +17,26 @@ export class RapierManager extends ModelService {
     }
 
     static types() {
-        if (!RAPIER) return {};
+        if (!RAPIER) { console.error("Rapier not ready to provide snapshot reader/writer"); return {}; }
         return {
             "RAPIER.World": {
                 cls: RAPIER.World,
-                write: world => world.takeSnapshot(),
-                read:  snapshot => RAPIER.World.restoreSnapshot(snapshot)
+                write: world => {
+                    const result = world.takeSnapshot();
+                    if (result) return result;
+
+                    // if an empty Rapier snapshot is returned, crash the session rather than write a Croquet snapshot that will be unloadable
+                    console.error("empty RAPIER.World snapshot: ", JSON.stringify(result));
+                    throw Error("Failed to take Rapier snapshot");
+                },
+                read: snapshot => {
+                    const result = RAPIER.World.restoreSnapshot(snapshot);
+                    if (result) return result;
+
+                    // if our decode fails, crash the session to ensure that we don't later write a Croquet snapshot that has no RAPIER.World
+                    console.error(`Rapier ${RapierVersion()} failed to decode snapshot.`, snapshot);
+                    throw Error("Failed to decode Rapier snapshot");
+                }
             },
             "RAPIER.EventQueue": {
                 cls: RAPIER.EventQueue,
@@ -38,6 +51,7 @@ export class RapierManager extends ModelService {
     }
 }
 RapierManager.register("RapierManager");
+
 //------------------------------------------------------------------------------------------
 //-- AM_RapierWorld ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -45,7 +59,7 @@ RapierManager.register("RapierManager");
 export const AM_RapierWorld = superclass => class extends superclass {
 
     init(options) {
-        super.init(options)
+        super.init(options);
         this.queue = new RAPIER.EventQueue(true);
         this.world = new RAPIER.World(new RAPIER.Vector3(...this.gravity));
         this.world.timestep = this.timeStep / 1000;
@@ -59,8 +73,8 @@ export const AM_RapierWorld = superclass => class extends superclass {
         this.world.free();
     }
 
-    get timeStep() {return this._timeStep || 50}
-    get gravity() {return this._gravity || [0,-9.8,0]}
+    get timeStep() {return this._timeStep || 50;}
+    get gravity() {return this._gravity || [0,-9.8,0];}
 
     createRigidBody(actor, rbd) {
         const rb = this.world.createRigidBody(rbd);
@@ -75,7 +89,7 @@ export const AM_RapierWorld = superclass => class extends superclass {
     destroyRigidBody(handle) {
         const rb = this.getRigidBody(handle);
         this.world.removeRigidBody(rb);
-        this.rigidBodyActors.set(handle, null);
+        this.rigidBodyActors.delete(handle); // used to set null - but that just endlessly grows the collection
     }
 
     tick() {
@@ -83,10 +97,12 @@ export const AM_RapierWorld = superclass => class extends superclass {
         this.world.step(this.queue);
         this.world.forEachActiveRigidBody(rb => {
             const actor = this.rigidBodyActors.get(rb.handle);
+            if (!actor) return; // ael: not sure this is possible, but just in case
+
             const t = rb.translation();
             const r = rb.rotation();
             const translation = [t.x, t.y, t.z];
-            const rotation = [r.x, r.y, r.z, r.w]
+            const rotation = [r.x, r.y, r.z, r.w];
 
             if (actor.hasAccelerometer) {
                 const velocity = v3_scale(v3_sub(translation, actor.translation), 1000/this.timeStep);
@@ -95,13 +111,12 @@ export const AM_RapierWorld = superclass => class extends superclass {
                 actor.set({acceleration,velocity});
             }
 
-
             actor.set({translation, rotation});
         });
         if (!this.doomed) this.future(this.timeStep).tick();
     }
 
-}
+};
 RegisterMixin(AM_RapierWorld);
 
 //------------------------------------------------------------------------------------------
@@ -118,7 +133,7 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
         switch (this.rigidBodyType) {
             case "static": rbd = RAPIER.RigidBodyDesc.newStatic(); break;
             case "dynamic":
-            default: rbd = RAPIER.RigidBodyDesc.newDynamic() 
+            default: rbd = RAPIER.RigidBodyDesc.newDynamic();
         }
         rbd.setCcdEnabled(true);
         rbd.translation = new RAPIER.Vector3(...this.translation);
@@ -127,16 +142,16 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
         this.rigidBodyHandle = this.worldActor.createRigidBody(this, rbd);
     }
 
-    destroy() { 
+    destroy() {
         super.destroy();
         this.worldActor.destroyRigidBody(this.rigidBodyHandle);
-        
+
     }
 
-    get rigidBodyType() { return this._rigidBodyType || "dynamic"}
-    get velocity() { return this._velocity || [0,0,0]}
-    get acceleration() { return this._acceleration || [0,0,0]}
-    get hasAccelerometer() { return this._hasAccelerometer}
+    get rigidBodyType() { return this._rigidBodyType || "dynamic";}
+    get velocity() { return this._velocity || [0,0,0];}
+    get acceleration() { return this._acceleration || [0,0,0];}
+    get hasAccelerometer() { return this._hasAccelerometer;}
 
     get rigidBody() {
         if (!this.$rigidBody) this.$rigidBody = this.worldActor.getRigidBody(this.rigidBodyHandle);
@@ -150,12 +165,13 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
             actor = actor.parent;
         } while (actor);
         console.error("AM_RapierRigidBody must have an AM_RapierWorld parent");
+        return null;
     }
 
     createCollider(cd) {
         this.worldActor.world.createCollider(cd, this.rigidBody);
     }
 
-}
+};
 RegisterMixin(AM_RapierRigidBody);
 

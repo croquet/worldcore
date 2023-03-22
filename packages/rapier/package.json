@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@croquet/worldcore-kernel": "^1.4.0",
-    "@dimforge/rapier3d": "^0.11.0"
+    "@dimforge/rapier3d": "0.11.2"
   },
   "publishConfig": {
     "access": "public"
