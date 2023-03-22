@@ -90,10 +90,10 @@ class GodView extends ViewService {
 
         this.updateCamera();
 
-        // this.subscribe("input", 'wheel', this.onWheel);
-        // this.subscribe("input", "pointerDown", this.doPointerDown);
-        // this.subscribe("input", "pointerUp", this.doPointerUp);
-        // this.subscribe("input", "pointerDelta", this.doPointerDelta);
+        this.subscribe("input", 'wheel', this.onWheel);
+        this.subscribe("input", "pointerDown", this.doPointerDown);
+        this.subscribe("input", "pointerUp", this.doPointerUp);
+        this.subscribe("input", "pointerDelta", this.doPointerDelta);
     }
 
     updateCamera() {

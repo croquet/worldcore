@@ -44,9 +44,10 @@ export class MyModelRoot extends ModelRoot {
         console.log("Start root model!!");
 
         this.base = BaseActor.create({gridPlane: "xz"});
-        this.test0 = TestActor2.create({parent: this.base, pawn: "TestPawn", translation:[0,0,0]});
+        this.test0 = TestActor2.create({parent: this.base, pawn: "TestPawn", translation:[0,0,-2]});
         this.test1 = TestActor2.create({parent: this.base, pawn: "TestPawn", translation:[5,0,5]});
         console.log(this.test0.gridBin);
+        console.log(this.base.navNodes);
 
         this.sun = TestActor.create({name: "sun", pawn: "TestPawn", translation:[0,2,0]});
         this.planet = TestActor.create({name: "planet", pawn: "OtherPawn", parent: this.sun, translation:[5,0,0]});
@@ -58,7 +59,7 @@ export class MyModelRoot extends ModelRoot {
 
 
 
-        this.subscribe("input", "pointerDown", this.click);
+        // this.subscribe("input", "pointerDown", this.click);
     }
 
     click() {
