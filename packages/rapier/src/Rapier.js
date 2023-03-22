@@ -17,7 +17,7 @@ export class RapierManager extends ModelService {
     }
 
     static types() {
-        if (!RAPIER) { console.error("Rapier not ready to provide snapshot reader/writer"); return {}; }
+        if (!RAPIER) return {}; // RapierManager isn't being used in this app
         return {
             "RAPIER.World": {
                 cls: RAPIER.World,
