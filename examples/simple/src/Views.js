@@ -3,7 +3,7 @@ import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, Thr
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, PM_ThreeCollider, ThreeRaycast } from "@croquet/worldcore";
 
 
-
+import { NavDebug } from "./NavTools"
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -159,6 +159,16 @@ export class MyViewRoot extends ViewRoot {
         this.buildInstances()
         this.buildLights();
         this.buildHUD();
+        this.navDebug = new NavDebug(this.model);
+
+        this.subscribe("input", "zDown", this.test)
+    }
+
+    test() {
+        console.log("test");
+        console.log(this.model.base);
+        this.navDebug.draw(this.model.base);
+
     }
 
     buildLights() {

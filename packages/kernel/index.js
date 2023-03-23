@@ -8,7 +8,7 @@ export * from "./src/User";
 export * from "./src/Utilities";
 export * from "./src/Vector";
 export * from "./src/Input";
-export * from "./src/Grid";
+export * from "./src/NavGrid";
 
 // export * from "./src/Player";
 // export * from "./src/Focus";
