@@ -1,9 +1,9 @@
 import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, ThreeInstanceManager, ViewRoot, Pawn, mix,
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE, PM_ThreeInstanced,
-    PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, PM_ThreeCollider, ThreeRaycast } from "@croquet/worldcore";
+    PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, PM_ThreeCollider, ThreeRaycast, viewRoot } from "@croquet/worldcore";
 
 
-import { NavDebug } from "./NavTools"
+import { NavDebug, PM_NavGridGizmo } from "./NavTools"
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ BallPawn.register("BallPawn");
 //-- BasePawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_NavGridGizmo) {
     constructor(...args) {
         super(...args);
 
@@ -94,6 +94,14 @@ class GodView extends ViewService {
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
+
+        this.subscribe("model", "path", this.drawPath)
+    }
+
+    drawPath(data) {
+        console.log("path");
+        console.log(data);
+        viewRoot.navDebug.drawPath(data.grid, data.path);
     }
 
     updateCamera() {
@@ -167,6 +175,12 @@ export class MyViewRoot extends ViewRoot {
     test() {
         console.log("test");
         console.log(this.model.base);
+        this.navDebug.draw(this.model.base);
+
+    }
+
+    path() {
+        console.log("path");
         this.navDebug.draw(this.model.base);
 
     }

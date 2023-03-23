@@ -65,6 +65,8 @@ export const AM_NavGrid = superclass => class extends superclass {
                 this.navNodes.set(node.key, node);
             }
         }
+
+        this.addHorizontalFence(0,3,8);
     }
 
     addObstacle(x,y) {
@@ -79,7 +81,6 @@ export const AM_NavGrid = superclass => class extends superclass {
         const northeast = this.navNodes.get(packKey(x+1, y+1));
         const northwest = this.navNodes.get(packKey(x-1, y+1));
 
-
         if (west) west.exits[2] = 0;
         if (south) south.exits[3] = 0;
         if (east) east.exits[0] = 0;
@@ -90,6 +91,119 @@ export const AM_NavGrid = superclass => class extends superclass {
         if (northeast) northeast.exits[4] = 0;
         if (northwest) northwest.exits[5] = 0;
     }
+
+    removeObstacle(x,y) {
+        const navKey = packKey(x,y);
+
+        const west = this.navNodes.get(packKey(x-1, y));
+        const south = this.navNodes.get(packKey(x, y-1));
+        const east = this.navNodes.get(packKey(x+1, y));
+        const north = this.navNodes.get(packKey(x, y+1));
+
+        const southwest = this.navNodes.get(packKey(x-1, y-1));
+        const southeast = this.navNodes.get(packKey(x+1, y-1));
+        const northeast = this.navNodes.get(packKey(x+1, y+1));
+        const northwest = this.navNodes.get(packKey(x-1, y+1));
+
+        if (west) west.exits[2] = navKey;
+        if (south) south.exits[3] = navKey;
+        if (east) east.exits[0] = navKey;
+        if (north) north.exits[1] = navKey;
+
+        if (southwest) southwest.exits[6] = navKey;
+        if (southeast) southeast.exits[7] = navKey;
+        if (northeast) northeast.exits[4] = navKey;
+        if (northwest) northwest.exits[5] = navKey;
+    }
+
+    addHorizontalFence(x,y,length) {
+
+        for ( let n = 0; n<length; n++) {
+
+            const south = this.navNodes.get(packKey(x+n,y-1));
+            const north = this.navNodes.get(packKey(x+n,y));
+
+            if (south) south.exits[3] = 0;
+            if (north) north.exits[1] = 0;
+
+            if (n>0) {
+                if (south) south.exits[7] = 0;
+                if (north) north.exits[4] = 0;
+            }
+
+            if (n<length-1) {
+                if (south) south.exits[6] = 0;
+                if (north) north.exits[5] = 0;
+            }
+        }
+    }
+
+    removeHorizontalFence(x,y,length) {
+
+        for ( let n = 0; n<length; n++) {
+
+            const south = this.navNodes.get(packKey(x+n,y-1));
+            const north = this.navNodes.get(packKey(x+n,y));
+
+            if (south) south.exits[3] = packKey(x+n,y);
+            if (north) north.exits[1] = packKey(x+n,y-1);
+
+            if (n>0) {
+                if (south) south.exits[7] = packKey(x+n-1,y);
+                if (north) north.exits[4] = packKey(x+n-1,y-1);
+            }
+
+            if (n<length-1) {
+                if (south) south.exits[6] = packKey(x+n+1,y);
+                if (north) north.exits[5] = packKey(x+n+1,y-1);
+            }
+        }
+    }
+
+    addVerticalFence(x,y,length) {
+
+        for ( let n = 0; n<length; n++) {
+
+            const west = this.navNodes.get(packKey(x-1,y+n));
+            const east = this.navNodes.get(packKey(x,y+n));
+
+            if (west) west.exits[2] = 0;
+            if (east) east.exits[0] = 0;
+
+            if (n>0) {
+                if (west) west.exits[5] = 0;
+                if (east) east.exits[4] = 0;
+            }
+
+            if (n<length-1) {
+                if (west) west.exits[6] = 0;
+                if (east) east.exits[7] = 0;
+            }
+        }
+    }
+
+    removeVerticalFence(x,y,length) {
+
+        for ( let n = 0; n<length; n++) {
+
+            const west = this.navNodes.get(packKey(x-1,y+n));
+            const east = this.navNodes.get(packKey(x,y+n));
+
+            if (west) west.exits[2] = packKey(x,y+n);
+            if (east) east.exits[0] = packKey(x-1,y+n);
+
+            if (n>0) {
+                if (west) west.exits[5] = packKey(x,y+n-1); //se
+                if (east) east.exits[4] = packKey(x-1,y+n-1); //sw
+            }
+
+            if (n<length-1) {
+                if (west) west.exits[6] = packKey(x,y+n); //ne
+                if (east) east.exits[7] = packKey(x-1,y+n); //nw
+            }
+        }
+    }
+
 
     findPath(startKey, endKey) {
 
@@ -148,6 +262,18 @@ RegisterMixin(AM_NavGrid);
 
 export const AM_OnNavGrid = superclass => class extends superclass {
 
+    init(options) {
+        super.init(options);
+        console.log(this.navXY);
+        if (this.obstacle) this.parent.addObstacle(...this.navXY);
+    }
+
+    destroy() {
+        if (this.obstacle) this.parent.removeObstacle(...this.navXY);
+        this.parent.removeFromBin(this.binKey, this);
+        super.destroy();
+    }
+
     get navXY() {
         const x = this.translation[0];
         const y = this.translation[1];
@@ -166,18 +292,16 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         return packKey(...this.navXY);
     }
 
-    destroy() {
-        super.destroy();
-        this.parent.removeFromBin(this.binKey, this);
-    }
+    get obstacle() { return this._obstacle}
 
     parentSet(value,old) {
         super.parentSet(value,old);
-        if(!this.parent || !this.parent.gridBins) console.warn("AM_OnNavGrid must have an AM_NavGrid parent");
+        if(!this.parent || !this.parent.gridBins) console.warn("AM_OnNavGrid must have a NavGrid parent!");
     }
 
     translationSet(value, old) {
         super.translationSet(value,old);
+        if (old && this.obstacle) console.warn("NavGrid obstacles can't move!");
 
         const oldKey = this.binKey;
 
@@ -185,7 +309,7 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         const x = value[0];
         const y = value[1];
         const z = value[2];
-        if (x < 0 || y < 0 || z < 0 ) console.warn("Negative xyz coordinates are not allowed on an AM_NavGrid");
+        if (x < 0 || y < 0 || z < 0 ) console.warn("Negative xyz coordinates are not allowed on an NavGrid!");
 
         switch (this.parent.gridPlane) {
             default:
@@ -200,6 +324,12 @@ export const AM_OnNavGrid = superclass => class extends superclass {
             this.parent.removeFromBin(oldKey,this);
             this.parent.addToBin(this.binKey, this);
         }
+    }
+
+    obstacleSet(value,old) {
+        if (!this.parent) return;
+        if (old) this.parent.removeObstacle(...this.navXY);
+        if (value) this.parent.addObstacle(...this.navXY);
     }
 
     findPathTo(target) {
