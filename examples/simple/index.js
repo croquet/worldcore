@@ -1,6 +1,5 @@
 // Simple Testbed
 
-import * as BEHAVIORS from "./src/Behaviors";
 import { App, StartWorldcore} from "@croquet/worldcore";
 
 import {  MyViewRoot } from "./src/Views";

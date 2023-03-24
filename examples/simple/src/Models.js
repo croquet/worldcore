@@ -75,7 +75,9 @@ export class MyModelRoot extends ModelRoot {
 
     test() {
         console.log("test");
-        this.test0.behavior.start({name: "GotoBehavior", speed:100, target: [22.5,0.5,10.5], radius: 0});
+        this.test0.behavior.start({name: "PathToBehavior", speed:50, target: [22.5,0.5,10.5], noise:1});
+
+        // this.test0.behavior.start({name: "GotoBehavior", speed:100, target: [22.5,0.5,10.5], radius: 0});
         // const path = this.test0.findPathTo([15,0,15]);
         // this.base.say("drawPath", path);
     }

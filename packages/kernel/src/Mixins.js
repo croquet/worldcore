@@ -197,9 +197,8 @@ export const AM_Spatial = superclass => class extends superclass {
     get scale() { return this._scale?[...this._scale] : [1,1,1] };
     set scale(v) { this.set({scale: v}) };
 
-    // get translationXYZ() { return this.translation }
-    // get rotationQ() { return this.rotation }
-    // get scaleXYZ() { return this.scale }
+    get forward() {return this._forward || [0,0,1]}
+    get up() { return this._up || [0,1,0]}
 
 };
 RegisterMixin(AM_Spatial);
@@ -219,19 +218,14 @@ export const PM_Spatial = superclass => class extends superclass {
     }
 
     get scale() { return this.actor.scale; }
-    get translation() { return this.actor.translation; }
-    get rotation() { return this.actor.rotation; }
-    get local() { return this.actor.local; }
-    get global() { return this.actor.global; }
+    get translation() { return this.actor.translation }
+    get rotation() { return this.actor.rotation }
+    get local() { return this.actor.local }
+    get global() { return this.actor.global }
     get lookGlobal() { return this.global; } // Allows objects to have an offset camera position -- obsolete?
 
-    // get translationXYZ() { return this.translation }
-    // get rotationQ() { return this.rotation }
-    // get scaleXYZ() { return this.scale }
-
-    // get translationTHREE() { return v3_THREE(...this.translation) }
-    // get rotationTHREE() { return q_THREE(...this.rotation) }
-    // get scaleTHREE() { return v3_THREE(...this.scale) }
+    get forward() {return this.actor.forward}
+    get up() { return this.actor.up}
 
 };
 

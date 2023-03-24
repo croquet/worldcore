@@ -4,6 +4,7 @@ import { Actor } from "./Actor";
 import { RegisterMixin } from "./Mixins";
 import { Shuffle } from "./Utilities";
 import { Constants } from "@croquet/croquet";
+import { q_axisAngle, q_multiply } from "./Vector";
 
 
 Constants.WC_BEHAVIORS = new Map();
@@ -72,7 +73,8 @@ export class Behavior extends Actor {
     get name() {return this._name || "Behavior"}
     get actor() { return this._actor}
     get tickRate() { return this._tickRate || 100}
-    get isPaused() { return this._pause};
+    get isPaused() { return this._pause}
+    get neverSucceed() {return this._neverSucceed}
 
     pause() { this.set({pause:true})}
     resume() { this.set({pause:false})}
@@ -121,12 +123,16 @@ export class Behavior extends Actor {
     }
 
     succeed(data) {
-        if (this.parent) this.parent.onSucceed(this, data);
-        this.destroy();
+        if (this.neverSucceed) {
+            this.progress(1)
+        } else {
+            if (this.parent) this.parent.onSucceed(this, data);
+            this.destroy();
+        }
     }
 
-    progress(data) {
-        if (this.parent) this.parent.onProgress(this, data);
+    progress(percent) {
+        if (this.parent) this.parent.onProgress(this, percent);
     }
 
     fail(data) {
@@ -552,3 +558,21 @@ export class InterruptBehavior extends DecoratorBehavior {
 
 }
 InterruptBehavior.register('InterruptBehavior');
+
+//------------------------------------------------------------------------------------------
+// Behaviors -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class SpinBehavior extends Behavior {
+
+    get axis() {return this._axis || [0,1,0]}
+    get speed() {return this._speed || 1}
+
+    do(delta) {
+        const q = q_axisAngle(this.axis, 0.13 * delta * this.speed / 50);
+        const rotation = q_multiply(this.actor.rotation, q);
+        this.actor.set({rotation});
+    }
+
+}
+SpinBehavior.register("SpinBehavior");

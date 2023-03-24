@@ -15,7 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Avatar mixins
 - onStart() to ViewRoot
 - dynamic pawn binding
-- Actors can be tagged
+- Actor tags
+- AM_Spatial & PM Spatial hav up and forward properties
+- NavGrid & PathToBehavior
 
 ### Changed
 - Pawn destruction handled by PawnManager, not Pawn itself

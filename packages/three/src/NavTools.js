@@ -1,4 +1,5 @@
-import { WorldcoreView, THREE } from "@croquet/worldcore";
+// import { WorldcoreView } from "@croquet/worldcore-kernel";
+import * as THREE from "three";
 
 
 export const PM_NavGridGizmo = superclass => class extends superclass {
