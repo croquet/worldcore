@@ -25,6 +25,7 @@ GridActor.register('GridActor');
 
 class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
     get pawn() {return "BasePawn"}
+
 }
 BaseActor.register('BaseActor');
 
@@ -43,9 +44,9 @@ export class MyModelRoot extends ModelRoot {
         super.init(...args);
         console.log("Start root model!!");
 
-        this.base = BaseActor.create({gridPlane: 0, gridSize: 16, gridScale: 1});
+        this.base = BaseActor.create({gridPlane: 0, gridSize: 16, gridScale: 3});
         this.test0 = GridActor.create({parent: this.base, pawn: "TestPawn", translation:[0.5,0.5,0.5]});
-        this.test1 = GridActor.create({parent: this.base, pawn: "TestPawn", translation:[7.5,0.5,4.5], obstacle: true});
+        this.test1 = GridActor.create({parent: this.base, pawn: "TestPawn", translation:[4.5,0.5,4.5], obstacle: true});
 
         this.sun = TestActor.create({name: "sun", pawn: "TestPawn", translation:[0,2,0]});
         this.planet = TestActor.create({name: "planet", pawn: "OtherPawn", parent: this.sun, translation:[5,0,0]});
@@ -58,6 +59,7 @@ export class MyModelRoot extends ModelRoot {
 
         this.subscribe("input", "xDown", this.test);
         this.subscribe("input", "nDown", this.test2);
+        // this.subscribe("input", "mDown", this.test2);
         // this.subscribe("input", "pointerDown", this.click);
     }
 
@@ -73,14 +75,15 @@ export class MyModelRoot extends ModelRoot {
 
     test() {
         console.log("test");
-        const path = this.test0.findPathTo([5,0,5]);
-        this.publish("model", "path", {grid: this.base, path});
+        this.test0.behavior.start({name: "GotoBehavior", speed:100, target: [22.5,0.5,10.5], radius: 0});
+        // const path = this.test0.findPathTo([15,0,15]);
+        // this.base.say("drawPath", path);
     }
 
     test2() {
         console.log("test2");
         // this.test1.set({translation: [5,5,5]});
-        this.test1.set({obstacle: false});
+        this.test1.destroy();
     }
 
 

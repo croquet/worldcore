@@ -3,7 +3,7 @@ import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, Thr
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, PM_ThreeCollider, ThreeRaycast, viewRoot } from "@croquet/worldcore";
 
 
-import { NavDebug, PM_NavGridGizmo } from "./NavTools"
+import { PM_NavGridGizmo } from "./NavTools"
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ class GodView extends ViewService {
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
 
-        this.subscribe("model", "path", this.drawPath)
+        // this.subscribe("model", "path", this.drawPath)
     }
 
     drawPath(data) {
@@ -167,23 +167,23 @@ export class MyViewRoot extends ViewRoot {
         this.buildInstances()
         this.buildLights();
         this.buildHUD();
-        this.navDebug = new NavDebug(this.model);
+        // this.navDebug = new NavDebug(this.model);
 
-        this.subscribe("input", "zDown", this.test)
+        // this.subscribe("input", "zDown", this.test)
     }
 
-    test() {
-        console.log("test");
-        console.log(this.model.base);
-        this.navDebug.draw(this.model.base);
+    // test() {
+    //     console.log("test");
+    //     console.log(this.model.base);
+    //     this.navDebug.draw(this.model.base);
 
-    }
+    // }
 
-    path() {
-        console.log("path");
-        this.navDebug.draw(this.model.base);
+    // path() {
+    //     console.log("path");
+    //     this.navDebug.draw(this.model.base);
 
-    }
+    // }
 
     buildLights() {
         const rm = this.service("ThreeRenderManager");

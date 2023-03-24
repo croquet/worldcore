@@ -67,6 +67,8 @@ export const AM_NavGrid = superclass => class extends superclass {
         }
 
         this.addHorizontalFence(0,3,8);
+
+        this.say("navGridChanged");
     }
 
     addObstacle(x,y) {
@@ -90,6 +92,8 @@ export const AM_NavGrid = superclass => class extends superclass {
         if (southeast) southeast.exits[7] = 0;
         if (northeast) northeast.exits[4] = 0;
         if (northwest) northwest.exits[5] = 0;
+
+        this.say("navGridChanged");
     }
 
     removeObstacle(x,y) {
@@ -114,6 +118,8 @@ export const AM_NavGrid = superclass => class extends superclass {
         if (southeast) southeast.exits[7] = navKey;
         if (northeast) northeast.exits[4] = navKey;
         if (northwest) northwest.exits[5] = navKey;
+
+        this.say("navGridChanged");
     }
 
     addHorizontalFence(x,y,length) {
@@ -136,6 +142,8 @@ export const AM_NavGrid = superclass => class extends superclass {
                 if (north) north.exits[5] = 0;
             }
         }
+
+        this.say("navGridChanged");
     }
 
     removeHorizontalFence(x,y,length) {
@@ -158,6 +166,8 @@ export const AM_NavGrid = superclass => class extends superclass {
                 if (north) north.exits[5] = packKey(x+n+1,y-1);
             }
         }
+
+        this.say("navGridChanged");
     }
 
     addVerticalFence(x,y,length) {
@@ -180,6 +190,7 @@ export const AM_NavGrid = superclass => class extends superclass {
                 if (east) east.exits[7] = 0;
             }
         }
+        this.say("navGridChanged");
     }
 
     removeVerticalFence(x,y,length) {
@@ -202,6 +213,7 @@ export const AM_NavGrid = superclass => class extends superclass {
                 if (east) east.exits[7] = packKey(x-1,y+n); //nw
             }
         }
+        this.say("navGridChanged");
     }
 
 
@@ -264,7 +276,6 @@ export const AM_OnNavGrid = superclass => class extends superclass {
 
     init(options) {
         super.init(options);
-        console.log(this.navXY);
         if (this.obstacle) this.parent.addObstacle(...this.navXY);
     }
 
@@ -296,7 +307,7 @@ export const AM_OnNavGrid = superclass => class extends superclass {
 
     parentSet(value,old) {
         super.parentSet(value,old);
-        if(!this.parent || !this.parent.gridBins) console.warn("AM_OnNavGrid must have a NavGrid parent!");
+        if(this.parent && !this.parent.gridBins) console.warn("AM_OnNavGrid must have a NavGrid parent!");
     }
 
     translationSet(value, old) {
