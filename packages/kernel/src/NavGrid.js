@@ -31,7 +31,7 @@ export const AM_NavGrid = superclass => class extends superclass {
     get gridSize() { return this._gridSize || 4}
     get gridScale() { return this._gridScale || 2}
     get gridPlane() { return this._gridPlane || 0 } // 0 = xz, 1 = xy, 2 = yz
-    get subdivisions() { return this._subdivisions || 1}
+    get subdivisions() { return this._subdivisions || 4}
     get isNavGrid() {return true}
 
     init(options) {
@@ -90,8 +90,6 @@ export const AM_NavGrid = superclass => class extends superclass {
                 this.navNodes.set(node.key, node);
             }
         }
-
-        this.addHorizontalFence(0,3,8);
 
         this.say("navGridChanged");
     }
@@ -290,6 +288,7 @@ export const AM_NavGrid = superclass => class extends superclass {
         return path;
     }
 
+
 }
 RegisterMixin(AM_NavGrid);
 
@@ -386,6 +385,67 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         return this.parent.findPath(this.navKey, endKey);
 
     }
+
+    ping(tag, radius=1) {
+        const out = [];
+        const cx = this.binXY[0];
+        const cy = this.binXY[1];
+        const grid = this.parent;
+        const bins = grid.gridBins;
+        const ss = grid.gridScale*grid.subdivisions;
+        const max = Math.floor(radius/ss);
+
+        for (const actor of this.gridBin) {
+            if(actor !== this && actor.tags.has(tag)) out.push(actor)
+        }
+
+        for(let n = 1; n<=max; n++) {
+            const x0 = cx-n;
+            const x1 = cx+n;
+            const y0 = cy-n;
+            const y1 = cx+n;
+
+            for(let x = x0; x<=x1; x++) {
+                const key = packKey(x,y0);
+                const bin = bins.get(key);
+                if (!bin) continue;
+                for (const actor of bin) {
+                    if(actor.tags.has(tag)) out.push(actor)
+                }
+            }
+
+            for(let y = y0+1; y<y1; y++) {
+                const key = packKey(x0,y);
+                const bin = bins.get(key);
+                if (!bin) continue;
+                for (const actor of bin) {
+                    if(actor.tags.has(tag)) out.push(actor)
+                }
+            }
+
+            for(let x = x0; x<=x1; x++) {
+                const key = packKey(x,y1);
+                const bin = bins.get(key);
+                if (!bin) continue;
+                for (const actor of bin) {
+                    if(actor.tags.has(tag)) out.push(actor)
+                }
+            }
+
+            for(let y = y0+1; y<y1; y++) {
+                const key = packKey(x1,y);
+                const bin = bins.get(key);
+                if (!bin) continue;
+                for (const actor of bin) {
+                    if(actor.tags.has(tag)) out.push(actor)
+                }
+            }
+
+        };
+        return out;
+    }
+
+
 
 }
 RegisterMixin(AM_OnNavGrid);
