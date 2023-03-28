@@ -1,4 +1,4 @@
-import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, Constants } from "@croquet/worldcore";
+import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, Constants, AM_NavGrid } from "@croquet/worldcore";
 import { BotActor, BotManager, FlockActor} from "./Bots";
 import { Paths, PackKey, packKey } from "./Paths";
 
@@ -21,8 +21,39 @@ TestActor.register('TestActor');
 //-- BaseActor ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BaseActor extends mix(Actor).with(AM_Spatial) {
+class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
     get pawn() {return "BasePawn"}
+
+    init(options) {
+        super.init(options);
+    }
+
+    navClear() {
+        super.navClear();
+
+        for(let n = 0; n < 50; n++) {
+            const x = Math.floor(this.gridSize * Math.random());
+            const y = Math.floor(this.gridSize * Math.random());
+            this.addObstacle(x,y);
+        }
+
+        for(let n = 0; n < 3; n++) {
+            const x = Math.floor(this.gridSize * Math.random())
+            const y = Math.floor(this.gridSize * Math.random());
+            const length = Math.floor(this.gridSize/2 * Math.random()) + 1;
+
+            this.addHorizontalFence(x,y,length);
+        }
+
+        for(let n = 0; n < 3; n++) {
+            const x = Math.floor(this.gridSize * Math.random())
+            const y = Math.floor(this.gridSize * Math.random());
+            const length = Math.floor(this.gridSize/2 * Math.random()) + 1;
+
+            this.addVerticalFence(x,y,length);
+        }
+
+    }
 }
 BaseActor.register('BaseActor');
 
@@ -33,45 +64,37 @@ BaseActor.register('BaseActor');
 export class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [Paths, BotManager];
+        return [];
     }
 
     init(...args) {
         super.init(...args);
         console.log("Start root model!");
+        this.bots = [];
 
-        this.base = BaseActor.create({});
-        // this.flock = FlockActor.create();
+        this.base = BaseActor.create({gridSize: 50, gridScale:3, subdivisions: 16});
 
-        // this.bot0 = BotActor.create({pawn: "TestPawn", name: "bot 0", translation:[3,0,3], tags: ["bot"]});
-        // this.bot1 = BotActor.create({pawn: "TestPawn", name: "bot 1", translation:[6,0,3], tags: ["bot"]});
-
-        // this.bot2 = BotActor.create({pawn: "TestPawn", name: "bot 2", translation:[3,0,3], tags: ["bot"]});
-        // this.bot3 = BotActor.create({pawn: "TestPawn", name: "bot 3", translation:[4,0,4], tags: ["bot"]});
-
-        // console.log (this.bot0.bin);
-        // console.log (this.bot1.bin);
-
-        // this.subscribe("input", "gDown", this.ggg);
-        // this.subscribe("hud", "go", this.go)
+        // const bot = BotActor.create({pawn: "TestPawn", parent: this.base, name: "bot 0", translation:[0,0.5,0], tags: ["bot"]});
+        // this.bots.push(bot);
 
         this.reset();
 
         this.subscribe("input", "xDown", this.reset);
-        this.subscribe("input", "zDown", this.ping);
+        // this.subscribe("input", "zDown", this.ping);
     }
 
     reset() {
-        const paths = this.service("Paths");
-        const bm = this.service("BotManager");
 
-        paths.clear();
-        bm.destroyAll();
+        this.base.navClear();
 
+        this.bots.forEach(b => b.destroy());
+
+        const ss = this.base.gridScale * this.base.gridSize;
 
         for(let n = 0; n<200;n++) {
-            const translation = [ Constants.xSize * Constants.scale * Math.random(), 0, Constants.zSize * Constants.scale * Math.random()];
-            const bot = BotActor.create({pawn: "TestPawn", translation, tags: ["bot"]});
+            const translation = [ ss * Math.random(), 0, ss * Math.random()];
+            const bot = BotActor.create({parent: this.base, pawn: "TestPawn", translation, tags: ["bot"]});
+            this.bots.push(bot)
         }
 
     }

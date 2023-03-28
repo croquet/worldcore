@@ -51,7 +51,7 @@ BallPawn.register("BallPawn");
 //-- BasePawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_NavGridGizmo) {
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
@@ -64,7 +64,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Nav
 
         const base = new THREE.Mesh( this.geometry, this.material );
         base.receiveShadow = true;
-        this.gizmo.visible = true;
+        // this.gizmo.visible = true;
 
         this.setRenderObject(base);
     }

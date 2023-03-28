@@ -1,7 +1,7 @@
 import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, ThreeInstanceManager, ViewRoot, Pawn, mix,
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, ThreeRaycast, PM_ThreeCollider,
-    PM_ThreeInstanced, OutlinePass, viewRoot, Constants } from "@croquet/worldcore";
+    PM_ThreeInstanced, OutlinePass, viewRoot, Constants, PM_NavGridGizmo } from "@croquet/worldcore";
 import { PathDebug, packKey } from "./Paths";
 
 //------------------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ TestPawn.register("TestPawn");
 //-- BasePawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCollider) {
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCollider, PM_NavGridGizmo ) {
     constructor(...args) {
         super(...args);
 
@@ -42,6 +42,8 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
 
         this.setRenderObject(base);
         this.addRenderObjectToRaycast("ground");
+
+        this.gizmo.visible = true;
     }
 
     destroy() {
@@ -59,7 +61,7 @@ BasePawn.register("BasePawn");
 let fov = 60;
 let pitch = toRad(-60);
 let yaw = toRad(0);
-const cam = [Constants.xSize*Constants.scale/2,200,100+Constants.zSize*Constants.scale/2 ];
+const cam = [0,200,100];
 
 class GodView extends ViewService {
 
@@ -179,15 +181,15 @@ export class MyViewRoot extends ViewRoot {
         this.buildInstances()
         this.buildLights();
         this.buildHUD();
-        this.pathDebug = new PathDebug(this.model);
+        // this.pathDebug = new PathDebug(this.model);
 
-        this.subscribe("paths", "new", this.onPathNew);
+        // this.subscribe("paths", "new", this.onPathNew);
 
     }
 
-    onPathNew() {
-        this.pathDebug.draw();
-    }
+    // onPathNew() {
+    //     this.pathDebug.draw();
+    // }
 
     buildLights() {
         const rm = this.service("ThreeRenderManager");
@@ -238,7 +240,7 @@ export class MyViewRoot extends ViewRoot {
         geometry.translate(0,1,0)
         im.addGeometry("cube", geometry);
 
-        const mmm = im.addMesh("bot", "cube", "magenta");
+        const mmm = im.addMesh("bot", "cube", "magenta", 2000);
         mmm.castShadow = true;
     }
 
