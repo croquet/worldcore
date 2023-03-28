@@ -13,25 +13,25 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
-        this.useInstance("cube");
+        this.useInstance("sun");
     }
 
 }
 TestPawn.register("TestPawn");
 
 //------------------------------------------------------------------------------------------
-// OtherPawn --------------------------------------------------------------------------------
+// PlanetPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class OtherPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
+export class PlanetPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
-        this.useInstance("other");
+        this.useInstance("planet");
     }
 
 }
-OtherPawn.register("OtherPawn");
+PlanetPawn.register("PlanetPawn");
 
 //------------------------------------------------------------------------------------------
 // BallPawn --------------------------------------------------------------------------------
@@ -48,10 +48,10 @@ export class BallPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 BallPawn.register("BallPawn");
 
 //------------------------------------------------------------------------------------------
-//-- BasePawn -------------------------------------------------------------------------
+//-- GroundPawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+export class GroundPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
@@ -64,7 +64,6 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
         const base = new THREE.Mesh( this.geometry, this.material );
         base.receiveShadow = true;
-        // this.gizmo.visible = true;
 
         this.setRenderObject(base);
     }
@@ -75,7 +74,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         this.material.dispose();
     }
 }
-BasePawn.register("BasePawn");
+GroundPawn.register("GroundPawn");
 
 //------------------------------------------------------------------------------------------
 //-- GodView -------------------------------------------------------------------------------
@@ -92,19 +91,12 @@ class GodView extends ViewService {
 
         this.updateCamera();
 
-        this.subscribe("input", 'wheel', this.onWheel);
-        this.subscribe("input", "pointerDown", this.doPointerDown);
-        this.subscribe("input", "pointerUp", this.doPointerUp);
-        this.subscribe("input", "pointerDelta", this.doPointerDelta);
-
-        // this.subscribe("model", "path", this.drawPath)
+        // this.subscribe("input", 'wheel', this.onWheel);
+        // this.subscribe("input", "pointerDown", this.doPointerDown);
+        // this.subscribe("input", "pointerUp", this.doPointerUp);
+        // this.subscribe("input", "pointerDelta", this.doPointerDelta);
     }
 
-    drawPath(data) {
-        console.log("path");
-        console.log(data);
-        viewRoot.navDebug.drawPath(data.grid, data.path);
-    }
 
     updateCamera() {
         if (this.paused) return;
@@ -168,24 +160,7 @@ export class MyViewRoot extends ViewRoot {
     onStart() {
         this.buildInstances()
         this.buildLights();
-        this.buildHUD();
-        // this.navDebug = new NavDebug(this.model);
-
-        // this.subscribe("input", "zDown", this.test)
     }
-
-    // test() {
-    //     console.log("test");
-    //     console.log(this.model.base);
-    //     this.navDebug.draw(this.model.base);
-
-    // }
-
-    // path() {
-    //     console.log("path");
-    //     this.navDebug.draw(this.model.base);
-
-    // }
 
     buildLights() {
         const rm = this.service("ThreeRenderManager");
@@ -215,9 +190,6 @@ export class MyViewRoot extends ViewRoot {
         rm.scene.add(group);
     }
 
-    buildHUD() {
-        const wm = this.service("WidgetManager2");
-    }
 
     buildInstances() {
         const im = this.service("ThreeInstanceManager");
@@ -243,10 +215,10 @@ export class MyViewRoot extends ViewRoot {
         const ball = new THREE.SphereGeometry( 0.5 );
         im.addGeometry("ball", ball);
 
-        const mmm0 = im.addMesh("cube", "cube", "yellow");
+        const mmm0 = im.addMesh("sun", "cube", "yellow");
         mmm0.castShadow = true;
 
-        const mmm1 = im.addMesh("other", "cube", "magenta");
+        const mmm1 = im.addMesh("planet", "cube", "magenta");
         mmm1.castShadow = true;
 
         const mmm2 = im.addMesh("ball", "ball", "red");

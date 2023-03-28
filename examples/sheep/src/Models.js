@@ -72,7 +72,7 @@ export class MyModelRoot extends ModelRoot {
         console.log("Start root model!");
         this.bots = [];
 
-        this.base = BaseActor.create({gridSize: 50, gridScale:3, subdivisions: 16});
+        this.base = BaseActor.create({gridSize: 50, gridScale:3, subdivisions: 4});
 
         // const bot = BotActor.create({pawn: "TestPawn", parent: this.base, name: "bot 0", translation:[0,0.5,0], tags: ["bot"]});
         // this.bots.push(bot);
@@ -91,7 +91,7 @@ export class MyModelRoot extends ModelRoot {
 
         const ss = this.base.gridScale * this.base.gridSize;
 
-        for(let n = 0; n<200;n++) {
+        for(let n = 0; n<500;n++) {
             const translation = [ ss * Math.random(), 0, ss * Math.random()];
             const bot = BotActor.create({parent: this.base, pawn: "TestPawn", translation, tags: ["bot"]});
             this.bots.push(bot)
