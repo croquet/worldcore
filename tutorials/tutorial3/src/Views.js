@@ -1,4 +1,4 @@
-// Tutorial 2 Views
+// Tutorial 3 Views
 
 // Identical to the view in the previous tutorial.
 

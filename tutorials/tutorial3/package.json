@@ -1,10 +1,10 @@
 {
   "name": "@croquet/worldcore-tutorial3",
   "version": "1.4.0",
-  "description": "Worldcore Tutorial",
+  "description": "Worldcore Tutorial 3",
   "private": true,
   "scripts": {
-    "start": "webpack-dev-server --mode development --devtool source-map --watch",
+    "start": "webpack serve --no-live-reload --no-hot --mode development --devtool source-map",
     "build": "webpack --mode production"
   },
   "author": "Croquet Corporation",
@@ -13,11 +13,12 @@
     "@croquet/worldcore": "^1.4.0"
   },
   "devDependencies": {
-    "file-loader": "^6.0.0",
-    "html-webpack-plugin": "^4.3.0",
-    "inspectpack": "^4.5.2",
-    "webpack": "^4.44.1",
-    "webpack-cli": "^3.3.12",
-    "webpack-dev-server": "^3.11.0"
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.5.0",
+    "inspectpack": "^4.7.1",
+    "source-map-loader": "^4.0.1",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "^4.11.1"
   }
 }
