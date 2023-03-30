@@ -545,16 +545,6 @@ export class InterruptBehavior extends DecoratorBehavior {
 
     }
 
-    // onSucceed(child, data) {
-    //     // console.log("s:" + child);
-    //     super.onSucceed(child, data);
-
-    // }
-
-    // onFail(child, data) {
-    //     // console.log("f:" + child);
-    //     super.onFail(child, data);
-    // }
 
 }
 InterruptBehavior.register('InterruptBehavior');

@@ -29,7 +29,9 @@ export class ThreeRaycast extends ViewService {
         const rm = this.service("ThreeRenderManager");
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera({x, y}, rm.camera);
-        const hits = raycaster.intersectObjects( this.layers.get(layer) );
+        const lll = this.layers.get(layer);
+        if (!lll) return [];
+        const hits = raycaster.intersectObjects( lll );
         const out = [];
         hits.forEach(hit => {
             let pawn = hit.object.pawn;
@@ -65,8 +67,6 @@ export class ThreeRaycast extends ViewService {
             const rc = this.service("ThreeRaycast");
             if (rc && this.renderObject && !this.renderObject.instance) this.collisionLayers.forEach( layer => rc.removeFromLayer(this.renderObject, layer));
         }
-
-        // Bug with instances
 
         addRenderObjectToRaycast(layer = "default") {
             const rc = this.service("ThreeRaycast");
