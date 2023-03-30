@@ -135,7 +135,7 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
             case "dynamic":
             default: rbd = RAPIER.RigidBodyDesc.newDynamic();
         }
-        rbd.setCcdEnabled(true);
+        rbd.setCcdEnabled(this.ccdEnabled);
         rbd.translation = new RAPIER.Vector3(...this.translation);
         rbd.rotation = new RAPIER.Quaternion(...this.rotation);
 
@@ -145,10 +145,10 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
     destroy() {
         super.destroy();
         this.worldActor.destroyRigidBody(this.rigidBodyHandle);
-
     }
 
     get rigidBodyType() { return this._rigidBodyType || "dynamic";}
+    get ccdEnabled() { return this._ccdEnabled === undefined ? true : this._ccdEnabled; }
     get velocity() { return this._velocity || [0,0,0];}
     get acceleration() { return this._acceleration || [0,0,0];}
     get hasAccelerometer() { return this._hasAccelerometer;}
