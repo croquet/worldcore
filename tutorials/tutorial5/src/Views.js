@@ -25,7 +25,7 @@ TestPawn.register("TestPawn");
 // ClickPawn -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// In addition to being instanced, TempPawn also has the PM_ThreeCollider mixin. This means
+// In addition to being instanced, ClickPawn also has the PM_ThreeCollider mixin. This means
 // its render object can be used by the THREE.js raycaster.
 
 export class ClickPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced, PM_ThreeCollider) {

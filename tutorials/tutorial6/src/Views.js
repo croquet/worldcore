@@ -1,15 +1,13 @@
 // Tutorial 6 Views
 
+// Identical to the previous tutorial.
+
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-// Instead of PM_ThreeVisible this pawn is PM_ThreeInstanced. The render object in an instanced
-// pawn is a shared mesh created with the InstanceManager. PM_ThreeInstanced is more efficient if
-// you have hundreds or thousand of objects using the same render model.
 
 export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
@@ -25,9 +23,6 @@ TestPawn.register("TestPawn");
 // ClickPawn -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// In addition to being instanced, TempPawn also has the PM_ThreeCollider mixin. This means
-// its render object can be used by the THREE.js raycaster.
-
 export class ClickPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced, PM_ThreeCollider) {
 
     constructor(actor) {
@@ -36,7 +31,6 @@ export class ClickPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced, PM
         this.addRenderObjectToRaycast();
     }
 
-
 }
 ClickPawn.register("ClickPawn");
 
@@ -44,14 +38,6 @@ ClickPawn.register("ClickPawn");
 //-- BasePawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// On a pointerDown event, BasePawn performs a raycast into the scene from the perspective of the
-// current camera. If BasePawn itself is clicked on, it sends an event to the BaseActor,
-// telling it to spawn a new child. But if a TempPawn was clicked on, the TempPawn tells
-// its actor to delete itself.
-//
-// Raycasting happends entirely in the view, with the pawns routing the appropriate events to
-// the model through the reflector: Clicking on a pawn on any client kills its actor everywhere.
-// Requesting a spawn on one client, spawns an actor on all the clients.
 
 export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCollider) {
     constructor(actor) {
@@ -125,10 +111,6 @@ ColorPawn.register("ColorPawn");
 //------------------------------------------------------------------------------------------
 //-- MyViewRoot ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-// Two new services have been added to the view root. ThreeInstanceManager holds shared
-// geometries, materials, and meshes. ThreeRaycast provides the interface for raycasting
-// into the scene, including managing different raycast layers.
 
 export class MyViewRoot extends ViewRoot {
 
