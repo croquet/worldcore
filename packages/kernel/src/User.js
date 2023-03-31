@@ -57,7 +57,7 @@ UserManager.register("UserManager");
 
 export const AM_Avatar = superclass => class extends superclass {
 
-    get driver() { return this._driver} // The who that is controlling this avatar.
+    get driver() { return this._driver} // The viewId of the user controlling this avatar.
 
 };
 RegisterMixin(AM_Avatar);
@@ -79,23 +79,17 @@ export const PM_Avatar = superclass => class extends superclass {
     }
 
     onDriverSet() {
+        if (this.isMyAvatar) {
+            this.driving = true;
+            this.drive();
+        } else {
+            this.driving = false;
+            this.park();
+        }
     }
 
-    // onDriverSet() {
-    //     if (this.driving) this.park();
-    //     if (this.isMyAvatarPawn) this.drive();
-    // }
-
-    // drive() { // Subscribe to controls
-    //     this.driving = true;
-    //     // this.publish(this.viewId, "avatar", true)
-    // }
-
-    // park() { // Unsubscribes from  controls
-    //     this.driving = false;
-    //     // this.publish(this.viewId, "avatar", false)
-    // }
-
+    park() {}
+    drive() {}
 
 };
 
