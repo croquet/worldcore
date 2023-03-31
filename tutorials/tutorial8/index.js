@@ -1,7 +1,7 @@
 // Worldcore Tutorial 8
 
-// This is the eighth in a series of tutorials illustrating how to build a Worldcore app.
-// This along with the following tutorial shows how to create avatars.
+// This is the ninth in a series of tutorials illustrating how to build a Worldcore app.
+// It shows how to create a first-person avatar, and switch between different avatars on the fly.
 
 import { App, StartWorldcore} from "@croquet/worldcore";
 

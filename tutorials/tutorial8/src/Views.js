@@ -4,7 +4,7 @@
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider,
-    PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, PM_ThreeCamera } from "@croquet/worldcore";
+    PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, PM_ThreeCamera, q_yaw, q_pitch } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
@@ -63,6 +63,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
     }
 
     doPointerDown(e) {
+        if (e.button === 2) return;
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(e.xy);
         if (hits.length<1) return;
@@ -112,10 +113,27 @@ ColorPawn.register("ColorPawn");
 // AvatarPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar, PM_ThreeCamera) {
+// We added the PM_ThreeCamera mixin to our avatar. The camera has a translation and rotation,
+// allowing us to control its position relative to the pawn. It automatically tracks the pawn's
+// movement so our view changes as our avatar moves.
+//
+// We also add the pawn to a special raycast layer ("avatar"). This allows us to raycast to
+// find other avatars.
+//
+// When you hold the right mouse button down, we put the InputManager into pointer lock mode.
+// The cursor is hidden and mouse movements are reported as delta changes rather than
+// absolute screen coordinates. We use this to drive the camera's pitch and yaw.
+//
+// When you click with the left mouse button, the AvatarPawn does its own raycast to determine
+// if you clicked on another avatar. If that avatar doesn't have a driver, you park your current
+// avatar and start driving the new one.
+
+export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar, PM_ThreeCamera, PM_ThreeCollider) {
 
     constructor(actor) {
         super(actor);
+        this.pitch = 0;
+        this.yaw = q_yaw(this.rotation);
         this.cameraTranslation = [0,5,10];
         this.cameraRotation = q_axisAngle([1,0,0], toRad(-5));
 
@@ -125,6 +143,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         const mesh = new THREE.Mesh( this.geometry, this.material );
         mesh.castShadow = true;
         this.setRenderObject(mesh);
+        this.addRenderObjectToRaycast();
+        this.addRenderObjectToRaycast("avatar");
 
         this.listen("colorSet", this.onColorSet)
     }
@@ -141,6 +161,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     drive() {
         this.fore = this.back = this.left = this.right = 0;
+        this.yawDelta = 0;
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
         this.subscribe("input", "pointerDown", this.doPointerDown);
@@ -150,6 +171,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     park() {
         this.fore = this.back = this.left = this.right = 0;
+        this.yawDelta = 0;
         this.unsubscribe("input", "keyDown", this.keyDown);
         this.unsubscribe("input", "keyUp", this.keyUp);
         this.unsubscribe("input", "pointerDown", this.doPointerDown);
@@ -198,40 +220,54 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     doPointerDown(e) {
-        if (e.button === 2) this.service("InputManager").enterPointerLock();;
+        if (e.button === 2) {
+            this.service("InputManager").enterPointerLock();
+        } else {
+            this.possess(e.xy);
+        }
+
     }
 
     doPointerUp(e) {
         if (e.button === 2) this.service("InputManager").exitPointerLock();
     }
 
-    // doPointerMove(e) {
-    //     this.xy = e.xy;
-    // }
-
     doPointerDelta(e) {
-        // if (this.service("InputManager").inPointerLock) {
-        //     this.yawDelta += (-this.turnSpeed * e.xy[0]);
-        //     this.pitch += (-this.turnSpeed * e.xy[1]);
-        //     this.pitch = Math.max(-Math.PI/2, this.pitch);
-        //     this.pitch = Math.min(Math.PI/2, this.pitch);
-        //     const pitchQ = q_axisAngle([1,0,0], this.pitch);
-        //     const yawQ = q_axisAngle([0,1,0], this.yawDelta);
-        //     this.cameraRotation = q_multiply(pitchQ, yawQ);
-        // };
+        if (this.service("InputManager").inPointerLock) {
+            this.yawDelta += (-0.002 * e.xy[0]);
+            this.pitch += (-0.002 * e.xy[1]);
+            this.pitch = Math.max(-Math.PI/2, this.pitch);
+            this.pitch = Math.min(Math.PI/2, this.pitch);
+            const pitchQ = q_axisAngle([1,0,0], this.pitch);
+            const yawQ = q_axisAngle([0,1,0], this.yawDelta);
+            this.cameraRotation = q_multiply(pitchQ, yawQ);
+        };
     }
 
     update(time, delta) {
         super.update(time,delta);
         if (this.driving) {
-            const yaw = (this.right+this.left) * -3 * delta/1000;
-            const yawQ = q_axisAngle([0,1,0], yaw);
-            const rotation = q_multiply(this.rotation, yawQ);
+            this.yaw += this.yawDelta;
+            this.yawDelta = 0;
+            const yawQ = q_axisAngle([0,1,0], this.yaw);
             const t = v3_scale([0, 0, (this.fore + this.back)], 5 * delta/1000)
-            const tt = v3_rotate(t, rotation);
+            const tt = v3_rotate(t, yawQ);
             let translation = v3_add(this.translation, tt);
-            this.positionTo(translation, rotation);
+            this.positionTo(translation, yawQ);
+            this.say("viewGlobalChanged"); // Required by PM_ThreeCamera to trigger a camera refresh when you're driving.
         }
+    }
+
+    possess(xy) {
+        const rc = this.service("ThreeRaycast");
+        const hits = rc.cameraRaycast(xy, "avatar");
+        if (hits.length<1) return;
+        const pawn = hits[0].pawn;
+        if (pawn === this) return; // You can't possess yourself
+        if (pawn.actor.driver) return // You can't steal someone else's avatar
+
+        this.set({driver: null})
+        pawn.set({driver: this.viewId});
     }
 
 }

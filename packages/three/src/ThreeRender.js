@@ -61,33 +61,17 @@ export const PM_ThreeCamera = superclass => class extends superclass {
         this.cameraTranslation = [0,0,0]; // position of the camera relative to the pawn
         this.cameraRotation = q_identity();
 
-        // this.refreshCameraTransform();
         this.listen("viewGlobalChanged", this.refreshCameraTransform);
-
-        // if (this.isMyAvatarPawn) {
-        //     this.refreshCameraTransform();
-        //     this.listen("viewGlobalChanged", this.refreshCameraTransform);
-        // }
     }
 
     refreshCameraTransform() {
         if (!this.isMyAvatar) return;
-
         const rm = this.service("ThreeRenderManager");
         const ttt = m4_translation(this.cameraTranslation);
         const rrr = m4_rotationQ(this.cameraRotation)
         const mmm = m4_multiply(rrr, ttt);
         rm.camera.matrix.fromArray(m4_multiply(mmm, this.global));
         rm.camera.matrixWorldNeedsUpdate = true;
-
-        // if (this.isMyAvatarPawn) {
-        //     const rm = this.service("ThreeRenderManager");
-        //     const ttt = m4_translation(this.cameraTranslation);
-        //     const rrr = m4_rotationQ(this.cameraRotation)
-        //     const mmm = m4_multiply(rrr, ttt);
-        //     rm.camera.matrix.fromArray(m4_multiply(mmm, this.global));
-        //     rm.camera.matrixWorldNeedsUpdate = true;
-        // }
     }
 
 };
