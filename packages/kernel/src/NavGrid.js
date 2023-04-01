@@ -343,8 +343,8 @@ export const AM_OnNavGrid = superclass => class extends superclass {
     }
 
     destroy() {
-        if (this.obstacle) this.parent.removeObstacle(...this.navXY);
-        this.parent.removeFromBin(this.binKey, this);
+        super.destroy();
+        if (this.parent) this.parent.removeFromBin(this.binKey, this);
         super.destroy();
     }
 
@@ -388,7 +388,7 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         const x = value[0];
         const y = value[1];
         const z = value[2];
-        if (x < 0 || y < 0 || z < 0 ) console.warn("Negative xyz coordinates are not allowed on an NavGrid!");
+        if (x < 0 || y < 0 || z < 0 ) console.warn("Negative coordinates are not allowed on a NavGrid!");
 
         switch (this.parent.gridPlane) {
             default:
@@ -396,6 +396,8 @@ export const AM_OnNavGrid = superclass => class extends superclass {
             case 1: this.binXY = [Math.floor(x/s), Math.floor(y/s)]; break;
             case 2: this.binXY = [Math.floor(y/s), Math.floor(z/s)]; break;
         }
+
+        if (this.binXY[0] < 0 || this.binXY[1] < 0 ) console.warn("Negative coordinates are not allowed on a NavGrid!");
 
         this.binKey = packKey(...this.binXY);
 

@@ -56,8 +56,8 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
         const b = 0.5*grid.gridScale;
         const c = 0.75*grid.gridScale;
         let d = 0.1;
-        const x0 = 0;
-        const y0 = 0;
+        const x0 = this.translation[0];
+        const y0 = this.translation[1];
 
         let material;
         let geometry
@@ -200,8 +200,8 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
         const b = 0.5*grid.gridScale;
         const c = 0.75*grid.gridScale;
         let d = 0.1
-        const x0 = 0;
-        const y0 = 0;
+        const x0 = this.translation[0];
+        const y0 = this.translation[2];
 
         let material;
         let geometry
@@ -343,8 +343,8 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
         const b = 0.5*grid.gridScale;
         const c = 0.75*grid.gridScale;
         let d = 0.1
-        const x0 = 0;
-        const y0 = 0;
+        const x0 = this.translation[1];
+        const y0 = this.translation[2];
 
         let material;
         let geometry

@@ -3,7 +3,7 @@
 import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, q_identity } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
-// ParentActor -----------------------------------------------------------------------------
+// -- ParentActor --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class ParentActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
@@ -38,7 +38,7 @@ class ParentActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 ParentActor.register('ParentActor');
 
 //------------------------------------------------------------------------------------------
-// ChildActor ------------------------------------------------------------------------------
+// -- ChildActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 // We add a color property to the ChildActor. This way of defining properties allows us to
