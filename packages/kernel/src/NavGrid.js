@@ -388,7 +388,6 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         const x = value[0];
         const y = value[1];
         const z = value[2];
-        if (x < 0 || y < 0 || z < 0 ) console.warn("Negative coordinates are not allowed on a NavGrid!");
 
         switch (this.parent.gridPlane) {
             default:
@@ -798,7 +797,7 @@ class PathToBehavior extends Behavior {
         this.path = grid.findPath(startKey, endKey);
 
         if (this.path.length === 0) { // No path to destination
-            console.log("no path!")
+            // console.log("no path!")
             this.fail();
             return;
         }
@@ -867,7 +866,6 @@ class PathToBehavior extends Behavior {
 
     onFail() {
         this.fail();
-
     }
 
     onSucceed() {

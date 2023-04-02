@@ -1,7 +1,5 @@
 // Tutorial 9 Views
 
-// All the code specific to this tutorial is in the definition of AvatarPawn.
-
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider,
     PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, v3_sub, PM_NavGridGizmo } from "@croquet/worldcore";
@@ -39,23 +37,12 @@ ClickPawn.register("ClickPawn");
 // BlockPawn -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BlockPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeCollider) {
+export class BlockPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced, PM_ThreeCollider) {
 
     constructor(actor) {
         super(actor);
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
-        this.geometry = new THREE.BoxGeometry( 2, 2, 2 );
-        this.geometry.translate(0,1,0);
-        const mesh = new THREE.Mesh( this.geometry, this.material );
-        mesh.castShadow = true;
-        this.setRenderObject(mesh);
+        this.useInstance("yellowBox");
         this.addRenderObjectToRaycast();
-    }
-
-    destroy() {
-        super.destroy()
-        this.geometry.dispose();
-        this.material.dispose();
     }
 
 }
@@ -64,6 +51,9 @@ BlockPawn.register("BlockPawn");
 //------------------------------------------------------------------------------------------
 //-- BasePawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// We added the PM_NavGridGizmo mixin to BasePawn. It lets us display a graphic that shows
+// nav grid. By default it's hidden, but you can toggle it on and off by pressing "g".
 
 export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCollider, PM_NavGridGizmo) {
     constructor(actor) {
@@ -104,7 +94,6 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         } else {
             pawn.say("kill");
         }
-
     }
 
     toggleGizmo() {
@@ -145,17 +134,21 @@ export class ColorPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 ColorPawn.register("ColorPawn");
 
 //------------------------------------------------------------------------------------------
-// AvatarPawn ------------------------------------------------------------------------------
+// BotPawn ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar) {
+// BotPawn is like the previous tut0rial's AvatarPawn. It sets the color of the bot
+// according to the user using it. The only subscription in drive and park are to the
+// right mouse click that sets the bot new destination.
+
+export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar) {
 
     constructor(actor) {
         super(actor);
 
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
-        this.geometry = new THREE.BoxGeometry( 1, 2, 1 );
-        this.geometry.translate(0,1,0);
+        this.geometry = new THREE.BoxGeometry( 1, 1, 2 );
+        this.geometry.translate(0,0.5,0);
         const mesh = new THREE.Mesh( this.geometry, this.material );
         mesh.castShadow = true;
         this.setRenderObject(mesh);
@@ -174,72 +167,29 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     drive() {
-        this.fore = this.back = this.left = this.right = 0;
-        this.subscribe("input", "keyDown", this.keyDown);
-        this.subscribe("input", "keyUp", this.keyUp);
+        this.driving = false;
+        this.subscribe("input", "pointerDown", this.doPointerDown);
     }
 
     park() {
-        this.fore = this.back = this.left = this.right = 0;
-        this.unsubscribe("input", "keyDown", this.keyDown);
-        this.unsubscribe("input", "keyUp", this.keyUp);
+        this.unsubscribe("input", "pointerDown", this.doPointerDown);
     }
 
-    keyDown(e) {
-        switch(e.key) {
-            case "ArrowUp":
-            case "w":
-            case "W":
-                this.fore = -1; break;
-            case "ArrowDown":
-            case "s":
-            case "S":
-                this.back = 1; break;
-            case "ArrowLeft":
-            case "a":
-            case "A":
-                this.left = -1; break;
-            case "ArrowRight":
-            case "d":
-            case "D" :
-                this.right = 1; break;
-            default:
-        }
+    doPointerDown(e) {
+        if (e.button === 0) return;
+        this.goto(e.xy);
     }
 
-    keyUp(e) {
-        switch(e.key) {
-            case "ArrowUp":
-            case "w":
-                this.fore = 0; break;
-            case "ArrowDown":
-            case "s":
-                this.back = 0; break;
-            case "ArrowLeft":
-            case "a":
-                this.left = 0; break;
-            case "ArrowRight":
-            case "d":
-                this.right = 0; break;
-            default:
-        }
-    }
-
-    update(time, delta) {
-        super.update(time,delta);
-        if (this.driving) {
-            const yaw = (this.right+this.left) * -3 * delta/1000;
-            const yawQ = q_axisAngle([0,1,0], yaw);
-            const rotation = q_multiply(this.rotation, yawQ);
-            const t = v3_scale([0, 0, (this.fore + this.back)], 5 * delta/1000)
-            const tt = v3_rotate(t, rotation);
-            let translation = v3_add(this.translation, tt);
-            this.positionTo(translation, rotation);
-        }
+    goto(xy) {
+        const rc = this.service("ThreeRaycast");
+        const hits = rc.cameraRaycast(xy);
+        if (hits.length<1) return;
+        const xyz = hits[0].xyz;
+        this.say("goto",xyz);
     }
 
 }
-AvatarPawn.register("AvatarPawn");
+BotPawn.register("BotPawn");
 
 //------------------------------------------------------------------------------------------
 //-- MyViewRoot ----------------------------------------------------------------------------
@@ -284,7 +234,7 @@ export class MyViewRoot extends ViewRoot {
         const pitchMatrix = m4_rotation([1,0,0], toRad(-45))
         const yawMatrix = m4_rotation([0,1,0], toRad(-30))
 
-        let cameraMatrix = m4_translation([0,0,50]);
+        let cameraMatrix = m4_translation([0,0,100]);
         cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);
         cameraMatrix = m4_multiply(cameraMatrix,yawMatrix);
 
@@ -310,7 +260,10 @@ export class MyViewRoot extends ViewRoot {
         const box = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("box", box);
 
-        const mesh0 = im.addMesh("yellowBox", "box", "yellow");
+        const big = new THREE.BoxGeometry( 2, 2, 2 );
+        im.addGeometry("big", big);
+
+        const mesh0 = im.addMesh("yellowBox", "big", "yellow");
         const mesh1 = im.addMesh("magentaBox", "box", "magenta");
         const mesh2 = im.addMesh("cyanBox", "box", "cyan");
 
