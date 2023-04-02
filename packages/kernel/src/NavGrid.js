@@ -1,6 +1,6 @@
 import { RegisterMixin } from "./Mixins";
 import { v2_manhattan, q_multiply, q_axisAngle, v3_normalize, v3_add, q_lookAt, v3_sub, v3_magnitude, v3_distance, v2_normalize, v2_sub } from "./Vector";
-import { PriorityQueue } from "./Utilities";
+import { PerlinNoise, PriorityQueue } from "./Utilities";
 import { Behavior } from "./Behavior";
 
 
@@ -32,6 +32,7 @@ export const AM_NavGrid = superclass => class extends superclass {
     get gridScale() { return this._gridScale || 1}
     get gridPlane() { return this._gridPlane || 0 } // 0 = xz, 1 = xy, 2 = yz
     get subdivisions() { return this._subdivisions || 4}
+    get noise () { return this._noise || 0}
     get isNavGrid() {return true}
 
     init(options) {
@@ -83,10 +84,12 @@ export const AM_NavGrid = superclass => class extends superclass {
     }
 
     navClear() {
+        const perlin = new PerlinNoise();
         for (let x = 0; x < this.gridSize; x++) {
             for (let y = 0; y < this.gridSize; y++) {
                 const node = new NavNode(x,y)
                 node.clear(this.gridSize);
+                if (this.noise) node.effort += this.noise*perlin.noise2D(x,y);
                 this.navNodes.set(node.key, node);
             }
         }

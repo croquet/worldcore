@@ -87,7 +87,7 @@ export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behav
 
         const speed = 16 + 4 * Math.random();
 
-        this.ggg = this.behavior.start({name: "PathToBehavior", target, speed, noise:1, radius:3});
+        this.ggg = this.behavior.start({name: "PathToBehavior", target, speed, noise:3, radius:3});
     }
 
 }
