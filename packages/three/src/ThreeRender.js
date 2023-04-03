@@ -60,12 +60,9 @@ export const PM_ThreeCamera = superclass => class extends superclass {
 
         this.cameraTranslation = [0,0,0]; // position of the camera relative to the pawn
         this.cameraRotation = q_identity();
-
-        this.listen("viewGlobalChanged", this.refreshCameraTransform);
     }
 
     refreshCameraTransform() {
-        if (!this.isMyAvatar) return;
         const rm = this.service("ThreeRenderManager");
         const ttt = m4_translation(this.cameraTranslation);
         const rrr = m4_rotationQ(this.cameraRotation)
