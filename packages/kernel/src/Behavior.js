@@ -353,8 +353,8 @@ export class DecoratorBehavior extends Behavior {
 
     onStart() { this.child = this.start(this.behavior); }
 
-    onSucceed(child, data) {if (this.child = child) this.succeed(data)}
-    onFail(child, data) {if (this.child = child) this.fail(data)}
+    onSucceed(child, data) {this.succeed(data)}
+    onFail(child, data) {this.fail(data)}
 
 }
 DecoratorBehavior.register('DecoratorBehavior');
@@ -496,7 +496,6 @@ export class BranchBehavior extends DecoratorBehavior {
 
     onSucceed(child) {
         if (child === this.conditionChild) {
-            this.conditionChild === null;
             if (this.then) this.start(this.then)
         } else {
             this.succeed();
@@ -505,7 +504,6 @@ export class BranchBehavior extends DecoratorBehavior {
 
     onFail(child) {
         if (child === this.conditionChild){
-            this.condition === null;
             if (this.else) this.start(this.else)
         } else {
             this.fail();

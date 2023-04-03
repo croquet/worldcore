@@ -122,32 +122,6 @@ export const AM_NavGrid = superclass => class extends superclass {
         this.say("navGridChanged");
     }
 
-    removeObstacle(x,y) {
-        const navKey = packKey(x,y);
-
-        const west = this.navNodes.get(packKey(x-1, y));
-        const south = this.navNodes.get(packKey(x, y-1));
-        const east = this.navNodes.get(packKey(x+1, y));
-        const north = this.navNodes.get(packKey(x, y+1));
-
-        const southwest = this.navNodes.get(packKey(x-1, y-1));
-        const southeast = this.navNodes.get(packKey(x+1, y-1));
-        const northeast = this.navNodes.get(packKey(x+1, y+1));
-        const northwest = this.navNodes.get(packKey(x-1, y+1));
-
-        if (west) west.exits[2] = navKey;
-        if (south) south.exits[3] = navKey;
-        if (east) east.exits[0] = navKey;
-        if (north) north.exits[1] = navKey;
-
-        if (southwest) southwest.exits[6] = navKey;
-        if (southeast) southeast.exits[7] = navKey;
-        if (northeast) northeast.exits[4] = navKey;
-        if (northwest) northwest.exits[5] = navKey;
-
-        this.say("navGridChanged");
-    }
-
     addHorizontalFence(x,y,length) {
 
         for ( let n = 0; n<length; n++) {
@@ -166,30 +140,6 @@ export const AM_NavGrid = superclass => class extends superclass {
             if (n<length-1) {
                 if (south) south.exits[6] = 0;
                 if (north) north.exits[5] = 0;
-            }
-        }
-
-        this.say("navGridChanged");
-    }
-
-    removeHorizontalFence(x,y,length) {
-
-        for ( let n = 0; n<length; n++) {
-
-            const south = this.navNodes.get(packKey(x+n,y-1));
-            const north = this.navNodes.get(packKey(x+n,y));
-
-            if (south) south.exits[3] = packKey(x+n,y);
-            if (north) north.exits[1] = packKey(x+n,y-1);
-
-            if (n>0) {
-                if (south) south.exits[7] = packKey(x+n-1,y);
-                if (north) north.exits[4] = packKey(x+n-1,y-1);
-            }
-
-            if (n<length-1) {
-                if (south) south.exits[6] = packKey(x+n+1,y);
-                if (north) north.exits[5] = packKey(x+n+1,y-1);
             }
         }
 
@@ -218,30 +168,6 @@ export const AM_NavGrid = superclass => class extends superclass {
         }
         this.say("navGridChanged");
     }
-
-    removeVerticalFence(x,y,length) {
-
-        for ( let n = 0; n<length; n++) {
-
-            const west = this.navNodes.get(packKey(x-1,y+n));
-            const east = this.navNodes.get(packKey(x,y+n));
-
-            if (west) west.exits[2] = packKey(x,y+n);
-            if (east) east.exits[0] = packKey(x-1,y+n);
-
-            if (n>0) {
-                if (west) west.exits[5] = packKey(x,y+n-1); //se
-                if (east) east.exits[4] = packKey(x-1,y+n-1); //sw
-            }
-
-            if (n<length-1) {
-                if (west) west.exits[6] = packKey(x,y+n); //ne
-                if (east) east.exits[7] = packKey(x-1,y+n); //nw
-            }
-        }
-        this.say("navGridChanged");
-    }
-
 
     findPath(startKey, endKey) {
 
