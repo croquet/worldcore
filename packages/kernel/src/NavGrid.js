@@ -289,17 +289,31 @@ export const AM_OnNavGrid = superclass => class extends superclass {
             case 1: return[Math.floor(x/s), Math.floor(y/s)];
             case 2: return[Math.floor(y/s), Math.floor(z/s)];
         }
+
     }
 
     get navKey() {
         return packKey(...this.navXY);
+        // return this.packXYZ(...this.translation)
     }
 
     get navNode() {
-        return this.parent.navNodes.get(this.navKey);
+        const n = this.parent.navNodes.get(this.navKey);
+        if (!n) console.error(this + " offNavGrid");
+        return n
     }
 
     get obstacle() { return this._obstacle}
+
+    packXYZ(x,y,z) { // not working yet
+        const s = this.parent.gridScale;
+        switch (this.parent.gridPlane) {
+            default:
+            case 0: return[Math.floor(x/s), Math.floor(z/s)];
+            case 1: return[Math.floor(x/s), Math.floor(y/s)];
+            case 2: return[Math.floor(y/s), Math.floor(z/s)];
+        }
+    }
 
     parentSet(value,old) {
         super.parentSet(value,old);
@@ -335,17 +349,6 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         }
     }
 
-    isBlocked(to) {
-        let x,y;
-        switch (this.parent.gridPlane) {
-            default:
-            case 0: x = to[0]; y = to[2]; break;
-            case 1: x = to[0]; y = to[1]; break;
-            case 2: x = to[1]; y = to[2]; break;
-        }
-        return !this.navNode.exitTo(x,y);
-    }
-
     obstacleSet(value,old) {
         if (!this.parent) return;
         if (old) this.parent.removeObstacle(...this.navXY);
@@ -370,30 +373,71 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         return this.parent.findPath(this.navKey, endKey);
     }
 
-    findWay(aim) { // Finds the best direction that isn't blocked
-
-        const x = aim[0];
-        const y = aim[1];
-        const z = aim[2];
-
-        let aa;
+    isBlocked(aim) {
+        const target = v3_add(aim, this.translation);
+        const x = target[0];
+        const y = target[1];
+        const z = target[2];
+        const s = this.parent.gridScale;
+        let key;
         switch (this.parent.gridPlane) {
             default:
-            case 0: aa = [x,z]; break;
-            case 1: aa = [x,y]; break;
-            case 2: aa = [y,z]; break;
+                case 0: key = packKey(Math.floor(x/s), Math.floor(z/s)); break;
+                case 1: key = packKey(Math.floor(x/s), Math.floor(y/s)); break;
+                case 2: key = packKey(Math.floor(y/s), Math.floor(z/s)); break;
         }
+        if(this.navKey===key) return false;
+        return !this.navNode.hasExitTo(key);
+    }
 
-        const key = this.parent.findWay(this.navKey, aa);
-        const xy = v2_normalize(v2_sub(unpackKey(key), this.navXY));
+    findWay(aim) {
+        if (!this.isBlocked(aim)) return aim;
+        const s = this.parent.gridScale;
 
+        let x;
+        let y;
         switch (this.parent.gridPlane) {
             default:
-            case 0: return [xy[0], 0, xy[1]];
-            case 1: return [xy[0], xy[1], 0];
-            case 2: return [0, xy[0], xy[1]];
+            case 0: x = aim[0]; y = aim[2]; break;
+            case 1: x = aim[0]; y = aim[1]; break;
+            case 2: x = aim[1]; y = aim[2]; break;
         }
 
+        const key = packKey(Math.floor(x/s), Math.floor(y/s));
+        const xx = Math.abs(x) > 2*Math.abs(y);
+        const yy = Math.abs(y) > 2*Math.abs(x);
+
+        let d=[];
+        if(x>0) { // east
+            if (y>0) { // northeast
+                d=[6,2,3,7,5];
+                if (xx) d = [2,6,3,5,7]
+                if (yy) d = [3,6,2,7,5]
+            } else { // southeast
+                d=[5,1,2,6,4];
+                if (xx) d = [2,5,1,6,4]
+                if (yy) d = [1,5,2,4,6]
+            }
+        } else { // west
+            if (y>0) { // northwest
+                d=[7,3,0,6,4];
+                if (xx) d = [0,7,3,4,6]
+                if (yy) d = [3,7,0,6,4]
+            } else { // southwest
+                d=[4,0,1,5,7];
+                if (xx) d = [0,4,1,7,5]
+                if (yy) d = [1,4,0,5,7]
+            }
+        }
+
+        const node = this.navNode;
+
+        for(const n of d) {
+            const exit = node.exits[n];
+            if (exit === key) return aim;
+        }
+
+        return [0,0,0];
     }
 
     ping(tag, radius=0) {
