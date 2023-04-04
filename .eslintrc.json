@@ -89,6 +89,7 @@
         "dot-notation": "off",
         "no-underscore-dangle": "off",
         "lines-between-class-members": "off",
-        "operator-linebreak": "off"
+        "operator-linebreak": "off",
+        "semi": ["error", "always", { "omitLastInOneLineBlock": true }]
     }
 }
