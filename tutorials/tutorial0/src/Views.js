@@ -1,6 +1,6 @@
 // Tutorial 0 Views
 
-// Every object in Worldcore is represened by an actor/pawn pair. Spawning an actor
+// Every object in Worldcore is represented by an actor/pawn pair. Spawning an actor
 // automatically instantiates a corresponding pawn. The actor is replicated
 // across all clients, while the pawn is unique to each client.
 
@@ -31,7 +31,7 @@ export class TestPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     }
 
     destroy() {
-        super.destroy()
+        super.destroy();
         this.geometry.dispose(); // Tell THREE.js to dispose of the pawn's resources when it's destroyed.
         this.material.dispose();
     }
@@ -83,8 +83,8 @@ export class MyViewRoot extends ViewRoot {
     buildCamera() {
         const rm = this.service("ThreeRenderManager");
 
-        const pitchMatrix = m4_rotation([1,0,0], toRad(-20))
-        const yawMatrix = m4_rotation([0,1,0], toRad(-30))
+        const pitchMatrix = m4_rotation([1,0,0], toRad(-20));
+        const yawMatrix = m4_rotation([0,1,0], toRad(-30));
 
         let cameraMatrix = m4_translation([0,0,15]);
         cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);

@@ -16,7 +16,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial) {
     }
 
     doSpawn(xyz) {
-        const translation = [...xyz]
+        const translation = [...xyz];
         TestActor.create({pawn:"ClickPawn", parent: this, translation});
     }
 
@@ -44,7 +44,7 @@ class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
         this.behavior.start({name: "SequenceBehavior", behaviors:[
             {name: "InflateBehavior", size: 4, speed: 0.2},
             "DestroyBehavior"
-        ]})
+        ]});
     }
 }
 TestActor.register('TestActor');
@@ -69,14 +69,14 @@ ColorActor.register('ColorActor');
 //------------------------------------------------------------------------------------------
 
 class MyUserManager extends UserManager {
-    get defaultUser() {return MyUser;}
+    get defaultUser() {return MyUser}
 }
 MyUserManager.register('MyUserManager');
 
 class MyUser extends User {
     init(options) {
-        super.init(options)
-        const base = this.wellKnownModel("ModelRoot").base
+        super.init(options);
+        const base = this.wellKnownModel("ModelRoot").base;
         this.color = [this.random(), this.random(), this.random()];
         this.avatar = ColorActor.create({
             pawn: "AvatarPawn",
@@ -132,6 +132,7 @@ export class MyModelRoot extends ModelRoot {
             parent: this.base,
             driver: null,
             translation: [2,0,-10],
+
             rotation: q_axisAngle([0,1,0], toRad(170))
         });
 
@@ -157,7 +158,7 @@ class InflateBehavior extends Behavior {
     get size() { return this._size || 3}
     get speed() { return this._speed || 0.5}
 
-    onStart () {
+    onStart() {
         this.scale = this.actor.scale[0];
     }
 
@@ -175,7 +176,7 @@ class RiseBehavior extends Behavior {
     get height() { return this._height || 3}
     get speed() { return this._speed || 0.5}
 
-    onStart () {
+    onStart() {
         this.top = this.actor.translation[1] + this.height;
     }
 

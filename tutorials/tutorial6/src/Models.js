@@ -10,7 +10,7 @@ import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, Behavior, sphericalRa
 // is like defining a new actor.
 //
 // Every behavior has a pointer to the actor it's controlling. Most of the time, when you define a
-// a new behavior all you need to do is write two methods:
+// new behavior all you need to do is write two methods:
 //
 // * onStart() runs once when the behavior starts
 // * do() runs every time the behavior ticks
@@ -25,7 +25,7 @@ class InflateBehavior extends Behavior {
     get size() { return this._size || 3}
     get speed() { return this._speed || 0.5}
 
-    onStart () {
+    onStart() {
         this.scale = this.actor.scale[0];
     }
 
@@ -43,7 +43,7 @@ class RiseBehavior extends Behavior {
     get height() { return this._height || 3}
     get speed() { return this._speed || 0.5}
 
-    onStart () {
+    onStart() {
         this.top = this.actor.translation[1] + this.height;
     }
 
@@ -71,7 +71,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial) {
     }
 
     doSpawn(xyz) {
-        const translation = [...xyz]
+        const translation = [...xyz];
         TestActor.create({pawn:"ClickPawn", parent: this, translation});
     }
 
@@ -82,14 +82,14 @@ BaseActor.register('BaseActor');
 //-- TestActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Now when a TestActor is killed instead of just destroying itself, it launches a suite of
+// Now when a TestActor is killed, instead of just destroying itself it launches a suite of
 // behaviors to float up and inflate until it pops.
 //
 // When you start several behaviors on the same actor by default they run concurrently,
 // but composite behaviors allow you to combine behaviors in different ways.
 //
 // For example, SequenceBehavior runs a list of behaviors in order. It only starts the
-// the next behavior when the previous one succeeds. Here we use a SequenceBehavior to destroy
+// next behavior when the previous one succeeds. Here we use a SequenceBehavior to destroy
 // the actor after it inflates to maximum size.
 
 class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
@@ -109,7 +109,7 @@ class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
         this.behavior.start({name: "SequenceBehavior", behaviors:[
             {name: "InflateBehavior", size: 4, speed: 0.2},
             "DestroyBehavior"
-        ]})
+        ]});
     }
 }
 TestActor.register('TestActor');

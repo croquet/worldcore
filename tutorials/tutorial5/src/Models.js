@@ -20,7 +20,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial) {
     }
 
     doSpawn(xyz) {
-        TestActor.create({pawn:"ClickPawn", parent: this, translation:xyz})
+        TestActor.create({pawn:"ClickPawn", parent: this, translation:xyz});
     }
 
 }

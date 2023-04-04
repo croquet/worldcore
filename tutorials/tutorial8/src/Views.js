@@ -57,7 +57,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
     }
 
     destroy() {
-        super.destroy()
+        super.destroy();
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -70,7 +70,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         const pawn = hits[0].pawn;
         const xyz = hits[0].xyz;
         if (pawn === this) {
-            this.say("spawn", xyz)
+            this.say("spawn", xyz);
         } else {
             pawn.say("kill");
         }
@@ -93,11 +93,11 @@ export class ColorPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         mesh.castShadow = true;
         this.setRenderObject(mesh);
 
-        this.listen("colorSet", this.onColorSet)
+        this.listen("colorSet", this.onColorSet);
     }
 
     destroy() {
-        super.destroy()
+        super.destroy();
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -146,11 +146,11 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.addRenderObjectToRaycast();
         this.addRenderObjectToRaycast("avatar");
 
-        this.listen("colorSet", this.onColorSet)
+        this.listen("colorSet", this.onColorSet);
     }
 
     destroy() {
-        super.destroy()
+        super.destroy();
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -195,7 +195,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 this.left = -1; break;
             case "ArrowRight":
             case "d":
-            case "D" :
+            case "D":
                 this.right = 1; break;
             default:
         }
@@ -241,7 +241,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const pitchQ = q_axisAngle([1,0,0], this.pitch);
             const yawQ = q_axisAngle([0,1,0], this.yawDelta);
             this.cameraRotation = q_multiply(pitchQ, yawQ);
-        };
+        }
     }
 
     update(time, delta) {
@@ -250,7 +250,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             this.yaw += this.yawDelta;
             this.yawDelta = 0;
             const yawQ = q_axisAngle([0,1,0], this.yaw);
-            const t = v3_scale([this.left + this.right, 0, (this.fore + this.back)], 5 * delta/1000)
+            const t = v3_scale([this.left + this.right, 0, (this.fore + this.back)], 5 * delta/1000);
             const tt = v3_rotate(t, yawQ);
             let translation = v3_add(this.translation, tt);
             this.positionTo(translation, yawQ);
@@ -264,9 +264,9 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         if (hits.length<1) return;
         const pawn = hits[0].pawn;
         if (pawn === this) return; // You can't possess yourself
-        if (pawn.actor.driver) return // You can't steal someone else's avatar
+        if (pawn.actor.driver) return; // You can't steal someone else's avatar
 
-        this.set({driver: null})
+        this.set({driver: null});
         pawn.set({driver: this.viewId});
     }
 
@@ -301,10 +301,10 @@ export class MyViewRoot extends ViewRoot {
         sun.shadow.mapSize.height = 4096;
         sun.shadow.camera.near = 90;
         sun.shadow.camera.far = 300;
-        sun.shadow.camera.left = -100
-        sun.shadow.camera.right = 100
-        sun.shadow.camera.top = 100
-        sun.shadow.camera.bottom = -100
+        sun.shadow.camera.left = -100;
+        sun.shadow.camera.right = 100;
+        sun.shadow.camera.top = 100;
+        sun.shadow.camera.bottom = -100;
 
         rm.scene.add(ambient);
         rm.scene.add(sun);
@@ -313,8 +313,8 @@ export class MyViewRoot extends ViewRoot {
     buildCamera() {
         const rm = this.service("ThreeRenderManager");
 
-        const pitchMatrix = m4_rotation([1,0,0], toRad(-45))
-        const yawMatrix = m4_rotation([0,1,0], toRad(-30))
+        const pitchMatrix = m4_rotation([1,0,0], toRad(-45));
+        const yawMatrix = m4_rotation([0,1,0], toRad(-30));
 
         let cameraMatrix = m4_translation([0,0,50]);
         cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);

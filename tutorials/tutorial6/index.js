@@ -1,7 +1,7 @@
 // Worldcore Tutorial 6
 
 // This is the seventh in a series of tutorials illustrating how to build a Worldcore app.
-// It shows how to use create your own behaviors.
+// It shows how to create your own behaviors.
 
 import { App, StartWorldcore} from "@croquet/worldcore";
 

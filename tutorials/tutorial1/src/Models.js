@@ -17,14 +17,14 @@ class ParentActor extends mix(Actor).with(AM_Spatial) {
     moveLeft() {
         console.log("left");
         const translation = this.translation;
-        translation[0] += -1
+        translation[0] += -1;
         this.set({translation});
     }
 
     moveRight() {
         console.log("right");
         const translation = this.translation;
-        translation[0] += 1
+        translation[0] += 1;
         this.set({translation});
 
     }
@@ -55,7 +55,7 @@ export class MyModelRoot extends ModelRoot {
         super.init(options);
         console.log("Start model root!");
         const parent = ParentActor.create({pawn: "TestPawn", translation:[0,0,0]});
-        const child = ChildActor.create({pawn: "TestPawn", parent: parent, translation:[0,0,-3]});
+        const child = ChildActor.create({pawn: "TestPawn", parent: parent, translation:[0,0,-3]}); // eslint-disable-line object-shorthand
         const grandchild = ChildActor.create({pawn: "TestPawn", parent: child, translation:[0,2,0]});
     }
 

@@ -1,6 +1,6 @@
 // Tutorial 0 Models
 
-// Every object in Worldcore is represened by an actor/pawn pair. Spawning an actor
+// Every object in Worldcore is represented by an actor/pawn pair. Spawning an actor
 // automatically instantiates a corresponding pawn. The actor is replicated
 // across all clients, while the pawn is unique to each client.
 
@@ -29,14 +29,14 @@ class TestActor extends mix(Actor).with(AM_Spatial) {
     moveLeft() {
         console.log("left");
         const translation = this.translation;
-        translation[0] += -0.1
+        translation[0] += -0.1;
         this.set({translation});
     }
 
     moveRight() {
         console.log("right");
         const translation = this.translation;
-        translation[0] += 0.1
+        translation[0] += 0.1;
         this.set({translation});
 
     }

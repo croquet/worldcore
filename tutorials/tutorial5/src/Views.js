@@ -9,7 +9,7 @@ import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager,
 
 // Instead of PM_ThreeVisible this pawn is PM_ThreeInstanced. The render object in an instanced
 // pawn is a shared mesh created with the InstanceManager. PM_ThreeInstanced is more efficient if
-// you have hundreds or thousand of objects using the same render model.
+// you have hundreds or thousands of objects using the same render model.
 
 export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
@@ -49,9 +49,9 @@ ClickPawn.register("ClickPawn");
 // telling it to spawn a new child. But if a TempPawn was clicked on, the TempPawn tells
 // its actor to delete itself.
 //
-// Raycasting happends entirely in the view, with the pawns routing the appropriate events to
+// Raycasting happens entirely in the view, with the pawns routing the appropriate events to
 // the model through the reflector: Clicking on a pawn on any client kills its actor everywhere.
-// Requesting a spawn on one client, spawns an actor on all the clients.
+// Requesting a spawn on one client spawns an actor on all the clients.
 
 export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCollider) {
     constructor(actor) {
@@ -71,7 +71,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
     }
 
     destroy() {
-        super.destroy()
+        super.destroy();
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -83,7 +83,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         const pawn = hits[0].pawn;
         const xyz = hits[0].xyz;
         if (pawn === this) {
-            this.say("spawn", xyz)
+            this.say("spawn", xyz);
         } else {
             pawn.say("kill");
         }
@@ -106,11 +106,11 @@ export class ColorPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         mesh.castShadow = true;
         this.setRenderObject(mesh);
 
-        this.listen("colorSet", this.onColorSet)
+        this.listen("colorSet", this.onColorSet);
     }
 
     destroy() {
-        super.destroy()
+        super.destroy();
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -156,10 +156,10 @@ export class MyViewRoot extends ViewRoot {
         sun.shadow.mapSize.height = 4096;
         sun.shadow.camera.near = 90;
         sun.shadow.camera.far = 300;
-        sun.shadow.camera.left = -100
-        sun.shadow.camera.right = 100
-        sun.shadow.camera.top = 100
-        sun.shadow.camera.bottom = -100
+        sun.shadow.camera.left = -100;
+        sun.shadow.camera.right = 100;
+        sun.shadow.camera.top = 100;
+        sun.shadow.camera.bottom = -100;
 
         rm.scene.add(ambient);
         rm.scene.add(sun);
@@ -168,8 +168,8 @@ export class MyViewRoot extends ViewRoot {
     buildCamera() {
         const rm = this.service("ThreeRenderManager");
 
-        const pitchMatrix = m4_rotation([1,0,0], toRad(-45))
-        const yawMatrix = m4_rotation([0,1,0], toRad(-30))
+        const pitchMatrix = m4_rotation([1,0,0], toRad(-45));
+        const yawMatrix = m4_rotation([0,1,0], toRad(-30));
 
         let cameraMatrix = m4_translation([0,0,50]);
         cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);

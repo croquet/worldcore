@@ -1,7 +1,7 @@
 // Worldcore Tutorial 4
 
 // This is the fifth in a series of tutorials illustrating how to build a Worldcore app.
-// It shows how to add new properties to actors, how to use random numbers, and hot to
+// It shows how to add new properties to actors, how to use random numbers, and how to
 // transmit events with say() and listen().
 
 import { App, StartWorldcore} from "@croquet/worldcore";

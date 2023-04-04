@@ -19,7 +19,7 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     }
 
     destroy() {
-        super.destroy()
+        super.destroy();
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -51,11 +51,11 @@ export class ColorPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         const mesh = new THREE.Mesh( this.geometry, this.material );
         this.setRenderObject(mesh);
 
-        this.listen("colorSet", this.onColorSet)
+        this.listen("colorSet", this.onColorSet);
     }
 
     destroy() {
-        super.destroy()
+        super.destroy();
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -97,8 +97,8 @@ export class MyViewRoot extends ViewRoot {
     buildCamera() {
         const rm = this.service("ThreeRenderManager");
 
-        const pitchMatrix = m4_rotation([1,0,0], toRad(-20))
-        const yawMatrix = m4_rotation([0,1,0], toRad(-30))
+        const pitchMatrix = m4_rotation([1,0,0], toRad(-20));
+        const yawMatrix = m4_rotation([0,1,0], toRad(-30));
 
         let cameraMatrix = m4_translation([0,0,15]);
         cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);

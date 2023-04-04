@@ -29,8 +29,8 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
 
     reset() {
         this.navClear();
-        for ( const block of this.blocks) block.destroy()
-        for (let n = 0; n<200;n ++) {
+        for ( const block of this.blocks) block.destroy();
+        for (let n = 0; n<200; n++) {
             const x = this.random()*this.gridScale*this.gridSize;
             const z = this.random()*this.gridScale*this.gridSize;
             this.addBlock(x,z);
@@ -65,7 +65,7 @@ BlockActor.register('BlockActor');
 //-- TestActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// We added the AM_OnNavGrid to our test actor. Every actor on a nav grid is sorted into a bins
+// We added the AM_OnNavGrid to our test actor. Every actor on a nav grid is sorted into a bin
 // according to the cell it's in. If you want to find nearby actors you can search in the bins
 // of nearby cells on the grid.
 
@@ -87,7 +87,7 @@ class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGrid)
         this.behavior.start({name: "SequenceBehavior", behaviors:[
             {name: "InflateBehavior", size: 2, speed: 0.1},
             "DestroyBehavior"
-        ]})
+        ]});
     }
 }
 TestActor.register('TestActor');
@@ -101,7 +101,7 @@ TestActor.register('TestActor');
 // If it finds one and it's less than 4m away, it kills it.
 //
 // The bot steers toward its target by running the PathToBehavior. PathTo succeeds when the
-// bot reaches the target destination. The noise option introduces a slight wiggle to be
+// bot reaches the target destination. The noise option introduces a slight wiggle to
 // the bot's path which makes it look more natural.
 
 class BotActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, AM_OnNavGrid) {
@@ -110,14 +110,14 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, AM_
 
     init(options) {
         super.init(options);
-        this.listen("goto", this.goto)
-        this.look()
+        this.listen("goto", this.goto);
+        this.look();
     }
 
     look() {
         const mines = this.ping("mine", 4);
         for (const mine of mines) if (v3_distance(mine.translation, this.translation) < 4) mine.doKill();
-        if (!this.doomed) this.future(50).look() // When actor is destroyed its doomed flag is set.
+        if (!this.doomed) this.future(50).look(); // When actor is destroyed its doomed flag is set.
     }
 
     goto(xyz) {
@@ -148,16 +148,16 @@ ColorActor.register('ColorActor');
 // location near the center of the grid.
 
 class MyUserManager extends UserManager {
-    get defaultUser() {return MyUser;}
+    get defaultUser() {return MyUser}
 }
 MyUserManager.register('MyUserManager');
 
 class MyUser extends User {
     init(options) {
-        super.init(options)
-        const base = this.wellKnownModel("ModelRoot").base
+        super.init(options);
+        const base = this.wellKnownModel("ModelRoot").base;
         const center = base.gridScale * base.gridSize / 2;
-        const translation = [center - 5 + this.random()*10, 0, center- 5 + this.random()*10]
+        const translation = [center - 5 + this.random()*10, 0, center- 5 + this.random()*10];
         this.color = [this.random(), this.random(), this.random()];
         this.avatar = BotActor.create({
             pawn: "BotPawn",

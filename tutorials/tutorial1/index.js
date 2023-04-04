@@ -1,7 +1,7 @@
 // Worldcore Tutorial 1
 
 // This is the second in a series of tutorials illustrating how to build a Worldcore app. It
-// shows how create parent-child relationships and use view smoothing.
+// shows how to create parent-child relationships and use view smoothing.
 
 import { App, StartWorldcore} from "@croquet/worldcore";
 
