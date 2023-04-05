@@ -1,10 +1,10 @@
-// Tutorial 8 Views
+// Tutorial 7a Views
 
 // All the code specific to this tutorial is in the definition of AvatarPawn.
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider,
-    PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, PM_ThreeCamera, q_yaw, q_pitch } from "@croquet/worldcore";
+    PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, PM_NavGridGizmo } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
@@ -36,16 +36,33 @@ export class ClickPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced, PM
 ClickPawn.register("ClickPawn");
 
 //------------------------------------------------------------------------------------------
+// BlockPawn -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class BlockPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced, PM_ThreeCollider) {
+
+    constructor(actor) {
+        super(actor);
+        this.useInstance("yellowBox");
+        this.addRenderObjectToRaycast();
+    }
+
+}
+BlockPawn.register("BlockPawn");
+
+//------------------------------------------------------------------------------------------
 //-- BasePawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCollider) {
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCollider, PM_ThreeVisible, PM_NavGridGizmo) {
     constructor(actor) {
         super(actor);
 
+        const size = this.actor.gridSize * this.actor.gridScale;
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2)} );
-        this.geometry = new THREE.PlaneGeometry(100,100);
+        this.geometry = new THREE.PlaneGeometry(size,size);
         this.geometry.rotateX(toRad(-90));
+        this.geometry.translate(size/2,0,size/2);
 
         const base = new THREE.Mesh( this.geometry, this.material );
         base.receiveShadow = true;
@@ -54,26 +71,30 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         this.addRenderObjectToRaycast();
 
         this.subscribe("input", "pointerDown", this.doPointerDown);
+        this.subscribe("input", "gDown", this.toggleGizmo);
     }
 
     destroy() {
-        super.destroy();
+        super.destroy()
         this.geometry.dispose();
         this.material.dispose();
     }
 
     doPointerDown(e) {
-        if (e.button === 2) return;
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(e.xy);
         if (hits.length<1) return;
         const pawn = hits[0].pawn;
         const xyz = hits[0].xyz;
         if (pawn === this) {
-            this.say("spawn", xyz);
+            this.say("spawn", xyz)
         } else {
             pawn.say("kill");
         }
+    }
+
+    toggleGizmo() {
+        this.gizmo.visible = !this.gizmo.visible;
     }
 }
 BasePawn.register("BasePawn");
@@ -93,11 +114,11 @@ export class ColorPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         mesh.castShadow = true;
         this.setRenderObject(mesh);
 
-        this.listen("colorSet", this.onColorSet);
+        this.listen("colorSet", this.onColorSet)
     }
 
     destroy() {
-        super.destroy();
+        super.destroy()
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -113,29 +134,26 @@ ColorPawn.register("ColorPawn");
 // AvatarPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// We added the PM_ThreeCamera mixin to our avatar. The camera has a translation and rotation,
-// allowing us to control its position relative to the pawn. It automatically tracks the pawn's
-// movement so our view changes as our avatar moves.
+// We've added the mixin PM_Avatar. Previously when we subscribed to control inputs, we've done
+// it directly in the model, but since we only want one person to control the avatar, we use
+// the AvatarPawn as a go-between. An AvatarPawn exists for the avatar on every client, but
+// only one should accept control inputs.
 //
-// We also add the pawn to a special raycast layer ("avatar"). This allows us to raycast to
-// find other avatars.
+// The important methods are drive() and park(). Drive() holds your control
+// subscriptions and park holds matching unsubscribe calls. When an avatar's driver
+// is set, Worldcore automatically performs the appropriate drive() and park().
 //
-// When you hold the right mouse button down, we put the InputManager into pointer lock mode.
-// The cursor is hidden and mouse movements are reported as delta changes rather than
-// absolute screen coordinates. We use this to drive the camera's pitch and yaw.
+// Every pawn has an update() method that's called every frame. For example, update() is where view
+// smoothing is performed. Worldcore automatically turns off view smoothing when a pawn is being driven.
 //
-// When you click with the left mouse button, the AvatarPawn does its own raycast to determine
-// if you clicked on another avatar. If that avatar doesn't have a driver, you park your current
-// avatar and start driving the new one.
+// We use AvatarPawn's update() to respond to the control inputs, calculating our new translation
+// and rotation. Then we send them to the AvatarActor with positionTo().
 
-export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar, PM_ThreeCamera, PM_ThreeCollider) {
+
+export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar) {
 
     constructor(actor) {
         super(actor);
-        this.pitch = 0;
-        this.yaw = q_yaw(this.rotation);
-        this.cameraTranslation = [0,5,10];
-        this.cameraRotation = q_axisAngle([1,0,0], toRad(-5));
 
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
         this.geometry = new THREE.BoxGeometry( 1, 2, 1 );
@@ -143,14 +161,12 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         const mesh = new THREE.Mesh( this.geometry, this.material );
         mesh.castShadow = true;
         this.setRenderObject(mesh);
-        this.addRenderObjectToRaycast();
-        this.addRenderObjectToRaycast("avatar");
 
-        this.listen("colorSet", this.onColorSet);
+        this.listen("colorSet", this.onColorSet)
     }
 
     destroy() {
-        super.destroy();
+        super.destroy()
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -161,22 +177,14 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     drive() {
         this.fore = this.back = this.left = this.right = 0;
-        this.yawDelta = 0;
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
-        this.subscribe("input", "pointerDown", this.doPointerDown);
-        this.subscribe("input", "pointerUp", this.doPointerUp);
-        this.subscribe("input", "pointerDelta", this.doPointerDelta);
     }
 
     park() {
         this.fore = this.back = this.left = this.right = 0;
-        this.yawDelta = 0;
         this.unsubscribe("input", "keyDown", this.keyDown);
         this.unsubscribe("input", "keyUp", this.keyUp);
-        this.unsubscribe("input", "pointerDown", this.doPointerDown);
-        this.unsubscribe("input", "pointerUp", this.doPointerUp);
-        this.unsubscribe("input", "pointerDelta", this.doPointerDelta);
     }
 
     keyDown(e) {
@@ -195,7 +203,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 this.left = -1; break;
             case "ArrowRight":
             case "d":
-            case "D":
+            case "D" :
                 this.right = 1; break;
             default:
         }
@@ -219,56 +227,21 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         }
     }
 
-    doPointerDown(e) {
-        if (e.button === 2) {
-            this.service("InputManager").enterPointerLock();
-        } else {
-            this.possess(e.xy);
-        }
-
-    }
-
-    doPointerUp(e) {
-        if (e.button === 2) this.service("InputManager").exitPointerLock();
-    }
-
-    doPointerDelta(e) {
-        if (this.service("InputManager").inPointerLock) {
-            this.yawDelta += (-0.002 * e.xy[0]);
-            this.pitch += (-0.002 * e.xy[1]);
-            this.pitch = Math.max(-Math.PI/2, this.pitch);
-            this.pitch = Math.min(Math.PI/2, this.pitch);
-            const pitchQ = q_axisAngle([1,0,0], this.pitch);
-            const yawQ = q_axisAngle([0,1,0], this.yawDelta);
-            this.cameraRotation = q_multiply(pitchQ, yawQ);
-        }
-    }
-
     update(time, delta) {
         super.update(time,delta);
         if (this.driving) {
-            this.yaw += this.yawDelta;
-            this.yawDelta = 0;
-            const yawQ = q_axisAngle([0,1,0], this.yaw);
-            const t = v3_scale([this.left + this.right, 0, (this.fore + this.back)], 5 * delta/1000);
-            const tt = v3_rotate(t, yawQ);
-            let translation = v3_add(this.translation, tt);
-            this.positionTo(translation, yawQ);
-            this.say("viewGlobalChanged");
-            this.refreshCameraTransform(); // Required by PM_ThreeCamera to trigger a camera refresh when you're driving.
+            const yaw = (this.right+this.left) * -3 * delta/1000;
+            const yawQ = q_axisAngle([0,1,0], yaw);
+            const rotation = q_multiply(this.rotation, yawQ);
+            const t = v3_scale([0, 0, (this.fore + this.back)], 5 * delta/1000)
+            const tt = v3_rotate(t, rotation);
+            let way = tt;
+            // let way = this.actor.findWay(tt);
+            const bbb = this.actor.isBlocked(tt);
+            if (bbb ) way = [0,0,0];
+            let translation = v3_add(this.translation, way);
+            this.positionTo(translation, rotation);
         }
-    }
-
-    possess(xy) {
-        const rc = this.service("ThreeRaycast");
-        const hits = rc.cameraRaycast(xy, "avatar");
-        if (hits.length<1) return;
-        const pawn = hits[0].pawn;
-        if (pawn === this) return; // You can't possess yourself
-        if (pawn.actor.driver) return; // You can't steal someone else's avatar
-
-        this.set({driver: null});
-        pawn.set({driver: this.viewId});
     }
 
 }
@@ -286,7 +259,7 @@ export class MyViewRoot extends ViewRoot {
 
     onStart() {
         this.buildLights();
-        // this.buildCamera();
+        this.buildCamera();
         this.buildInstances();
     }
 
@@ -302,10 +275,10 @@ export class MyViewRoot extends ViewRoot {
         sun.shadow.mapSize.height = 4096;
         sun.shadow.camera.near = 90;
         sun.shadow.camera.far = 300;
-        sun.shadow.camera.left = -100;
-        sun.shadow.camera.right = 100;
-        sun.shadow.camera.top = 100;
-        sun.shadow.camera.bottom = -100;
+        sun.shadow.camera.left = -100
+        sun.shadow.camera.right = 100
+        sun.shadow.camera.top = 100
+        sun.shadow.camera.bottom = -100
 
         rm.scene.add(ambient);
         rm.scene.add(sun);
@@ -314,8 +287,8 @@ export class MyViewRoot extends ViewRoot {
     buildCamera() {
         const rm = this.service("ThreeRenderManager");
 
-        const pitchMatrix = m4_rotation([1,0,0], toRad(-45));
-        const yawMatrix = m4_rotation([0,1,0], toRad(-30));
+        const pitchMatrix = m4_rotation([1,0,0], toRad(-45))
+        const yawMatrix = m4_rotation([0,1,0], toRad(-30))
 
         let cameraMatrix = m4_translation([0,0,50]);
         cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);
@@ -343,7 +316,10 @@ export class MyViewRoot extends ViewRoot {
         const box = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("box", box);
 
-        const mesh0 = im.addMesh("yellowBox", "box", "yellow");
+        const big = new THREE.BoxGeometry( 2, 2, 2 );
+        im.addGeometry("big", big);
+
+        const mesh0 = im.addMesh("yellowBox", "big", "yellow");
         const mesh1 = im.addMesh("magentaBox", "box", "magenta");
         const mesh2 = im.addMesh("cyanBox", "box", "cyan");
 

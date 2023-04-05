@@ -51,7 +51,7 @@ BallPawn.register("BallPawn");
 //-- GroundPawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class GroundPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+export class GroundPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_NavGridGizmo) {
     constructor(...args) {
         super(...args);
 
@@ -66,6 +66,8 @@ export class GroundPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         base.receiveShadow = true;
 
         this.setRenderObject(base);
+
+        this.gizmo.visible = true;
     }
 
     destroy() {
@@ -91,10 +93,10 @@ class GodView extends ViewService {
 
         this.updateCamera();
 
-        // this.subscribe("input", 'wheel', this.onWheel);
-        // this.subscribe("input", "pointerDown", this.doPointerDown);
-        // this.subscribe("input", "pointerUp", this.doPointerUp);
-        // this.subscribe("input", "pointerDelta", this.doPointerDelta);
+        this.subscribe("input", 'wheel', this.onWheel);
+        this.subscribe("input", "pointerDown", this.doPointerDown);
+        this.subscribe("input", "pointerUp", this.doPointerUp);
+        this.subscribe("input", "pointerDelta", this.doPointerDelta);
     }
 
 
@@ -212,7 +214,7 @@ export class MyViewRoot extends ViewRoot {
         const box = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("cube", box);
 
-        const ball = new THREE.SphereGeometry( 0.5 );
+        const ball = new THREE.SphereGeometry( 0.25 );
         im.addGeometry("ball", ball);
 
         const mmm0 = im.addMesh("sun", "cube", "yellow");

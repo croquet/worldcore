@@ -1,27 +1,59 @@
-// Tutorial 8 Models
+// Tutorial 7a Models
 
-import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, Behavior, sphericalRandom, v3_add, UserManager, User, AM_Avatar, q_axisAngle, toRad } from "@croquet/worldcore";
+import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, Behavior, sphericalRandom, v3_add, UserManager, User, AM_Avatar, AM_NavGrid, AM_OnNavGrid } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BaseActor extends mix(Actor).with(AM_Spatial) {
+class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
 
     get pawn() {return "BasePawn"}
 
     init(options) {
         super.init(options);
+        this.blocks = new Set();
+        this.reset();
         this.listen("spawn", this.doSpawn);
     }
 
     doSpawn(xyz) {
-        const translation = [...xyz];
+        const translation = [...xyz]
         TestActor.create({pawn:"ClickPawn", parent: this, translation});
+    }
+
+    reset() {
+        this.navClear();
+        for ( const block of this.blocks) block.destroy()
+
+        this.addBlock(60,40);
+        // for (let n = 0; n<200;n ++) {
+        //     const x = this.random()*this.gridScale*this.gridSize;
+        //     const z = this.random()*this.gridScale*this.gridSize;
+        //     this.addBlock(x,z);
+        // }
+    }
+
+    addBlock(x,z) {
+        console.log("add block");
+        const xx = this.gridScale*(Math.floor(x/this.gridScale) + 0.5);
+        const zz = this.gridScale*(Math.floor(z/this.gridScale) + 0.5);
+        const block = BlockActor.create({pawn:"BlockPawn", parent: this, translation: [xx,1,zz], obstacle: true});
+        this.blocks.add(block);
     }
 
 }
 BaseActor.register('BaseActor');
+
+//------------------------------------------------------------------------------------------
+//-- BlockActor ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// These are the obstacles on our NavGrid. They have the AM_OnNavGrid mixin.
+
+class BlockActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid) {
+}
+BlockActor.register('BlockActor');
 
 //------------------------------------------------------------------------------------------
 //--TestActor ------------------------------------------------------------------------------
@@ -44,7 +76,7 @@ class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
         this.behavior.start({name: "SequenceBehavior", behaviors:[
             {name: "InflateBehavior", size: 4, speed: 0.2},
             "DestroyBehavior"
-        ]});
+        ]})
     }
 }
 TestActor.register('TestActor');
@@ -65,25 +97,44 @@ class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
 ColorActor.register('ColorActor');
 
 //------------------------------------------------------------------------------------------
+//-- AvatarActor ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+
+class AvatarActor extends mix(ColorActor).with(AM_Avatar, AM_OnNavGrid) {
+}
+AvatarActor.register('AvatarActor');
+
+//------------------------------------------------------------------------------------------
 //-- Users ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// UserManager is a model-side service that creates a special user actor whenever someone joins
+// the session. You can query the UserManager to get a list of all current users, but right now
+// we're going to use the user system to spawn an avatar.
+
 class MyUserManager extends UserManager {
-    get defaultUser() {return MyUser}
+    get defaultUser() {return MyUser;}
 }
 MyUserManager.register('MyUserManager');
 
+// When someone joins a session, a new user is created for them. When it starts up, the user creates
+// an avatar that only that person can use. We randomly generate a color for the user, so we'll be able
+// to tell avatars controlled by different people apart.
+
 class MyUser extends User {
     init(options) {
-        super.init(options);
-        const base = this.wellKnownModel("ModelRoot").base;
+        super.init(options)
+        const base = this.wellKnownModel("ModelRoot").base
+        const center = base.gridScale * base.gridSize / 2;
+        const translation = [center, 0, center+10]
         this.color = [this.random(), this.random(), this.random()];
-        this.avatar = ColorActor.create({
+        this.avatar = AvatarActor.create({
             pawn: "AvatarPawn",
             parent: base,
             driver: this.userId,
             color: this.color,
-            translation: [0,0,10]
+            translation
         });
     }
 
@@ -95,12 +146,10 @@ class MyUser extends User {
 }
 MyUser.register('MyUser');
 
+
 //------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-// We add two spare avatars to the world. These avatars have no drivers, so they're available
-// for anyone to drive, and they also change color when anyone presses "c".
 
 export class MyModelRoot extends ModelRoot {
 
@@ -111,29 +160,17 @@ export class MyModelRoot extends ModelRoot {
     init(options) {
         super.init(options);
         console.log("Start model root!");
-        this.base = BaseActor.create();
-        this.parent = TestActor.create({pawn: "TestPawn", parent: this.base, translation:[0,1,0]});
+
+        const gridSize = 32;
+        const gridScale = 3;
+        const offset = -gridScale*gridSize/2;
+
+        this.base = BaseActor.create({gridSize, gridScale, subdivisions:1, translation:[offset,0,offset]});
+        this.parent = TestActor.create({pawn: "TestPawn", translation:[0,1,0]});
         this.child = ColorActor.create({pawn: "ColorPawn", parent: this.parent, translation:[0,0,2]});
 
         this.parent.behavior.start({name: "SpinBehavior", axis: [0,1,0], tickRate:500});
         this.child.behavior.start({name: "SpinBehavior", axis: [0,0,1], speed: 3});
-
-        this.spare0 = ColorActor.create({
-            pawn: "AvatarPawn",
-            parent: this.base,
-            driver: null,
-            translation: [-2,0,-10],
-            rotation: q_axisAngle([0,1,0], toRad(-170))
-        });
-
-        this.spare1 = ColorActor.create({
-            pawn: "AvatarPawn",
-            parent: this.base,
-            driver: null,
-            translation: [2,0,-10],
-
-            rotation: q_axisAngle([0,1,0], toRad(170))
-        });
 
         this.subscribe("input", "cDown", this.colorChange);
     }
@@ -141,8 +178,6 @@ export class MyModelRoot extends ModelRoot {
     colorChange() {
         const color = [this.random(), this.random(), this.random()];
         this.child.set({color});
-        this.spare0.set({color});
-        this.spare1.set({color});
     }
 
 }
@@ -157,7 +192,7 @@ class InflateBehavior extends Behavior {
     get size() { return this._size || 3}
     get speed() { return this._speed || 0.5}
 
-    onStart() {
+    onStart () {
         this.scale = this.actor.scale[0];
     }
 
@@ -175,7 +210,7 @@ class RiseBehavior extends Behavior {
     get height() { return this._height || 3}
     get speed() { return this._speed || 0.5}
 
-    onStart() {
+    onStart () {
         this.top = this.actor.translation[1] + this.height;
     }
 

@@ -1,5 +1,6 @@
 import { RegisterMixin } from "./Mixins";
-import { v2_manhattan, q_multiply, q_axisAngle, v3_normalize, v3_add, q_lookAt, v3_sub, v3_magnitude, v3_distance, v2_normalize, v2_sub } from "./Vector";
+import { v2_manhattan, q_multiply, q_axisAngle, v3_normalize, v3_add, q_lookAt, v3_sub, v3_magnitude, v3_distance, v2_normalize, v2_sub,
+        v3_rotateX, v3_rotateY, v3_rotateZ, toRad, v3_max }from "./Vector";
 import { PerlinNoise, PriorityQueue } from "./Utilities";
 import { Behavior } from "./Behavior";
 
@@ -39,6 +40,7 @@ export const AM_NavGrid = superclass => class extends superclass {
         super.init(options)
         this.gridBins = new Map();
         this.navNodes = new Map();
+        this.gridObstacles = new Set();
         this.navClear();
     }
 
@@ -46,15 +48,39 @@ export const AM_NavGrid = superclass => class extends superclass {
         super.destroy();
     }
 
-    packNavKey(x,y,z) {
+    binXY(x,y,z) {
+        const s = this.gridScale/this.subdivisions;
+        switch (this.gridPlane) {
+            default:
+            case 0: return [Math.floor(x/s), Math.floor(z/s)];
+            case 1: return [Math.floor(x/s), Math.floor(y/s)];
+            case 2: return [Math.floor(y/s), Math.floor(z/s)];
+        }
+    }
+
+    navXY(x,y,z) {
         const s = this.gridScale;
         switch (this.gridPlane) {
             default:
-            case 0: return packKey(Math.floor(x/s), Math.floor(z/s));
-            case 1: return packKey(Math.floor(x/s), Math.floor(y/s));
-            case 2: return packKey( Math.floor(y/s), Math.floor(z/s));
+            case 0: return [Math.floor(x/s), Math.floor(z/s)];
+            case 1: return [Math.floor(x/s), Math.floor(y/s)];
+            case 2: return [Math.floor(y/s), Math.floor(z/s)];
         }
     }
+
+    packNavKey(x,y,z) {
+        return packKey(...this.navXY(x,y,z));
+    }
+
+    // packNavKey(x,y,z) {
+    //     const s = this.gridScale;
+    //     switch (this.gridPlane) {
+    //         default:
+    //         case 0: return packKey(Math.floor(x/s), Math.floor(z/s));
+    //         case 1: return packKey(Math.floor(x/s), Math.floor(y/s));
+    //         case 2: return packKey( Math.floor(y/s), Math.floor(z/s));
+    //     }
+    // }
 
     unpackNavKey(key){
         const s = this.gridScale;
@@ -83,6 +109,17 @@ export const AM_NavGrid = superclass => class extends superclass {
         child.gridBin = null;
     }
 
+    addObstacle(child){
+        this.gridObstacles.add(child);
+        child.drawObstacles()
+    }
+
+    removeObstacle(child){
+        this.gridObstacles.delete(child);
+        this.navClear();
+        for (const o of this.gridObstacles) o.drawObstacles();
+    }
+
     navClear() {
         const perlin = new PerlinNoise();
         for (let x = 0; x < this.gridSize; x++) {
@@ -97,7 +134,7 @@ export const AM_NavGrid = superclass => class extends superclass {
         this.say("navGridChanged");
     }
 
-    addObstacle(x,y) {
+    drawBlock(x,y) {
 
         const west = this.navNodes.get(packKey(x-1, y));
         const south = this.navNodes.get(packKey(x, y-1));
@@ -122,7 +159,7 @@ export const AM_NavGrid = superclass => class extends superclass {
         this.say("navGridChanged");
     }
 
-    addHorizontalFence(x,y,length) {
+    drawHorizontalFence(x,y,length) {
 
         for ( let n = 0; n<length; n++) {
 
@@ -146,7 +183,7 @@ export const AM_NavGrid = superclass => class extends superclass {
         this.say("navGridChanged");
     }
 
-    addVerticalFence(x,y,length) {
+    drawVerticalFence(x,y,length) {
 
         for ( let n = 0; n<length; n++) {
 
@@ -196,7 +233,7 @@ export const AM_NavGrid = superclass => class extends superclass {
                 const weight = node.weight(n);
                 if (!visited.has(exit)) visited.set(exit, {}); // First time visited
                 const next = visited.get(exit);
-                if (!next.from || next.cost > cost + weight ){ // This route is better
+                if (!next.from || next.cost > cost + weight ) { // This route is better
                     next.from = key;
                     next.cost = cost + weight;
                     const heuristic = v2_manhattan(this.navNodes.get(exit).xy, endXY);
@@ -217,47 +254,47 @@ export const AM_NavGrid = superclass => class extends superclass {
         return path;
     }
 
-    findWay(startKey, aim) {
-        const node = this.navNodes.get(startKey);
-        if (!node) return startKey;  // Invalid start waypoint
-        const x = aim[0];
-        const y = aim[1];
-        const xx = Math.abs(x) > 2*Math.abs(y);
-        const yy = Math.abs(y) > 2*Math.abs(x);
+    // findWay(startKey, aim) {
+    //     const node = this.navNodes.get(startKey);
+    //     if (!node) return startKey;  // Invalid start waypoint
+    //     const x = aim[0];
+    //     const y = aim[1];
+    //     const xx = Math.abs(x) > 2*Math.abs(y);
+    //     const yy = Math.abs(y) > 2*Math.abs(x);
 
-        let d=[];
-        if(x>0) { // east
-            if (y>0) { // northeast
-                d=[6,2,3,7,5];
-                if (xx) d = [2,6,3,5,7]
-                if (yy) d = [3,6,2,7,5]
-            } else { // southeast
-                d=[5,1,2,6,4];
-                if (xx) d = [2,5,1,6,4]
-                if (yy) d = [1,5,2,4,6]
-            }
-        } else { // west
-            if (y>0) { // northwest
-                d=[7,3,0,6,4];
-                if (xx) d = [0,7,3,4,6]
-                if (yy) d = [3,7,0,6,4]
-            } else { // southwest
-                d=[4,0,1,5,7];
-                if (xx) d = [0,4,1,7,5]
-                if (yy) d = [1,4,0,5,7]
-            }
-        }
+    //     let d=[];
+    //     if(x>0) { // east
+    //         if (y>0) { // northeast
+    //             d=[6,2,3,7,5];
+    //             if (xx) d = [2,6,3,5,7]
+    //             if (yy) d = [3,6,2,7,5]
+    //         } else { // southeast
+    //             d=[5,1,2,6,4];
+    //             if (xx) d = [2,5,1,6,4]
+    //             if (yy) d = [1,5,2,4,6]
+    //         }
+    //     } else { // west
+    //         if (y>0) { // northwest
+    //             d=[7,3,0,6,4];
+    //             if (xx) d = [0,7,3,4,6]
+    //             if (yy) d = [3,7,0,6,4]
+    //         } else { // southwest
+    //             d=[4,0,1,5,7];
+    //             if (xx) d = [0,4,1,7,5]
+    //             if (yy) d = [1,4,0,5,7]
+    //         }
+    //     }
 
-        for(const n of d) {
-            const exit = node.exits[n];
-            if (exit) return exit;
-        }
+    //     for(const n of d) {
+    //         const exit = node.exits[n];
+    //         if (exit) return exit;
+    //     }
 
-        return startKey;
-    }
+    //     return startKey;
+    // }
 
 
-}
+};
 RegisterMixin(AM_NavGrid);
 
 //------------------------------------------------------------------------------------------
@@ -268,39 +305,67 @@ export const AM_OnNavGrid = superclass => class extends superclass {
 
     init(options) {
         super.init(options);
-        if (this.obstacle) this.parent.addObstacle(...this.navXY);
+        if (this.parent && this.obstacle) this.parent.addObstacle(this);
     }
 
     destroy() {
         super.destroy();
-        if (this.parent) this.parent.removeFromBin(this.binKey, this);
+        if (this.parent) {
+            this.parent.removeFromBin(this.binKey, this);
+            if (this.obstacle) this.parent.removeObstacle(this);
+        }
         super.destroy();
     }
 
     get navXY() {
-        const x = this.translation[0];
-        const y = this.translation[1];
-        const z = this.translation[2];
-        const s = this.parent.gridScale;
-
-        switch (this.parent.gridPlane) {
-            default:
-            case 0: return[Math.floor(x/s), Math.floor(z/s)];
-            case 1: return[Math.floor(x/s), Math.floor(y/s)];
-            case 2: return[Math.floor(y/s), Math.floor(z/s)];
-        }
+        return this.parent.navXY(...this.translation);
     }
+
+    // get navXY() {
+    //     const x = this.translation[0];
+    //     const y = this.translation[1];
+    //     const z = this.translation[2];
+    //     const s = this.parent.gridScale;
+
+    //     switch (this.parent.gridPlane) {
+    //         default:
+    //         case 0: return[Math.floor(x/s), Math.floor(z/s)];
+    //         case 1: return[Math.floor(x/s), Math.floor(y/s)];
+    //         case 2: return[Math.floor(y/s), Math.floor(z/s)];
+    //     }
+
+    // }
 
     get navKey() {
-        return packKey(...this.navXY);
+        return this.parent.packNavKey(...this.translation);
     }
 
+    // get navKey() {
+    //     return packKey(...this.navXY);
+    //     // return this.packXYZ(...this.translation)
+    // }
+
     get navNode() {
-        return this.parent.navNodes.get(this.navKey);
+        const n = this.parent.navNodes.get(this.navKey);
+        if (!n) console.error(this + " offNavGrid");
+        return n
     }
 
     get obstacle() { return this._obstacle}
 
+    obstacleSet(value,old) {
+        if (!this.parent) return;
+        if (old) {
+            this.parent.removeObstacle(this);
+        }
+        if (value) {
+            this.parent.addObstacle(this);
+        }
+    }
+
+    drawObstacles(){ // default
+        this.parent.drawBlock(...this.navXY)
+    }
     parentSet(value,old) {
         super.parentSet(value,old);
         if(this.parent && !this.parent.isNavGrid) console.warn("AM_OnNavGrid must have a NavGrid parent!");
@@ -312,18 +377,19 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         if (old && this.obstacle) console.warn("NavGrid obstacles can't move!");
 
         const oldKey = this.binKey;
+        this.binXY = this.parent.binXY(...value);
 
-        const s = this.parent.gridScale/this.parent.subdivisions;
-        const x = value[0];
-        const y = value[1];
-        const z = value[2];
+        // const s = this.parent.gridScale/this.parent.subdivisions;
+        // const x = value[0];
+        // const y = value[1];
+        // const z = value[2];
 
-        switch (this.parent.gridPlane) {
-            default:
-            case 0: this.binXY = [Math.floor(x/s), Math.floor(z/s)]; break;
-            case 1: this.binXY = [Math.floor(x/s), Math.floor(y/s)]; break;
-            case 2: this.binXY = [Math.floor(y/s), Math.floor(z/s)]; break;
-        }
+        // switch (this.parent.gridPlane) {
+        //     default:
+        //     case 0: this.binXY = [Math.floor(x/s), Math.floor(z/s)]; break;
+        //     case 1: this.binXY = [Math.floor(x/s), Math.floor(y/s)]; break;
+        //     case 2: this.binXY = [Math.floor(y/s), Math.floor(z/s)]; break;
+        // }
 
         if (this.binXY[0] < 0 || this.binXY[1] < 0 ) console.warn("Negative coordinates are not allowed on a NavGrid!");
 
@@ -333,23 +399,6 @@ export const AM_OnNavGrid = superclass => class extends superclass {
             this.parent.removeFromBin(oldKey,this);
             this.parent.addToBin(this.binKey, this);
         }
-    }
-
-    isBlocked(to) {
-        let x,y;
-        switch (this.parent.gridPlane) {
-            default:
-            case 0: x = to[0]; y = to[2]; break;
-            case 1: x = to[0]; y = to[1]; break;
-            case 2: x = to[1]; y = to[2]; break;
-        }
-        return !this.navNode.exitTo(x,y);
-    }
-
-    obstacleSet(value,old) {
-        if (!this.parent) return;
-        if (old) this.parent.removeObstacle(...this.navXY);
-        if (value) this.parent.addObstacle(...this.navXY);
     }
 
     findPathTo(target) {
@@ -370,31 +419,132 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         return this.parent.findPath(this.navKey, endKey);
     }
 
-    findWay(aim) { // Finds the best direction that isn't blocked
+    /// isBlocked (start, aim) ... instead of assuming translation. Probaly up in the grid.
 
-        const x = aim[0];
-        const y = aim[1];
-        const z = aim[2];
-
-        let aa;
+    isBlocked(aim) {
+        const target = v3_add(aim, this.translation);
+        const x = target[0];
+        const y = target[1];
+        const z = target[2];
+        const s = this.parent.gridScale;
+        let key;
         switch (this.parent.gridPlane) {
             default:
-            case 0: aa = [x,z]; break;
-            case 1: aa = [x,y]; break;
-            case 2: aa = [y,z]; break;
+                case 0: key = packKey(Math.floor(x/s), Math.floor(z/s)); break;
+                case 1: key = packKey(Math.floor(x/s), Math.floor(y/s)); break;
+                case 2: key = packKey(Math.floor(y/s), Math.floor(z/s)); break;
+        }
+        if (this.navKey !== key) {
+            // console.log("boundary");
+            if (!this.navNode.hasExitTo(key)) {
+                // console.log("block");
+                return true;
+            }
         }
 
-        const key = this.parent.findWay(this.navKey, aa);
-        const xy = v2_normalize(v2_sub(unpackKey(key), this.navXY));
+        return false;
 
-        switch (this.parent.gridPlane) {
-            default:
-            case 0: return [xy[0], 0, xy[1]];
-            case 1: return [xy[0], xy[1], 0];
-            case 2: return [0, xy[0], xy[1]];
-        }
+
+        // if(this.navKey===key) {
+        //     return false
+        // } else {
+        //     console.log(key)
+        //     console.log(this.navNode.exits);
+        //     console.log(!this.navNode.hasExitTo(key));
+        //     return !this.navNode.hasExitTo(key);
+
+        // }
 
     }
+
+    // findWay(start, aim) ... instead of assuming translation.
+
+    findWay(aim) {
+        if (!this.isBlocked(aim)) return aim;
+
+        let left;
+        let right;
+
+        switch (this.parent.gridPlane) {
+            default:
+            case 0: left = v3_rotateY(aim, toRad(45)); right = v3_rotateY(aim, toRad(-45)); break;
+            case 1: left = v3_rotateZ(aim, toRad(45)); right = v3_rotateZ(aim, toRad(-45)); break;
+            case 2: left = v3_rotateX(aim, toRad(45)); right = v3_rotateX(aim, toRad(-45)); break;
+        }
+
+        if (!this.isBlocked(left)) return v3_max(left, [0,0,0]);
+        if (!this.isBlocked(right)) return v3_max(right, [0,0,0]);
+
+        switch (this.parent.gridPlane) {
+            default:
+            case 0: left = v3_rotateY(aim, toRad(90)); right = v3_rotateY(aim, toRad(-90)); break;
+            case 1: left = v3_rotateZ(aim, toRad(90)); right = v3_rotateZ(aim, toRad(-90)); break;
+            case 2: left = v3_rotateX(aim, toRad(90)); right = v3_rotateX(aim, toRad(-90)); break;
+        }
+
+        if (!this.isBlocked(left)) return v3_max(left, [0,0,0]);
+        if (!this.isBlocked(right)) return v3_max(right, [0,0,0]);
+
+        return [0,0,0];
+    }
+
+
+    // findWay(aim) {
+    //     if (!this.isBlocked(aim)) return aim;
+    //     const s = this.parent.gridScale;
+
+    //     let x;
+    //     let y;
+    //     switch (this.parent.gridPlane) {
+    //         default:
+    //         case 0: x = aim[0]; y = aim[2]; break;
+    //         case 1: x = aim[0]; y = aim[1]; break;
+    //         case 2: x = aim[1]; y = aim[2]; break;
+    //     }
+
+    //     const key = packKey(Math.floor(x/s), Math.floor(y/s));
+    //     const xx = Math.abs(x) > 2*Math.abs(y);
+    //     const yy = Math.abs(y) > 2*Math.abs(x);
+
+    //     let d=[];
+    //     if(x>0) { // east
+    //         if (y>0) { // northeast
+    //             d=[6,2,3,7,5];
+    //             if (xx) d = [2,5,6,1,3] // east
+    //             if (yy) d = [3,6,7,2,0] // north
+    //         } else { // southeast
+    //             d=[5,1,2,6,4];
+    //             if (xx) d = [2,5,6,1,3] // east
+    //             if (yy) d = [1,4,5,0,2] // south
+    //         }
+    //     } else { // west
+    //         if (y>0) { // northwest
+    //             d=[7,3,0,6,4];
+    //             if (xx) d = [0,7,4,3,1] // west
+    //             if (yy) d = [3,6,7,2,0] // north
+    //         } else { // southwest
+    //             d=[4,0,1,5,7];
+    //             if (xx) d = [0,7,4,3,1] // west
+    //             if (yy) d = [1,4,5,0,2] // south
+    //         }
+    //     }
+
+    //     const node = this.navNode;
+
+    //     console.log(key);
+    //     console.log(node);
+
+    //     for(const n of d) {
+    //         const exit = node.exits[n];
+    //         console.log(n + ":"+ exit);
+    //         if (exit) {
+    //             console.log("found:" + n)
+    //             return aim;
+    //         }
+    //     }
+
+    //     return [0,0,0];
+    // }
 
     ping(tag, radius=0) {
         const out = [];
@@ -567,7 +717,7 @@ class NavNode {
     get hasExit() { return this.exits.some(e => e)}
     get isEmpty() { return !this.hasExit; }
 
-    hasExitTo(key) { return this.exits.find(e => e===key)}
+    hasExitTo(key) { return this.exits.some(e => e===key)}
 
     exitTo(x,y) {
         const xx = Math.abs(x) > 2*Math.abs(y);

@@ -34,7 +34,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
         for(let n = 0; n < 50; n++) {
             const x = Math.floor(this.gridSize * Math.random());
             const y = Math.floor(this.gridSize * Math.random());
-            this.addObstacle(x,y);
+            this.drawBlock(x,y);
         }
 
         for(let n = 0; n < 3; n++) {
@@ -42,7 +42,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
             const y = Math.floor(this.gridSize * Math.random());
             const length = Math.floor(this.gridSize/2 * Math.random()) + 1;
 
-            this.addHorizontalFence(x,y,length);
+            this.drawHorizontalFence(x,y,length);
         }
 
         for(let n = 0; n < 3; n++) {
@@ -50,7 +50,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
             const y = Math.floor(this.gridSize * Math.random());
             const length = Math.floor(this.gridSize/2 * Math.random()) + 1;
 
-            this.addVerticalFence(x,y,length);
+            this.drawVerticalFence(x,y,length);
         }
 
     }
@@ -69,7 +69,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
+        console.log("Start root model!!!");
         this.bots = [];
 
         this.base = BaseActor.create({gridSize: 50, gridScale:3, subdivisions: 4, noise: 1});
@@ -91,7 +91,7 @@ export class MyModelRoot extends ModelRoot {
 
         const ss = this.base.gridScale * this.base.gridSize;
 
-        for(let n = 0; n<1000;n++) {
+        for(let n = 0; n<500;n++) {
             const translation = [ ss * Math.random(), 0, ss * Math.random()];
             const bot = BotActor.create({parent: this.base, pawn: "TestPawn", translation, tags: ["bot"]});
             this.bots.push(bot)
