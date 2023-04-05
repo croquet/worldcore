@@ -254,6 +254,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const tt = v3_rotate(t, yawQ);
             let translation = v3_add(this.translation, tt);
             this.positionTo(translation, yawQ);
+            this.say("viewGlobalChanged");
             this.refreshCameraTransform(); // Required by PM_ThreeCamera to trigger a camera refresh when you're driving.
         }
     }

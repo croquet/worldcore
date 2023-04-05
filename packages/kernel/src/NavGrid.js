@@ -233,7 +233,7 @@ export const AM_NavGrid = superclass => class extends superclass {
                 const weight = node.weight(n);
                 if (!visited.has(exit)) visited.set(exit, {}); // First time visited
                 const next = visited.get(exit);
-                if (!next.from || next.cost > cost + weight ){ // This route is better
+                if (!next.from || next.cost > cost + weight ) { // This route is better
                     next.from = key;
                     next.cost = cost + weight;
                     const heuristic = v2_manhattan(this.navNodes.get(exit).xy, endXY);
@@ -294,7 +294,7 @@ export const AM_NavGrid = superclass => class extends superclass {
     // }
 
 
-}
+};
 RegisterMixin(AM_NavGrid);
 
 //------------------------------------------------------------------------------------------
@@ -313,7 +313,7 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         if (this.parent) {
             this.parent.removeFromBin(this.binKey, this);
             if (this.obstacle) this.parent.removeObstacle(this);
-        };
+        }
         super.destroy();
     }
 
@@ -401,8 +401,6 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         }
     }
 
-
-
     findPathTo(target) {
         const x = target[0];
         const y = target[1];
@@ -437,9 +435,9 @@ export const AM_OnNavGrid = superclass => class extends superclass {
                 case 2: key = packKey(Math.floor(y/s), Math.floor(z/s)); break;
         }
         if (this.navKey !== key) {
-            console.log("boundary");
+            // console.log("boundary");
             if (!this.navNode.hasExitTo(key)) {
-                console.log("block");
+                // console.log("block");
                 return true;
             }
         }
@@ -469,23 +467,23 @@ export const AM_OnNavGrid = superclass => class extends superclass {
 
         switch (this.parent.gridPlane) {
             default:
-            case 0: left = v3_rotateY(aim, toRad(45)); right = v3_rotateY(aim, toRad(-45));break;
-            case 1: left = v3_rotateZ(aim, toRad(45)); right = v3_rotateZ(aim, toRad(-45));break;
-            case 2: left = v3_rotateX(aim, toRad(45)); right = v3_rotateX(aim, toRad(-45));break;
+            case 0: left = v3_rotateY(aim, toRad(45)); right = v3_rotateY(aim, toRad(-45)); break;
+            case 1: left = v3_rotateZ(aim, toRad(45)); right = v3_rotateZ(aim, toRad(-45)); break;
+            case 2: left = v3_rotateX(aim, toRad(45)); right = v3_rotateX(aim, toRad(-45)); break;
         }
 
         if (!this.isBlocked(left)) return v3_max(left, [0,0,0]);
-        if (!this.isBlocked(right))return v3_max(right, [0,0,0]);
+        if (!this.isBlocked(right)) return v3_max(right, [0,0,0]);
 
         switch (this.parent.gridPlane) {
             default:
-            case 0: left = v3_rotateY(aim, toRad(90)); right = v3_rotateY(aim, toRad(-90));break;
-            case 1: left = v3_rotateZ(aim, toRad(90)); right = v3_rotateZ(aim, toRad(-90));break;
-            case 2: left = v3_rotateX(aim, toRad(90)); right = v3_rotateX(aim, toRad(-90));break;
+            case 0: left = v3_rotateY(aim, toRad(90)); right = v3_rotateY(aim, toRad(-90)); break;
+            case 1: left = v3_rotateZ(aim, toRad(90)); right = v3_rotateZ(aim, toRad(-90)); break;
+            case 2: left = v3_rotateX(aim, toRad(90)); right = v3_rotateX(aim, toRad(-90)); break;
         }
 
         if (!this.isBlocked(left)) return v3_max(left, [0,0,0]);
-        if (!this.isBlocked(right))return v3_max(right, [0,0,0]);
+        if (!this.isBlocked(right)) return v3_max(right, [0,0,0]);
 
         return [0,0,0];
     }

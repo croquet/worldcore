@@ -123,8 +123,7 @@ export class MyModelRoot extends ModelRoot {
             parent: this.base,
             driver: null,
             translation: [-2,0,-10],
-            rotation: q_axisAngle([0,1,0], toRad(-170)),
-            tags:["avatar"]
+            rotation: q_axisAngle([0,1,0], toRad(-170))
         });
 
         this.spare1 = ColorActor.create({
