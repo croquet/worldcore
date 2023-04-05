@@ -297,18 +297,21 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     scaleTo(v) {
         this._scale = v;
         this.localChanged();
+        this.refreshDrawTransform();
         this.say("setScale", v, this.throttle)
     }
 
     rotateTo(q) {
         this._rotation = q;
         this.localChanged();
+        this.refreshDrawTransform();
         this.say("setRotation", q, this.throttle)
     }
 
     translateTo(v) {
         this._translation = v;
         this.localChanged();
+        this.refreshDrawTransform();
         this.say("setTranslation", v, this.throttle)
     }
 
@@ -316,6 +319,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this._translation = v;
         this._rotation = q;
         this.localChanged();
+        this.refreshDrawTransform();
         this.say("setPosition", [v,q], this.throttle)
     }
 
@@ -378,11 +382,14 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         }
 
         if(!this._global) {
-            this.say("viewGlobalChanged");
+            // this.say("viewGlobalChanged");
+            this.refreshDrawTransform();
             if (this.children) this.children.forEach(child => child.globalChanged()); // If our global changes, so do the globals of our children
         }
 
     }
+
+    refreshDrawTransform() {}
 
 };
 
