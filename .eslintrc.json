@@ -90,10 +90,7 @@
         "no-underscore-dangle": "off",
         "lines-between-class-members": "off",
         "operator-linebreak": "off",
-<<<<<<< HEAD
+        "linebreak-style": "off",
         "semi": ["error", "always", { "omitLastInOneLineBlock": true }]
-=======
-        "linebreak-style": "off"
->>>>>>> avatar-obstacles
     }
 }
