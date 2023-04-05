@@ -235,9 +235,11 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const rotation = q_multiply(this.rotation, yawQ);
             const t = v3_scale([0, 0, (this.fore + this.back)], 5 * delta/1000)
             const tt = v3_rotate(t, rotation);
-            const way = this.actor.findWay(tt);
-            console.log(way);
-            let translation = v3_add(this.translation, tt);
+            let way = tt;
+            // let way = this.actor.findWay(tt);
+            const bbb = this.actor.isBlocked(tt);
+            if (bbb ) way = [0,0,0];
+            let translation = v3_add(this.translation, way);
             this.positionTo(translation, rotation);
         }
     }
