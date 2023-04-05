@@ -17,11 +17,6 @@ export { Reflector };
 //------------------------------------------------------------------------------------------
 export const PM_ThreeVisible = superclass => class extends superclass {
 
-    constructor(...args) {
-        super(...args);
-        // this.listen("viewGlobalChanged", this.refreshDrawTransform);
-    }
-
     destroy() {
         super.destroy();
         const rm = this.service("ThreeRenderManager");
@@ -32,7 +27,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 
     refreshDrawTransform() {
         super.refreshDrawTransform();
-        if(this.renderObject){
+        if (this.renderObject) {
             this.renderObject.matrix.fromArray(this.global);
             this.renderObject.matrixWorldNeedsUpdate = true;
         }
