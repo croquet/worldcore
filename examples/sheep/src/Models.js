@@ -91,10 +91,10 @@ export class MyModelRoot extends ModelRoot {
 
         const ss = this.base.gridScale * this.base.gridSize;
 
-        for(let n = 0; n<500;n++) {
+        for (let n = 0; n<200; n++) {
             const translation = [ ss * Math.random(), 0, ss * Math.random()];
             const bot = BotActor.create({parent: this.base, pawn: "TestPawn", translation, tags: ["bot"]});
-            this.bots.push(bot)
+            this.bots.push(bot);
         }
 
     }

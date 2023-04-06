@@ -47,10 +47,10 @@ export class InstancedMesh {
 
 export const PM_ThreeInstanced = superclass => class extends superclass {
 
-    constructor(...args) {
-        super(...args);
-        this.listen("viewGlobalChanged", this.updateMatrix);
-    }
+    // constructor(...args) {
+    //     super(...args);
+    //     // this.listen("viewGlobalChanged", this.updateMatrix);
+    // }
 
     destroy() {
         super.destroy();
@@ -69,6 +69,11 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
         if (this.instance) this.instance.release(this.meshIndex);
         this.instance = undefined;
         this.meshIndex = undefined;
+    }
+
+    refreshDrawTransform() {
+        super.refreshDrawTransform();
+        this.updateMatrix();
     }
 
     updateMatrix() {

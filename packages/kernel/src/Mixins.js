@@ -139,7 +139,7 @@ export const AM_Spatial = superclass => class extends superclass {
     }
 
     positionTo(data) {
-        this.set({translation:data[0], rotation: data[1]})
+        this.set({translation:data[0], rotation: data[1]});
     }
 
     scaleSet(v) {
@@ -188,14 +188,14 @@ export const AM_Spatial = superclass => class extends superclass {
         return [...this.$global];
     }
 
-    get translation() { return this._translation?[...this._translation] : v3_zero() };
-    set translation(v) { this.set({translation: v}) };
+    get translation() { return this._translation?[...this._translation] : v3_zero() }
+    set translation(v) { this.set({translation: v}) }
 
-    get rotation() { return this._rotation?[...this._rotation] : q_identity() };
-    set rotation(q) { this.set({rotation: q}) };
+    get rotation() { return this._rotation?[...this._rotation] : q_identity() }
+    set rotation(q) { this.set({rotation: q}) }
 
-    get scale() { return this._scale?[...this._scale] : [1,1,1] };
-    set scale(v) { this.set({scale: v}) };
+    get scale() { return this._scale?[...this._scale] : [1,1,1] }
+    set scale(v) { this.set({scale: v}) }
 
     get forward() {return this._forward || [0,0,1]}
     get up() { return this._up || [0,1,0]}
@@ -210,19 +210,20 @@ export const PM_Spatial = superclass => class extends superclass {
 
     constructor(...args) {
         super(...args);
-        this.listenOnce("globalChanged", this.onGlobalChanged);
+        this.listenOnce("globalChanged", this.refreshDrawTransform);
     }
 
-    onGlobalChanged() {
-        this.say("viewGlobalChanged");
-    }
+    // onGlobalChanged() {
+    //     this.say("viewGlobalChanged");
+    // }
 
-    get scale() { return this.actor.scale; }
+    refreshDrawTransform() {}
+
+    get scale() { return this.actor.scale }
     get translation() { return this.actor.translation }
     get rotation() { return this.actor.rotation }
     get local() { return this.actor.local }
     get global() { return this.actor.global }
-    get lookGlobal() { return this.global; } // Allows objects to have an offset camera position -- obsolete?
 
     get forward() {return this.actor.forward}
     get up() { return this.actor.up}
@@ -275,48 +276,53 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this.listenOnce("scaleSnap", this.onScaleSnap);
         this.listenOnce("rotationSnap", this.onRotationSnap);
         this.listenOnce("translationSnap", this.onTranslationSnap);
+        this.ignore("globalChanged", this.refreshDrawTransform);
 
     }
 
     set tug(t) {this._tug = t}
-    get tug() { return this._tug; }
+    get tug() { return this._tug }
 
-    get scale() { return this._scale; }
-    get rotation() { return this._rotation; }
-    get translation() { return this._translation; }
+    get scale() { return this._scale }
+    get rotation() { return this._rotation }
+    get translation() { return this._translation }
 
-    localChanged(){
+    localChanged() {
         this._local = null;
         this.globalChanged();
     }
 
-    globalChanged(){
+    globalChanged() {
         this._global = null;
     }
 
     scaleTo(v) {
         this._scale = v;
         this.localChanged();
-        this.say("setScale", v, this.throttle)
+        this.say("setScale", v, this.throttle);
+        this.refreshDrawTransform();
     }
 
     rotateTo(q) {
         this._rotation = q;
         this.localChanged();
-        this.say("setRotation", q, this.throttle)
+        this.say("setRotation", q, this.throttle);
+        this.refreshDrawTransform();
     }
 
     translateTo(v) {
         this._translation = v;
         this.localChanged();
-        this.say("setTranslation", v, this.throttle)
+        this.say("setTranslation", v, this.throttle);
+        this.refreshDrawTransform();
     }
 
     positionTo(v, q) {
         this._translation = v;
         this._rotation = q;
         this.localChanged();
-        this.say("setPosition", [v,q], this.throttle)
+        this.say("setPosition", [v,q], this.throttle);
+        this.refreshDrawTransform();
     }
 
     onScaleSnap() {
@@ -335,7 +341,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     }
 
     get local() {
-        if (this._local) return this. _local;
+        if (this._local) return this._local;
         this._local = m4_scaleRotationTranslation(this._scale, this._rotation, this._translation);
         return this._local;
     }
@@ -356,33 +362,36 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
 
-        if(!this.driving) {
+        if (!this.driving) {
             if (v3_equals(this._scale, this.actor.scale, .0001)) {
                 this._scale = this.actor.scale;
             } else {
                 this._scale = v3_lerp(this._scale, this.actor.scale, tug);
-            };
+            }
 
             if (q_equals(this._rotation, this.actor.rotation, 0.000001)) {
                 this._rotation = this.actor.rotation;
             } else {
                 this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
-            };
+            }
 
             if (v3_equals(this._translation, this.actor.translation, .0001)) {
                 this._translation = this.actor.translation;
             } else {
                 this._translation = v3_lerp(this._translation, this.actor.translation, tug);
-            };
+            }
             this.localChanged();
         }
 
-        if(!this._global) {
-            this.say("viewGlobalChanged");
+        if (!this._global) {
+            // this.say("viewGlobalChanged");
+            this.refreshDrawTransform();
             if (this.children) this.children.forEach(child => child.globalChanged()); // If our global changes, so do the globals of our children
         }
 
     }
+
+
 
 };
 

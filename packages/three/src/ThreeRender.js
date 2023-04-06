@@ -10,17 +10,15 @@ import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 
 export { Reflector };
 
-
-
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 export const PM_ThreeVisible = superclass => class extends superclass {
 
-    constructor(...args) {
-        super(...args);
-        this.listen("viewGlobalChanged", this.refreshDrawTransform);
-    }
+    // constructor(...args) {
+    //     super(...args);
+    //     // this.listen("viewGlobalChanged", this.refreshDrawTransform);
+    // }
 
     destroy() {
         super.destroy();
@@ -31,7 +29,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
     }
 
     refreshDrawTransform() {
-        if(this.renderObject){
+        if (this.renderObject) {
             this.renderObject.matrix.fromArray(this.global);
             this.renderObject.matrixWorldNeedsUpdate = true;
         }
@@ -48,7 +46,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
     }
 
 
-}
+};
 
 //------------------------------------------------------------------------------------------
 //-- ThreeCamera  --------------------------------------------------------------------------
@@ -60,6 +58,11 @@ export const PM_ThreeCamera = superclass => class extends superclass {
 
         this.cameraTranslation = [0,0,0]; // position of the camera relative to the pawn
         this.cameraRotation = q_identity();
+    }
+
+    refreshDrawTransform() {
+        super.refreshDrawTransform();
+        this.refreshCameraTransform();
     }
 
     refreshCameraTransform() {

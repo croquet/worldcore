@@ -175,8 +175,8 @@ export class Pawn extends WorldcoreView {
         this.subscribe(this.actor.id,{event, handling: "immediate"}, callback);
     }
 
-    ignore(event) {
-        this.unsubscribe(this.actor.id, event);
+    ignore(event, callback) {
+        this.unsubscribe(this.actor.id, event, callback);
     }
 
     listenOnce(event, callback) {
