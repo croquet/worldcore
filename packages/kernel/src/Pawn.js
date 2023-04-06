@@ -15,9 +15,9 @@ export class PawnManager extends ViewService {
         this.pawns = new Map();
 
         const actorManager = this.modelService("ActorManager");
-        actorManager.actors.forEach(actor => this.spawnPawn(actor));
+        actorManager.actors.forEach(actor => this.newPawn(actor));
 
-        for(const pawn of this.pawns.values()) { pawn.link() }; // recreate child links after all pawns are spawned
+        for (const pawn of this.pawns.values()) { pawn.link() } // recreate child links
 
         this.subscribe("actor", "createActor", this.spawnPawn);
         this.subscribe("actor", "destroyActor", this.destroyPawn);
@@ -30,40 +30,41 @@ export class PawnManager extends ViewService {
         super.destroy();
     }
 
-    spawnPawn(actor) {
-        if (!actor.pawn) return;
-        let p;
+    newPawn(actor) {
+        if (!actor.pawn) return null;
+        let p=null;
         if (typeof actor.pawn === 'string' ) {
             const cls = PAWN_REGISTRY.get(actor.pawn);
             if (!cls) {
                 console.warn(actor.pawn + " does not exist in the pawn registry!");
-                return;
+                return null;
             }
             p = new cls(actor);
         } else {
             p = new actor.pawn(actor);
         }
-        p.link();
+        this.pawns.set(actor.id, p);
         return p;
     }
 
+    spawnPawn(actor) {
+        if (!actor.pawn) return;
+        const p = this.newPawn(actor);
+        if (p) p.link();
+    }
+
     destroyPawn(actor) {
-        const p = this.get(actor.id);
-        this.delete(p);
+        const p = this.pawns.get(actor.id);
+        this.pawns.delete(actor.id);
         if (p) p.destroy();
     }
 
-    add(pawn) {  this.pawns.set(pawn.actor.id, pawn); }
-    has(id) { return this.pawns.has(id); }
-    get(id) { return this.pawns.get(id); }
-    delete(pawn) { if (pawn) this.pawns.delete(pawn.actor.id); }
-
     update(time, delta) {
-        for(const pawn of this.pawns.values()) { if (!pawn.parent) pawn.fullUpdate(time, delta); };
+        for (const pawn of this.pawns.values()) { if (!pawn.parent) pawn.fullUpdate(time, delta); }
     }
 }
 
-export function GetPawn(actorId) { return pm.get(actorId); }
+export function GetPawn(actorId) { return pm.pawns.get(actorId) }
 
 //------------------------------------------------------------------------------------------
 //-- Pawn ----------------------------------------------------------------------------------
@@ -78,20 +79,17 @@ export class Pawn extends WorldcoreView {
 
     constructor(actor) {
         super(actor);
+        this._actor = actor;
         this._sayNext = {};
         this._sayCache = {};
-
-        this._actor = actor;
-        pm.add(this);
-        this.link();
 
         this.listen("parentSet", this.onParent);
         this.listen("pawnSet", this.onPawn);
     }
 
-    link() { if(this.parent) this.parent.addChild(this); }
+    link() { if (this.parent) this.parent.addChild(this); }
 
-    get actor() {return this._actor};
+    get actor() {return this._actor}
 
     destroy() {
         this.doomed = true;
@@ -116,22 +114,12 @@ export class Pawn extends WorldcoreView {
         if (this._children) this._children.delete(child);
     }
 
-    // onParent(d) {
-    //     if (this.parent) this.parent.removeChild(this);
-    //     // if (d.o) {
-    //     //     this._parent = null;
-    //     //     GetPawn(d.o.id).removeChild(this);
-    //     // }
-    //     if(this.parent) this.parent.addChild(this);
-    // }
-
-
     onParent(d) {
         if (d.o) {
             this._parent = null;
             GetPawn(d.o.id).removeChild(this);
         }
-        if(this.parent) this.parent.addChild(this);
+        if (this.parent) this.parent.addChild(this);
     }
 
     onPawn() {
@@ -141,7 +129,7 @@ export class Pawn extends WorldcoreView {
         pm.spawnPawn(actor);
         children.forEach(child => {
             child._parent = null;
-            child.link()
+            child.link();
         });
     }
 
@@ -154,18 +142,6 @@ export class Pawn extends WorldcoreView {
             this.publish(this.actor.id, event, data);
         }
     }
-
-    // say(event, data, throttle = 0) {
-    //     if (this.time < (this.sayLast[event] || 0) + throttle) {
-    //         const expire = this.time + throttle;
-    //         this.sayCache[event] = {data, expire};
-    //     } else {
-    //         this.sayLast[event] = this.time;
-    //         this.publish(this.actor.id, event, data);
-    //         this.sayCache[event] = null;
-    //     }
-    // }
-
 
     listen(event, callback) {
         this.subscribe(this.actor.id, event, callback);
@@ -208,26 +184,6 @@ export class Pawn extends WorldcoreView {
 
         if (this.children) this.children.forEach(child => child.fullUpdate(time, delta));
     }
-
-    // fullUpdate(time, delta) {
-    //     this.preUpdate(time, delta);
-    //     this.update(time, delta);
-    //     this.postUpdate(time, delta);
-
-    //     for (const event in this.sayCache) { // Flushes expired cached events from throttled says
-    //         const cache = this.sayCache[event];
-    //         // console.log(cache);
-    //         if (cache) {
-    //             console.log("flush");
-    //             this.sayLast[event] = this.time;
-    //             this.publish(this.actor.id, event, cache.data);
-    //             this.sayCache[event] = null;
-    //             // console.log(this.sayCache[event]);
-    //         }
-    //     }
-
-    //     if (this.children) this.children.forEach(child => child.fullUpdate(time, delta));
-    // }
 
 }
 Pawn.register("Pawn");
