@@ -28,7 +28,7 @@
     "directory": "packages/kernel"
   },
   "dependencies": {
-    "@croquet/croquet": "^1.1.0-19",
+    "@croquet/croquet": "^1.1.0-20",
     "three": "^0.138.0",
     "three-mesh-bvh": "^0.5.21"
   },
