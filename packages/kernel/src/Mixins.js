@@ -86,7 +86,7 @@ export const mix = superclass => new MixinFactory(superclass);
 export const RegisterMixin = mixin => Constants.WC_MIXIN_REGISTRY.push(mixin);
 
 function IsModel(c) {
-    while(c) {
+    while (c) {
         // console.log(c);
         if (c === Model) return true;
         c = Object.getPrototypeOf(c);
@@ -103,7 +103,7 @@ class MixinFactory  {
         if (IsModel(this.superclass))Constants.WC_MIXIN_USAGE.push(mixins);
         return mixins.reduce((c, mixin) => mixin(c), this.superclass);
     }
-};
+}
 
 //------------------------------------------------------------------------------------------
 //-- Spatial -------------------------------------------------------------------------------

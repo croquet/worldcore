@@ -1,13 +1,12 @@
 
 import { m4_multiply, m4_scaleRotationTranslation, m4_translation, q_axisAngle, ViewService, toRad, m4_rotation, q_identity, m4_rotationQ  } from "@croquet/worldcore-kernel";
 import * as THREE from "three";
-export { THREE };
-
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 
+export { THREE };
 export { Reflector };
 
 //------------------------------------------------------------------------------------------
@@ -60,15 +59,15 @@ export const PM_ThreeCamera = superclass => class extends superclass {
         this.cameraRotation = q_identity();
     }
 
-    refreshDrawTransform() {
-        super.refreshDrawTransform();
-        this.refreshCameraTransform();
-    }
+    // refreshDrawTransform() {
+    //     super.refreshDrawTransform();
+    //     this.refreshCameraTransform();
+    // }
 
     refreshCameraTransform() {
         const rm = this.service("ThreeRenderManager");
         const ttt = m4_translation(this.cameraTranslation);
-        const rrr = m4_rotationQ(this.cameraRotation)
+        const rrr = m4_rotationQ(this.cameraRotation);
         const mmm = m4_multiply(rrr, ttt);
         rm.camera.matrix.fromArray(m4_multiply(mmm, this.global));
         rm.camera.matrixWorldNeedsUpdate = true;

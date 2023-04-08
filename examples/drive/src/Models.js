@@ -31,20 +31,6 @@ class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 
     init(options) {
         super.init(options);
-        this.listen("kill", this.doKill);
-    }
-
-    doKill() {
-        if (this.dying) return; // Prevent an actor from being killed twice
-        this.dying = true;
-        const translation = v3_add(this.translation, [0,2,0]);
-        this.set({translation});
-        this.behavior.start({name: "RiseBehavior", height: 5, speed: 1});
-        this.behavior.start({name: "SpinBehavior", axis: sphericalRandom(), speed: 0.2});
-        this.behavior.start({name: "SequenceBehavior", behaviors:[
-            {name: "InflateBehavior", size: 4, speed: 0.2},
-            "DestroyBehavior"
-        ]});
     }
 }
 TestActor.register('TestActor');
@@ -53,9 +39,7 @@ TestActor.register('TestActor');
 //-- ColorActor ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// We add the AM_Avatar mixin to the ColorActor. This lets us use a ColorActor as an
-// avatar. Avatars have a driver property that holds the viewId of the user controlling
-// them.
+
 
 class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
 
@@ -110,7 +94,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(options) {
         super.init(options);
-        console.log("Start model root!");
+        console.log("Start model root!!");
         this.base = BaseActor.create();
         this.parent = TestActor.create({pawn: "TestPawn", parent: this.base, translation:[0,1,0]});
         this.child = ColorActor.create({pawn: "ColorPawn", parent: this.parent, translation:[0,0,2]});
