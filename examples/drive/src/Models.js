@@ -118,26 +118,26 @@ export class MyModelRoot extends ModelRoot {
 
 
 
-        this.spare0 = ColorActor.create({
-            pawn: "AvatarPawn",
-            name: "Spare 0",
-            parent: this.base,
-            driver: null,
-            translation: [-5,0,-30],
-            rotation: q_axisAngle([0,1,0], toRad(-170)),
-            tags: ["avatar"]
-        });
+        // this.spare0 = ColorActor.create({
+        //     pawn: "AvatarPawn",
+        //     name: "Spare 0",
+        //     parent: this.base,
+        //     driver: null,
+        //     translation: [-5,0,-30],
+        //     rotation: q_axisAngle([0,1,0], toRad(-170)),
+        //     tags: ["avatar"]
+        // });
 
-        this.spare1 = ColorActor.create({
-            pawn: "AvatarPawn",
-            name: "Spare 1",
-            parent: this.base,
-            driver: null,
-            translation: [5,0,-30],
-            tags: ["avatar"],
+        // this.spare1 = ColorActor.create({
+        //     pawn: "AvatarPawn",
+        //     name: "Spare 1",
+        //     parent: this.base,
+        //     driver: null,
+        //     translation: [5,0,-30],
+        //     tags: ["avatar"],
 
-            rotation: q_axisAngle([0,1,0], toRad(170))
-        });
+        //     rotation: q_axisAngle([0,1,0], toRad(170))
+        // });
 
         this.subscribe("input", "cDown", this.colorChange);
     }
@@ -145,8 +145,8 @@ export class MyModelRoot extends ModelRoot {
     colorChange() {
         const color = [this.random(), this.random(), this.random()];
         this.child.set({color});
-        this.spare0.set({color});
-        this.spare1.set({color});
+        // this.spare0.set({color});
+        // this.spare1.set({color});
     }
 
 }
