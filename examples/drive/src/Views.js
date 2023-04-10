@@ -4,7 +4,8 @@
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider,
-    PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, PM_ThreeCamera, q_yaw, q_pitch, q_slerp, v3_lerp, v3_transform, m4_rotationQ } from "@croquet/worldcore";
+    PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, PM_ThreeCamera, q_yaw, q_pitch, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
+    v3_distance, v3_dot, v3_sub, v3_normalize } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
@@ -21,10 +22,30 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 TestPawn.register("TestPawn");
 
 //------------------------------------------------------------------------------------------
+// BollardPawn --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
+
+    constructor(actor) {
+        super(actor);
+        this.useInstance("pole");
+        this.service("CollisionManager").colliders.add(this);
+    }
+
+    destroy() {
+        super.destroy();
+        this.service("CollisionManager").colliders.delete(this);
+    }
+
+}
+BollardPawn.register("BollardPawn");
+
+//------------------------------------------------------------------------------------------
 //-- BasePawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCollider) {
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(actor) {
         super(actor);
 
@@ -85,15 +106,14 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     constructor(actor) {
         super(actor);
-        this.pitch = 0;
         this.yaw = q_yaw(this.rotation);
-        this.cameraTranslation = [0,5,10];
         this.chaseTranslation = [0,10,20];
         this.chaseRotation = q_axisAngle([1,0,0], toRad(-5));
-        // this.cameraRotation = q_axisAngle([1,0,0], toRad(-5));
 
         this.velocity = [0,0,0];
         this.speed = 0;
+
+        this.service("CollisionManager").colliders.add(this);
 
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
         this.geometry = new THREE.BoxGeometry( 2, 1, 3.5 );
@@ -107,6 +127,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     destroy() {
         super.destroy();
+        this.service("CollisionManager").colliders.delete(this);
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -117,98 +138,90 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     drive() {
         this.gas = this.brake = 0;
-        this.yawDelta = 0;
+        this.left = this.right = 0;
         this.steer = 0;
+        this.speed = 0;
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
-        this.subscribe("input", "pointerDown", this.doPointerDown);
-        this.subscribe("input", "pointerUp", this.doPointerUp);
-        // this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", "pointerMove", this.doPointerMove);
     }
 
     park() {
         this.gas = this.brake = 0;
-        this.yawDelta = 0;
+        this.left = this.right = 0;
         this.steer = 0;
+        this.speed = 0;
         this.unsubscribe("input", "keyDown", this.keyDown);
         this.unsubscribe("input", "keyUp", this.keyUp);
-        this.unsubscribe("input", "pointerDown", this.doPointerDown);
-        this.unsubscribe("input", "pointerUp", this.doPointerUp);
-        // this.unsubscribe("input", "pointerDelta", this.doPointerDelta);
-        this.unsubscribe("input", "pointerMove", this.doPointerMove);
+        // this.unsubscribe("input", "pointerMove", this.doPointerMove);
     }
 
     keyDown(e) {
         switch (e.key) {
-            case "x":
+            case "w":
                 this.gas = 1; break;
-            case "z":
+            case "s":
                 this.brake = 1; break;
+            case "a":
+                this.left = 1; break;
+            case "d":
+                this.right = 1; break;
+            case "m":
+                this.auto = !this.auto; break;
             default:
         }
     }
 
     keyUp(e) {
         switch (e.key) {
-            case "x":
+            case "w":
                 this.gas = 0; break;
-            case "z":
+            case "s":
                 this.brake = 0; break;
+            case "a":
+                this.left = 0; break;
+            case "d":
+                this.right = 0; break;
             default:
-        }
-    }
-
-    doPointerDown() {
-        this.service("InputManager").enterPointerLock();
-    }
-
-    doPointerUp() {
-        this.service("InputManager").exitPointerLock();
-    }
-
-    doPointerDelta(e) {
-        if (this.service("InputManager").inPointerLock) {
-            this.yawDelta += (-0.005 * e.xy[0]);
-            // this.steer = (-0.005 * e.xy[0]);
-            // this.pitch += (-0.002 * e.xy[1]);
-            // this.pitch = Math.max(-Math.PI/2, this.pitch);
-            // this.pitch = Math.min(Math.PI/2, this.pitch);
-            // const pitchQ = q_axisAngle([1,0,0], this.pitch);
-            // const yawQ = q_axisAngle([0,1,0], this.yawDelta);
-            // this.cameraRotation = q_multiply(pitchQ, yawQ);
         }
     }
 
     doPointerMove(e) {
         const s = ( e.xy[0] / window.innerWidth ) * 2 - 1;
         this.steer = Math.max(-30,Math.min(30, s*15));
-        // console.log(this.steer);
     }
 
     update(time, delta) {
         super.update(time,delta);
         if (this.driving) {
+            const wheelbase = 3.5;
             const factor = delta/1000;
-            // this.yaw += toRad(-this.steer);
-            this.yawDelta = 0;
 
             this.speed = (this.gas-this.brake) * 10 * factor;
+            this.steer = (this.right-this.left) * 5;
+            if (this.auto) {
+                this.speed = 5 * factor;
+                this.steer = -5;
+            }
 
-            const angularVelocity = -this.speed/10 * Math.sin(toRad(this.steer)) / 3.5 / factor;
+            const angularVelocity = -this.speed/10 * Math.sin(toRad(this.steer)) / wheelbase / factor;
             this.yaw += angularVelocity;
             const yawQ = q_axisAngle([0,1,0], this.yaw);
 
-            this.velocity = [0, 0 , -this.speed];
+            this.velocity = [0, 0, -this.speed];
             const tt = v3_rotate(this.velocity, yawQ);
             const translation = v3_add(this.translation, tt);
-            this.positionTo(translation, yawQ);
+            if (!this.collide(tt)) this.positionTo(translation, yawQ);
             this.updateChaseCam(time, delta);
         }
     }
 
     updateChaseCam(time, delta) {
         const rm = this.service("ThreeRenderManager");
+
+        const pitch = toRad(-10);
+        const offset = [0,10,20];
+
         let tTug = 0.2;
         let rTug = 0.2;
 
@@ -217,13 +230,12 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             rTug = Math.min(1, rTug * delta / 15);
         }
 
-        const targetTranslation = v3_transform([0,10,20], this.global);
-        this.pitch = toRad(-5);
-
-        const pitchQ = q_axisAngle([1,0,0], this.pitch);
+        const pitchQ = q_axisAngle([1,0,0], pitch);
         const yawQ = q_axisAngle([0,1,0], this.yaw);
 
+        const targetTranslation = v3_transform(offset, this.global);
         const targetRotation = q_multiply(pitchQ, yawQ);
+
         this.chaseTranslation = v3_lerp(this.chaseTranslation, targetTranslation, tTug);
         this.chaseRotation = q_slerp(this.chaseRotation, targetRotation, rTug);
 
@@ -234,8 +246,52 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         rm.camera.matrixWorldNeedsUpdate = true;
     }
 
+    collide(velocity) {
+        const colliders = this.service("CollisionManager").colliders;
+        for (const collider of colliders) {
+            if (collider === this) continue;
+            const distance = v3_distance(collider.translation, this.translation);
+            if (distance < 3.5) {
+                if ( collider.actor.tags.has("bollard")) {
+                    const from = v3_sub(this.translation, collider.translation);
+                    const dot = v3_dot(from, velocity);
+                    if (dot<-0.5) {
+                        console.log("stop!");
+                        return true;
+                    }
+                }
+
+                if ( collider.actor.tags.has("avatar")) {
+                    if (distance < 3) {
+                        console.log("bump!");
+                        console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
+                        const from = v3_sub(this.translation, collider.translation);
+                        const bounce = v3_scale(from, 0.2);
+                        const translation = v3_add(this.translation, bounce);
+                        this.translateTo(translation);
+                        return true;
+                    }
+                }
+
+            }
+        }
+        return false;
+    }
+
 }
 AvatarPawn.register("AvatarPawn");
+
+//------------------------------------------------------------------------------------------
+//-- CollisionManager ----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class CollisionManager extends ViewService {
+
+    constructor() {
+        super("CollisionManager");
+        this.colliders = new Set();
+    }
+}
 
 //------------------------------------------------------------------------------------------
 //-- MyViewRoot ----------------------------------------------------------------------------
@@ -244,7 +300,7 @@ AvatarPawn.register("AvatarPawn");
 export class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, ThreeInstanceManager, ThreeRaycast];
+        return [InputManager, ThreeRenderManager, ThreeInstanceManager, CollisionManager];
     }
 
     onStart() {
@@ -306,13 +362,19 @@ export class MyViewRoot extends ViewRoot {
         const box = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("box", box);
 
+        const cylinder = new THREE.CylinderGeometry(0.2, 0.2, 1.5);
+        cylinder.translate(0,0.75,0);
+        im.addGeometry("cylinder", cylinder);
+
         const mesh0 = im.addMesh("yellowBox", "box", "yellow");
         const mesh1 = im.addMesh("magentaBox", "box", "magenta");
         const mesh2 = im.addMesh("cyanBox", "box", "cyan");
+        const mesh3 = im.addMesh("pole", "cylinder", "yellow");
 
         mesh0.castShadow = true;
         mesh1.castShadow = true;
         mesh2.castShadow = true;
+        mesh3.castShadow = true;
     }
 
 }

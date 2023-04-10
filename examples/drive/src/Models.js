@@ -1,6 +1,6 @@
 // Drive Models
 
-import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, Behavior, sphericalRandom, v3_add, UserManager, User, AM_Avatar, q_axisAngle, toRad } from "@croquet/worldcore";
+import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, Behavior, v3_add, UserManager, User, AM_Avatar, q_axisAngle, toRad } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
@@ -36,9 +36,20 @@ class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 TestActor.register('TestActor');
 
 //------------------------------------------------------------------------------------------
-//-- ColorActor ----------------------------------------------------------------------------
+//--BollardActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+class BollardActor extends mix(Actor).with(AM_Spatial) {
+
+    init(options) {
+        super.init(options);
+    }
+}
+BollardActor.register('BollardActor');
+
+//------------------------------------------------------------------------------------------
+//-- ColorActor ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
 
 class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
@@ -62,12 +73,14 @@ class MyUser extends User {
         super.init(options);
         const base = this.wellKnownModel("ModelRoot").base;
         this.color = [this.random(), this.random(), this.random()];
+        const translation = [-5 + this.random() * 10, 0, 10]
         this.avatar = ColorActor.create({
             pawn: "AvatarPawn",
             parent: base,
             driver: this.userId,
             color: this.color,
-            translation: [0,0,10]
+            translation,
+            tags: ["avatar"]
         });
     }
 
@@ -82,9 +95,6 @@ MyUser.register('MyUser');
 //------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-// We add two spare avatars to the world. These avatars have no drivers, so they're available
-// for anyone to drive, and they also change color when anyone presses "c".
 
 export class MyModelRoot extends ModelRoot {
 
@@ -102,19 +112,29 @@ export class MyModelRoot extends ModelRoot {
         this.parent.behavior.start({name: "SpinBehavior", axis: [0,1,0], tickRate:500});
         this.child.behavior.start({name: "SpinBehavior", axis: [0,0,1], speed: 3});
 
+        for (let n=0; n<5; n++) {
+            BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, translation:[-20+10*n,0,-20]});
+        }
+
+
+
         this.spare0 = ColorActor.create({
             pawn: "AvatarPawn",
+            name: "Spare 0",
             parent: this.base,
             driver: null,
-            translation: [-2,0,-10],
-            rotation: q_axisAngle([0,1,0], toRad(-170))
+            translation: [-5,0,-30],
+            rotation: q_axisAngle([0,1,0], toRad(-170)),
+            tags: ["avatar"]
         });
 
         this.spare1 = ColorActor.create({
             pawn: "AvatarPawn",
+            name: "Spare 1",
             parent: this.base,
             driver: null,
-            translation: [2,0,-10],
+            translation: [5,0,-30],
+            tags: ["avatar"],
 
             rotation: q_axisAngle([0,1,0], toRad(170))
         });
@@ -132,43 +152,3 @@ export class MyModelRoot extends ModelRoot {
 }
 MyModelRoot.register("MyModelRoot");
 
-//------------------------------------------------------------------------------------------
-// -- Behaviors ----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-class InflateBehavior extends Behavior {
-
-    get size() { return this._size || 3}
-    get speed() { return this._speed || 0.5}
-
-    onStart() {
-        this.scale = this.actor.scale[0];
-    }
-
-    do(delta) { // Increases the actor's scale until it reaches a target size
-        this.scale += this.speed * delta/1000;
-        this.actor.set({scale:[this.scale,this.scale,this.scale]});
-        if (this.scale > this.size) this.succeed();
-    }
-
-}
-InflateBehavior.register('InflateBehavior');
-
-class RiseBehavior extends Behavior {
-
-    get height() { return this._height || 3}
-    get speed() { return this._speed || 0.5}
-
-    onStart() {
-        this.top = this.actor.translation[1] + this.height;
-    }
-
-    do(delta) { // Moves the actor up until it reaches the top
-        const y = this.speed * delta/1000;
-        const translation = v3_add(this.actor.translation, [0,y,0]);
-        this.actor.set({translation});
-        if (translation[1] > this.top) this.succeed();
-    }
-
-}
-RiseBehavior.register('RiseBehavior');
