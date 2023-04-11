@@ -69,7 +69,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!");
+        console.log("Start root model!");
         this.bots = [];
 
         this.base = BaseActor.create({gridSize: 50, gridScale:3, subdivisions: 4, noise: 1});

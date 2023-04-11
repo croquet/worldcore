@@ -213,10 +213,6 @@ export const PM_Spatial = superclass => class extends superclass {
         this.listenOnce("globalChanged", this.refreshDrawTransform);
     }
 
-    // onGlobalChanged() {
-    //     this.say("viewGlobalChanged");
-    // }
-
     refreshDrawTransform() {}
 
     get scale() { return this.actor.scale }
@@ -367,31 +363,31 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
                 this._scale = this.actor.scale;
             } else {
                 this._scale = v3_lerp(this._scale, this.actor.scale, tug);
+                this.localChanged();
             }
 
             if (q_equals(this._rotation, this.actor.rotation, 0.000001)) {
                 this._rotation = this.actor.rotation;
             } else {
                 this._rotation = q_slerp(this._rotation, this.actor.rotation, tug);
+                this.localChanged();
             }
 
             if (v3_equals(this._translation, this.actor.translation, .0001)) {
                 this._translation = this.actor.translation;
             } else {
                 this._translation = v3_lerp(this._translation, this.actor.translation, tug);
+                this.localChanged();
             }
-            this.localChanged();
+
         }
 
         if (!this._global) {
-            // this.say("viewGlobalChanged");
             this.refreshDrawTransform();
             if (this.children) this.children.forEach(child => child.globalChanged()); // If our global changes, so do the globals of our children
         }
 
     }
-
-
 
 };
 
