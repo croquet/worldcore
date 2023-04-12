@@ -64,17 +64,28 @@ export class PriorityQueue {
 //------------------------------------------------------------------------------------------
 
 export class PerlinNoise  {
-    constructor() {
-        this.generate();
+    constructor(seed = 0.1) {
+        this.generate(seed);
     }
 
-    generate() {
-        this.hashTable = this.generateHashTable();
+    generate(seed) {
+        this.hashTable = this.generateHashTable(seed);
     }
 
-    generateHashTable() {
+    // deterministic pseudo-random number generator
+    mulberry32(a) {
+        var t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+
+    generateHashTable(seed) {
         const permutation = [];
-        for (let n = 0; n < 256; n++) permutation.push({key: Math.random(), value: n});
+        for (let n = 0; n < 256; n++) {
+            seed = this.mulberry32(seed*0xFFFFFFFF);
+            permutation.push({key: seed, value: n});
+        }
         permutation.sort((a, b) => a.key - b.key);
         const table = permutation.map(a => a.value);
         const table2 = table.concat(table);
@@ -87,7 +98,7 @@ export class PerlinNoise  {
 
     noise2D(x,y) {
         const table = this.hashTable;
-        const xInt= Math.floor(x);
+        const xInt = Math.floor(x);
         const yInt = Math.floor(y);
         const xf = x - xInt;
         const yf = y - yInt;
@@ -95,6 +106,7 @@ export class PerlinNoise  {
         const v = this.fade(yf);
         const xi = xInt & 0xff;
         const yi = yInt & 0xff;
+        
         const aa = table[table[xi   ] + yi];
         const ab = table[table[xi+1 ] + yi];
         const ba = table[table[xi   ] + yi+1];
@@ -121,9 +133,9 @@ export class PerlinNoise  {
 
     grad(hash, x, y) {
         switch (hash&0x3) {
-            case 0: return x + y;
-            case 1: return x - y;
-            case 2: return -x + y;
+            case 0: return  x + y;
+            case 1: return -x + y;
+            case 2: return  x - y;
             case 3: return -x - y;
             default: return 0;
         }

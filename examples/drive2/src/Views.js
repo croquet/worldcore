@@ -7,11 +7,13 @@ import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager,
     PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, PM_ThreeCamera, q_yaw, q_pitch, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
     v3_distance, v3_dot, v3_sub, PerlinNoise } from "@croquet/worldcore";
 
-const perlin2D = function(){
+// construct a perlin object and return a function that uses it
+const perlin2D = function(perlinHeight = 50, perlinScale = 0.01){
     const perlin = new PerlinNoise();
-    const perlinScale = 0.01;
-    const perlinHeight = 100;
-    return function(x,y){return perlinHeight * perlin.signedNoise2D(perlinScale*x, perlinScale*y);}
+
+    return function(x,y){
+        return perlinHeight * perlin.signedNoise2D(perlinScale*x, perlinScale*y);
+    }
 }();
 
 //------------------------------------------------------------------------------------------
@@ -63,9 +65,10 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         this.geometry.rotateX(toRad(-90));
         
         const vertices = this.geometry.attributes.position.array;
-        for(let i=0; i < worldX-1; i++)
+
+        for(let index=0; index < vertices.length; index+=3)
             for(let j=0; j < worldZ-1; j++){
-                vertices[i*worldX*3+j*3+1]=perlin2D((i-worldX2)*worldScale, (j-worldZ2)*worldScale);
+                vertices[index+1]=perlin2D((vertices[index])*worldScale, (vertices[index+2])*worldScale);
             }
         this.geometry.computeVertexNormals();
         const base = new THREE.Mesh( this.geometry, this.material );
