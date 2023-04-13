@@ -20,8 +20,8 @@ export const TO_RAD = Math.PI / 180;
 export const TO_DEG = 1 / TO_RAD;
 export const TAU = Math.PI * 2;
 
-export function toRad(x) { return x * TO_RAD; }
-export function toDeg(x) { return x * TO_DEG; }
+export function toRad(x) { return x * TO_RAD }
+export function toDeg(x) { return x * TO_DEG }
 
 export function clampRad(x) {
     while (x < 0) x += TAU;
@@ -1235,7 +1235,7 @@ export function q_toAxisAngle(quat) {
     } else {
         axis = [q[0] / s, q[1] / s, q[2] / s]; // normalize vector
     }
-    return {axis: axis, angle:angle};
+    return {axis, angle};
 }
 
 // Given a forward vector and an up vector, generates the quaternion that will rotate
@@ -1243,7 +1243,7 @@ export function q_toAxisAngle(quat) {
 export function q_lookAt(f, u, t) {
     const epsilon = 0.00001;
     const dot = v3_dot(f,t);
-    if (Math.abs(dot+1) < epsilon) return q_axisAngle(u, Math.PI)
+    if (Math.abs(dot+1) < epsilon) return q_axisAngle(u, Math.PI);
     if (Math.abs(dot-1) < epsilon) return q_identity();
     const angle = Math.acos(dot);
     const axis = v3_normalize(v3_cross(f,t));
@@ -1252,9 +1252,9 @@ export function q_lookAt(f, u, t) {
 
 // Creates a quaternion from the given Euler angles.
 export function q_euler(x, y ,z) {
-    x *= 0.5
-    y *= 0.5
-    z *= 0.5
+    x *= 0.5;
+    y *= 0.5;
+    z *= 0.5;
     const sinX = Math.sin(x);
     const cosX = Math.cos(x);
     const sinY = Math.sin(y);
