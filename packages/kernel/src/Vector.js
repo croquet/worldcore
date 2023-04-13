@@ -1104,7 +1104,7 @@ export function m4_multiply(a,b) {
 
 // Extracts the scaling/rotation components and performs an inverse/transpose operation to generate a 4x4 normal transform matrix.
 export function m4_toNormal4(m) {
-    let q = m4_getRotation(m4);
+    let q = m4_getRotation(m);
     return m4_rotationQ(q);
 
     /*
