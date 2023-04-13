@@ -1,10 +1,16 @@
 // Drive Views
-
+//
 // All the code specific to this tutorial is in the definition of AvatarPawn.
-
+// to do:
+/*
+ - avatar pitch follows terrain
+ - increase velocity
+ - add velocity momentum
+ - 
+*/
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
-    THREE, toRad, m4_rotation, m4_multiply, m4_translation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider,
-    PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, PM_ThreeCamera, q_yaw, q_pitch, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
+    THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_scaleRotationTranslation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider,
+    PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, v3_magnitude, PM_ThreeCamera, q_yaw, q_pitch, q_euler, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
     v3_distance, v3_dot, v3_sub, PerlinNoise } from "@croquet/worldcore";
 
 // construct a perlin object and return a function that uses it
@@ -211,24 +217,39 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         super.update(time,delta);
         if (this.driving) {
             const wheelbase = 3.5;
+            const wheelHeight = 0.5;
             const factor = delta/1000;
-
-            this.speed = (this.gas-this.brake) * 10 * factor;
+            this.speed = (this.gas-this.brake) * 20 * factor;
             this.steer = (this.right-this.left) * 5;
             if (this.auto) {
                 this.speed = 5 * factor;
                 this.steer = -5;
             }
-
-            const angularVelocity = -this.speed/10 * Math.sin(toRad(this.steer)) / wheelbase / factor;
-            this.yaw += angularVelocity;
-            const yawQ = q_axisAngle([0,1,0], this.yaw);
-
-            this.velocity = [0, 0, -this.speed];
-            const tt = v3_rotate(this.velocity, yawQ);
-            const translation = v3_add(this.translation, tt);
-            if (!this.collide(tt)) this.positionTo(translation, yawQ);
-            this.updateChaseCam(time, delta);
+            if(this.speed!=0){
+                // copy our current position to compute pitch
+                let start = [...this.translation];
+                // angular velocity based on speed
+                const angularVelocity = -this.speed/10 * Math.sin(toRad(this.steer)) / wheelbase / factor;
+                this.yaw += angularVelocity;
+                const yawQ = q_axisAngle([0,1,0], this.yaw);
+                this.velocity = [0, 0, -this.speed];
+                const tt = v3_rotate(this.velocity, yawQ);
+                const translation = v3_add(this.translation, tt);
+                translation[1]=perlin2D(translation[0], translation[2])+wheelHeight;
+                // compute pitch
+                let d;
+                if(this.speed>=0)
+                    d = v3_sub( translation, start );
+                else 
+                    d = v3_sub( start, translation );
+                this.pitch = Math.atan2(d[1], v3_magnitude([d[0], 0, d[2]]));
+                let pitchQ = q_axisAngle([1,0,0], this.pitch); 
+                if (!this.collide(tt)){ 
+                    this.positionTo(translation, q_multiply(pitchQ, yawQ));
+                    this.cameraTarget = m4_scaleRotationTranslation(1, yawQ, translation);
+                }
+                this.updateChaseCam(time, delta);
+            }else this.collide(); // see if someone hits us
         }
     }
 
@@ -246,16 +267,20 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             rTug = Math.min(1, rTug * delta / 15);
         }
 
-        const pitchQ = q_axisAngle([1,0,0], pitch);
+        const pitchQ = q_axisAngle([1,0,0], pitch); 
         const yawQ = q_axisAngle([0,1,0], this.yaw);
 
-        const targetTranslation = v3_transform(offset, this.global);
+        const targetTranslation = v3_transform(offset, this.cameraTarget);
         const targetRotation = q_multiply(pitchQ, yawQ);
 
-        this.chaseTranslation = v3_lerp(this.chaseTranslation, targetTranslation, tTug);
+        let t = this.chaseTranslation = v3_lerp(this.chaseTranslation, targetTranslation, tTug);
         this.chaseRotation = q_slerp(this.chaseRotation, targetRotation, rTug);
 
+        const terrainHeight = perlin2D(t[0], t[2])+0.5;
+        if(t[1]<terrainHeight)this.chaseTranslation[1]=terrainHeight;
+
         const ttt = m4_translation(this.chaseTranslation);
+
         const rrr = m4_rotationQ(this.chaseRotation);
         const mmm = m4_multiply(rrr, ttt);
         rm.camera.matrix.fromArray(mmm);
@@ -268,7 +293,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             if (collider === this) continue;
             const distance = v3_distance(collider.translation, this.translation);
             if (distance < 3.5) {
-                if ( collider.actor.tags.has("bollard")) {
+                if ( velocity && collider.actor.tags.has("bollard")) {
                     const from = v3_sub(this.translation, collider.translation);
                     const dot = v3_dot(from, velocity);
                     if (dot<-0.5) {
@@ -337,10 +362,11 @@ export class MyViewRoot extends ViewRoot {
         sun.shadow.mapSize.height = 4096;
         sun.shadow.camera.near = 90;
         sun.shadow.camera.far = 300;
-        sun.shadow.camera.left = -100;
-        sun.shadow.camera.right = 100;
+        sun.shadow.camera.left = -1000;
+        sun.shadow.camera.right = 1000;
         sun.shadow.camera.top = 100;
         sun.shadow.camera.bottom = -100;
+        sun.shadow.bias = 0.0001;
 
         rm.scene.add(ambient);
         rm.scene.add(sun);
