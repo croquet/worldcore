@@ -5,5 +5,10 @@
     "examples/*",
     "demos/*"
   ],
+  "command": {
+    "publish": {
+      "preDistTag": "pre"
+    }
+  },
   "version": "2.0.0-alpha.0"
 }
