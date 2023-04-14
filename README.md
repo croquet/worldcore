@@ -115,6 +115,27 @@ We use `lerna` with "fixed" versioning, meaning each package will have the same 
    We use `--no-push` to get a chance to roll back if needed
    (undo the version commit and delete the tag).
 
-4. publish to npm
+4. Push to git
+
+        git push
+
+5. publish to npm
 
        lerna publish from-package
+
+### Prereleases
+
+For prerelases we don't update the `CHANGELOG.md` files, but otherwise use the same steps as above, with prerelease ids `"alpha"` or `"beta"`:
+
+    lerna version --preid alpha
+    lerna version --preid beta
+
+and selecting one of the `pre*` options from the list.
+
+For publishing, we use `"pre"` as the prerelease channel (as opposed to the default `"latest"`):
+
+    lerna publish from-package --pre-dist-tag pre
+
+This will cause the prereleases to not be installed automatically, because the regular `npm i` command will only use the `latest` tag.
+
+(Note to self: I just added a `preDistTag` option to `lerna.json` so in theory we do not need to specify it on the command line next time)
