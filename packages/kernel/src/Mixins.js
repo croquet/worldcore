@@ -273,7 +273,6 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this.listenOnce("rotationSnap", this.onRotationSnap);
         this.listenOnce("translationSnap", this.onTranslationSnap);
         this.ignore("globalChanged", this.refreshDrawTransform);
-
     }
 
     set tug(t) {this._tug = t}

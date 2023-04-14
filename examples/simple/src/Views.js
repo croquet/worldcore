@@ -3,8 +3,6 @@ import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, Thr
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, PM_ThreeCollider, ThreeRaycast, viewRoot,
     PM_NavGridGizmo } from "@croquet/worldcore";
 
-
-
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -51,7 +49,7 @@ BallPawn.register("BallPawn");
 //-- GroundPawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class GroundPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_NavGridGizmo) {
+export class GroundPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
@@ -66,12 +64,10 @@ export class GroundPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_N
         base.receiveShadow = true;
 
         this.setRenderObject(base);
-
-        this.gizmo.visible = true;
     }
 
     destroy() {
-        super.destroy()
+        super.destroy();
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -104,8 +100,8 @@ class GodView extends ViewService {
         if (this.paused) return;
         const rm = this.service("ThreeRenderManager");
 
-        const pitchMatrix = m4_rotation([1,0,0], pitch)
-        const yawMatrix = m4_rotation([0,1,0], yaw)
+        const pitchMatrix = m4_rotation([1,0,0], pitch);
+        const yawMatrix = m4_rotation([0,1,0], yaw);
 
         let cameraMatrix = m4_translation([0,0,20]);
         cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);
@@ -141,11 +137,11 @@ class GodView extends ViewService {
         if (this.paused) return;
         if (!this.dragging) return;
         yaw += -0.01 * e.xy[0];
-        yaw = yaw % TAU;
+        yaw %=  TAU;
         pitch += -0.01 * e.xy[1];
         pitch = Math.min(pitch, toRad(-5));
         pitch = Math.max(pitch, toRad(-90));
-        this.updateCamera()
+        this.updateCamera();
     }
 }
 
@@ -160,7 +156,7 @@ export class MyViewRoot extends ViewRoot {
     }
 
     onStart() {
-        this.buildInstances()
+        this.buildInstances();
         this.buildLights();
     }
 
@@ -181,10 +177,10 @@ export class MyViewRoot extends ViewRoot {
         sun.shadow.camera.near = 0.5;
         sun.shadow.camera.far = 300;
 
-        sun.shadow.camera.left = -80
-        sun.shadow.camera.right = 80
-        sun.shadow.camera.top = 80
-        sun.shadow.camera.bottom = -80
+        sun.shadow.camera.left = -80;
+        sun.shadow.camera.right = 80;
+        sun.shadow.camera.top = 80;
+        sun.shadow.camera.bottom = -80;
 
         sun.shadow.bias = -0.0005;
         group.add(sun);
@@ -214,7 +210,7 @@ export class MyViewRoot extends ViewRoot {
         const box = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("cube", box);
 
-        const ball = new THREE.SphereGeometry( 0.25 );
+        const ball = new THREE.SphereGeometry( 0.5 );
         im.addGeometry("ball", ball);
 
         const mmm0 = im.addMesh("sun", "cube", "yellow");

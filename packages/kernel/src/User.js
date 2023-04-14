@@ -66,6 +66,8 @@ RegisterMixin(AM_Avatar);
 //-- PM_Avatar -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// Way to turn on view smoothing temporarily.
+
 export const PM_Avatar = superclass => class extends superclass {
 
     constructor(actor) {

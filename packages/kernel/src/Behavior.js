@@ -423,7 +423,7 @@ DelayBehavior.register("DelayBehavior");
 
 // Repeatedly executes a child behavior until count is reached, as long
 // as it succeeds. If it fails, the loop returns failure.
-// If the count is set to 0, it executes indefinitely. BEWARE: if the behavior succeeds on start in an infinite loop you will exceed thr call stack
+// If the count is set to 0, it executes indefinitely. BEWARE: if the behavior succeeds on start in an infinite loop you will exceed the call stack
 
 export class LoopBehavior extends DecoratorBehavior {
 
