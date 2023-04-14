@@ -12,7 +12,7 @@
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_scaleRotationTranslation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider,
-    PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, v3_magnitude, PM_ThreeCamera, q_yaw, q_pitch, q_euler, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
+    PM_Avatar, v3_scale, v3_add, q_identity, q_equals, q_multiply, q_axisAngle, v3_rotate, v3_magnitude, PM_ThreeCamera, q_yaw, q_pitch, q_euler, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
     v3_distance, v3_dot, v3_sub, PerlinNoise } from "@croquet/worldcore";
 
 // construct a perlin object and return a function that uses it
@@ -184,8 +184,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.steer = 0;
         this.speed = 0;
         this.highGear = 1;
+        this.usePointer = false;
+        this.lastPitchQ = q_identity();
+        this.lastYawQ = q_identity();
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
+        this.subscribe("input", "pointerDown", this.doPointerDown);
+        this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerMove", this.doPointerMove);
         this.listen("doBounce", this.doBounce);
     }
@@ -202,7 +207,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     keyDown(e) {
-        console.log(e.key)
         switch (e.key) {
             case "W":
             case "w":
@@ -219,6 +223,9 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             case "M":
             case "m":
                 this.auto = !this.auto; break;
+            case "H":
+            case "h":
+                this.goHome(); break;
             case "Shift":
                 console.log("shiftKey Down")
                 this.highGear = 2; break;
@@ -247,9 +254,26 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         }
     }
 
+
+    doPointerDown(e){
+        this.usePointer = true;
+        this.pointerHome = e.xy;
+        //this.doPointerMove(e);
+        console.log("pointerDown",e.xy);
+    }
+
     doPointerMove(e) {
-        const s = ( e.xy[0] / window.innerWidth ) * 2 - 1;
-        this.steer = Math.max(-30,Math.min(30, s*15));
+        const x = -(this.pointerHome[0] - e.xy[0])/50;
+        const y = (this.pointerHome[1] - e.xy[1])/500;
+        this.steer = Math.max(-5,Math.min(5, x));
+        this.speed = Math.max(-2,Math.min(2, y));
+    }
+
+    doPointerUp(e){
+        this.usePointer = false;
+        this.steer = 0;
+        this.speed = 0;
+        console.log("pointerUp", e.xy);
     }
 
     update(time, delta) {
@@ -258,13 +282,14 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const wheelbase = 3.5;
 
             const factor = delta/1000;
-            this.speed = (this.gas-this.brake) * 20 * factor * this.highGear;
-            this.steer = (this.right-this.left) * 5;
-            if (this.auto) {
-                this.speed = 5 * factor;
-                this.steer = -5;
+            if(!this.usePointer){
+                this.speed = (this.gas-this.brake) * 20 * factor * this.highGear;
+                this.steer = (this.right-this.left) * 5;
+                if (this.auto) {
+                    this.speed = 5 * factor;
+                    this.steer = -5;
+                }
             }
-
             // copy our current position to compute pitch
             let start = [...this.translation];
             // angular velocity based on speed
@@ -289,7 +314,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             
             if (!this.collide(tt)){ 
                 if(this.speed)this.positionTo(translation, q_multiply(pitchQ, yawQ));
-                else this.positionTo(start, q_multiply(pitchQ, yawQ));
+                else {
+                    if(!(q_equals(pitchQ, this.lastPitchQ) && q_equals(yawQ, this.lastYawQ))){
+                        this.positionTo(start, q_multiply(pitchQ, yawQ)); // pitch and yaw might change
+                        this.lastPitchQ = pitchQ;
+                        this.lastYawQ = yawQ;
+                    }
+                }
             }
             this.cameraTarget = m4_scaleRotationTranslation(1, yawQ, translation);
             this.updateChaseCam(time, delta);
@@ -369,6 +400,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     doBounce(bounce){
         let translation = v3_add(bounce, this.translation);
         this.translateTo(translation);
+    }
+
+    goHome(){
+        this.translateTo([-5 + Math.random() * 10, 0, 10]);
     }
 }
 
