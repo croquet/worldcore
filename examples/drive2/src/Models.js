@@ -62,7 +62,7 @@ class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
 
     doBounce(bounce){
         this.set({translation: v3_add(this.translation, bounce)})
-        console.log("bounce")
+        console.log("bounce", bounce)
     }
 
 }
@@ -120,8 +120,9 @@ export class MyModelRoot extends ModelRoot {
         this.parent.behavior.start({name: "SpinBehavior", axis: [0,1,0], tickRate:500});
         this.child.behavior.start({name: "SpinBehavior", axis: [0,0,1], speed: 3});
 
-        for (let n=0; n<5; n++) {
-            BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, translation:[-20+10*n,0,-20]});
+        for (let n=0; n<10; n++) 
+        for (let m=0; m<10; m++){
+            BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, translation:[-20+10*n,0,-20+10*m]});
         }
 
 

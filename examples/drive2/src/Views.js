@@ -46,6 +46,9 @@ export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
         super(actor);
         this.useInstance("pole");
         this.service("CollisionManager").colliders.add(this);
+        let t = this.translation;
+        t[1]=perlin2D(t[0], t[2]);
+        this.set({translation:t});
     }
 
     destroy() {
@@ -312,7 +315,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             if (collider === this) continue;
             const distance = v3_distance(collider.translation, this.translation);
 
-            if (distance < 3) {
+            if (distance < 2.5) {
                 console.log("bump!");
                 console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
                 const from = v3_sub(this.translation, collider.translation);
@@ -412,8 +415,8 @@ export class MyViewRoot extends ViewRoot {
         const box = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("box", box);
 
-        const cylinder = new THREE.CylinderGeometry(0.2, 0.2, 1.5);
-        cylinder.translate(0,0.75,0);
+        const cylinder = new THREE.CylinderGeometry(1, 1, 3);
+        cylinder.translate(0,1.5,0);
         im.addGeometry("cylinder", cylinder);
 
         const mesh0 = im.addMesh("yellowBox", "box", "yellow");
