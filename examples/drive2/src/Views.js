@@ -34,6 +34,9 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
+        let t = this.translation;
+        t[1]=perlin2D(t[0], t[2])+4;
+        this.set({translation:t});
         this.useInstance("cyanBox");
     }
 
@@ -107,9 +110,9 @@ export class ColorPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
-
+        this.service("CollisionManager").colliders.add(this);
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
-        this.geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        this.geometry = new THREE.BoxGeometry( 2, 2, 2 );
         const mesh = new THREE.Mesh( this.geometry, this.material );
         mesh.castShadow = true;
         this.setRenderObject(mesh);
