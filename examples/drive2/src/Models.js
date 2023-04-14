@@ -53,8 +53,17 @@ BollardActor.register('BollardActor');
 
 
 class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
+    init(options){
+        super.init(options);
+        this.listen("bounce", this.doBounce);
+    }
 
     get color() { return this._color || [0.5,0.5,0.5]}
+
+    doBounce(bounce){
+        this.set({translation: v3_add(this.translation, bounce)})
+        console.log("bounce")
+    }
 
 }
 ColorActor.register('ColorActor');
@@ -73,13 +82,13 @@ class MyUser extends User {
         super.init(options);
         const base = this.wellKnownModel("ModelRoot").base;
         this.color = [this.random(), this.random(), this.random()];
-        const translation = [-5 + this.random() * 10, 0, 10]
+        const translation = [-5 + this.random() * 10, 0, 10];
         this.avatar = ColorActor.create({
             pawn: "AvatarPawn",
             parent: base,
             driver: this.userId,
             color: this.color,
-            translation,
+            translation: translation,
             tags: ["avatar"]
         });
     }
@@ -88,7 +97,6 @@ class MyUser extends User {
         super.destroy();
         if (this.avatar) this.avatar.destroy();
     }
-
 }
 MyUser.register('MyUser');
 

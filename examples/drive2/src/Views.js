@@ -131,16 +131,23 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.yaw = q_yaw(this.rotation);
         this.chaseTranslation = [0,10,20];
         this.chaseRotation = q_axisAngle([1,0,0], toRad(-5));
-
+        this.wheelHeight = 0.5;
         this.velocity = [0,0,0];
         this.speed = 0;
-
+        this.pitch = 0;
         this.service("CollisionManager").colliders.add(this);
 
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
         this.geometry = new THREE.BoxGeometry( 2, 1, 3.5 );
         this.geometry.translate(0,0.5,0);
         const mesh = new THREE.Mesh( this.geometry, this.material );
+
+
+        const mesh2 = new THREE.Mesh( 
+            new THREE.BoxGeometry( 0.5, 0.5, 0.5 ),
+            new THREE.MeshStandardMaterial( {color: new THREE.Color([1,1,1])} ));
+        mesh2.position.set(0, 1.25, 1.5);
+        mesh.add(mesh2);
         mesh.castShadow = true;
         this.setRenderObject(mesh);
 
@@ -217,7 +224,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         super.update(time,delta);
         if (this.driving) {
             const wheelbase = 3.5;
-            const wheelHeight = 0.5;
+
             const factor = delta/1000;
             this.speed = (this.gas-this.brake) * 20 * factor;
             this.steer = (this.right-this.left) * 5;
@@ -225,32 +232,44 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 this.speed = 5 * factor;
                 this.steer = -5;
             }
-            if(this.speed!=0){
-                // copy our current position to compute pitch
-                let start = [...this.translation];
-                // angular velocity based on speed
-                const angularVelocity = -this.speed/10 * Math.sin(toRad(this.steer)) / wheelbase / factor;
-                this.yaw += angularVelocity;
-                const yawQ = q_axisAngle([0,1,0], this.yaw);
-                this.velocity = [0, 0, -this.speed];
-                const tt = v3_rotate(this.velocity, yawQ);
-                const translation = v3_add(this.translation, tt);
-                translation[1]=perlin2D(translation[0], translation[2])+wheelHeight;
-                // compute pitch
-                let d;
-                if(this.speed>=0)
-                    d = v3_sub( translation, start );
-                else 
-                    d = v3_sub( start, translation );
-                this.pitch = Math.atan2(d[1], v3_magnitude([d[0], 0, d[2]]));
-                let pitchQ = q_axisAngle([1,0,0], this.pitch); 
-                if (!this.collide(tt)){ 
-                    this.positionTo(translation, q_multiply(pitchQ, yawQ));
-                    this.cameraTarget = m4_scaleRotationTranslation(1, yawQ, translation);
-                }
-                this.updateChaseCam(time, delta);
-            }else this.collide(); // see if someone hits us
+
+            // copy our current position to compute pitch
+            let start = [...this.translation];
+            // angular velocity based on speed
+            const angularVelocity = -this.speed/10 * Math.sin(toRad(this.steer)) / wheelbase / factor;
+            this.yaw += angularVelocity;
+            const yawQ = q_axisAngle([0,1,0], this.yaw);
+
+            // velocity and follow terrain
+            // -1 is a fake velocity used to compute the pitch when not moving
+            this.velocity = [0, 0, -this.speed || -1];
+            const tt = v3_rotate(this.velocity, yawQ);
+            const translation = v3_add(this.translation, tt);
+            // can't use last position to determine pitch if not moving
+            if(this.speed === 0 )start[1]=perlin2D(start[0], start[2])+this.wheelHeight; 
+            translation[1]=perlin2D(translation[0], translation[2])+this.wheelHeight;
+            // compute pitch - both backward and forward
+            let pitchQ;
+            if(this.speed>=0)
+                pitchQ = this.computePitch(start, translation);
+            else
+                pitchQ = this.computePitch(translation, start);
+            
+            if (!this.collide(tt)){ 
+                if(this.speed)this.positionTo(translation, q_multiply(pitchQ, yawQ));
+                else this.positionTo(start, q_multiply(pitchQ, yawQ));
+            }
+            this.cameraTarget = m4_scaleRotationTranslation(1, yawQ, translation);
+            this.updateChaseCam(time, delta);
         }
+    }
+
+    computePitch(tf, tt){
+        const d = v3_sub(tt, tf);
+        const dx = v3_magnitude([d[0], 0, d[2]]);
+        if( dx>0 )
+            this.pitch = Math.atan2(d[1], dx);
+        return q_axisAngle([1,0,0], this.pitch); 
     }
 
     updateChaseCam(time, delta) {
@@ -292,34 +311,23 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         for (const collider of colliders) {
             if (collider === this) continue;
             const distance = v3_distance(collider.translation, this.translation);
-            if (distance < 3.5) {
-                if ( velocity && collider.actor.tags.has("bollard")) {
-                    const from = v3_sub(this.translation, collider.translation);
-                    const dot = v3_dot(from, velocity);
-                    if (dot<-0.5) {
-                        console.log("stop!");
-                        return true;
-                    }
-                }
 
-                if ( collider.actor.tags.has("avatar")) {
-                    if (distance < 3) {
-                        console.log("bump!");
-                        console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
-                        const from = v3_sub(this.translation, collider.translation);
-                        const bounce = v3_scale(from, 0.2);
-                        const translation = v3_add(this.translation, bounce);
-                        this.translateTo(translation);
-                        return true;
-                    }
-                }
-
+            if (distance < 3) {
+                console.log("bump!");
+                console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
+                const from = v3_sub(this.translation, collider.translation);
+                const bounce = v3_scale(from, 0.5);
+                const translation = v3_add(this.translation, bounce);
+                this.translateTo(translation);
+                if(collider.actor.tags.has("avatar"))
+                    collider.say("bounce", [-bounce[0], -bounce[1], -bounce[2]]);
+                return true;
             }
         }
         return false;
     }
-
 }
+
 AvatarPawn.register("AvatarPawn");
 
 //------------------------------------------------------------------------------------------
