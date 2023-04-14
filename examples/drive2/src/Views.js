@@ -1,13 +1,15 @@
 // Drive Views
 //
-// All the code specific to this tutorial is in the definition of AvatarPawn.
-// to do:
-/*
- - avatar pitch follows terrain
- - increase velocity
- - add velocity momentum
- - 
-*/
+// The majority of the code specific to this tutorial is in the definition of AvatarPawn.
+// Demonstrates terrain following, avatar/object and avatar/avatar collisions.
+// Uses a 2D Perlin noise function to generate terrain and to dynamically compute 
+// the height of the terrain as the avatar moves.
+//
+// When an avatar collides with another avatar, a bounce event is sent to the collided
+// avatar with a negative value for the bounce vector. The other avatar bounces away from
+// the collision in the opposite direction of your avatar. 
+
+
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_scaleRotationTranslation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider,
     PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, v3_magnitude, PM_ThreeCamera, q_yaw, q_pitch, q_euler, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
@@ -15,6 +17,8 @@ import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager,
 
 // construct a perlin object and return a function that uses it
 const perlin2D = function(perlinHeight = 50, perlinScale = 0.02){
+    // the PerlinNoise constructor can take a seed value as an argument
+    // this must be the same for all participants so it generates the same terrain.
     const perlin = new PerlinNoise();
 
     return function(x,y){
@@ -37,7 +41,7 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 TestPawn.register("TestPawn");
 
 //------------------------------------------------------------------------------------------
-// BollardPawn --------------------------------------------------------------------------------
+// BollardPawn -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
@@ -61,6 +65,9 @@ BollardPawn.register("BollardPawn");
 
 //------------------------------------------------------------------------------------------
 //-- BasePawn ------------------------------------------------------------------------------
+// This is the ground of the world. We generate a simple plane of worldX by worldY in size 
+// and compute the Perlin noise value at each x/z position to determine the height.
+// We the renormalize the mesh vectors.
 //------------------------------------------------------------------------------------------
 
 export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
@@ -106,7 +113,6 @@ export class ColorPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         const mesh = new THREE.Mesh( this.geometry, this.material );
         mesh.castShadow = true;
         this.setRenderObject(mesh);
-
         this.listen("colorSet", this.onColorSet);
     }
 
@@ -168,14 +174,20 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.material.color = new THREE.Color(...this.actor.color);
     }
 
+    // If this is YOUR avatar, the AvatarPawn automatically calls this.drive() in the constructor. 
+    // The drive() function sets up the user interface for the avatar. 
+    // If this is not YOUR avatar, the park() function is called.
     drive() {
+        console.log("DRIVE");
         this.gas = this.brake = 0;
         this.left = this.right = 0;
         this.steer = 0;
         this.speed = 0;
+        this.highGear = 1;
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
         this.subscribe("input", "pointerMove", this.doPointerMove);
+        this.listen("doBounce", this.doBounce);
     }
 
     park() {
@@ -183,37 +195,54 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.left = this.right = 0;
         this.steer = 0;
         this.speed = 0;
+        this.highGear = 1;
         this.unsubscribe("input", "keyDown", this.keyDown);
         this.unsubscribe("input", "keyUp", this.keyUp);
         // this.unsubscribe("input", "pointerMove", this.doPointerMove);
     }
 
     keyDown(e) {
+        console.log(e.key)
         switch (e.key) {
+            case "W":
             case "w":
                 this.gas = 1; break;
+            case "S":
             case "s":
                 this.brake = 1; break;
+            case "A":
             case "a":
                 this.left = 1; break;
+            case "D":
             case "d":
                 this.right = 1; break;
+            case "M":
             case "m":
                 this.auto = !this.auto; break;
+            case "Shift":
+                console.log("shiftKey Down")
+                this.highGear = 2; break;
             default:
         }
     }
 
     keyUp(e) {
         switch (e.key) {
+            case "W":
             case "w":
                 this.gas = 0; break;
+            case "S":
             case "s":
                 this.brake = 0; break;
+            case "A":
             case "a":
                 this.left = 0; break;
+            case "D":
             case "d":
                 this.right = 0; break;
+            case "Shift":
+                console.log("shiftKey Up")
+                this.highGear = 1; break;
             default:
         }
     }
@@ -229,7 +258,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const wheelbase = 3.5;
 
             const factor = delta/1000;
-            this.speed = (this.gas-this.brake) * 20 * factor;
+            this.speed = (this.gas-this.brake) * 20 * factor * this.highGear;
             this.steer = (this.right-this.left) * 5;
             if (this.auto) {
                 this.speed = 5 * factor;
@@ -317,9 +346,12 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
             if (distance < 2.5) {
                 console.log("bump!");
-                console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
+                //console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
                 const from = v3_sub(this.translation, collider.translation);
-                const bounce = v3_scale(from, 0.5);
+                let distance = v3_magnitude(from);
+                let bounce;
+                if(distance > 0) bounce = v3_scale( from, 2/distance );
+                else bounce = [1,1,1]; // we are on top of each other
                 const translation = v3_add(this.translation, bounce);
                 this.translateTo(translation);
                 if(collider.actor.tags.has("avatar"))
@@ -328,6 +360,15 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             }
         }
         return false;
+    }
+
+    // when I hit another avatar, the other needs to bounce too.
+    // This is a bit tricky, because the other avatar is updating itself so fast,
+    // it is possible to miss this if it occurs in the model. The drawback is it
+    // increases latency. 
+    doBounce(bounce){
+        let translation = v3_add(bounce, this.translation);
+        this.translateTo(translation);
     }
 }
 

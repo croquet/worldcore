@@ -60,9 +60,12 @@ class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
 
     get color() { return this._color || [0.5,0.5,0.5]}
 
+    // since the view side control is happening so often, it is possible to miss this
+    // because the view will be updated before the bounce gets integrated into the
+    // avatar position. By sending it to the view here, it gets fully integrated.
+    // This does increase latency somewhat for you seeing the other user's bounce.
     doBounce(bounce){
-        this.set({translation: v3_add(this.translation, bounce)})
-        console.log("bounce", bounce)
+        this.say("doBounce", bounce);
     }
 
 }
@@ -124,29 +127,6 @@ export class MyModelRoot extends ModelRoot {
         for (let m=0; m<10; m++){
             BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, translation:[-20+10*n,0,-20+10*m]});
         }
-
-
-
-        // this.spare0 = ColorActor.create({
-        //     pawn: "AvatarPawn",
-        //     name: "Spare 0",
-        //     parent: this.base,
-        //     driver: null,
-        //     translation: [-5,0,-30],
-        //     rotation: q_axisAngle([0,1,0], toRad(-170)),
-        //     tags: ["avatar"]
-        // });
-
-        // this.spare1 = ColorActor.create({
-        //     pawn: "AvatarPawn",
-        //     name: "Spare 1",
-        //     parent: this.base,
-        //     driver: null,
-        //     translation: [5,0,-30],
-        //     tags: ["avatar"],
-
-        //     rotation: q_axisAngle([0,1,0], toRad(170))
-        // });
 
         this.subscribe("input", "cDown", this.colorChange);
     }
