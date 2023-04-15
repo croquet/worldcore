@@ -266,10 +266,12 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     doPointerMove(e) {
-        const x = -(this.pointerHome[0] - e.xy[0])/50;
-        const y = (this.pointerHome[1] - e.xy[1])/500;
-        this.steer = Math.max(-5,Math.min(5, x));
-        this.speed = Math.max(-2,Math.min(2, y));
+        if(this.usePointer){
+            const x = -(this.pointerHome[0] - e.xy[0])/50;
+            const y = (this.pointerHome[1] - e.xy[1])/500;
+            this.steer = Math.max(-5,Math.min(5, x));
+            this.speed = Math.max(-2,Math.min(2, y));
+        }
     }
 
     doPointerUp(e){
