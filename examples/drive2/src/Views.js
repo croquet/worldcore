@@ -499,7 +499,7 @@ export class MyViewRoot extends ViewRoot {
         const rm = this.service("ThreeRenderManager");
         rm.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
 
-        const ambient = new THREE.AmbientLight( 0xffffff, 0.8 );
+        const ambient = new THREE.AmbientLight( 0xffffff, 0.7 );
         const sun = new THREE.DirectionalLight( 0xffffff, 0.3 );
         sun.position.set(100, 50, 100);
         sun.castShadow = true;

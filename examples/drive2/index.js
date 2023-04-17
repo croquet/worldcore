@@ -8,6 +8,7 @@ import { App, StartWorldcore} from "@croquet/worldcore";
 import {  MyViewRoot } from "./src/Views";
 import { MyModelRoot } from "./src/Models";
 
+App.makeWidgetDock();
 StartWorldcore({
     appId: 'io.croquet.worldcore.drive',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',    // Replace with your apiKey
