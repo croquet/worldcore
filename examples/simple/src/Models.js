@@ -35,7 +35,7 @@ export class MyModelRoot extends ModelRoot {
         this.planet.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5})
 
         this.subscribe("input", "pointerDown", this.click);
-        this.subscribe("input", "xDown", this.test);
+        // this.subscribe("input", "xDown", this.test);
     }
 
     click() {
@@ -50,8 +50,6 @@ export class MyModelRoot extends ModelRoot {
 
     test() {
         console.log("test");
-        const way = this.grid.findWay([1,0,-1]);
-        console.log(way);
     }
 
 

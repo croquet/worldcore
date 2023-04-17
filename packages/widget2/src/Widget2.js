@@ -115,7 +115,7 @@ export class Widget2 extends WorldcoreView {
 
     buildDefault() {}
 
-    get name() { return this._name; }
+    get name() { return this._name }
     get parent() { return this._parent }
     get size() { return this._size || [0,0] }
     get autoSize() { return this._autoSize || [0,0]}

@@ -22,7 +22,7 @@ WorldcoreModel.register("WorldcoreModel");
 
 export class ModelRoot extends WorldcoreModel {
 
-    static modelServices() { return []; }
+    static modelServices() { return [] }
 
     init() {
         super.init();

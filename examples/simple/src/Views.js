@@ -158,6 +158,12 @@ export class MyViewRoot extends ViewRoot {
     onStart() {
         this.buildInstances();
         this.buildLights();
+        this.subscribe("input", "xDown", this.test);
+
+    }
+
+    test() {
+        console.log("test");
     }
 
     buildLights() {

@@ -1,6 +1,6 @@
 // Drive Models
 
-import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, Behavior, v3_add, UserManager, User, AM_Avatar, q_axisAngle, toRad } from "@croquet/worldcore";
+import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, Behavior, v3_add, UserManager, User, AM_Avatar, q_axisAngle, toRad } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
@@ -43,6 +43,15 @@ class BollardActor extends mix(Actor).with(AM_Spatial) {
 
     init(options) {
         super.init(options);
+        const mcm = this.service("ModelCollisionManager");
+        mcm.colliders.add(this);
+        console.log(mcm.colliders);
+    }
+
+    destroy() {
+        super.destroy();
+        const mcm = this.service("ModelCollisionManager");
+        mcm.colliders.delete(this);
     }
 }
 BollardActor.register('BollardActor');
@@ -51,10 +60,23 @@ BollardActor.register('BollardActor');
 //-- ColorActor ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-
 class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
 
     get color() { return this._color || [0.5,0.5,0.5]}
+
+    init(options) {
+        super.init(options);
+        const mcm = this.service("ModelCollisionManager");
+        mcm.colliders.add(this);
+        console.log(mcm.colliders);
+
+    }
+
+    destroy() {
+        super.destroy();
+        const mcm = this.service("ModelCollisionManager");
+        mcm.colliders.delete(this);
+    }
 
 }
 ColorActor.register('ColorActor');
@@ -93,13 +115,26 @@ class MyUser extends User {
 MyUser.register('MyUser');
 
 //------------------------------------------------------------------------------------------
+//-- ModelCollisionManager -----------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class ModelCollisionManager extends ModelService {
+
+    init() {
+        super.init("ModelCollisionManager");
+        this.colliders = new Set();
+    }
+}
+ModelCollisionManager.register('ModelCollisionManager');
+
+//------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [MyUserManager];
+        return [MyUserManager, ModelCollisionManager];
     }
 
     init(options) {
