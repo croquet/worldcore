@@ -151,7 +151,7 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         super(actor);
         this.service("CollisionManager").colliders.add(this);
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
-        this.geometry = new THREE.BoxGeometry( 2, 2, 2 );
+        this.geometry = new THREE.SphereGeometry( 1, 32, 16 );
         const mesh = new THREE.Mesh( this.geometry, this.material );
         mesh.castShadow = true;
         this.setRenderObject(mesh);
@@ -208,9 +208,35 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         mesh2.position.set(0, 1.25, 1.5);
         mesh.add(mesh2);
         mesh.castShadow = true;
+        this.followLight(mesh);
+
+        //mesh.add(this.followLight(mesh))
         this.setRenderObject(mesh);
 
         this.listen("colorSet", this.onColorSet);
+    }
+
+    followLight(target){
+        this.sunBase = [25, 100, 50];
+        const sun = new THREE.DirectionalLight( 0xffffff, 0.3 );
+        sun.position.set(...this.sunBase);
+        sun.castShadow = true;
+        sun.shadow.mapSize.width = 4096;
+        sun.shadow.mapSize.height = 4096;
+        sun.shadow.camera.near = 90;
+        sun.shadow.camera.far = 150;
+        sun.shadow.camera.left = -200;
+        sun.shadow.camera.right = 200;
+        sun.shadow.camera.top = 200;
+        sun.shadow.camera.bottom = -200;
+        sun.shadow.bias = -0.0002;
+        sun.shadow.radius = 2;
+        sun.shadow.blurSamples = 4;
+        sun.target = target;
+        const rm = this.service("ThreeRenderManager");
+        rm.scene.add(sun);
+        this.sun = sun;
+        //return sun;
     }
 
     destroy() {
@@ -268,15 +294,19 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         switch (e.key) {
             case "W":
             case "w":
+                this.brake = 0;
                 this.gas = 1; break;
             case "S":
             case "s":
+                this.gas = 0;
                 this.brake = 1; break;
             case "A":
             case "a":
+                this.right = 0;
                 this.left = 1; break;
             case "D":
             case "d":
+                this.left = 0; 
                 this.right = 1; break;
             case "M":
             case "m":
@@ -412,6 +442,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 //let q2 = q_euler( qp, qy, qr);
                 if(this.speed){
                     this.positionTo(translation, q); //pitch, yaw, roll));
+                    this.sun.position.set(...v3_add(translation, this.sunBase));
                 }
                 else { // if we haven't moved, then don't change anything
                     if((pitch !== this.pitch) || (yaw!==this.yaw) || (roll!==this.roll)){
@@ -557,7 +588,7 @@ export class MyViewRoot extends ViewRoot {
         sun.shadow.blurSamples = 4;
 
         rm.scene.add(ambient);
-        rm.scene.add(sun);
+        //rm.scene.add(sun);
     }
 
     buildCamera() {
