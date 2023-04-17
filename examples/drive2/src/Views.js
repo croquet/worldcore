@@ -8,7 +8,14 @@
 // When an avatar collides with another avatar, a bounce event is sent to the collided
 // avatar with a negative value for the bounce vector. The other avatar bounces away from
 // the collision in the opposite direction of your avatar. 
-
+//
+// To do:
+// - add missile
+// - fix shadows
+// - better UI for mobile
+// - better tank model
+// - tank explosion (turret jumps up, tank fades out)
+// 
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation, m4_scaleRotationTranslation, 
@@ -41,7 +48,6 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
         this.set({translation:t});
         this.useInstance("cyanBox");
     }
-
 }
 TestPawn.register("TestPawn");
 
@@ -136,6 +142,41 @@ export class CollidePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 CollidePawn.register("CollidePawn");
 
 //------------------------------------------------------------------------------------------
+// MissilePawn -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+
+    constructor(actor) {
+        super(actor);
+        this.service("CollisionManager").colliders.add(this);
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
+        this.geometry = new THREE.BoxGeometry( 2, 2, 2 );
+        const mesh = new THREE.Mesh( this.geometry, this.material );
+        mesh.castShadow = true;
+        this.setRenderObject(mesh);
+        this.listen("colorSet", this.onColorSet);
+    }
+
+    destroy() {
+        super.destroy();
+        this.geometry.dispose();
+        this.material.dispose();
+    }
+
+    onColorSet() {
+        this.material.color = new THREE.Color(...this.actor.color);
+    }
+
+    update(time, delta) {
+        super.update(time,delta);
+        this._translation[1] = perlin2D(this.translation[0], this.translation[2])+2;
+        this.localChanged();
+        this.refreshDrawTransform();
+    }
+}
+MissilePawn.register("MissilePawn");
+//------------------------------------------------------------------------------------------
 // AvatarPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -151,7 +192,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.wheelHeight = 0.5;
         this.velocity = [0,0,0];
         this.speed = 0;
-        this.lastShootTime = 0;
+        this.lastShootTime = -10000;
         this.waitShootTime = 4000; 
         this.service("CollisionManager").colliders.add(this);
 
@@ -501,7 +542,7 @@ export class MyViewRoot extends ViewRoot {
 
         const ambient = new THREE.AmbientLight( 0xffffff, 0.7 );
         const sun = new THREE.DirectionalLight( 0xffffff, 0.3 );
-        sun.position.set(100, 50, 100);
+        sun.position.set(25, 100, 50);
         sun.castShadow = true;
         sun.shadow.mapSize.width = 4096;
         sun.shadow.mapSize.height = 4096;

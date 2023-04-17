@@ -1,6 +1,7 @@
 // Drive Models
 
-import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, Behavior, v3_add, UserManager, User, AM_Avatar, q_axisAngle, toRad } from "@croquet/worldcore";
+import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, Behavior, v3_add, v3_scale, 
+    UserManager, User, AM_Avatar, q_axisAngle, v3_rotate, toRad } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
@@ -36,6 +37,26 @@ class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 }
 TestActor.register('TestActor');
 
+//------------------------------------------------------------------------------------------
+//--MissileActor ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
+
+    init(options) {
+        super.init(options);
+        console.log(this._velocity);
+        this.future(100).step();
+    }
+
+    step(){
+        this.translateTo(v3_add(this.translation, this._velocity));
+        this.future(100).step();
+    }
+
+    get color() { return this._color || [0.5,0.5,0.5]}
+}
+MissileActor.register('MissileActor');
 //------------------------------------------------------------------------------------------
 //--BollardActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -73,7 +94,11 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) 
 
     doShoot(where){
         //[this.translation, this.yaw]
-        console.log(where, this._color);
+        const yawQ = q_axisAngle([0,1,0], where[1]);
+        let velocity = [0, 0, -5];
+        const v = v3_rotate(velocity, yawQ);
+
+        MissileActor.create({pawn: "MissilePawn", parent: this.parent, translation: v3_add(where[0], v3_scale(v,3)), rotation: yawQ, velocity: v, color: [...this.color]});
     }
 
 }
