@@ -32,6 +32,7 @@ class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
     init(options) {
         super.init(options);
     }
+    get color() { return this._color || [0.5,0.5,0.5]}
 }
 TestActor.register('TestActor');
 
@@ -48,28 +49,35 @@ class BollardActor extends mix(Actor).with(AM_Spatial) {
 BollardActor.register('BollardActor');
 
 //------------------------------------------------------------------------------------------
-//-- ColorActor ----------------------------------------------------------------------------
+//-- AvatarActor ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 
-class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
+class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
     init(options){
         super.init(options);
         this.listen("bounce", this.doBounce);
+        this.listen("shoot", this.doShoot);
     }
 
     get color() { return this._color || [0.5,0.5,0.5]}
 
-    // since the view side control is happening so often, it is possible to miss this
-    // because the view will be updated before the bounce gets integrated into the
-    // avatar position. By sending it to the view here, it gets fully integrated.
-    // This does increase latency somewhat for you seeing the other user's bounce.
+    // Since the view side control is happening so often, it is possible to miss a
+    // collision with another avatar because the view will be updated before the 
+    // bounce gets integrated into the avatar position. By sending it to the view 
+    // here, it gets fully integrated. This does increase latency somewhat for you 
+    // seeing the other user's bounce.
     doBounce(bounce){
         this.say("doBounce", bounce);
     }
 
+    doShoot(where){
+        //[this.translation, this.yaw]
+        console.log(where, this._color);
+    }
+
 }
-ColorActor.register('ColorActor');
+AvatarActor.register('AvatarActor');
 
 //------------------------------------------------------------------------------------------
 //-- Users ---------------------------------------------------------------------------------
@@ -86,7 +94,7 @@ class MyUser extends User {
         const base = this.wellKnownModel("ModelRoot").base;
         this.color = [this.random(), this.random(), this.random()];
         const translation = [-5 + this.random() * 10, 0, 10];
-        this.avatar = ColorActor.create({
+        this.avatar = AvatarActor.create({
             pawn: "AvatarPawn",
             parent: base,
             driver: this.userId,
@@ -117,8 +125,8 @@ export class MyModelRoot extends ModelRoot {
         super.init(options);
         console.log("Start model root!!");
         this.base = BaseActor.create();
-        this.parent = TestActor.create({pawn: "TestPawn", parent: this.base, translation:[0,1,0]});
-        this.child = ColorActor.create({pawn: "ColorPawn", parent: this.parent, translation:[0,0,4]});
+        this.parent = TestActor.create({pawn: "TestPawn", parent: this.base, translation:[-12,7,-35]});
+        this.child = TestActor.create({pawn: "CollidePawn", parent: this.parent, translation:[0,0,4]});
 
         this.parent.behavior.start({name: "SpinBehavior", axis: [0,1,0], tickRate:500});
         this.child.behavior.start({name: "SpinBehavior", axis: [0,0,1], speed: 3});

@@ -37,7 +37,7 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
     constructor(actor) {
         super(actor);
         let t = this.translation;
-        t[1]=perlin2D(t[0], t[2])+4;
+        t[1]=perlin2D(t[0], t[2])+1;
         this.set({translation:t});
         this.useInstance("cyanBox");
     }
@@ -72,7 +72,7 @@ BollardPawn.register("BollardPawn");
 //-- BasePawn ------------------------------------------------------------------------------
 // This is the ground of the world. We generate a simple plane of worldX by worldY in size 
 // and compute the Perlin noise value at each x/z position to determine the height.
-// We the renormalize the mesh vectors.
+// We then renormalize the mesh vectors.
 //------------------------------------------------------------------------------------------
 
 export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
@@ -106,10 +106,10 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 BasePawn.register("BasePawn");
 
 //------------------------------------------------------------------------------------------
-// ColorPawn -------------------------------------------------------------------------------
+// CollidePawn -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class ColorPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+export class CollidePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
@@ -133,7 +133,7 @@ export class ColorPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     }
 
 }
-ColorPawn.register("ColorPawn");
+CollidePawn.register("CollidePawn");
 
 //------------------------------------------------------------------------------------------
 // AvatarPawn ------------------------------------------------------------------------------
@@ -151,6 +151,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.wheelHeight = 0.5;
         this.velocity = [0,0,0];
         this.speed = 0;
+        this.lastShootTime = 0;
+        this.waitShootTime = 4000; 
         this.service("CollisionManager").colliders.add(this);
 
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
@@ -198,6 +200,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerMove", this.doPointerMove);
+        this.subscribe("input", "tap", this.doPointerTap);
         this.listen("doBounce", this.doBounce);
     }
 
@@ -210,6 +213,14 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.unsubscribe("input", "keyDown", this.keyDown);
         this.unsubscribe("input", "keyUp", this.keyUp);
         // this.unsubscribe("input", "pointerMove", this.doPointerMove);
+    }
+
+    shoot(){
+        if(this.now()-this.lastShootTime > this.waitShootTime){
+            this.lastShootTime = this.now();
+            this.say("shoot", [this.translation, this.yaw]);
+            console.log("Shoot");
+        }
     }
 
     keyDown(e) {
@@ -236,7 +247,14 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 console.log("shiftKey Down")
                 this.highGear = 2; break;
             case " ":
-                console.log("Shoot");
+                this.shoot();
+                break;
+            case "I":
+            case "i":
+                console.log("translation:", this.translation, 
+                    "roll:", this.roll, 
+                    "pitch:", this.pitch, 
+                    "yaw:", this.yaw);
                 break;
             default:
         }
@@ -287,6 +305,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         console.log("pointerUp", e.xy);
     }
 
+    doPointerTap(e){
+        this.shoot();
+    }
+
     update(time, delta) {
         super.update(time,delta);
         if (this.driving) {
@@ -297,6 +319,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 if (this.auto) {
                     this.speed = 5 * factor;
                     this.steer = -5;
+                    this.shoot(); // only shoots once every 10 seconds
                 }else{
                     this.speed = (this.gas-this.brake) * 20 * factor * this.highGear;
                     this.steer = (this.right-this.left) * 5;
