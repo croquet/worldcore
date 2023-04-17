@@ -2,12 +2,12 @@
 //
 // The majority of the code specific to this tutorial is in the definition of AvatarPawn.
 // Demonstrates terrain following, avatar/object and avatar/avatar collisions.
-// Uses a 2D Perlin noise function to generate terrain and to dynamically compute 
+// Uses a 2D Perlin noise function to generate terrain and to dynamically compute
 // the height of the terrain as the avatar moves.
 //
 // When an avatar collides with another avatar, a bounce event is sent to the collided
 // avatar with a negative value for the bounce vector. The other avatar bounces away from
-// the collision in the opposite direction of your avatar. 
+// the collision in the opposite direction of your avatar.
 //
 // To do:
 // - add missile
@@ -15,12 +15,12 @@
 // - better UI for mobile
 // - better tank model
 // - tank explosion (turret jumps up, tank fades out)
-// 
+//
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
-    THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation, m4_scaleRotationTranslation, 
-    ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider, PM_Avatar, v2_dot, v3_scale, v3_add, 
-    q_identity, q_equals, q_multiply, q_axisAngle, v3_rotate, v3_magnitude, PM_ThreeCamera, q_yaw, 
+    THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation, m4_scaleRotationTranslation,
+    ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider, PM_Avatar, v2_dot, v3_scale, v3_add,
+    q_identity, q_equals, q_multiply, q_axisAngle, v3_rotate, v3_magnitude, PM_ThreeCamera, q_yaw,
     q_pitch, q_euler, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
     v3_distance, v3_dot, v3_sub, PerlinNoise } from "@croquet/worldcore";
 
@@ -95,7 +95,7 @@ BollardPawn.register("BollardPawn");
 
 //------------------------------------------------------------------------------------------
 //-- BasePawn ------------------------------------------------------------------------------
-// This is the ground of the world. We generate a simple plane of worldX by worldY in size 
+// This is the ground of the world. We generate a simple plane of worldX by worldY in size
 // and compute the Perlin noise value at each x/z position to determine the height.
 // We then renormalize the mesh vectors.
 //------------------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2)} );
         this.geometry = new THREE.PlaneGeometry(worldX*cellSize,worldZ*cellSize, worldX, worldZ);
         this.geometry.rotateX(toRad(-90));
-        
+
         const vertices = this.geometry.attributes.position.array;
 
         for(let index=0; index < vertices.length; index+=3)
@@ -212,7 +212,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.velocity = [0,0,0];
         this.speed = 0;
         this.lastShootTime = -10000;
-        this.waitShootTime = 4000; 
+        this.waitShootTime = 4000;
         this.service("CollisionManager").colliders.add(this);
 
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
@@ -221,7 +221,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         const mesh = new THREE.Mesh( this.geometry, this.material );
 
 
-        const mesh2 = new THREE.Mesh( 
+        const mesh2 = new THREE.Mesh(
             new THREE.BoxGeometry( 0.5, 0.5, 0.5 ),
             new THREE.MeshStandardMaterial( {color: new THREE.Color([1,1,1])} ));
         mesh2.position.set(0, 1.25, 1.5);
@@ -244,8 +244,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.material.color = new THREE.Color(...this.actor.color);
     }
 
-    // If this is YOUR avatar, the AvatarPawn automatically calls this.drive() in the constructor. 
-    // The drive() function sets up the user interface for the avatar. 
+    // If this is YOUR avatar, the AvatarPawn automatically calls this.drive() in the constructor.
+    // The drive() function sets up the user interface for the avatar.
     // If this is not YOUR avatar, the park() function is called.
     drive() {
         console.log("DRIVE");
@@ -254,7 +254,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.steer = 0;
         this.speed = 0;
         this.highGear = 1;
-        this.usePointer = false;
+        this.pointerId = 0;
 
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
@@ -300,7 +300,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 this.left = 1; break;
             case "D":
             case "d":
-                this.left = 0; 
+                this.left = 0;
                 this.right = 1; break;
             case "M":
             case "m":
@@ -316,9 +316,9 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 break;
             case "I":
             case "i":
-                console.log("translation:", this.translation, 
-                    "roll:", this.roll, 
-                    "pitch:", this.pitch, 
+                console.log("translation:", this.translation,
+                    "roll:", this.roll,
+                    "pitch:", this.pitch,
                     "yaw:", this.yaw);
                 break;
             default:
@@ -348,26 +348,47 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
 
     doPointerDown(e){
-        this.usePointer = true;
-        this.pointerHome = e.xy;
-        //this.doPointerMove(e);
-        console.log("pointerDown",e.xy);
+        console.log("pointerDown", e.id, e.xy);
+
+        if (!this.pointerId) {
+            this.pointerId = e.id;
+            this.pointerHome = e.xy;
+
+            const joystick = document.getElementById("joystick");
+            joystick.style.left = `${e.xy[0] - 60}px`;
+            joystick.style.top = `${e.xy[1] - 60}px`;
+            joystick.style.display = "block";
+
+            //this.doPointerMove(e);
+        }
     }
 
     doPointerMove(e) {
-        if(this.usePointer){
-            const x = -(this.pointerHome[0] - e.xy[0])/50;
-            const y = (this.pointerHome[1] - e.xy[1])/500;
+        if (e.id === this.pointerId){
+            const dx = e.xy[0] - this.pointerHome[0];
+            const dy = e.xy[1] - this.pointerHome[1];
+            const x = dx/50;
+            const y = -dy/500;
             this.steer = Math.max(-5,Math.min(5, x));
             this.speed = Math.max(-2,Math.min(2, y));
+
+            const knob = document.getElementById("knob");
+            knob.style.left = `${20 + Math.min(Math.max(dx, -Math.abs(dy)), Math.abs(dy))}px`;
+            knob.style.top = `${20 + dy}px`;
         }
     }
 
     doPointerUp(e){
-        this.usePointer = false;
-        this.steer = 0;
-        this.speed = 0;
-        console.log("pointerUp", e.xy);
+        console.log("pointerUp", e.id, e.xy);
+        if (e.id === this.pointerId) {
+            this.pointerId = 0;
+            this.steer = 0;
+            this.speed = 0;
+
+            const knob = document.getElementById("knob");
+            knob.style.left = `20px`;
+            knob.style.top = `20px`;
+        }
     }
 
     doPointerTap(e){
@@ -380,7 +401,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const wheelbase = 3.5;
 
             const factor = delta/1000;
-            if(!this.usePointer){
+            if (!this.pointerId){
                 if (this.auto) {
                     this.speed = 5 * factor;
                     this.steer = -5;
@@ -428,7 +449,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 roll = this.computeAngle(deltaRoll);
             }
 
-            if (!this.collide(tt, translation)){ 
+            if (!this.collide(tt, translation)){
                 let qp = q_axisAngle([1,0,0], pitch);
                 let qy = q_axisAngle([0,1,0], yaw);
                 let qr = q_axisAngle([0,0,1], roll);
@@ -440,7 +461,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 }
                 else { // if we haven't moved, then don't change anything
                     if((pitch !== this.pitch) || (yaw!==this.yaw) || (roll!==this.roll)){
-                        this.positionTo(start, q); 
+                        this.positionTo(start, q);
                     }
                 }
             }
@@ -471,7 +492,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             rTug = Math.min(1, rTug * delta / 15);
         }
 
-        const pitchQ = q_axisAngle([1,0,0], fixedPitch); 
+        const pitchQ = q_axisAngle([1,0,0], fixedPitch);
         const yawQ = q_axisAngle([0,1,0], this.yaw);
 
         const targetTranslation = v3_transform(offset, this.cameraTarget);
@@ -520,7 +541,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     // when I hit another avatar, the other needs to bounce too.
     // This is a bit tricky, because the other avatar is updating itself so fast,
     // it is possible to miss this if it occurs in the model. The drawback is it
-    // increases latency. 
+    // increases latency.
     doBounce(bounce){
         let translation = v3_add(bounce, this.translation);
         this.translateTo(translation);
