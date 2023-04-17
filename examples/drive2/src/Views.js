@@ -35,6 +35,25 @@ const perlin2D = function(perlinHeight = 50, perlinScale = 0.02){
     }
 }();
 
+const sunBase = [25, 100, 50];
+const sunLight =  function(){
+    const sun = new THREE.DirectionalLight( 0xffffff, 0.3 );
+    sun.position.set(...sunBase);
+    sun.castShadow = true;
+    sun.shadow.mapSize.width = 4096;
+    sun.shadow.mapSize.height = 4096;
+    sun.shadow.camera.near = 90;
+    sun.shadow.camera.far = 150;
+    sun.shadow.camera.left = -200;
+    sun.shadow.camera.right = 200;
+    sun.shadow.camera.top = 200;
+    sun.shadow.camera.bottom = -200;
+    sun.shadow.bias = -0.0002;
+    sun.shadow.radius = 2;
+    sun.shadow.blurSamples = 4;
+    return sun;
+}();
+
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -208,35 +227,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         mesh2.position.set(0, 1.25, 1.5);
         mesh.add(mesh2);
         mesh.castShadow = true;
-        this.followLight(mesh);
-
-        //mesh.add(this.followLight(mesh))
+        sunLight.target = mesh; // sunLight is a global
         this.setRenderObject(mesh);
 
         this.listen("colorSet", this.onColorSet);
-    }
-
-    followLight(target){
-        this.sunBase = [25, 100, 50];
-        const sun = new THREE.DirectionalLight( 0xffffff, 0.3 );
-        sun.position.set(...this.sunBase);
-        sun.castShadow = true;
-        sun.shadow.mapSize.width = 4096;
-        sun.shadow.mapSize.height = 4096;
-        sun.shadow.camera.near = 90;
-        sun.shadow.camera.far = 150;
-        sun.shadow.camera.left = -200;
-        sun.shadow.camera.right = 200;
-        sun.shadow.camera.top = 200;
-        sun.shadow.camera.bottom = -200;
-        sun.shadow.bias = -0.0002;
-        sun.shadow.radius = 2;
-        sun.shadow.blurSamples = 4;
-        sun.target = target;
-        const rm = this.service("ThreeRenderManager");
-        rm.scene.add(sun);
-        this.sun = sun;
-        //return sun;
     }
 
     destroy() {
@@ -442,7 +436,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 //let q2 = q_euler( qp, qy, qr);
                 if(this.speed){
                     this.positionTo(translation, q); //pitch, yaw, roll));
-                    this.sun.position.set(...v3_add(translation, this.sunBase));
+                    sunLight.position.set(...v3_add(translation, sunBase));
                 }
                 else { // if we haven't moved, then don't change anything
                     if((pitch !== this.pitch) || (yaw!==this.yaw) || (roll!==this.roll)){
@@ -570,25 +564,9 @@ export class MyViewRoot extends ViewRoot {
     buildLights() {
         const rm = this.service("ThreeRenderManager");
         rm.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
-
-        const ambient = new THREE.AmbientLight( 0xffffff, 0.7 );
-        const sun = new THREE.DirectionalLight( 0xffffff, 0.3 );
-        sun.position.set(25, 100, 50);
-        sun.castShadow = true;
-        sun.shadow.mapSize.width = 4096;
-        sun.shadow.mapSize.height = 4096;
-        sun.shadow.camera.near = 90;
-        sun.shadow.camera.far = 200;
-        sun.shadow.camera.left = -1000;
-        sun.shadow.camera.right = 1000;
-        sun.shadow.camera.top = 100;
-        sun.shadow.camera.bottom = -100;
-        sun.shadow.bias = -0.0002;
-        sun.shadow.radius = 2;
-        sun.shadow.blurSamples = 4;
-
+        const ambient = new THREE.AmbientLight( 0xffffff, 0.6 );
         rm.scene.add(ambient);
-        //rm.scene.add(sun);
+        rm.scene.add(sunLight); // this is a global object
     }
 
     buildCamera() {
