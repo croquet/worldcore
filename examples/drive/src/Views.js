@@ -143,7 +143,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.speed = 0;
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
-        this.subscribe("input", "pointerMove", this.doPointerMove);
+        // this.subscribe("input", "pointerMove", this.doPointerMove);
     }
 
     park() {
@@ -194,24 +194,33 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     update(time, delta) {
         super.update(time,delta);
         if (this.driving) {
+            const topSpeed = 40; // m/s
+            const thrust = 30; // m/s/s
+            const drag = 60; // m/s/s
             const wheelbase = 3.5;
             const factor = delta/1000;
 
-            this.speed = (this.gas-this.brake) * 10 * factor;
-            this.steer = (this.right-this.left) * 5;
-            if (this.auto) {
-                this.speed = 5 * factor;
-                this.steer = -5;
+            if (this.gas) {
+                this.speed += thrust * factor;
+                this.speed = Math.max(0, Math.min(topSpeed, this.speed));
+            } else {
+                this.speed -= drag * factor;
+                this.speed = Math.max(0, Math.min(topSpeed, this.speed));
             }
 
-            const angularVelocity = -this.speed/10 * Math.sin(toRad(this.steer)) / wheelbase / factor;
+            if (this.brake) this.speed = 0;
+
+
+            this.steer = (this.right-this.left) * 20; // degrees
+
+            const angularVelocity = -this.speed/topSpeed * Math.sin(toRad(this.steer)) / wheelbase;
             this.yaw += angularVelocity;
             const yawQ = q_axisAngle([0,1,0], this.yaw);
 
-            this.velocity = [0, 0, -this.speed];
+            this.velocity = [0, 0, -this.speed*factor];
             const tt = v3_rotate(this.velocity, yawQ);
             const translation = v3_add(this.translation, tt);
-            if (!this.collide(tt)) this.positionTo(translation, yawQ);
+            this.positionTo(translation, yawQ);
             this.updateChaseCam(time, delta);
         }
     }
