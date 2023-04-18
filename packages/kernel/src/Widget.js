@@ -1,4 +1,5 @@
 import { WorldcoreView, viewRoot} from "./Root";
+import { v2_add } from "./Vector";
 
 //------------------------------------------------------------------------------------------
 //-- Widget -------------------------------------------------------------------------------
@@ -87,7 +88,7 @@ export class Widget extends WorldcoreView {
     }
 
     addChild(child) {
-        if (!this.children) this._children = new Set();
+        if (!this.children) this.children = new Set();
         this.children.add(child);
     }
 

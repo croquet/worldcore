@@ -1,7 +1,7 @@
 import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, ThreeInstanceManager, ViewRoot, Pawn, mix,
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE, PM_ThreeInstanced,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, PM_ThreeCollider, ThreeRaycast, viewRoot,
-    PM_NavGridGizmo, Widget2, CanvasWidget2, ImageWidget2} from "@croquet/worldcore";
+    PM_NavGridGizmo, Widget2, CanvasWidget2, ImageWidget2, HUD} from "@croquet/worldcore";
 
 import llama from "../assets/llama.jpg";
 import diana from "../assets/diana.jpg";
@@ -155,7 +155,7 @@ class GodView extends ViewService {
 export class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, ThreeInstanceManager, GodView, ThreeRaycast];
+        return [InputManager, ThreeRenderManager, ThreeInstanceManager, GodView, ThreeRaycast, HUD];
     }
 
     onStart() {
@@ -167,9 +167,14 @@ export class MyViewRoot extends ViewRoot {
 
     test() {
         console.log("test");
+        const hud = this.service("HUD");
+        console.log(hud.root);
         this.xxx = new ImageWidget2({
+            parent: hud.root,
             size: [200,200],
-            translation: [10,10],
+            anchor: [1,0],
+            pivot: [1,0],
+            translation: [-10,10],
             color: [0,1,1],
             url: diana
         });

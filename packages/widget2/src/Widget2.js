@@ -1,37 +1,44 @@
-import { WorldcoreView, viewRoot, ViewService, v2_add, v3_add, v2_magnitude, v2_scale, v2_normalize, v2_sub, Widget} from "@croquet/worldcore-kernel";
+import { WorldcoreView, viewRoot, ViewService, v2_add, v2_magnitude, v2_scale, v2_normalize, v2_sub, Widget, v2_equals, v3_equals} from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
 //-- HelperFunctions -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// function RelativeTranslation(t, anchor, pivot, size, parentSize) {
-//     const aX = -0.5*parentSize[0] + parentSize[0]*anchor[0];
-//     const aY = -0.5*parentSize[1] + parentSize[1]*anchor[1];
-//     const pX = 0.5*size[0] - size[0]*pivot[0];
-//     const pY = 0.5*size[1] - size[1]*pivot[1];
-//     return [t[0]+aX+pX, t[1]+aY+pY, t[2]];
-// }
-
 function canvasColor(r, g, b) {
     return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
 }
 
-function vEquals(a, b) {
-    if (!a || !b) return false;
-    if (a === b) return true;
-    const al = a.length;
-    const bl = b.length;
-    if (al !== bl) return false;
-    for (let i = 0; i < al; i++) if (a[i] !== b[i]) return false;
-    return true;
+//------------------------------------------------------------------------------------------
+//-- HUD -----------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class HUD extends ViewService {
+    constructor() {
+        super("HUD");
+
+        const x = window.innerWidth;
+        const y = window.innerHeight;
+        this.root = new Widget2({size: [x,y]});
+        this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
+    }
+
+    destroy() {
+        super.destroy();
+        if (this.root) this.root.destroy();
+    }
+
+    update(time,delta) {
+        this.root.update(time,delta);
+    }
+
+    resize() {
+        const x = window.innerWidth;
+        const y = window.innerHeight;
+        this.root.set({size: [x,y]});
+    }
+
 }
 
-//------------------------------------------------------------------------------------------
-//-- WidgetManager2 -------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// Recast this as HUD the service
-// xxx
 
 // let wm;
 
@@ -102,6 +109,66 @@ function vEquals(a, b) {
 //------------------------------------------------------------------------------------------
 
 export class Widget2 extends Widget {
+
+    update(time,delta) {
+        if (this.reposition) {
+            this.position();
+            this.reposition = false;
+        }
+        if (this.redraw) {
+            this.draw();
+            this.redraw = false;
+        }
+        if (this.children) this.children.forEach( child => child.update(time,delta));
+    }
+
+    position() {}
+    draw() {}
+
+    repositionChildren() {
+        this.reposition  = true;
+        if (this.children) this.children.forEach( child => child.repositionChildren());
+    }
+
+    redrawChildren() {
+        this.redraw  = true;
+        if (this.children) this.children.forEach( child => child.redrawChildren());
+    }
+
+    parentSet(value, old) {
+        super.parentSet(value, old);
+        this.repositionChildren();
+    }
+
+    sizeSet(value, old) {
+        if (old && v2_equals(value, old)) return;
+        this.repositionChildren();
+        this.redrawChildren();
+    }
+
+    translationSet(value, old) {
+        if (old && v2_equals(value, old)) return;
+        this.repositionChildren();
+    }
+
+    anchorSet(value, old) {
+        if (old && v2_equals(value, old)) return;
+        this.repositionChildren();
+    }
+
+    pivotSet(value, old) {
+        if (old && v2_equals(value, old)) return;
+        this.repositionChildren();
+    }
+
+    colorSet(value, old) {
+        if (old && v3_equals(value, old)) return;
+        this.redraw = true;
+    }
+
+
+
+
 
     // constructor(options) {
     //     super(viewRoot.model);
@@ -192,49 +259,10 @@ export class Widget2 extends Widget {
     //     }
     // }
 
-    // parentSet(p) {
-    //     if (this.parent === p) return;
-    //     if (this.parent) this.parent.removeChild(this);
-    //     this._parent = p;
-    //     if (this.parent) this.parent.addChild(this);
-    //     this.repositionChildren();
-    // }
-
-    // sizeSet(s) {
-    //     if (vEquals(s, this.size)) return;
-    //     this._size = s;
-    //     this.repositionChildren();
-    //     this.redrawChildren();
-    // }
-
-    // translationSet(t) {
-    //     if (vEquals(t, this.translation)) return;
-    //     this._translation = t;
-    //     this.repositionChildren();
-    // }
-
     // depthSet(z) {
     //     if (this.depth === z) return;
     //     this._depth= z;
     //     this.repositionChildren();
-    // }
-
-    // anchorSet(a) {
-    //     if (vEquals(a, this.anchor)) return;
-    //     this._anchor = a;
-    //     this.repositionChildren()
-    // }
-
-    // pivotSet(p) {
-    //     if (vEquals(p, this.pivot)) return;
-    //     this._pivot = p;
-    //     this.repositionChildren()
-    // }
-
-    // colorSet(s) {
-    //     if (vEquals(s, this.color)) return;
-    //     this._color = s;
-    //     this.redraw = true;
     // }
 
     // visibleSet(b) {
@@ -254,16 +282,6 @@ export class Widget2 extends Widget {
 
     // destroyChildren() {
     //     new Set(this.children).forEach(child => child.destroy());
-    // }
-
-    // redrawChildren() {
-    //     this.redraw  = true;
-    //     if (this.children) this.children.forEach( child => child.redrawChildren());
-    // }
-
-    // repositionChildren() {
-    //     this.reposition  = true;
-    //     if (this.children) this.children.forEach( child => child.repositionChildren());
     // }
 
     // inside(xy) {
@@ -291,20 +309,6 @@ export class Widget2 extends Widget {
     //     if (this.children) this.children.forEach( child => child.pointerMove(e));
     // }
 
-    update(time,delta) {
-        if (this.reposition) {
-            this.position();
-            this.reposition = false;
-        }
-        if (this.redraw) {
-            this.draw();
-            this.redraw = false;
-        }
-        if (this.children) this.children.forEach( child => child.update(time,delta));
-    }
-
-    position() {}
-    draw() {}
 
 }
 
