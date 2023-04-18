@@ -296,6 +296,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this.localChanged();
         this.say("setScale", v, this.throttle);
         this.refreshDrawTransform();
+        this.refreshChildDrawTransform();
     }
 
     rotateTo(q) {
@@ -303,6 +304,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this.localChanged();
         this.say("setRotation", q, this.throttle);
         this.refreshDrawTransform();
+        this.refreshChildDrawTransform();
     }
 
     translateTo(v) {
@@ -310,6 +312,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this.localChanged();
         this.say("setTranslation", v, this.throttle);
         this.refreshDrawTransform();
+        this.refreshChildDrawTransform();
     }
 
     positionTo(v, q) {
@@ -318,6 +321,15 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this.localChanged();
         this.say("setPosition", [v,q], this.throttle);
         this.refreshDrawTransform();
+        this.refreshChildDrawTransform();
+    }
+
+    refreshChildDrawTransform() {
+        if (this.children) this.children.forEach(child => {
+            child.globalChanged();
+            child.refreshDrawTransform();
+        });
+
     }
 
     onScaleSnap() {
@@ -383,7 +395,8 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 
         if (!this._global) {
             this.refreshDrawTransform();
-            if (this.children) this.children.forEach(child => child.globalChanged()); // If our global changes, so do the globals of our children
+            this.refreshChildDrawTransform();
+            // if (this.children) this.children.forEach(child => child.globalChanged()); // If our global changes, so do the globals of our children
         }
 
     }
