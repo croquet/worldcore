@@ -1,4 +1,4 @@
-import { WorldcoreView, viewRoot, ViewService, v2_add, v3_add, v2_magnitude, v2_scale, v2_normalize, v2_sub} from "@croquet/worldcore-kernel";
+import { WorldcoreView, viewRoot, ViewService, v2_add, v3_add, v2_magnitude, v2_scale, v2_normalize, v2_sub, Widget} from "@croquet/worldcore-kernel";
 
 //------------------------------------------------------------------------------------------
 //-- HelperFunctions -----------------------------------------------------------------------
@@ -30,263 +30,266 @@ function vEquals(a, b) {
 //-- WidgetManager2 -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-let wm;
+// Recast this as HUD the service
+// xxx
 
-export class WidgetManager2 extends ViewService {
-    constructor(name) {
-        super(name || "WidgetManager2");
-        wm = this;
-        const x = window.innerWidth;
-        const y = window.innerHeight;
-        this.root = new Widget2({size: [x,y]});
-        this.topWindow = 10;
+// let wm;
 
-        this.subscribe("input", { event: "pointerDown", handling: "immediate" }, this.pointerDown);
-        this.subscribe("input", { event: "pointerUp", handling: "immediate" }, this.pointerUp);
-        this.subscribe("input", { event: "pointerMove", handling: "immediate" }, this.pointerMove);
-        this.subscribe("input", "keyDown", this.keyDown);
-        this.subscribe("input", "keyRepeat", this.keyDown);
-        this.subscribe("input", "keyUp", this.keyUp);
-        this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
+// export class WidgetManager2 extends ViewService {
+//     constructor(name) {
+//         super(name || "WidgetManager2");
+//         wm = this;
+//         const x = window.innerWidth;
+//         const y = window.innerHeight;
+//         this.root = new Widget2({size: [x,y]});
+//         this.topWindow = 10;
 
-    }
+//         this.subscribe("input", { event: "pointerDown", handling: "immediate" }, this.pointerDown);
+//         this.subscribe("input", { event: "pointerUp", handling: "immediate" }, this.pointerUp);
+//         this.subscribe("input", { event: "pointerMove", handling: "immediate" }, this.pointerMove);
+//         this.subscribe("input", "keyDown", this.keyDown);
+//         this.subscribe("input", "keyRepeat", this.keyDown);
+//         this.subscribe("input", "keyUp", this.keyUp);
+//         this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
+
+//     }
 
 
 
-    destroy() {
-        super.destroy();
-        if (this.root) this.root.destroy();
-    }
+//     destroy() {
+//         super.destroy();
+//         if (this.root) this.root.destroy();
+//     }
 
-    update(time,delta) {
-        this.root.update(time,delta);
-    }
+//     update(time,delta) {
+//         this.root.update(time,delta);
+//     }
 
-    resize() {
-        const x = window.innerWidth;
-        const y = window.innerHeight;
-        this.root.set({size: [x,y]});
-    }
+//     resize() {
+//         const x = window.innerWidth;
+//         const y = window.innerHeight;
+//         this.root.set({size: [x,y]});
+//     }
 
-    pointerDown(e) {
-        if (e.button == 0) {
-            if (this.root.pointerDown(e)) return;
+//     pointerDown(e) {
+//         if (e.button == 0) {
+//             if (this.root.pointerDown(e)) return;
 
-        };
-        this.publish("ui", "pointerDown", e);
-    }
+//         };
+//         this.publish("ui", "pointerDown", e);
+//     }
 
-    pointerUp(e) {
-        if (e.button === 2) return;
-        this.root.pointerUp(e);
-    }
+//     pointerUp(e) {
+//         if (e.button === 2) return;
+//         this.root.pointerUp(e);
+//     }
 
-    pointerMove(e) {
-        if (e.button === 2) return;
-        this.root.pointerMove(e);
-    }
+//     pointerMove(e) {
+//         if (e.button === 2) return;
+//         this.root.pointerMove(e);
+//     }
 
-    keyDown(e) {
-    }
+//     keyDown(e) {
+//     }
 
-    keyUp(e) {
-    }
+//     keyUp(e) {
+//     }
 
-}
+// }
 
 //------------------------------------------------------------------------------------------
 //-- Widget2 -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class Widget2 extends WorldcoreView {
+export class Widget2 extends Widget {
 
-    constructor(options) {
-        super(viewRoot.model);
-        this.set(options);
-        this.buildDefault();
-    }
+    // constructor(options) {
+    //     super(viewRoot.model);
+    //     this.set(options);
+    //     this.buildDefault();
+    // }
 
-    destroy() {
-        super.destroy();
-        this.destroyChildren();
-        // new Set(this.children).forEach(child => child.destroy());
-        if (this.parent) this.parent.removeChild(this);
-    }
+    // destroy() {
+    //     super.destroy();
+    //     this.destroyChildren();
+    //     // new Set(this.children).forEach(child => child.destroy());
+    //     if (this.parent) this.parent.removeChild(this);
+    // }
 
-    buildDefault() {}
+    // buildDefault() {}
 
-    get name() { return this._name }
-    get parent() { return this._parent }
-    get size() { return this._size || [0,0] }
-    get autoSize() { return this._autoSize || [0,0]}
-    get border() { return this._border || [0,0,0,0]}
-    get height() { return this._height || 0}
-    get width() { return this._width || 0}
-    get translation() { return this._translation || [0,0] }
-    get depth() { return this._depth || 0}
-    get anchor() { return this._anchor || [0,0]}
-    get pivot() { return this._pivot || [0,0]}
-    get color() {return this._color || [0,0,0]}
+    // get name() { return this._name }
+    // get parent() { return this._parent }
+    // get size() { return this._size || [0,0] }
+    // get autoSize() { return this._autoSize || [0,0]}
+    // get border() { return this._border || [0,0,0,0]}
+    // get height() { return this._height || 0}
+    // get width() { return this._width || 0}
+    // get translation() { return this._translation || [0,0] }
+    // get depth() { return this._depth || 0}
+    // get anchor() { return this._anchor || [0,0]}
+    // get pivot() { return this._pivot || [0,0]}
+    // get color() {return this._color || [0,0,0]}
 
-    get visible() {
-        const v = this._visible === undefined || this._visible;
-        if (v && this.parent) return this.parent.visible;
-        return v;
-    }
+    // get visible() {
+    //     const v = this._visible === undefined || this._visible;
+    //     if (v && this.parent) return this.parent.visible;
+    //     return v;
+    // }
 
-    get local() {
-        let parentSize = [0,0];
-        if (this.parent) parentSize = this.parent.trueSize;
-        const aX = parentSize[0]*this.anchor[0];
-        const aY = parentSize[1]*this.anchor[1];
-        const pX = this.trueSize[0]*this.pivot[0];
-        const pY = this.trueSize[1]*this.pivot[1];
+    // get local() {
+    //     let parentSize = [0,0];
+    //     if (this.parent) parentSize = this.parent.trueSize;
+    //     const aX = parentSize[0]*this.anchor[0];
+    //     const aY = parentSize[1]*this.anchor[1];
+    //     const pX = this.trueSize[0]*this.pivot[0];
+    //     const pY = this.trueSize[1]*this.pivot[1];
 
-        const x = this.translation[0];
-        const y = this.translation[1];
+    //     const x = this.translation[0];
+    //     const y = this.translation[1];
 
-        const bx = this.border[0];
-        const by = this.border[1];
+    //     const bx = this.border[0];
+    //     const by = this.border[1];
 
-        return [bx+x+aX-pX, by+y+aY-pY];
-    }
+    //     return [bx+x+aX-pX, by+y+aY-pY];
+    // }
 
-    get global() {
-        if (this.parent) {
-            return v3_add(this.parent.global, this.local);
-        }
-        return this.local;
-    }
+    // get global() {
+    //     if (this.parent) {
+    //         return v3_add(this.parent.global, this.local);
+    //     }
+    //     return this.local;
+    // }
 
-    get trueSize() {
-        const out = [...this.size]
-        if (this.parent) {
-            if (this.autoSize[0]) { out[0] = this.parent.trueSize[0] * this.autoSize[0]; }
-            if (this.autoSize[1]) { out[1] = this.parent.trueSize[1] * this.autoSize[1]; }
-        }
+    // get trueSize() {
+    //     const out = [...this.size]
+    //     if (this.parent) {
+    //         if (this.autoSize[0]) { out[0] = this.parent.trueSize[0] * this.autoSize[0]; }
+    //         if (this.autoSize[1]) { out[1] = this.parent.trueSize[1] * this.autoSize[1]; }
+    //     }
 
-        out[0] -= (this.border[0] + this.border[2]);
-        out[1] -= (this.border[1] + this.border[3]);
-        return out;
-    }
+    //     out[0] -= (this.border[0] + this.border[2]);
+    //     out[1] -= (this.border[1] + this.border[3]);
+    //     return out;
+    // }
 
-    get trueDepth() {
-        if (this.parent && this.parent.trueDepth ) return this.parent.trueDepth + 1;
-        return this.depth;
-    }
+    // get trueDepth() {
+    //     if (this.parent && this.parent.trueDepth ) return this.parent.trueDepth + 1;
+    //     return this.depth;
+    // }
 
-    set(options) {
-        options = options || {};
-        const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
-        for (const option of sorted) {
-            const n = option[0];
-            const v = option[1];
-            if (this[n+'Set']) {
-                this[n+'Set'](v)
-            } else {
-                this['_'+ n] = v;
-            }
-        }
-    }
+    // set(options) {
+    //     options = options || {};
+    //     const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
+    //     for (const option of sorted) {
+    //         const n = option[0];
+    //         const v = option[1];
+    //         if (this[n+'Set']) {
+    //             this[n+'Set'](v)
+    //         } else {
+    //             this['_'+ n] = v;
+    //         }
+    //     }
+    // }
 
-    parentSet(p) {
-        if (this.parent === p) return;
-        if (this.parent) this.parent.removeChild(this);
-        this._parent = p;
-        if (this.parent) this.parent.addChild(this);
-        this.repositionChildren();
-    }
+    // parentSet(p) {
+    //     if (this.parent === p) return;
+    //     if (this.parent) this.parent.removeChild(this);
+    //     this._parent = p;
+    //     if (this.parent) this.parent.addChild(this);
+    //     this.repositionChildren();
+    // }
 
-    sizeSet(s) {
-        if (vEquals(s, this.size)) return;
-        this._size = s;
-        this.repositionChildren();
-        this.redrawChildren();
-    }
+    // sizeSet(s) {
+    //     if (vEquals(s, this.size)) return;
+    //     this._size = s;
+    //     this.repositionChildren();
+    //     this.redrawChildren();
+    // }
 
-    translationSet(t) {
-        if (vEquals(t, this.translation)) return;
-        this._translation = t;
-        this.repositionChildren();
-    }
+    // translationSet(t) {
+    //     if (vEquals(t, this.translation)) return;
+    //     this._translation = t;
+    //     this.repositionChildren();
+    // }
 
-    depthSet(z) {
-        if (this.depth === z) return;
-        this._depth= z;
-        this.repositionChildren();
-    }
+    // depthSet(z) {
+    //     if (this.depth === z) return;
+    //     this._depth= z;
+    //     this.repositionChildren();
+    // }
 
-    anchorSet(a) {
-        if (vEquals(a, this.anchor)) return;
-        this._anchor = a;
-        this.repositionChildren()
-    }
+    // anchorSet(a) {
+    //     if (vEquals(a, this.anchor)) return;
+    //     this._anchor = a;
+    //     this.repositionChildren()
+    // }
 
-    pivotSet(p) {
-        if (vEquals(p, this.pivot)) return;
-        this._pivot = p;
-        this.repositionChildren()
-    }
+    // pivotSet(p) {
+    //     if (vEquals(p, this.pivot)) return;
+    //     this._pivot = p;
+    //     this.repositionChildren()
+    // }
 
-    colorSet(s) {
-        if (vEquals(s, this.color)) return;
-        this._color = s;
-        this.redraw = true;
-    }
+    // colorSet(s) {
+    //     if (vEquals(s, this.color)) return;
+    //     this._color = s;
+    //     this.redraw = true;
+    // }
 
-    visibleSet(b) {
-        if (this.visible === b) return;
-        this._visible = b;
-        this.redrawChildren();
-    }
+    // visibleSet(b) {
+    //     if (this.visible === b) return;
+    //     this._visible = b;
+    //     this.redrawChildren();
+    // }
 
-    addChild(child) {
-        if (!this.children) this.children = new Set();
-        this.children.add(child);
-    }
+    // addChild(child) {
+    //     if (!this.children) this.children = new Set();
+    //     this.children.add(child);
+    // }
 
-    removeChild(child) {
-        if (this.children) this.children.delete(child);
-    }
+    // removeChild(child) {
+    //     if (this.children) this.children.delete(child);
+    // }
 
-    destroyChildren() {
-        new Set(this.children).forEach(child => child.destroy());
-    }
+    // destroyChildren() {
+    //     new Set(this.children).forEach(child => child.destroy());
+    // }
 
-    redrawChildren() {
-        this.redraw  = true;
-        if (this.children) this.children.forEach( child => child.redrawChildren());
-    }
+    // redrawChildren() {
+    //     this.redraw  = true;
+    //     if (this.children) this.children.forEach( child => child.redrawChildren());
+    // }
 
-    repositionChildren() {
-        this.reposition  = true;
-        if (this.children) this.children.forEach( child => child.repositionChildren());
-    }
+    // repositionChildren() {
+    //     this.reposition  = true;
+    //     if (this.children) this.children.forEach( child => child.repositionChildren());
+    // }
 
-    inside(xy) {
-        const x = xy[0];
-        const y = xy[1];
-        if (x < this.global[0] || x > (this.global[0] + this.trueSize[0])) return false;
-        if (y < this.global[1] || y > (this.global[1] + this.trueSize[1])) return false;
-        return true;
-    }
+    // inside(xy) {
+    //     const x = xy[0];
+    //     const y = xy[1];
+    //     if (x < this.global[0] || x > (this.global[0] + this.trueSize[0])) return false;
+    //     if (y < this.global[1] || y > (this.global[1] + this.trueSize[1])) return false;
+    //     return true;
+    // }
 
-    pointerDown(e) {
-        if (!this.visible) return false;
-        let consumed = false;
-        if (this.children) this.children.forEach( child => consumed = child.pointerDown(e) || consumed);
-        return consumed;
-    }
+    // pointerDown(e) {
+    //     if (!this.visible) return false;
+    //     let consumed = false;
+    //     if (this.children) this.children.forEach( child => consumed = child.pointerDown(e) || consumed);
+    //     return consumed;
+    // }
 
-    pointerUp(e) {
-        if (!this.visible) return;
-        if (this.children) this.children.forEach( child => child.pointerUp(e));
-    }
+    // pointerUp(e) {
+    //     if (!this.visible) return;
+    //     if (this.children) this.children.forEach( child => child.pointerUp(e));
+    // }
 
-    pointerMove(e) {
-        if (!this.visible) return;
-        if (this.children) this.children.forEach( child => child.pointerMove(e));
-    }
+    // pointerMove(e) {
+    //     if (!this.visible) return;
+    //     if (this.children) this.children.forEach( child => child.pointerMove(e));
+    // }
 
     update(time,delta) {
         if (this.reposition) {
@@ -323,7 +326,6 @@ export class CanvasWidget2 extends Widget2 {
     destroy() {
         super.destroy();
         this.canvas.remove();
-
     }
 
     get cc() {
@@ -337,11 +339,11 @@ export class CanvasWidget2 extends Widget2 {
     }
 
     draw() {
-        if (this.visible) {
-            this.canvas.style.display = 'inline';
-        } else {
-            this.canvas.style.display = 'none';
-        }
+        // if (this.visible) {
+        //     this.canvas.style.display = 'inline';
+        // } else {
+        //     this.canvas.style.display = 'none';
+        // }
         this.canvas.width = this.trueSize[0];
         this.canvas.height = this.trueSize[1];
         this.cc.fillStyle = canvasColor(...this.color);
@@ -440,7 +442,8 @@ export class ImageWidget2 extends CanvasWidget2 {
 
         this.image = new Image();
         this.image.onload = () => {
-            this.redraw= true;
+            this.draw();
+            this.redraw = true;
         }
         this.image.src = this.url;
     }

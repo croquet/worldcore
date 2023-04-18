@@ -7,6 +7,7 @@ export * from "./src/Root";
 export * from "./src/User";
 export * from "./src/Utilities";
 export * from "./src/Vector";
+export * from "./src/Widget";
 export * from "./src/Input";
 export * from "./src/NavGrid";
 
