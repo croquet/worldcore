@@ -164,10 +164,10 @@ export class Widget2 extends Widget {
         this.redraw = true;
     }
 
-    // visibleSet(value, old) {
-    //     if (value === old) return;
-    //     this.redrawChildren();
-    // }
+    visibleSet(value, old) {
+        if (value === old) return;
+        this.redrawChildren();
+    }
 
 
   // inside(xy) {
@@ -229,11 +229,11 @@ export class CanvasWidget2 extends Widget2 {
     }
 
     draw() {
-        // if (this.visible) {
-        //     this.canvas.style.display = 'inline';
-        // } else {
-        //     this.canvas.style.display = 'none';
-        // }
+        if (this.visible) {
+            this.canvas.style.display = 'inline';
+        } else {
+            this.canvas.style.display = 'none';
+        }
         this.canvas.width = this.trueSize[0];
         this.canvas.height = this.trueSize[1];
         this.cc.fillStyle = canvasColor(...this.color);
@@ -340,8 +340,8 @@ export class ImageWidget2 extends CanvasWidget2 {
 
     get url() { return this._url }
 
-    urlSet(url) {
-        this._url = url;
+    urlSet(value, old) {
+        if (value === old) return;
         if (this.image) this.image.src = this.url;
     }
 
@@ -366,14 +366,48 @@ export class TextWidget2 extends CanvasWidget2 {
     get style() { return this._style || "normal"}
     get alignX() { return this._alignX || "center"}
     get alignY() { return this._alignY || "middle"}
-    get offset() { return this._offset || [0,0] }
     get noWrap() { return this._noWrap }
+    get offset() { return this._offset || [0,0] }
     get textColor()  {return this._textColor || [0,0,0]}
 
-    textSet(t) {
-        if (t === this.text) return;
-        this._text = t;
-        this.redraw = true;
+    textSet(value, old) {
+        if (value !== old) this.redraw = true;
+    }
+
+    fontSet(value, old) {
+        if (value !== old) this.redraw = true;
+    }
+
+    pointSet(value, old) {
+        if (value !== old) this.redraw = true;
+    }
+
+    lineSpacingSet(value, old) {
+        if (value !== old) this.redraw = true;
+    }
+
+    styleSet(value, old) {
+        if (value !== old) this.redraw = true;
+    }
+
+    alignXSet(value, old) {
+        if (value !== old) this.redraw = true;
+    }
+
+    alignYSet(value, old) {
+        if (value !== old) this.redraw = true;
+    }
+
+    noWrapSet(value, old) {
+        if (value !== old) this.redraw = true;
+    }
+
+    offetSet(value, old) {
+        if (!old || !v2_equals(value, old)) this.redraw = true;
+    }
+
+    textColorSet(value, old) {
+        if (!old || !v3_equals(value, old)) this.redraw = true;
     }
 
     lines() {
@@ -383,7 +417,7 @@ export class TextWidget2 extends CanvasWidget2 {
         const words = this.text.split(' ');
         let sum = this.canvas.width+1;
         words.forEach( word => {
-            const wordWidth = this.cc.measureText(word).width
+            const wordWidth = this.cc.measureText(word).width;
             sum += spaceWidth + wordWidth;
             if (sum > this.canvas.width) {
                 out.push(word);
@@ -396,7 +430,7 @@ export class TextWidget2 extends CanvasWidget2 {
     }
 
     letterOffset(n) {
-        this.setStyle();
+        // this.setStyle();
         const c = [...this.text];
         let offset = 0;
         n = Math.min(n, c.length);
@@ -438,6 +472,7 @@ export class TextWidget2 extends CanvasWidget2 {
         let x = 0;
         let y = 0;
         let yOffset = 0;
+        this.setStyle();
 
         const lineHeight = (this.point + this.lineSpacing);
         const lines = this.lines();
@@ -454,8 +489,6 @@ export class TextWidget2 extends CanvasWidget2 {
             y = this.trueSize[1];
             yOffset = lineHeight * (lines.length-1);
         }
-
-        this.setStyle();
 
         lines.forEach((line,i) => {
             const o = (i * lineHeight) - yOffset;

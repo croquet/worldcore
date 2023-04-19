@@ -32,6 +32,12 @@ export class Widget extends WorldcoreView {
 
     get depth() { if (this.parent) return this.parent.depth+1; return 0 }
 
+    get visible() {
+        const v = this._visible === undefined || this._visible;
+        if (this.parent) return this.parent.visible && v;
+        return v;
+    }
+
     get trueSize() {
         const out = [...this.size];
         if (this.parent) {

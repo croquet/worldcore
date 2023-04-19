@@ -168,7 +168,6 @@ export class MyViewRoot extends ViewRoot {
     test() {
         console.log("test");
         const hud = this.service("HUD");
-        console.log(hud.root.visible);
         this.xxx = new ImageWidget2({
             parent: hud.root,
             size: [200,200],
@@ -179,8 +178,6 @@ export class MyViewRoot extends ViewRoot {
             url: diana
         });
 
-        console.log(this.xxx.visible);
-
         this.text = new TextWidget2({
             parent: hud.root,
             size: [200,200],
@@ -188,11 +185,12 @@ export class MyViewRoot extends ViewRoot {
             pivot: [0,0],
             translation: [10,10],
             color: [1,1,0],
-            text: "bing",
-            textColor: [1,0,0]
+            text: "bing this is a long line!",
+            textColor: [1,0,0],
+            offset: [0,20],
+            noWrap: false
         });
 
-        // this.text.set({visible: false});
     }
 
     buildLights() {
