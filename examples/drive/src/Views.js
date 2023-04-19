@@ -210,7 +210,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
             if (this.brake) this.speed = 0;
 
-
             this.steer = (this.right-this.left) * 20; // degrees
 
             const angularVelocity = -this.speed/topSpeed * Math.sin(toRad(this.steer)) / wheelbase;

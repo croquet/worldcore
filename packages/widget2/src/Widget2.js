@@ -61,8 +61,6 @@ export class HUD extends ViewService {
 
 //     }
 
-
-
 //     destroy() {
 //         super.destroy();
 //         if (this.root) this.root.destroy();
@@ -166,125 +164,13 @@ export class Widget2 extends Widget {
         this.redraw = true;
     }
 
-
-
-
-
-    // constructor(options) {
-    //     super(viewRoot.model);
-    //     this.set(options);
-    //     this.buildDefault();
-    // }
-
-    // destroy() {
-    //     super.destroy();
-    //     this.destroyChildren();
-    //     // new Set(this.children).forEach(child => child.destroy());
-    //     if (this.parent) this.parent.removeChild(this);
-    // }
-
-    // buildDefault() {}
-
-    // get name() { return this._name }
-    // get parent() { return this._parent }
-    // get size() { return this._size || [0,0] }
-    // get autoSize() { return this._autoSize || [0,0]}
-    // get border() { return this._border || [0,0,0,0]}
-    // get height() { return this._height || 0}
-    // get width() { return this._width || 0}
-    // get translation() { return this._translation || [0,0] }
-    // get depth() { return this._depth || 0}
-    // get anchor() { return this._anchor || [0,0]}
-    // get pivot() { return this._pivot || [0,0]}
-    // get color() {return this._color || [0,0,0]}
-
-    // get visible() {
-    //     const v = this._visible === undefined || this._visible;
-    //     if (v && this.parent) return this.parent.visible;
-    //     return v;
-    // }
-
-    // get local() {
-    //     let parentSize = [0,0];
-    //     if (this.parent) parentSize = this.parent.trueSize;
-    //     const aX = parentSize[0]*this.anchor[0];
-    //     const aY = parentSize[1]*this.anchor[1];
-    //     const pX = this.trueSize[0]*this.pivot[0];
-    //     const pY = this.trueSize[1]*this.pivot[1];
-
-    //     const x = this.translation[0];
-    //     const y = this.translation[1];
-
-    //     const bx = this.border[0];
-    //     const by = this.border[1];
-
-    //     return [bx+x+aX-pX, by+y+aY-pY];
-    // }
-
-    // get global() {
-    //     if (this.parent) {
-    //         return v3_add(this.parent.global, this.local);
-    //     }
-    //     return this.local;
-    // }
-
-    // get trueSize() {
-    //     const out = [...this.size]
-    //     if (this.parent) {
-    //         if (this.autoSize[0]) { out[0] = this.parent.trueSize[0] * this.autoSize[0]; }
-    //         if (this.autoSize[1]) { out[1] = this.parent.trueSize[1] * this.autoSize[1]; }
-    //     }
-
-    //     out[0] -= (this.border[0] + this.border[2]);
-    //     out[1] -= (this.border[1] + this.border[3]);
-    //     return out;
-    // }
-
-    // get trueDepth() {
-    //     if (this.parent && this.parent.trueDepth ) return this.parent.trueDepth + 1;
-    //     return this.depth;
-    // }
-
-    // set(options) {
-    //     options = options || {};
-    //     const sorted = Object.entries(options).sort((a,b) => { return b[0] < a[0] ? 1 : -1 } );
-    //     for (const option of sorted) {
-    //         const n = option[0];
-    //         const v = option[1];
-    //         if (this[n+'Set']) {
-    //             this[n+'Set'](v)
-    //         } else {
-    //             this['_'+ n] = v;
-    //         }
-    //     }
-    // }
-
-    // depthSet(z) {
-    //     if (this.depth === z) return;
-    //     this._depth= z;
-    //     this.repositionChildren();
-    // }
-
-    // visibleSet(b) {
-    //     if (this.visible === b) return;
-    //     this._visible = b;
+    // visibleSet(value, old) {
+    //     if (value === old) return;
     //     this.redrawChildren();
     // }
 
-    // addChild(child) {
-    //     if (!this.children) this.children = new Set();
-    //     this.children.add(child);
-    // }
 
-    // removeChild(child) {
-    //     if (this.children) this.children.delete(child);
-    // }
-
-    // destroyChildren() {
-    //     new Set(this.children).forEach(child => child.destroy());
-    // }
-
-    // inside(xy) {
+  // inside(xy) {
     //     const x = xy[0];
     //     const y = xy[1];
     //     if (x < this.global[0] || x > (this.global[0] + this.trueSize[0])) return false;
@@ -384,7 +270,7 @@ export class VerticalWidget2 extends Widget2 {
 
         let auto = 0;
         if (count > 0) auto = Math.max(0, (this.trueSize[1] - sum) / count);
-        let offset = 0
+        let offset = 0;
         this.children.forEach(child => {
             let height = auto;
             if (child.height) height = child.height;
@@ -424,7 +310,7 @@ export class HorizontalWidget2 extends Widget2 {
 
         let auto = 0;
         if (count > 0) auto = Math.max(0, (this.trueSize[0] - sum) / count);
-        let offset = 0
+        let offset = 0;
         this.children.forEach(child => {
             let width = auto;
             if (child.width) width = child.width;
@@ -448,11 +334,11 @@ export class ImageWidget2 extends CanvasWidget2 {
         this.image.onload = () => {
             this.draw();
             this.redraw = true;
-        }
+        };
         this.image.src = this.url;
     }
 
-    get url() { return this._url; }
+    get url() { return this._url }
 
     urlSet(url) {
         this._url = url;
@@ -483,7 +369,6 @@ export class TextWidget2 extends CanvasWidget2 {
     get offset() { return this._offset || [0,0] }
     get noWrap() { return this._noWrap }
     get textColor()  {return this._textColor || [0,0,0]}
-    get offset() { return this._offset || [0,0] }
 
     textSet(t) {
         if (t === this.text) return;

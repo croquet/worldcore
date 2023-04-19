@@ -1,7 +1,7 @@
 import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, ThreeInstanceManager, ViewRoot, Pawn, mix,
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE, PM_ThreeInstanced,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, PM_ThreeCollider, ThreeRaycast, viewRoot,
-    PM_NavGridGizmo, Widget2, CanvasWidget2, ImageWidget2, HUD} from "@croquet/worldcore";
+    PM_NavGridGizmo, Widget2, CanvasWidget2, ImageWidget2, TextWidget2, HUD} from "@croquet/worldcore";
 
 import llama from "../assets/llama.jpg";
 import diana from "../assets/diana.jpg";
@@ -168,7 +168,7 @@ export class MyViewRoot extends ViewRoot {
     test() {
         console.log("test");
         const hud = this.service("HUD");
-        console.log(hud.root);
+        console.log(hud.root.visible);
         this.xxx = new ImageWidget2({
             parent: hud.root,
             size: [200,200],
@@ -178,6 +178,21 @@ export class MyViewRoot extends ViewRoot {
             color: [0,1,1],
             url: diana
         });
+
+        console.log(this.xxx.visible);
+
+        this.text = new TextWidget2({
+            parent: hud.root,
+            size: [200,200],
+            anchor: [0,0],
+            pivot: [0,0],
+            translation: [10,10],
+            color: [1,1,0],
+            text: "bing",
+            textColor: [1,0,0]
+        });
+
+        // this.text.set({visible: false});
     }
 
     buildLights() {
