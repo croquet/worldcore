@@ -29,13 +29,12 @@ export class Widget extends WorldcoreView {
     get anchor() { return this._anchor || [0,0]}
     get pivot() { return this._pivot || [0,0]}
     get color() {return this._color || [0,0,0]}
-
     get depth() { if (this.parent) return this.parent.depth+1; return 0 }
+    get visible() { return this._visible === undefined || this._visible }
 
-    get visible() {
-        const v = this._visible === undefined || this._visible;
-        if (this.parent) return this.parent.visible && v;
-        return v;
+    get isVisible() { // includes parent visibility
+        if (this.parent) return this.parent.visible && this.visible;
+        return this.visible;
     }
 
     get trueSize() {

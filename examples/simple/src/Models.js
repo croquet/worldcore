@@ -34,7 +34,7 @@ export class MyModelRoot extends ModelRoot {
         this.sun.behavior.start({name: "SpinBehavior", axis:[0,1,0], tickRate: 1000, speed: 2});
         this.planet.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5})
 
-        this.subscribe("input", "pointerDown", this.click);
+        this.subscribe("hud", "pointerDown", this.click);
         // this.subscribe("input", "xDown", this.test);
     }
 

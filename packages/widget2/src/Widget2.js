@@ -20,6 +20,9 @@ export class HUD extends ViewService {
         const y = window.innerHeight;
         this.root = new Widget2({size: [x,y]});
         this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
+        this.subscribe("input", { event: "pointerDown", handling: "immediate" }, this.pointerDown);
+        this.subscribe("input", { event: "pointerUp", handling: "immediate" }, this.pointerUp);
+        this.subscribe("input", { event: "pointerMove", handling: "immediate" }, this.pointerMove);
     }
 
     destroy() {
@@ -35,6 +38,21 @@ export class HUD extends ViewService {
         const x = window.innerWidth;
         const y = window.innerHeight;
         this.root.set({size: [x,y]});
+    }
+
+    pointerDown(e) {
+        if (this.root.pointerDown(e)) return;
+        this.publish("hud", "pointerDown", e);
+    }
+
+    pointerUp(e) {
+        this.root.pointerUp(e);
+        this.publish("hud", "pointerUp", e);
+    }
+
+    pointerMove(e) {
+        this.root.pointerMove(e);
+        this.publish("hud", "pointerMove", e);
     }
 
 }
@@ -169,77 +187,34 @@ export class Widget2 extends Widget {
         this.redrawChildren();
     }
 
+  inside(xy) {
+        const x = xy[0];
+        const y = xy[1];
+        if (x < this.global[0] || x > (this.global[0] + this.trueSize[0])) return false;
+        if (y < this.global[1] || y > (this.global[1] + this.trueSize[1])) return false;
+        return true;
+    }
 
-  // inside(xy) {
-    //     const x = xy[0];
-    //     const y = xy[1];
-    //     if (x < this.global[0] || x > (this.global[0] + this.trueSize[0])) return false;
-    //     if (y < this.global[1] || y > (this.global[1] + this.trueSize[1])) return false;
-    //     return true;
-    // }
+    pointerDown(e) {
+        if (!this.isVisible) return false;
+        let consumed = false;
+        if (this.children) this.children.forEach( child => consumed = child.pointerDown(e) || consumed);
+        return consumed;
+    }
 
-    // pointerDown(e) {
-    //     if (!this.visible) return false;
-    //     let consumed = false;
-    //     if (this.children) this.children.forEach( child => consumed = child.pointerDown(e) || consumed);
-    //     return consumed;
-    // }
+    pointerUp(e) {
+        if (!this.visible) return;
+        if (this.children) this.children.forEach( child => child.pointerUp(e));
+    }
 
-    // pointerUp(e) {
-    //     if (!this.visible) return;
-    //     if (this.children) this.children.forEach( child => child.pointerUp(e));
-    // }
-
-    // pointerMove(e) {
-    //     if (!this.visible) return;
-    //     if (this.children) this.children.forEach( child => child.pointerMove(e));
-    // }
-
+    pointerMove(e) {
+        if (!this.visible) return;
+        if (this.children) this.children.forEach( child => child.pointerMove(e));
+    }
 
 }
 
-//------------------------------------------------------------------------------------------
-//-- CanvasWidget2 -------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
 
-export class CanvasWidget2 extends Widget2 {
-
-    constructor(options) {
-        super(options);
-        this.canvas = document.createElement("canvas");
-        this.canvas.style.cssText = "position: absolute; left: 0; top: 0; border: 0, z-index: 0;";
-        document.body.insertBefore(this.canvas, null);
-        this.position();
-        this.draw();
-    }
-
-    destroy() {
-        super.destroy();
-        this.canvas.remove();
-    }
-
-    get cc() {
-        return this.canvas.getContext('2d');
-    }
-
-    position() {
-        this.canvas.style.left = this.global[0] + "px";
-        this.canvas.style.top = this.global[1] + "px";
-        this.canvas.style.zIndex = this.trueDepth;
-    }
-
-    draw() {
-        if (this.visible) {
-            this.canvas.style.display = 'inline';
-        } else {
-            this.canvas.style.display = 'none';
-        }
-        this.canvas.width = this.trueSize[0];
-        this.canvas.height = this.trueSize[1];
-        this.cc.fillStyle = canvasColor(...this.color);
-        this.cc.fillRect(0, 0, this.trueSize[0], this.trueSize[1]);
-    }
-}
 
 //------------------------------------------------------------------------------------------
 //-- VerticalWidget2------------------------------------------------------------------------
@@ -322,6 +297,49 @@ export class HorizontalWidget2 extends Widget2 {
 }
 
 //------------------------------------------------------------------------------------------
+//-- CanvasWidget2 -------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class CanvasWidget2 extends Widget2 {
+
+    constructor(options) {
+        super(options);
+        this.canvas = document.createElement("canvas");
+        this.canvas.style.cssText = "position: absolute; left: 0; top: 0; border: 0, z-index: 0;";
+        document.body.insertBefore(this.canvas, null);
+        this.position();
+        this.draw();
+    }
+
+    destroy() {
+        super.destroy();
+        this.canvas.remove();
+    }
+
+    get cc() {
+        return this.canvas.getContext('2d');
+    }
+
+    position() {
+        this.canvas.style.left = this.global[0] + "px";
+        this.canvas.style.top = this.global[1] + "px";
+        this.canvas.style.zIndex = this.trueDepth;
+    }
+
+    draw() {
+        if (this.isVisible) {
+            this.canvas.style.display = 'inline';
+        } else {
+            this.canvas.style.display = 'none';
+        }
+        this.canvas.width = this.trueSize[0];
+        this.canvas.height = this.trueSize[1];
+        this.cc.fillStyle = canvasColor(...this.color);
+        this.cc.fillRect(0, 0, this.trueSize[0], this.trueSize[1]);
+    }
+}
+
+//------------------------------------------------------------------------------------------
 //-- ImageWidget2 --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -370,45 +388,16 @@ export class TextWidget2 extends CanvasWidget2 {
     get offset() { return this._offset || [0,0] }
     get textColor()  {return this._textColor || [0,0,0]}
 
-    textSet(value, old) {
-        if (value !== old) this.redraw = true;
-    }
-
-    fontSet(value, old) {
-        if (value !== old) this.redraw = true;
-    }
-
-    pointSet(value, old) {
-        if (value !== old) this.redraw = true;
-    }
-
-    lineSpacingSet(value, old) {
-        if (value !== old) this.redraw = true;
-    }
-
-    styleSet(value, old) {
-        if (value !== old) this.redraw = true;
-    }
-
-    alignXSet(value, old) {
-        if (value !== old) this.redraw = true;
-    }
-
-    alignYSet(value, old) {
-        if (value !== old) this.redraw = true;
-    }
-
-    noWrapSet(value, old) {
-        if (value !== old) this.redraw = true;
-    }
-
-    offetSet(value, old) {
-        if (!old || !v2_equals(value, old)) this.redraw = true;
-    }
-
-    textColorSet(value, old) {
-        if (!old || !v3_equals(value, old)) this.redraw = true;
-    }
+    textSet(value, old) { if (value !== old) this.redraw = true; }
+    fontSet(value, old) { if (value !== old) this.redraw = true; }
+    pointSet(value, old) { if (value !== old) this.redraw = true; }
+    lineSpacingSet(value, old) { if (value !== old) this.redraw = true; }
+    styleSet(value, old) { if (value !== old) this.redraw = true; }
+    alignXSet(value, old) { if (value !== old) this.redraw = true; }
+    alignYSet(value, old) { if (value !== old) this.redraw = true; }
+    noWrapSet(value, old) { if (value !== old) this.redraw = true; }
+    offetSet(value, old) { if (!old || !v2_equals(value, old)) this.redraw = true; }
+    textColorSet(value, old) { if (!old || !v3_equals(value, old)) this.redraw = true; }
 
     lines() {
         if (this.noWrap) return this.text.split('\n');
@@ -430,7 +419,7 @@ export class TextWidget2 extends CanvasWidget2 {
     }
 
     letterOffset(n) {
-        // this.setStyle();
+        this.setStyle();
         const c = [...this.text];
         let offset = 0;
         n = Math.min(n, c.length);
@@ -504,22 +493,19 @@ export class TextWidget2 extends CanvasWidget2 {
 //-- ControlWidget -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export function ParentControl2(w) {
-    do {
-        if (w instanceof ControlWidget3) return w;
-        w = w.parent
-    } while(w)
-    return null;
-}
-
 export class ControlWidget2 extends Widget2 {
 
     constructor(options) {
         super(options);
+        this.build();
+        // this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.7,0.83]});
+        // this.label = new TextWidget2({ parent: this.frame, autoSize: [1,1], border: [5, 5, 5, 5], color: [0.8,0.8,0.8], text:  "Button" });
     }
 
+    build() {}
+
     pointerDown(e) {
-        if(this.inside(e.xy)) {
+        if (this.inside(e.xy)) {
             this.pressed = true;
             this.onPress();
             return true;
@@ -527,31 +513,31 @@ export class ControlWidget2 extends Widget2 {
         return false;
     }
 
-    pointerUp(e) {
-        if(this.pressed) {
+    pointerUp() {
+        if (this.pressed) {
             this.pressed = false;
-            this.onNormal();
+            if (this.hovered) {
+                this.onHover();
+            } else {
+                this.onNormal();
+            }
         }
     }
 
     pointerMove(e) {
         super.pointerMove();
-        if(this.inside(e.xy)) {
+        if (this.inside(e.xy)) {
+            if (!this.pressed && !this.hovered) this.onHover();
             this.hovered = true;
-            if (this.pressed) {
-                this.onPress();
-            } else {
-                this.onHover();
-            }
-        } else {
+        } else if (this.hovered) {
             this.hovered = false;
-            this.onNormal();
+            if (!this.pressed) this.onNormal();
         }
     }
 
-    onHover() {}
-    onPress() {}
-    onNormal() {}
+    onHover() { console.log("hover")}
+    onPress() {console.log("press")}
+    onNormal() { console.log("normal")}
 
 }
 
@@ -561,36 +547,39 @@ export class ControlWidget2 extends Widget2 {
 
 export class ButtonWidget2 extends ControlWidget2 {
 
-    buildDefault() {
-            this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.5,0.7]});
-            this.label = new TextWidget2({ parent: this.frame, autoSize: [1,1], border: [5, 5, 5, 5], color: [0.8,0.8,0.8], text:  "Button" });
+    build() {
+        this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.7,0.83]});
+        this.label = new TextWidget2({ parent: this.frame, autoSize: [1,1], border: [5, 5, 5, 5], color: [0.8,0.8,0.8], text:  "Button" });
     }
 
     pointerUp(e) {
-
-        if(this.pressed && this.inside(e.xy) ) {
-            this.onNormal();
+        if (!this.pressed) return;
+        this.pressed = false;
+        if (this.inside(e.xy) ) {
+            this.hovered = true;
+            this.onHover();
             this.onClick();
+        } else {
+            this.onNormal();
         }
     }
 
     onHover() {
-        this.frame.set({color: [0,1,1]});
+        this.frame.set({color: [0.16,0.5,0.72]});
     }
 
     onPress() {
-        this.frame.set({color: [1,0,0]});
+        this.frame.set({color: [0.94,0.77,0.06]});
     }
 
     onNormal() {
-        this.frame.set({color: [0,0,1]});
+        this.frame.set({color: [0.5,0.7,0.83]});
     }
 
     onClick() {
         this.publish(this.id, "click");
     }
 }
-
 
 
 //------------------------------------------------------------------------------------------
@@ -614,17 +603,19 @@ export class ToggleWidget2 extends ButtonWidget2 {
     get toggleSet() { return this._toggleSet }
 
     toggleSetSet(ts) {
-        this._toggleSet = ts;
         if (ts) ts.set.add(this);
     }
 
-    isOnSet(b) {
-        this._isOn = b;
+    isOnSet(value, old) {
+        if (value === old) return;
         this.onToggle();
     }
 
     onToggle() {
-        this.isOn ? this.label.set({text: "On"}) : this.label.set({text: "Off"});
+        this.label.set({
+            text: this.isOn ? "On" : "Off",
+            color: this.isOn ? [0.9,0.9,0.9] : [0.8,0.8,0.8]
+        });
     }
 
     onClick() {
@@ -663,28 +654,22 @@ export class ToggleSet2 extends WorldcoreView  {
 
 export class ImageToggleWidget2 extends ToggleWidget2 {
 
-    buildDefault() {
-        this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.5,0.5]});
+    build() {
+        this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.7,0.83]});
         this.label = new ImageWidget2({parent: this.frame, autoSize: [1,1], border: [2.5, 2.5, 2.5, 2.5], color: [0.6,0.6,0.6], url: this.offURL});
     }
 
-    get offURL() {return this._offURL}
-    get onURL() {return this._onURL}
+    get offURL()  {return this._offURL }
+    get onURL() { return this._onURL }
 
-    onHover() {
-        this.frame.set({color: [0.4,0.4,0.4]});
-    }
-
-    onPress() {
-        this.frame.set({color: [0.8,0.8,0.8]});
-    }
-
-    onNormal() {
-        this.frame.set({color: [0.6,0.6,0.6]});
-    }
+    // onToggle() {
+    //     this.isOn ? this.label.set({url: this.onURL}) : this.label.set({url: this.offURL});
+    // }
 
     onToggle() {
-        this.isOn ? this.label.set({url: this.onURL}) : this.label.set({url: this.offURL});
+        this.label.set({
+            url: this.isOn ? this.onURL : this.offURL
+        });
     }
 }
 
@@ -958,11 +943,11 @@ export class MenuWidget2 extends ControlWidget2 {
         this.buildEntries();
     }
 
-    buildDefault() {
-        this.background = new CanvasWidget2({parent: this, autoSize: [1,0], color: [1,1,1],});
-        this.layout = new VerticalWidget2({parent: this.background, autoSize: [1,1]});
-        this.buildEntries();
-    }
+    // buildDefault() {
+    //     this.background = new CanvasWidget2({parent: this, autoSize: [1,0], color: [1,1,1],});
+    //     this.layout = new VerticalWidget2({parent: this.background, autoSize: [1,1]});
+    //     this.buildEntries();
+    // }
 
     buildEntries() {
         if (!this.background) return;
