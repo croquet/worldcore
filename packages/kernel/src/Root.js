@@ -183,6 +183,9 @@ export async function StartWorldcore(options) {
         return service.asyncStart();
     }));
 
+    if (!Array.isArray(options.flags)) options = { ...options, flags: [] };
+    if (!options.flags.includes("worldcore")) options.flags.push("worldcore");
+
     const session = await Session.join(options);
 
     return session;
