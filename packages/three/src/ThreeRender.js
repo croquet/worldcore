@@ -5,9 +5,10 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
-
+import { GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 export { THREE };
 export { Reflector };
+export { GLTFLoader };
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------

@@ -16,26 +16,27 @@ class BaseActor extends mix(Actor).with(AM_Spatial) {
         this.listen("spawn", this.doSpawn);
     }
 
+    // unused...
     doSpawn(xyz) {
         const translation = [...xyz];
-        TestActor.create({pawn:"ClickPawn", parent: this, translation});
+        SimpleActor.create({pawn:"ClickPawn", parent: this, translation});
     }
 
 }
 BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
-//--TestActor ------------------------------------------------------------------------------
+//--SimpleActor ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
+class SimpleActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 
     init(options) {
         super.init(options);
     }
     get color() { return this._color || [0.5,0.5,0.5]}
 }
-TestActor.register('TestActor');
+SimpleActor.register('SimpleActor');
 
 //------------------------------------------------------------------------------------------
 //--MissileActor ------------------------------------------------------------------------------
@@ -95,7 +96,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) 
     doShoot(where){
         //[this.translation, this.yaw]
         const yawQ = q_axisAngle([0,1,0], where[1]);
-        let velocity = [0, 0, -5];
+        let velocity = [0, 0, -2];
         const v = v3_rotate(velocity, yawQ);
 
         MissileActor.create({pawn: "MissilePawn", parent: this.parent, translation: v3_add(where[0], v3_scale(v,3)), rotation: yawQ, velocity: v, color: [...this.color]});
@@ -125,8 +126,11 @@ class MyUser extends User {
             driver: this.userId,
             color: this.color,
             translation: translation,
+            instanceName: 'tankTracks',
             tags: ["avatar"]
         });
+        SimpleActor.create({pawn: "InstancePawn", parent: this.avatar, color:this.color, instanceName:'tankBody'});
+        SimpleActor.create({pawn: "InstancePawn", parent: this.avatar, color:this.color, instanceName:'tankTurret'});
     }
 
     destroy() {
@@ -150,8 +154,8 @@ export class MyModelRoot extends ModelRoot {
         super.init(options);
         console.log("Start model root!!");
         this.base = BaseActor.create();
-        this.parent = TestActor.create({pawn: "TestPawn", parent: this.base, translation:[-12,7,-35]});
-        this.child = TestActor.create({pawn: "CollidePawn", parent: this.parent, translation:[0,0,4]});
+        this.parent = SimpleActor.create({pawn: "TestPawn", parent: this.base, translation:[-12,7,-35]});
+        this.child = SimpleActor.create({pawn: "CollidePawn", parent: this.parent, translation:[0,0,4]});
 
         this.parent.behavior.start({name: "SpinBehavior", axis: [0,1,0], tickRate:500});
         this.child.behavior.start({name: "SpinBehavior", axis: [0,0,1], speed: 3});

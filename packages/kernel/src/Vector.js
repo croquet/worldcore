@@ -1271,6 +1271,26 @@ export function q_euler(x, y ,z) {
 
 }
 
+export function q_eulerYXZ(x, y, z){
+    const cos = Math.cos;
+    const sin = Math.sin;
+
+    const c1 = cos( x / 2 );
+    const c2 = cos( y / 2 );
+    const c3 = cos( z / 2 );
+
+    const s1 = sin( x / 2 );
+    const s2 = sin( y / 2 );
+    const s3 = sin( z / 2 );
+
+    return [
+        s1 * c2 * c3 + c1 * s2 * s3,
+        c1 * s2 * c3 - s1 * c2 * s3,
+        c1 * c2 * s3 - s1 * s2 * c3,
+        c1 * c2 * c3 + s1 * s2 * s3,
+    ];
+}
+
 // Returns the equivalent Euler angle around the x axis
 export function q_pitch(q) {
     const x = q[0], y = q[1], z = q[2], w = q[3];

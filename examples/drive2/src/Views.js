@@ -11,18 +11,20 @@
 //
 // To do:
 // - add missile
-// - fix shadows
-// - better UI for mobile
 // - better tank model
 // - tank explosion (turret jumps up, tank fades out)
-//
+// - collision more natural
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation, m4_scaleRotationTranslation,
     ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider, PM_Avatar, v2_dot, v3_scale, v3_add,
     q_identity, q_equals, q_multiply, q_axisAngle, v3_rotate, v3_magnitude, PM_ThreeCamera, q_yaw,
-    q_pitch, q_euler, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
-    v3_distance, v3_dot, v3_sub, PerlinNoise } from "@croquet/worldcore";
+    q_pitch, q_euler, q_eulerYXZ, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
+    v3_distance, v3_dot, v3_sub, PerlinNoise, GLTFLoader } from "@croquet/worldcore";
+import tank_tracks from "../assets/tank_tracks.glb";
+import tank_turret from "../assets/tank_turret.glb";
+import tank_body from "../assets/tank_body.glb";
+
 
 // construct a perlin object and return a function that uses it
 const perlin2D = function(perlinHeight = 50, perlinScale = 0.02){
@@ -70,6 +72,30 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 }
 TestPawn.register("TestPawn");
 
+//------------------------------------------------------------------------------------------
+// InstancePawn --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class InstancePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
+
+    constructor(actor) {
+        super(actor);
+        this.loadInstance(actor._instanceName, actor.color);
+    }
+
+    loadInstance(name, color){
+        const im = this.service("ThreeInstanceManager");
+        let geometry = im.geometry(name);
+        if(geometry){
+            this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...color)} );
+            this.mesh = new THREE.Mesh( geometry, this.material );
+            this.mesh.castShadow = true;
+            this.mesh.receiveShadow = true;
+            this.setRenderObject(this.mesh);
+        }else this.future(100).loadInstance(name, color);
+    }
+}
+InstancePawn.register("InstancePawn");
 //------------------------------------------------------------------------------------------
 // BollardPawn -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -199,7 +225,7 @@ MissilePawn.register("MissilePawn");
 // AvatarPawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar, PM_ThreeCamera) {
+export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar, PM_ThreeCamera, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
@@ -208,29 +234,45 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.roll = 0;
         this.chaseTranslation = [0,10,20];
         this.chaseRotation = q_axisAngle([1,0,0], toRad(-5));
-        this.wheelHeight = 0.5;
+        this.wheelHeight = 0.0;
         this.velocity = [0,0,0];
         this.speed = 0;
         this.lastShootTime = -10000;
         this.waitShootTime = 4000;
         this.service("CollisionManager").colliders.add(this);
-
+        this.loadInstance(actor._instanceName, [0.35, 0.35, 0.35]);
+ /*       
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
         this.geometry = new THREE.BoxGeometry( 2, 1, 3.5 );
         this.geometry.translate(0,0.5,0);
         const mesh = new THREE.Mesh( this.geometry, this.material );
-
+        this.geometry2 = new THREE.BoxGeometry( 0.5, 0.5, 0.5 );
+        this.material2 = new THREE.MeshStandardMaterial( {color: new THREE.Color([1,1,1])} );
 
         const mesh2 = new THREE.Mesh(
-            new THREE.BoxGeometry( 0.5, 0.5, 0.5 ),
-            new THREE.MeshStandardMaterial( {color: new THREE.Color([1,1,1])} ));
+            this.geometry2,
+            this.material2);
         mesh2.position.set(0, 1.25, 1.5);
         mesh.add(mesh2);
         mesh.castShadow = true;
-        sunLight.target = mesh; // sunLight is a global
+        
+        sunLight.target = mesh; //this.instance; // sunLight is a global
         this.setRenderObject(mesh);
-
+*/
         this.listen("colorSet", this.onColorSet);
+    }
+
+    loadInstance(name, color){
+        const im = this.service("ThreeInstanceManager");
+        let geometry = im.geometry(name);
+        if(geometry){
+            console.log("HERE I AM", geometry)
+            this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...color)} );
+            this.mesh = new THREE.Mesh( geometry, this.material );
+            this.mesh.castShadow = true;
+            this.mesh.receiveShadow = true;
+            this.setRenderObject(this.mesh);
+        }else this.future(100).loadInstance(name, color);
     }
 
     destroy() {
@@ -241,7 +283,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     onColorSet() {
-        this.material.color = new THREE.Color(...this.actor.color);
+       // this.material.color = new THREE.Color(...this.actor.color);
     }
 
     // If this is YOUR avatar, the AvatarPawn automatically calls this.drive() in the constructor.
@@ -450,11 +492,14 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             }
 
             if (!this.collide(tt, translation)){
+                /*
                 let qp = q_axisAngle([1,0,0], pitch);
                 let qy = q_axisAngle([0,1,0], yaw);
                 let qr = q_axisAngle([0,0,1], roll);
-                let q = q_multiply(qr, q_multiply(qp, qy));
-                //let q2 = q_euler( qp, qy, qr);
+                let q0 = q_multiply(qr, q_multiply(qp, qy));
+                */
+                let q = q_eulerYXZ( pitch, yaw, roll);
+                //let q2 = q_euler( pitch, yaw, roll);
                 if(this.speed){
                     this.positionTo(translation, q); //pitch, yaw, roll));
                     sunLight.position.set(...v3_add(translation, sunBase));
@@ -608,16 +653,18 @@ export class MyViewRoot extends ViewRoot {
         rm.camera.updateProjectionMatrix();
     }
 
-    buildInstances() {
+    async buildInstances() {
         const im = this.service("ThreeInstanceManager");
 
         const  yellow = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
         const  magenta = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
         const  cyan = new THREE.MeshStandardMaterial( {color: new THREE.Color(0,1,1)} );
+        const  gray = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.1,0.1,0.1)} );
 
         im.addMaterial("yellow", yellow);
         im.addMaterial("magenta", magenta);
         im.addMaterial("cyan", cyan);
+        im.addMaterial("gray", gray);
 
         const box = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("box", box);
@@ -635,6 +682,40 @@ export class MyViewRoot extends ViewRoot {
         mesh1.castShadow = true;
         mesh2.castShadow = true;
         mesh3.castShadow = true;
+
+        const gltfLoader = new GLTFLoader();
+
+        let [ tankTracks, tankTurret, tankBody ] = await Promise.all( [
+            gltfLoader.loadAsync( tank_tracks ),
+            gltfLoader.loadAsync( tank_turret),
+            gltfLoader.loadAsync( tank_body)
+        ] );
+
+        tankBody = tankBody.scene.children[0].geometry;
+        tankTracks = tankTracks.scene.children[0].geometry;
+        tankTurret = tankTurret.scene.children[0].geometry;
+        tankBody.rotateY(toRad(-90));
+        tankTracks.rotateY(toRad(-90));
+        tankTurret.rotateY(toRad(-90));
+        tankBody.scale(1,1,1.5);
+        im.addGeometry("tankBody", tankBody);
+        im.addGeometry("tankTurret", tankTurret);
+        im.addGeometry("tankTracks", tankTracks);
+
+
+        console.log("DO I GET HERE?", tankTracks, im.geometry("tankTracks"))
+
+        const tankBodyim = im.addMesh("tankBody","tankBody", "yellow");
+        const tankTurretim = im.addMesh("tankTurret", "tankTurret","yellow");
+        const tankTracksim = im.addMesh("tankTracks", "tankTracks", "gray");
+
+        tankBodyim.castShadow = true;
+        tankBodyim.receiveShadow = true;
+        tankTurretim.castShadow = true;
+        tankTurretim.receiveShadow = true;
+        tankTracksim.castShadow = true;
+        tankTracksim.receiveShadow = true;
+
     }
 
 }

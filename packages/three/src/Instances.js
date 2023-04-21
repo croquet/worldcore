@@ -60,9 +60,12 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
     useInstance(name) {
         const im = this.service("ThreeInstanceManager");
         this.instance = im.mesh(name);
-        this.renderObject = this.instance.mesh;
-        this.meshIndex = this.instance.use(this);
-        this.updateMatrix();
+        if(this.instance){
+            this.renderObject = this.instance.mesh;
+            this.meshIndex = this.instance.use(this);
+            this.updateMatrix();
+        }
+        return this.instance;
     }
 
     releaseInstance() {
@@ -103,33 +106,51 @@ export class ThreeInstanceManager extends ViewService {
     }
 
     material(name) {
-        if (!this.materials.has(name)) console.error("No material named " + name);
+        if (!this.materials.has(name)) {
+            console.error("No material named " + name);
+            return;
+        }
         return this.materials.get(name);
     }
 
     geometry(name) {
-        if (!this.geometries.has(name)) console.error("No geometry named " + name);
+        if (!this.geometries.has(name)) {
+            console.error("No geometry named " + name);
+            return;
+        }
         return this.geometries.get(name);
     }
 
     mesh(name) {
-        if (!this.meshes.has(name)) console.error("No mesh named " + name);
+        if (!this.meshes.has(name)) {
+            console.error("No mesh named " + name);
+            return;
+        }
         return this.meshes.get(name);
     }
 
     addMaterial(name, material) {
-        if (this.materials.has(name)) console.error("duplicate material: " + name);
+        if (this.materials.has(name)) {
+            console.error("duplicate material: " + name);
+            return;
+        }
         this.materials.set(name,material);
     }
 
     addGeometry(name, geometry) {
-        if (this.geometries.has(name)) console.error("duplicate geometry: " + name);
+        if (this.geometries.has(name)) {
+            console.error("duplicate geometry: " + name);
+            return;
+        }
         this.geometries.set(name,geometry);
     }
 
     addMesh(meshName, geometryName, materialName, count=1000) {
         const rm = this.service("ThreeRenderManager");
-        if (this.meshes.has(meshName)) console.error("duplicate mesh: " + meshName);
+        if (this.meshes.has(meshName)) {
+            console.error("duplicate mesh: " + meshName);
+            return this.mesh(meshName);
+        }
         const mesh = new InstancedMesh(this.geometry(geometryName), this.material(materialName), count);
         mesh.limbo = this.limbo;
         this.meshes.set(meshName, mesh);
