@@ -137,13 +137,12 @@ export class Widget2 extends Widget {
 
     pointerDown(e) {
         if (!this.isVisible) return false;
-        let consumed = false;
-        // const sss = this.sortedChildren;
         for (const child of this.sortedChildren) {
-            consumed = child.pointerDown(e) || consumed;
+            const consumed = child.pointerDown(e);
+            if (consumed) return true;
         }
-        // if (this.children) this.children.forEach( child => consumed = child.pointerDown(e) || consumed);
-        return consumed;
+        if (this.inside(e.xy)) return true;
+        return false;
     }
 
     pointerUp(e) {
@@ -884,8 +883,8 @@ class DragWidget2 extends ControlWidget2 {
     }
 
     pointerDown(e) {
-        if (this.close.pointerDown(e)) return true;
         if (this.inside(e.xy)) {
+            if (this.close.pointerDown(e)) return true;
             this.pressed = true;
             if (this.target) this.grab = v2_sub(this.target.translation, e.xy);
             return true;
@@ -964,7 +963,7 @@ export class MenuWidget2 extends ControlWidget2 {
     }
 
     pointerDown(e) {
-        if(this.background.inside(e.xy)) {
+        if (this.background.inside(e.xy)) {
             this.pressed = true;
             const w = this.findEntry(e.xy);
             this.unhiliteAll();
