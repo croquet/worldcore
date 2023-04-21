@@ -1,7 +1,8 @@
 import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, ThreeInstanceManager, ViewRoot, Pawn, mix,
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE, PM_ThreeInstanced,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, PM_ThreeCollider, ThreeRaycast, viewRoot,
-    PM_NavGridGizmo, Widget2, CanvasWidget2, ImageWidget2, TextWidget2, ControlWidget2, HUD, ButtonWidget2, ToggleWidget2, VerticalWidget2, ToggleSet2, ImageToggleWidget2} from "@croquet/worldcore";
+    PM_NavGridGizmo, Widget2, CanvasWidget2, ImageWidget2, TextWidget2, ControlWidget2, HUD, ButtonWidget2, ToggleWidget2, VerticalWidget2, ToggleSet2, ImageToggleWidget2,
+     SliderWidget2, JoyStickWidget2, WindowWidget2} from "@croquet/worldcore";
 
 import llama from "../assets/llama.jpg";
 import diana from "../assets/diana.jpg";
@@ -169,71 +170,18 @@ export class MyViewRoot extends ViewRoot {
     test() {
         console.log("test");
         const hud = this.service("HUD");
-        this.xxx = new ImageWidget2({
+
+        const www = new WindowWidget2({
             parent: hud.root,
-            size: [200,200],
-            anchor: [1,0],
-            pivot: [1,0],
-            translation: [-10,10],
-            color: [0,1,1],
-            url: diana
+            size:[200,200],
+            translation: [100,100]
         });
 
-        this.yyy = new ImageWidget2({
-            parent: this.xxx,
-            autoSize: [0.5,0.5],
-            anchor: [0.5,0.5],
-            pivot: [0.5,0.5],
-            url: llama
-        });
-
-        this.bbb = new ImageToggleWidget2({
-            parent: hud.root,
-            size: [200,200],
-            translation: [10,10],
-            onURL: diana,
-            offURL: llama
-        });
-
-        this.vvv = new VerticalWidget2({
-            parent: hud.root,
-            size: [150,300],
-            translation: [10,300]
-        });
-
-        const toggleSet = new ToggleSet2();
-
-        this.ttt0 = new ToggleWidget2({
-            parent: this.vvv,
-            toggleSet
-        });
-
-        this.ttt1 = new ToggleWidget2({
-            parent: this.vvv,
-            toggleSet
-        });
-
-
-
-
-        // this.text = new TextWidget2({
-        //     parent: hud.root,
-        //     size: [200,200],
-        //     anchor: [0,0],
-        //     pivot: [0,0],
-        //     translation: [10,10],
-        //     color: [1,1,0],
-        //     text: "bing this is a long line!",
-        //     textColor: [1,0,0],
-        //     noWrap: false
-        // });
 
     }
 
     test2() {
         console.log("test2");
-
-        this.yyy.set({visible: !this.yyy.visible});
 
 
 

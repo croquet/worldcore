@@ -18,6 +18,7 @@ export class HUD extends ViewService {
 
         const x = window.innerWidth;
         const y = window.innerHeight;
+        this.topWindow = 0; // Eventually we should resort them
         this.root = new Widget2({size: [x,y]});
         this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
         this.subscribe("input", { event: "pointerDown", handling: "immediate" }, this.pointerDown);
@@ -56,69 +57,6 @@ export class HUD extends ViewService {
     }
 
 }
-
-
-// let wm;
-
-// export class WidgetManager2 extends ViewService {
-//     constructor(name) {
-//         super(name || "WidgetManager2");
-//         wm = this;
-//         const x = window.innerWidth;
-//         const y = window.innerHeight;
-//         this.root = new Widget2({size: [x,y]});
-//         this.topWindow = 10;
-
-//         this.subscribe("input", { event: "pointerDown", handling: "immediate" }, this.pointerDown);
-//         this.subscribe("input", { event: "pointerUp", handling: "immediate" }, this.pointerUp);
-//         this.subscribe("input", { event: "pointerMove", handling: "immediate" }, this.pointerMove);
-//         this.subscribe("input", "keyDown", this.keyDown);
-//         this.subscribe("input", "keyRepeat", this.keyDown);
-//         this.subscribe("input", "keyUp", this.keyUp);
-//         this.subscribe("input", {event: "resize", handling: "immediate"}, this.resize);
-
-//     }
-
-//     destroy() {
-//         super.destroy();
-//         if (this.root) this.root.destroy();
-//     }
-
-//     update(time,delta) {
-//         this.root.update(time,delta);
-//     }
-
-//     resize() {
-//         const x = window.innerWidth;
-//         const y = window.innerHeight;
-//         this.root.set({size: [x,y]});
-//     }
-
-//     pointerDown(e) {
-//         if (e.button == 0) {
-//             if (this.root.pointerDown(e)) return;
-
-//         };
-//         this.publish("ui", "pointerDown", e);
-//     }
-
-//     pointerUp(e) {
-//         if (e.button === 2) return;
-//         this.root.pointerUp(e);
-//     }
-
-//     pointerMove(e) {
-//         if (e.button === 2) return;
-//         this.root.pointerMove(e);
-//     }
-
-//     keyDown(e) {
-//     }
-
-//     keyUp(e) {
-//     }
-
-// }
 
 //------------------------------------------------------------------------------------------
 //-- Widget2 -------------------------------------------------------------------------------
@@ -187,7 +125,9 @@ export class Widget2 extends Widget {
         this.redrawChildren();
     }
 
-  inside(xy) {
+    depthSet() { this.repositionChildren()}
+
+    inside(xy) {
         const x = xy[0];
         const y = xy[1];
         if (x < this.global[0] || x > (this.global[0] + this.trueSize[0])) return false;
@@ -198,7 +138,11 @@ export class Widget2 extends Widget {
     pointerDown(e) {
         if (!this.isVisible) return false;
         let consumed = false;
-        if (this.children) this.children.forEach( child => consumed = child.pointerDown(e) || consumed);
+        // const sss = this.sortedChildren;
+        for (const child of this.sortedChildren) {
+            consumed = child.pointerDown(e) || consumed;
+        }
+        // if (this.children) this.children.forEach( child => consumed = child.pointerDown(e) || consumed);
         return consumed;
     }
 
@@ -214,12 +158,9 @@ export class Widget2 extends Widget {
 
 }
 
-
-
 //------------------------------------------------------------------------------------------
 //-- VerticalWidget2------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
 
 export class VerticalWidget2 extends Widget2 {
 
@@ -257,9 +198,8 @@ export class VerticalWidget2 extends Widget2 {
 }
 
 //------------------------------------------------------------------------------------------
-//-- VerticalWidget2------------------------------------------------------------------------
+//-- HorizontalWidget2----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
 
 export class HorizontalWidget2 extends Widget2 {
 
@@ -305,7 +245,7 @@ export class CanvasWidget2 extends Widget2 {
     constructor(options) {
         super(options);
         this.canvas = document.createElement("canvas");
-        this.canvas.style.cssText = "position: absolute; left: 0; top: 0; border: 0, z-index: 0;";
+        this.canvas.style.cssText = "position: fixed; left: 0; top: 0; border: 0;";
         document.body.insertBefore(this.canvas, null);
         this.position();
         this.draw();
@@ -334,6 +274,7 @@ export class CanvasWidget2 extends Widget2 {
         }
         this.canvas.width = this.trueSize[0];
         this.canvas.height = this.trueSize[1];
+        this.cc.globalAlpha = this.opacity;
         this.cc.fillStyle = canvasColor(...this.color);
         this.cc.fillRect(0, 0, this.trueSize[0], this.trueSize[1]);
     }
@@ -495,16 +436,15 @@ export class TextWidget2 extends CanvasWidget2 {
 
 export class ControlWidget2 extends Widget2 {
 
-    constructor(options) {
-        super(options);
-        this.build();
-        // this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.7,0.83]});
-        // this.label = new TextWidget2({ parent: this.frame, autoSize: [1,1], border: [5, 5, 5, 5], color: [0.8,0.8,0.8], text:  "Button" });
+    get disabled() { return this._disabled}
+
+    disabledSet(visible) { // turn on the dim overlay
+        if (this.dim) this.dim.set({visible});
     }
 
-    build() {}
-
     pointerDown(e) {
+        if (!this.isVisible) return false;
+        if (this.disabled) return true;
         if (this.inside(e.xy)) {
             this.pressed = true;
             this.onPress();
@@ -514,6 +454,8 @@ export class ControlWidget2 extends Widget2 {
     }
 
     pointerUp() {
+        if (!this.isVisible) return;
+        if (this.disabled) return;
         if (this.pressed) {
             this.pressed = false;
             if (this.hovered) {
@@ -525,7 +467,8 @@ export class ControlWidget2 extends Widget2 {
     }
 
     pointerMove(e) {
-        super.pointerMove();
+        if (!this.isVisible) return;
+        if (this.disabled) return;
         if (this.inside(e.xy)) {
             if (!this.pressed && !this.hovered) this.onHover();
             this.hovered = true;
@@ -535,9 +478,9 @@ export class ControlWidget2 extends Widget2 {
         }
     }
 
-    onHover() { console.log("hover")}
-    onPress() {console.log("press")}
-    onNormal() { console.log("normal")}
+    onHover() {}
+    onPress() {}
+    onNormal() {}
 
 }
 
@@ -550,9 +493,11 @@ export class ButtonWidget2 extends ControlWidget2 {
     build() {
         this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.7,0.83]});
         this.label = new TextWidget2({ parent: this.frame, autoSize: [1,1], border: [5, 5, 5, 5], color: [0.8,0.8,0.8], text:  "Button" });
+        this.dim = new CanvasWidget2({parent: this.label, autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.5, visible: this.disabled});
     }
 
     pointerUp(e) {
+        if (!this.isVisible) return;
         if (!this.pressed) return;
         this.pressed = false;
         if (this.inside(e.xy) ) {
@@ -596,7 +541,6 @@ export class ToggleWidget2 extends ButtonWidget2 {
     destroy() {
         super.destroy();
         if (this.toggleSet) this.toggleSet.set.delete(this);
-
     }
 
     get isOn() { return this._isOn || false}
@@ -657,14 +601,11 @@ export class ImageToggleWidget2 extends ToggleWidget2 {
     build() {
         this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.7,0.83]});
         this.label = new ImageWidget2({parent: this.frame, autoSize: [1,1], border: [2.5, 2.5, 2.5, 2.5], color: [0.6,0.6,0.6], url: this.offURL});
+        this.dim = new CanvasWidget2({parent: this.label, autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.5, visible: false});
     }
 
     get offURL()  {return this._offURL }
     get onURL() { return this._onURL }
-
-    // onToggle() {
-    //     this.isOn ? this.label.set({url: this.onURL}) : this.label.set({url: this.offURL});
-    // }
 
     onToggle() {
         this.label.set({
@@ -679,21 +620,21 @@ export class ImageToggleWidget2 extends ToggleWidget2 {
 
 export class SliderWidget2 extends ControlWidget2 {
 
-    constructor(options) {
-        super(options);
-
-        this.bar = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.8,0.8,0.8]});
-        this.knob = new CanvasWidget2({parent: this.bar, translation: this.knobTranslation, size: this.knobSize, color: [0.6,0.6,0.6] });
+    build() {
+        this.bar = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.92,0.96,0.98]});
+        this.knob = new CanvasWidget2({parent: this.bar, translation: this.knobTranslation, size: this.knobSize, color: [0.5,0.7,0.83] });
+        this.dim = new CanvasWidget2({parent: this.bar, autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.5, visible: this.disabled});
     }
 
-    get isHorizontal() { return this.trueSize[0] > this.trueSize[1]; }
+    get isHorizontal() { return this.trueSize[0] > this.trueSize[1]}
     get knobSize() {  return this.isHorizontal ? [this.trueSize[1], this.trueSize[1]] : [this.trueSize[0], this.trueSize[0]] }
-    get percent() {  return this._percent || 0; }
-    get step() { return this._step || 0; }
+    get percent() {  return this._percent || 0}
+    get step() { return this._step || 0}
 
     get knobTranslation() {
-        const t = [0,0]
+        const t = [0,0];
         if (this.isHorizontal) {
+            t[0] = this.percent * (this.trueSize[0]-this.knobSize[0]);
         } else {
             t[1] = this.percent * (this.trueSize[1]-this.knobSize[1]);
         }
@@ -710,41 +651,56 @@ export class SliderWidget2 extends ControlWidget2 {
     }
 
     onPress() {
-        this.knob.set({color: [0.4, 0.4, 0.4]});
+        this.knob.set({color: [0.94,0.77,0.06]});
     }
 
     onNormal() {
-        this.knob.set({color: [0.6,0.6,0.6]});
+        this.knob.set({color: [0.5,0.7,0.83]});
     }
 
     onHover() {
-        this.knob.set({color: [0.5, 0.5, 0.5]});
+        this.knob.set({color: [0.16,0.5,0.72]});
     }
 
     pointerDown(e) {
-        super.pointerDown(e);
-        if(this.inside(e.xy)) {
-            let p = 0;
+        if (!this.isVisible) return false;
+        if (this.disabled) return true;
+        if (this.inside(e.xy)) {
+            this.pressed = true;
+            let percent = 0;
             if (this.isHorizontal) {
-                p = (e.xy[0] - this.global[0]- this.knobSize[0]/2) / (this.trueSize[0]-this.knobSize[0]);
+                percent = (e.xy[0] - this.global[0]- this.knobSize[0]/2) / (this.trueSize[0]-this.knobSize[0]);
             } else {
-                p = (e.xy[1] - this.global[1]- this.knobSize[1]/2) / (this.trueSize[1]-this.knobSize[1]);
+                percent = (e.xy[1] - this.global[1]- this.knobSize[1]/2) / (this.trueSize[1]-this.knobSize[1]);
             }
-            this.set({percent: p});
+            this.set({percent});
+            this.onPress();
             return true;
         }
+        return false;
     }
 
     pointerMove(e) {
-        super.pointerMove(e);
-        if(this.pressed) {
-            let p = 0;
+        if (!this.isVisible) return;
+        if (this.disabled) return;
+        if (this.pressed) {
+            let percent = 0;
             if (this.isHorizontal) {
-                p = (e.xy[0] - this.global[0]- this.knobSize[0]/2) / (this.trueSize[0]-this.knobSize[0]);
+                percent = (e.xy[0] - this.global[0]- this.knobSize[0]/2) / (this.trueSize[0]-this.knobSize[0]);
             } else {
-                p = (e.xy[1] - this.global[1]- this.knobSize[1]/2) / (this.trueSize[1]-this.knobSize[1]);
+                percent = (e.xy[1] - this.global[1]- this.knobSize[1]/2) / (this.trueSize[1]-this.knobSize[1]);
             }
-            this.set({percent: p});
+            this.set({percent});
+        }
+
+        if (this.inside(e.xy)) {
+            if (!this.pressed && !this.hovered) {
+                this.hovered = true;
+                this.onHover();
+            }
+        } else if (this.hovered) {
+            this.hovered = false;
+            if (!this.pressed) this.onNormal();
         }
     }
 
@@ -760,40 +716,41 @@ export class SliderWidget2 extends ControlWidget2 {
 
 export class JoyStickWidget2 extends ControlWidget2 {
 
-    constructor(options) {
-        super(options);
-
-        this.background = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.8,0.8,0.8]});
+    build() {
+        this.background = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.92,0.96,0.98]});
         this.gate = new Widget2({parent: this.background, autoSize: [1,1], border:[this.knobSize/2, this.knobSize/2, this.knobSize/2,this.knobSize/2]});
-        this.knob = new CanvasWidget2({parent: this.gate, anchor:[0.5, 0.5], pivot: [0.5,0.5], size: [this.knobSize,this.knobSize], color: [0.6,0.6,0.6] });
+        this.knob = new CanvasWidget2({parent: this.gate, anchor:[0.5, 0.5], pivot: [0.5,0.5], size: [this.knobSize,this.knobSize], color: [0.5,0.7,0.83] });
+        this.dim = new CanvasWidget2({parent: this.gate, autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.5, visible: this.disabled});
     }
 
     get deadRadius() { return this._deadRadius || 0.1}
-    get knobSize() { return this._knobSize || 20};
+    get knobSize() { return this._knobSize || 20}
 
     onPress() {
-        this.knob.set({color: [0.4, 0.4, 0.4]});
+        this.knob.set({color: [0.94,0.77,0.06]});
     }
 
     onNormal() {
-        this.knob.set({color: [0.6,0.6,0.6]});
+        this.knob.set({color: [0.5,0.7,0.83]});
     }
 
     onHover() {
-        this.knob.set({color: [0.5, 0.5, 0.5]});
+        this.knob.set({color: [0.16,0.5,0.72]});
     }
 
     pointerDown(e) {
-        super.pointerDown(e);
-        if(this.inside(e.xy)) {
+        if (!this.isVisible) return false;
+        if (this.disabled) return true;
+        if (this.inside(e.xy)) {
+            this.pressed = true;
             const x = Math.min(1, Math.max(0,(0.5 + e.xy[0] - this.global[0]) / this.trueSize[0]));
             const y = Math.min(1, Math.max(0,(0.5 + e.xy[1] - this.global[1]) / this.trueSize[1]));
-            let xy = [x,y]
+            let xy = [x,y];
 
             const v = v2_sub(xy,[0.5,0.5]);
             const m = v2_magnitude(v);
 
-            if(m > 0.5) {
+            if (m > 0.5) {
                 const n = v2_normalize(v);
                 const s = v2_scale(n, 0.5);
                 xy = v2_add(s,[0.5,0.5]);
@@ -801,21 +758,22 @@ export class JoyStickWidget2 extends ControlWidget2 {
 
             this.knob.set({anchor: xy });
             this.change(xy);
+            this.onPress();
             return true;
         }
+        return false;
     }
 
     pointerMove(e) {
-        super.pointerMove(e);
-        if(this.pressed) {
+        if (this.pressed) {
             const x = Math.min(1, Math.max(0,(0.5 + e.xy[0] - this.global[0]) / this.trueSize[0]));
             const y = Math.min(1, Math.max(0,(0.5 + e.xy[1] - this.global[1]) / this.trueSize[1]));
-            let xy = [x,y]
+            let xy = [x,y];
 
             const v = v2_sub(xy,[0.5,0.5]);
             const m = v2_magnitude(v);
 
-            if(m > 0.5) {
+            if (m > 0.5) {
                 const n = v2_normalize(v);
                 const s = v2_scale(n, 0.5);
                 xy = v2_add(s,[0.5,0.5]);
@@ -824,24 +782,38 @@ export class JoyStickWidget2 extends ControlWidget2 {
             this.knob.set({anchor: xy });
             this.change(xy);
         }
+
+        if (this.inside(e.xy)) {
+            if (!this.pressed && !this.hovered) {
+                this.hovered = true;
+                this.onHover();
+            }
+        } else if (this.hovered) {
+            this.hovered = false;
+            if (!this.pressed) this.onNormal();
+        }
+
     }
 
-    pointerUp(e) {
-        super.pointerUp(e);
-        this.knob.set({anchor: [0.5,0.5] });
-        this.change([0.5,0.5]);
+    pointerUp() {
+        if (this.pressed) {
+            this.pressed = false;
+            this.knob.set({anchor: [0.5,0.5]});
+            this.change([0.5,0.5]);
+        }
+
     }
 
     change(xy) {
         let v = v2_scale(v2_sub(xy,[0.5,0.5]),2);
         const m = v2_magnitude(v);
-        if( m < this.deadRadius) v = [0,0];
+        if ( m < this.deadRadius) v = [0,0];
         this.publish(this.id, "xy", v);
         this.onChange(v);
     }
 
-    onChange(xy){
-        console.log(xy);
+    onChange(xy) {
+        this.publish(this.id, "xy", xy);
     }
 
 }
@@ -850,13 +822,38 @@ export class JoyStickWidget2 extends ControlWidget2 {
 //-- CloseBoxWidget2 -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class CloseBoxWidget2 extends ButtonWidget2 {
+class CloseBoxWidget2 extends ControlWidget2 {
 
-    buildDefault() {
+    build() {
             this.box = new CanvasWidget2({ parent: this, autoSize: [1,1], color: [1,1,1]});
     }
 
-    onHover() {}
+    pointerUp(e) {
+        if (!this.isVisible) return;
+        if (!this.pressed) return;
+        this.pressed = false;
+        if (this.inside(e.xy) ) {
+            this.onNormal();
+            this.onClick();
+        }
+    }
+
+    pointerMove(e) {
+        if (!this.isVisible) return;
+        if (this.disabled) return;
+        if (this.inside(e.xy)) {
+            if (!this.pressed && !this.hovered) this.onHover();
+            this.hovered = true;
+        } else if (this.pressed || this.hovered)  {
+            this.hovered = false;
+            this.pressed = false;
+            this.onNormal();
+        }
+    }
+
+    onHover() {
+        this.box.set({color: [1,0.5,0.5]});
+    }
 
     onPress() {
         this.box.set({color: [1,0,0]});
@@ -866,41 +863,47 @@ class CloseBoxWidget2 extends ButtonWidget2 {
         this.box.set({color: [1,1,1]});
     }
 
+    onClick() {
+        console.log("close");
+    }
+}
 
-}//------------------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------------------
 //-- DragWidget2 -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class DragWidget2 extends ControlWidget2 {
 
-    buildDefault() {
-        this.handle = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.6,0.6,0.6]});
-        this.close = new CloseBoxWidget2({parent: this.handle, size:[8,8], anchor: [1,0.5], pivot: [1,0.5], translation: [-5, 0]});
+    get target() { return this._target }
 
-        this.close.onClick = () => this.parent.destroy();
+    build() {
+        this.handle = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.7,0.83]});
+        this.close = new CloseBoxWidget2({parent: this.handle, size:[8,8], anchor: [1,0.5], pivot: [1,0.5], translation: [-5, 0]});
+        this.close.onClick = () => this.target.destroy();
     }
 
     pointerDown(e) {
-        if(this.inside(e.xy) && !this.close.inside(e.xy)) {
+        if (this.close.pointerDown(e)) return true;
+        if (this.inside(e.xy)) {
             this.pressed = true;
-            if (this.parent) {
-                this.grab = v2_sub(this.parent.translation, e.xy)
-            }
+            if (this.target) this.grab = v2_sub(this.target.translation, e.xy);
+            return true;
         }
-        return this.close.pointerDown(e);
+        return false;
     }
 
     pointerUp(e) {
-        if(this.pressed) {
+        if (this.pressed) {
             this.pressed = false;
-            if (this.parent) this.parent.set({translation: v2_add(e.xy, this.grab)});
+            if (this.target) this.target.set({translation: v2_add(e.xy, this.grab)});
         }
         this.close.pointerUp(e);
     }
 
     pointerMove(e) {
-        if (this.pressed) {
-            if (this.parent) this.parent.set({translation: v2_add(e.xy, this.grab)});
+        if (this.pressed && !this.close.pressed) {
+            if (this.target) this.target.set({translation: v2_add(e.xy, this.grab)});
         }
         this.close.pointerMove(e);
     }
@@ -912,14 +915,15 @@ class DragWidget2 extends ControlWidget2 {
 
 export class WindowWidget2 extends Widget2 {
 
-    buildDefault() {
-        const depth = wm.topWindow+10;
-        this.set({depth})
-        wm.topWindow = depth;
+    build() {
+        const hud = this.service("HUD");
 
+        const depth = hud.topWindow+10;
+        this.set({depth});
+        hud.topWindow = depth;
         this.layout = new VerticalWidget2({parent: this, autoSize: [1,1]});
-        this.drag = new DragWidget2({parent: this.layout, height:15, color: [0.5,0.5,0.5]});
-        this.content = new CanvasWidget2({parent: this.layout, color: [0,1,0]});
+        this.drag = new DragWidget2({parent: this.layout, target: this,height:15, color: [0.5,0.5,0.5]});
+        this.content = new CanvasWidget2({parent: this.layout, color:[0,1,0], opacity: 0.5});
     }
 
 }

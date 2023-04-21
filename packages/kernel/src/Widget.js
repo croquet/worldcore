@@ -9,8 +9,12 @@ export class Widget extends WorldcoreView {
 
     constructor(options) {
         super(viewRoot.model);
+        this._opacity = 1;
         this.set(options);
+        this.build();
     }
+
+    build() {} // Use for created child widgets
 
     destroy() {
         super.destroy();
@@ -28,13 +32,19 @@ export class Widget extends WorldcoreView {
     get translation() { return this._translation || [0,0] }
     get anchor() { return this._anchor || [0,0]}
     get pivot() { return this._pivot || [0,0]}
-    get color() {return this._color || [0,0,0]}
-    get depth() { if (this.parent) return this.parent.depth+1; return 0 }
+    get color() { return this._color || [0,0,0]}
+    get opacity() {return this._opacity}
+    // get depth() { if (this.parent) return this.parent.depth+1; return this._depth || 0 }
     get visible() { return this._visible === undefined || this._visible }
-
+    get depth() {return this._depth || 0}
     get isVisible() { // includes parent visibility
         if (this.parent) return this.parent.visible && this.visible;
         return this.visible;
+    }
+
+    get trueDepth() {
+        if (this.parent) return this.parent.trueDepth + this.depth;
+        return this.depth;
     }
 
     get trueSize() {
@@ -99,6 +109,13 @@ export class Widget extends WorldcoreView {
 
     removeChild(child) {
         if (this.children) this.children.delete(child);
+    }
+
+    get sortedChildren() {
+        if (!this.children) return [];
+        const out = Array.from(this.children);
+        out.sort((a,b) => b.depth-a.depth);
+        return out;
     }
 
 }
