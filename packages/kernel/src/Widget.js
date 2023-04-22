@@ -18,7 +18,7 @@ export class Widget extends WorldcoreView {
 
     destroy() {
         super.destroy();
-        new Set(this.children).forEach(child => child.destroy());
+        this.destroyChildren();
         if (this.parent) this.parent.removeChild(this);
     }
 
@@ -34,7 +34,6 @@ export class Widget extends WorldcoreView {
     get pivot() { return this._pivot || [0,0]}
     get color() { return this._color || [0,0,0]}
     get opacity() {return this._opacity}
-    // get depth() { if (this.parent) return this.parent.depth+1; return this._depth || 0 }
     get visible() { return this._visible === undefined || this._visible }
     get depth() {return this._depth || 0}
     get isVisible() { // includes parent visibility
@@ -109,6 +108,10 @@ export class Widget extends WorldcoreView {
 
     removeChild(child) {
         if (this.children) this.children.delete(child);
+    }
+
+    destroyChildren() {
+        new Set(this.children).forEach(child => child.destroy());
     }
 
     get sortedChildren() {
