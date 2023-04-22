@@ -238,27 +238,9 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.velocity = [0,0,0];
         this.speed = 0;
         this.lastShootTime = -10000;
-        this.waitShootTime = 4000;
+        this.waitShootTime = 20;
         this.service("CollisionManager").colliders.add(this);
         this.loadInstance(actor._instanceName, [0.35, 0.35, 0.35]);
- /*       
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
-        this.geometry = new THREE.BoxGeometry( 2, 1, 3.5 );
-        this.geometry.translate(0,0.5,0);
-        const mesh = new THREE.Mesh( this.geometry, this.material );
-        this.geometry2 = new THREE.BoxGeometry( 0.5, 0.5, 0.5 );
-        this.material2 = new THREE.MeshStandardMaterial( {color: new THREE.Color([1,1,1])} );
-
-        const mesh2 = new THREE.Mesh(
-            this.geometry2,
-            this.material2);
-        mesh2.position.set(0, 1.25, 1.5);
-        mesh.add(mesh2);
-        mesh.castShadow = true;
-        
-        sunLight.target = mesh; //this.instance; // sunLight is a global
-        this.setRenderObject(mesh);
-*/
         this.listen("colorSet", this.onColorSet);
     }
 
@@ -271,6 +253,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             this.mesh = new THREE.Mesh( geometry, this.material );
             this.mesh.castShadow = true;
             this.mesh.receiveShadow = true;
+            sunLight.target = this.mesh; //this.instance; // sunLight is a global
             this.setRenderObject(this.mesh);
         }else this.future(100).loadInstance(name, color);
     }
@@ -278,8 +261,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     destroy() {
         super.destroy();
         this.service("CollisionManager").colliders.delete(this);
-        this.geometry.dispose();
-        this.material.dispose();
     }
 
     onColorSet() {
@@ -447,10 +428,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 if (this.auto) {
                     this.speed = 5 * factor;
                     this.steer = -5;
-                    this.shoot(); // only shoots once every 10 seconds
+                    this.shoot(); 
                 }else{
                     this.speed = (this.gas-this.brake) * 20 * factor * this.highGear;
-                    this.steer = (this.right-this.left) * 5;
+                    this.steer = (this.right-this.left) * 2.5;
                 }
             }
             // copy our current position to compute pitch
