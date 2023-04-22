@@ -2,7 +2,7 @@ import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, Thr
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE, PM_ThreeInstanced,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, PM_ThreeCollider, ThreeRaycast, viewRoot,
     PM_NavGridGizmo, Widget2, CanvasWidget2, ImageWidget2, TextWidget2, ControlWidget2, HUD, ButtonWidget2, ToggleWidget2, VerticalWidget2, ToggleSet2, ImageToggleWidget2,
-     SliderWidget2, JoyStickWidget2, WindowWidget2} from "@croquet/worldcore";
+     SliderWidget2, JoyStickWidget2, WindowWidget2, MenuWidget2, ListWidget2} from "@croquet/worldcore";
 
 import llama from "../assets/llama.jpg";
 import diana from "../assets/diana.jpg";
@@ -177,13 +177,51 @@ export class MyViewRoot extends ViewRoot {
             translation: [100,100]
         });
 
+        const sss = new SliderWidget2({
+            parent:www.content,
+            size: [20,20],
+            autoSize: [0,1],
+            anchor: [1,0],
+            pivot: [1,0],
+        });
+
+        const mmm = new MenuWidget2({
+            parent: www.content,
+            size:[100,20],
+            anchor: [0,0],
+            pivot: [0,0],
+            translation: [20,20],
+            title: "Pick",
+            popup: true,
+            entries: ["Alpha", "Beta", "Gamma"]
+        });
+
 
     }
 
     test2() {
         console.log("test2");
+        const hud = this.service("HUD");
 
+        // const mmm = new ListWidget2({
+        //     parent: hud.root,
+        //     size:[200,200],
+        //     anchor: [1,0],
+        //     pivot: [1,0],
+        //     translation: [-20,20],
+        //     list: ["Alpha", "Beta", "Gamma"]
+        // });
 
+        const mmm = new MenuWidget2({
+            parent: hud.root,
+            size:[100,20],
+            anchor: [1,0],
+            pivot: [1,0],
+            translation: [-20,20],
+            title: "Pick",
+            popup: true,
+            entries: ["Alpha", "Beta", "Gamma"]
+        });
 
     }
 

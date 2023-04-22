@@ -928,56 +928,45 @@ export class WindowWidget2 extends Widget2 {
 }
 
 //------------------------------------------------------------------------------------------
-//-- MenuWidget2 ---------------------------------------------------------------------------
+//-- ListWidget2 ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class MenuWidget2 extends ControlWidget2 {
+export class ListWidget2 extends ControlWidget2 {
 
-    buildDefault() {
-        this.background = new CanvasWidget2({parent: this, autoSize: [1,0], color: [1,1,1],});
-        this.layout = new VerticalWidget2({parent: this.background, autoSize: [1,1]});
+    build() {
+        this.layout = new VerticalWidget2({parent: this, autoSize: [1,0]});
         this.buildEntries();
     }
 
-    get list() { return this._list || []; }
-
-    listSet(list) {
-        this._list = list;
-        this.buildEntries();
-    }
-
-    // buildDefault() {
-    //     this.background = new CanvasWidget2({parent: this, autoSize: [1,0], color: [1,1,1],});
-    //     this.layout = new VerticalWidget2({parent: this.background, autoSize: [1,1]});
-    //     this.buildEntries();
-    // }
+    get entries() { return this._entries || [] }
+    entriesSet() { this.buildEntries() }
 
     buildEntries() {
-        if (!this.background) return;
+        if (!this.layout) return;
         this.layout.destroyChildren();
-        const y = this.list.length * 20;
-        this.background.set({size: [0,y]});
-        this.list.forEach(entry =>{
-            new TextWidget2({parent: this.layout, text: entry, color: [1,1,1], noWrap: true, offset: [10,0], alignX: "left", point: 12, font: "sans-serif"})
+        const y = this.entries.length * 20;
+        this.layout.set({size: [0,y]});
+        this.entries.forEach(entry =>{
+            new TextWidget2({parent: this.layout, text: entry, color: [1,1,1], noWrap: true, offset: [10,0], alignX: "left", point: 12, font: "sans-serif"});
         });
     }
 
     pointerDown(e) {
-        if (this.background.inside(e.xy)) {
-            this.pressed = true;
+        if (!this.isVisible) return false;
+        if (this.disabled) return true;
+        if (this.inside(e.xy)) {
             const w = this.findEntry(e.xy);
+            this.pressed = true;
             this.unhiliteAll();
             this.hiliteEntry(w);
-            return true;
         }
+        return false;
     }
 
     pointerMove(e) {
-        if (this.pressed) {
-            this.unhiliteAll();
-            const w = this.findEntry(e.xy);
-            if (w) this.hiliteEntry(w);
-        }
+        this.unhiliteAll();
+        const w = this.findEntry(e.xy);
+        if (w) this.hiliteEntry(w);
     }
 
     pointerUp(e) {
@@ -985,19 +974,15 @@ export class MenuWidget2 extends ControlWidget2 {
             this.pressed = false;
             this.unhiliteAll();
             const w = this.findEntry(e.xy);
-            if (w) this.pick(w);
+            if (w) this.onPick(w.text);
         }
     }
 
     findEntry(xy) {
-        let out = null;
-        this.layout.children.forEach( child => {
-            if (child.inside(xy)){
-                out = child;
-                return;
-            }
-        } )
-        return out;
+        for (const child of this.layout.children) {
+            if (child.inside(xy)) return child;
+        }
+        return null;
     }
 
     hiliteEntry(entry) {
@@ -1008,14 +993,78 @@ export class MenuWidget2 extends ControlWidget2 {
         this.layout.children.forEach( child => child.set({color:[1,1,1]}));
     }
 
-    pick(w) {
-        this.publish(this.id, "pick", w.text);
-        this.onPick(w)
-    }
+    // pick(w) {
+    //     this.publish(this.id, "pick", w.text);
+    //     this.onPick(w.text);
+    // }
 
-    onPick(w) {}
+    onPick(text) {
+    }
 }
 
+//------------------------------------------------------------------------------------------
+//-- MenuWidget2 ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
+export class MenuWidget2 extends ControlWidget2 {
 
+    build() {
+        this.text = new TextWidget2({parent: this, text: this.title, autoSize: [1,1], alignX: "center", color: [1,1,1], point: 12, style: "bold", font: "sans-serif"});
+    }
 
+    get title() { return this._title || "Pick" }
+    get entries() { return this._entries || [] }
+    get popup() { return this._popup}
+
+    pointerDown(e) {
+        if (!this.isVisible) return false;
+        if (this.disabled) return true;
+        if (this.inside(e.xy)) {
+            this.pressed = true;
+            this.onPress();
+            this.list = new ListWidget2({parent: this, size: [100,100], translation: [0,20], entries: this.entries});
+            this.list.onPick = text => {this.onPick(text)};
+            this.list.pressed = true;
+            return true;
+        }
+        return false;
+    }
+
+    pointerMove(e) {
+        if (!this.isVisible) return;
+        if (this.disabled) return;
+        if (this.pressed) {
+            if (this.list) this.list.pointerMove(e);
+        }
+
+        if (this.inside(e.xy)) {
+            if (!this.pressed && !this.hovered) {
+                this.hovered = true;
+                this.onHover();
+            }
+        } else if (this.hovered) {
+            this.hovered = false;
+            if (!this.pressed) this.onNormal();
+        }
+    }
+
+    pointerUp(e) {
+        if (this.pressed) {
+            if (this.list) this.list.pointerUp(e);
+            this.pressed = false;
+            this.onNormal();
+            if (this.list) this.list.destroy();
+        }
+    }
+
+    onNormal() { this.text.set({color:[1,1,1]})}
+    onHover() { this.text.set({color:[0.83,0.9,0.94]})}
+    onPress() { this.text.set({color:[0.16,0.5,0.72]})}
+
+    onPick(text) {
+        console.log(text);
+        this.publish(this.id, "pick", text);
+        if (this.popup) this.text.set({text});
+    }
+
+}
