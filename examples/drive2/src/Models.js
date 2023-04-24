@@ -1,6 +1,6 @@
 // Drive Models
 
-import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, Behavior, v3_add, v3_scale, 
+import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, Behavior, v3_add, v3_scale, 
     UserManager, User, AM_Avatar, q_axisAngle, v3_rotate, toRad } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
@@ -145,13 +145,26 @@ class MyUser extends User {
 MyUser.register('MyUser');
 
 //------------------------------------------------------------------------------------------
+//-- ModelCollisionManager -----------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class ModelCollisionManager extends ModelService {
+
+    init() {
+        super.init("ModelCollisionManager");
+        this.colliders = new Set();
+    }
+}
+ModelCollisionManager.register('ModelCollisionManager');
+
+//------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [MyUserManager];
+        return [MyUserManager, ModelCollisionManager];
     }
 
     init(options) {

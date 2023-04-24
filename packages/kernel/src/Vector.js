@@ -191,6 +191,12 @@ export function v2_distance(a,b) {
     return Math.sqrt(dx*dx+dy*dy);
 }
 
+export function v2_distanceSqr(a,b) {
+    const dx = a[0] - b[0];
+    const dy = a[1] - b[1];
+    return dx*dx+dy*dy;
+}
+
 export function v2_manhattan(a, b) {
     return Math.abs(a[0]-b[0]) + Math.abs(a[1]-b[1]);
 }
@@ -384,6 +390,12 @@ export function v3_distance(a,b) {
     return Math.sqrt(dx*dx+dy*dy+dz*dz);
 }
 
+export function v3_distanceSqr(a,b) {
+    const dx = a[0] - b[0];
+    const dy = a[1] - b[1];
+    const dz = a[2] - b[2];
+    return dx*dx+dy*dy+dz*dz;
+}
 //--------------------------------------------------------------------------------
 //-- 4 Vectors -------------------------------------------------------------------
 //--------------------------------------------------------------------------------
