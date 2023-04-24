@@ -175,6 +175,7 @@ export class CollidePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     destroy() {
         super.destroy();
+        this.service("CollisionManager").colliders.delete(this);
         this.geometry.dispose();
         this.material.dispose();
     }
@@ -205,6 +206,7 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     destroy() {
         super.destroy();
+        this.service("CollisionManager").colliders.delete(this);
         this.geometry.dispose();
         this.material.dispose();
     }
