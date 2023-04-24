@@ -174,7 +174,7 @@ class GodView extends ViewService {
 export class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, GodView, WidgetManager2, ThreeInstanceManager, ThreeRaycast];
+        return [InputManager, ThreeRenderManager, GodView, ThreeInstanceManager, ThreeRaycast];
     }
 
     onStart() {
