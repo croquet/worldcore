@@ -691,7 +691,7 @@ export const AM_OnNavGrid = superclass => class extends superclass {
             }
 
         }
-        return out;
+        return null;
 
     }
 

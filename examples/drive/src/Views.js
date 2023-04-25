@@ -42,6 +42,26 @@ export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
 BollardPawn.register("BollardPawn");
 
 //------------------------------------------------------------------------------------------
+// MissilePawn --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
+
+    constructor(actor) {
+        super(actor);
+        this.useInstance("magentaBox");
+        this.service("CollisionManager").colliders.add(this);
+    }
+
+    destroy() {
+        super.destroy();
+        this.service("CollisionManager").colliders.delete(this);
+    }
+
+}
+MissilePawn.register("MissilePawn");
+
+//------------------------------------------------------------------------------------------
 //-- BasePawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -175,6 +195,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 this.right = 1; break;
             case "m":
                 this.auto = !this.auto; console.log(this.auto); break;
+            case "x":
+                this.say("shoot"); break;
             default:
         }
     }
