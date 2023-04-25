@@ -5,7 +5,7 @@
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider,
     PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, PM_ThreeCamera, q_yaw, q_pitch, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
-    v3_distance, v3_dot, v3_sub, v3_normalize, v3_magnitude } from "@croquet/worldcore";
+    v3_distance, v3_dot, v3_sub, v3_normalize, v3_magnitude, PM_NavGridGizmo } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
@@ -45,18 +45,25 @@ BollardPawn.register("BollardPawn");
 //-- BasePawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_NavGridGizmo) {
     constructor(actor) {
         super(actor);
 
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2)} );
-        this.geometry = new THREE.PlaneGeometry(100,100);
+        this.geometry = new THREE.PlaneGeometry(400,400);
         this.geometry.rotateX(toRad(-90));
+        this.geometry.translate(200,0,200);
 
         const base = new THREE.Mesh( this.geometry, this.material );
         base.receiveShadow = true;
 
         this.setRenderObject(base);
+
+        this.subscribe("input", "gDown", this.toggleGizmo);
+    }
+
+    toggleGizmo() {
+        this.gizmo.visible = !this.gizmo.visible;
     }
 
     destroy() {
@@ -269,7 +276,9 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     collide(velocity) {
+
         const colliders = this.service("CollisionManager").colliders;
+
         for (const collider of colliders) {
             if (collider === this) continue;
             const distance = v3_distance(collider.translation, this.translation);
@@ -290,7 +299,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 if ( collider.actor.tags.has("avatar")) {
                     if (distance < 3) {
                         console.log("bump!");
-                        // console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
                         const from = v3_sub(this.translation, collider.translation);
                         const to = v3_sub(collider.translation, this.translation);
                         const bounce = v3_scale(from, 0.2);
