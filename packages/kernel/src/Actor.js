@@ -36,15 +36,15 @@ ActorManager.register("ActorManager");
 
 export class Actor extends WorldcoreModel {
 
-    static okayToIgnore() {return ["$local", "$global"]; }
+    static okayToIgnore() {return ["$local", "$global"] }
 
-    get pawn() {return this._pawn;}
+    get pawn() {return this._pawn}
     get doomed() {return this._doomed} // About to be destroyed. This is used to prevent creating new future messages.
-    get parent() { return this._parent; }
-    get children() { return this._children || new Set(); }
+    get parent() { return this._parent}
+    get children() { return this._children || new Set() }
     get name() {return this._name || "Actor"}
 
-    get tags() {  return this.__tags || new Set(); }
+    get tags() {  return this.__tags || new Set() }
     set _tags(tags) {
         if(!this.__tags) this.__tags = new Set();
         for (const tag of tags) this.__tags.add(tag);
@@ -54,6 +54,7 @@ export class Actor extends WorldcoreModel {
         super.init();
         this.set(options);
         this.listen("_set", this.set);
+        this.listen("_snap", this.snap);
         this.service('ActorManager').add(this);
         this.publish("actor", "createActor", this);
     }
@@ -77,7 +78,7 @@ export class Actor extends WorldcoreModel {
             const old = this[ul];
             this[ul] = value;
             if (this[nameSet]) this[nameSet](value,old);
-            const data = {old, value, o: old, v: value}
+            const data = {old, value, o: old, v: value};
             this.say(nameSet, data);
         }
         return sorted;
@@ -89,14 +90,14 @@ export class Actor extends WorldcoreModel {
             const name = option[0];
             const value = option[1];
             const nameSnap = name+'Snap';
-            if (this[nameSnap]) this[nameSnap](value)
+            if (this[nameSnap]) this[nameSnap](value);
             this.say(nameSnap, value);
         }
     }
 
     parentSet(value, old) {
-        if(old) old.removeChild(this);
-        if(value) value.addChild(this);
+        if (old) old.removeChild(this);
+        if (value) value.addChild(this);
     }
 
     addChild(child) {

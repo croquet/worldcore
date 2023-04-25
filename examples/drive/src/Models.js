@@ -45,7 +45,7 @@ class BollardActor extends mix(Actor).with(AM_Spatial) {
         super.init(options);
         const mcm = this.service("ModelCollisionManager");
         mcm.colliders.add(this);
-        console.log(mcm.colliders);
+        // console.log(mcm.colliders);
     }
 
     destroy() {
@@ -68,14 +68,19 @@ class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
         super.init(options);
         const mcm = this.service("ModelCollisionManager");
         mcm.colliders.add(this);
-        console.log(mcm.colliders);
 
+        this.listen("shove", this.doShove);
     }
 
     destroy() {
         super.destroy();
         const mcm = this.service("ModelCollisionManager");
         mcm.colliders.delete(this);
+    }
+
+    doShove(v) {
+        const translation = v3_add(this.translation, v);
+        this.snap({translation});
     }
 
 }
@@ -95,7 +100,7 @@ class MyUser extends User {
         super.init(options);
         const base = this.wellKnownModel("ModelRoot").base;
         this.color = [this.random(), this.random(), this.random()];
-        const translation = [-5 + this.random() * 10, 0, 10]
+        const translation = [-5 + this.random() * 10, 0, 10];
         this.avatar = ColorActor.create({
             pawn: "AvatarPawn",
             parent: base,
