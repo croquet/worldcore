@@ -46,7 +46,6 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 
     init(options) {
         super.init(options);
-        console.log(this._velocity);
         this.deathTime = this.now()+10000; 
         this.future(100).step();
     }
@@ -70,6 +69,13 @@ class BollardActor extends mix(Actor).with(AM_Spatial) {
 
     init(options) {
         super.init(options);
+        const mcm = this.service("ModelCollisionManager");
+        mcm.colliders.add(this);
+    }
+    destroy() {
+        super.destroy();
+        const mcm = this.service("ModelCollisionManager");
+        mcm.colliders.delete(this);
     }
 }
 BollardActor.register('BollardActor');

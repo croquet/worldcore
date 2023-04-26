@@ -11,13 +11,13 @@
 //
 // To do:
 // - add missile
-// - better tank model
+// - ensure camera can always see tank
 // - tank explosion (turret jumps up, tank fades out)
 // - collision more natural
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation, m4_scaleRotationTranslation,
-    ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider, PM_Avatar, v2_dot, v3_scale, v3_add,
+    ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider, PM_Avatar, v2_magnitude, v3_scale, v3_add,
     q_identity, q_equals, q_multiply, q_axisAngle, v3_rotate, v3_magnitude, PM_ThreeCamera, q_yaw,
     q_pitch, q_euler, q_eulerYXZ, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
     v3_distance, v3_dot, v3_sub, PerlinNoise, GLTFLoader } from "@croquet/worldcore";
@@ -56,6 +56,37 @@ const sunLight =  function(){
     return sun;
 }();
 
+const constructShadow = function(object3d, renderOrder, color){
+
+    let shadowMat = new THREE.MeshStandardMaterial({
+        color: color,
+        opacity: 0.25,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+        // side: THREE.BackSide,
+    });
+
+    let outline3d = object3d.clone(true);
+    outline3d.position.set(0,0,0);
+    outline3d.rotation.set(0,0,0);
+    outline3d.updateMatrix();
+    outline3d.traverse((m) => {
+        if (m.material) {
+            m.material = shadowMat;
+            if (!Array.isArray(m.material)) {
+                console.log("single material")
+                m.material = shadowMat;
+            } else {
+                console.log("multiple material", m.material.length);
+                let mArray = m.material.map((_m) => shadowMat);
+                m.material = mArray;
+            }
+        }
+    });
+    outline3d.renderOrder = renderOrder;
+    return outline3d;
+}
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -92,9 +123,12 @@ export class InstancePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
             this.mesh.castShadow = true;
             this.mesh.receiveShadow = true;
             this.setRenderObject(this.mesh);
+            //this.outline3d=constructShadow(this.mesh, 10002);
+            //this.mesh.add(this.outline3d, color);
         }else this.future(100).loadInstance(name, color);
     }
 }
+
 InstancePawn.register("InstancePawn");
 //------------------------------------------------------------------------------------------
 // BollardPawn -----------------------------------------------------------------------------
@@ -130,7 +164,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(actor) {
         super(actor);
         let worldX = 512, worldZ=512;
-        let cellSize = 2;
+        let cellSize = 2.5;
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2)} );
         this.geometry = new THREE.PlaneGeometry(worldX*cellSize,worldZ*cellSize, worldX, worldZ);
         this.geometry.rotateX(toRad(-90));
@@ -144,7 +178,16 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         const base = new THREE.Mesh( this.geometry, this.material );
         base.receiveShadow = true;
         base.castShadow = true;
-
+/*
+        // define an outline of the hills - flattens the world a bit too much though
+        let base2 = base.clone();
+        base2.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0, 0, 0), side:THREE.BackSide} );
+        base2.position.y=0.1;
+        base2.castShadow = false;
+        base2.receiveShadow = false;
+       // base2.side = THREE.BackSide;
+        base.add(base2);
+*/
         this.setRenderObject(base);
     }
 
@@ -255,8 +298,11 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             this.mesh = new THREE.Mesh( geometry, this.material );
             this.mesh.castShadow = true;
             this.mesh.receiveShadow = true;
-            sunLight.target = this.mesh; //this.instance; // sunLight is a global
+            if(this.isMyAvatar)
+                sunLight.target = this.mesh; //this.instance; // sunLight is a global
             this.setRenderObject(this.mesh);
+            //this.outline3d=constructShadow(this.mesh, 10001, color);
+            //this.mesh.add(this.outline3d);
         }else this.future(100).loadInstance(name, color);
     }
 
@@ -429,17 +475,20 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             if (!this.pointerId){
                 if (this.auto) {
                     this.speed = 5 * factor;
-                    this.steer = -5;
+                    this.steer = -1;
                     this.shoot(); 
                 }else{
                     this.speed = (this.gas-this.brake) * 20 * factor * this.highGear;
-                    this.steer = (this.right-this.left) * 2.5;
+                    this.steer = this.left-this.right;
                 }
             }
             // copy our current position to compute pitch
             let start = [...this.translation];
             // angular velocity based on speed
-            const angularVelocity = -this.speed/10 * Math.sin(toRad(this.steer)) / wheelbase / factor;
+            
+           // const angularVelocity = -this.speed/10 * Math.sin(toRad(this.steer)) / wheelbase / factor;
+
+            const angularVelocity = this.steer*0.025;
             let yaw = this.yaw+angularVelocity;
             const yawQ = q_axisAngle([0,1,0], yaw);
 
@@ -475,14 +524,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             }
 
             if (!this.collide(tt, translation)){
-                /*
-                let qp = q_axisAngle([1,0,0], pitch);
-                let qy = q_axisAngle([0,1,0], yaw);
-                let qr = q_axisAngle([0,0,1], roll);
-                let q0 = q_multiply(qr, q_multiply(qp, qy));
-                */
                 let q = q_eulerYXZ( pitch, yaw, roll);
-                //let q2 = q_euler( pitch, yaw, roll);
                 if(this.speed){
                     this.positionTo(translation, q); //pitch, yaw, roll));
                     sunLight.position.set(...v3_add(translation, sunBase));
@@ -497,7 +539,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             this.roll = roll;
             this.yaw = yaw;
             this.cameraTarget = m4_scaleRotationTranslation(1, yawQ, translation);
-            this.updateChaseCam(time, delta);
+            this.updateChaseCam(time, delta, translation);
         }
     }
 
@@ -506,12 +548,12 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         return  delta>0 ? Math.atan2(d[1], delta) : 0;
     }
 
-    updateChaseCam(time, delta) {
+    updateChaseCam(time, delta, translation) {
         const rm = this.service("ThreeRenderManager");
 
-        const fixedPitch = toRad(-10);
-        const offset = [0,10,20];
 
+        const offset = [0,10,20];
+        const fixedPitch = toRad(-10);
         let tTug = 0.2;
         let rTug = 0.2;
 
@@ -520,10 +562,25 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             rTug = Math.min(1, rTug * delta / 15);
         }
 
+        const targetTranslation = v3_transform(offset, this.cameraTarget);
+        // check if we are behind a hill
+
+        const d = v3_sub(targetTranslation, translation);
+
+        for(let i=1; i<=4; i++){
+            let dd = v3_add(translation, v3_scale(d,i/4));
+
+            let p = perlin2D(dd[0], dd[2]);
+            if(p>dd[1]){
+
+
+               // console.log(fixedPitch, pitch)
+            }
+        }
+        
         const pitchQ = q_axisAngle([1,0,0], fixedPitch);
         const yawQ = q_axisAngle([0,1,0], this.yaw);
 
-        const targetTranslation = v3_transform(offset, this.cameraTarget);
         //const targetRotation = q_euler(this.pitch, this.yaw, 0); //q_multiply(pitchQ, yawQ);
         const targetRotation = q_multiply(pitchQ, yawQ);
 
@@ -680,7 +737,6 @@ export class MyViewRoot extends ViewRoot {
         tankBody.rotateY(toRad(-90));
         tankTracks.rotateY(toRad(-90));
         tankTurret.rotateY(toRad(-90));
-        tankBody.scale(1,1,1.5);
         im.addGeometry("tankBody", tankBody);
         im.addGeometry("tankTurret", tankTurret);
         im.addGeometry("tankTracks", tankTracks);
