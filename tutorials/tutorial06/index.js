@@ -1,4 +1,4 @@
-// Worldcore Tutorial 5
+// Worldcore Tutorial 6
 
 // This is the sixth in a series of tutorials illustrating how to build a Worldcore app.
 // It shows how to use instance rendering and raycasting in THREE.js

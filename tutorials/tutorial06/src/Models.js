@@ -1,4 +1,4 @@
-// Tutorial 5 Models
+// Tutorial 6 Models
 
 import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral } from "@croquet/worldcore";
 

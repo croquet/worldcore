@@ -1,4 +1,4 @@
-// Tutorial 5 Views
+// Tutorial 6 Views
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider } from "@croquet/worldcore";
