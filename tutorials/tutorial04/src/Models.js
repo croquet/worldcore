@@ -1,4 +1,4 @@
-// Tutorial 3 Models
+// Tutorial 4 Models
 
 import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, q_axisAngle, q_euler, toRad } from "@croquet/worldcore";
 
@@ -6,7 +6,7 @@ import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, q_axisAngle, q_euler,
 // -- ParentActor --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// We add a reset method to pop the actor back to [0,0,0] and set its rotation to 45 degrees.
+// We add a reset method to pop the actor back to [0,0,0] and set its rotation to 0 degrees.
 // Instead of using set() to change the properties, we use snap(). Snap tells the pawn to use the
 // new values without view smoothing; it's useful if you need to instantly teleport
 // an actor to a new position.
@@ -42,7 +42,7 @@ class ParentActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 
     reset() {
         console.log("reset");
-        const rotation = q_euler(0,0,toRad(45));
+        const rotation = q_euler(0,0,toRad(0));
         this.snap({rotation, translation:[0,0,0]});
     }
 }
@@ -67,7 +67,7 @@ export class MyModelRoot extends ModelRoot {
         const parent = ParentActor.create({pawn: "TestPawn", translation:[0,0,0]});
         const child = ChildActor.create({pawn: "TestPawn", parent, translation:[0,2,0]});
 
-        parent.behavior.start({name: "SpinBehavior", axis: [0,0,1], tickRate:500});
+        parent.behavior.start({name: "SpinBehavior", axis: [0,0,1]});
         child.behavior.start({name: "SpinBehavior", speed: 3});
     }
 

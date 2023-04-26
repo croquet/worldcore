@@ -1,7 +1,7 @@
 {
-  "name": "@croquet/worldcore-tutorial3",
+  "name": "@croquet/worldcore-tutorial04",
   "version": "2.0.0-alpha.0",
-  "description": "Worldcore Tutorial 3",
+  "description": "Worldcore Tutorial 4",
   "private": true,
   "scripts": {
     "start": "webpack serve --no-live-reload --no-hot --mode development --devtool source-map",
