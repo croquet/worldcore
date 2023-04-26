@@ -1,4 +1,4 @@
-// Tutorial 7 Views
+// Tutorial 8 Views
 
 // All the code specific to this tutorial is in the definition of AvatarPawn.
 
