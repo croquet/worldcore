@@ -19,7 +19,7 @@ import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation, m4_scaleRotationTranslation,
     ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider, PM_Avatar, v2_magnitude, v3_scale, v3_add,
     q_identity, q_equals, q_multiply, q_axisAngle, v3_rotate, v3_magnitude, PM_ThreeCamera, q_yaw,
-    q_pitch, q_euler, q_eulerYXZ, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
+    q_pitch, q_euler, q_eulerYXZ, q_slerp, v2_sqrMag, v3_lerp, v3_transform, m4_rotationQ, ViewService,
     v3_distance, v3_dot, v3_sub, PerlinNoise, GLTFLoader } from "@croquet/worldcore";
 import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
@@ -56,7 +56,8 @@ const sunLight =  function(){
     return sun;
 }();
 
-const constructShadow = function(object3d, renderOrder, color){
+// 3D object that you can see through a wall
+const constructShadowObject = function(object3d, renderOrder, color){
 
     let shadowMat = new THREE.MeshStandardMaterial({
         color: color,
@@ -282,6 +283,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.wheelHeight = 0.0;
         this.velocity = [0,0,0];
         this.speed = 0;
+        this.pointerMoved = false;
         this.lastShootTime = -10000;
         this.waitShootTime = 20;
         this.service("CollisionManager").colliders.add(this);
@@ -320,8 +322,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     // If this is not YOUR avatar, the park() function is called.
     drive() {
         console.log("DRIVE");
-        this.gas = this.brake = 0;
-        this.left = this.right = 0;
+        this.gas = 0;
+        this.turn = 0;
         this.steer = 0;
         this.speed = 0;
         this.highGear = 1;
@@ -337,8 +339,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     park() {
-        this.gas = this.brake = 0;
-        this.left = this.right = 0;
+        this.gas = 0;
+        this.turn = 0;
         this.steer = 0;
         this.speed = 0;
         this.highGear = 1;
@@ -359,20 +361,17 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         switch (e.key) {
             case "W":
             case "w":
-                this.brake = 0;
+
                 this.gas = 1; break;
             case "S":
             case "s":
-                this.gas = 0;
-                this.brake = 1; break;
+                this.gas = -1; break;
             case "A":
             case "a":
-                this.right = 0;
-                this.left = 1; break;
+                this.turn = 1; break;
             case "D":
             case "d":
-                this.left = 0;
-                this.right = 1; break;
+                this.turn = -1; break;
             case "M":
             case "m":
                 this.auto = !this.auto; break;
@@ -381,7 +380,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 this.goHome(); break;
             case "Shift":
                 console.log("shiftKey Down")
-                this.highGear = 2; break;
+                this.highGear = 1.5; break;
             case " ":
                 this.shoot();
                 break;
@@ -403,13 +402,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 this.gas = 0; break;
             case "S":
             case "s":
-                this.brake = 0; break;
+                this.gas = 0; break;
             case "A":
             case "a":
-                this.left = 0; break;
+                this.turn = 0; break;
             case "D":
             case "d":
-                this.right = 0; break;
+                this.turn = 0; break;
             case "Shift":
                 console.log("shiftKey Up")
                 this.highGear = 1; break;
@@ -424,12 +423,12 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         if (!this.pointerId) {
             this.pointerId = e.id;
             this.pointerHome = e.xy;
-
+/*
             const joystick = document.getElementById("joystick");
             joystick.style.left = `${e.xy[0] - 60}px`;
             joystick.style.top = `${e.xy[1] - 60}px`;
             joystick.style.display = "block";
-
+*/
             //this.doPointerMove(e);
         }
     }
@@ -438,14 +437,24 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         if (e.id === this.pointerId){
             const dx = e.xy[0] - this.pointerHome[0];
             const dy = e.xy[1] - this.pointerHome[1];
-            const x = dx/50;
-            const y = -dy/500;
-            this.steer = Math.max(-5,Math.min(5, x));
-            this.speed = Math.max(-2,Math.min(2, y));
+            const x = -dx/20;
+            const y = -dy/20;
+            this.turn = Math.max(-1,Math.min(1, x));
+            this.gas = Math.max(-1,Math.min(1, y));
+
+            let v = v2_sqrMag([this.turn, this.gas]);
+
+            if(v>1){
+                v=Math.sqrt(v);
+                this.turn/=v;
+                this.gas/=v;
+            }
 
             const knob = document.getElementById("knob");
-            knob.style.left = `${20 + Math.min(Math.max(dx, -Math.abs(dy)), Math.abs(dy))}px`;
-            knob.style.top = `${20 + dy}px`;
+            
+            knob.style.left = `${20 - this.turn*20}px`;
+            knob.style.top = `${20 - this.gas*20}px`;
+            this.pointerMoved = true;
         }
     }
 
@@ -453,12 +462,15 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         console.log("pointerUp", e.id, e.xy);
         if (e.id === this.pointerId) {
             this.pointerId = 0;
-            this.steer = 0;
-            this.speed = 0;
+            this.turn = 0;
+            this.gas = 0;
+            if(this.pointerMoved){
+                const knob = document.getElementById("knob");
+                knob.style.left = `20px`;
+                knob.style.top = `20px`;
+                this.pointerMoved = false;
+            }
 
-            const knob = document.getElementById("knob");
-            knob.style.left = `20px`;
-            knob.style.top = `20px`;
         }
     }
 
@@ -472,16 +484,16 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const wheelbase = 3.5;
 
             const factor = delta/1000;
-            if (!this.pointerId){
-                if (this.auto) {
-                    this.speed = 5 * factor;
-                    this.steer = -1;
-                    this.shoot(); 
-                }else{
-                    this.speed = (this.gas-this.brake) * 20 * factor * this.highGear;
-                    this.steer = this.left-this.right;
-                }
+
+            if (this.auto) {
+                this.speed = 5 * factor;
+                this.steer = -1;
+                this.shoot(); 
+            }else{
+                this.speed = this.gas * 20 * factor * this.highGear;
+                this.steer = this.turn;
             }
+
             // copy our current position to compute pitch
             let start = [...this.translation];
             // angular velocity based on speed
