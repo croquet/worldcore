@@ -304,11 +304,18 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         for (const collider of colliders) {
             if (collider === this) continue;
             const distance = v3_distance(collider.translation, this.translation);
-            if (distance < 5) {
+            if (distance < 4) {
                 if ( collider.actor.tags.has("bollard")) {
                     const from = v3_sub(this.translation, collider.translation);
                     const dot = v3_dot(v3_normalize(from), v3_normalize(velocity));
-                    if (dot<0) {
+
+                    if (dot<0.3) {
+                        if (dot<-0.5) {
+                            const bounce = v3_scale(velocity, -1);
+                            const translation = v3_add(this.translation, bounce);
+                            this.translateTo(translation);
+                            return true;
+                        }
                         const speed = v3_magnitude(velocity);
                         const norm = v3_normalize(from);
                         const bounce = v3_scale(norm, 1 * speed);
@@ -316,6 +323,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                         this.translateTo(translation);
                         return true;
                     }
+
                 }
 
                 if ( collider.actor.tags.has("avatar")) {
