@@ -163,6 +163,10 @@ export class Pawn extends WorldcoreView {
         this.say("_set", options, throttle);
     }
 
+    snap(options, throttle = 0) {
+        this.say("_snap", options, throttle);
+    }
+
     preUpdate(time, delta) {} // Called immediately before the main update
     update(time, delta) {}
     postUpdate(time, delta){} // Called immediately after the main update.

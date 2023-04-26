@@ -5,7 +5,7 @@
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider,
     PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, PM_ThreeCamera, q_yaw, q_pitch, q_slerp, v3_lerp, v3_transform, m4_rotationQ, ViewService,
-    v3_distance, v3_dot, v3_sub, v3_normalize } from "@croquet/worldcore";
+    v3_distance, v3_dot, v3_sub, v3_normalize, v3_magnitude, PM_NavGridGizmo } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
@@ -42,21 +42,48 @@ export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
 BollardPawn.register("BollardPawn");
 
 //------------------------------------------------------------------------------------------
+// MissilePawn --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
+
+    constructor(actor) {
+        super(actor);
+        this.useInstance("magentaBox");
+        this.service("CollisionManager").colliders.add(this);
+    }
+
+    destroy() {
+        super.destroy();
+        this.service("CollisionManager").colliders.delete(this);
+    }
+
+}
+MissilePawn.register("MissilePawn");
+
+//------------------------------------------------------------------------------------------
 //-- BasePawn ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_NavGridGizmo) {
     constructor(actor) {
         super(actor);
 
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2)} );
-        this.geometry = new THREE.PlaneGeometry(100,100);
+        this.geometry = new THREE.PlaneGeometry(400,400);
         this.geometry.rotateX(toRad(-90));
+        this.geometry.translate(200,0,200);
 
         const base = new THREE.Mesh( this.geometry, this.material );
         base.receiveShadow = true;
 
         this.setRenderObject(base);
+
+        this.subscribe("input", "gDown", this.toggleGizmo);
+    }
+
+    toggleGizmo() {
+        this.gizmo.visible = !this.gizmo.visible;
     }
 
     destroy() {
@@ -143,7 +170,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.speed = 0;
         this.subscribe("input", "keyDown", this.keyDown);
         this.subscribe("input", "keyUp", this.keyUp);
-        // this.subscribe("input", "pointerMove", this.doPointerMove);
+        this.subscribe("input", "vDown", this.shoveTest);
     }
 
     park() {
@@ -153,7 +180,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.speed = 0;
         this.unsubscribe("input", "keyDown", this.keyDown);
         this.unsubscribe("input", "keyUp", this.keyUp);
-        // this.unsubscribe("input", "pointerMove", this.doPointerMove);
+        this.unsubscribe("input", "vDown", this.shoveTest);
     }
 
     keyDown(e) {
@@ -167,7 +194,9 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             case "d":
                 this.right = 1; break;
             case "m":
-                this.auto = !this.auto; break;
+                this.auto = !this.auto; console.log(this.auto); break;
+            case "x":
+                this.say("shoot"); break;
             default:
         }
     }
@@ -200,17 +229,29 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const wheelbase = 3.5;
             const factor = delta/1000;
 
-            if (this.gas) {
-                this.speed += thrust * factor;
-                this.speed = Math.max(0, Math.min(topSpeed, this.speed));
+            if (this.auto) {
+                this.speed = topSpeed/4;
+                this.steer = -10;
             } else {
-                this.speed -= drag * factor;
-                this.speed = Math.max(0, Math.min(topSpeed, this.speed));
+                this.steer = (this.right-this.left) * 20; // degrees
+                if (this.gas) {
+                    this.speed += thrust * factor;
+                    this.speed = Math.max(0, Math.min(topSpeed, this.speed));
+                } else {
+                    this.speed -= drag * factor;
+                    this.speed = Math.max(0, Math.min(topSpeed, this.speed));
+                }
             }
 
-            if (this.brake) this.speed = 0;
+            // if (this.gas) {
+            //     this.speed += thrust * factor;
+            //     this.speed = Math.max(0, Math.min(topSpeed, this.speed));
+            // } else {
+            //     this.speed -= drag * factor;
+            //     this.speed = Math.max(0, Math.min(topSpeed, this.speed));
+            // }
 
-            this.steer = (this.right-this.left) * 20; // degrees
+            if (this.brake) this.speed = 0;
 
             const angularVelocity = -this.speed/topSpeed * Math.sin(toRad(this.steer)) / wheelbase;
             this.yaw += angularVelocity;
@@ -218,6 +259,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
             this.velocity = [0, 0, -this.speed*factor];
             const tt = v3_rotate(this.velocity, yawQ);
+            const cc = this.collide(this.velocity);
+            // if (this.collide(this.velocity)) console.log("hit!");
             const translation = v3_add(this.translation, tt);
             this.positionTo(translation, yawQ);
             this.updateChaseCam(time, delta);
@@ -255,16 +298,22 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     collide(velocity) {
+
         const colliders = this.service("CollisionManager").colliders;
+
         for (const collider of colliders) {
             if (collider === this) continue;
             const distance = v3_distance(collider.translation, this.translation);
-            if (distance < 3.5) {
+            if (distance < 5) {
                 if ( collider.actor.tags.has("bollard")) {
                     const from = v3_sub(this.translation, collider.translation);
-                    const dot = v3_dot(from, velocity);
-                    if (dot<-0.5) {
-                        console.log("stop!");
+                    const dot = v3_dot(v3_normalize(from), v3_normalize(velocity));
+                    if (dot<0) {
+                        const speed = v3_magnitude(velocity);
+                        const norm = v3_normalize(from);
+                        const bounce = v3_scale(norm, 1 * speed);
+                        const translation = v3_add(this.translation, bounce);
+                        this.translateTo(translation);
                         return true;
                     }
                 }
@@ -272,9 +321,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 if ( collider.actor.tags.has("avatar")) {
                     if (distance < 3) {
                         console.log("bump!");
-                        console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
                         const from = v3_sub(this.translation, collider.translation);
+                        const to = v3_sub(collider.translation, this.translation);
                         const bounce = v3_scale(from, 0.2);
+                        collider.shove(v3_scale(to, 0.2));
                         const translation = v3_add(this.translation, bounce);
                         this.translateTo(translation);
                         return true;
@@ -284,6 +334,15 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             }
         }
         return false;
+    }
+
+    shove(v) {
+        this.say("shove", v);
+    }
+
+    shoveTest() {
+        console.log("shove test");
+        this.shove([1,0,0]);
     }
 
 }
@@ -370,7 +429,7 @@ export class MyViewRoot extends ViewRoot {
         const box = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("box", box);
 
-        const cylinder = new THREE.CylinderGeometry(0.2, 0.2, 1.5);
+        const cylinder = new THREE.CylinderGeometry(1.5, 1.5, 1.5);
         cylinder.translate(0,0.75,0);
         im.addGeometry("cylinder", cylinder);
 

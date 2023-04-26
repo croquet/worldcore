@@ -1,12 +1,13 @@
 // Drive Models
 
-import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, Behavior, v3_add, UserManager, User, AM_Avatar, q_axisAngle, toRad } from "@croquet/worldcore";
+import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, Behavior, v3_add, UserManager, User, AM_Avatar, q_axisAngle,
+    toRad, AM_NavGrid, AM_OnNavGrid, fromS, v3_rotate, v3_scale, v3_distance } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BaseActor extends mix(Actor).with(AM_Spatial) {
+class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
 
     get pawn() {return "BasePawn"}
 
@@ -24,7 +25,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial) {
 BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
-//--TestActor ------------------------------------------------------------------------------
+//-- TestActor ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
@@ -36,16 +37,16 @@ class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 TestActor.register('TestActor');
 
 //------------------------------------------------------------------------------------------
-//--BollardActor ---------------------------------------------------------------------------
+//-- BollardActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BollardActor extends mix(Actor).with(AM_Spatial) {
+class BollardActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid) {
 
     init(options) {
         super.init(options);
         const mcm = this.service("ModelCollisionManager");
         mcm.colliders.add(this);
-        console.log(mcm.colliders);
+        // console.log(mcm.colliders);
     }
 
     destroy() {
@@ -57,10 +58,47 @@ class BollardActor extends mix(Actor).with(AM_Spatial) {
 BollardActor.register('BollardActor');
 
 //------------------------------------------------------------------------------------------
-//-- ColorActor ----------------------------------------------------------------------------
+//-- MissileActor --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
+class MissileActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behavioral) {
+
+    init(options) {
+        super.init(options);
+        const mcm = this.service("ModelCollisionManager");
+        mcm.colliders.add(this);
+        this.future(fromS(10)).destroy();
+        this.tick();
+    }
+
+    tick() {
+        const bollard = this.pingClosest("bollard",2);
+        if (bollard) {
+            const d = v3_distance(this.translation, bollard.translation);
+            if (d < 1.5) this.destroy();
+        }
+        if (!this.doomed) this.future(15).tick();
+    }
+
+    translationSet(t,o) {
+        super.translationSet(t,o);
+        if (t[0] < 5) this.destroy(); // kill plane
+        if (t[2] < 5) this.destroy();
+    }
+
+    destroy() {
+        super.destroy();
+        const mcm = this.service("ModelCollisionManager");
+        mcm.colliders.delete(this);
+    }
+}
+MissileActor.register('MissileActor');
+
+//------------------------------------------------------------------------------------------
+//-- AvatarActor ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, AM_OnNavGrid) {
 
     get color() { return this._color || [0.5,0.5,0.5]}
 
@@ -68,14 +106,59 @@ class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
         super.init(options);
         const mcm = this.service("ModelCollisionManager");
         mcm.colliders.add(this);
-        console.log(mcm.colliders);
 
+        this.listen("shove", this.doShove);
+        this.listen("shoot", this.doShoot);
     }
 
     destroy() {
         super.destroy();
         const mcm = this.service("ModelCollisionManager");
         mcm.colliders.delete(this);
+    }
+
+    doShove(v) {
+        const translation = v3_add(this.translation, v);
+        this.snap({translation});
+    }
+
+    doShoot(v) {
+        console.log("shoot!");
+        const aim = v3_rotate([0,0,-1], this.rotation);
+        const translation = v3_add(this.translation, v3_scale(aim, 5))
+        const missile = MissileActor.create({parent: this.parent, pawn: "MissilePawn", translation});
+        // const aim = v3_rotate([0,0,-1], this.rotation);
+            missile.behavior.start({name: "GoBehavior", aim, speed: 30});
+    }
+
+}
+AvatarActor.register('AvatarActor');
+
+//------------------------------------------------------------------------------------------
+//-- ColorActor ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar ) {
+
+    get color() { return this._color || [0.5,0.5,0.5]}
+
+    init(options) {
+        super.init(options);
+        const mcm = this.service("ModelCollisionManager");
+        mcm.colliders.add(this);
+
+        this.listen("shove", this.doShove);
+    }
+
+    destroy() {
+        super.destroy();
+        const mcm = this.service("ModelCollisionManager");
+        mcm.colliders.delete(this);
+    }
+
+    doShove(v) {
+        const translation = v3_add(this.translation, v);
+        this.snap({translation});
     }
 
 }
@@ -95,8 +178,8 @@ class MyUser extends User {
         super.init(options);
         const base = this.wellKnownModel("ModelRoot").base;
         this.color = [this.random(), this.random(), this.random()];
-        const translation = [-5 + this.random() * 10, 0, 10]
-        this.avatar = ColorActor.create({
+        const translation = [200-5 + this.random() * 10, 0, 200+10];
+        this.avatar = AvatarActor.create({
             pawn: "AvatarPawn",
             parent: base,
             driver: this.userId,
@@ -140,39 +223,19 @@ export class MyModelRoot extends ModelRoot {
     init(options) {
         super.init(options);
         console.log("Start model root!!");
-        this.base = BaseActor.create();
+        this.base = BaseActor.create({gridSize: 100, gridScale:3, subdivisions: 3, noise: 1});
         this.parent = TestActor.create({pawn: "TestPawn", parent: this.base, translation:[0,1,0]});
         this.child = ColorActor.create({pawn: "ColorPawn", parent: this.parent, translation:[0,0,2]});
 
         this.parent.behavior.start({name: "SpinBehavior", axis: [0,1,0], tickRate:500});
         this.child.behavior.start({name: "SpinBehavior", axis: [0,0,1], speed: 3});
 
-        for (let n=0; n<5; n++) {
-            BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, translation:[-20+10*n,0,-20]});
+        for (let x=0; x<10; x++) {
+            for (let y=0; y<10; y++) {
+                BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, translation:[60+12*x+1.5,0, 60+12*y+1.5]});
+            }
         }
 
-
-
-        // this.spare0 = ColorActor.create({
-        //     pawn: "AvatarPawn",
-        //     name: "Spare 0",
-        //     parent: this.base,
-        //     driver: null,
-        //     translation: [-5,0,-30],
-        //     rotation: q_axisAngle([0,1,0], toRad(-170)),
-        //     tags: ["avatar"]
-        // });
-
-        // this.spare1 = ColorActor.create({
-        //     pawn: "AvatarPawn",
-        //     name: "Spare 1",
-        //     parent: this.base,
-        //     driver: null,
-        //     translation: [5,0,-30],
-        //     tags: ["avatar"],
-
-        //     rotation: q_axisAngle([0,1,0], toRad(170))
-        // });
 
         this.subscribe("input", "cDown", this.colorChange);
     }
@@ -180,8 +243,6 @@ export class MyModelRoot extends ModelRoot {
     colorChange() {
         const color = [this.random(), this.random(), this.random()];
         this.child.set({color});
-        // this.spare0.set({color});
-        // this.spare1.set({color});
     }
 
 }

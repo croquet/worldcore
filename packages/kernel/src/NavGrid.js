@@ -5,7 +5,6 @@ import { PerlinNoise, PriorityQueue } from "./Utilities";
 import { Behavior } from "./Behavior";
 
 
-
 //------------------------------------------------------------------------------------------
 // Utilities ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -17,7 +16,6 @@ function packKey(x,y) {
 function unpackKey(key) {
     return [(key>>>14) & 0x3FFF,key & 0x3FFF];
 }
-
 
 //------------------------------------------------------------------------------------------
 // AM_NavGrid ------------------------------------------------------------------------------
@@ -33,11 +31,11 @@ export const AM_NavGrid = superclass => class extends superclass {
     get gridScale() { return this._gridScale || 1}
     get gridPlane() { return this._gridPlane || 0 } // 0 = xz, 1 = xy, 2 = yz
     get subdivisions() { return this._subdivisions || 4}
-    get noise () { return this._noise || 0}
+    get noise() { return this._noise || 0}
     get isNavGrid() {return true}
 
     init(options) {
-        super.init(options)
+        super.init(options);
         this.gridBins = new Map();
         this.navNodes = new Map();
         this.gridObstacles = new Set();
@@ -488,63 +486,70 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         return [0,0,0];
     }
 
+    pingXYZ(tag, xyz, radius=0) {
+        const out = [];
+        const binXY = this.parent.binXY(...xyz);
+        const cx = binXY[0];
+        const cy = binXY[1];
+        const grid = this.parent;
+        const bins = grid.gridBins;
+        const ss = grid.gridScale*grid.subdivisions;
+        const max = Math.max(1,Math.floor(radius/ss));
 
-    // findWay(aim) {
-    //     if (!this.isBlocked(aim)) return aim;
-    //     const s = this.parent.gridScale;
+        for (const actor of this.gridBin) {
+            if (actor !== this && actor.tags.has(tag)) out.push(actor);
+        }
 
-    //     let x;
-    //     let y;
-    //     switch (this.parent.gridPlane) {
-    //         default:
-    //         case 0: x = aim[0]; y = aim[2]; break;
-    //         case 1: x = aim[0]; y = aim[1]; break;
-    //         case 2: x = aim[1]; y = aim[2]; break;
-    //     }
+        for (let n = 1; n<=max; n++) {
+            const x0 = cx-n;
+            const x1 = cx+n;
+            const y0 = cy-n;
+            const y1 = cx+n;
 
-    //     const key = packKey(Math.floor(x/s), Math.floor(y/s));
-    //     const xx = Math.abs(x) > 2*Math.abs(y);
-    //     const yy = Math.abs(y) > 2*Math.abs(x);
+            for (let x = x0; x<=x1; x++) {
+                const key = packKey(x,y0);
+                const bin = bins.get(key);
+                if (!bin) continue;
+                for (const actor of bin) {
+                    if (actor.tags.has(tag)) out.push(actor);
+                }
+            }
 
-    //     let d=[];
-    //     if(x>0) { // east
-    //         if (y>0) { // northeast
-    //             d=[6,2,3,7,5];
-    //             if (xx) d = [2,5,6,1,3] // east
-    //             if (yy) d = [3,6,7,2,0] // north
-    //         } else { // southeast
-    //             d=[5,1,2,6,4];
-    //             if (xx) d = [2,5,6,1,3] // east
-    //             if (yy) d = [1,4,5,0,2] // south
-    //         }
-    //     } else { // west
-    //         if (y>0) { // northwest
-    //             d=[7,3,0,6,4];
-    //             if (xx) d = [0,7,4,3,1] // west
-    //             if (yy) d = [3,6,7,2,0] // north
-    //         } else { // southwest
-    //             d=[4,0,1,5,7];
-    //             if (xx) d = [0,7,4,3,1] // west
-    //             if (yy) d = [1,4,5,0,2] // south
-    //         }
-    //     }
+            for (let y = y0+1; y<y1; y++) {
+                const key = packKey(x0,y);
+                const bin = bins.get(key);
+                if (!bin) continue;
+                for (const actor of bin) {
+                    if (actor.tags.has(tag)) out.push(actor);
+                }
+            }
 
-    //     const node = this.navNode;
+            for (let x = x0; x<=x1; x++) {
+                const key = packKey(x,y1);
+                const bin = bins.get(key);
+                if (!bin) continue;
+                for (const actor of bin) {
+                    if (actor.tags.has(tag)) out.push(actor);
+                }
+            }
 
-    //     console.log(key);
-    //     console.log(node);
+            for (let y = y0+1; y<y1; y++) {
+                const key = packKey(x1,y);
+                const bin = bins.get(key);
+                if (!bin) continue;
+                for (const actor of bin) {
+                    if (actor.tags.has(tag)) out.push(actor);
+                }
+            }
 
-    //     for(const n of d) {
-    //         const exit = node.exits[n];
-    //         console.log(n + ":"+ exit);
-    //         if (exit) {
-    //             console.log("found:" + n)
-    //             return aim;
-    //         }
-    //     }
+        }
 
-    //     return [0,0,0];
-    // }
+        return out.sort((a,b) => {
+            const aDistance = v3_distance(this.translation, a.translation);
+            const bDistance = v3_distance(this.translation, b.translation);
+            return aDistance-bDistance;
+        });
+    }
 
     ping(tag, radius=0) {
         const out = [];
@@ -556,52 +561,52 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         const max = Math.max(1,Math.floor(radius/ss));
 
         for (const actor of this.gridBin) {
-            if(actor !== this && actor.tags.has(tag)) out.push(actor)
+            if (actor !== this && actor.tags.has(tag)) out.push(actor);
         }
 
-        for(let n = 1; n<=max; n++) {
+        for (let n = 1; n<=max; n++) {
             const x0 = cx-n;
             const x1 = cx+n;
             const y0 = cy-n;
             const y1 = cx+n;
 
-            for(let x = x0; x<=x1; x++) {
+            for (let x = x0; x<=x1; x++) {
                 const key = packKey(x,y0);
                 const bin = bins.get(key);
                 if (!bin) continue;
                 for (const actor of bin) {
-                    if(actor.tags.has(tag)) out.push(actor)
+                    if (actor.tags.has(tag)) out.push(actor);
                 }
             }
 
-            for(let y = y0+1; y<y1; y++) {
+            for (let y = y0+1; y<y1; y++) {
                 const key = packKey(x0,y);
                 const bin = bins.get(key);
                 if (!bin) continue;
                 for (const actor of bin) {
-                    if(actor.tags.has(tag)) out.push(actor)
+                    if (actor.tags.has(tag)) out.push(actor);
                 }
             }
 
-            for(let x = x0; x<=x1; x++) {
+            for (let x = x0; x<=x1; x++) {
                 const key = packKey(x,y1);
                 const bin = bins.get(key);
                 if (!bin) continue;
                 for (const actor of bin) {
-                    if(actor.tags.has(tag)) out.push(actor)
+                    if (actor.tags.has(tag)) out.push(actor);
                 }
             }
 
-            for(let y = y0+1; y<y1; y++) {
+            for (let y = y0+1; y<y1; y++) {
                 const key = packKey(x1,y);
                 const bin = bins.get(key);
                 if (!bin) continue;
                 for (const actor of bin) {
-                    if(actor.tags.has(tag)) out.push(actor)
+                    if (actor.tags.has(tag)) out.push(actor);
                 }
             }
 
-        };
+        }
 
         return out.sort((a,b) => {
             const aDistance = v3_distance(this.translation, a.translation);
@@ -614,11 +619,11 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         const out = [];
 
         for (const actor of this.gridBin) {
-            if(actor !== this && actor.tags.has(tag)) out.push(actor)
+            if (actor !== this && actor.tags.has(tag)) out.push(actor);
 
         }
 
-        if(out.length > 0) {
+        if (out.length > 0) {
             out.sort((a,b) => {
                 const aDistance = v3_distance(this.translation, a.translation);
                 const bDistance = v3_distance(this.translation, b.translation);
@@ -634,49 +639,49 @@ export const AM_OnNavGrid = superclass => class extends superclass {
         const ss = grid.gridScale*grid.subdivisions;
         const max = Math.max(1,Math.floor(radius/ss));
 
-        for(let n = 1; n<=max; n++) {
+        for (let n = 1; n<=max; n++) {
             const x0 = cx-n;
             const x1 = cx+n;
             const y0 = cy-n;
             const y1 = cx+n;
 
-            for(let x = x0; x<=x1; x++) {
+            for (let x = x0; x<=x1; x++) {
                 const key = packKey(x,y0);
                 const bin = bins.get(key);
                 if (!bin) continue;
                 for (const actor of bin) {
-                    if(actor.tags.has(tag)) out.push(actor)
+                    if (actor.tags.has(tag)) out.push(actor);
                 }
             }
 
-            for(let y = y0+1; y<y1; y++) {
+            for (let y = y0+1; y<y1; y++) {
                 const key = packKey(x0,y);
                 const bin = bins.get(key);
                 if (!bin) continue;
                 for (const actor of bin) {
-                    if(actor.tags.has(tag)) out.push(actor)
+                    if (actor.tags.has(tag)) out.push(actor);
                 }
             }
 
-            for(let x = x0; x<=x1; x++) {
+            for (let x = x0; x<=x1; x++) {
                 const key = packKey(x,y1);
                 const bin = bins.get(key);
                 if (!bin) continue;
                 for (const actor of bin) {
-                    if(actor.tags.has(tag)) out.push(actor)
+                    if (actor.tags.has(tag)) out.push(actor);
                 }
             }
 
-            for(let y = y0+1; y<y1; y++) {
+            for (let y = y0+1; y<y1; y++) {
                 const key = packKey(x1,y);
                 const bin = bins.get(key);
                 if (!bin) continue;
                 for (const actor of bin) {
-                    if(actor.tags.has(tag)) out.push(actor)
+                    if (actor.tags.has(tag)) out.push(actor);
                 }
             }
 
-            if(out.length > 0) {
+            if (out.length > 0) {
                 out.sort((a,b) => {
                     const aDistance = v3_distance(this.translation, a.translation);
                     const bDistance = v3_distance(this.translation, b.translation);
@@ -685,11 +690,12 @@ export const AM_OnNavGrid = superclass => class extends superclass {
                 return out[0];
             }
 
-        };
+        }
+        return null;
 
     }
 
-}
+};
 RegisterMixin(AM_OnNavGrid);
 
 //------------------------------------------------------------------------------------------

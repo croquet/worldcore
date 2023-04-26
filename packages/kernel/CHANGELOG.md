@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Actor.snap() sets properties without smoothing
+- Pawn.snap() message
 - Actor.set() automatically calls this.propertySet() if the actor has that method.
 - AM_Smoothed deprecated (Use AM_Spatial)
 - AM_Spatial.local setter added
