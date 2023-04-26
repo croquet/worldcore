@@ -1,4 +1,4 @@
-// Tutorial 0 Views
+// Tutorial 1 Views
 
 // Every object in Worldcore is represented by an actor/pawn pair. Spawning an actor
 // automatically instantiates a corresponding pawn. The actor is replicated
@@ -46,7 +46,7 @@ TestPawn.register("TestPawn"); // All Worldcore pawns must be registered after t
 // The view root has a list of global services it creates on start-up. In this case we're using
 // InputManager and ThreeRenderManager.
 
-// ThreeRenderManager is the THREE.js renderer, and InputManager is a collection of DOM  listeners
+// ThreeRenderManager is the THREE.js renderer, and InputManager is a collection of DOM listeners
 // that translate common DOM events into Croquet events. In our model code we subscribe to InputManager
 // events to move our actor left and right.
 

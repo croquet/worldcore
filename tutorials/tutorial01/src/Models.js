@@ -1,4 +1,4 @@
-// Tutorial 0 Models
+// Tutorial 1 Models
 
 // Every object in Worldcore is represented by an actor/pawn pair. Spawning an actor
 // automatically instantiates a corresponding pawn. The actor is replicated

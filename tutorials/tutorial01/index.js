@@ -1,4 +1,4 @@
-// Worldcore Tutorial 0
+// Worldcore Tutorial 1
 
 // This is the first in a series of tutorials illustrating how to build a Worldcore app. It
 // shows how to set up your model root and view root, and how to create an object in the world.
@@ -18,7 +18,7 @@ import { MyModelRoot } from "./src/Models";
 // own all the other models and views in your application.
 
 StartWorldcore({
-    appId: 'io.croquet.worldcore.tutorial0',
+    appId: 'io.croquet.worldcore.tutorial01',
     apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',    // Replace with your apiKey
     name: App.autoSession(),
     password: App.autoPassword(),
