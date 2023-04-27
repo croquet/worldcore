@@ -239,8 +239,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             this.pitch = Math.max(-Math.PI/2, this.pitch);
             this.pitch = Math.min(Math.PI/2, this.pitch);
             const pitchQ = q_axisAngle([1,0,0], this.pitch);
-            const yawQ = q_axisAngle([0,1,0], this.yawDelta);
-            this.cameraRotation = q_multiply(pitchQ, yawQ);
+            this.cameraRotation = pitchQ;
+            this.refreshCameraTransform();
         }
     }
 
