@@ -462,9 +462,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         console.log("pointerUp", e.id, e.xy);
         if (e.id === this.pointerId) {
             this.pointerId = 0;
-            this.turn = 0;
-            this.gas = 0;
+
             if(this.pointerMoved){
+                this.turn = 0;
+                this.gas = 0;
                 const knob = document.getElementById("knob");
                 knob.style.left = `20px`;
                 knob.style.top = `20px`;
