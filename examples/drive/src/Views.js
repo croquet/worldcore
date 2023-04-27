@@ -225,6 +225,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         if (this.driving) {
             const topSpeed = 40; // m/s
             const thrust = 30; // m/s/s
+            const drag = 60; // m/s/s
             const wheelbase = 3.5;
             const factor = delta/1000;
 
@@ -236,7 +237,14 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 this.speed -= thrust * factor;
                 this.speed = Math.max(-topSpeed, Math.min(0, this.speed));
             } else {
-                this.speed = 0;
+                console.log("coast");
+                if (this.speed > 0) {
+                    this.speed -= drag * factor;
+                    this.speed = Math.max(0, Math.min(topSpeed, this.speed));
+                } else if (this.speed < 0 ) {
+                    this.speed += drag * factor;
+                    this.speed = Math.max(-topSpeed, Math.min(0, this.speed));
+                }
             }
 
             // if (this.brake) this.speed = 0;
