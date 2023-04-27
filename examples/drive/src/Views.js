@@ -225,33 +225,21 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         if (this.driving) {
             const topSpeed = 40; // m/s
             const thrust = 30; // m/s/s
-            const drag = 60; // m/s/s
             const wheelbase = 3.5;
             const factor = delta/1000;
 
-            if (this.auto) {
-                this.speed = topSpeed/4;
-                this.steer = -10;
+            this.steer = (this.right-this.left) * 20; // degrees
+            if (this.gas) {
+                this.speed += thrust * factor;
+                this.speed = Math.max(0, Math.min(topSpeed, this.speed));
+            } else if (this.brake) {
+                this.speed -= thrust * factor;
+                this.speed = Math.max(-topSpeed, Math.min(0, this.speed));
             } else {
-                this.steer = (this.right-this.left) * 20; // degrees
-                if (this.gas) {
-                    this.speed += thrust * factor;
-                    this.speed = Math.max(0, Math.min(topSpeed, this.speed));
-                } else {
-                    this.speed -= drag * factor;
-                    this.speed = Math.max(0, Math.min(topSpeed, this.speed));
-                }
+                this.speed = 0;
             }
 
-            // if (this.gas) {
-            //     this.speed += thrust * factor;
-            //     this.speed = Math.max(0, Math.min(topSpeed, this.speed));
-            // } else {
-            //     this.speed -= drag * factor;
-            //     this.speed = Math.max(0, Math.min(topSpeed, this.speed));
-            // }
-
-            if (this.brake) this.speed = 0;
+            // if (this.brake) this.speed = 0;
 
             const angularVelocity = -this.speed/topSpeed * Math.sin(toRad(this.steer)) / wheelbase;
             this.yaw += angularVelocity;
@@ -260,7 +248,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             this.velocity = [0, 0, -this.speed*factor];
             const tt = v3_rotate(this.velocity, yawQ);
             const cc = this.collide(this.velocity);
-            // if (this.collide(this.velocity)) console.log("hit!");
             const translation = v3_add(this.translation, tt);
             this.positionTo(translation, yawQ);
             this.updateChaseCam(time, delta);
@@ -304,30 +291,18 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         for (const collider of colliders) {
             if (collider === this) continue;
             const distance = v3_distance(collider.translation, this.translation);
-            if (distance < 4) {
+            if (distance < 3) {
                 if ( collider.actor.tags.has("bollard")) {
                     const from = v3_sub(this.translation, collider.translation);
-                    const dot = v3_dot(v3_normalize(from), v3_normalize(velocity));
-
-                    if (dot<0.3) {
-                        if (dot<-0.5) {
-                            const bounce = v3_scale(velocity, -1);
-                            const translation = v3_add(this.translation, bounce);
-                            this.translateTo(translation);
-                            return true;
-                        }
-                        const speed = v3_magnitude(velocity);
-                        const norm = v3_normalize(from);
-                        const bounce = v3_scale(norm, 1 * speed);
-                        const translation = v3_add(this.translation, bounce);
-                        this.translateTo(translation);
-                        return true;
-                    }
-
+                    const speed = v3_magnitude(velocity);
+                    const norm = v3_normalize(from);
+                    const bounce = v3_scale(norm, 1 * speed);
+                    const translation = v3_add(this.translation, bounce);
+                    this.translateTo(translation);
+                    return true;
                 }
 
                 if ( collider.actor.tags.has("avatar")) {
-                    if (distance < 3) {
                         console.log("bump!");
                         const from = v3_sub(this.translation, collider.translation);
                         const to = v3_sub(collider.translation, this.translation);
@@ -336,7 +311,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                         const translation = v3_add(this.translation, bounce);
                         this.translateTo(translation);
                         return true;
-                    }
                 }
 
             }
