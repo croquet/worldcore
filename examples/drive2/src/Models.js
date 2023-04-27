@@ -1,7 +1,7 @@
 // Drive2 Models
 
 import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, Behavior, v3_add, UserManager, User, AM_Avatar, q_axisAngle,
-    toRad, AM_NavGrid, AM_OnNavGrid, fromS, v3_rotate, v3_scale, v3_distance } from "@croquet/worldcore";
+    toRad, AM_NavGrid, AM_OnNavGrid, fromS, v3_rotate, v3_scale, v3_distance, v3_sub, v3_normalize } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
@@ -72,12 +72,22 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behavior
     }
 
     tick() {
-        const bollard = this.pingClosest("bollard",2);
+        this.test();
+        if (!this.doomed) this.future(10).tick();
+    }
+
+    test() {
+        const bollard = this.pingClosest("bollard", 2);
         if (bollard) {
             const d = v3_distance(this.translation, bollard.translation);
-            if (d < 1.5) this.destroy();
+            if (d < 1.55) {
+                // if (d<0.5) {console.log("inside")}
+                const aim = v3_normalize(v3_sub(this.translation, bollard.translation));
+                if (this.go) this.go.destroy();
+
+                this.go = this.behavior.start({name: "GoBehavior", aim, speed: 30, tickRate: 20});
+            }
         }
-        if (!this.doomed) this.future(15).tick();
     }
 
     translationSet(t,o) {
@@ -122,13 +132,19 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, 
         this.snap({translation});
     }
 
+    multishoot(v) {
+        this.doShoot(v);
+        this.future(10).doShoot(v);
+        this.future(20).doShoot(v);
+        this.future(30).doShoot(v);
+    }
+
     doShoot(v) {
-        console.log("shoot!");
+        // console.log("shoot!");
         const aim = v3_rotate([0,0,-1], this.rotation);
-        const translation = v3_add(this.translation, v3_scale(aim, 5))
+        const translation = v3_add(this.translation, v3_scale(aim, 5));
         const missile = MissileActor.create({parent: this.parent, pawn: "MissilePawn", translation});
-        // const aim = v3_rotate([0,0,-1], this.rotation);
-            missile.behavior.start({name: "GoBehavior", aim, speed: 30});
+            missile.go = missile.behavior.start({name: "GoBehavior", aim, speed: 30, tickRate: 20});
     }
 
 }

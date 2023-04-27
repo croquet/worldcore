@@ -195,7 +195,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 this.right = 1; break;
             case "m":
                 this.auto = !this.auto; console.log(this.auto); break;
-            case "x":
+            case " ":
                 this.say("shoot"); break;
             default:
         }
@@ -236,15 +236,12 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             } else if (this.brake) {
                 this.speed -= thrust * factor;
                 this.speed = Math.max(-topSpeed, Math.min(0, this.speed));
-            } else {
-                console.log("coast");
-                if (this.speed > 0) {
+            } else if (this.speed > 0) {
                     this.speed -= drag * factor;
                     this.speed = Math.max(0, Math.min(topSpeed, this.speed));
                 } else if (this.speed < 0 ) {
                     this.speed += drag * factor;
                     this.speed = Math.max(-topSpeed, Math.min(0, this.speed));
-                }
             }
 
             // if (this.brake) this.speed = 0;
