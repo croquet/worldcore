@@ -33,7 +33,8 @@ const perlin2D = function(perlinHeight = 40, perlinScale = 0.02){
     const perlin = new PerlinNoise();
 
     return function(x,y){
-        return perlinHeight * perlin.signedNoise2D(perlinScale*x-100, perlinScale*y-146);
+        return 0; // used for testing
+        //return perlinHeight * perlin.signedNoise2D(perlinScale*x-100, perlinScale*y-146);
     }
 }();
 
