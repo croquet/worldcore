@@ -55,11 +55,27 @@ TestActor.register('TestActor');
 
 // We add the AM_Avatar mixin to the ColorActor. This lets us use a ColorActor as an
 // avatar. Avatars have a driver property that holds the viewId of the user controlling
-// them.
+// them. We also create avent so users can shove each other.  If the avatar has a driver we
+// snap it to its new position, so as not to interfere with its user's control inputs.
 
 class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
 
+    init(options) {
+        super.init(options);
+        this.listen("shove", this.doShove);
+    }
+
     get color() { return this._color || [0.5,0.5,0.5]}
+
+    doShove(v) {
+        const translation = v3_add(this.translation, v);
+        if (this.driver) {
+            this.snap({translation});
+        } else {
+            this.set({translation});
+        }
+
+    }
 
 }
 ColorActor.register('ColorActor');
@@ -100,7 +116,7 @@ MyUser.register('MyUser');
 //------------------------------------------------------------------------------------------
 
 // We add two spare avatars to the world. These avatars have no drivers, so they're available
-// for anyone to drive, and they also change color when anyone presses "c".
+// for anyone to shove; they also change color when anyone presses "c".
 
 export class MyModelRoot extends ModelRoot {
 

@@ -166,7 +166,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     keyDown(e) {
-        switch(e.key) {
+        switch (e.key) {
             case "ArrowUp":
             case "w":
             case "W":
@@ -188,7 +188,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     keyUp(e) {
-        switch(e.key) {
+        switch (e.key) {
             case "ArrowUp":
             case "w":
                 this.fore = 0; break;
@@ -213,7 +213,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const rotation = q_multiply(this.rotation, yawQ);
             const t = v3_scale([0, 0, (this.fore + this.back)], 5 * delta/1000);
             const tt = v3_rotate(t, rotation);
-            let translation = v3_add(this.translation, tt);
+            const translation = v3_add(this.translation, tt);
             this.positionTo(translation, rotation);
         }
     }

@@ -4,7 +4,7 @@
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider,
-    PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, PM_ThreeCamera, q_yaw, q_pitch } from "@croquet/worldcore";
+    PM_Avatar, v3_scale, v3_add, q_multiply, q_axisAngle, v3_rotate, PM_ThreeCamera, q_yaw, q_pitch, v3_sub, v3_normalize } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
@@ -124,9 +124,8 @@ ColorPawn.register("ColorPawn");
 // The cursor is hidden and mouse movements are reported as delta changes rather than
 // absolute screen coordinates. We use this to drive the camera's pitch and yaw.
 //
-// When you click with the left mouse button, the AvatarPawn does its own raycast to determine
-// if you clicked on another avatar. If that avatar doesn't have a driver, you park your current
-// avatar and start driving the new one.
+// If you click another avatar with the left mouse button, its shoved backwards, even if its
+// controlled by another user.
 
 export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar, PM_ThreeCamera, PM_ThreeCollider) {
 
@@ -180,7 +179,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     keyDown(e) {
-        switch(e.key) {
+        switch (e.key) {
             case "ArrowUp":
             case "w":
             case "W":
@@ -202,7 +201,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     keyUp(e) {
-        switch(e.key) {
+        switch (e.key) {
             case "ArrowUp":
             case "w":
                 this.fore = 0; break;
@@ -223,9 +222,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         if (e.button === 2) {
             this.service("InputManager").enterPointerLock();
         } else {
-            this.possess(e.xy);
+            this.shove(e.xy);
         }
-
     }
 
     doPointerUp(e) {
@@ -258,16 +256,16 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         }
     }
 
-    possess(xy) {
+    shove(xy) {
+        console.log("pawn shove");
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(xy, "avatar");
         if (hits.length<1) return;
         const pawn = hits[0].pawn;
-        if (pawn === this) return; // You can't possess yourself
-        if (pawn.actor.driver) return; // You can't steal someone else's avatar
+        if (pawn === this) return; // You can't shove yourself
 
-        this.set({driver: null});
-        pawn.set({driver: this.viewId});
+        const away = v3_normalize(v3_sub(pawn.translation, this.translation));
+        pawn.say("shove", v3_scale(away, 1));
     }
 
 }
