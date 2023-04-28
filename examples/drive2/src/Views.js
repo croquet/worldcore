@@ -197,6 +197,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 this.auto = !this.auto; console.log(this.auto); break;
             case " ":
                 this.say("shoot"); break;
+            case "k":
+                    this.chase(); break;
             default:
         }
     }
@@ -330,6 +332,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     shoveTest() {
         console.log("shove test");
         this.shove([1,0,0]);
+    }
+
+    chase() {
+        this.publish("hud", "go", this.translation);
     }
 
 }

@@ -1,7 +1,39 @@
 // Drive2 Models
 
 import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, Behavior, v3_add, UserManager, User, AM_Avatar, q_axisAngle,
-    toRad, AM_NavGrid, AM_OnNavGrid, fromS, v3_rotate, v3_scale, v3_distance, v3_sub, v3_normalize } from "@croquet/worldcore";
+    toRad, AM_NavGrid, AM_OnNavGrid, fromS, v3_rotate, v3_scale, v3_distance, v3_sub, v3_normalize, v3_magnitude } from "@croquet/worldcore";
+
+//------------------------------------------------------------------------------------------
+//-- BotActor ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behavioral) {
+
+    init(options) {
+        super.init(options);
+        this.spread = this.behavior.start({name: "SpreadBehavior", radius: 2});
+        this.subscribe("hud", "go", this.go);
+    }
+    destroy() {
+        super.destroy();
+        console.log("bot destroy! "+ this.name);
+    }
+
+    go(target) {
+        console.log("go!");
+        target[1] = 0;
+        if (this.ggg) {
+            this.ggg.destroy();
+            this.ggg = null;
+        }
+
+        const speed = 16 + 4 * Math.random();
+
+        this.ggg = this.behavior.start({name: "PathToBehavior", target, speed, noise:3, radius:3});
+    }
+
+}
+BotActor.register("BotActor");
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
@@ -86,6 +118,16 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behavior
                 if (this.go) this.go.destroy();
 
                 this.go = this.behavior.start({name: "GoBehavior", aim, speed: 30, tickRate: 20});
+            }
+        }
+
+        const bot = this.pingClosest("bot", 1);
+        if (bot) {
+            const d = v3_distance(this.translation, bot.translation);
+            if (d < 1) {
+                console.log("bot hit!");
+                this.destroy();
+                bot.destroy();
             }
         }
     }
@@ -238,7 +280,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(options) {
         super.init(options);
-        console.log("Start model root!!");
+        console.log("Start model root!!!");
         this.base = BaseActor.create({gridSize: 100, gridScale:3, subdivisions: 3, noise: 1});
         this.parent = TestActor.create({pawn: "TestPawn", parent: this.base, translation:[0,1,0]});
         this.child = ColorActor.create({pawn: "ColorPawn", parent: this.parent, translation:[0,0,2]});
@@ -248,9 +290,14 @@ export class MyModelRoot extends ModelRoot {
 
         for (let x=0; x<10; x++) {
             for (let y=0; y<10; y++) {
-                // BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, translation:[60+12*x+1.5,0, 60+12*y+1.5]});
+                BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, translation:[60+12*x+1.5,0, 60+12*y+1.5]});
                 BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, translation:[60+12*x+1.5, 0, 60+12*y+1.5]});
             }
+        }
+
+        for (let x=0; x<100; x++) {
+                // BotActor.create({pawn: "TestPawn", tags: ["bot"], parent: this.base, translation:[70+10*x,0, 70]});
+                BotActor.create({pawn: "TestPawn", tags: ["bot"], parent: this.base, translation:[50,0, 50]});
         }
 
 
@@ -264,4 +311,44 @@ export class MyModelRoot extends ModelRoot {
 
 }
 MyModelRoot.register("MyModelRoot");
+
+//------------------------------------------------------------------------------------------
+//-- SpreadBehavior ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class SpreadBehavior extends Behavior {
+
+    get radius() { return this._radius || 1}
+
+    onStart() {
+        this.tickRate = 500;
+    }
+
+    do() {
+        const bot = this.actor.pingClosest("bot", 3);
+        if (!bot) return;
+
+        const from = v3_sub(this.actor.translation, bot.translation);
+        const mag = v3_magnitude(from);
+        if (mag===0) {
+            const a = Math.random() * 2 * Math.PI;
+            from[0] = this.radius * Math.cos(a);
+            from[1] = 0;
+            from[2] = this.radius* Math.sin(a);
+        } else {
+            from[0] = this.radius * from[0] / mag;
+            from[1] = this.radius * from[1] / mag;
+            from[2] = this.radius * from[2] / mag;
+        }
+
+        if (mag < this.radius) {
+            if (this.actor.isBlocked(from)) return;
+            const translation = v3_add(this.actor.translation, from);
+            this.actor.set({translation});
+        }
+    }
+
+
+}
+SpreadBehavior.register("SpreadBehavior");
 

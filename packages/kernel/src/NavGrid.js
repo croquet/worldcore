@@ -307,7 +307,7 @@ export const AM_OnNavGrid = superclass => class extends superclass {
     }
 
     destroy() {
-        super.destroy();
+        // super.destroy();
         if (this.parent) {
             this.parent.removeFromBin(this.binKey, this);
             if (this.obstacle) this.parent.removeObstacle(this);
