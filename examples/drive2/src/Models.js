@@ -290,7 +290,7 @@ export class MyModelRoot extends ModelRoot {
 
         for (let x=0; x<10; x++) {
             for (let y=0; y<10; y++) {
-                BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, translation:[60+12*x+1.5, 0, 60+12*y+1.5]});
+                BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, translation:[111+12*x+1.5, 0, 111+12*y+1.5]});
             }
         }
 
