@@ -20,7 +20,7 @@ import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager,
     ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider, PM_Avatar, v2_magnitude, v3_scale, v3_add,
     q_identity, q_equals, q_multiply, q_axisAngle, v3_rotate, v3_magnitude, PM_ThreeCamera, q_yaw,
     q_pitch, q_euler, q_eulerYXZ, q_slerp, v2_sqrMag, v3_lerp, v3_transform, m4_rotationQ, ViewService,
-    v3_distance, v3_dot, v3_sub, PerlinNoise, GLTFLoader } from "@croquet/worldcore";
+    v3_distance, v3_dot, v3_sub, PerlinNoise, GLTFLoader, PM_NavGridGizmo } from "@croquet/worldcore";
 import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
 import tank_body from "../assets/tank_body.glb";
@@ -161,7 +161,7 @@ BollardPawn.register("BollardPawn");
 // We then renormalize the mesh vectors.
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_NavGridGizmo) {
     constructor(actor) {
         super(actor);
         let worldX = 512, worldZ=512;
@@ -179,6 +179,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         const base = new THREE.Mesh( this.geometry, this.material );
         base.receiveShadow = true;
         base.castShadow = true;
+        this.subscribe("input", "gDown", this.toggleGizmo);
 /*
         // define an outline of the hills - flattens the world a bit too much though
         let base2 = base.clone();
@@ -190,6 +191,10 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         base.add(base2);
 */
         this.setRenderObject(base);
+    }
+
+    toggleGizmo() {
+        this.gizmo.visible = !this.gizmo.visible;
     }
 
     destroy() {

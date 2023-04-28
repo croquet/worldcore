@@ -1,13 +1,13 @@
 // Drive Models
 
 import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, Behavior, v3_add, v3_scale, 
-    UserManager, User, AM_Avatar, q_axisAngle, v3_rotate, toRad } from "@croquet/worldcore";
+    UserManager, User, AM_Avatar, q_axisAngle, v3_rotate, toRad, AM_NavGrid, AM_OnNavGrid } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BaseActor extends mix(Actor).with(AM_Spatial) {
+class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
 
     get pawn() {return "BasePawn"}
 
@@ -129,13 +129,15 @@ class MyUser extends User {
         super.init(options);
         const base = this.wellKnownModel("ModelRoot").base;
         this.color = [this.random(), this.random(), this.random()];
-        const translation = [-5 + this.random() * 10, 0, 10];
+        const translation = [120 + this.random() * 10, 0, 100+this.random()*10];
+        const rotation = q_axisAngle([0,1,0], Math.PI/2);
         this.avatar = AvatarActor.create({
             pawn: "AvatarPawn",
             parent: base,
             driver: this.userId,
             color: this.color,
             translation: translation,
+            rotation: rotation,
             instanceName: 'tankTracks',
             tags: ["avatar"]
         });
@@ -176,16 +178,17 @@ export class MyModelRoot extends ModelRoot {
     init(options) {
         super.init(options);
         console.log("Start model root!!");
-        this.base = BaseActor.create();
+        this.base = BaseActor.create({gridSize: 100, gridScale:3, subdivisions: 3, noise: 1});
         this.parent = SimpleActor.create({pawn: "TestPawn", parent: this.base, translation:[-12,7,-35]});
         this.child = SimpleActor.create({pawn: "CollidePawn", parent: this.parent, translation:[0,0,4]});
 
         this.parent.behavior.start({name: "SpinBehavior", axis: [0,1,0], tickRate:500});
         this.child.behavior.start({name: "SpinBehavior", axis: [0,0,1], speed: 3});
 
-        for (let n=0; n<10; n++) 
-        for (let m=0; m<10; m++){
-            BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, translation:[-20+10*n,0,-20+10*m]});
+        for (let x=0; x<10; x++) 
+        for (let y=0; y<10; y++){
+            //BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, translation:[-20+10*n,0,-20+10*m]});
+            BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, translation:[60+12*x+1.5,0, 60+12*y+1.5]});
         }
 
         this.subscribe("input", "cDown", this.colorChange);
