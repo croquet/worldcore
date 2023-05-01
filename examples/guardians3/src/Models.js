@@ -46,10 +46,10 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGr
 
     init(options) {
         super.init(options);
-//        const mcm = this.service("ModelCollisionManager");
-//       mcm.colliders.add(this);
-        this.future(10000).destroy(); // destroy in 10 seconds
-       // this.future(100).step();
+//      const mcm = this.service("ModelCollisionManager");
+//      mcm.colliders.add(this);
+        this.future(8000).destroy(); // destroy in 10 seconds
+        this.lastTranslation = [0,0,0];
         this.tick();
     }
 
@@ -59,12 +59,26 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGr
     }
 
     test() {
+        const v_dist2Sqr = function (a,b) {
+            const dx = a[0] - b[0];
+            const dy = a[2] - b[2];
+            return dx*dx+dy*dy;
+        }
+
+        const v_equals = function(a, b){
+            return a[0]===b[0] && a[2]===b[2];
+        }
+
         const bollard = this.pingClosest("bollard", 2);
         if (bollard) {
-            const d = v3_distance(this.translation, bollard.translation);
-            if (d < 1.55) {
+            //console.log(v_equals(this.lastTranslation, this.translation), this.translation);
+            //console.log(this.translation);
+            const d2 = v_dist2Sqr(this.translation, bollard.translation);
+            if (d2 < 2.5) {
                 // if (d<0.5) {console.log("inside")}
-                const aim = v3_normalize(v3_sub(this.translation, bollard.translation));
+                let aim = v3_sub(this.translation, bollard.translation);
+                aim[1]=0;
+                aim = v3_normalize(aim);
                 if (this.go) this.go.destroy();
 
                 this.go = this.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
@@ -76,10 +90,13 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGr
             const d = v3_distance(this.translation, avatar.translation);
             if (d < 2) {
                 const aim = v3_normalize(v3_sub(this.translation, avatar.translation));
-                avatar.doBounce( v3_scale(aim, -0.5) );
+                if (this.go) this.go.destroy();
+                this.go = this.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
+                avatar.doBounce( v3_scale(aim, -0.5) )
                 //console.log("avatar hit!");
             }
         }
+        this.lastTranslation = this.translation;
     }
 
     translationSet(t,o) {
@@ -157,7 +174,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, 
         const aim = v3_rotate([0,0,-1], q_axisAngle([0,1,0], where[1])); //
         const translation = v3_add(this.translation, v3_scale(aim, 5));
         const missile = MissileActor.create({parent: this.parent, pawn: "MissilePawn", translation, color: [...this.color]});
-            missile.go = missile.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 100});
+            missile.go = missile.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
 
     }
 
