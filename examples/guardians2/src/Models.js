@@ -128,7 +128,7 @@ class MyUser extends User {
     init(options) {
         super.init(options);
         const base = this.wellKnownModel("ModelRoot").base;
-        this.color = [this.random(), this.random(), this.random()];
+        this.color = [0.25+0.75*this.random(), 0.5, 0.25+0.75*this.random()];
         const translation = [120 + this.random() * 10, 0, 100+this.random()*10];
         const rotation = q_axisAngle([0,1,0], Math.PI/2);
         this.avatar = AvatarActor.create({

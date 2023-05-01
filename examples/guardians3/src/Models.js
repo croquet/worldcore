@@ -42,12 +42,12 @@ SimpleActor.register('SimpleActor');
 //--MissileActor ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class MissileActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behavioral) {
+class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGrid) {
 
     init(options) {
         super.init(options);
-        const mcm = this.service("ModelCollisionManager");
-        mcm.colliders.add(this);
+//        const mcm = this.service("ModelCollisionManager");
+//       mcm.colliders.add(this);
         this.future(10000).destroy(); // destroy in 10 seconds
        // this.future(100).step();
         this.tick();
@@ -71,13 +71,13 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behavior
             }
         }
 
-        const bot = this.pingClosest("bot", 1);
-        if (bot) {
-            const d = v3_distance(this.translation, bot.translation);
-            if (d < 1) {
-                console.log("bot hit!");
-                this.destroy();
-                bot.destroy();
+        const avatar = this.pingClosest("avatar", 1);
+        if (avatar) {
+            const d = v3_distance(this.translation, avatar.translation);
+            if (d < 2) {
+                const aim = v3_normalize(v3_sub(this.translation, avatar.translation));
+                avatar.doBounce( v3_scale(aim, -0.5) );
+                //console.log("avatar hit!");
             }
         }
     }
@@ -89,11 +89,8 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behavior
     }
 
     step(){
-        if(this.now()>this.deathTime)this.destroy();
-        else {
-            this.translateTo(v3_add(this.translation, this._velocity));
-            this.future(100).step();
-        }
+        this.translateTo(v3_add(this.translation, this._velocity));
+        this.future(100).step();
     }
 
     get color() { return this._color || [0.5,0.5,0.5]}
@@ -160,7 +157,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, 
         const aim = v3_rotate([0,0,-1], q_axisAngle([0,1,0], where[1])); //
         const translation = v3_add(this.translation, v3_scale(aim, 5));
         const missile = MissileActor.create({parent: this.parent, pawn: "MissilePawn", translation, color: [...this.color]});
-            missile.go = missile.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
+            missile.go = missile.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 100});
 
     }
 
@@ -230,9 +227,9 @@ export class MyModelRoot extends ModelRoot {
     init(options) {
         super.init(options);
         console.log("Start model root!!");
-        let gridScale = 3;
-        let bollardDistance = gridScale * 3;
-        this.base = BaseActor.create({gridSize: 100, gridScale:gridScale, subdivisions: 3, noise: 1});
+        let gridScale = 10;
+        let bollardDistance = gridScale;
+        this.base = BaseActor.create({gridSize: 25, gridScale:gridScale, subdivisions: 1, noise: 1});
         this.parent = SimpleActor.create({pawn: "TestPawn", parent: this.base, translation:[-12,7,-35]});
         this.child = SimpleActor.create({pawn: "CollidePawn", parent: this.parent, translation:[0,0,4]});
 
@@ -242,7 +239,7 @@ export class MyModelRoot extends ModelRoot {
         for (let x=0; x<10; x++) 
         for (let y=0; y<10; y++){
             //BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, translation:[-20+10*n,0,-20+10*m]});
-            BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, translation:[36*gridScale+bollardDistance*x+1.5,0, 36*gridScale+bollardDistance*y+1.5]});
+            BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, translation:[10*gridScale+bollardDistance*x+1.5,0, 10*gridScale+bollardDistance*y+1.5]});
         }
 
         this.subscribe("input", "cDown", this.colorChange);

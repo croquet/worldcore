@@ -18,9 +18,9 @@
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation, m4_scaleRotationTranslation,
     ThreeInstanceManager, PM_ThreeInstanced, ThreeRaycast, PM_ThreeCollider, PM_Avatar, v2_magnitude, v3_scale, v3_add,
-    q_identity, q_equals, q_multiply, q_axisAngle, v3_rotate, v3_magnitude, PM_ThreeCamera, q_yaw,
+    q_identity, q_equals, q_multiply, q_axisAngle, v2_distanceSqr, v3_rotate, v3_magnitude, PM_ThreeCamera, q_yaw,
     q_pitch, q_euler, q_eulerYXZ, q_slerp, v2_sqrMag, v3_lerp, v3_transform, m4_rotationQ, ViewService,
-    v3_distance, v3_dot, v3_sub, PerlinNoise, GLTFLoader, PM_NavGridGizmo } from "@croquet/worldcore";
+    v3_distance, v3_dot, v3_sub, PerlinNoise, GLTFLoader, PM_NavGridGizmo, v3_distanceSqr } from "@croquet/worldcore";
 import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
 import tank_body from "../assets/tank_body.glb";
@@ -492,7 +492,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const factor = delta/1000;
 
             if (this.auto) {
-                this.speed = 5 * factor;
+                this.speed = -5 * factor;
                 this.steer = -1;
                 this.shoot(); 
             }else{
@@ -509,15 +509,16 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const angularVelocity = this.steer*0.025;
             let yaw = this.yaw+angularVelocity;
             const yawQ = q_axisAngle([0,1,0], yaw);
-
+            const startP = this.translation[1];
             // velocity and follow terrain
             // -1 is a fake velocity used to compute the pitch when not moving
             this.velocity = [0, 0, -this.speed || -0.4];
             const tt = v3_rotate(this.velocity, yawQ);
             const translation = v3_add(this.translation, tt);
             // can't use last position to determine pitch if not moving
+
             if(this.speed === 0 )start[1]=perlin2D(start[0], start[2])+this.wheelHeight;
-            translation[1]=perlin2D(translation[0], translation[2])+this.wheelHeight;;
+            translation[1]=perlin2D(translation[0], translation[2])+this.wheelHeight;
             // compute pitch - both backward and forward
 
             let deltaPitch, deltaRoll;
@@ -618,15 +619,16 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     collide(velocity) {
         const colliders = this.service("CollisionManager").colliders;
+        const t2 = [this.translation[0], this.translation[2]];
         for (const collider of colliders) {
             if (collider === this) continue;
-            const colliderPos = m4_getTranslation(collider.global);
-            const distance = v3_distance(colliderPos, this.translation);
+            const colliderPos = collider.translation;
+            const distanceSQ = v2_distanceSqr([colliderPos[0], colliderPos[2]], t2);
 
-            if (distance < 2.5) {
+            if (distanceSQ < 6) {
                 console.log("bump!");
                 //console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
-                const from = v3_sub(this.translation, collider.translation);
+                const from = v3_sub(this.translation, colliderPos); 
                 let distance = v3_magnitude(from);
                 let bounce;
                 if(distance > 0) bounce = v3_scale( from, 2/distance );
@@ -651,7 +653,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     goHome(){
-        this.translateTo([-5 + Math.random() * 10, 0, 10]);
+        this.translateTo([120 + this.random() * 10, 0, 100+this.random()*10]);
     }
 }
 

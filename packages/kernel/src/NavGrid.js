@@ -103,7 +103,10 @@ export const AM_NavGrid = superclass => class extends superclass {
 
     removeFromBin(key,child) {
         const bin = this.gridBins.get(key);
-        if (bin) bin.delete(child);
+        if (bin) {
+            bin.delete(child);
+            if (bin.size === 0)this.gridBins.delete(key);
+        }
         child.gridBin = null;
     }
 

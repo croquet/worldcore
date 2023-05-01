@@ -292,6 +292,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.pointerMoved = false;
         this.lastShootTime = -10000;
         this.waitShootTime = 100;
+        this.godMode = false;
+
         this.service("CollisionManager").colliders.add(this);
         this.loadInstance(actor._instanceName, [0.35, 0.35, 0.35]);
         this.listen("colorSet", this.onColorSet);
@@ -359,7 +361,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         if(this.now()-this.lastShootTime > this.waitShootTime){
             this.lastShootTime = this.now();
             this.say("shoot", [this.translation, this.yaw]);
-            console.log("Shoot");
+            //console.log("Shoot");
         }
     }
 
@@ -396,6 +398,11 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                     "roll:", this.roll,
                     "pitch:", this.pitch,
                     "yaw:", this.yaw);
+                break;
+            case "c":
+            case "C":
+                // switch to god mode camera
+                this.godMode = !this.godMode;
                 break;
             default:
         }
@@ -558,7 +565,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             this.roll = roll;
             this.yaw = yaw;
             this.cameraTarget = m4_scaleRotationTranslation(1, yawQ, translation);
-            this.updateChaseCam(time, delta, translation);
+            if(this.godMode)this.godCamera();
+            else this.updateChaseCam(time, delta, translation);
         }
     }
 
@@ -566,6 +574,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         const delta = v3_magnitude([d[0], 0, d[2]]);
         return  delta>0 ? Math.atan2(d[1], delta) : 0;
     }
+
 
     updateChaseCam(time, delta, translation) {
         const rm = this.service("ThreeRenderManager");
@@ -617,6 +626,17 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         rm.camera.matrixWorldNeedsUpdate = true;
     }
 
+    godCamera(){
+        if(!this.godMatrix){
+            let t = [150,100,150];
+            let q = q_axisAngle([1, 0, 0], -Math.PI/2);
+            this.godMatrix = m4_scaleRotationTranslation(1, q, t);
+        }
+        const rm = this.service("ThreeRenderManager");
+        rm.camera.matrix.fromArray(this.godMatrix);
+        rm.camera.matrixWorldNeedsUpdate = true;
+    }
+
     collide(velocity) {
         const colliders = this.service("CollisionManager").colliders;
         for (const collider of colliders) {
@@ -625,7 +645,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const distance = v3_distance(colliderPos, this.translation);
 
             if (distance < 2.5) {
-                console.log("bump!");
+                //console.log("bump!");
                 //console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
                 const from = v3_sub(this.translation, collider.translation);
                 let distance = v3_magnitude(from);
