@@ -156,7 +156,7 @@ class GodView extends ViewService {
 export class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, ThreeInstanceManager, GodView, ThreeRaycast, HUD];
+        return [InputManager, ThreeRenderManager, ThreeInstanceManager, GodView, ThreeRaycast];
     }
 
     onStart() {
@@ -164,6 +164,9 @@ export class MyViewRoot extends ViewRoot {
         this.buildLights();
         this.subscribe("input", "xDown", this.test);
         this.subscribe("input", "cDown", this.test2);
+
+        const [x,y,z] = [1,2,3];
+        console.log(z);
 
     }
 

@@ -11,9 +11,4 @@ export * from "./src/Widget";
 export * from "./src/Input";
 export * from "./src/NavGrid";
 
-// export * from "./src/Player";
-// export * from "./src/Focus";
-// export * from "./src/Render";
-// export * from "./src/ObjectCache";
-// export * from "./src/ViewAssetCache";
 
