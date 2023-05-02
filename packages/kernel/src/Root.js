@@ -1,7 +1,6 @@
 import { Model, View, Session } from "@croquet/croquet";
 import { ActorManager} from "./Actor";
 import { PawnManager} from "./Pawn";
-import { ClearObjectCache } from "./ObjectCache";
 
 //------------------------------------------------------------------------------------------
 //-- WorldcoreModel ------------------------------------------------------------------------
