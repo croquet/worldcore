@@ -64,11 +64,7 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGr
             const dy = a[2] - b[2];
             return dx*dx+dy*dy;
         }
-
-        const v_equals = function(a, b){
-            return a[0]===b[0] && a[2]===b[2];
-        }
-
+        let aim;
         const bollard = this.pingClosest("bollard", 2);
         if (bollard) {
             //console.log(v_equals(this.lastTranslation, this.translation), this.translation);
@@ -87,9 +83,11 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGr
 
         const avatar = this.pingClosest("avatar", 1);
         if (avatar) {
-            const d = v3_distance(this.translation, avatar.translation);
-            if (d < 2) {
-                const aim = v3_normalize(v3_sub(this.translation, avatar.translation));
+            const d = v_dist2Sqr(this.translation, avatar.translation);
+            if (d < 4) {
+                aim = v3_sub(this.translation, avatar.translation);
+                aim[1]=0;
+                aim = v3_normalize(aim);
                 if (this.go) this.go.destroy();
                 this.go = this.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
                 avatar.doBounce( v3_scale(aim, -0.5) )
@@ -244,9 +242,9 @@ export class MyModelRoot extends ModelRoot {
     init(options) {
         super.init(options);
         console.log("Start model root!!");
-        let gridScale = 10;
-        let bollardDistance = gridScale;
-        this.base = BaseActor.create({gridSize: 25, gridScale:gridScale, subdivisions: 1, noise: 1});
+        let gridScale = 3;
+        let bollardDistance = gridScale*3;
+        this.base = BaseActor.create({gridSize: 75, gridScale:gridScale, subdivisions: 1, noise: 1});
         this.parent = SimpleActor.create({pawn: "TestPawn", parent: this.base, translation:[-12,7,-35]});
         this.child = SimpleActor.create({pawn: "CollidePawn", parent: this.parent, translation:[0,0,4]});
 
@@ -255,8 +253,8 @@ export class MyModelRoot extends ModelRoot {
 
         for (let x=0; x<10; x++) 
         for (let y=0; y<10; y++){
-            //BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, translation:[-20+10*n,0,-20+10*m]});
-            BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, translation:[10*gridScale+bollardDistance*x+1.5,0, 10*gridScale+bollardDistance*y+1.5]});
+            BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, 
+                translation:[99+bollardDistance*x+1.5,0, 99+bollardDistance*y+1.5]});
         }
 
         this.subscribe("input", "cDown", this.colorChange);

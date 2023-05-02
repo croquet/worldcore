@@ -33,8 +33,8 @@ const perlin2D = function(perlinHeight = 40, perlinScale = 0.02){
     const perlin = new PerlinNoise();
 
     return function(x,y){
-        return 0; // used for testing
-        //return perlinHeight * perlin.signedNoise2D(perlinScale*x-100, perlinScale*y-146);
+        //return 0; // used for testing
+        return perlinHeight * perlin.signedNoise2D(perlinScale*x-100, perlinScale*y-146);
     }
 }();
 
@@ -552,7 +552,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             if (!this.collide(tt, translation)){
                 let q = q_eulerYXZ( pitch, yaw, roll);
                 if(this.speed){
-                    this.positionTo(translation, q); //pitch, yaw, roll));
+                    this.positionTo(translation, q);
                     sunLight.position.set(...v3_add(translation, sunBase));
                 }
                 else { // if we haven't moved, then don't change anything
@@ -672,8 +672,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     goHome(){
-        const translation = [175+ this.random() * 10, 0, 160+this.random()*10];
-        const rotation = q_axisAngle([0,1,0], Math.PI/2);
+        let translation = [175+ this.random() * 10, 0, 160+this.random()*10];
+        this.yaw = Math.PI/2;
+        let rotation = q_axisAngle([0,1,0], this.yaw);        
+
         this.positionTo(translation, rotation);
     }
 }
