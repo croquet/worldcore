@@ -1,6 +1,7 @@
 import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, Constants, AM_NavGrid } from "@croquet/worldcore";
 import { BotActor, BotManager, FlockActor} from "./Bots";
-import { Paths, PackKey, packKey } from "./Paths";
+// import { Paths, PackKey } from "./Paths";
+import { AM_NavGridX, packKey, unpackKey} from "./Grid";
 
 //------------------------------------------------------------------------------------------
 // TestActor -------------------------------------------------------------------------------
@@ -21,7 +22,7 @@ TestActor.register('TestActor');
 //-- BaseActor ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
+class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGridX) {
     get pawn() {return "BasePawn"}
 
     init(options) {
@@ -31,28 +32,29 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
     navClear() {
         super.navClear();
 
-        for(let n = 0; n < 50; n++) {
+        for (let n = 0; n < 50; n++) {
             const x = Math.floor(this.gridSize * Math.random());
             const y = Math.floor(this.gridSize * Math.random());
-            this.drawBlock(x,y);
+            this.addBlock(x,y);
         }
 
-        for(let n = 0; n < 3; n++) {
-            const x = Math.floor(this.gridSize * Math.random())
+        for (let n = 0; n < 3; n++) {
+            const x = Math.floor(this.gridSize * Math.random());
             const y = Math.floor(this.gridSize * Math.random());
             const length = Math.floor(this.gridSize/2 * Math.random()) + 1;
 
-            this.drawHorizontalFence(x,y,length);
+            this.addHorizontalFence(x,y,length);
         }
 
-        for(let n = 0; n < 3; n++) {
-            const x = Math.floor(this.gridSize * Math.random())
+        for (let n = 0; n < 3; n++) {
+            const x = Math.floor(this.gridSize * Math.random());
             const y = Math.floor(this.gridSize * Math.random());
             const length = Math.floor(this.gridSize/2 * Math.random()) + 1;
 
-            this.drawVerticalFence(x,y,length);
+            this.addVerticalFence(x,y,length);
         }
 
+        this.say("navGridChanged");
     }
 }
 BaseActor.register('BaseActor');
@@ -72,15 +74,15 @@ export class MyModelRoot extends ModelRoot {
         console.log("Start root model!");
         this.bots = [];
 
-        this.base = BaseActor.create({gridSize: 50, gridScale:3, subdivisions: 4, noise: 1});
+        this.base = BaseActor.create({gridSize: 50});
 
-        // const bot = BotActor.create({pawn: "TestPawn", parent: this.base, name: "bot 0", translation:[0,0.5,0], tags: ["bot"]});
-        // this.bots.push(bot);
+        const bot = BotActor.create({pawn: "TestPawn", parent: this.base, name: "bot 0", translation:[0.5,0,0.5], tags: ["bot"]});
+        this.bots.push(bot);
 
-        this.reset();
+        // this.reset();
 
         this.subscribe("input", "xDown", this.reset);
-        // this.subscribe("input", "zDown", this.ping);
+        this.subscribe("input", "zDown", this.ping);
     }
 
     reset() {
@@ -89,19 +91,18 @@ export class MyModelRoot extends ModelRoot {
 
         this.bots.forEach(b => b.destroy());
 
-        const ss = this.base.gridScale * this.base.gridSize;
+        // const ss = this.base.gridScale * this.base.gridSize;
 
-        for (let n = 0; n<200; n++) {
-            const translation = [ ss * Math.random(), 0, ss * Math.random()];
-            const bot = BotActor.create({parent: this.base, pawn: "TestPawn", translation, tags: ["bot"]});
-            this.bots.push(bot);
-        }
+        // for (let n = 0; n<200; n++) {
+        //     const translation = [ ss * Math.random(), 0, ss * Math.random()];
+        //     const bot = BotActor.create({parent: this.base, pawn: "TestPawn", translation, tags: ["bot"]});
+        //     this.bots.push(bot);
+        // }
 
     }
 
     ping() {
-        const found = this.bot0.neighbors(10, "other");
-        console.log(found);
+
     }
 
 }

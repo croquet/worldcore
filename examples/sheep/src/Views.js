@@ -2,7 +2,7 @@ import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, Thr
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, ThreeRaycast, PM_ThreeCollider,
     PM_ThreeInstanced, OutlinePass, viewRoot, Constants, PM_NavGridGizmo } from "@croquet/worldcore";
-import { PathDebug, packKey } from "./Paths";
+// import { PathDebug, packKey } from "./Paths";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
@@ -16,7 +16,7 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
     }
 
     destroy() {
-        super.destroy()
+        super.destroy();
     }
 
 }
@@ -44,12 +44,36 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         this.addRenderObjectToRaycast("ground");
 
         this.gizmo.visible = true;
+
+        this.subscribe("input", "pointerDown", this.doPointerDown);
     }
 
     destroy() {
-        super.destroy()
+        super.destroy();
         this.geometry.dispose();
         this.material.dispose();
+    }
+
+    doPointerDown(e) {
+        if (e.button === 2) return;
+        this.point(e.xy);
+    }
+
+    point(xy) {
+        const rc = this.service("ThreeRaycast");
+        const hits = rc.cameraRaycast(xy, "ground");
+        if (hits.length<1) return;
+        const hit = hits[0];
+        const navX = Math.floor(hit.xyz[0]/this.actor.gridScale);
+        const navZ = Math.floor(hit.xyz[2]/this.actor.gridScale);
+
+        if (navX <0) return;
+        if (navZ <0) return;
+
+        const start = packKey(0,0);
+        const end = packKey(navX,navZ);
+        const path = this.actor.findPath(start, end);
+        this.drawPathGizmo(path);
     }
 }
 BasePawn.register("BasePawn");
@@ -61,7 +85,7 @@ BasePawn.register("BasePawn");
 let fov = 60;
 let pitch = toRad(-60);
 let yaw = toRad(0);
-const cam = [0,200,100];
+const cam = [0,20,10];
 
 class GodView extends ViewService {
 
@@ -95,31 +119,12 @@ class GodView extends ViewService {
         this.publish("hud", "go", [x,0,z]);
     }
 
-
-
-    point() {
-        const rc = this.service("ThreeRaycast");
-        const hits = rc.cameraRaycast(this.xy, "ground");
-        if (hits.length<1) return;
-        const hit = hits[0];
-        // const pawn = hit.pawn;
-        // console.log([hit.xyz[0], hit.xyz[2]]);
-        const navX = Math.floor(hit.xyz[0]/Constants.scale);
-        const navZ = Math.floor(hit.xyz[2]/Constants.scale);
-
-        const paths = this.modelService("Paths");
-        // const start = packKey(0,1,0);
-        const end = packKey(navX,1,navZ);
-        const path = paths.findPath(this.pathStart, end);
-        viewRoot.pathDebug.drawPath(path);
-    }
-
     updateCamera() {
         if (this.paused) return;
         const rm = this.service("ThreeRenderManager");
 
-        const pitchMatrix = m4_rotation([1,0,0], pitch)
-        const yawMatrix = m4_rotation([0,1,0], yaw)
+        const pitchMatrix = m4_rotation([1,0,0], pitch);
+        const yawMatrix = m4_rotation([0,1,0], yaw);
 
         let cameraMatrix = m4_translation(cam);
         cameraMatrix = m4_multiply(pitchMatrix,cameraMatrix);
@@ -156,14 +161,14 @@ class GodView extends ViewService {
     doPointerDelta(e) {
         if (this.paused) return;
         if (!this.dragging) return;
-        cam[0] += -0.5 * e.xy[0];
-        cam[2] += -0.5 * e.xy[1];
+        cam[0] += -0.1 * e.xy[0];
+        cam[2] += -0.1 * e.xy[1];
         // yaw += -0.01 * e.xy[0];
         // yaw = yaw % TAU;
         // pitch += -0.01 * e.xy[1];
         // pitch = Math.min(pitch, toRad(-5));
         // pitch = Math.max(pitch, toRad(-90));
-        this.updateCamera()
+        this.updateCamera();
     }
 }
 
@@ -178,7 +183,7 @@ export class MyViewRoot extends ViewRoot {
     }
 
     onStart() {
-        this.buildInstances()
+        this.buildInstances();
         this.buildLights();
         this.buildHUD();
         // this.pathDebug = new PathDebug(this.model);
@@ -208,10 +213,10 @@ export class MyViewRoot extends ViewRoot {
         sun.shadow.camera.near = 0.5;
         sun.shadow.camera.far = 300;
 
-        sun.shadow.camera.left = -80
-        sun.shadow.camera.right = 80
-        sun.shadow.camera.top = 80
-        sun.shadow.camera.bottom = -80
+        sun.shadow.camera.left = -80;
+        sun.shadow.camera.right = 80;
+        sun.shadow.camera.top = 80;
+        sun.shadow.camera.bottom = -80;
 
         sun.shadow.bias = -0.0005;
         group.add(sun);
@@ -220,7 +225,7 @@ export class MyViewRoot extends ViewRoot {
     }
 
     buildHUD() {
-        const wm = this.service("WidgetManager2");
+        // const wm = this.service("WidgetManager2");
     }
 
     buildInstances() {
@@ -236,16 +241,22 @@ export class MyViewRoot extends ViewRoot {
         material2.shadowSide = THREE.BackSide;
         im.addMaterial("magenta", material2);
 
-        const geometry = new THREE.BoxGeometry( 0.5, 0.5, 0.5 );
-        geometry.translate(0,1,0)
+        const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+        geometry.translate(0,0.5,0);
         im.addGeometry("cube", geometry);
 
         const mmm = im.addMesh("bot", "cube", "magenta", 2000);
         mmm.castShadow = true;
     }
 
+}
 
+function packKey(x,y) {
+    if (x < 0 ) console.error("Negative AM_Grid x coordinate!");
+    if (y < 0 ) console.error("Negative AM_Grid y coordinate!");
+    return ((0x8000|x)<<16)|y;
+}
 
-
-
+function unpackKey(key) {
+    return [(key>>>16) & 0x7FFF,key & 0x7FFF];
 }

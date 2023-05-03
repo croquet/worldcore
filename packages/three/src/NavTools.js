@@ -501,9 +501,9 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
             const xy = unpackKey(key);
             const x = (xy[0] + 0.5) * grid.gridScale;
             const y = (xy[1] + 0.5) * grid.gridScale;
-            const p = [x,0.15,y]
+            const p = [x,0.15,y];
             points.push(new THREE.Vector3(...p));
-        })
+        });
 
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
         this.pathGizmo = new THREE.Line(geometry, this.magentaMaterial);
@@ -518,9 +518,9 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
             const xy = unpackKey(key);
             const x = (xy[0] + 0.5) * grid.gridScale;
             const y = (xy[1] + 0.5) * grid.gridScale;
-            const p = [x,y,0.15]
+            const p = [x,y,0.15];
             points.push(new THREE.Vector3(...p));
-        })
+        });
 
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
         this.pathGizmo = new THREE.Line(geometry, this.magentaMaterial);
@@ -535,17 +535,17 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
             const xy = unpackKey(key);
             const x = (xy[0] + 0.5) * grid.gridScale;
             const y = (xy[1] + 0.5) * grid.gridScale;
-            const p = [0.15, x,y]
+            const p = [0.15, x,y];
             points.push(new THREE.Vector3(...p));
-        })
+        });
 
         const geometry = new THREE.BufferGeometry().setFromPoints(points);
         this.pathGizmo = new THREE.Line(geometry, this.magentaMaterial);
         geometry.dispose();
     }
 
-}
+};
 
 function unpackKey(key) {
-    return [(key>>>14) & 0x3FFF,key & 0x3FFF];
+    return [(key>>>16) & 0x7FFF,key & 0x7FFF];
 }

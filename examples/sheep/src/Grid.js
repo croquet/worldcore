@@ -1,4 +1,4 @@
-import { RegisterMixin } from "@croquet/worldcore";
+import { RegisterMixin, PriorityQueue, v2_manhattan, Behavior, v3_sub, v3_magnitude, v3_normalize, v3_add, q_lookAt } from "@croquet/worldcore";
 
 
 //------------------------------------------------------------------------------------------
@@ -6,10 +6,13 @@ import { RegisterMixin } from "@croquet/worldcore";
 //------------------------------------------------------------------------------------------
 
 function packKey(x,y) {
-    if (x < 0 || y < 0 ) console.error("Negative AM_Grid coordinates!");
-    return 0xF0000000|(x<<14)|y;
+    if (x < 0 || y< 0 ) return 0;
+    return ((0x8000|x)<<16)|y;
 }
 
+function unpackKey(key) {
+    return [(key>>>16) & 0x7FFF,key & 0x7FFF];
+}
 
 //------------------------------------------------------------------------------------------
 // -- AM_Grid ------------------------------------------------------------------------------
@@ -34,6 +37,17 @@ export const AM_Grid = superclass => class extends superclass {
             case 0: return packKey(Math.floor(x/s), Math.floor(z/s));
             case 1: return packKey(Math.floor(x/s), Math.floor(y/s));
             case 2: return packKey(Math.floor(y/s), Math.floor(z/s));
+        }
+    }
+
+    unpackKey(key) {
+        const s = this.gridScale;
+        const xy = unpackKey(key);
+        switch (this.gridPlane) {
+            default:
+            case 0: return [s*xy[0], 0, s*xy[1]];
+            case 1: return [s*xy[0], s*xy[1], 0];
+            case 2: return [0, s*xy[0], s*xy[1]];
         }
     }
 
@@ -189,9 +203,11 @@ export const AM_OnGrid = superclass => class extends superclass {
     translationSet(value, old) {
         super.translationSet(value,old);
         if (!this.parent || !this.parent.isGrid) { console.error("AM_OnGrid must have an AM_Grid parent!"); return}
+        const xy = this.parent.gridXY(...value);
+        if (xy[0]<0 || xy[1]<0 ) console.error("Off grid: " + xy);
 
         const oldKey = this.binKey;
-        this.binKey = this.parent.packKey(...value);
+        this.binKey = packKey(...xy);
 
         if (this.binKey !== oldKey) {
             this.parent.removeFromBin(oldKey,this);
@@ -218,6 +234,141 @@ RegisterMixin(AM_OnGrid);
 export const AM_NavGridX = superclass => class extends AM_Grid(superclass) {
 
     static types() { return { "AM_NavGrid:NavNode": NavNode }}
+
+    init(options) {
+        super.init(options);
+        this.navNodes = new Map();
+        this.navClear();
+    }
+
+    navClear() {
+        for (let x = 0; x < this.gridSize; x++) {
+            for (let y = 0; y < this.gridSize; y++) {
+                const node = new NavNode(x,y);
+                node.clear(this.gridSize);
+                this.navNodes.set(node.key, node);
+            }
+        }
+
+        this.say("navGridChanged");
+    }
+
+    addBlock(x,y) {
+
+        const west = this.navNodes.get(packKey(x-1, y));
+        const south = this.navNodes.get(packKey(x, y-1));
+        const east = this.navNodes.get(packKey(x+1, y));
+        const north = this.navNodes.get(packKey(x, y+1));
+
+        const southwest = this.navNodes.get(packKey(x-1, y-1));
+        const southeast = this.navNodes.get(packKey(x+1, y-1));
+        const northeast = this.navNodes.get(packKey(x+1, y+1));
+        const northwest = this.navNodes.get(packKey(x-1, y+1));
+
+        if (west) west.exits[2] = 0;
+        if (south) south.exits[3] = 0;
+        if (east) east.exits[0] = 0;
+        if (north) north.exits[1] = 0;
+
+        if (southwest) southwest.exits[6] = 0;
+        if (southeast) southeast.exits[7] = 0;
+        if (northeast) northeast.exits[4] = 0;
+        if (northwest) northwest.exits[5] = 0;
+
+    }
+
+    addHorizontalFence(x,y,length) {
+
+        for ( let n = 0; n<length; n++) {
+
+            const south = this.navNodes.get(packKey(x+n,y-1));
+            const north = this.navNodes.get(packKey(x+n,y));
+
+            if (south) south.exits[3] = 0;
+            if (north) north.exits[1] = 0;
+
+            if (n>0) {
+                if (south) south.exits[7] = 0;
+                if (north) north.exits[4] = 0;
+            }
+
+            if (n<length-1) {
+                if (south) south.exits[6] = 0;
+                if (north) north.exits[5] = 0;
+            }
+        }
+    }
+
+    addVerticalFence(x,y,length) {
+
+        for ( let n = 0; n<length; n++) {
+
+            const west = this.navNodes.get(packKey(x-1,y+n));
+            const east = this.navNodes.get(packKey(x,y+n));
+
+            if (west) west.exits[2] = 0;
+            if (east) east.exits[0] = 0;
+
+            if (n>0) {
+                if (west) west.exits[5] = 0;
+                if (east) east.exits[4] = 0;
+            }
+
+            if (n<length-1) {
+                if (west) west.exits[6] = 0;
+                if (east) east.exits[7] = 0;
+            }
+        }
+
+    }
+
+    findPath(startKey, endKey) {
+
+        const path = [];
+
+        if (!this.navNodes.has(startKey)) return path;  // Invalid start waypoint
+        if (!this.navNodes.has(endKey)) return path;    // Invalid end waypoint
+        if (startKey === endKey) return [startKey]; // already at destination
+
+        const endXY = this.navNodes.get(endKey).xy;
+
+        const frontier = new PriorityQueue((a, b) => a.priority < b.priority);
+        const visited = new Map();
+
+        frontier.push({priority: 0, key: startKey});
+        visited.set(startKey, {from: startKey, cost: 0});
+
+        let key;
+        while (!frontier.isEmpty) {
+            key = frontier.pop().key;
+            if (key === endKey) break;
+            const cost = visited.get(key).cost;
+            const node = this.navNodes.get(key);
+            node.exits.forEach((exit,n) => {
+                if (!exit) return;
+                const weight = node.weight(n);
+                if (!visited.has(exit)) visited.set(exit, {}); // First time visited
+                const next = visited.get(exit);
+                if (!next.from || next.cost > cost + weight ) { // This route is better
+                    next.from = key;
+                    next.cost = cost + weight;
+                    const heuristic = v2_manhattan(this.navNodes.get(exit).xy, endXY);
+                    frontier.push({priority: next.cost + heuristic, key: exit});
+                }
+            });
+        }
+
+        if (key === endKey) { // A path was found!
+            while (key !== startKey) { // Run backwards along "from" links to build path array
+                path.push(key);
+                key = visited.get(key).from;
+            }
+            path.push(startKey);
+            path.reverse();
+        }
+
+        return path;
+    }
 
 };
 RegisterMixin(AM_NavGridX);
@@ -296,3 +447,51 @@ class NavNode {
     }
 
 }
+
+//------------------------------------------------------------------------------------------
+//-- GotoBehavior --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Moves to a target point
+
+class GotoBehaviorX extends Behavior {
+
+    get tickRate() { return this._tickRate || 50} // More than 15ms for smooth movement
+
+    get radius() { return this._radius || 0}
+    get speed() { return this._speed || 3}
+    get target() {return this._target || this.actor.translation}
+
+    do(delta) {
+        const distance = this.speed * delta / 1000;
+
+        const to = v3_sub(this.target, this.actor.translation);
+        const left = v3_magnitude(to);
+
+        if (left < this.radius) {
+            this.succeed();
+            return;
+        }
+
+        if (left<distance) {
+            this.actor.set({translation:this.target});
+            this.succeed();
+            return;
+        }
+
+        const aim = v3_normalize(to);
+
+        const x = aim[0] * distance;
+        const y = aim[1] * distance;
+        const z = aim[2] * distance;
+
+        const translation = v3_add(this.actor.translation, [x,y,z]);
+        const rotation = q_lookAt(this.actor.forward, this.actor.up, aim);
+
+        this.actor.set({translation, rotation});
+
+    }
+
+}
+GotoBehaviorX.register("GotoBehaviorX");
+

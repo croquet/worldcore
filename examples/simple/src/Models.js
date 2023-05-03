@@ -6,14 +6,14 @@ import { AM_Grid, AM_OnGrid } from "./Grid";
 // BaseActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BaseActor extends mix(Actor).with(AM_Spatial, AM_Grid) {}
+class BaseActor extends mix(Actor).with(AM_Spatial) {}
 BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
 // TestActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnGrid) {}
+class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {}
 TestActor.register('TestActor');
 
 //------------------------------------------------------------------------------------------
@@ -24,7 +24,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!");
+        console.log("Start root model!");
 
         this.base = BaseActor.create({pawn: "GroundPawn"});
         this.sun = TestActor.create({parent: this.base, name: "sun", pawn: "TestPawn", translation:[0,2,0]});
@@ -49,9 +49,6 @@ export class MyModelRoot extends ModelRoot {
 
     test() {
         console.log("test");
-        const translation = v3_add(this.sun.translation, [1,0,0]);
-        this.sun.set({translation});
-        console.log(this.sun.gridXY);
     }
 
 
