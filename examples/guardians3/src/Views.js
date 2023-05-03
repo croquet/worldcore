@@ -1,6 +1,6 @@
 // Drive Views
 //
-// The majority of the code specific to this tutorial is in the definition of AvatarPawn.
+// The majority of the code specific to this example is in the definition of AvatarPawn.
 // Demonstrates terrain following, avatar/object and avatar/avatar collisions.
 // Uses a 2D Perlin noise function to generate terrain and to dynamically compute
 // the height of the terrain as the avatar moves.
@@ -10,7 +10,6 @@
 // the collision in the opposite direction of your avatar.
 //
 // To do:
-// - add missile
 // - ensure camera can always see tank
 // - tank explosion (turret jumps up, tank fades out)
 // - collision more natural
@@ -24,22 +23,22 @@ import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager,
 import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
 import tank_body from "../assets/tank_body.glb";
-
+import paper from "../assets/paper.jpg";
 
 // construct a perlin object and return a function that uses it
-const perlin2D = function(perlinHeight = 40, perlinScale = 0.02){
+const perlin2D = function(perlinHeight = 40, perlinScale = 0.02) {
     // the PerlinNoise constructor can take a seed value as an argument
     // this must be the same for all participants so it generates the same terrain.
     const perlin = new PerlinNoise();
 
-    return function(x,y){
+    return function(x,y) {
         //return 0; // used for testing
         return perlinHeight * perlin.signedNoise2D(perlinScale*x-100, perlinScale*y-146);
     }
 }();
 
 const sunBase = [25, 100, 50];
-const sunLight =  function(){
+const sunLight =  function() {
     const sun = new THREE.DirectionalLight( 0xffffff, 0.3 );
     sun.position.set(...sunBase);
     sun.castShadow = true;
@@ -58,9 +57,9 @@ const sunLight =  function(){
 }();
 
 // 3D object that you can see through a wall
-const constructShadowObject = function(object3d, renderOrder, color){
+const constructShadowObject = function(object3d, renderOrder, color) {
 
-    let shadowMat = new THREE.MeshStandardMaterial({
+    const shadowMat = new THREE.MeshStandardMaterial( {
         color: color,
         opacity: 0.25,
         transparent: true,
@@ -69,7 +68,7 @@ const constructShadowObject = function(object3d, renderOrder, color){
         // side: THREE.BackSide,
     });
 
-    let outline3d = object3d.clone(true);
+    const outline3d = object3d.clone(true);
     outline3d.position.set(0,0,0);
     outline3d.rotation.set(0,0,0);
     outline3d.updateMatrix();
@@ -113,21 +112,25 @@ export class InstancePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
 
     constructor(actor) {
         super(actor);
+        this.paperTexture = new THREE.TextureLoader().load( paper );
+        this.paperTexture.wrapS = THREE.RepeatWrapping;
+        this.paperTexture.wrapT = THREE.RepeatWrapping;
+        this.paperTexture.repeat.set( 1, 1 );
         this.loadInstance(actor._instanceName, actor.color);
     }
 
-    loadInstance(name, color){
+    loadInstance(name, color) {
         const im = this.service("ThreeInstanceManager");
-        let geometry = im.geometry(name);
-        if(geometry){
-            this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...color)} );
+        const geometry = im.geometry(name);
+        if (geometry) {
+            this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...color), map:this.paperTexture} );
             this.mesh = new THREE.Mesh( geometry, this.material );
             this.mesh.castShadow = true;
             this.mesh.receiveShadow = true;
             this.setRenderObject(this.mesh);
             //this.outline3d=constructShadow(this.mesh, 10002);
             //this.mesh.add(this.outline3d, color);
-        }else this.future(100).loadInstance(name, color);
+        } else this.future(100).loadInstance(name, color);
     }
 }
 
@@ -142,7 +145,7 @@ export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
         super(actor);
         this.useInstance("pole");
         this.service("CollisionManager").colliders.add(this);
-        let t = this.translation;
+        const t = this.translation;
         t[1]=perlin2D(t[0], t[2]);
         this.set({translation:t});
     }
@@ -165,16 +168,23 @@ BollardPawn.register("BollardPawn");
 export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_NavGridGizmo) {
     constructor(actor) {
         super(actor);
-        let worldX = 512, worldZ=512;
-        let cellSize = 2.5;
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2)} );
+        const worldX = 512, worldZ=512;
+        const cellSize = 2.5;
+
+        const paperTexture = new THREE.TextureLoader().load( paper );
+        paperTexture.wrapS = THREE.RepeatWrapping;
+        paperTexture.wrapT = THREE.RepeatWrapping;
+        paperTexture.repeat.set( worldX/4, worldZ/4 );
+
+
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2), map:paperTexture} );
         this.geometry = new THREE.PlaneGeometry(worldX*cellSize,worldZ*cellSize, worldX, worldZ);
         this.geometry.rotateX(toRad(-90));
 
         const vertices = this.geometry.attributes.position.array;
 
-        for(let index=0; index < vertices.length; index+=3)
-            vertices[index+1]=perlin2D(vertices[index], vertices[index+2]);
+        for( let index=0; index < vertices.length; index+=3)
+            vertices[index+1] = perlin2D(vertices[index], vertices[index+2]);
 
         this.geometry.computeVertexNormals();
         const base = new THREE.Mesh( this.geometry, this.material );
@@ -297,23 +307,27 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.service("CollisionManager").colliders.add(this);
         this.loadInstance(actor._instanceName, [0.35, 0.35, 0.35]);
         this.listen("colorSet", this.onColorSet);
+        this.paperTexture = new THREE.TextureLoader().load( paper );
+        this.paperTexture.wrapS = THREE.RepeatWrapping;
+        this.paperTexture.wrapT = THREE.RepeatWrapping;
+        this.paperTexture.repeat.set( 1, 1 );
     }
 
-    loadInstance(name, color){
+    loadInstance(name, color) {
         const im = this.service("ThreeInstanceManager");
-        let geometry = im.geometry(name);
-        if(geometry){
+        const geometry = im.geometry(name);
+        if (geometry) {
             console.log("HERE I AM", geometry)
-            this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...color)} );
+            this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...color), map:this.paperTexture} );
             this.mesh = new THREE.Mesh( geometry, this.material );
             this.mesh.castShadow = true;
             this.mesh.receiveShadow = true;
-            if(this.isMyAvatar)
+            if (this.isMyAvatar)
                 sunLight.target = this.mesh; //this.instance; // sunLight is a global
             this.setRenderObject(this.mesh);
             //this.outline3d=constructShadow(this.mesh, 10001, color);
             //this.mesh.add(this.outline3d);
-        }else this.future(100).loadInstance(name, color);
+        } else this.future(100).loadInstance(name, color);
     }
 
     destroy() {
@@ -357,8 +371,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         // this.unsubscribe("input", "pointerMove", this.doPointerMove);
     }
 
-    shoot(){
-        if(this.now()-this.lastShootTime > this.waitShootTime){
+    shoot() {
+        if (this.now()-this.lastShootTime > this.waitShootTime) {
             this.lastShootTime = this.now();
             this.say("shoot", [this.translation, this.yaw]);
             //console.log("Shoot");
@@ -430,24 +444,17 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
 
-    doPointerDown(e){
+    doPointerDown(e) {
         console.log("pointerDown", e.id, e.xy);
 
         if (!this.pointerId) {
             this.pointerId = e.id;
             this.pointerHome = e.xy;
-/*
-            const joystick = document.getElementById("joystick");
-            joystick.style.left = `${e.xy[0] - 60}px`;
-            joystick.style.top = `${e.xy[1] - 60}px`;
-            joystick.style.display = "block";
-*/
-            //this.doPointerMove(e);
         }
     }
 
     doPointerMove(e) {
-        if (e.id === this.pointerId){
+        if (e.id === this.pointerId) {
             const dx = e.xy[0] - this.pointerHome[0];
             const dy = e.xy[1] - this.pointerHome[1];
             const x = -dx/20;
@@ -457,26 +464,25 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
             let v = v2_sqrMag([this.turn, this.gas]);
 
-            if(v>1){
+            if(v>1) {
                 v=Math.sqrt(v);
                 this.turn/=v;
                 this.gas/=v;
             }
 
             const knob = document.getElementById("knob");
-            
             knob.style.left = `${20 - this.turn*20}px`;
             knob.style.top = `${20 - this.gas*20}px`;
             this.pointerMoved = true;
         }
     }
 
-    doPointerUp(e){
+    doPointerUp(e) {
         console.log("pointerUp", e.id, e.xy);
         if (e.id === this.pointerId) {
             this.pointerId = 0;
 
-            if(this.pointerMoved){
+            if (this.pointerMoved) {
                 this.turn = 0;
                 this.gas = 0;
                 const knob = document.getElementById("knob");
@@ -488,14 +494,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         }
     }
 
-    doPointerTap(e){
+    doPointerTap(e) {
         this.shoot();
     }
 
     update(time, delta) {
         super.update(time,delta);
         if (this.driving) {
-            const wheelbase = 3.5;
 
             const factor = delta/1000;
 
@@ -503,17 +508,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 this.speed = 5 * factor;
                 this.steer = -1;
                 this.shoot(); 
-            }else{
+            } else {
                 this.speed = this.gas * 20 * factor * this.highGear;
                 this.steer = this.turn;
             }
 
             // copy our current position to compute pitch
-            let start = [...this.translation];
-            // angular velocity based on speed
-            
-           // const angularVelocity = -this.speed/10 * Math.sin(toRad(this.steer)) / wheelbase / factor;
-
+            const start = [...this.translation];
             const angularVelocity = this.steer*0.025;
             let yaw = this.yaw+angularVelocity;
             const yawQ = q_axisAngle([0,1,0], yaw);
@@ -530,7 +531,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
             let deltaPitch, deltaRoll;
             let roll, pitch;
-            if(this.speed>=0){
+            if(this.speed>=0) {
                 deltaPitch = v3_sub(translation, start);
                 pitch = this.computeAngle(deltaPitch);
 
@@ -538,8 +539,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 deltaRoll[1] = perlin2D(deltaRoll[0], deltaRoll[2])+this.wheelHeight;
                 deltaRoll = v3_sub(translation, deltaRoll);
                 roll = this.computeAngle(deltaRoll);
-            }
-            else{
+            } else {
                 deltaPitch = v3_sub(start, translation);
                 pitch = this.computeAngle(deltaPitch);
 
@@ -549,34 +549,32 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 roll = this.computeAngle(deltaRoll);
             }
 
-            if (!this.collide(tt, translation)){
-                let q = q_eulerYXZ( pitch, yaw, roll);
-                if(this.speed){
+            if (!this.collide()) {
+                const q = q_eulerYXZ( pitch, yaw, roll);
+                if (this.speed) {
                     this.positionTo(translation, q);
                     sunLight.position.set(...v3_add(translation, sunBase));
-                }
-                else { // if we haven't moved, then don't change anything
-                    if((pitch !== this.pitch) || (yaw!==this.yaw) || (roll!==this.roll)){
+                } else { // if we haven't moved, then don't change anything
+                    if ( (pitch !== this.pitch) || (yaw!==this.yaw) || (roll!==this.roll) ) 
                         this.positionTo(start, q);
-                    }
                 }
             }
             this.pitch = pitch;
             this.roll = roll;
             this.yaw = yaw;
             this.cameraTarget = m4_scaleRotationTranslation(1, yawQ, translation);
-            if(this.godMode)this.godCamera();
-            else this.updateChaseCam(time, delta, translation);
+            if (this.godMode) this.godCamera();
+            else this.updateChaseCam(time, delta);
         }
     }
 
-    computeAngle(d){
+    computeAngle(d) {
         const delta = v3_magnitude([d[0], 0, d[2]]);
         return  delta>0 ? Math.atan2(d[1], delta) : 0;
     }
 
 
-    updateChaseCam(time, delta, translation) {
+    updateChaseCam(time, delta) {
         const rm = this.service("ThreeRenderManager");
 
 
@@ -591,32 +589,15 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         }
 
         const targetTranslation = v3_transform(offset, this.cameraTarget);
-        // check if we are behind a hill
-
-        const d = v3_sub(targetTranslation, translation);
-
-        for(let i=1; i<=4; i++){
-            let dd = v3_add(translation, v3_scale(d,i/4));
-
-            let p = perlin2D(dd[0], dd[2]);
-            if(p>dd[1]){
-
-
-               // console.log(fixedPitch, pitch)
-            }
-        }
-        
         const pitchQ = q_axisAngle([1,0,0], fixedPitch);
         const yawQ = q_axisAngle([0,1,0], this.yaw);
-
-        //const targetRotation = q_euler(this.pitch, this.yaw, 0); //q_multiply(pitchQ, yawQ);
         const targetRotation = q_multiply(pitchQ, yawQ);
 
-        let t = this.chaseTranslation = v3_lerp(this.chaseTranslation, targetTranslation, tTug);
+        const t = this.chaseTranslation = v3_lerp(this.chaseTranslation, targetTranslation, tTug);
         this.chaseRotation = q_slerp(this.chaseRotation, targetRotation, rTug);
 
         const terrainHeight = perlin2D(t[0], t[2])+0.5;
-        if(t[1]<terrainHeight)this.chaseTranslation[1]=terrainHeight;
+        if (t[1]<terrainHeight) this.chaseTranslation[1]=terrainHeight;
 
         const ttt = m4_translation(this.chaseTranslation);
 
@@ -626,8 +607,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         rm.camera.matrixWorldNeedsUpdate = true;
     }
 
-    godCamera(){
-        if(!this.godMatrix){
+    godCamera() {
+        if (!this.godMatrix) {
             let t = [150,100,150];
             let q = q_axisAngle([1, 0, 0], -Math.PI/2);
             this.godMatrix = m4_scaleRotationTranslation(1, q, t);
@@ -637,7 +618,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         rm.camera.matrixWorldNeedsUpdate = true;
     }
 
-    collide(velocity) {
+    collide() {
         const colliders = this.service("CollisionManager").colliders;
         for (const collider of colliders) {
             if (collider === this) continue;
@@ -648,13 +629,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 //console.log("bump!");
                 //console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
                 const from = v3_sub(this.translation, collider.translation);
-                let distance = v3_magnitude(from);
+                const distance = v3_magnitude(from);
                 let bounce;
-                if(distance > 0) bounce = v3_scale( from, 2/distance );
+                if (distance > 0) bounce = v3_scale( from, 2/distance );
                 else bounce = [1,1,1]; // we are on top of each other
                 const translation = v3_add(this.translation, bounce);
                 this.translateTo(translation);
-                if(collider.actor.tags.has("avatar"))
+                if (collider.actor.tags.has("avatar"))
                     collider.say("bounce", [-bounce[0], -bounce[1], -bounce[2]]);
                 return true;
             }
@@ -666,15 +647,15 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     // This is a bit tricky, because the other avatar is updating itself so fast,
     // it is possible to miss this if it occurs in the model. The drawback is it
     // increases latency.
-    doBounce(bounce){
-        let translation = v3_add(bounce, this.translation);
+    doBounce(bounce) {
+        const translation = v3_add(bounce, this.translation);
         this.translateTo(translation);
     }
 
-    goHome(){
-        let translation = [175+ this.random() * 10, 0, 160+this.random()*10];
+    goHome() {
+        const translation = [175+ this.random() * 10, 0, 160+this.random()*10];
         this.yaw = Math.PI/2;
-        let rotation = q_axisAngle([0,1,0], this.yaw);        
+        const rotation = q_axisAngle([0,1,0], this.yaw);
 
         this.positionTo(translation, rotation);
     }
@@ -797,7 +778,5 @@ export class MyViewRoot extends ViewRoot {
         tankTurretim.receiveShadow = true;
         tankTracksim.castShadow = true;
         tankTracksim.receiveShadow = true;
-
     }
-
 }

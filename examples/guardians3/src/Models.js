@@ -103,7 +103,7 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGr
         if (t[2] < 5) this.destroy();
     }
 
-    step(){
+    step() {
         this.translateTo(v3_add(this.translation, this._velocity));
         this.future(100).step();
     }
@@ -142,7 +142,7 @@ BollardActor.register('BollardActor');
 
 
 class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, AM_OnNavGrid) {
-    init(options){
+    init(options) {
         super.init(options);
         this.listen("bounce", this.doBounce);
         this.listen("shoot", this.doShoot);
@@ -155,11 +155,11 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, 
     // bounce gets integrated into the avatar position. By sending it to the view 
     // here, it gets fully integrated. This does increase latency somewhat for you 
     // seeing the other user's bounce.
-    doBounce(bounce){
+    doBounce(bounce) {
         this.say("doBounce", bounce);
     }
 
-    doShoot(where){
+    doShoot(where) {
         //[this.translation, this.yaw]
         /*
         const yawQ = q_axisAngle([0,1,0], where[1]);
@@ -173,7 +173,6 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, 
         const translation = v3_add(this.translation, v3_scale(aim, 5));
         const missile = MissileActor.create({parent: this.parent, pawn: "MissilePawn", translation, color: [...this.color]});
             missile.go = missile.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
-
     }
 
 }
@@ -242,19 +241,19 @@ export class MyModelRoot extends ModelRoot {
     init(options) {
         super.init(options);
         console.log("Start model root!!");
-        let gridScale = 3;
-        let bollardDistance = gridScale*3;
-        this.base = BaseActor.create({gridSize: 75, gridScale:gridScale, subdivisions: 1, noise: 1});
+        const gridScale = 3;
+        const bollardDistance = gridScale*3;
+        this.base = BaseActor.create({gridSize: 75, gridScale: gridScale, subdivisions: 1, noise: 1});
         this.parent = SimpleActor.create({pawn: "TestPawn", parent: this.base, translation:[-12,7,-35]});
         this.child = SimpleActor.create({pawn: "CollidePawn", parent: this.parent, translation:[0,0,4]});
 
         this.parent.behavior.start({name: "SpinBehavior", axis: [0,1,0], tickRate:500});
         this.child.behavior.start({name: "SpinBehavior", axis: [0,0,1], speed: 3});
 
-        for (let x=0; x<10; x++) 
-        for (let y=0; y<10; y++){
-            BollardActor.create({pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, 
-                translation:[99+bollardDistance*x+1.5,0, 99+bollardDistance*y+1.5]});
+        for (let x=0; x<10; x++)
+        for (let y = 0; y<10; y++) {
+            BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, 
+                translation:[99+bollardDistance*x+1.5,0, 99+bollardDistance*y+1.5]} );
         }
 
         this.subscribe("input", "cDown", this.colorChange);
