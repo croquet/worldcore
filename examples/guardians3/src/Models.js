@@ -204,8 +204,8 @@ class MyUser extends User {
             instanceName: 'tankTracks',
             tags: ["avatar"]
         });
-        SimpleActor.create({pawn: "InstancePawn", parent: this.avatar, color:this.color, instanceName:'tankBody'});
-        SimpleActor.create({pawn: "InstancePawn", parent: this.avatar, color:this.color, instanceName:'tankTurret'});
+        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, color:this.color, instanceName:'tankBody'});
+        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, color:this.color, instanceName:'tankTurret'});
     }
 
     destroy() {
@@ -252,8 +252,12 @@ export class MyModelRoot extends ModelRoot {
 
         for (let x=0; x<10; x++)
         for (let y = 0; y<10; y++) {
-            BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, 
+            let bollard = BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, 
                 translation:[99+bollardDistance*x+1.5,0, 99+bollardDistance*y+1.5]} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,2.75,0]} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,3.25,0]} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,3.75,0]} );
+            
         }
 
         this.subscribe("input", "cDown", this.colorChange);

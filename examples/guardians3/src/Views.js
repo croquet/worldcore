@@ -108,7 +108,7 @@ TestPawn.register("TestPawn");
 // InstancePawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class InstancePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
+export class GeometryPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
@@ -116,10 +116,10 @@ export class InstancePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
         this.paperTexture.wrapS = THREE.RepeatWrapping;
         this.paperTexture.wrapT = THREE.RepeatWrapping;
         this.paperTexture.repeat.set( 1, 1 );
-        this.loadInstance(actor._instanceName, actor.color);
+        this.loadGeometry(actor._instanceName, actor.color);
     }
 
-    loadInstance(name, color) {
+    loadGeometry(name, color) {
         const im = this.service("ThreeInstanceManager");
         const geometry = im.geometry(name);
         if (geometry) {
@@ -130,11 +130,11 @@ export class InstancePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
             this.setRenderObject(this.mesh);
             //this.outline3d=constructShadow(this.mesh, 10002);
             //this.mesh.add(this.outline3d, color);
-        } else this.future(100).loadInstance(name, color);
+        } else this.future(100).loadGeometry(name, color);
     }
 }
 
-InstancePawn.register("InstancePawn");
+GeometryPawn.register("GeometryPawn");
 //------------------------------------------------------------------------------------------
 // BollardPawn -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -146,7 +146,7 @@ export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
         this.useInstance("pole");
         this.service("CollisionManager").colliders.add(this);
         const t = this.translation;
-        t[1]=perlin2D(t[0], t[2]);
+        t[1]=perlin2D(t[0], t[2])-0.25;
         this.set({translation:t});
     }
 
@@ -157,6 +157,15 @@ export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
 
 }
 BollardPawn.register("BollardPawn");
+
+export class InstancePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
+
+    constructor(actor) {
+        super(actor);
+        this.useInstance(actor._instanceName);
+    }
+}
+InstancePawn.register("InstancePawn");
 
 //------------------------------------------------------------------------------------------
 //-- BasePawn ------------------------------------------------------------------------------
@@ -723,7 +732,7 @@ export class MyViewRoot extends ViewRoot {
         const  yellow = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
         const  magenta = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
         const  cyan = new THREE.MeshStandardMaterial( {color: new THREE.Color(0,1,1)} );
-        const  gray = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.1,0.1,0.1)} );
+        const  gray = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.3,0.3,0.3), metalness:1, roughness:0.1} );
 
         im.addMaterial("yellow", yellow);
         im.addMaterial("magenta", magenta);
@@ -733,19 +742,29 @@ export class MyViewRoot extends ViewRoot {
         const box = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("box", box);
 
-        const cylinder = new THREE.CylinderGeometry(1, 1, 3);
-        cylinder.translate(0,1.5,0);
+        const cylinder = new THREE.CylinderGeometry(1, 1.5, 4.25, 32);
+        cylinder.translate(0,2,0);
         im.addGeometry("cylinder", cylinder);
+
+        const cylinder2 = new THREE.CylinderGeometry(1, 1, 0.25, 32);
+        cylinder2.translate(0,1.5,0);
+        im.addGeometry("cylinder2", cylinder2);
+
+        const cylinder3 = new THREE.CylinderGeometry(1, 1, 0.25, 32);
+        cylinder3.translate(0,1.5,0);
+        im.addGeometry("cylinder3", cylinder3);
 
         const mesh0 = im.addMesh("yellowBox", "box", "yellow");
         const mesh1 = im.addMesh("magentaBox", "box", "magenta");
         const mesh2 = im.addMesh("cyanBox", "box", "cyan");
-        const mesh3 = im.addMesh("pole", "cylinder", "yellow");
+        const mesh3 = im.addMesh("pole", "cylinder", "gray");
+        const mesh4 = im.addMesh("pole2", "cylinder2", "gray");
 
         mesh0.castShadow = true;
         mesh1.castShadow = true;
         mesh2.castShadow = true;
         mesh3.castShadow = true;
+        mesh4.castShadow = true;
 
         const gltfLoader = new GLTFLoader();
 
