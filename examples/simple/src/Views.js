@@ -162,11 +162,8 @@ export class MyViewRoot extends ViewRoot {
     onStart() {
         this.buildInstances();
         this.buildLights();
-        this.subscribe("input", "xDown", this.test);
-        this.subscribe("input", "cDown", this.test2);
-
-        const [x,y,z] = [1,2,3];
-        console.log(z);
+        // this.subscribe("input", "xDown", this.test);
+        // this.subscribe("input", "cDown", this.test2);
 
     }
 
