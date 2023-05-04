@@ -56,7 +56,7 @@ const sunLight =  function() {
     sun.shadow.camera.top = 400;
     sun.shadow.camera.bottom = -200;
     sun.shadow.bias = -0.0002;
-    sun.shadow.radius = 2;
+    sun.shadow.radius = 1.5;
     sun.shadow.blurSamples = 4;
     return sun;
 }();
