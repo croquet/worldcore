@@ -15,13 +15,13 @@ Constants.scale = 3;
 //-- Utility ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export function packKey(x,y,z) {
-    return (x << 20) | y << 10 | z;
-}
+// export function packKey(x,y,z) {
+//     return (x << 20) | y << 10 | z;
+// }
 
-export function unpackKey(key) {
-    return [(key >>> 20) & 0x3FF, (key >>> 10) & 0x3FF, key & 0x3FF];
-}
+// export function unpackKey(key) {
+//     return [(key >>> 20) & 0x3FF, (key >>> 10) & 0x3FF, key & 0x3FF];
+// }
 
 function adjacent(x,y,z,v) {
     const out = [...v];

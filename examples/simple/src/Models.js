@@ -1,13 +1,12 @@
-import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, q_axisAngle, RegisterMixin, AM_OnNavGrid, AM_NavGrid } from "@croquet/worldcore";
-
-import { TestPawn } from "./Views";
-
+import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, q_axisAngle, RegisterMixin, v3_add} from "@croquet/worldcore";
+import { AM_Grid, AM_OnGrid } from "./Grid";
+// import { AM_Grid, AM_OnGrid } from "./Grid";
 
 //------------------------------------------------------------------------------------------
 // BaseActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BaseActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {}
+class BaseActor extends mix(Actor).with(AM_Spatial) {}
 BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
@@ -28,14 +27,14 @@ export class MyModelRoot extends ModelRoot {
         console.log("Start root model!");
 
         this.base = BaseActor.create({pawn: "GroundPawn"});
-        this.sun = TestActor.create({name: "sun", pawn: "TestPawn", translation:[0,2,0]});
+        this.sun = TestActor.create({parent: this.base, name: "sun", pawn: "TestPawn", translation:[0,2,0]});
         this.planet = TestActor.create({name: "planet", pawn: "PlanetPawn", parent: this.sun, translation:[5,0,0]});
 
         this.sun.behavior.start({name: "SpinBehavior", axis:[0,1,0], tickRate: 1000, speed: 2});
-        this.planet.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5})
+        this.planet.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5});
 
-        this.subscribe("hud", "pointerDown", this.click);
-        // this.subscribe("input", "xDown", this.test);
+        this.subscribe("input", "pointerDown", this.click);
+        this.subscribe("input", "xDown", this.test);
     }
 
     click() {
@@ -51,7 +50,6 @@ export class MyModelRoot extends ModelRoot {
     test() {
         console.log("test");
     }
-
 
 
 }
