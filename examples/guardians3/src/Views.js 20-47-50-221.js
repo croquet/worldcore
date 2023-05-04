@@ -13,9 +13,6 @@
 // - ensure camera can always see tank
 // - tank explosion (turret jumps up, tank fades out)
 // - collision more natural
-// - fence to keep avatars and missiles on the grid
-// - should tanks lay down track?
-// - place target towers.
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation, m4_scaleRotationTranslation,
@@ -27,10 +24,12 @@ import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
 import tank_body from "../assets/tank_body.glb";
 import paper from "../assets/paper.jpg";
+//import sky from "../assets/aboveClouds.jpg";
 import sky from "../assets/quarry_02.png";
 
+
 // construct a perlin object and return a function that uses it
-const perlin2D = function(perlinHeight = 27.5, perlinScale = 0.02) {
+const perlin2D = function(perlinHeight = 40, perlinScale = 0.02) {
     // the PerlinNoise constructor can take a seed value as an argument
     // this must be the same for all participants so it generates the same terrain.
     const perlin = new PerlinNoise();
@@ -41,7 +40,6 @@ const perlin2D = function(perlinHeight = 27.5, perlinScale = 0.02) {
     }
 }();
 
-const cameraOffset = [0,12,20];
 const sunBase = [50, 100, 50];
 const sunLight =  function() {
     const sun = new THREE.DirectionalLight( 0xffffff, 0.3 );
@@ -49,11 +47,11 @@ const sunLight =  function() {
     sun.castShadow = true;
     sun.shadow.mapSize.width = 4096;
     sun.shadow.mapSize.height = 4096;
-    sun.shadow.camera.near = 50;
-    sun.shadow.camera.far =400;
-    sun.shadow.camera.left = -400;
-    sun.shadow.camera.right = 400;
-    sun.shadow.camera.top = 400;
+    sun.shadow.camera.near = 90;
+    sun.shadow.camera.far = 150;
+    sun.shadow.camera.left = -200;
+    sun.shadow.camera.right = 200;
+    sun.shadow.camera.top = 200;
     sun.shadow.camera.bottom = -200;
     sun.shadow.bias = -0.0002;
     sun.shadow.radius = 2;
@@ -317,6 +315,9 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.lastShootTime = -10000;
         this.waitShootTime = 100;
         this.godMode = false;
+        this.bounce = [0,0,0];
+        this.bounceDown = 0.75;
+        this.bounceTime = 0;
 
         this.service("CollisionManager").colliders.add(this);
         this.loadInstance(actor._instanceName, [0.35, 0.35, 0.35]);
@@ -336,8 +337,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             this.mesh = new THREE.Mesh( geometry, this.material );
             this.mesh.castShadow = true;
             this.mesh.receiveShadow = true;
-            if (this.isMyAvatar)
-                sunLight.target = this.mesh; //this.instance; // sunLight is a global
+            if (this.isMyAvatar) sunLight.target = this.mesh; //this.instance; // sunLight is a global
             this.setRenderObject(this.mesh);
             //this.outline3d=constructShadow(this.mesh, 10001, color);
             //this.mesh.add(this.outline3d);
@@ -521,7 +521,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             if (this.auto) {
                 this.speed = 5 * factor;
                 this.steer = -1;
-                this.shoot(); 
+                this.shoot();
             } else {
                 this.speed = this.gas * 20 * factor * this.highGear;
                 this.steer = this.turn;
@@ -536,10 +536,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             // velocity and follow terrain
             // -1 is a fake velocity used to compute the pitch when not moving
             this.velocity = [0, 0, -this.speed || -0.4];
-            const tt = v3_rotate(this.velocity, yawQ);
+            let tt = this.bounce;
+            if (this.bounceTime < this.now()) tt = v3_add(tt, v3_rotate(this.velocity, yawQ));
+            else console.log(this.bounce, this.bounceTime-this.now());
             const translation = v3_add(this.translation, tt);
+            this.bounce = v3_scale(this.bounce, this.bounceDown);
             // can't use last position to determine pitch if not moving
-            if(this.speed === 0 )start[1]=perlin2D(start[0], start[2])+this.wheelHeight;
+            if (this.speed === 0 )start[1]=perlin2D(start[0], start[2])+this.wheelHeight;
             translation[1]=perlin2D(translation[0], translation[2])+this.wheelHeight;;
             // compute pitch - both backward and forward
 
@@ -568,10 +571,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 if (this.speed) {
                     this.positionTo(translation, q);
                     sunLight.position.set(...v3_add(translation, sunBase));
-                } else { // if we haven't moved, then don't change anything
-                    if ( (pitch !== this.pitch) || (yaw!==this.yaw) || (roll!==this.roll) ) 
-                        this.positionTo(start, q);
-                }
+                } else if ( (pitch !== this.pitch) || (yaw!==this.yaw) || (roll!==this.roll) )
+                    this.positionTo(start, q);
             }
             this.pitch = pitch;
             this.roll = roll;
@@ -591,6 +592,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     updateChaseCam(time, delta) {
         const rm = this.service("ThreeRenderManager");
 
+
+        const offset = [0,10,20];
         const fixedPitch = toRad(-10);
         let tTug = 0.2;
         let rTug = 0.2;
@@ -600,7 +603,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             rTug = Math.min(1, rTug * delta / 15);
         }
 
-        const targetTranslation = v3_transform(cameraOffset, this.cameraTarget);
+        const targetTranslation = v3_transform(offset, this.cameraTarget);
         const pitchQ = q_axisAngle([1,0,0], fixedPitch);
         const yawQ = q_axisAngle([0,1,0], this.yaw);
         const targetRotation = q_multiply(pitchQ, yawQ);
@@ -642,13 +645,15 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 //console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
                 const from = v3_sub(this.translation, collider.translation);
                 const distance = v3_magnitude(from);
-                let bounce;
-                if (distance > 0) bounce = v3_scale( from, 2/distance );
-                else bounce = [1,1,1]; // we are on top of each other
-                const translation = v3_add(this.translation, bounce);
-                this.translateTo(translation);
-                if (collider.actor.tags.has("avatar"))
-                    collider.say("bounce", [-bounce[0], -bounce[1], -bounce[2]]);
+                if (distance>0.001) {
+                    let bounce = v3_scale( from, this.speed*2/distance);
+                    this.bounceTime = this.now()+100;
+                    if (collider.actor.tags.has("avatar")) collider.say("bounce", [-bounce[0], -bounce[1], -bounce[2]]);
+                    this.bounce = v3_add(this.bounce, bounce);
+                    const translation = v3_add(this.translation, this.bounce);
+                    this.translateTo(translation);
+                    this.bounce = v3_scale(this.bounce, this.bounceDown);
+                }
                 return true;
             }
         }
@@ -660,7 +665,11 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     // it is possible to miss this if it occurs in the model. The drawback is it
     // increases latency.
     doBounce(bounce) {
-        const translation = v3_add(bounce, this.translation);
+        console.log(bounce);
+        this.bounce = v3_add( this.bounce, bounce);
+        const translation = v3_add(this.bounce, this.translation);
+        this.bounce = v3_scale(this.bounce, this.bounceDown);
+        this.bounceTime = this.now()+100;
         this.translateTo(translation);
     }
 

@@ -151,9 +151,9 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, 
     get color() { return this._color || [0.5,0.5,0.5]}
 
     // Since the view side control is happening so often, it is possible to miss a
-    // collision with another avatar because the view will be updated before the 
-    // bounce gets integrated into the avatar position. By sending it to the view 
-    // here, it gets fully integrated. This does increase latency somewhat for you 
+    // collision with another avatar because the view will be updated before the
+    // bounce gets integrated into the avatar position. By sending it to the view
+    // here, it gets fully integrated. This does increase latency somewhat for you
     // seeing the other user's bounce.
     doBounce(bounce) {
         this.say("doBounce", bounce);
@@ -167,7 +167,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, 
         const v = v3_rotate(velocity, yawQ);
 
         const missile = MissileActor.create({pawn: "MissilePawn", parent: this.parent, translation: v3_add(where[0], v3_scale(v,0.5)), rotation: yawQ, velocity: v, color: [...this.color]});
-*/
+        */
 
         const aim = v3_rotate([0,0,-1], q_axisAngle([0,1,0], where[1])); //
         const translation = v3_add(this.translation, v3_scale(aim, 5));
@@ -191,9 +191,11 @@ class MyUser extends User {
     init(options) {
         super.init(options);
         const base = this.wellKnownModel("ModelRoot").base;
-        this.color = [this.random(), this.random(), this.random()];
-        const translation = [175+ this.random() * 10, 0, 160+this.random()*10];
+
+        this.color = [0.25+0.75*this.random(), 0.5, 0.25+0.75*this.random()];
+        const translation = [170 + this.random() * 10, 0, 170+this.random()*10];
         const rotation = q_axisAngle([0,1,0], Math.PI/2);
+
         this.avatar = AvatarActor.create({
             pawn: "AvatarPawn",
             parent: base,
@@ -251,13 +253,12 @@ export class MyModelRoot extends ModelRoot {
         this.child.behavior.start({name: "SpinBehavior", axis: [0,0,1], speed: 3});
 
         for (let x=0; x<10; x++)
-        for (let y = 0; y<10; y++) {
+        for (let y=0; y<10; y++) {
             let bollard = BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true, 
                 translation:[99+bollardDistance*x+1.5,0, 99+bollardDistance*y+1.5]} );
-                SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,2.75,0]} );
-                SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,3.25,0]} );
-                SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,3.75,0]} );
-            
+            SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,3,0]} );
+            SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,3.5,0]} );
+            SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,4,0]} );
         }
 
         this.subscribe("input", "cDown", this.colorChange);
