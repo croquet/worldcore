@@ -1,6 +1,6 @@
 import { ModelService, Actor, mix, AM_Spatial, AM_Behavioral, Constants, RegisterMixin, v3_distance, AM_OnNavGrid  } from "@croquet/worldcore";
 import { packKey } from "./Paths";
-import { AM_OnGrid } from "./Grid";
+import { AM_OnGrid, AM_OnNavGridX } from "./Grid";
 
 //------------------------------------------------------------------------------------------
 //-- Flockable -----------------------------------------------------------------------------
@@ -70,26 +70,34 @@ import { AM_OnGrid } from "./Grid";
 //-- BotActor ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
+export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGridX, AM_Behavioral) {
 
     init(options) {
         super.init(options);
-        // this.spread = this.behavior.start({name: "SpreadBehavior", radius: 0.5});
+        this.spread = this.behavior.start({name: "SpreadBehavior", radius: 0.5});
         this.subscribe("hud", "go", this.go);
+        // this.subscribe("input", "pDown", this.ping);
     }
 
     go(target) {
-        console.log("go!");
-        target[1] = 0;
-        if (this.ggg){
+        // console.log("go!");
+        // console.log(target);
+        if (this.ggg) {
             this.ggg.destroy();
             this.ggg = null;
         }
 
-        const speed = 16 + 4 * Math.random();
+        const speed = (16 + 4 * Math.random()) / 3;
 
-        this.ggg = this.behavior.start({name: "GotoBehavior", target, speed: 5});
+        this.ggg = this.behavior.start({name: "PathToBehaviorX", target, speed, noise: 1, radius: 1});
+        // this.ggg = this.behavior.start({name: "GotoBehaviorX", target, speed: 4});
     }
+
+    // ping() {
+    //     console.log("ping "+ this.name);
+    //     const xxx = this.isBlocked([1.6,0,0]);
+    //     console.log(xxx);
+    // }
 
 }
 BotActor.register("BotActor");

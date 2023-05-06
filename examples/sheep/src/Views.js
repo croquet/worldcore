@@ -85,13 +85,13 @@ BasePawn.register("BasePawn");
 let fov = 60;
 let pitch = toRad(-60);
 let yaw = toRad(0);
-const cam = [0,20,10];
+const cam = [0,200,100];
 
 class GodView extends ViewService {
 
     constructor() {
         super("GodView");
-        this.pathStart = packKey(0,1,0);
+        // this.pathStart = packKey(0,1,0);
 
         this.updateCamera();
 
@@ -109,14 +109,15 @@ class GodView extends ViewService {
     }
 
     go() {
-        // console.log("go");
+        console.log("go");
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(this.xy, "ground");
         if (hits.length<1) return;
         const hit = hits[0];
         const x = hit.xyz[0];
-        const z = hit.xyz[2];
-        this.publish("hud", "go", [x,0,z]);
+        const y = hit.xyz[2];
+        const xy = [x/3,y/3];
+        this.publish("hud", "go", xy);
     }
 
     updateCamera() {
@@ -161,8 +162,8 @@ class GodView extends ViewService {
     doPointerDelta(e) {
         if (this.paused) return;
         if (!this.dragging) return;
-        cam[0] += -0.1 * e.xy[0];
-        cam[2] += -0.1 * e.xy[1];
+        cam[0] += -0.5 * e.xy[0];
+        cam[2] += -0.5 * e.xy[1];
         // yaw += -0.01 * e.xy[0];
         // yaw = yaw % TAU;
         // pitch += -0.01 * e.xy[1];
@@ -251,12 +252,12 @@ export class MyViewRoot extends ViewRoot {
 
 }
 
-function packKey(x,y) {
-    if (x < 0 ) console.error("Negative AM_Grid x coordinate!");
-    if (y < 0 ) console.error("Negative AM_Grid y coordinate!");
-    return ((0x8000|x)<<16)|y;
-}
+// function packKey(x,y) {
+//     if (x < 0 ) console.error("Negative AM_Grid x coordinate!");
+//     if (y < 0 ) console.error("Negative AM_Grid y coordinate!");
+//     return ((0x8000|x)<<16)|y;
+// }
 
-function unpackKey(key) {
-    return [(key>>>16) & 0x7FFF,key & 0x7FFF];
-}
+// function unpackKey(key) {
+//     return [(key>>>16) & 0x7FFF,key & 0x7FFF];
+// }

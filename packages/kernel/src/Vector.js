@@ -99,8 +99,6 @@ export function v2_magnitude(v) {
     return Math.sqrt(v[0] * v[0] + v[1] * v[1]);
 }
 
-
-
 export function v2_sqrMag(v) { // Squared magnitude
     return (v[0] * v[0] + v[1] * v[1]);
 }
