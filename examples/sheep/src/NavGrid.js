@@ -1,5 +1,5 @@
 import { RegisterMixin, PriorityQueue, v2_manhattan, Behavior, v3_sub, v3_magnitude, v3_normalize, v3_add, q_lookAt, PerlinNoise, v2_scale,
-v2_sub, v2_magnitude, v2_normalize, v2_add, v2_signedAngle, toDeg, q_axisAngle, v2_floor } from "@croquet/worldcore";
+v2_sub, v2_magnitude, v2_normalize, v2_add, v2_signedAngle, toDeg, q_axisAngle, v2_floor, AM_Grid, AM_OnGrid } from "@croquet/worldcore";
 
 
 //------------------------------------------------------------------------------------------
@@ -19,208 +19,208 @@ function unpackKey(key) {
 // -- AM_Grid ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export const AM_Grid = superclass => class extends superclass {
+// export const AM_Grid = superclass => class extends superclass {
 
-    get gridSize() { return this._gridSize || 16}
-    get gridScale() { return this._gridScale || 1}
-    get gridPlane() { return this._gridPlane || 0 } // 0 = xz, 1 = xy, 2 = yz
-    get isGrid() { return true}
+//     get gridSize() { return this._gridSize || 16}
+//     get gridScale() { return this._gridScale || 1}
+//     get gridPlane() { return this._gridPlane || 0 } // 0 = xz, 1 = xy, 2 = yz
+//     get isGrid() { return true}
 
-    init(options) {
-        super.init(options);
-        this.gridBins = new Map();
-    }
+//     init(options) {
+//         super.init(options);
+//         this.gridBins = new Map();
+//     }
 
-    gridXY(x,y,z) {
-        const s = this.gridScale;
-        switch (this.gridPlane) {
-            default:
-            case 0: return [Math.floor(x/s), Math.floor(z/s)];
-            case 1: return [Math.floor(x/s), Math.floor(y/s)];
-            case 2: return [Math.floor(y/s), Math.floor(z/s)];
-        }
-    }
+//     gridXY(x,y,z) {
+//         const s = this.gridScale;
+//         switch (this.gridPlane) {
+//             default:
+//             case 0: return [Math.floor(x/s), Math.floor(z/s)];
+//             case 1: return [Math.floor(x/s), Math.floor(y/s)];
+//             case 2: return [Math.floor(y/s), Math.floor(z/s)];
+//         }
+//     }
 
-    planeXYZ(x,y) {
-        switch (this.gridPlane) {
-            default:
-            case 0: return [x,0,y];
-            case 1: return [x,y,0];
-            case 2: return [0,x,y];
-        }
-    }
+//     planeXYZ(x,y) {
+//         switch (this.gridPlane) {
+//             default:
+//             case 0: return [x,0,y];
+//             case 1: return [x,y,0];
+//             case 2: return [0,x,y];
+//         }
+//     }
 
-    addToBin(key,child) {
-        let bin = this.gridBins.get(key);
-        if (!bin) {
-            bin = new Set();
-            this.gridBins.set(key, bin);
-        }
-        bin.add(child);
-        child.gridBin = bin;
-    }
+//     addToBin(key,child) {
+//         let bin = this.gridBins.get(key);
+//         if (!bin) {
+//             bin = new Set();
+//             this.gridBins.set(key, bin);
+//         }
+//         bin.add(child);
+//         child.gridBin = bin;
+//     }
 
-    removeFromBin(key,child) {
-        const bin = this.gridBins.get(key);
-        if (bin) {
-            bin.delete(child);
-            if (bin.size === 0) this.gridBins.delete(key);
-        }
-        child.gridBin = null;
-    }
+//     removeFromBin(key,child) {
+//         const bin = this.gridBins.get(key);
+//         if (bin) {
+//             bin.delete(child);
+//             if (bin.size === 0) this.gridBins.delete(key);
+//         }
+//         child.gridBin = null;
+//     }
 
-    getBin(x,y) {
-        if (x<0 || y<0) return null;
-        const key = packKey(x,y);
-        return this.gridBins.get(key);
-    }
+//     getBin(x,y) {
+//         if (x<0 || y<0) return null;
+//         const key = packKey(x,y);
+//         return this.gridBins.get(key);
+//     }
 
-    pingAll(tag, cx, cy, radius=0, exclude) {     // returns an array of all actors with tag in radius
-        const out = [];
+//     pingAll(tag, cx, cy, radius=0, exclude) {     // returns an array of all actors with tag in radius
+//         const out = [];
 
-        for (const actor of this.getBin(cx, cy)) {
-            if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
-        }
+//         for (const actor of this.getBin(cx, cy)) {
+//             if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
+//         }
 
-        for (let n = 1; n<=radius; n++) {
-            const x0 = Math.max(0,cx-n);
-            const y0 = Math.max(0,cy-n);
-            const x1 = cx+n;
-            const y1 = cx+n;
+//         for (let n = 1; n<=radius; n++) {
+//             const x0 = Math.max(0,cx-n);
+//             const y0 = Math.max(0,cy-n);
+//             const x1 = cx+n;
+//             const y1 = cx+n;
 
-            for (let x = x0; x<=x1; x++) {
-                const bin = this.getBin(x,y0);
-                if (!bin) continue;
-                for (const actor of bin) {
-                    if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
-                }
-            }
+//             for (let x = x0; x<=x1; x++) {
+//                 const bin = this.getBin(x,y0);
+//                 if (!bin) continue;
+//                 for (const actor of bin) {
+//                     if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
+//                 }
+//             }
 
-            for (let y = y0+1; y<y1; y++) {
-                const bin = this.getBin(x0,y);
-                if (!bin) continue;
-                for (const actor of bin) {
-                    if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
-                }
-            }
+//             for (let y = y0+1; y<y1; y++) {
+//                 const bin = this.getBin(x0,y);
+//                 if (!bin) continue;
+//                 for (const actor of bin) {
+//                     if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
+//                 }
+//             }
 
-            for (let x = x0; x<=x1; x++) {
-                const bin = this.getBin(x,y1);
-                if (!bin) continue;
-                for (const actor of bin) {
-                    if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
-                }
-            }
+//             for (let x = x0; x<=x1; x++) {
+//                 const bin = this.getBin(x,y1);
+//                 if (!bin) continue;
+//                 for (const actor of bin) {
+//                     if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
+//                 }
+//             }
 
-            for (let y = y0+1; y<y1; y++) {
-                const bin = this.getBin(x1,y);
-                if (!bin) continue;
-                for (const actor of bin) {
-                    if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
-                }
-            }
+//             for (let y = y0+1; y<y1; y++) {
+//                 const bin = this.getBin(x1,y);
+//                 if (!bin) continue;
+//                 for (const actor of bin) {
+//                     if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
+//                 }
+//             }
 
-        }
+//         }
 
-        return out;
-    }
+//         return out;
+//     }
 
-    pingAny(tag, cx, cy, radius=0, exclude) { // Returns the first actor it finds in the radius
+//     pingAny(tag, cx, cy, radius=0, exclude) { // Returns the first actor it finds in the radius
 
-        let bin = this.getBin(cx, cy);
-        if (bin) {
-            for (const actor of bin) {
-                if (actor !== exclude && actor.tags.has(tag)) return actor;
-            }
-        }
+//         let bin = this.getBin(cx, cy);
+//         if (bin) {
+//             for (const actor of bin) {
+//                 if (actor !== exclude && actor.tags.has(tag)) return actor;
+//             }
+//         }
 
-        for (let n = 1; n<=radius; n++) {
-            const x0 = cx-n;
-            const x1 = cx+n;
-            const y0 = cy-n;
-            const y1 = cx+n;
+//         for (let n = 1; n<=radius; n++) {
+//             const x0 = cx-n;
+//             const x1 = cx+n;
+//             const y0 = cy-n;
+//             const y1 = cx+n;
 
-            for (let x = x0; x<=x1; x++) {
-                bin = this.getBin(x,y0);
-                if (!bin) continue;
-                for (const actor of bin) {
-                    if (actor !== exclude && actor.tags.has(tag)) return actor;
-                }
-            }
+//             for (let x = x0; x<=x1; x++) {
+//                 bin = this.getBin(x,y0);
+//                 if (!bin) continue;
+//                 for (const actor of bin) {
+//                     if (actor !== exclude && actor.tags.has(tag)) return actor;
+//                 }
+//             }
 
-            for (let y = y0+1; y<y1; y++) {
-                bin = this.getBin(x0,y);
-                if (!bin) continue;
-                for (const actor of bin) {
-                    if (actor !== exclude && actor.tags.has(tag)) return actor;
-                }
-            }
+//             for (let y = y0+1; y<y1; y++) {
+//                 bin = this.getBin(x0,y);
+//                 if (!bin) continue;
+//                 for (const actor of bin) {
+//                     if (actor !== exclude && actor.tags.has(tag)) return actor;
+//                 }
+//             }
 
-            for (let x = x0; x<=x1; x++) {
-                bin = this.getBin(x,y1);
-                if (!bin) continue;
-                for (const actor of bin) {
-                    if (actor !== exclude && actor.tags.has(tag)) return actor;
-                }
-            }
+//             for (let x = x0; x<=x1; x++) {
+//                 bin = this.getBin(x,y1);
+//                 if (!bin) continue;
+//                 for (const actor of bin) {
+//                     if (actor !== exclude && actor.tags.has(tag)) return actor;
+//                 }
+//             }
 
-            for (let y = y0+1; y<y1; y++) {
-                bin = this.getBin(x1,y);
-                if (!bin) continue;
-                for (const actor of bin) {
-                    if (actor !== exclude && actor.tags.has(tag)) return actor;
-                }
-            }
-        }
+//             for (let y = y0+1; y<y1; y++) {
+//                 bin = this.getBin(x1,y);
+//                 if (!bin) continue;
+//                 for (const actor of bin) {
+//                     if (actor !== exclude && actor.tags.has(tag)) return actor;
+//                 }
+//             }
+//         }
 
-        return null;
-    }
+//         return null;
+//     }
 
-};
-RegisterMixin(AM_Grid);
+// };
+// RegisterMixin(AM_Grid);
 
 //------------------------------------------------------------------------------------------
 //-- AM_OnGrid -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export const AM_OnGrid = superclass => class extends superclass {
+// export const AM_OnGrid = superclass => class extends superclass {
 
-    get xy() { return this._xy || [0,0]}
+//     get xy() { return this._xy || [0,0]}
 
-    xySet(xy) {
-        if (!this.parent || !this.parent.isGrid) { console.error("AM_OnGrid must have an AM_Grid parent!"); return}
-        const scaled = v2_scale(xy, this.parent.gridScale);
-        const translation = this.parent.planeXYZ(...scaled);
-        this.set({translation});
+//     xySet(xy) {
+//         if (!this.parent || !this.parent.isGrid) { console.error("AM_OnGrid must have an AM_Grid parent!"); return}
+//         const scaled = v2_scale(xy, this.parent.gridScale);
+//         const translation = this.parent.planeXYZ(...scaled);
+//         this.set({translation});
 
-        if (xy[0]<0 || xy[1]<0 ) console.error("Off grid: " + xy);
+//         if (xy[0]<0 || xy[1]<0 ) console.error("Off grid: " + xy);
 
-        const oldKey = this.gridKey;
-        this.gridKey = packKey(...xy);
+//         const oldKey = this.gridKey;
+//         this.gridKey = packKey(...xy);
 
-        if (this.gridKey !== oldKey) {
-            this.parent.removeFromBin(oldKey,this);
-            this.parent.addToBin(this.gridKey, this);
-        }
-    }
+//         if (this.gridKey !== oldKey) {
+//             this.parent.removeFromBin(oldKey,this);
+//             this.parent.addToBin(this.gridKey, this);
+//         }
+//     }
 
-    destroy() {
-        if (this.parent) this.parent.removeFromBin(this.binKey, this);
-        super.destroy();
-    }
+//     destroy() {
+//         if (this.parent) this.parent.removeFromBin(this.binKey, this);
+//         super.destroy();
+//     }
 
 
-    pingAll(tag, radius = 0) {
-        if (!this.parent || !this.parent.isGrid) { console.error("Ping requires an AM_Grid!"); return []}
-        return this.parent.pingAll(tag, ...this.xy, radius, this);
-    }
+//     pingAll(tag, radius = 0) {
+//         if (!this.parent || !this.parent.isGrid) { console.error("Ping requires an AM_Grid!"); return []}
+//         return this.parent.pingAll(tag, ...this.xy, radius, this);
+//     }
 
-    pingAny(tag, radius = 0) {
-        if (!this.parent || !this.parent.isGrid) { console.error("Ping requires an AM_Grid!"); return []}
-        return this.parent.pingAny(tag, ...this.xy, radius, this);
-    }
-};
-RegisterMixin(AM_OnGrid);
+//     pingAny(tag, radius = 0) {
+//         if (!this.parent || !this.parent.isGrid) { console.error("Ping requires an AM_Grid!"); return []}
+//         return this.parent.pingAny(tag, ...this.xy, radius, this);
+//     }
+// };
+// RegisterMixin(AM_OnGrid);
 
 //------------------------------------------------------------------------------------------
 // -- AM_NavGridX ---------------------------------------------------------------------------

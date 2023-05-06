@@ -1,7 +1,6 @@
 import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, Constants, AM_NavGrid } from "@croquet/worldcore";
-import { BotActor, BotManager, FlockActor} from "./Bots";
-// import { Paths, PackKey } from "./Paths";
-import { AM_NavGridX, AM_OnNavGridX, packKey, unpackKey} from "./Grid";
+import { BotActor } from "./Bots";
+import { AM_NavGridX, AM_OnNavGridX} from "./NavGrid";
 
 //------------------------------------------------------------------------------------------
 // TestActor -------------------------------------------------------------------------------
