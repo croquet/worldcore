@@ -79,7 +79,7 @@ export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGridX, AM_Beha
         // this.subscribe("input", "pDown", this.ping);
     }
 
-    go(target) {
+    go(xy) {
         // console.log("go!");
         // console.log(target);
         if (this.ggg) {
@@ -87,17 +87,17 @@ export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGridX, AM_Beha
             this.ggg = null;
         }
 
-        const speed = (16 + 4 * Math.random()) / 3;
+        const speed = (16 + 4 * Math.random());
 
-        this.ggg = this.behavior.start({name: "PathToBehaviorX", target, speed, noise: 1, radius: 1});
-        // this.ggg = this.behavior.start({name: "GotoBehaviorX", target, speed: 4});
+        this.ggg = this.behavior.start({name: "PathToBehaviorX", xy, speed, noise: 2, radius: 1});
+        // this.ggg = this.behavior.start({name: "GotoBehaviorX", xy, speed: 4});
     }
 
-    // ping() {
-    //     console.log("ping "+ this.name);
-    //     const xxx = this.isBlocked([1.6,0,0]);
-    //     console.log(xxx);
-    // }
+    ping() {
+        console.log("ping "+ this.name);
+        const xxx = this.isBlocked([-1,0,0]);
+        console.log(xxx);
+    }
 
 }
 BotActor.register("BotActor");

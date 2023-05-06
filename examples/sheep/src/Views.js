@@ -15,12 +15,22 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
         this.useInstance("bot");
     }
 
-    destroy() {
-        super.destroy();
+}
+TestPawn.register("TestPawn");
+
+//------------------------------------------------------------------------------------------
+// BlockPawn --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class BlockPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
+
+    constructor(actor) {
+        super(actor);
+        this.useInstance("block");
     }
 
 }
-TestPawn.register("TestPawn");
+BlockPawn.register("BlockPawn");
 
 //------------------------------------------------------------------------------------------
 //-- BasePawn -------------------------------------------------------------------------
@@ -43,9 +53,14 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         this.setRenderObject(base);
         this.addRenderObjectToRaycast("ground");
 
-        this.gizmo.visible = true;
+        this.gizmo.visible = false;
 
-        this.subscribe("input", "pointerDown", this.doPointerDown);
+        // this.subscribe("input", "pointerDown", this.doPointerDown);
+        this.subscribe("input", "qDown", this.toggleGizmo);
+    }
+
+    toggleGizmo() {
+        this.gizmo.visible = !this.gizmo.visible;
     }
 
     destroy() {
@@ -214,10 +229,10 @@ export class MyViewRoot extends ViewRoot {
         sun.shadow.camera.near = 0.5;
         sun.shadow.camera.far = 300;
 
-        sun.shadow.camera.left = -80;
-        sun.shadow.camera.right = 80;
-        sun.shadow.camera.top = 80;
-        sun.shadow.camera.bottom = -80;
+        sun.shadow.camera.left = -200;
+        sun.shadow.camera.right = 200;
+        sun.shadow.camera.top = 200;
+        sun.shadow.camera.bottom = -200;
 
         sun.shadow.bias = -0.0005;
         group.add(sun);
@@ -245,6 +260,9 @@ export class MyViewRoot extends ViewRoot {
         const geometry = new THREE.BoxGeometry( 1, 1, 1 );
         geometry.translate(0,0.5,0);
         im.addGeometry("cube", geometry);
+
+        const bbb = im.addMesh("block", "cube", "cyan", 500);
+        bbb.castShadow = true;
 
         const mmm = im.addMesh("bot", "cube", "magenta", 2000);
         mmm.castShadow = true;

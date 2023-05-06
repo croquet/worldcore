@@ -31,33 +31,6 @@ export const AM_Grid = superclass => class extends superclass {
         this.gridBins = new Map();
     }
 
-    // packKey(x,y,z) {
-    //     const s = this.gridScale;
-    //     switch (this.gridPlane) {
-    //         default:
-    //         case 0: return packKey(Math.floor(x/s), Math.floor(z/s));
-    //         case 1: return packKey(Math.floor(x/s), Math.floor(y/s));
-    //         case 2: return packKey(Math.floor(y/s), Math.floor(z/s));
-    //     }
-    // }
-
-    // unpackKey(key) {
-    //     const s = this.gridScale;
-    //     const xy = unpackKey(key);
-    //     switch (this.gridPlane) {
-    //         default:
-    //         case 0: return [s*xy[0], 0, s*xy[1]];
-    //         case 1: return [s*xy[0], s*xy[1], 0];
-    //         case 2: return [0, s*xy[0], s*xy[1]];
-    //     }
-    // }
-
-    // unpackKey(key) {
-    //     const s = this.gridScale;
-    //     const xy = unpackKey(key);
-    //     return v2_scale(xy,s);
-    // }
-
     gridXY(x,y,z) {
         const s = this.gridScale;
         switch (this.gridPlane) {
@@ -212,17 +185,14 @@ RegisterMixin(AM_Grid);
 
 export const AM_OnGrid = superclass => class extends superclass {
 
-    // get gridXY() { return this.parent.gridXY(...this.translation) }
-
     get xy() { return this._xy || [0,0]}
 
-    xySet(value, old) {
+    xySet(xy) {
         if (!this.parent || !this.parent.isGrid) { console.error("AM_OnGrid must have an AM_Grid parent!"); return}
-        const scaled = v2_scale(value, this.parent.gridScale);
+        const scaled = v2_scale(xy, this.parent.gridScale);
         const translation = this.parent.planeXYZ(...scaled);
         this.set({translation});
 
-        const xy = value;
         if (xy[0]<0 || xy[1]<0 ) console.error("Off grid: " + xy);
 
         const oldKey = this.gridKey;
@@ -239,31 +209,6 @@ export const AM_OnGrid = superclass => class extends superclass {
         super.destroy();
     }
 
-    // translationSet(value, old) {
-    //     super.translationSet(value,old);
-    //     if (!this.parent || !this.parent.isGrid) { console.error("AM_OnGrid must have an AM_Grid parent!"); return}
-    //     const xy = this.parent.gridXY(...value);
-    //     if (xy[0]<0 || xy[1]<0 ) console.error("Off grid: " + xy);
-
-    //     const oldKey = this.gridKey;
-    //     this.gridKey = packKey(...xy);
-
-    //     if (this.gridKey !== oldKey) {
-    //         this.parent.removeFromBin(oldKey,this);
-    //         this.parent.addToBin(this.gridKey, this);
-    //     }
-    // }
-
-    // pingAll(tag, radius = 0) {
-    //     if (!this.parent || !this.parent.isGrid) { console.error("Ping requires an AM_Grid!"); return []}
-    //     return this.parent.pingAll(tag, ...this.gridXY, radius, this);
-    // }
-
-    // pingAny(tag, radius = 0) {
-    //     if (!this.parent || !this.parent.isGrid) { console.error("Ping requires an AM_Grid!"); return []}
-    //     const xy = this.gridXY;
-    //     return this.parent.pingAny(tag, xy[0], xy[1], radius, this);
-    // }
 
     pingAll(tag, radius = 0) {
         if (!this.parent || !this.parent.isGrid) { console.error("Ping requires an AM_Grid!"); return []}
@@ -272,7 +217,6 @@ export const AM_OnGrid = superclass => class extends superclass {
 
     pingAny(tag, radius = 0) {
         if (!this.parent || !this.parent.isGrid) { console.error("Ping requires an AM_Grid!"); return []}
-        // const xy = this.gridXY;
         return this.parent.pingAny(tag, ...this.xy, radius, this);
     }
 };
@@ -294,18 +238,6 @@ export const AM_NavGridX = superclass => class extends AM_Grid(superclass) {
         this.navNodes = new Map();
         this.navClear();
     }
-
-    // navClear() {
-    //     for (let x = 0; x < this.gridSize; x++) {
-    //         for (let y = 0; y < this.gridSize; y++) {
-    //             const node = new NavNode(x,y);
-    //             node.clear(this.gridSize);
-    //             this.navNodes.set(node.key, node);
-    //         }
-    //     }
-
-    //     this.say("navGridChanged");
-    // }
 
     navClear() {
         const perlin = new PerlinNoise();
@@ -451,7 +383,6 @@ export const AM_NavGridX = superclass => class extends AM_Grid(superclass) {
 };
 RegisterMixin(AM_NavGridX);
 
-
 //------------------------------------------------------------------------------------------
 //-- NavNode -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -536,31 +467,40 @@ class NavNode {
 
 export const AM_OnNavGridX = superclass => class extends AM_OnGrid(superclass) {
 
+    get obstacle() { return this._obstacle}
+
+    init(options) {
+        super.init(options);
+        if (this.parent && this.obstacle) this.buildObstacle();
+    }
+
     isBlocked(aim) {
-        return this.parent.isBlocked(this.translation, aim);
+        return this.parent.isBlocked(this.xy, aim);
+    }
+
+    buildObstacle() {
+        this.parent.addBlock(...this.xy);
     }
 
 };
 RegisterMixin(AM_OnNavGridX);
 
 //------------------------------------------------------------------------------------------
-//-- GotoBehavior --------------------------------------------------------------------------
+//-- GotoBehaviorX -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-// Moves to a target point
 
 class GotoBehaviorX extends Behavior {
 
     get tickRate() { return this._tickRate || 50} // More than 15ms for smooth movement
 
     get radius() { return this._radius || 0}
-    get speed() { return this._speed || 3}
-    get target() {return this._target || this.actor.xy}
+    get speed() { return this._speed || 1}
+    get xy() {return this._xy || this.actor.xy}
 
     do(delta) {
         const distance = this.speed * delta / 1000;
 
-        const to = v2_sub(this.target, this.actor.xy);
+        const to = v2_sub(this.xy, this.actor.xy);
         const left = v2_magnitude(to);
 
         if (left < this.radius) {
@@ -569,25 +509,19 @@ class GotoBehaviorX extends Behavior {
         }
 
         if (left<distance) {
-            this.actor.set({xy:this.target});
+            this.actor.set({xy:this.xy});
             this.succeed();
             return;
         }
 
-        // console.log("go");
-
-        // const aim = v3_normalize(to);
         const aim = v2_normalize(to);
 
         const x = aim[0] * distance;
         const y = aim[1] * distance;
-        // const z = aim[2] * distance;
 
         const xy = v2_add(this.actor.xy, [x,y]);
-        // const rotation = q_lookAt(this.actor.forward, this.actor.up, aim);
         const angle = v2_signedAngle([0,1], aim);
-        // console.log(toDeg(angle));
-        const rotation = q_axisAngle([0,1,0], -angle);
+        const rotation = q_axisAngle(this.actor.up, -angle);
 
         this.actor.set({xy, rotation});
 
@@ -602,7 +536,7 @@ GotoBehaviorX.register("GotoBehaviorX");
 
 class PathToBehaviorX extends Behavior {
 
-    get target() {return this._target}
+    get xy() {return this._xy || this.actor.xy}
     get speed() { return this._speed || 3}
     get radius() { return this._radius || 0}
     get noise() { return this._noise || 0}
@@ -613,21 +547,12 @@ class PathToBehaviorX extends Behavior {
             this.fail();
         }
 
-        // console.log("onStart pathTo");
-        // console.log(this.actor.xy);
-        // console.log(this.target);
 
         const grid = this.actor.parent;
-        // const startKey = this.actor.gridKey;
         const startKey = packKey(...v2_floor(this.actor.xy));
-        // const endKey = grid.packKey(...this.target);
-        const endKey = packKey(...v2_floor(this.target));
-        // console.log(startKey);
-        // console.log(endKey);
+        const endKey = packKey(...v2_floor(this.xy));
 
         this.path = grid.findPath(startKey, endKey);
-        // console.log(this.path.length);
-        // console.log(this.path);
 
         if (this.path.length === 0) { // No path to destination
             this.fail();
@@ -637,8 +562,7 @@ class PathToBehaviorX extends Behavior {
         this.step = 0;
 
         if (this.path.length === 1) {
-            // console.log("short");
-            this.goto = this.start({name: "GotoBehaviorX", speed: this.speed, target: this.target});
+            this.goto = this.start({name: "GotoBehaviorX", speed: this.speed, xy: this.xy});
         } else {
             this.goto = this.start({name: "GotoBehaviorX", speed: this.speed, neverSucceed: true});
             this.nextStep();
@@ -649,59 +573,24 @@ class PathToBehaviorX extends Behavior {
     nextStep() {
         this.step++;
         if (this.step >  this.path.length-2) { // at end
-            this.goto.set({target: this.target, radius: this.radius});
+            this.goto.set({xy: this.xy, radius: this.radius});
         } else {
-            // const grid = this.actor.parent;
-            // const target = grid.unpackKey(this.path[this.step]);
-            const targetXY = unpackKey(this.path[this.step]);
-            // console.log("wp: "+ targetXY);
-            this.addNoise(targetXY);
-            // const target = grid.planeXYZ(...targetXY);
-            // this.addNoise(target);
-            this.goto.set({target:targetXY});
+            const xy = unpackKey(this.path[this.step]);
+            this.addNoise(xy);
+            this.goto.set({xy});
         }
     }
 
     addNoise(xy) {
-        const grid = this.actor.parent;
-        const s = grid.gridScale;
-        const n = this.noise/2;
         let x = 0.5;
         let y = 0.5;
+        const n = this.noise/2;
         if (n) {
             x = (0.5-n/2) + n*this.random();
             y = (0.5-n/2) + n*this.random();
         }
-
-        // xy[0] += x*s; xy[1] += y*s;
         xy[0] += x; xy[1] += y;
-
-        // switch (grid.gridPlane) {
-        //     default:
-        //     case 0: xyz[0] += x*s; xyz[2] += y*s; break;
-        //     case 1: xyz[0] += x*s; xyz[1] += y*s; break;
-        //     case 2: xyz[1] += x*s; xyz[2] += y*s; break;
-        // }
     }
-
-    // addNoise(xyz) {
-    //     const grid = this.actor.parent;
-    //     const s = grid.gridScale;
-    //     const n = this.noise/2;
-    //     let x = 0.5;
-    //     let y = 0.5;
-    //     if (n) {
-    //         x = (0.5-n/2) + n*this.random();
-    //         y = (0.5-n/2) + n*this.random();
-    //     }
-
-    //     switch (grid.gridPlane) {
-    //         default:
-    //         case 0: xyz[0] += x*s; xyz[2] += y*s; break;
-    //         case 1: xyz[0] += x*s; xyz[1] += y*s; break;
-    //         case 2: xyz[1] += x*s; xyz[2] += y*s; break;
-    //     }
-    // }
 
     onProgress() {
         if (this.step<this.path.length) {
@@ -713,13 +602,9 @@ class PathToBehaviorX extends Behavior {
         }
     }
 
-    onFail() {
-        this.fail();
-    }
+    onFail() { this.fail() }
 
-    onSucceed() {
-        this.succeed();
-    }
+    onSucceed() {  this.succeed()}
 
 }
 PathToBehaviorX.register("PathToBehaviorX");
