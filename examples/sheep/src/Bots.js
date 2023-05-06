@@ -1,6 +1,6 @@
-import { ModelService, Actor, mix, AM_Spatial, AM_Behavioral, Constants, RegisterMixin, v3_distance, AM_OnNavGrid  } from "@croquet/worldcore";
+import { ModelService, Actor, mix, AM_Spatial, AM_Behavioral, Constants, RegisterMixin, v3_distance, AM_OnNavGrid, AM_OnNavGridX  } from "@croquet/worldcore";
 import { packKey } from "./Paths";
-import { AM_OnGrid, AM_OnNavGridX } from "./NavGrid";
+// import { AM_OnGrid, AM_OnNavGridX } from "./NavGrid";
 
 //------------------------------------------------------------------------------------------
 //-- Flockable -----------------------------------------------------------------------------

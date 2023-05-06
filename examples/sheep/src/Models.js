@@ -1,6 +1,6 @@
-import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, Constants, AM_NavGrid } from "@croquet/worldcore";
+import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, Constants, AM_NavGridX, AM_OnNavGridX } from "@croquet/worldcore";
 import { BotActor } from "./Bots";
-import { AM_NavGridX, AM_OnNavGridX} from "./NavGrid";
+// import { GotoBehaviorX} from "./NavGrid";
 
 //------------------------------------------------------------------------------------------
 // TestActor -------------------------------------------------------------------------------
