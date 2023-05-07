@@ -10,10 +10,8 @@
 // the collision in the opposite direction of your avatar.
 //
 // To do:
-// - ensure camera can always see tank
 // - tank explosion (turret jumps up, tank fades out)
 // - collision more natural
-// - fence to keep avatars and missiles on the grid
 // - should tanks lay down track?
 // - place target towers.
 
@@ -93,6 +91,27 @@ const constructShadowObject = function(object3d, renderOrder, color) {
     outline3d.renderOrder = renderOrder;
     return outline3d;
 }
+
+function createBoxWithRoundedEdges( width, height, depth, radius0, smoothness ) {
+    const shape = new THREE.Shape();
+    let eps = 0.00001;
+    const radius = radius0 - eps;
+    shape.absarc( eps, eps, eps, -Math.PI / 2, -Math.PI, true );
+    shape.absarc( eps, height -  radius * 2, eps, Math.PI, Math.PI / 2, true );
+    shape.absarc( width - radius * 2, height -  radius * 2, eps, Math.PI / 2, 0, true );
+    shape.absarc( width - radius * 2, eps, eps, 0, -Math.PI / 2, true );
+    const geometry = new THREE.ExtrudeBufferGeometry( shape, {
+      amount: depth - radius0 * 2,
+      bevelEnabled: true,
+      bevelSegments: smoothness * 2,
+      steps: 1,
+      bevelSize: radius,
+      bevelThickness: radius0,
+      curveSegments: smoothness
+    });
+    geometry.center();
+    return geometry;
+  }
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -163,11 +182,19 @@ export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
 }
 BollardPawn.register("BollardPawn");
 
+//------------------------------------------------------------------------------------------
+// BollardPawn -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 export class InstancePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
         this.useInstance(actor._instanceName);
+        if (actor._perlin) {
+            const t = this.translation;
+            t[1]=perlin2D(t[0], t[2])-0.25;
+            this.set({translation:t});
+        }
     }
 }
 InstancePawn.register("InstancePawn");
@@ -536,16 +563,16 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             // velocity and follow terrain
             // -1 is a fake velocity used to compute the pitch when not moving
             this.velocity = [0, 0, -this.speed || -0.4];
-            const tt = v3_rotate(this.velocity, yawQ);
-            const translation = v3_add(this.translation, tt);
+            this.deltat = v3_rotate(this.velocity, yawQ);
+            const translation = v3_add(this.translation, this.deltat);
             // can't use last position to determine pitch if not moving
             if(this.speed === 0 )start[1]=perlin2D(start[0], start[2])+this.wheelHeight;
-            translation[1]=perlin2D(translation[0], translation[2])+this.wheelHeight;;
+            translation[1]=perlin2D(translation[0], translation[2])+this.wheelHeight;
             // compute pitch - both backward and forward
 
             let deltaPitch, deltaRoll;
             let roll, pitch;
-            if(this.speed>=0) {
+            if (this.speed>=0) {
                 deltaPitch = v3_sub(translation, start);
                 pitch = this.computeAngle(deltaPitch);
 
@@ -569,7 +596,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                     this.positionTo(translation, q);
                     sunLight.position.set(...v3_add(translation, sunBase));
                 } else { // if we haven't moved, then don't change anything
-                    if ( (pitch !== this.pitch) || (yaw!==this.yaw) || (roll!==this.roll) ) 
+                    if ( (pitch !== this.pitch) || (yaw!==this.yaw) || (roll!==this.roll) )
                         this.positionTo(start, q);
                 }
             }
@@ -621,7 +648,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     godCamera() {
         if (!this.godMatrix) {
-            let t = [150,100,150];
+            let t = [110,150,110];
             let q = q_axisAngle([1, 0, 0], -Math.PI/2);
             this.godMatrix = m4_scaleRotationTranslation(1, q, t);
         }
@@ -632,6 +659,22 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     collide() {
         const colliders = this.service("CollisionManager").colliders;
+        const mx = 75*3-2.5;
+        let t = this.translation;
+        const xm = t[0] < 2.5 || t[0] > mx;
+        const zm = t[2] < 2.5 || t[2] > mx;
+
+        if (xm || zm) {
+            const mag = v3_magnitude(this.deltat);
+            if ( mag > 0 ) {
+                if(xm) this.deltat[0] = -this.deltat[0];
+                if(zm) this.deltat[2] = -this.deltat[2];
+                const bounce = v3_scale(this.deltat, 2/mag);
+                t = v3_add(t, bounce);
+                this.translateTo(t);
+                return true;
+            }
+        }
         for (const collider of colliders) {
             if (collider === this) continue;
             const colliderPos = m4_getTranslation(collider.global);
@@ -744,11 +787,13 @@ export class MyViewRoot extends ViewRoot {
         const  magenta = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
         const  cyan = new THREE.MeshStandardMaterial( {color: new THREE.Color(0,1,1)} );
         const  gray = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.3,0.3,0.3), metalness:1, roughness:0.1} );
+        const  fenceMat = new THREE.MeshStandardMaterial( { color: new THREE.Color(0.3,0.3,0.3), metalness:1, roughness:0.1, transparent:true, opacity:0.25, side:THREE.DoubleSide} );
 
         im.addMaterial("yellow", yellow);
         im.addMaterial("magenta", magenta);
         im.addMaterial("cyan", cyan);
         im.addMaterial("gray", gray);
+        im.addMaterial("fenceMat", fenceMat);
 
         const box = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("box", box);
@@ -765,17 +810,25 @@ export class MyViewRoot extends ViewRoot {
         cylinder3.translate(0,1.5,0);
         im.addGeometry("cylinder3", cylinder3);
 
+        //const fenceGeo = createBoxWithRoundedEdges(3, 3, 0.25, .05, 3);
+        const fenceGeo = new THREE.PlaneGeometry(2.75,8);
+        fenceGeo.translate(0, 4, 0);
+        fenceGeo.computeVertexNormals();
+        im.addGeometry("fenceGeo", fenceGeo);
+
         const mesh0 = im.addMesh("yellowBox", "box", "yellow");
         const mesh1 = im.addMesh("magentaBox", "box", "magenta");
         const mesh2 = im.addMesh("cyanBox", "box", "cyan");
         const mesh3 = im.addMesh("pole", "cylinder", "gray");
         const mesh4 = im.addMesh("pole2", "cylinder2", "gray");
+        const fence = im.addMesh("fence", "fenceGeo", "fenceMat");
 
         mesh0.castShadow = true;
         mesh1.castShadow = true;
         mesh2.castShadow = true;
         mesh3.castShadow = true;
         mesh4.castShadow = true;
+        //fence.castShadow = true;
 
         const gltfLoader = new GLTFLoader();
 
