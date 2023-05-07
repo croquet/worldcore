@@ -209,15 +209,6 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, 
     }
 
     doShoot(where) {
-        //[this.translation, this.yaw]
-        /*
-        const yawQ = q_axisAngle([0,1,0], where[1]);
-        let velocity = [0, 0, -4];
-        const v = v3_rotate(velocity, yawQ);
-
-        const missile = MissileActor.create({pawn: "MissilePawn", parent: this.parent, translation: v3_add(where[0], v3_scale(v,0.5)), rotation: yawQ, velocity: v, color: [...this.color]});
-        */
-
         const aim = v3_rotate([0,0,-1], q_axisAngle([0,1,0], where[1])); //
         const translation = v3_add(this.translation, v3_scale(aim, 5));
         const missile = MissileActor.create({parent: this.parent, pawn: "MissilePawn", translation, userColor: this.userColor, color: [...this.color]});
@@ -298,18 +289,17 @@ export class MyModelRoot extends ModelRoot {
         const bollardScale = 3;
         const bollardDistance = bollardScale*3;
         this.base = BaseActor.create({gridSize: 75, gridScale: bollardScale, subdivisions: 1, noise: 1});
-        this.parent = SimpleActor.create({pawn: "TestPawn", parent: this.base, translation:[-12,7,-35]});
-        this.child = SimpleActor.create({pawn: "CollidePawn", parent: this.parent, translation:[0,0,4]});
-
-        this.parent.behavior.start({name: "SpinBehavior", axis: [0,1,0], tickRate:500});
-        this.child.behavior.start({name: "SpinBehavior", axis: [0,0,1], speed: 3});
+        //this.parent = SimpleActor.create({pawn: "TestPawn", parent: this.base, translation:[-12,7,-35]});
+        //this.child = SimpleActor.create({pawn: "CollidePawn", parent: this.parent, translation:[0,0,4]});
+        //this.parent.behavior.start({name: "SpinBehavior", axis: [0,1,0], tickRate:500});
+        //this.child.behavior.start({name: "SpinBehavior", axis: [0,0,1], speed: 3});
 
         //place the bollards
         const maxSize = 15;
         for (let x=0; x<maxSize; x++) for (let y=0; y<maxSize; y++) {
             if ((x<=4 || x>=maxSize-5) && (y<=4 || y>=maxSize-5)) {
                 // bottom of bollard
-                const bollard = BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], parent: this.base, obstacle: true,
+                const bollard = BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole', parent: this.base, obstacle: true,
                     translation:[15*bollardScale+bollardDistance*x+1.5,0, 15*bollardScale+bollardDistance*y+1.5]} );
                 // the three floating parts of the bollard
                 SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,3,0]} );
@@ -317,6 +307,16 @@ export class MyModelRoot extends ModelRoot {
                 SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,4,0]} );
             }
         }
+
+        [[7-1, 7-1],[7-1, 7+1], [7+1, 7+1], [7+1, 7-1]].forEach( xy => {
+            BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole3', parent: this.base, obstacle: true,
+            translation:[15*bollardScale+bollardDistance*xy[0]+1.5,0, 15*bollardScale+bollardDistance*xy[1]+1.5]} );
+        });
+        [[0,0], [0, 74], [74,74], [74,0]].forEach( xy => {
+            BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole3', parent: this.base, obstacle: true,
+            translation:[bollardScale*xy[0]+1.5,0, bollardScale*xy[1]+1.5]} );
+        });
+
         const m = 75*3;
         const r =  q_axisAngle([0,1,0], Math.PI/2);
 
@@ -335,8 +335,6 @@ export class MyModelRoot extends ModelRoot {
     colorChange() {
         const color = [this.random(), this.random(), this.random()];
         this.child.set({color});
-        // this.spare0.set({color});
-        // this.spare1.set({color});
     }
 
 }

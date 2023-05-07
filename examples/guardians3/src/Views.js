@@ -10,7 +10,6 @@
 // the collision in the opposite direction of your avatar.
 //
 // To do:
-// - tank colors for list
 // - place target towers.
 // - add the bots
 // - tank damage and explosion (turret jumps up, tank fades out)
@@ -62,7 +61,7 @@ const perlin2D = function(perlinHeight = 27.5, perlinScale = 0.02) {
 
     return function(x,y) {
         //return 0; // used for testing
-        return perlinHeight * perlin.signedNoise2D(perlinScale*x-100, perlinScale*y-146);
+        return perlinHeight * perlin.signedNoise2D(-17+perlinScale*x-100, 14+perlinScale*y-146);
     };
 }();
 
@@ -194,7 +193,8 @@ export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
-        this.useInstance("pole");
+        //this.useInstance("pole");
+        this.useInstance(actor._instanceName);
         this.service("CollisionManager").colliders.add(this);
         const t = this.translation;
         t[1]=perlin2D(t[0], t[2])-0.25;
@@ -840,8 +840,8 @@ export class MyViewRoot extends ViewRoot {
         cylinder2.translate(0,1.5,0);
         im.addGeometry("cylinder2", cylinder2);
 
-        const cylinder3 = new THREE.CylinderGeometry(1, 1, 0.25, 32);
-        cylinder3.translate(0,1.5,0);
+        const cylinder3 = new THREE.CylinderGeometry(0.5, 1.5, 20.25, 32);
+        cylinder3.translate(0,10,0);
         im.addGeometry("cylinder3", cylinder3);
 
         //const fenceGeo = createBoxWithRoundedEdges(3, 3, 0.25, .05, 3);
@@ -855,6 +855,7 @@ export class MyViewRoot extends ViewRoot {
         const mesh2 = im.addMesh("cyanBox", "box", "cyan");
         const mesh3 = im.addMesh("pole", "cylinder", "gray");
         const mesh4 = im.addMesh("pole2", "cylinder2", "gray");
+        const mesh5 = im.addMesh("pole3", "cylinder3", "gray");
         const fence = im.addMesh("fence", "fenceGeo", "fenceMat");
 
         mesh0.castShadow = true;
@@ -862,6 +863,7 @@ export class MyViewRoot extends ViewRoot {
         mesh2.castShadow = true;
         mesh3.castShadow = true;
         mesh4.castShadow = true;
+        mesh5.castShadow = true;
         //fence.castShadow = true;
 
         const gltfLoader = new GLTFLoader();
