@@ -1,7 +1,7 @@
 {
   "name": "@croquet/worldcore-guardians3",
   "version": "2.0.0-alpha.0",
-  "description": "Worldcore Drive",
+  "description": "Worldcore Guardians",
   "private": true,
   "scripts": {
     "start": "webpack serve --no-live-reload --no-hot --mode development --devtool source-map",

@@ -1,4 +1,4 @@
-// Drive Views
+// Guardian Views
 //
 // The majority of the code specific to this example is in the definition of AvatarPawn.
 // Demonstrates terrain following, avatar/object and avatar/avatar collisions.
@@ -10,10 +10,12 @@
 // the collision in the opposite direction of your avatar.
 //
 // To do:
-// - tank explosion (turret jumps up, tank fades out)
+// - tank damage and explosion (turret jumps up, tank fades out)
 // - collision more natural
 // - should tanks lay down track?
 // - place target towers.
+// - don't sort the nav test
+// - add the bots
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation, m4_scaleRotationTranslation,

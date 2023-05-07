@@ -1,10 +1,15 @@
-// Drive Models
+// Guardian Models
 
 import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, v3_add, v3_sub, v3_scale,
     UserManager, User, AM_Avatar, q_axisAngle, v3_normalize, v3_rotate, AM_NavGrid, AM_OnNavGrid } from "@croquet/worldcore";
 
+// The Guardian game is basically a 2D game. Virtually all computations in the model are 2D.
+// The flat world is placed on a Perlin noise generated surface, but all interactions including
+// driving and collisions are computed in 2D.
+
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
+// This is the ground plane.
 //------------------------------------------------------------------------------------------
 const missileSpeed = 50;
 class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
@@ -105,7 +110,7 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGr
     }
 
     translationSet(t,o) {
-        //let doTranslate = true;
+        //don't let the missile off of the grid...
         if (this.now()>=this.bounceWait) {
             const mx = 75*3-2.5;
             if (t[0] < 2.5 || t[0]>mx) {
@@ -160,13 +165,13 @@ class BollardActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid) {
 
     init(options) {
         super.init(options);
-        const mcm = this.service("ModelCollisionManager");
-        mcm.colliders.add(this);
+        //const mcm = this.service("ModelCollisionManager");
+        //mcm.colliders.add(this);
     }
     destroy() {
         super.destroy();
-        const mcm = this.service("ModelCollisionManager");
-        mcm.colliders.delete(this);
+        //const mcm = this.service("ModelCollisionManager");
+       //mcm.colliders.delete(this);
     }
 }
 BollardActor.register('BollardActor');
