@@ -20,7 +20,7 @@ User.register('User');
 
 export class UserManager extends ModelService {
 
-    get defaultUser() {return User;}
+    get defaultUser() {return User}
 
     init() {
         super.init('UserManager');
