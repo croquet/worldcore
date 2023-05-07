@@ -10,12 +10,13 @@
 // the collision in the opposite direction of your avatar.
 //
 // To do:
+// - tank colors for list
+// - place target towers.
+// - add the bots
 // - tank damage and explosion (turret jumps up, tank fades out)
 // - collision more natural
 // - should tanks lay down track?
-// - place target towers.
 // - don't sort the nav test
-// - add the bots
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation, m4_scaleRotationTranslation,
@@ -29,6 +30,30 @@ import tank_body from "../assets/tank_body.glb";
 import paper from "../assets/paper.jpg";
 import sky from "../assets/quarry_02.png";
 
+export const UserColors = [
+    rgb(192, 57, 43),        // Red
+    rgb(40, 116, 166),        // Blue
+    rgb(175, 96, 26),        // Orange
+    rgb(118, 68, 138),        // Purple
+    rgb(183, 149, 11),        // Yellow
+
+    rgb(217, 136, 128),        // Red
+    rgb(52, 152, 219),        // Blue
+    rgb(230, 126, 34),        // Orange
+    rgb(155, 89, 182),         // Purple
+    rgb(241, 196, 15),        // Yellow
+
+    rgb(242, 215, 213),        // Red
+    rgb(133, 193, 233),         // Blue
+    rgb(240, 178, 122),        // Orange
+    rgb(195, 155, 211),        // Purple
+    rgb(247, 220, 111),        // Yellow
+];
+
+function rgb(r, g, b) {
+    return [r/255, g/255, b/255];
+}
+
 // construct a perlin object and return a function that uses it
 const perlin2D = function(perlinHeight = 27.5, perlinScale = 0.02) {
     // the PerlinNoise constructor can take a seed value as an argument
@@ -38,7 +63,7 @@ const perlin2D = function(perlinHeight = 27.5, perlinScale = 0.02) {
     return function(x,y) {
         //return 0; // used for testing
         return perlinHeight * perlin.signedNoise2D(perlinScale*x-100, perlinScale*y-146);
-    }
+    };
 }();
 
 const cameraOffset = [0,12,20];
@@ -62,10 +87,10 @@ const sunLight =  function() {
 }();
 
 // 3D object that you can see through a wall
-const constructShadowObject = function(object3d, renderOrder, color) {
+const constructShadowObject = function(object3d, renderOrder, c) {
 
     const shadowMat = new THREE.MeshStandardMaterial( {
-        color: color,
+        color: c,
         opacity: 0.25,
         transparent: true,
         depthTest: false,
@@ -77,26 +102,26 @@ const constructShadowObject = function(object3d, renderOrder, color) {
     outline3d.position.set(0,0,0);
     outline3d.rotation.set(0,0,0);
     outline3d.updateMatrix();
-    outline3d.traverse((m) => {
+    outline3d.traverse( m => {
         if (m.material) {
             m.material = shadowMat;
             if (!Array.isArray(m.material)) {
-                console.log("single material")
+                console.log("single material");
                 m.material = shadowMat;
             } else {
                 console.log("multiple material", m.material.length);
-                let mArray = m.material.map((_m) => shadowMat);
+                const mArray = m.material.map( _m => shadowMat );
                 m.material = mArray;
             }
         }
     });
     outline3d.renderOrder = renderOrder;
     return outline3d;
-}
+};
 
 function createBoxWithRoundedEdges( width, height, depth, radius0, smoothness ) {
     const shape = new THREE.Shape();
-    let eps = 0.00001;
+    const eps = 0.00001;
     const radius = radius0 - eps;
     shape.absarc( eps, eps, eps, -Math.PI / 2, -Math.PI, true );
     shape.absarc( eps, height -  radius * 2, eps, Math.PI, Math.PI / 2, true );
@@ -122,7 +147,7 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
-        let t = this.translation;
+        const t = this.translation;
         t[1]=perlin2D(t[0], t[2])+1;
         this.set({translation:t});
         this.useInstance("cyanBox");
@@ -142,7 +167,7 @@ export class GeometryPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
         this.paperTexture.wrapS = THREE.RepeatWrapping;
         this.paperTexture.wrapT = THREE.RepeatWrapping;
         this.paperTexture.repeat.set( 1, 1 );
-        this.loadGeometry(actor._instanceName, actor.color);
+        this.loadGeometry(actor._instanceName, UserColors[actor.userColor]);
     }
 
     loadGeometry(name, color) {
@@ -226,7 +251,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Nav
 
         const vertices = this.geometry.attributes.position.array;
 
-        for( let index=0; index < vertices.length; index+=3)
+        for ( let index=0; index < vertices.length; index+=3)
             vertices[index+1] = perlin2D(vertices[index], vertices[index+2]);
 
         this.geometry.computeVertexNormals();
@@ -299,7 +324,7 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(actor) {
         super(actor);
     //    this.service("CollisionManager").colliders.add(this);
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...UserColors[actor.userColor]) } );
         this.geometry = new THREE.SphereGeometry( 1, 32, 16 );
         const mesh = new THREE.Mesh( this.geometry, this.material );
         mesh.castShadow = true;
@@ -360,13 +385,11 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         const im = this.service("ThreeInstanceManager");
         const geometry = im.geometry(name);
         if (geometry) {
-            console.log("HERE I AM", geometry)
             this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...color), map:this.paperTexture} );
             this.mesh = new THREE.Mesh( geometry, this.material );
             this.mesh.castShadow = true;
             this.mesh.receiveShadow = true;
-            if (this.isMyAvatar)
-                sunLight.target = this.mesh; //this.instance; // sunLight is a global
+            if (this.isMyAvatar) sunLight.target = this.mesh; //this.instance; // sunLight is a global
             this.setRenderObject(this.mesh);
             //this.outline3d=constructShadow(this.mesh, 10001, color);
             //this.mesh.add(this.outline3d);
@@ -401,6 +424,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.subscribe("input", "pointerMove", this.doPointerMove);
         this.subscribe("input", "tap", this.doPointerTap);
         this.listen("doBounce", this.doBounce);
+        this.listen("doGodMode", this.doGodMode);
     }
 
     park() {
@@ -444,7 +468,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             case "h":
                 this.goHome(); break;
             case "Shift":
-                console.log("shiftKey Down")
+                console.log("shiftKey Down");
                 this.highGear = 1.5; break;
             case " ":
                 this.shoot();
@@ -457,9 +481,12 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                     "yaw:", this.yaw);
                 break;
             case "c":
-            case "C":
                 // switch to god mode camera
                 this.godMode = !this.godMode;
+                break;
+            case "C":
+                // everyone switch to go mode camera
+                this.publish("all", "godMode", !this.godMode);
                 break;
             default:
         }
@@ -480,7 +507,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             case "d":
                 this.turn = 0; break;
             case "Shift":
-                console.log("shiftKey Up")
+                console.log("shiftKey Up");
                 this.highGear = 1; break;
             default:
         }
@@ -507,7 +534,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
             let v = v2_sqrMag([this.turn, this.gas]);
 
-            if(v>1) {
+            if (v>1) {
                 v=Math.sqrt(v);
                 this.turn/=v;
                 this.gas/=v;
@@ -537,7 +564,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         }
     }
 
-    doPointerTap(e) {
+    doPointerTap() {
         this.shoot();
     }
 
@@ -550,7 +577,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             if (this.auto) {
                 this.speed = 5 * factor;
                 this.steer = -1;
-                this.shoot(); 
+                this.shoot();
             } else {
                 this.speed = this.gas * 20 * factor * this.highGear;
                 this.steer = this.turn;
@@ -559,7 +586,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             // copy our current position to compute pitch
             const start = [...this.translation];
             const angularVelocity = this.steer*0.025;
-            let yaw = this.yaw+angularVelocity;
+            const yaw = this.yaw+angularVelocity;
             const yawQ = q_axisAngle([0,1,0], yaw);
 
             // velocity and follow terrain
@@ -568,7 +595,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             this.deltat = v3_rotate(this.velocity, yawQ);
             const translation = v3_add(this.translation, this.deltat);
             // can't use last position to determine pitch if not moving
-            if(this.speed === 0 )start[1]=perlin2D(start[0], start[2])+this.wheelHeight;
+            if (this.speed === 0 ) start[1]=perlin2D(start[0], start[2])+this.wheelHeight;
             translation[1]=perlin2D(translation[0], translation[2])+this.wheelHeight;
             // compute pitch - both backward and forward
 
@@ -650,8 +677,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     godCamera() {
         if (!this.godMatrix) {
-            let t = [110,150,110];
-            let q = q_axisAngle([1, 0, 0], -Math.PI/2);
+            const t = [110,150,110];
+            const q = q_axisAngle([1, 0, 0], -Math.PI/2);
             this.godMatrix = m4_scaleRotationTranslation(1, q, t);
         }
         const rm = this.service("ThreeRenderManager");
@@ -669,8 +696,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         if (xm || zm) {
             const mag = v3_magnitude(this.deltat);
             if ( mag > 0 ) {
-                if(xm) this.deltat[0] = -this.deltat[0];
-                if(zm) this.deltat[2] = -this.deltat[2];
+                if (xm) this.deltat[0] = -this.deltat[0];
+                if (zm) this.deltat[2] = -this.deltat[2];
                 const bounce = v3_scale(this.deltat, 2/mag);
                 t = v3_add(t, bounce);
                 this.translateTo(t);
@@ -680,9 +707,9 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         for (const collider of colliders) {
             if (collider === this) continue;
             const colliderPos = m4_getTranslation(collider.global);
-            const distance = v3_distance(colliderPos, this.translation);
+            const d = v3_distance(colliderPos, this.translation);
 
-            if (distance < 2.5) {
+            if (d < 2.5) {
                 //console.log("bump!");
                 //console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
                 const from = v3_sub(this.translation, collider.translation);
@@ -709,8 +736,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.translateTo(translation);
     }
 
+    doGodMode(gm) {
+        // global switch to godMode
+        this.godMode = gm;
+    }
+
     goHome() {
-        const translation = [175+ this.random() * 10, 0, 160+this.random()*10];
+        const translation = [110 + this.random() * 10-5, 0, 155+this.random()*10-5];
         this.yaw = Math.PI/2;
         const rotation = q_axisAngle([0,1,0], this.yaw);
 
@@ -755,7 +787,7 @@ export class MyViewRoot extends ViewRoot {
         rm.scene.add(ambient);
         rm.scene.add(sunLight); // this is a global object
         const loader = new THREE.TextureLoader();
-        loader.load( sky, (skyTexture) => {
+        loader.load( sky, skyTexture => {
             const pmremGenerator = new THREE.PMREMGenerator(rm.renderer);
             pmremGenerator.compileEquirectangularShader();
             const skyEnvironment = pmremGenerator.fromEquirectangular(skyTexture);
@@ -849,9 +881,6 @@ export class MyViewRoot extends ViewRoot {
         im.addGeometry("tankBody", tankBody);
         im.addGeometry("tankTurret", tankTurret);
         im.addGeometry("tankTracks", tankTracks);
-
-
-        console.log("DO I GET HERE?", tankTracks, im.geometry("tankTracks"))
 
         const tankBodyim = im.addMesh("tankBody","tankBody", "yellow");
         const tankTurretim = im.addMesh("tankTurret", "tankTurret","yellow");

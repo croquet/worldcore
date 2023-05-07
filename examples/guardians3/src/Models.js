@@ -39,6 +39,7 @@ class SimpleActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
     init(options) {
         super.init(options);
     }
+    get userColor() { return this._userColor }
     get color() { return this._color || [0.5,0.5,0.5]}
 }
 SimpleActor.register('SimpleActor');
@@ -58,6 +59,8 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGr
         this.bounceWait = this.now(); // need to bounce otherwise we might instantly bounce again
         this.tick();
     }
+
+    get userColor() { return this._userColor }
 
     tick() {
         this.test();
@@ -186,8 +189,10 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, 
         super.init(options);
         this.listen("bounce", this.doBounce);
         this.listen("shoot", this.doShoot);
+        this.subscribe("all", "godMode", this.doGodMode);
     }
 
+    get userColor() { return this._userColor }
     get color() { return this._color || [0.5,0.5,0.5]}
 
     // Since the view side control is happening so often, it is possible to miss a
@@ -197,6 +202,10 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, 
     // seeing the other user's bounce.
     doBounce(bounce) {
         this.say("doBounce", bounce);
+    }
+
+    doGodMode(gm) {
+        this.say("doGodMode", gm);
     }
 
     doShoot(where) {
@@ -211,8 +220,8 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, 
 
         const aim = v3_rotate([0,0,-1], q_axisAngle([0,1,0], where[1])); //
         const translation = v3_add(this.translation, v3_scale(aim, 5));
-        const missile = MissileActor.create({parent: this.parent, pawn: "MissilePawn", translation, color: [...this.color]});
-            missile.go = missile.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
+        const missile = MissileActor.create({parent: this.parent, pawn: "MissilePawn", translation, userColor: this.userColor, color: [...this.color]});
+        missile.go = missile.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
     }
 
 }
@@ -230,10 +239,12 @@ MyUserManager.register('MyUserManager');
 class MyUser extends User {
     init(options) {
         super.init(options);
+        console.log(options);
         const base = this.wellKnownModel("ModelRoot").base;
 
         this.color = [0.25+0.75*this.random(), 0.5, 0.25+0.75*this.random()];
-        const trans = [170 + this.random() * 10, 0, 170+this.random()*10];
+        this.userColor = options.userCount%15;
+        const trans = [110 + this.random() * 10-5, 0, 155+this.random()*10-5];
         const rot = q_axisAngle([0,1,0], Math.PI/2);
 
         this.avatar = AvatarActor.create({
@@ -241,13 +252,14 @@ class MyUser extends User {
             parent: base,
             driver: this.userId,
             color: this.color,
+            userColor: this.userColor,
             translation: trans,
             rotation: rot,
             instanceName: 'tankTracks',
             tags: ["avatar"]
         });
-        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, color:this.color, instanceName:'tankBody'});
-        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, color:this.color, instanceName:'tankTurret'});
+        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor:this.userColor, color:this.color, instanceName:'tankBody'});
+        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor:this.userColor, color:this.color, instanceName:'tankTurret'});
     }
 
     destroy() {
