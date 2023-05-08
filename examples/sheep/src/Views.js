@@ -4,6 +4,15 @@ import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, Thr
     PM_ThreeInstanced, OutlinePass, viewRoot, Constants, PM_NavGridGizmo } from "@croquet/worldcore";
 // import { PathDebug, packKey } from "./Paths";
 
+function setGeometryColor(geometry, color) {
+    const count = geometry.getAttribute("position").count;
+    const colors = [];
+    for (let i = 0; i < count; i++) {
+        colors.push(...color);
+    }
+    geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3) );
+}
+
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -12,7 +21,7 @@ export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
-        this.useInstance("bot");
+        this.useInstance("cube16");
     }
 
 }
@@ -55,7 +64,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
 
         this.gizmo.visible = false;
 
-        // this.subscribe("input", "pointerDown", this.doPointerDown);
+        this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "qDown", this.toggleGizmo);
     }
 
@@ -71,25 +80,17 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
 
     doPointerDown(e) {
         if (e.button === 2) return;
-        // this.point(e.xy);
-    }
-
-    point(xy) {
+        console.log("base down");
         const rc = this.service("ThreeRaycast");
-        const hits = rc.cameraRaycast(xy, "ground");
+        const hits = rc.cameraRaycast(e.xy, "ground");
         if (hits.length<1) return;
         const hit = hits[0];
-        const navX = Math.floor(hit.xyz[0]/this.actor.gridScale);
-        const navZ = Math.floor(hit.xyz[2]/this.actor.gridScale);
-
-        if (navX <0) return;
-        if (navZ <0) return;
-
-        const start = packKey(0,0);
-        const end = packKey(navX,navZ);
-        const path = this.actor.findPath(start, end);
-        this.drawPathGizmo(path);
+        const x = hit.xyz[0];
+        const y = hit.xyz[2];
+        const xy = [x/3,y/3];
+        this.publish("hud", "go", xy);
     }
+
 }
 BasePawn.register("BasePawn");
 
@@ -115,7 +116,7 @@ class GodView extends ViewService {
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", "pointerMove", this.doPointerMove);
-        this.subscribe("input", "gDown", this.go);
+        // this.subscribe("input", "gDown", this.go);
     }
 
     doPointerMove(e) {
@@ -123,17 +124,17 @@ class GodView extends ViewService {
         // this.point();
     }
 
-    go() {
-        console.log("go");
-        const rc = this.service("ThreeRaycast");
-        const hits = rc.cameraRaycast(this.xy, "ground");
-        if (hits.length<1) return;
-        const hit = hits[0];
-        const x = hit.xyz[0];
-        const y = hit.xyz[2];
-        const xy = [x/3,y/3];
-        this.publish("hud", "go", xy);
-    }
+    // go() {
+    //     console.log("go");
+    //     const rc = this.service("ThreeRaycast");
+    //     const hits = rc.cameraRaycast(this.xy, "ground");
+    //     if (hits.length<1) return;
+    //     const hit = hits[0];
+    //     const x = hit.xyz[0];
+    //     const y = hit.xyz[2];
+    //     const xy = [x/3,y/3];
+    //     this.publish("hud", "go", xy);
+    // }
 
     updateCamera() {
         if (this.paused) return;
@@ -240,6 +241,15 @@ export class MyViewRoot extends ViewRoot {
     buildInstances() {
         const im = this.service("ThreeInstanceManager");
 
+        const  vcmaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1)} );
+        vcmaterial.side = THREE.FrontSide;
+        vcmaterial.shadowSide = THREE.BackSide;
+        vcmaterial.castShadow = true;
+        vcmaterial.vertexColors = true;
+
+        im.addMaterial("vc", vcmaterial);
+        this.buildCubes();
+
         const  material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0,1,1)} );
         material.side = THREE.FrontSide;
         material.shadowSide = THREE.BackSide;
@@ -254,11 +264,24 @@ export class MyViewRoot extends ViewRoot {
         geometry.translate(0,0.5,0);
         im.addGeometry("cube", geometry);
 
-        const bbb = im.addMesh("block", "cube", "cyan", 1000);
+        const bbb = im.addMesh("block", "cube", "cyan", 2000);
         bbb.castShadow = true;
 
         const mmm = im.addMesh("bot", "cube", "magenta", 2000);
         mmm.castShadow = true;
+    }
+
+    buildCubes() {
+        const im = this.service("ThreeInstanceManager");
+        for ( let n = 0; n < this.model.colors.length; n++) {
+            const color = this.model.colors[n];
+            const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+            setGeometryColor(geometry, color);
+            im.addGeometry("box" + n, geometry);
+            const mesh = im.addMesh("cube" + n, "box"+n, "vc");
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+        }
     }
 
 }

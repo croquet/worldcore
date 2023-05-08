@@ -208,7 +208,7 @@ class MyViewRoot extends ViewRoot {
 
     buildCubes() {
         const im = this.service("ThreeInstanceManager");
-        for( let n = 0; n < this.model.colors.length; n++) {
+        for ( let n = 0; n < this.model.colors.length; n++) {
             const color = this.model.colors[n];
             const geometry = new THREE.BoxGeometry( 1, 1, 1 );
             setGeometryColor(geometry, color);
@@ -221,7 +221,7 @@ class MyViewRoot extends ViewRoot {
 
     buildCylinders() {
         const im = this.service("ThreeInstanceManager");
-        for( let n = 0; n < this.model.colors.length; n++) {
+        for ( let n = 0; n < this.model.colors.length; n++) {
             const color = this.model.colors[n];
             const geometry = new THREE.CylinderGeometry( 0.5, 0.5, 1, 10 );
             setGeometryColor(geometry, color);
@@ -234,7 +234,7 @@ class MyViewRoot extends ViewRoot {
 
     buildBalls() {
         const im = this.service("ThreeInstanceManager");
-        for( let n = 0; n < this.model.colors.length; n++) {
+        for ( let n = 0; n < this.model.colors.length; n++) {
             const color = this.model.colors[n];
             const geometry = new THREE.SphereGeometry( 0.5, 10, 10);
             setGeometryColor(geometry, color);
