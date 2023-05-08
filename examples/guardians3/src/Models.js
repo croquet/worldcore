@@ -302,19 +302,39 @@ export class MyModelRoot extends ModelRoot {
                 const bollard = BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole', parent: this.base, obstacle: true,
                     translation:[15*bollardScale+bollardDistance*x+1.5,0, 15*bollardScale+bollardDistance*y+1.5]} );
                 // the three floating parts of the bollard
-                SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,3,0]} );
-                SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,3.5,0]} );
-                SimpleActor.create({pawn: "InstancePawn", parent: bollard, color:this.color, instanceName:'pole2', translation:[0,4,0]} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3,0]} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3.5,0]} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,4,0]} );
+            }
+        }
+        //place the bollards
+
+        for (let x=0; x<25; x++) for (let y=0; y<25; y++) {
+            if ((y<=1 || y>=23) || (x<=1 || x>=23)) {
+                // bottom of bollard
+                const bollard = BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole', parent: this.base, obstacle: true,
+                    translation:[bollardDistance*x+1.5,0, bollardDistance*y+1.5]} );
+                // the three floating parts of the bollard
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3,0]} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3.5,0]} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,4,0]} );
             }
         }
 
-        [[7-1, 7-1],[7-1, 7+1], [7+1, 7+1], [7+1, 7-1]].forEach( xy => {
-            BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole3', parent: this.base, obstacle: true,
-            translation:[15*bollardScale+bollardDistance*xy[0]+1.5,0, 15*bollardScale+bollardDistance*xy[1]+1.5]} );
+        [[7-1, 7-1, -Math.PI/4],[7-1, 7+1, Math.PI/4], [7+1, 7+1, Math.PI-Math.PI/4], [7+1, 7-1, Math.PI+Math.PI/4]].forEach( xy => {
+            const powerPole = BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole3', parent: this.base, obstacle: true,
+            translation:[15*bollardScale+bollardDistance*xy[0]+1.5,0, 15*bollardScale+bollardDistance*xy[1]+1.5], rotation:q_axisAngle([0,1,0],xy[2])} );
+            SimpleActor.create({pawn: "InstancePawn", parent: powerPole, instanceName:'pole4', translation:[5.3,20,0]} );
+            SimpleActor.create({pawn: "InstancePawn", parent: powerPole, instanceName:'pole4', translation:[5.6,21,0]} );
+            SimpleActor.create({pawn: "InstancePawn", parent: powerPole, instanceName:'pole4', translation:[5.9,22,0]} );
         });
-        [[0,0], [0, 74], [74,74], [74,0]].forEach( xy => {
-            BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole3', parent: this.base, obstacle: true,
-            translation:[bollardScale*xy[0]+1.5,0, bollardScale*xy[1]+1.5]} );
+
+        [[0,0, -Math.PI/4], [0, 74, Math.PI/4], [74, 74, Math.PI-Math.PI/4], [74,0, Math.PI+Math.PI/4]].forEach( xy => {
+            const powerPole2 = BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole3', parent: this.base, obstacle: true,
+            translation:[bollardScale*xy[0]+1.5,0, bollardScale*xy[1]+1.5], rotation:q_axisAngle([0,1,0],xy[2])} );
+            SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.3,20,0]} );
+            SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.6,21,0]} );
+            SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.9,22,0]} );
         });
 
         const m = 75*3;

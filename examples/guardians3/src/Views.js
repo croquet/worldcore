@@ -324,7 +324,7 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(actor) {
         super(actor);
     //    this.service("CollisionManager").colliders.add(this);
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...UserColors[actor.userColor]) } );
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...UserColors[actor.userColor]), metalness:0.5, roughness:0.1 } );
         this.geometry = new THREE.SphereGeometry( 1, 32, 16 );
         const mesh = new THREE.Mesh( this.geometry, this.material );
         mesh.castShadow = true;
@@ -817,13 +817,13 @@ export class MyViewRoot extends ViewRoot {
     async buildInstances() {
         const im = this.service("ThreeInstanceManager");
 
-        const  yellow = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,0)} );
+        const  green = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.25,1,0.25), metalness:1, roughness:0.1} );
         const  magenta = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
         const  cyan = new THREE.MeshStandardMaterial( {color: new THREE.Color(0,1,1)} );
         const  gray = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.3,0.3,0.3), metalness:1, roughness:0.1} );
         const  fenceMat = new THREE.MeshStandardMaterial( { color: new THREE.Color(0.3,0.3,0.3), metalness:1, roughness:0.1, transparent:true, opacity:0.25, side:THREE.DoubleSide} );
 
-        im.addMaterial("yellow", yellow);
+        im.addMaterial("green", green);
         im.addMaterial("magenta", magenta);
         im.addMaterial("cyan", cyan);
         im.addMaterial("gray", gray);
@@ -840,9 +840,16 @@ export class MyViewRoot extends ViewRoot {
         cylinder2.translate(0,1.5,0);
         im.addGeometry("cylinder2", cylinder2);
 
-        const cylinder3 = new THREE.CylinderGeometry(0.5, 1.5, 20.25, 32);
-        cylinder3.translate(0,10,0);
+        const cylinder3 = new THREE.CylinderGeometry(0.5, 1.5, 28.25, 32);
+        cylinder3.translate(0,14,0);
+        const shearMatrix = new THREE.Matrix4().makeShear(0, 0, 0.25, 0, 0, 0, 0);
+        cylinder3.applyMatrix4(shearMatrix);
+        cylinder3.computeVertexNormals();
         im.addGeometry("cylinder3", cylinder3);
+
+        const cylinder4 = new THREE.CylinderGeometry(1.5, 1.5, 0.35, 32);
+        cylinder4.translate(0,1.5,0);
+        im.addGeometry("cylinder4", cylinder4);
 
         //const fenceGeo = createBoxWithRoundedEdges(3, 3, 0.25, .05, 3);
         const fenceGeo = new THREE.PlaneGeometry(2.75,8);
@@ -850,20 +857,22 @@ export class MyViewRoot extends ViewRoot {
         fenceGeo.computeVertexNormals();
         im.addGeometry("fenceGeo", fenceGeo);
 
-        const mesh0 = im.addMesh("yellowBox", "box", "yellow");
+        //const mesh0 = im.addMesh("yellowBox", "box", "yellow");
         const mesh1 = im.addMesh("magentaBox", "box", "magenta");
         const mesh2 = im.addMesh("cyanBox", "box", "cyan");
         const mesh3 = im.addMesh("pole", "cylinder", "gray");
         const mesh4 = im.addMesh("pole2", "cylinder2", "gray");
         const mesh5 = im.addMesh("pole3", "cylinder3", "gray");
+        const mesh6 = im.addMesh("pole4", "cylinder4", "green");
         const fence = im.addMesh("fence", "fenceGeo", "fenceMat");
 
-        mesh0.castShadow = true;
+       //mesh0.castShadow = true;
         mesh1.castShadow = true;
         mesh2.castShadow = true;
         mesh3.castShadow = true;
         mesh4.castShadow = true;
         mesh5.castShadow = true;
+        mesh6.castShadow = true;
         //fence.castShadow = true;
 
         const gltfLoader = new GLTFLoader();
