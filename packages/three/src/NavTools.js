@@ -31,7 +31,7 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
 
     drawGizmo() {
         const rm = this.service("ThreeRenderManager");
-        let visible
+        let visible;
         if (this.gizmo) {
             visible = this.gizmo.visible;
             rm.scene.remove(this.gizmo);
@@ -60,8 +60,8 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
         const y0 = this.translation[1];
 
         let material;
-        let geometry
-        let p0
+        let geometry;
+        let p0;
         let p1;
         let line;
 
@@ -133,7 +133,7 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
             // -- southwest --
 
             material = node.southwest ? this.cyanMaterial : this.redMaterial;
-            d = 0.1
+            d = 0.1;
 
             p0 = [x+b,y+b,d];
             p1 = [x+a,y+a,d];
@@ -148,7 +148,7 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
             // -- southeast --
 
             material = node.southeast ? this.cyanMaterial : this.redMaterial;
-            d = 0.1
+            d = 0.1;
 
             p0 = [x+b,y+b,d];
             p1 = [x+c,y+a,d];
@@ -163,7 +163,7 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
             // -- northeast --
 
             material = node.northeast ? this.cyanMaterial : this.redMaterial;
-            d = 0.1
+            d = 0.1;
 
             p0 = [x+b,y+b,d];
             p1 = [x+c,y+c,d];
@@ -178,7 +178,7 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
             // -- northwest --
 
             material = node.northwest ? this.cyanMaterial : this.redMaterial;
-            d = 0.1
+            d = 0.1;
 
             p0 = [x+b,y+b,d];
             p1 = [x+a,y+c,d];
@@ -199,13 +199,13 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
         const a = 0.25*grid.gridScale;
         const b = 0.5*grid.gridScale;
         const c = 0.75*grid.gridScale;
-        let d = 0.1
+        let d = 0.1;
         const x0 = this.translation[0];
         const y0 = this.translation[2];
 
         let material;
-        let geometry
-        let p0
+        let geometry;
+        let p0;
         let p1;
         let line;
 
@@ -342,13 +342,13 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
         const a = 0.25*grid.gridScale;
         const b = 0.5*grid.gridScale;
         const c = 0.75*grid.gridScale;
-        let d = 0.1
+        let d = 0.1;
         const x0 = this.translation[1];
         const y0 = this.translation[2];
 
         let material;
-        let geometry
-        let p0
+        let geometry;
+        let p0;
         let p1;
         let line;
 
@@ -547,5 +547,7 @@ export const PM_NavGridGizmo = superclass => class extends superclass {
 };
 
 function unpackKey(key) {
-    return [(key>>>16) & 0x7FFF,key & 0x7FFF];
+    const x = (key>>>16) & 0x7FFF;
+    const y = key & 0x7FFF;
+    return [x - 0x4000, y - 0x4000];
 }
