@@ -1,10 +1,10 @@
 // import { RegisterMixin, Shuffle, Actor, Constants } from "@croquet/worldcore-kernel";
 
+import { Constants } from "@croquet/croquet";
 import { Actor } from "./Actor";
 import { RegisterMixin } from "./Mixins";
 import { Shuffle } from "./Utilities";
-import { Constants } from "@croquet/croquet";
-import { q_axisAngle, q_multiply } from "./Vector";
+import { q_axisAngle, q_multiply, v3_normalize, q_lookAt, v3_add } from "./Vector";
 
 
 Constants.WC_BEHAVIORS = new Map();
@@ -99,12 +99,13 @@ export class Behavior extends Actor {
 
     get(name) {
         const b = Constants.WC_BEHAVIORS.get(name);
-        if (!b) return;
+        if (!b) return null;
         for (const child of this.children) if (child instanceof b) return child;
+        return null;
     }
 
     start(behavior) {
-        if (!behavior) return;
+        if (!behavior) return null;
         let name = behavior;
         let options = {};
         if (behavior.name) {
@@ -115,16 +116,15 @@ export class Behavior extends Actor {
         options.parent = this;
 
         const b = Constants.WC_BEHAVIORS.get(name);
-        if (b) {
-            return b.create(options);
-        } else{
-            console.warn("Behavior "+ name + " not found!")
-        }
+        if (b) return b.create(options);
+
+        console.warn("Behavior "+ name + " not found!");
+        return null;
     }
 
     succeed(data) {
         if (this.neverSucceed) {
-            this.progress(1)
+            this.progress(1);
         } else {
             if (this.parent) this.parent.onSucceed(this, data);
             this.destroy();
@@ -548,7 +548,7 @@ export class InterruptBehavior extends DecoratorBehavior {
 InterruptBehavior.register('InterruptBehavior');
 
 //------------------------------------------------------------------------------------------
-// Behaviors -------------------------------------------------------------------------------
+// SpingBehavior ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class SpinBehavior extends Behavior {
@@ -565,3 +565,36 @@ export class SpinBehavior extends Behavior {
 
 }
 SpinBehavior.register("SpinBehavior");
+
+//------------------------------------------------------------------------------------------
+// GoBehavior ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class GoBehavior extends Behavior {
+
+    get tickRate() { return this._tickRate || 50} // More than 15ms for smooth movement
+
+    get aim() {return this._aim || [0,0,1]}
+    get speed() { return this._speed || 3}
+
+    // aimSet(a) {
+    //     this._aim = v3_normalize(a);
+    //     const rotation = q_lookAt(this.actor.forward, this.actor.up, this.aim);
+    //     this.actor.set({rotation});
+    // }
+
+    do(delta) {
+        const distance = this.speed * delta / 1000;
+
+        const x = this.aim[0] * distance;
+        const y = this.aim[1] * distance;
+        const z = this.aim[2] * distance;
+
+        const translation = v3_add(this.actor.translation, [x,y,z]);
+
+        this.actor.set({translation});
+
+    }
+
+}
+GoBehavior.register("GoBehavior");

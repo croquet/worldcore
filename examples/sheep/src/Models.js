@@ -1,11 +1,11 @@
-import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, Constants, AM_NavGridX, AM_OnNavGridX } from "@croquet/worldcore";
+import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, AM_NavGrid, AM_OnNavGrid } from "@croquet/worldcore";
 import { BotActor } from "./Bots";
 
 //------------------------------------------------------------------------------------------
 // TestActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Spatial, AM_OnNavGridX) {
+class TestActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid) {
 
     init(options) {
         super.init(options);
@@ -20,7 +20,7 @@ TestActor.register('TestActor');
 //-- BaseActor ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGridX) {
+class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
     get pawn() {return "BasePawn"}
 
     init(options) {

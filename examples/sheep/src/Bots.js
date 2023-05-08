@@ -1,10 +1,10 @@
-import { Actor, mix, AM_Spatial, AM_Behavioral, AM_OnNavGridX  } from "@croquet/worldcore";
+import { Actor, mix, AM_Spatial, AM_Behavioral, AM_OnNavGrid  } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- BotActor ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGridX, AM_Behavioral) {
+export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behavioral) {
 
     init(options) {
         super.init(options);
@@ -21,8 +21,8 @@ export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGridX, AM_Beha
 
         const speed = (16 + 4 * Math.random());
 
-        this.ggg = this.behavior.start({name: "PathToBehaviorX", xy, speed, noise: 2, radius: 1});
-        // this.ggg = this.behavior.start({name: "GotoBehaviorX", xy, speed: 4});
+        this.ggg = this.behavior.start({name: "PathToBehavior", xy, speed, noise: 2, radius: 1});
+        // this.ggg = this.behavior.start({name: "GotoBehavior", xy, speed: 4});
     }
 
     ping() {
