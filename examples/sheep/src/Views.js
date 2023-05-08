@@ -71,7 +71,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
 
     doPointerDown(e) {
         if (e.button === 2) return;
-        this.point(e.xy);
+        // this.point(e.xy);
     }
 
     point(xy) {
@@ -202,15 +202,8 @@ export class MyViewRoot extends ViewRoot {
         this.buildInstances();
         this.buildLights();
         this.buildHUD();
-        // this.pathDebug = new PathDebug(this.model);
-
-        // this.subscribe("paths", "new", this.onPathNew);
-
     }
 
-    // onPathNew() {
-    //     this.pathDebug.draw();
-    // }
 
     buildLights() {
         const rm = this.service("ThreeRenderManager");
@@ -261,7 +254,7 @@ export class MyViewRoot extends ViewRoot {
         geometry.translate(0,0.5,0);
         im.addGeometry("cube", geometry);
 
-        const bbb = im.addMesh("block", "cube", "cyan", 500);
+        const bbb = im.addMesh("block", "cube", "cyan", 1000);
         bbb.castShadow = true;
 
         const mmm = im.addMesh("bot", "cube", "magenta", 2000);
@@ -270,12 +263,3 @@ export class MyViewRoot extends ViewRoot {
 
 }
 
-// function packKey(x,y) {
-//     if (x < 0 ) console.error("Negative AM_Grid x coordinate!");
-//     if (y < 0 ) console.error("Negative AM_Grid y coordinate!");
-//     return ((0x8000|x)<<16)|y;
-// }
-
-// function unpackKey(key) {
-//     return [(key>>>16) & 0x7FFF,key & 0x7FFF];
-// }

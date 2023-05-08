@@ -9,12 +9,17 @@ import { Behavior } from "./Behavior";
 //------------------------------------------------------------------------------------------
 
 function packKey(x,y) {
-    if (x < 0 || y< 0 ) return 0;
-    return ((0x8000|x)<<16)|y;
+    // if (x < 0 || y< 0 ) return 0;
+    const xx = x + 0x4000;
+    const yy = y + 0x4000;
+    return ((0x8000|xx)<<16)|yy;
 }
 
 function unpackKey(key) {
-    return [(key>>>16) & 0x7FFF,key & 0x7FFF];
+    const x = (key>>>16) & 0x7FFF;
+    const y = key & 0x7FFF;
+    return [x - 0x4000, y - 0x4000];
+    // return [(key>>>16) & 0x7FFF,key & 0x7FFF];
 }
 
 
@@ -85,7 +90,6 @@ export const AM_Grid = superclass => class extends superclass {
     }
 
     getBin(x,y) {
-        if (x<0 || y<0) return null;
         const key = packKey(x,y);
         return this.gridBins.get(key);
     }
@@ -208,7 +212,7 @@ export const AM_OnGrid = superclass => class extends superclass {
         const translation = this.parent.gridXYZ(...scaled);
         this.set({translation});
 
-        if (xy[0]<0 || xy[1]<0 ) console.error("Off grid: " + xy);
+        // if (xy[0]<0 || xy[1]<0 ) console.error("Off grid: " + xy);
 
         const oldKey = this.gridKey;
         this.gridKey = packKey(...xy);
@@ -299,7 +303,7 @@ export const AM_NavGrid = superclass => class extends superclass {
     //     }
     // }
 
-    unpackNavKey(key){
+    unpackNavKey(key) {
         const s = this.gridScale;
         const xy = unpackKey(key);
         switch (this.gridPlane) {
@@ -329,7 +333,7 @@ export const AM_NavGrid = superclass => class extends superclass {
         child.gridBin = null;
     }
 
-    addObstacle(child){
+    addObstacle(child) {
         this.gridObstacles.add(child);
         child.drawObstacles()
     }
@@ -939,8 +943,9 @@ export const AM_NavGridX = superclass => class extends AM_Grid(superclass) {
 
     navClear() {
         const perlin = new PerlinNoise();
-        for (let x = 0; x < this.gridSize; x++) {
-            for (let y = 0; y < this.gridSize; y++) {
+        const halfSize = this.gridSize/2;
+        for (let x = -halfSize; x < halfSize; x++) {
+            for (let y = -halfSize; y < halfSize; y++) {
                 const node = new NavNode(x,y);
                 node.clear(this.gridSize);
                 if (this.noise) node.effort += this.noise*perlin.noise2D(x,y);
@@ -1139,17 +1144,18 @@ class NavNode {
         this.exits.fill(0);
         const x = this.xy[0];
         const y = this.xy[1];
-        const max = gridSize-1;
+        const min = -gridSize/2;
+        const max = gridSize/2-1;
 
-        if (x>0) this.exits[0] = packKey(x-1, y);
-        if (y>0) this.exits[1] = packKey(x, y-1);
+        if (x>min) this.exits[0] = packKey(x-1, y);
+        if (y>min) this.exits[1] = packKey(x, y-1);
         if (x<max) this.exits[2] = packKey(x+1, y);
         if (y<max) this.exits[3] = packKey(x, y+1);
 
-        if (x>0 && y>0) this.exits[4] = packKey(x-1,y-1);
-        if (x<max && y>0) this.exits[5] = packKey(x+1,y-1);
+        if (x>min && y>min) this.exits[4] = packKey(x-1,y-1);
+        if (x<max && y>min) this.exits[5] = packKey(x+1,y-1);
         if (x<max && y<max) this.exits[6] = packKey(x+1,y+1);
-        if (x>0 && y<max) this.exits[7] = packKey(x-1,y+1);
+        if (x>min && y<max) this.exits[7] = packKey(x-1,y+1);
     }
 
     weight(n) {
