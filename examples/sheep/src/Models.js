@@ -118,7 +118,8 @@ export class MyModelRoot extends ModelRoot {
             const x = -ss/2 + ss * Math.random();
             const y = -ss/2 + ss * Math.random();
             const xy = [x,y];
-            const bot = BotActor.create({parent: this.base, pawn: "TestPawn", xy, tags: ["bot"]});
+            const index = Math.floor(20*Math.random());
+            const bot = BotActor.create({parent: this.base,  index, pawn: "AvatarPawn", xy, tags: ["bot"]});
             this.bots.push(bot);
         }
 

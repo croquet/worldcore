@@ -17,15 +17,15 @@ function setGeometryColor(geometry, color) {
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
+export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
-        this.useInstance("cube16");
+        this.useInstance("cube" + this.actor.index);
     }
 
 }
-TestPawn.register("TestPawn");
+AvatarPawn.register("AvatarPawn");
 
 //------------------------------------------------------------------------------------------
 // BlockPawn --------------------------------------------------------------------------------
