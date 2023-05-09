@@ -80,7 +80,8 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
 
     doPointerDown(e) {
         if (e.button === 2) return;
-        console.log("base down");
+        // console.log("base down");
+        // console.log(this.viewId);
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(e.xy, "ground");
         if (hits.length<1) return;
@@ -88,7 +89,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         const x = hit.xyz[0];
         const y = hit.xyz[2];
         const xy = [x/3,y/3];
-        this.publish("hud", "go", xy);
+        this.publish(this.viewId, "go", xy);
     }
 
 }
@@ -101,7 +102,7 @@ BasePawn.register("BasePawn");
 let fov = 60;
 let pitch = toRad(-60);
 let yaw = toRad(0);
-const cam = [0,200,100];
+const cam = [0,150,100];
 
 class GodView extends ViewService {
 
@@ -260,11 +261,16 @@ export class MyViewRoot extends ViewRoot {
         material2.shadowSide = THREE.BackSide;
         im.addMaterial("magenta", material2);
 
+        const  material3 = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.3,0.3,0.3)} );
+        material3.side = THREE.FrontSide;
+        material3.shadowSide = THREE.BackSide;
+        im.addMaterial("dark", material3);
+
         const geometry = new THREE.BoxGeometry( 1, 1, 1 );
         geometry.translate(0,0.5,0);
         im.addGeometry("cube", geometry);
 
-        const bbb = im.addMesh("block", "cube", "cyan", 2000);
+        const bbb = im.addMesh("block", "cube", "dark", 2000);
         bbb.castShadow = true;
 
         const mmm = im.addMesh("bot", "cube", "magenta", 2000);

@@ -38,11 +38,7 @@ export function fromD(d) {return 24*fromH(d)}
         if (this.behavior) this.behavior.destroy();
     }
 
-    startBehavior(behavior) {
-        console.log("obsolete");
-    }
-
-}
+};
 RegisterMixin(AM_Behavioral);
 
 //------------------------------------------------------------------------------------------

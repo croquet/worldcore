@@ -1,4 +1,4 @@
-import { ModelRoot,  Actor, mix, AM_Spatial, AM_NavGrid, AM_OnNavGrid } from "@croquet/worldcore";
+import { ModelRoot,  Actor, mix, AM_Spatial, AM_NavGrid, AM_OnNavGrid, UserManager, User } from "@croquet/worldcore";
 import { BotActor } from "./Bots";
 
 function rgb(r, g, b) {
@@ -34,7 +34,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
     navClear() {
         super.navClear();
 
-        for (let n = 0; n < 1000; n++) {
+        for (let n = 0; n < 500; n++) {
             const x = -this.gridSize/2 + Math.floor(this.gridSize * Math.random()) + 0.5;
             const y = -this.gridSize/2 + Math.floor(this.gridSize * Math.random()) + 0.5;
             // this.addBlock(x,y);
@@ -48,13 +48,46 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
 BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
+//-- Users ---------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class MyUserManager extends UserManager {
+    get defaultUser() {return MyUser}
+}
+MyUserManager.register('MyUserManager');
+
+class MyUser extends User {
+    init(options) {
+        super.init(options);
+        const base = this.wellKnownModel("ModelRoot").base;
+        this.swarm = [];
+        const index = Math.floor(20*Math.random());
+        const ss = base.gridSize;
+        for (let n = 0; n<100; n++) {
+            const x = -ss/2 + ss * Math.random();
+            const y = -ss/2 + ss * Math.random();
+            const xy = [x,y];
+            const bot = BotActor.create({parent: base, driver: this.userId, index, pawn: "AvatarPawn", xy, tags: ["bot"]});
+            this.swarm.push(bot);
+        }
+    }
+
+    destroy() {
+        super.destroy();
+        this.swarm.forEach(b => b.destroy());
+    }
+
+}
+MyUser.register('MyUser');
+
+//------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [];
+        return [MyUserManager];
     }
 
     init(...args) {
@@ -114,14 +147,14 @@ export class MyModelRoot extends ModelRoot {
 
         const ss = this.base.gridSize;
 
-        for (let n = 0; n<200; n++) {
-            const x = -ss/2 + ss * Math.random();
-            const y = -ss/2 + ss * Math.random();
-            const xy = [x,y];
-            const index = Math.floor(20*Math.random());
-            const bot = BotActor.create({parent: this.base,  index, pawn: "AvatarPawn", xy, tags: ["bot"]});
-            this.bots.push(bot);
-        }
+        // for (let n = 0; n<200; n++) {
+        //     const x = -ss/2 + ss * Math.random();
+        //     const y = -ss/2 + ss * Math.random();
+        //     const xy = [x,y];
+        //     const index = Math.floor(20*Math.random());
+        //     const bot = BotActor.create({parent: this.base,  index, pawn: "AvatarPawn", xy, tags: ["bot"]});
+        //     this.bots.push(bot);
+        // }
 
     }
 

@@ -1,17 +1,17 @@
-import { Actor, mix, AM_Spatial, AM_Behavioral, AM_OnNavGrid  } from "@croquet/worldcore";
+import { Actor, mix, AM_Spatial, AM_Behavioral, AM_OnNavGrid, AM_Avatar  } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- BotActor ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behavioral) {
+export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behavioral, AM_Avatar) {
 
     get index() {return this._index || 0}
 
     init(options) {
         super.init(options);
-        this.spread = this.behavior.start({name: "SpreadBehavior", radius: 0.5});
-        this.subscribe("hud", "go", this.go);
+        this.behavior.start({name: "SpreadBehavior", radius: 0.5});
+        this.subscribe(this.driver, "go", this.go);
         // this.subscribe("input", "pDown", this.ping);
     }
 
