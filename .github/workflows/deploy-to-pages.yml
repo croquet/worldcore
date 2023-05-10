@@ -34,6 +34,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0          # fetch full history
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
@@ -43,13 +45,8 @@ jobs:
         with:
           node-version: 18
 
-      - name: Bla debug
-        run: |
-          mkdir _site
-          echo Bla > _site/index.html
-
-      # - name: Build tutorials and examples
-      #   run: scripts/build-pages.sh
+      - name: Build tutorials and examples
+        run: scripts/build-pages.sh
 
       - name: Upload _site
         uses: actions/upload-pages-artifact@v1
