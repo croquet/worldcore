@@ -44,7 +44,7 @@ jobs:
           node-version: 18
 
       - name: Bla debug
-      - run: |
+        run: |
           mkdir _site
           echo Bla > _site/index.html
 
