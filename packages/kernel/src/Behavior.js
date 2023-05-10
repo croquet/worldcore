@@ -544,7 +544,7 @@ export class InterruptBehavior extends DecoratorBehavior {
 InterruptBehavior.register('InterruptBehavior');
 
 //------------------------------------------------------------------------------------------
-// SpingBehavior ---------------------------------------------------------------------------
+// SpinBehavior ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class SpinBehavior extends Behavior {

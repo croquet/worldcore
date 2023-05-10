@@ -41,9 +41,9 @@ export const AM_Grid = superclass => class extends superclass {
         const s = this.gridScale;
         switch (this.gridPlane) {
             default:
-            case 0: return [Math.floor(x/s), Math.floor(z/s)];
-            case 1: return [Math.floor(x/s), Math.floor(y/s)];
-            case 2: return [Math.floor(y/s), Math.floor(z/s)];
+            case 0: return [x/s, z/s];
+            case 1: return [x/s, y/s];
+            case 2: return [y/s, z/s];
         }
     }
 
@@ -192,11 +192,28 @@ export const AM_OnGrid = superclass => class extends superclass {
 
     get xy() { return this._xy || [0,0]}
 
-    xySet(xy) {
+    // xySet(xy) {
+    //     if (!this.parent || !this.parent.isGrid) { console.error("AM_OnGrid must have an AM_Grid parent!"); return}
+    //     const scaled = v2_scale(xy, this.parent.gridScale);
+    //     // const translation = this.parent.gridXYZ(...scaled);
+    //     // this.set({translation});
+
+    //     // if (xy[0]<0 || xy[1]<0 ) console.error("Off grid: " + xy);
+
+    //     const oldKey = this.gridKey;
+    //     this.gridKey = packKey(...xy);
+
+    //     if (this.gridKey !== oldKey) {
+    //         this.parent.removeFromBin(oldKey,this);
+    //         this.parent.addToBin(this.gridKey, this);
+    //     }
+    // }
+
+    translationSet(xyz) {
         if (!this.parent || !this.parent.isGrid) { console.error("AM_OnGrid must have an AM_Grid parent!"); return}
-        const scaled = v2_scale(xy, this.parent.gridScale);
-        const translation = this.parent.gridXYZ(...scaled);
-        this.set({translation});
+        // const scaled = v2_scale(xy, this.parent.gridScale);
+        const xy = this.parent.gridXY(...xyz);
+        this.set({xy});
 
         // if (xy[0]<0 || xy[1]<0 ) console.error("Off grid: " + xy);
 
@@ -552,7 +569,6 @@ class PathToBehavior extends Behavior {
             console.warn("PathToBehavior must be used on a NavGrid");
             this.fail();
         }
-
 
         const grid = this.actor.parent;
         const startKey = packKey(...v2_floor(this.actor.xy));
