@@ -22,7 +22,7 @@ for DIR in tutorials examples ; do
         cd $TOP/$APP
         COMMIT=$(git log -1 --format='%ad %H' --date=format:'%Y-%m-%d %H:%M:%S')
         echo "Commit: $COMMIT" > build.log
-        npm run build 2>&1 >> build.log
+        npm run build >> build.log 2>&1
         BUILD_ERROR=$?
         cat build.log
         DATE=$(git ls-tree -r --name-only HEAD -- . | grep -v 'package.*json' | xargs -n 1 git log -1 --format='%ad' --date=format:'%Y-%m-%d' | sort | tail -1)
