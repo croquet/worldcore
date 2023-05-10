@@ -2,8 +2,7 @@
   "packages": [
     "packages/*",
     "tutorials/*",
-    "examples/*",
-    "demos/*"
+    "examples/*"
   ],
   "command": {
     "publish": {

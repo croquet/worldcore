@@ -1,0 +1,54 @@
+# Workflow to build a GitHub Pages site for multiple branches simultaneously
+
+# NOTE: to make this work, in GitHub Settings under Pages – Build and Deployment
+# change Source from "Deploy from a branch" to "GitHub Actions"!
+
+# NOTE: to make this work, in GitHub Settings under Pages – Build and Deployment
+# change Source from "Deploy from a branch" to "GitHub Actions"!
+
+name: Deploy to Pages
+
+on:
+  # only execute on push to main
+  push:
+    branches:
+      - main
+  # or manually in the GitHub UI
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Build tutorials and examples
+        run: scripts/build-pages.sh
+
+      - name: Upload _site
+        uses: actions/upload-pages-artifact@v1
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

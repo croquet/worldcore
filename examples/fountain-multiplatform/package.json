@@ -4,6 +4,7 @@
   "description": "Worldcore Fountain Demo",
   "private": true,
   "scripts": {
+    "build": "npm run build-three && mv dist-three dist",
     "build-three": "mkdir -p dist-three; cp index.html ../multiplatform-common/dist/bundled-models.js src/Models.js src/Views-three.js dist-three",
     "build-unity": "mkdir -p unity-build/fountain; cp src/Models.js unity-build/fountain/; cp src/Views-unity.js unity-build/fountain/Views.js"
   },
