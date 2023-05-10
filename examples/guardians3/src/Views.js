@@ -29,8 +29,19 @@ import tank_body from "../assets/tank_body.glb";
 import paper from "../assets/paper.jpg";
 import sky from "../assets/quarry_02.png";
 
+import fireballTexture from "/assets/explosion.png";
+import smokeTexture from "/assets/Smoke-Element.png";
+import * as fireballFragmentShader from "/assets/fireball.frag.js";
+import * as fireballVertexShader from "/assets/fireball.vert.js";
+
 export const UserColors = [
-    rgb(192, 57, 43),        // Red
+    rgb(255, 64, 64),        // Red
+    rgb(64, 64, 255),         // Blue
+    rgb(255, 178, 122),        // Orange
+    rgb(255, 64, 255),        // Purple
+    rgb(255, 240, 111),        // Yellow
+
+    rgb(210, 57, 43),        // Red
     rgb(40, 116, 166),        // Blue
     rgb(175, 96, 26),        // Orange
     rgb(118, 68, 138),        // Purple
@@ -118,26 +129,136 @@ const constructShadowObject = function(object3d, renderOrder, c) {
     return outline3d;
 };
 
-function createBoxWithRoundedEdges( width, height, depth, radius0, smoothness ) {
-    const shape = new THREE.Shape();
-    const eps = 0.00001;
-    const radius = radius0 - eps;
-    shape.absarc( eps, eps, eps, -Math.PI / 2, -Math.PI, true );
-    shape.absarc( eps, height -  radius * 2, eps, Math.PI, Math.PI / 2, true );
-    shape.absarc( width - radius * 2, height -  radius * 2, eps, Math.PI / 2, 0, true );
-    shape.absarc( width - radius * 2, eps, eps, 0, -Math.PI / 2, true );
-    const geometry = new THREE.ExtrudeBufferGeometry( shape, {
-      amount: depth - radius0 * 2,
-      bevelEnabled: true,
-      bevelSegments: smoothness * 2,
-      steps: 1,
-      bevelSize: radius,
-      bevelThickness: radius0,
-      curveSegments: smoothness
-    });
-    geometry.center();
-    return geometry;
-  }
+let fireMaterial = function makeFireMaterial() {
+    const texture = new THREE.TextureLoader().load(fireballTexture)
+    return new THREE.ShaderMaterial( {
+        uniforms: {
+        tExplosion: {
+            type: "t",
+            value: texture
+        },
+        time: {
+            type: "f",
+            value: 0.0
+        },
+        tOpacity: {
+            type: "f",
+            value: 1.0
+        }
+        },
+        vertexShader: fireballVertexShader.vertexShader(),
+        fragmentShader: fireballFragmentShader.fragmentShader()
+    } );
+}();
+
+let smokeMaterial = function makeSmokeMaterial() {
+    const texture = new THREE.TextureLoader().load(smokeTexture);
+    const smoke = new THREE.MeshLambertMaterial({color: 0x00dddd, map: texture, transparent: true});
+    return smoke;
+}();
+
+//------------------------------------------------------------------------------------------
+// BotPawn --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeCollider, PM_ThreeInstanced) {
+
+    constructor(actor) {
+        super(actor);
+        const t = this.translation;
+        t[1]=perlin2D(t[0], t[2])+2;
+        this.set({translation:t});
+        this.useInstance("botBody");
+       // this.addRenderObjectToRaycast("bot");
+    }
+
+    destroy() {
+        this.releaseInstance();
+        super.destroy();
+    }
+
+    killMe() {
+        this.say("killMe");
+    }
+}
+
+BotPawn.register("BotPawn");
+
+//------------------------------------------------------------------------------------------
+// BotEyePawn --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class BotEyePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeCollider, PM_ThreeInstanced) {
+
+    constructor(actor) {
+        super(actor);
+        this.useInstance("botEye");
+    //    this.addRenderObjectToRaycast();
+    }
+
+    killMe() {
+        this.say("killMe");
+    }
+
+    destroy() {
+        this.releaseInstance();
+        super.destroy();
+    }
+}
+
+BotEyePawn.register("BotEyePawn");
+//------------------------------------------------------------------------------------------
+// FireballPawn --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeCollider) {
+
+    constructor(actor) {
+        super(actor);
+        this.listen("updateFire",this.fireUpdate);
+        this.material = fireMaterial.clone();
+        this.geometry = new THREE.IcosahedronGeometry( 10, 20 );
+        this.fireball = new THREE.Mesh(this.geometry, this.material);
+        this.pointLight = new THREE.PointLight(0xff8844, 1, 4, 2);
+        this.fireball.add(this.pointLight);
+
+        this.smokeGeo = new THREE.PlaneGeometry(10,10);
+        this.smokeParticles = [];
+        this.smokeGroup = new THREE.Group();
+        this.smokeGroup.position.y = 4;
+        for (let p = 0; p < 5; p++) {
+            var particle = new THREE.Mesh(this.smokeGeo, smokeMaterial);
+            particle.position.set(Math.random()*5-2.5,Math.random()*5-2.5,Math.random()*5-2.5);
+            particle.rotation.z = Math.random() * 360;
+            this.smokeGroup.add(particle);
+            this.smokeParticles.push(particle);
+        }
+        this.fireball.add(this.smokeGroup);
+        this.setRenderObject(this.fireball);
+    }
+
+    fireUpdate(u) {
+        if (this.fireball) {
+            let t=u[0];
+            this.fireball.material.uniforms[ 'time' ].value = t*this.actor.timeScale;
+            this.fireball.material.uniforms[ 'tOpacity' ].value = 0.25;
+            this.pointLight.intensity = 0.25+ 0.75* Math.sin(t*0.020)*Math.cos(t*0.007);
+        }
+        const rm = this.service("ThreeRenderManager");
+        if (this.smokeParticles) {
+            this.smokeParticles.forEach( particle => particle.quaternion.copy( rm.camera.quaternion ));
+        }
+    }
+
+    destroy() {
+        super.destroy()
+        this.geometry.dispose();
+        this.material.dispose();
+        this.pointLight.dispose();
+    }
+
+}
+FireballPawn.register("FireballPawn");
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -173,7 +294,7 @@ export class GeometryPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
         const im = this.service("ThreeInstanceManager");
         const geometry = im.geometry(name);
         if (geometry) {
-            this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...color), map:this.paperTexture} );
+            this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...color), metalness:0.25, roughness:0.5, map:this.paperTexture} );
             this.mesh = new THREE.Mesh( geometry, this.material );
             this.mesh.castShadow = true;
             this.mesh.receiveShadow = true;
@@ -817,6 +938,22 @@ export class MyViewRoot extends ViewRoot {
     async buildInstances() {
         const im = this.service("ThreeInstanceManager");
 
+        const botBodyGeo = new THREE.SphereGeometry( 1.0, 32, 16, 0, Math.PI * 2, 0, 2.6); 
+        botBodyGeo.rotateX(Math.PI/2);
+        im.addGeometry("botBody", botBodyGeo);
+        const botMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.5,0.5,0.5), metalness:1.0, roughness:0.3} );
+        botMaterial.side = THREE.DoubleSide;
+        im.addMaterial("botBody", botMaterial);
+        const botBody = im.addMesh("botBody", "botBody", "botBody");
+        botBody.castShadow = true;
+
+        const botEye = new THREE.SphereGeometry( 0.80, 32, 16); 
+        im.addGeometry("botEye", botEye);
+        const botEyeMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.75,0.15,0.15)} );
+        botEyeMaterial.side = THREE.FrontSide;
+        im.addMaterial("botEye", botEyeMaterial);
+        im.addMesh("botEye", "botEye", "botEye");
+
         const  green = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.25,1,0.25), metalness:1, roughness:0.1} );
         const  magenta = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
         const  cyan = new THREE.MeshStandardMaterial( {color: new THREE.Color(0,1,1)} );
@@ -903,5 +1040,6 @@ export class MyViewRoot extends ViewRoot {
         tankTurretim.receiveShadow = true;
         tankTracksim.castShadow = true;
         tankTracksim.receiveShadow = true;
+
     }
 }

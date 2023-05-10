@@ -31,6 +31,70 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
 BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
+// FireballActor -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class FireballActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
+    init(...args) {
+        super.init(...args);
+        this.fireUpdate();
+        this.fireballVisible = false;
+        this.subscribe("menu","FireballToggle", this.fireballToggle);
+        this.timeOffset = Math.random()*100;
+        this.timeScale = 0.00025 + Math.random()*0.00002;
+        this.counter = 0;
+        this.maxCounter = 30;
+        this.fireScale = 0.025;
+        this.scale = [0.025,0.025, 0.025];
+    }
+
+    fireUpdate() {
+        this.future(50).fireUpdate();
+        let fs = this.fireScale + this.counter * 0.001;
+        let rise = 0.025;
+        this.scale = [fs, fs, fs];
+        this.translation = [this.translation[0], this.translation[1]+rise, this.translation[2]];
+        if(this.counter++ > this.maxCounter) this.destroy();
+        else this.say("updateFire", [this.now()+this.timeOffset,(this.maxCounter-this.counter)/this.maxCounter]);
+    }
+
+    fireballToggle() {
+        this.fireballVisible = !this.fireballVisible;
+    }
+    get pawn() {return "FireballPawn"}
+}
+FireballActor.register('FireballActor');
+
+//------------------------------------------------------------------------------------------
+// BotActor -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class BotActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
+    init(...args) {
+        super.init(...args);
+        this.listen("killMe", this.killMe);
+    }
+
+    killMe() {
+        FireballActor.create({translation:this.translation});
+        this.destroy();
+    }
+
+    get pawn() {return "BotPawn"}
+
+}
+BotActor.register('BotActor');
+
+//------------------------------------------------------------------------------------------
+// BotEyeActor -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class BotEyeActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
+    get pawn() {return "BotEyePawn"}
+}
+BotEyeActor.register('BotEyeActor');
+
+//------------------------------------------------------------------------------------------
 //--SimpleActor ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -234,7 +298,7 @@ class MyUser extends User {
         const base = this.wellKnownModel("ModelRoot").base;
 
         this.color = [0.25+0.75*this.random(), 0.5, 0.25+0.75*this.random()];
-        this.userColor = options.userCount%15;
+        this.userColor = options.userCount%20;
         const trans = [110 + this.random() * 10-5, 0, 155+this.random()*10-5];
         const rot = q_axisAngle([0,1,0], Math.PI/2);
 
@@ -350,6 +414,10 @@ export class MyModelRoot extends ModelRoot {
         }
 
         //this.subscribe("input", "cDown", this.colorChange);
+        for (let i=0; i<10; i++) for (let j=0; j<10; j++) {
+            const bot = BotActor.create({translation:[95+i*3+Math.random()/2, 0.5, 55+j*3+Math.random()/2]});
+            const eye = BotEyeActor.create({parent: bot});
+        }
     }
 
     colorChange() {
