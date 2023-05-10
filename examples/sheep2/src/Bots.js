@@ -10,7 +10,7 @@ export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behav
 
     init(options) {
         super.init(options);
-        // this.behavior.start({name: "SpreadBehavior", radius: 0.5});
+        this.behavior.start({name: "SpreadBehavior", radius: 0.5});
         // this.subscribe("hud", "go", this.go);
         // this.subscribe("input", "pDown", this.ping);
     }

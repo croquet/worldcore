@@ -80,8 +80,12 @@ export const AM_Grid = superclass => class extends superclass {
         return this.gridBins.get(key);
     }
 
-    pingAll(tag, cx, cy, radius=0, exclude) {     // returns an array of all actors with tag in radius
+    pingAll(tag, center, radius=0, exclude) {     // returns an array of all actors with tag in radius
         const out = [];
+
+        const xy = this.gridXY(...center);
+        const cx = Math.floor(xy[0]);
+        const cy = Math.floor(xy[1]);
 
         for (const actor of this.getBin(cx, cy)) {
             if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
@@ -124,13 +128,16 @@ export const AM_Grid = superclass => class extends superclass {
                     if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
                 }
             }
-
         }
 
         return out;
     }
 
-    pingAny(tag, cx, cy, radius=0, exclude) { // Returns the first actor it finds in the radius
+    pingAny(tag, center, radius=0, exclude) { // Returns the first actor it finds in the radius
+
+        const xy = this.gridXY(...center);
+        const cx = Math.floor(xy[0]);
+        const cy = Math.floor(xy[1]);
 
         let bin = this.getBin(cx, cy);
         if (bin) {
@@ -233,12 +240,12 @@ export const AM_OnGrid = superclass => class extends superclass {
 
     pingAll(tag, radius = 0) {
         if (!this.parent || !this.parent.isGrid) { console.error("Ping requires an AM_Grid!"); return []}
-        return this.parent.pingAll(tag, ...this.xy, radius, this);
+        return this.parent.pingAll(tag, this.translation, radius, this);
     }
 
     pingAny(tag, radius = 0) {
         if (!this.parent || !this.parent.isGrid) { console.error("Ping requires an AM_Grid!"); return []}
-        return this.parent.pingAny(tag, ...this.xy, radius, this);
+        return this.parent.pingAny(tag, this.translation, radius, this);
     }
 };
 RegisterMixin(AM_OnGrid);
