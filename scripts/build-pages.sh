@@ -20,14 +20,23 @@ for DIR in tutorials examples ; do
         echo
         echo "=== Building $APP ==="
         cd $TOP/$APP
-        COMMIT=$(git log -1 --format='%ad %H' --date=format:'%Y-%m-%d %H:%M:%S' -- .)
-        npm run build
-        if [ $? -eq 0 ] ; then
+        COMMIT=$(git log -1 --format='%ad %H' --date=format:'%Y-%m-%d %H:%M:%S')
+        echo "Commit: $COMMIT" > build.log
+        npm run build 2>&1 >> build.log
+        BUILD_ERROR=$?
+        cat build.log
+        DATE=$(git ls-tree -r --name-only HEAD -- . | grep -v 'package.*json' | xargs -n 1 git log -1 --format='%ad' --date=format:'%Y-%m-%d' | sort | tail -1)
+        if [ $BUILD_ERROR -eq 0 ] ; then
             mv -v dist ../../_site/$APP
-            LINKS+=("<dt><a href=\"${APP}\"><b>${APP}</b></a></dt><dd>${COMMIT}</dd>")
+            LINKS+=("<p>${DATE} <a href=\"${APP}/\"><b>${APP}</b></a> (<a href=\"${APP}/build.log\">log</a>)</p>")
         else
-            LINKS+=("<dt><b>${APP} (build failed)</b></dt><dd>${COMMIT}</dd>")
+            mkdir ../../_site/$APP
+            echo "<H1>Build failed</h1><pre>" > ../../_site/$APP/index.html
+            cat build.log >> ../../_site/$APP/index.html
+            echo "</pre>" >> ../../_site/$APP/index.html
+            LINKS+=("<p>${DATE} <b>${APP} BUILD FAILED</b> (<a href=\"${APP}/build.log\">log</a>)</p>")
         fi
+        mv -v build.log ../../_site/$APP/
     done
 done
 
@@ -41,11 +50,14 @@ cat > _site/index.html <<EOF
 <head>
     <meta charset="utf-8">
     <title>Worldcore Builds</title>
+    <style>
+        body { font-family: monospace; }
+    </style>
 </head>
-<body style="font-family:monospace">
+<body>
     <h1>Worldcore Builds</h1>
-    <h2><a href="https://github.com/croquet/worldcore/actions/workflows/deploy-to-pages.yml">Build Logs</a></h2>
-    <dl>${LINKS[@]}</dl>
+    <h2>${COMMIT} (<a href="https://github.com/croquet/worldcore/actions/workflows/deploy-to-pages.yml">previous</a>)</h2>
+    ${LINKS[@]}
     <script>
         const {search, hash} = window.location;
         const links = document.getElementsByTagName('a');
