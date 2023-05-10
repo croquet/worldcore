@@ -43,8 +43,13 @@ jobs:
         with:
           node-version: 18
 
-      - name: Build tutorials and examples
-        run: scripts/build-pages.sh
+      - name: Bla debug
+      - run: |
+        mkdir _site
+        echo Bla > _site/index.html
+
+      # - name: Build tutorials and examples
+      #   run: scripts/build-pages.sh
 
       - name: Upload _site
         uses: actions/upload-pages-artifact@v1
