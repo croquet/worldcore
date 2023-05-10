@@ -44,13 +44,13 @@ cat > _site/index.html <<EOF
 </head>
 <body style="font-family:monospace">
     <h1>Worldcore Builds</h1>
-    <dl>
-        ${LINKS[@]}
-    </dl>
+    <h2><a href="https://github.com/croquet/worldcore/actions/workflows/deploy-to-pages.yml">Build Logs</a></h2>
+    <dl>${LINKS[@]}</dl>
     <script>
         const {search, hash} = window.location;
         const links = document.getElementsByTagName('a');
         for (const link of links) {
+            if (link.href.startsWith('http')) continue;
             const url = new URL(link.href);
             url.search = search;
             url.hash = hash;
