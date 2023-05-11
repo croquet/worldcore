@@ -1,4 +1,4 @@
-import { ModelRoot,  Actor, mix, AM_Spatial, AM_NavGrid, AM_OnNavGrid, UserManager, User } from "@croquet/worldcore";
+import { ModelRoot,  Actor, mix, AM_Spatial, AM_Grid, AM_OnGrid } from "@croquet/worldcore";
 import { BotActor } from "./Bots";
 
 function rgb(r, g, b) {
@@ -9,7 +9,7 @@ function rgb(r, g, b) {
 // TestActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid) {
+class TestActor extends mix(Actor).with(AM_Spatial, AM_OnGrid) {
 
     init(options) {
         super.init(options);
@@ -38,65 +38,27 @@ SimpleActor.register('SimpleActor');
 //-- BaseActor -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
+class BaseActor extends mix(Actor).with(AM_Spatial, AM_Grid) {
     get pawn() {return "BasePawn"}
 
     init(options) {
         super.init(options);
     }
 
-    navClear() {
-        super.navClear();
+    // navClear() {
+    //     super.navClear();
 
-        // TestActor.create({pawn: "BlockPawn", parent: this, translation: [0,0,0], obstacle: true});
-        // TestActor.create({pawn: "BlockPawn", parent: this, translation: [2,0,2], obstacle: true});
-        // TestActor.create({pawn: "BlockPawn", parent: this, translation: [-2,0,-2], obstacle: true});
+    //     for (let n = 0; n < 500; n++) {
+    //         const x = -this.gridSize/2 + Math.floor(this.gridSize * Math.random()) + 0.5;
+    //         const y = -this.gridSize/2 + Math.floor(this.gridSize * Math.random()) + 0.5;
+    //         const translation = [3*x,0,3*y];
+    //         TestActor.create({pawn: "BlockPawn", parent: this, translation, tags: ["block"]});
+    //     }
 
-        for (let n = 0; n < 500; n++) {
-            const x = -this.gridSize/2 + Math.floor(this.gridSize * Math.random()) + 0.5;
-            const y = -this.gridSize/2 + Math.floor(this.gridSize * Math.random()) + 0.5;
-            // this.addBlock(x,y);
-            const translation = [3*x,0,3*y];
-            TestActor.create({pawn: "BlockPawn", parent: this, translation, obstacle: true});
-        }
-
-        this.say("navGridChanged");
-    }
+    //     this.say("navGridChanged");
+    // }
 }
 BaseActor.register('BaseActor');
-
-//------------------------------------------------------------------------------------------
-//-- Users ---------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// class MyUserManager extends UserManager {
-//     get defaultUser() {return MyUser}
-// }
-// MyUserManager.register('MyUserManager');
-
-// class MyUser extends User {
-//     init(options) {
-//         super.init(options);
-//         const base = this.wellKnownModel("ModelRoot").base;
-//         this.swarm = [];
-//         const index = Math.floor(20*Math.random());
-//         const ss = base.gridSize;
-//         for (let n = 0; n<100; n++) {
-//             const x = -ss/2 + ss * Math.random();
-//             const y = -ss/2 + ss * Math.random();
-//             const xy = [x,y];
-//             const bot = BotActor.create({parent: base, driver: this.userId, index, pawn: "AvatarPawn", xy, tags: ["bot"]});
-//             this.swarm.push(bot);
-//         }
-//     }
-
-//     destroy() {
-//         super.destroy();
-//         this.swarm.forEach(b => b.destroy());
-//     }
-
-// }
-// MyUser.register('MyUser');
 
 //------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
@@ -161,17 +123,24 @@ export class MyModelRoot extends ModelRoot {
 
         // this.bots.forEach(b => b.destroy());
 
-        // const bot = BotActor.create({pawn: "TestPawn", parent: this.base, name: "bot 0", translation:[0.5,0,0.5], tags: ["bot"]});
+        // const bot = BotActor.create({pawn: "AvatarPawn", parent: this.base, index: 2, name: "bot 0", translation:[0,0,0], tags: ["bot"]});
         // this.bots.push(bot);
 
         const ss = this.base.gridSize;
 
-        for (let n = 0; n<200; n++) {
+        for (let n = 0; n < 1000; n++) {
+            const x = -ss/2 + Math.floor(ss * Math.random()) + 0.5;
+            const y = -ss/2 + Math.floor(ss * Math.random()) + 0.5;
+            const translation = [3*x,0,3*y];
+            TestActor.create({pawn: "BlockPawn", parent: this.base, translation, tags: ["block"]});
+        }
+
+        for (let n = 0; n<1000; n++) {
             const x = -ss/2 + ss * Math.random();
             const y = -ss/2 + ss * Math.random();
             const translation = [x*3,0, y*3];
             const index = Math.floor(20*Math.random());
-            const bot = BotActor.create({parent: this.base,  index, pawn: "AvatarPawn", translation, tags: ["bot"]});
+            const bot = BotActor.create({parent: this.base,  index, pawn: "AvatarPawn", translation, tags: ["bot", "block"]});
             this.bots.push(bot);
         }
 

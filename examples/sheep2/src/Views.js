@@ -45,7 +45,7 @@ BlockPawn.register("BlockPawn");
 //-- BasePawn -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCollider, PM_NavGridGizmo ) {
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCollider ) {
     constructor(...args) {
         super(...args);
 
@@ -62,17 +62,9 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         this.setRenderObject(base);
         this.addRenderObjectToRaycast("ground");
 
-        this.gizmo.visible = false;
-        this.localTransform = m4_translation([0,0,0]);
-        this.refreshDrawTransform();
-
         this.subscribe("input", "pointerDown", this.doPointerDown);
-        this.subscribe("input", "qDown", this.toggleGizmo);
     }
 
-    toggleGizmo() {
-        this.gizmo.visible = !this.gizmo.visible;
-    }
 
     destroy() {
         super.destroy();
@@ -88,10 +80,8 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         const hits = rc.cameraRaycast(e.xy, "ground");
         if (hits.length<1) return;
         const hit = hits[0];
-        const x = hit.xyz[0];
-        const y = hit.xyz[2];
-        const xy = [x/3,y/3];
-        this.publish("hud", "go", xy);
+        const xyz = hit.xyz;
+        this.publish("hud", "go", xyz);
     }
 
 }

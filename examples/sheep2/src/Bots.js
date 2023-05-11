@@ -1,21 +1,23 @@
-import { Actor, mix, AM_Spatial, AM_Behavioral, AM_OnNavGrid, AM_Avatar  } from "@croquet/worldcore";
+import { Actor, mix, AM_Spatial, AM_Behavioral, AM_OnGrid } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 //-- BotActor ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behavioral, AM_Avatar) {
+export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
 
     get index() {return this._index || 0}
 
     init(options) {
         super.init(options);
-        this.behavior.start({name: "SpreadBehavior", radius: 0.5});
-        // this.subscribe("hud", "go", this.go);
+        this.behavior.start({name: "SpreadBehavior", radius: 1});
+        this.subscribe("hud", "go", this.go);
         // this.subscribe("input", "pDown", this.ping);
     }
 
-    go(xy) {
+    go(target) {
+
+        // console.log(target);
         if (this.ggg) {
             this.ggg.destroy();
             this.ggg = null;
@@ -24,7 +26,7 @@ export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid, AM_Behav
         const speed = (16 + 4 * Math.random());
 
         // this.ggg = this.behavior.start({name: "PathToBehavior", xy, speed, noise: 2, radius: 1});
-        // this.ggg = this.behavior.start({name: "GotoBehavior", xy, speed: 4});
+        this.ggg = this.behavior.start({name: "GotoBehavior", target, speed, radius: 2});
     }
 
     ping() {
