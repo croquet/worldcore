@@ -516,10 +516,8 @@ export const AM_OnNavGrid = superclass => class extends AM_OnGrid(superclass) {
 RegisterMixin(AM_OnNavGrid);
 
 //------------------------------------------------------------------------------------------
-//-- GotoBehavior -------------------------------------------------------------------------
+//-- GotoBehavior --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-// xxx
 
 class GotoBehavior extends Behavior {
 
@@ -527,14 +525,13 @@ class GotoBehavior extends Behavior {
 
     get radius() { return this._radius || 0}
     get speed() { return this._speed || 1}
-    // get xy() {return this._xy || this.actor.xy}
     get target() {return this._target || this.actor.translation}
 
     do(delta) {
         const distance = this.speed * delta / 1000;
 
-        const to = v2_sub(this.xy, this.actor.xy);
-        const left = v2_magnitude(to);
+        const to = v3_sub(this.target, this.actor.translation);
+        const left = v3_magnitude(to);
 
         if (left < this.radius) {
             this.succeed();
@@ -547,16 +544,17 @@ class GotoBehavior extends Behavior {
             return;
         }
 
-        const aim = v2_normalize(to);
+        const aim = v3_normalize(to);
 
         const x = aim[0] * distance;
         const y = aim[1] * distance;
+        const z = aim[2] * distance;
 
-        const xy = v2_add(this.actor.xy, [x,y]);
-        const angle = v2_signedAngle([0,1], aim);
-        const rotation = q_axisAngle(this.actor.up, -angle);
+        const translation = v3_add(this.actor.translation, [x,y,z]);
+        const rotation = q_lookAt(this.actor.forward, this.actor.up, aim);
+        // const rotation = q_axisAngle(this.actor.up, -angle);
 
-        this.actor.set({xy, rotation});
+        this.actor.set({translation, rotation});
 
     }
 
