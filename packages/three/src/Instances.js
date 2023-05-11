@@ -1,7 +1,7 @@
-import { ViewService } from "@croquet/worldcore-kernel";
+import { ViewService, m4_multiply } from "@croquet/worldcore-kernel";
 import * as THREE from "three";
 
-function m4_THREE(m) { return m?(new THREE.Matrix4()).fromArray(m):new THREE.Matrix4(); }
+function m4_THREE(m) { return m?(new THREE.Matrix4()).fromArray(m):new THREE.Matrix4() }
 
 //------------------------------------------------------------------------------------------
 //-- InstancedMesh --------------------------------------------------------------------------------
@@ -47,11 +47,6 @@ export class InstancedMesh {
 
 export const PM_ThreeInstanced = superclass => class extends superclass {
 
-    // constructor(...args) {
-    //     super(...args);
-    //     // this.listen("viewGlobalChanged", this.updateMatrix);
-    // }
-
     destroy() {
         super.destroy();
         if (this.instance) this.releaseInstance();
@@ -60,7 +55,7 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
     useInstance(name) {
         const im = this.service("ThreeInstanceManager");
         this.instance = im.mesh(name);
-        if(this.instance){
+        if (this.instance) {
             this.renderObject = this.instance.mesh;
             this.meshIndex = this.instance.use(this);
             this.updateMatrix();
@@ -81,7 +76,9 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
 
     updateMatrix() {
         if (this.meshIndex === undefined) return;
-        this.instance.updateMatrix(this.meshIndex, this.global);
+        let matrix = this.global;
+        if (this.localTransform) matrix = m4_multiply(this.localTransform, this.global);
+        this.instance.updateMatrix(this.meshIndex, matrix);
     }
 
 };
@@ -108,7 +105,7 @@ export class ThreeInstanceManager extends ViewService {
     material(name) {
         if (!this.materials.has(name)) {
             console.error("No material named " + name);
-            return;
+            return null;
         }
         return this.materials.get(name);
     }
@@ -116,7 +113,7 @@ export class ThreeInstanceManager extends ViewService {
     geometry(name) {
         if (!this.geometries.has(name)) {
             console.error("No geometry named " + name);
-            return;
+            return null;
         }
         return this.geometries.get(name);
     }
@@ -124,7 +121,7 @@ export class ThreeInstanceManager extends ViewService {
     mesh(name) {
         if (!this.meshes.has(name)) {
             console.error("No mesh named " + name);
-            return;
+            return null;
         }
         return this.meshes.get(name);
     }

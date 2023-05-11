@@ -1,7 +1,7 @@
 import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, ThreeInstanceManager, ViewRoot, Pawn, mix,
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, ThreeRaycast, PM_ThreeCollider,
-    PM_ThreeInstanced, OutlinePass, viewRoot, Constants, PM_NavGridGizmo } from "@croquet/worldcore";
+    PM_ThreeInstanced, OutlinePass, viewRoot, Constants, PM_NavGridGizmo, m4_identity } from "@croquet/worldcore";
 // import { PathDebug, packKey } from "./Paths";
 
 function setGeometryColor(geometry, color) {
@@ -63,6 +63,8 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         this.addRenderObjectToRaycast("ground");
 
         this.gizmo.visible = false;
+        this.localTransform = m4_translation([0,0,0]);
+        this.refreshDrawTransform();
 
         this.subscribe("input", "pointerDown", this.doPointerDown);
         this.subscribe("input", "qDown", this.toggleGizmo);

@@ -29,10 +29,14 @@ export const PM_ThreeVisible = superclass => class extends superclass {
     }
 
     refreshDrawTransform() {
-        if (this.renderObject) {
-            this.renderObject.matrix.fromArray(this.global);
-            this.renderObject.matrixWorldNeedsUpdate = true;
-        }
+        if (this.renderObject) this.setMatrix();
+    }
+
+    setMatrix() {
+        let matrix = this.global;
+        if (this.localTransform) matrix = m4_multiply(this.localTransform, this.global);
+        this.renderObject.matrix.fromArray(matrix);
+        this.renderObject.matrixWorldNeedsUpdate = true;
     }
 
     setRenderObject(renderObject) {
@@ -40,8 +44,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
         renderObject.pawn = this;
         this.renderObject = renderObject;
         this.renderObject.matrixAutoUpdate = false;
-        this.renderObject.matrix.fromArray(this.global);
-        this.renderObject.matrixWorldNeedsUpdate = true;
+        this.setMatrix();
         if (render && render.scene) render.scene.add(this.renderObject);
     }
 
@@ -59,11 +62,6 @@ export const PM_ThreeCamera = superclass => class extends superclass {
         this.cameraTranslation = [0,0,0]; // position of the camera relative to the pawn
         this.cameraRotation = q_identity();
     }
-
-    // refreshDrawTransform() {
-    //     super.refreshDrawTransform();
-    //     this.refreshCameraTransform();
-    // }
 
     refreshCameraTransform() {
         const rm = this.service("ThreeRenderManager");

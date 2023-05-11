@@ -519,13 +519,16 @@ RegisterMixin(AM_OnNavGrid);
 //-- GotoBehavior -------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+// xxx
+
 class GotoBehavior extends Behavior {
 
     get tickRate() { return this._tickRate || 50} // More than 15ms for smooth movement
 
     get radius() { return this._radius || 0}
     get speed() { return this._speed || 1}
-    get xy() {return this._xy || this.actor.xy}
+    // get xy() {return this._xy || this.actor.xy}
+    get target() {return this._target || this.actor.translation}
 
     do(delta) {
         const distance = this.speed * delta / 1000;
@@ -539,7 +542,7 @@ class GotoBehavior extends Behavior {
         }
 
         if (left<distance) {
-            this.actor.set({xy:this.xy});
+            this.actor.set({translation:this.target});
             this.succeed();
             return;
         }

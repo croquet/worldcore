@@ -19,6 +19,20 @@ class TestActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid) {
 
 TestActor.register('TestActor');
 
+//------------------------------------------------------------------------------------------
+// SimpleActor -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class SimpleActor extends mix(Actor).with(AM_Spatial) {
+
+    init(options) {
+        super.init(options);
+
+    }
+}
+
+SimpleActor.register('SimpleActor');
+
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
@@ -101,6 +115,7 @@ export class MyModelRoot extends ModelRoot {
         this.bots = [];
 
         this.base = BaseActor.create({gridSize: 50, gridScale: 3, noise: 5});
+        // this.simple = SimpleActor.create({pawn: "BlockPawn", translation:[0,0,0]});
 
         this.reset();
 
