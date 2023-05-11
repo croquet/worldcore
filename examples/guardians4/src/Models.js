@@ -1,7 +1,7 @@
 // Guardian Models
 
 import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, v3_add, v3_sub, v3_scale,
-    UserManager, User, AM_Avatar, q_axisAngle, v3_normalize, v3_rotate, AM_NavGrid, AM_OnNavGrid } from "@croquet/worldcore";
+    UserManager, User, AM_Avatar, q_axisAngle, v3_normalize, v3_rotate, AM_Grid, AM_OnGrid } from "@croquet/worldcore";
 
 // The Guardian game is basically a 2D game. Virtually all computations in the model are 2D.
 // The flat world is placed on a Perlin noise generated surface, but all interactions including
@@ -12,7 +12,7 @@ import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, v3_add,
 // This is the ground plane.
 //------------------------------------------------------------------------------------------
 const missileSpeed = 50;
-class BaseActor extends mix(Actor).with(AM_Spatial, AM_NavGrid) {
+class BaseActor extends mix(Actor).with(AM_Spatial, AM_Grid) {
 
     get pawn() {return "BasePawn"}
 
@@ -112,7 +112,7 @@ SimpleActor.register('SimpleActor');
 //--MissileActor ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGrid) {
+class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 
     init(options) {
         super.init(options);
@@ -140,7 +140,9 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGr
 
         if (this.now()>=this.bounceWait) {
             let aim;
-            const bollard = this.pingClosest("bollard", 2);
+
+            const bollard = this.parent.pingAny("bollard", this.translation, 2, this);
+
             if (bollard) {
                 //console.log(v_equals(this.lastTranslation, this.translation), this.translation);
                 //console.log(this.translation);
@@ -157,8 +159,7 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGr
                     this.go = this.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
                 }
             }
-
-            const avatar = this.pingClosest("avatar", 1);
+            const avatar = this.parent.pingAny("avatar", this.translation, 2, this);
             if (avatar) {
                 const d = v_dist2Sqr(this.translation, avatar.translation);
                 if (d < 3) {
@@ -168,7 +169,7 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_OnNavGr
                     aim = v3_normalize(aim);
                     if (this.go) this.go.destroy();
                     this.go = this.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
-                    avatar.doBounce( v3_scale(aim, -0.5) )
+                    //avatar.doBounce( v3_scale(aim, -0.5) )
                     //console.log("avatar hit!");
                 }
             }
@@ -228,7 +229,7 @@ MissileActor.register('MissileActor');
 //--BollardActor ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BollardActor extends mix(Actor).with(AM_Spatial, AM_OnNavGrid) {
+class BollardActor extends mix(Actor).with(AM_Spatial, AM_OnGrid) {
 
     init(options) {
         super.init(options);
@@ -248,7 +249,7 @@ BollardActor.register('BollardActor');
 //------------------------------------------------------------------------------------------
 
 
-class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, AM_OnNavGrid) {
+class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, AM_OnGrid) {
     init(options) {
         super.init(options);
         this.listen("bounce", this.doBounce);
@@ -352,23 +353,25 @@ export class MyModelRoot extends ModelRoot {
         console.log("Start model root!!");
         const bollardScale = 3;
         const bollardDistance = bollardScale*3;
-        this.base = BaseActor.create({gridSize: 75, gridScale: bollardScale, subdivisions: 1, noise: 1});
+        
+        this.base = BaseActor.create({gridScale: bollardScale});
         //this.parent = SimpleActor.create({pawn: "TestPawn", parent: this.base, translation:[-12,7,-35]});
         //this.child = SimpleActor.create({pawn: "CollidePawn", parent: this.parent, translation:[0,0,4]});
         //this.parent.behavior.start({name: "SpinBehavior", axis: [0,1,0], tickRate:500});
         //this.child.behavior.start({name: "SpinBehavior", axis: [0,0,1], speed: 3});
 
         //place the bollards
+
         const maxSize = 15;
         for (let x=0; x<maxSize; x++) for (let y=0; y<maxSize; y++) {
             if ((x<=4 || x>=maxSize-5) && (y<=4 || y>=maxSize-5)) {
                 // bottom of bollard
                 const bollard = BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole', parent: this.base, obstacle: true,
-                    translation:[15*bollardScale+bollardDistance*x+1.5,0, 15*bollardScale+bollardDistance*y+1.5]} );
+                    translation:[15+3*x+1.5,0, 15+3*y+1.5]} );
                 // the three floating parts of the bollard
-                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3,0]} );
-                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3.5,0]} );
-                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,4,0]} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3,0], perlin:true} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3.5,0], perlin:true} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,4,0], perlin:true} );
             }
         }
         //place the bollards
@@ -377,28 +380,28 @@ export class MyModelRoot extends ModelRoot {
             if ((y<=1 || y>=23) || (x<=1 || x>=23)) {
                 // bottom of bollard
                 const bollard = BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole', parent: this.base, obstacle: true,
-                    translation:[bollardDistance*x+1.5,0, bollardDistance*y+1.5]} );
+                    translation:[15*bollardScale+bollardDistance*x+1.5, 0, 15*bollardScale+bollardDistance*y+1.5]} );
                 // the three floating parts of the bollard
-                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3,0]} );
-                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3.5,0]} );
-                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,4,0]} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3,0], perlin:true} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3.5,0], perlin:true} );
+                SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,4,0], perlin:true} );
             }
         }
 
         [[7-1, 7-1, -Math.PI/4],[7-1, 7+1, Math.PI/4], [7+1, 7+1, Math.PI-Math.PI/4], [7+1, 7-1, Math.PI+Math.PI/4]].forEach( xy => {
             const powerPole = BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole3', parent: this.base, obstacle: true,
-            translation:[15*bollardScale+bollardDistance*xy[0]+1.5,0, 15*bollardScale+bollardDistance*xy[1]+1.5], rotation:q_axisAngle([0,1,0],xy[2])} );
-            SimpleActor.create({pawn: "InstancePawn", parent: powerPole, instanceName:'pole4', translation:[5.3,20,0]} );
-            SimpleActor.create({pawn: "InstancePawn", parent: powerPole, instanceName:'pole4', translation:[5.6,21,0]} );
-            SimpleActor.create({pawn: "InstancePawn", parent: powerPole, instanceName:'pole4', translation:[5.9,22,0]} );
+                translation:[15*bollardScale+bollardDistance*xy[0]+1.5,0, 15*bollardScale+bollardDistance*xy[1]+1.5], rotation:q_axisAngle([0,1,0],xy[2])} );
+            SimpleActor.create({pawn: "InstancePawn", parent: powerPole, instanceName:'pole4', translation:[5.3,20,0], perlin:true} );
+            SimpleActor.create({pawn: "InstancePawn", parent: powerPole, instanceName:'pole4', translation:[5.6,21,0], perlin:true} );
+            SimpleActor.create({pawn: "InstancePawn", parent: powerPole, instanceName:'pole4', translation:[5.9,22,0], perlin:true} );
         });
 
         [[0,0, -Math.PI/4], [0, 74, Math.PI/4], [74, 74, Math.PI-Math.PI/4], [74,0, Math.PI+Math.PI/4]].forEach( xy => {
             const powerPole2 = BollardActor.create( {pawn: "BollardPawn", tags: ["bollard"], instanceName:'pole3', parent: this.base, obstacle: true,
-            translation:[bollardScale*xy[0]+1.5,0, bollardScale*xy[1]+1.5], rotation:q_axisAngle([0,1,0],xy[2])} );
-            SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.3,20,0]} );
-            SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.6,21,0]} );
-            SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.9,22,0]} );
+                translation:[bollardScale*xy[0]+1.5,0, bollardScale*xy[1]+1.5], rotation:q_axisAngle([0,1,0],xy[2])} );
+            SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.3,20,0], perlin:true} );
+            SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.6,21,0], perlin:true} );
+            SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.9,22,0], perlin:true} );
         });
 
         const m = 75*3;

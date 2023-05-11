@@ -259,24 +259,9 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
 
 }
 FireballPawn.register("FireballPawn");
-//------------------------------------------------------------------------------------------
-// TestPawn --------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-export class TestPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
-
-    constructor(actor) {
-        super(actor);
-        const t = this.translation;
-        t[1]=perlin2D(t[0], t[2])+1;
-        this.set({translation:t});
-        this.useInstance("cyanBox");
-    }
-}
-TestPawn.register("TestPawn");
 
 //------------------------------------------------------------------------------------------
-// InstancePawn --------------------------------------------------------------------------------
+// GeometryPawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export class GeometryPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
@@ -318,8 +303,8 @@ export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
         this.useInstance(actor._instanceName);
         this.service("CollisionManager").colliders.add(this);
         const t = this.translation;
-        t[1]=perlin2D(t[0], t[2])-0.25;
-        this.set({translation:t});
+        this.localTransform = m4_translation([0,perlin2D(t[0], t[2])-0.25,0]);
+        this.refreshDrawTransform();
     }
 
     destroy() {
@@ -338,11 +323,11 @@ export class InstancePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) 
     constructor(actor) {
         super(actor);
         this.useInstance(actor._instanceName);
-        if (actor._perlin) {
-            const t = this.translation;
-            t[1]=perlin2D(t[0], t[2])-0.25;
-            this.set({translation:t});
-        }
+       // if (actor._perlin) {
+            const t = m4_getTranslation(this.global);
+            this.localTransform = m4_translation([0,perlin2D(t[0], t[2])-0.25,0]);
+            this.refreshDrawTransform();
+        //}
     }
 }
 InstancePawn.register("InstancePawn");
@@ -354,7 +339,7 @@ InstancePawn.register("InstancePawn");
 // We then renormalize the mesh vectors.
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_NavGridGizmo) {
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(actor) {
         super(actor);
         const worldX = 512, worldZ=512;
@@ -808,7 +793,16 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     collide() {
-        const colliders = this.service("CollisionManager").colliders;
+        const v_dist2Sqr = function (a,b) {
+            const dx = a[0] - b[0];
+            const dy = a[2] - b[2];
+            return dx*dx+dy*dy;
+        };
+        const v_sub2 = function (a,b) {
+            return [a[0]-b[0], 0, a[2]-b[2]];
+        }
+
+        // check the walls
         const mx = 75*3-2.5;
         let t = this.translation;
         const xm = t[0] < 2.5 || t[0] > mx;
@@ -825,15 +819,17 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 return true;
             }
         }
+        const colliders = this.service("CollisionManager").colliders;
+
         for (const collider of colliders) {
             if (collider === this) continue;
             const colliderPos = m4_getTranslation(collider.global);
-            const d = v3_distance(colliderPos, this.translation);
+            const d = v_dist2Sqr(colliderPos, this.translation);
 
-            if (d < 2.5) {
+            if (d < 6.25) {
                 //console.log("bump!");
                 //console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
-                const from = v3_sub(this.translation, collider.translation);
+                const from = v_sub2(this.translation, collider.translation);
                 const distance = v3_magnitude(from);
                 let bounce;
                 if (distance > 0) bounce = v3_scale( from, 2/distance );
@@ -1030,8 +1026,8 @@ export class MyViewRoot extends ViewRoot {
         im.addGeometry("tankTurret", tankTurret);
         im.addGeometry("tankTracks", tankTracks);
 
-        const tankBodyim = im.addMesh("tankBody","tankBody", "yellow");
-        const tankTurretim = im.addMesh("tankTurret", "tankTurret","yellow");
+        const tankBodyim = im.addMesh("tankBody","tankBody", "gray");
+        const tankTurretim = im.addMesh("tankTurret", "tankTurret","gray");
         const tankTracksim = im.addMesh("tankTracks", "tankTracks", "gray");
 
         tankBodyim.castShadow = true;
