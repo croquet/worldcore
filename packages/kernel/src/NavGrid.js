@@ -86,12 +86,13 @@ export const AM_Grid = superclass => class extends superclass {
         const xy = this.gridXY(...center);
         const cx = Math.floor(xy[0]);
         const cy = Math.floor(xy[1]);
+        const r = Math.floor(radius/this.gridScale);
 
         for (const actor of this.getBin(cx, cy)) {
             if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
         }
 
-        for (let n = 1; n<=radius; n++) {
+        for (let n = 1; n<=r; n++) {
             const x0 = Math.max(0,cx-n);
             const y0 = Math.max(0,cy-n);
             const x1 = cx+n;
@@ -138,6 +139,7 @@ export const AM_Grid = superclass => class extends superclass {
         const xy = this.gridXY(...center);
         const cx = Math.floor(xy[0]);
         const cy = Math.floor(xy[1]);
+        const r = Math.floor(radius/this.gridScale);
 
         let bin = this.getBin(cx, cy);
         if (bin) {
@@ -146,7 +148,7 @@ export const AM_Grid = superclass => class extends superclass {
             }
         }
 
-        for (let n = 1; n<=radius; n++) {
+        for (let n = 1; n<=r; n++) {
             const x0 = cx-n;
             const x1 = cx+n;
             const y0 = cy-n;
@@ -199,30 +201,10 @@ export const AM_OnGrid = superclass => class extends superclass {
 
     get xy() { return this._xy || [0,0]}
 
-    // xySet(xy) {
-    //     if (!this.parent || !this.parent.isGrid) { console.error("AM_OnGrid must have an AM_Grid parent!"); return}
-    //     const scaled = v2_scale(xy, this.parent.gridScale);
-    //     // const translation = this.parent.gridXYZ(...scaled);
-    //     // this.set({translation});
-
-    //     // if (xy[0]<0 || xy[1]<0 ) console.error("Off grid: " + xy);
-
-    //     const oldKey = this.gridKey;
-    //     this.gridKey = packKey(...xy);
-
-    //     if (this.gridKey !== oldKey) {
-    //         this.parent.removeFromBin(oldKey,this);
-    //         this.parent.addToBin(this.gridKey, this);
-    //     }
-    // }
-
     translationSet(xyz) {
         if (!this.parent || !this.parent.isGrid) { console.error("AM_OnGrid must have an AM_Grid parent!"); return}
-        // const scaled = v2_scale(xy, this.parent.gridScale);
         const xy = this.parent.gridXY(...xyz);
         this.set({xy});
-
-        // if (xy[0]<0 || xy[1]<0 ) console.error("Off grid: " + xy);
 
         const oldKey = this.gridKey;
         this.gridKey = packKey(...xy);
@@ -552,7 +534,6 @@ class GotoBehavior extends Behavior {
 
         const translation = v3_add(this.actor.translation, [x,y,z]);
         const rotation = q_lookAt(this.actor.forward, this.actor.up, aim);
-        // const rotation = q_axisAngle(this.actor.up, -angle);
 
         this.actor.set({translation, rotation});
 

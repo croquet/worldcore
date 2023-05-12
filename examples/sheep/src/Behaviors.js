@@ -20,23 +20,24 @@ class SpreadBehavior extends Behavior {
     }
 
     flee(bot) {
+        const grid = this.actor.parent;
         const from = v3_sub(this.actor.translation, bot.translation);
         const mag = v3_magnitude(from);
         if (mag > this.radius) return;
+        let x, y;
         if (mag===0) {
             const a = Math.random() * 2 * Math.PI;
-            from[0] = this.radius * Math.cos(a);
-            from[1] = 0;
-            from[2] = this.radius* Math.sin(a);
+            x = this.radius * Math.cos(a);
+            y = this.radius* Math.sin(a);
         } else {
-            from[0] = this.radius * from[0] / mag;
-            from[1] = 0;
-            from[2] = this.radius * from[2] / mag;
+            x = this.radius * from[0] / mag;
+            y = this.radius * from[2] / mag;
         }
+        const xyz = grid.gridXYZ(x,y);
 
-        if (this.actor.isBlocked(from)) return;
+        if (this.actor.isBlocked(xyz)) return;
 
-        const translation = v3_add(this.actor.translation, from);
+        const translation = v3_add(this.actor.translation, xyz);
         this.actor.set({translation});
     }
 

@@ -62,14 +62,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         this.setRenderObject(base);
         this.addRenderObjectToRaycast("ground");
 
-        // this.gizmo.visible = false;
-
         this.subscribe("input", "pointerDown", this.doPointerDown);
-        this.subscribe("input", "qDown", this.toggleGizmo);
-    }
-
-    toggleGizmo() {
-        this.gizmo.visible = !this.gizmo.visible;
     }
 
     destroy() {
@@ -80,8 +73,6 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
 
     doPointerDown(e) {
         if (e.button === 2) return;
-        // console.log("base down");
-        // console.log(this.viewId);
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(e.xy, "ground");
         if (hits.length<1) return;
@@ -115,25 +106,12 @@ class GodView extends ViewService {
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
         this.subscribe("input", "pointerMove", this.doPointerMove);
-        // this.subscribe("input", "gDown", this.go);
     }
 
     doPointerMove(e) {
         this.xy = e.xy;
         // this.point();
     }
-
-    // go() {
-    //     console.log("go");
-    //     const rc = this.service("ThreeRaycast");
-    //     const hits = rc.cameraRaycast(this.xy, "ground");
-    //     if (hits.length<1) return;
-    //     const hit = hits[0];
-    //     const x = hit.xyz[0];
-    //     const y = hit.xyz[2];
-    //     const xy = [x/3,y/3];
-    //     this.publish("hud", "go", xy);
-    // }
 
     updateCamera() {
         if (this.paused) return;
