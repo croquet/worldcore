@@ -13,7 +13,7 @@ const apiKey = process.env.NODE_ENV === 'production'
     : '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9';
 
 
-// App.makeWidgetDock({debug: true, stats: true});
+App.makeWidgetDock({debug: true, stats: true});
 
 StartWorldcore({
     appId: 'io.croquet.sheep',

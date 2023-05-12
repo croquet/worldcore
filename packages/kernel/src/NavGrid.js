@@ -352,9 +352,9 @@ export const AM_NavGrid = superclass => class extends AM_Grid(superclass) {
     }
 
     isBlocked(from, aim) {
-        const to = v2_add(from,aim);
-        const fromKey = packKey(...v2_floor(from));
-        const toKey = packKey(...v2_floor(to));
+        const to = v3_add(from,aim);
+        const fromKey = packKey(...v2_floor(this.gridXY(...from)));
+        const toKey = packKey(...v2_floor(this.gridXY(...to)));
         if (fromKey === toKey) return false;
         const node = this.navNodes.get(fromKey);
         if (node) return !node.hasExitTo(toKey);
@@ -505,7 +505,7 @@ export const AM_OnNavGrid = superclass => class extends AM_OnGrid(superclass) {
     }
 
     isBlocked(aim) {
-        return this.parent.isBlocked(this.xy, aim);
+        return this.parent.isBlocked(this.translation, aim);
     }
 
     buildObstacle() {
@@ -567,7 +567,7 @@ GotoBehavior.register("GotoBehavior");
 
 class PathToBehavior extends Behavior {
 
-    get xy() {return this._xy || this.actor.xy}
+    get target() {return this._target || this.actor.translation}
     get speed() { return this._speed || 3}
     get radius() { return this._radius || 0}
     get noise() { return this._noise || 0}
@@ -579,8 +579,11 @@ class PathToBehavior extends Behavior {
         }
 
         const grid = this.actor.parent;
-        const startKey = packKey(...v2_floor(this.actor.xy));
-        const endKey = packKey(...v2_floor(this.xy));
+        const start = grid.gridXY(...this.actor.translation);
+        const end = grid.gridXY(...this.target);
+        const startKey = packKey(...v2_floor(start));
+        const endKey = packKey(...v2_floor(end));
+
 
         this.path = grid.findPath(startKey, endKey);
 
@@ -592,7 +595,7 @@ class PathToBehavior extends Behavior {
         this.step = 0;
 
         if (this.path.length === 1) {
-            this.goto = this.start({name: "GotoBehavior", speed: this.speed, xy: this.xy});
+            this.goto = this.start({name: "GotoBehavior", speed: this.speed, target: this.target});
         } else {
             this.goto = this.start({name: "GotoBehavior", speed: this.speed, neverSucceed: true});
             this.nextStep();
@@ -601,17 +604,20 @@ class PathToBehavior extends Behavior {
     }
 
     nextStep() {
+        const grid = this.actor.parent;
         this.step++;
         if (this.step >  this.path.length-2) { // at end
-            this.goto.set({xy: this.xy, radius: this.radius});
+            this.goto.set({target: this.target, radius: this.radius});
         } else {
             const xy = unpackKey(this.path[this.step]);
             this.addNoise(xy);
-            this.goto.set({xy});
+            const target = grid.gridXYZ(...xy);
+            this.goto.set({target});
         }
     }
 
     addNoise(xy) {
+        const s = this.actor.parent.gridScale;
         let x = 0.5;
         let y = 0.5;
         const n = this.noise/2;
@@ -620,6 +626,7 @@ class PathToBehavior extends Behavior {
             y = (0.5-n/2) + n*this.random();
         }
         xy[0] += x; xy[1] += y;
+        xy[0] *=s; xy[1] *=s;
     }
 
     onProgress() {
