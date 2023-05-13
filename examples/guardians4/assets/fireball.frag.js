@@ -1,4 +1,5 @@
-export function fragmentShader(){return  `
+export function fragmentShader() {
+return  `
 
 varying vec2 vUv;
 varying float noise;
@@ -16,5 +17,5 @@ void main() {
   vec4 color = texture2D( tExplosion, tPos );
   gl_FragColor = vec4( color.rgb, tOpacity);
 
-}`
+}`;
 }

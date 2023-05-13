@@ -81,7 +81,6 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
     }
 
     get pawn() {return "BotPawn"}
-
 }
 BotActor.register('BotActor');
 
@@ -147,7 +146,7 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
                 //console.log(v_equals(this.lastTranslation, this.translation), this.translation);
                 //console.log(this.translation);
                 const d2 = v_dist2Sqr(this.translation, bollard.translation);
-                if (d2 < 2.5) {
+                if (d2 < 8) {
                     //console.log("bollard bounce");
                     this.bounceWait = this.now()+20;
                     // if (d<0.5) {console.log("inside")}
@@ -162,7 +161,7 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
             const avatar = this.parent.pingAny("avatar", this.translation, 2, this);
             if (avatar) {
                 const d = v_dist2Sqr(this.translation, avatar.translation);
-                if (d < 3) {
+                if (d < 8) {
                     this.bounceWait = this.now()+20;
                     aim = v3_sub(this.translation, avatar.translation);
                     aim[1]=0;
