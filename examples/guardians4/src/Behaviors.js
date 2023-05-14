@@ -14,7 +14,7 @@ class SpreadBehavior extends Behavior {
     }
 
     do() {
-        const bots = this.actor.pingAll("bollard", 0);
+        const bots = this.actor.pingAll("block", 0);
         if (bots.length===0) return;
         bots.forEach(bot => this.flee(bot));
     }

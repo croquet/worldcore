@@ -164,7 +164,11 @@ export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Thr
         const t = this.translation;
         t[1]=perlin2D(t[0], t[2])+2;
         this.set({translation:t});
-        this.useInstance("botBody");
+        const bot = this.useInstance("botBody");
+        const botEyeGeometry = new THREE.SphereGeometry( 0.80, 32, 16);
+        const botEyeMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.75,0.15,0.15)} );
+        botEyeMaterial.side = THREE.FrontSide;
+        this.renderObject.add(new THREE.Mesh(botEyeGeometry, botEyeMaterial));
        // this.addRenderObjectToRaycast("bot");
     }
 
@@ -175,7 +179,13 @@ export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Thr
 
     update(time, delta) {
         super.update(time,delta);
-        this._translation[1] = perlin2D(this.translation[0], this.translation[2])+2;
+        const p = perlin2D(this.translation[0], this.translation[2])+2;
+        this._translation[1] = p;
+        if (this.children) this.children.forEach(c => {
+            //c._translation[1]=p;
+            c.localChanged();
+            c.refreshDrawTransform();
+        });
         this.localChanged();
         this.refreshDrawTransform();
     }
