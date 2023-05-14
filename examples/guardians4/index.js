@@ -7,6 +7,7 @@ import { App, StartWorldcore} from "@croquet/worldcore";
 import {  MyViewRoot } from "./src/Pawns";
 import { MyModelRoot } from "./src/Actors";
 import "./src/Avatar";
+import "./src/Behaviors";
 
 App.makeWidgetDock();
 StartWorldcore({

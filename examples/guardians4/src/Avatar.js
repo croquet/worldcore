@@ -7,8 +7,21 @@ import paper from "../assets/paper.jpg";
 import { sunLight, sunBase, perlin2D } from "./Pawns";
 
 export const cameraOffset = [0,12,20];
+
 //------------------------------------------------------------------------------------------
-// AvatarPawn ------------------------------------------------------------------------------
+// AvatarPawn
+// The avatar is designed to instantly react to user input and the publish those changes
+// so other users are able to see and interact with this avatar. Though there will be some latency
+// between when you see your actions and the other users do, this should have a minimal
+// impact on gameplay.
+// Besides user input, avatars respond to three things:
+// - avatar collisions - if an avatar collides with you, you bounce in the opposite direction
+// - bollard collisions - if you hit a bollard, you will bounce
+// - bots - your avatar recieves damage if a bot explodes nearby
+// - avatars are NOT effected by missiles - they just bounce off
+// When an avatar collides with another avatar, a bounce event is sent to the collided
+// avatar with a negative value for the bounce vector. The other avatar bounces away from
+// the collision in the opposite direction of your avatar.
 //------------------------------------------------------------------------------------------
 
 export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar, PM_ThreeCamera, PM_ThreeInstanced) {
@@ -170,14 +183,22 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         }
     }
 
-
     doPointerDown(e) {
+        const rc = this.service("ThreeRaycast");
+        const hits = rc.cameraRaycast(e.xy, "ground");
+        if (hits.length<1) return;
+        const hit = hits[0];
+        const xyz = hit.xyz;
+        this.publish("hud", "go", xyz);
+        console.log("Let's go")
+        /*
         console.log("pointerDown", e);
 
         if (!this.pointerId) {
             this.pointerId = e.id;
             this.pointerHome = e.xy;
         }
+        */
     }
 
     doPointerMove(e) {
@@ -334,7 +355,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     godCamera() {
         if (!this.godMatrix) {
-            const t = [110,150,110];
+            const t = [0,150,0];
             const q = q_axisAngle([1, 0, 0], -Math.PI/2);
             this.godMatrix = m4_scaleRotationTranslation(1, q, t);
         }
@@ -352,7 +373,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         const v_sub2 = function (a,b) {
             return [a[0]-b[0], 0, a[2]-b[2]];
         }
-
+/*
         // check the walls
         const mx = 75*3-2.5;
         let t = this.translation;
@@ -370,6 +391,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 return true;
             }
         }
+        */
         const colliders = this.service("CollisionManager").colliders;
 
         for (const collider of colliders) {
@@ -410,7 +432,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     goHome() {
-        const translation = [110 + this.random() * 10-5, 0, 155+this.random()*10-5];
+        const translation = [this.random() * 10-5, 0, this.random()*10-5];
         this.yaw = Math.PI/2;
         const rotation = q_axisAngle([0,1,0], this.yaw);
 

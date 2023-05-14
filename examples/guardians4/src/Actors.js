@@ -2,7 +2,7 @@
 
 import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, v3_add, v3_sub, v3_scale,
     UserManager, User, AM_Avatar, q_axisAngle, v3_normalize, v3_rotate, AM_Grid, AM_OnGrid } from "@croquet/worldcore";
-
+import { BotActor } from "./Bots";
 // The Guardian game is basically a 2D game. Virtually all computations in the model are 2D.
 // The flat world is placed on a Perlin noise generated surface, but all interactions including
 // driving and collisions are computed in 2D.
@@ -68,7 +68,7 @@ FireballActor.register('FireballActor');
 //------------------------------------------------------------------------------------------
 // BotActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
+/*
 class BotActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
     init(...args) {
         super.init(...args);
@@ -83,7 +83,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
     get pawn() {return "BotPawn"}
 }
 BotActor.register('BotActor');
-
+*/
 //------------------------------------------------------------------------------------------
 // BotEyeActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -117,7 +117,7 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
         super.init(options);
 //      const mcm = this.service("ModelCollisionManager");
 //      mcm.colliders.add(this);
-        this.future(8000).destroy(); // destroy in 8 seconds
+        this.future(8000).destroy(); // destroy after some time
         this.lastTranslation = [0,0,0];
         this.bounceWait = this.now(); // need to bounce otherwise we might instantly bounce again
         this.tick();
@@ -174,40 +174,6 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
             }
         }
         this.lastTranslation = this.translation;
-    }
-
-    translationSet(t,o) {
-        //don't let the missile off of the grid...
-        if (this.now()>=this.bounceWait) {
-            const mx = 75*3-2.5;
-            if (t[0] < 2.5 || t[0]>mx) {
-                if (t[0]<2.5) t[0]=2.5;
-                if (t[0]>mx) t[0]=mx;
-                if (this.go) {
-                    //doTranslate = false; // don't go there
-                    this.bounceWait = this.now()+20;
-                    this.go.destroy();
-                    //console.log("bounce Z");
-                    const aim = this.go.aim;
-                    aim[0] = -aim[0];
-                    this.go = this.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
-                }
-            }
-            if (t[2] < 2.5 || t[2] > mx) {
-                if (t[2]<2.5) t[2]=2.5;
-                if (t[2]>mx) t[2]=mx;
-                if (this.go) {
-                    //doTranslate = false;
-                    this.bounceWait = this.now()+20;
-                    //console.log("bounce X");
-                    this.go.destroy();
-                    const aim = this.go.aim;
-                    aim[2] = -aim[2];
-                    this.go = this.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
-                }
-            }
-        }
-        super.translationSet(t,o);
     }
 
     step() {
@@ -299,7 +265,7 @@ class MyUser extends User {
 
         this.color = [0.25+0.75*this.random(), 0.5, 0.25+0.75*this.random()];
         this.userColor = options.userCount%20;
-        const trans = [110 + this.random() * 10-5, 0, 155+this.random()*10-5];
+        const trans = [this.random() * 10-5, 0, this.random()*10-5];
         const rot = q_axisAngle([0,1,0], Math.PI/2);
 
         this.avatar = AvatarActor.create({
@@ -350,38 +316,29 @@ export class MyModelRoot extends ModelRoot {
     init(options) {
         super.init(options);
         console.log("Start model root!!");
-        const bollardScale = 3;
-        const bollardDistance = bollardScale*3;
+        const bollardScale = 3; // size of the bollard
+        const bollardDistance = bollardScale*3; // distance between bollards
 
         this.base = BaseActor.create({gridScale: bollardScale});
 
         //place the bollards
-
+/*
         const maxSize = 15;
         for (let x=0; x<maxSize; x++) for (let y=0; y<maxSize; y++) {
             if ((x<=4 || x>=maxSize-5) && (y<=4 || y>=maxSize-5)) {
                 this.makeBollard(15*bollardScale+bollardDistance*x+1.5, 15*bollardScale+bollardDistance*y+1.5);
             }
         }
-        //place the bollards
-
-        for (let x=0; x<25; x++) for (let y=0; y<25; y++) {
-            if ((y<=1 || y>=23) || (x<=1 || x>=23)) {
-                this.makeBollard(bollardDistance*x+1.5, bollardDistance*y+1.5);
-            }
-        }
-
+*/
+/*
         [[7-1, 7-1, -Math.PI/4],[7-1, 7+1, Math.PI/4], [7+1, 7+1, Math.PI-Math.PI/4], [7+1, 7-1, Math.PI+Math.PI/4]].forEach( xy => {
             this.makePowerPole(15*bollardScale+bollardDistance*xy[0],15*bollardScale+bollardDistance*xy[1]+1.5,xy[2]);
         });
-
-        [[0,0, -Math.PI/4], [0, 74, Math.PI/4], [74, 74, Math.PI-Math.PI/4], [74,0, Math.PI+Math.PI/4]].forEach( xy => {
-            this.makePowerPole(bollardScale*xy[0]+1.5,bollardScale*xy[1]+1.5,xy[2]);
-        });
+*/
 
         const m = 75*3;
         const r =  q_axisAngle([0,1,0], Math.PI/2);
-
+/*
         // build the fence
         for (let i=0; i<75; i++) {
             const b = i*bollardScale+1.5;
@@ -390,12 +347,55 @@ export class MyModelRoot extends ModelRoot {
             SimpleActor.create({pawn: "InstancePawn", parent:this.base, translation:[0, 0, b], rotation:r, instanceName:'fence', perlin:true} );
             SimpleActor.create({pawn: "InstancePawn", parent:this.base, translation:[m, 0, b], rotation:r, instanceName:'fence', perlin:true} );
         }
-
-        //this.subscribe("input", "cDown", this.colorChange);
+*/
+        // create the bots
+        /*
         for (let i=0; i<10; i++) for (let j=0; j<10; j++) {
             const bot = BotActor.create({translation:[95+i*3+Math.random()/2, 0.5, 55+j*3+Math.random()/2]});
             const eye = BotEyeActor.create({parent: bot});
+        }*/
+        let v = [-10,0,0];
+        for (let i=0; i<3;i++) {
+            const p3 = Math.PI*2/3;
+            this.makePowerPole(v[0],v[2],i*p3);
+            v = v3_rotate( v, q_axisAngle([0,1,0], p3) );
         }
+
+        let corner = 12;
+        [[-corner,-corner, -Math.PI/4], [-corner, corner, Math.PI/4], [corner, corner, Math.PI-Math.PI/4], [corner,-corner, Math.PI+Math.PI/4]].forEach( xy => {
+            this.makePowerPole(bollardDistance*xy[0]+1.5,bollardDistance*xy[1]+1.5,xy[2]);
+        });
+
+        //place the bollards
+        corner--;
+        for (let x=-corner; x<=corner; x++) for (let y=-corner; y<=corner; y++) {
+            if ((y<=-corner+2 || y>=corner-2) || (x<=-corner+2 || x>=corner-2) || (y<=-corner+7 && x<=-corner+7)) {
+                this.makeBollard(bollardDistance*x, bollardDistance*y);
+            }
+        }
+
+        const ss = 200;
+/*
+        for (let n = 0; n < 1000; n++) {
+            const x = -ss/2 + Math.floor(ss * Math.random()) + 0.5;
+            const y = -ss/2 + Math.floor(ss * Math.random()) + 0.5;
+
+            this.makeBollard(3*x, 3*y);
+            //const translation = [3*x,0,3*y];
+            //TestActor.create({pawn: "BlockPawn", parent: this.base, translation, tags: ["block"]});
+        }
+        */
+        this.bots = [];
+        for (let n = 0; n<1000; n++) {
+            const x = -ss/2 + ss * Math.random();
+            const y = -ss/2 + ss * Math.random();
+            //const translation = [x*3,0, y*3];
+            const index = Math.floor(20*Math.random());
+            const bot = this.makeBot(x*3, y*3, index);
+            //const bot = BotActor.create({parent: this.base,  index, pawn: "AvatarPawn", translation, tags: ["bot", "block"]});
+            this.bots.push(bot);
+        }
+
     }
 
     colorChange() {
@@ -418,6 +418,12 @@ export class MyModelRoot extends ModelRoot {
         SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.3,20,0], perlin:true} );
         SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.6,21,0], perlin:true} );
         SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.9,22,0], perlin:true} );        
+    }
+
+    makeBot(x, z, index) {
+        const bot = BotActor.create({parent: this.base, tags:["block", "bot"], pawn:"BotPawn", index, radius: 2, translation:[x, 0.5, z]});
+        const eye = BotEyeActor.create({parent: bot});
+        return bot;
     }
 }
 MyModelRoot.register("MyModelRoot");

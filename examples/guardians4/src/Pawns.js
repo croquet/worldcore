@@ -1,24 +1,21 @@
 // Guardian Views
 //
-// The majority of the code specific to this example is in the definition of AvatarPawn.
+// The majority of the code specific to this example is in Avatar.js.
 // Demonstrates terrain following, avatar/object and avatar/avatar collisions.
 // Uses a 2D Perlin noise function to generate terrain and to dynamically compute
 // the height of the terrain as the avatar moves.
-//
-// When an avatar collides with another avatar, a bounce event is sent to the collided
-// avatar with a negative value for the bounce vector. The other avatar bounces away from
-// the collision in the opposite direction of your avatar.
+
 //
 // To do:
 // - place target towers.
 // - add the bots
 // - tank damage and explosion (turret jumps up, tank fades out)
-// - collision more natural
+// - collision more naturalw
 // - should tanks lay down track?
 // - don't sort the nav test
 
 import { ViewRoot, ViewService,Pawn, mix, InputManager, ThreeInstanceManager,
-    PM_ThreeVisible, ThreeRenderManager, PM_Smoothed, PM_Spatial, PM_ThreeInstanced, PM_ThreeCollider,
+    PM_ThreeVisible, ThreeRenderManager, ThreeRaycast, PM_Smoothed, PM_Spatial, PM_ThreeInstanced, PM_ThreeCollider,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation,
     PerlinNoise, GLTFLoader } from "@croquet/worldcore";
 import tank_tracks from "../assets/tank_tracks.glb";
@@ -27,10 +24,10 @@ import tank_body from "../assets/tank_body.glb";
 import paper from "../assets/paper.jpg";
 import sky from "../assets/quarry_02.png";
 
-import fireballTexture from "/assets/explosion.png";
-import smokeTexture from "/assets/Smoke-Element.png";
-import * as fireballFragmentShader from "/assets/fireball.frag.js";
-import * as fireballVertexShader from "/assets/fireball.vert.js";
+import fireballTexture from "../assets/explosion.png";
+import smokeTexture from "../assets/Smoke-Element.png";
+import * as fireballFragmentShader from "../assets/fireball.frag.js";
+import * as fireballVertexShader from "../assets/fireball.vert.js";
 
 
 export const UserColors = [
@@ -71,7 +68,7 @@ export const perlin2D = function(perlinHeight = 27.5, perlinScale = 0.02) {
 
     return function(x,y) {
         //return 0; // used for testing
-        return perlinHeight * perlin.signedNoise2D(-17+perlinScale*x-100, 14+perlinScale*y-146);
+        return perlinHeight * perlin.signedNoise2D(perlinScale*(x-176+96), perlinScale*(y+176+68));
     };
 }();
 
@@ -176,6 +173,13 @@ export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Thr
         super.destroy();
     }
 
+    update(time, delta) {
+        super.update(time,delta);
+        this._translation[1] = perlin2D(this.translation[0], this.translation[2])+2;
+        this.localChanged();
+        this.refreshDrawTransform();
+    }
+
     killMe() {
         this.say("killMe");
     }
@@ -260,7 +264,9 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
 FireballPawn.register("FireballPawn");
 
 //------------------------------------------------------------------------------------------
-// GeometryPawn ----------------------------------------------------------------------------
+// GeometryPawn
+// 3D models are loaded async, so may not yet exist when your avatar is being constructed.
+// We check to see if there is an instance for this yet, and try again later if not.
 //------------------------------------------------------------------------------------------
 
 export class GeometryPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
@@ -338,7 +344,7 @@ InstancePawn.register("InstancePawn");
 // We then renormalize the mesh vectors.
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCollider) {
     constructor(actor) {
         super(actor);
         const worldX = 512, worldZ=512;
@@ -363,22 +369,8 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         const base = new THREE.Mesh( this.geometry, this.material );
         base.receiveShadow = true;
         base.castShadow = true;
-        this.subscribe("input", "gDown", this.toggleGizmo);
-/*
-        // define an outline of the hills - flattens the world a bit too much though
-        let base2 = base.clone();
-        base2.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0, 0, 0), side:THREE.BackSide} );
-        base2.position.y=0.1;
-        base2.castShadow = false;
-        base2.receiveShadow = false;
-       // base2.side = THREE.BackSide;
-        base.add(base2);
-*/
         this.setRenderObject(base);
-    }
-
-    toggleGizmo() {
-        this.gizmo.visible = !this.gizmo.visible;
+        this.addRenderObjectToRaycast("ground");
     }
 
     destroy() {
@@ -388,37 +380,6 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     }
 }
 BasePawn.register("BasePawn");
-
-//------------------------------------------------------------------------------------------
-// CollidePawn -------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-export class CollidePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
-
-    constructor(actor) {
-        super(actor);
-        this.service("CollisionManager").colliders.add(this);
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...this.actor.color)} );
-        this.geometry = new THREE.BoxGeometry( 2, 2, 2 );
-        const mesh = new THREE.Mesh( this.geometry, this.material );
-        mesh.castShadow = true;
-        this.setRenderObject(mesh);
-        this.listen("colorSet", this.onColorSet);
-    }
-
-    destroy() {
-        super.destroy();
-        this.service("CollisionManager").colliders.delete(this);
-        this.geometry.dispose();
-        this.material.dispose();
-    }
-
-    onColorSet() {
-        this.material.color = new THREE.Color(...this.actor.color);
-    }
-
-}
-CollidePawn.register("CollidePawn");
 
 //------------------------------------------------------------------------------------------
 // MissilePawn -------------------------------------------------------------------------------
@@ -476,12 +437,11 @@ class CollisionManager extends ViewService {
 export class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, ThreeInstanceManager, CollisionManager];
+        return [InputManager, ThreeRenderManager, ThreeInstanceManager, CollisionManager, ThreeRaycast];
     }
 
     onStart() {
         this.buildLights();
-        // this.buildCamera();
         this.buildInstances();
     }
 
@@ -501,28 +461,11 @@ export class MyViewRoot extends ViewRoot {
         } );
     }
 
-    buildCamera() {
-        const rm = this.service("ThreeRenderManager");
-        const pitchMatrix = m4_rotation([1,0,0], toRad(-45));
-        const yawMatrix = m4_rotation([0,1,0], toRad(-30));
-
-        let cameraMatrix = m4_translation([0,0,50]);
-        cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);
-        cameraMatrix = m4_multiply(cameraMatrix,yawMatrix);
-
-        rm.camera.matrix.fromArray(cameraMatrix);
-        rm.camera.matrixAutoUpdate = false;
-        rm.camera.matrixWorldNeedsUpdate = true;
-
-        rm.camera.fov = 60;
-        rm.camera.updateProjectionMatrix();
-    }
-
     async buildInstances() {
         const im = this.service("ThreeInstanceManager");
 
         const botBodyGeo = new THREE.SphereGeometry( 1.0, 32, 16, 0, Math.PI * 2, 0, 2.6); 
-        botBodyGeo.rotateX(Math.PI/2);
+        botBodyGeo.rotateX(-Math.PI/2);
         im.addGeometry("botBody", botBodyGeo);
         const botMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.5,0.5,0.5), metalness:1.0, roughness:0.3} );
         botMaterial.side = THREE.DoubleSide;
@@ -581,10 +524,10 @@ export class MyViewRoot extends ViewRoot {
         const mesh1 = im.addMesh("magentaBox", "box", "magenta");
         const mesh2 = im.addMesh("cyanBox", "box", "cyan");
         const mesh3 = im.addMesh("pole", "cylinder", "gray");
-        const mesh4 = im.addMesh("pole2", "cylinder2", "gray");
+        const mesh4 = im.addMesh("pole2", "cylinder2", "gray",3000);
         const mesh5 = im.addMesh("pole3", "cylinder3", "gray");
         const mesh6 = im.addMesh("pole4", "cylinder4", "green");
-        const fence = im.addMesh("fence", "fenceGeo", "fenceMat");
+        //const fence = im.addMesh("fence", "fenceGeo", "fenceMat");
 
        //mesh0.castShadow = true;
         mesh1.castShadow = true;
@@ -623,6 +566,5 @@ export class MyViewRoot extends ViewRoot {
         tankTurretim.receiveShadow = true;
         tankTracksim.castShadow = true;
         tankTracksim.receiveShadow = true;
-
     }
 }
