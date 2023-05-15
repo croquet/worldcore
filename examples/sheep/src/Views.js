@@ -21,6 +21,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
+        // this.localTransform = m4_translation([0,15,0]);
         this.useInstance("cube" + this.actor.index);
     }
 
@@ -35,6 +36,7 @@ export class BlockPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
+        // this.localTransform = m4_translation([0,1,0]);
         this.useInstance("block");
     }
 

@@ -77,7 +77,7 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
     updateMatrix() {
         if (this.meshIndex === undefined) return;
         let matrix = this.global;
-        if (this.localTransform) matrix = m4_multiply(this.localTransform, this.global);
+        // if (this.localTransform) matrix = m4_multiply(this.localTransform, this.global);
         this.instance.updateMatrix(this.meshIndex, matrix);
     }
 

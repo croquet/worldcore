@@ -219,10 +219,15 @@ export const PM_Spatial = superclass => class extends superclass {
     get translation() { return this.actor.translation }
     get rotation() { return this.actor.rotation }
     get local() { return this.actor.local }
-    get global() { return this.actor.global }
+    // get global() { return this.actor.global }
 
     get forward() {return this.actor.forward}
     get up() { return this.actor.up}
+
+    get global() {
+        if (this.localTransform) return m4_multiply(this.localTransform, this.actor.global);
+        return this.actor.global;
+    }
 
 };
 
@@ -329,7 +334,6 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
             child.globalChanged();
             child.refreshDrawTransform();
         });
-
     }
 
     onScaleSnap() {
@@ -360,6 +364,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         } else {
             this._global = this.local;
         }
+        if (this.localTransform) return m4_multiply(this.localTransform, this._global);
         return this._global;
     }
 

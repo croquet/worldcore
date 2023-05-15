@@ -34,7 +34,7 @@ export const PM_ThreeVisible = superclass => class extends superclass {
 
     setMatrix() {
         let matrix = this.global;
-        if (this.localTransform) matrix = m4_multiply(this.localTransform, this.global);
+        // if (this.localTransform) matrix = m4_multiply(this.localTransform, this.global);
         this.renderObject.matrix.fromArray(matrix);
         this.renderObject.matrixWorldNeedsUpdate = true;
     }
