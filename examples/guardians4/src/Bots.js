@@ -12,7 +12,7 @@ export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavior
         super.init(options);
         this.behavior.start({name: "SpreadBehavior", radius: 1.5});
         this.subscribe("hud", "go", this.go);
-        // this.subscribe("input", "pDown", this.ping);
+        this.subscribe("bots", "resetBots", this.reset);
     }
 
     go(target) {
@@ -26,6 +26,19 @@ export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavior
 
         // this.ggg = this.behavior.start({name: "PathToBehavior", xy, speed, noise: 2, radius: 1});
         this.ggg = this.behavior.start( {name: "GotoBehavior", target, speed, noise:2, radius:1} );
+    }
+
+    // this is to reset the bots for testing
+    reset() {
+        if (this.ggg) {
+            this.ggg.destroy();
+            this.ggg = null;
+        }
+        const ss = 200;
+        const x = -ss/2 + ss * Math.random();
+        const z = -ss/2 + ss * Math.random();
+        const translation = [3*x, 0, 3*z];
+        this.set({translation});
     }
 
     ping() {

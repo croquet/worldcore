@@ -353,7 +353,7 @@ export class MyModelRoot extends ModelRoot {
         }
         */
         this.bots = [];
-        for (let n = 0; n<1000; n++) {
+        for (let n = 0; n<200; n++) {
             const x = -ss/2 + ss * Math.random();
             const y = -ss/2 + ss * Math.random();
             //const translation = [x*3,0, y*3];

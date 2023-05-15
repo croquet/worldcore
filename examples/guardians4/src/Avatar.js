@@ -158,6 +158,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 // everyone switch to go mode camera
                 this.publish("all", "godMode", !this.godMode);
                 break;
+            case "R":
+            case "r":
+                this.publish("bots", "resetBots");
+                break;
             default:
         }
     }
@@ -372,26 +376,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         };
         const v_sub2 = function (a,b) {
             return [a[0]-b[0], 0, a[2]-b[2]];
-        }
-/*
-        // check the walls
-        const mx = 75*3-2.5;
-        let t = this.translation;
-        const xm = t[0] < 2.5 || t[0] > mx;
-        const zm = t[2] < 2.5 || t[2] > mx;
+        };
 
-        if (xm || zm) {
-            const mag = v3_magnitude(this.deltat);
-            if ( mag > 0 ) {
-                if (xm) this.deltat[0] = -this.deltat[0];
-                if (zm) this.deltat[2] = -this.deltat[2];
-                const bounce = v3_scale(this.deltat, 2/mag);
-                t = v3_add(t, bounce);
-                this.translateTo(t);
-                return true;
-            }
-        }
-        */
         const colliders = this.service("CollisionManager").colliders;
 
         for (const collider of colliders) {
