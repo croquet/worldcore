@@ -140,16 +140,16 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
         if (this.now()>=this.bounceWait) {
             let aim;
 
-            const bollard = this.parent.pingAny("block", this.translation, 2, this);
+            const bollard = this.parent.pingAny("block", this.translation, 4, this);
 
             if (bollard) {
+
                 //console.log(v_equals(this.lastTranslation,w this.translation), this.translation);
                 //console.log(this.translation);
                 const d2 = v_dist2Sqr(this.translation, bollard.translation);
-                if (d2 < 8) {
-                    //console.log("bollard bounce");wwwwwwwwwwwwwwwwwwwwwwwwwwasdasdasdasdasdasad
+                if (d2 < 2.5) {
+                    //console.log("bollard bounce");
                     this.bounceWait = this.now()+20;
-                    // if (d<0.5) {console.log("inside")}
                     aim = v3_sub(this.translation, bollard.translation);
                     aim[1]=0;
                     aim = v3_normalize(aim);
@@ -158,10 +158,10 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
                     this.go = this.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
                 }
             }
-            const avatar = this.parent.pingAny("avatar", this.translation, 2, this);
+            const avatar = this.parent.pingAny("avatar", this.translation, 4, this);
             if (avatar) {
                 const d = v_dist2Sqr(this.translation, avatar.translation);
-                if (d < 8) {
+                if (d < 2.5) {
                     this.bounceWait = this.now()+20;
                     aim = v3_sub(this.translation, avatar.translation);
                     aim[1]=0;
@@ -321,39 +321,6 @@ export class MyModelRoot extends ModelRoot {
 
         this.base = BaseActor.create({gridScale: bollardScale});
 
-        //place the bollards
-/*
-        const maxSize = 15;
-        for (let x=0; x<maxSize; x++) for (let y=0; y<maxSize; y++) {
-            if ((x<=4 || x>=maxSize-5) && (y<=4 || y>=maxSize-5)) {
-                this.makeBollard(15*bollardScale+bollardDistance*x+1.5, 15*bollardScale+bollardDistance*y+1.5);
-            }
-        }
-*/
-/*
-        [[7-1, 7-1, -Math.PI/4],[7-1, 7+1, Math.PI/4], [7+1, 7+1, Math.PI-Math.PI/4], [7+1, 7-1, Math.PI+Math.PI/4]].forEach( xy => {
-            this.makePowerPole(15*bollardScale+bollardDistance*xy[0],15*bollardScale+bollardDistance*xy[1]+1.5,xy[2]);
-        });
-*/
-
-        const m = 75*3;
-        const r =  q_axisAngle([0,1,0], Math.PI/2);
-/*
-        // build the fence
-        for (let i=0; i<75; i++) {
-            const b = i*bollardScale+1.5;
-            SimpleActor.create({pawn: "InstancePawn", parent:this.base, translation:[b, 0, 0], instanceName:'fence', perlin:true} );
-            SimpleActor.create({pawn: "InstancePawn", parent:this.base, translation:[b, 0, m], instanceName:'fence', perlin:true} );
-            SimpleActor.create({pawn: "InstancePawn", parent:this.base, translation:[0, 0, b], rotation:r, instanceName:'fence', perlin:true} );
-            SimpleActor.create({pawn: "InstancePawn", parent:this.base, translation:[m, 0, b], rotation:r, instanceName:'fence', perlin:true} );
-        }
-*/
-        // create the bots
-        /*
-        for (let i=0; i<10; i++) for (let j=0; j<10; j++) {
-            const bot = BotActor.create({translation:[95+i*3+Math.random()/2, 0.5, 55+j*3+Math.random()/2]});
-            const eye = BotEyeActor.create({parent: bot});
-        }*/
         let v = [-10,0,0];
         for (let i=0; i<3;i++) {
             const p3 = Math.PI*2/3;
@@ -398,11 +365,6 @@ export class MyModelRoot extends ModelRoot {
 
     }
 
-    colorChange() {
-        const color = [this.random(), this.random(), this.random()];
-        this.child.set({color});
-    }
-
     makeBollard(x, z) {
         const bollard = BollardActor.create( {pawn: "BollardPawn", tags: ["block"], instanceName:'pole', parent: this.base, obstacle: true,
             translation:[x, 0, z]} );
@@ -417,7 +379,7 @@ export class MyModelRoot extends ModelRoot {
             translation:[x, 0, z], rotation:q_axisAngle([0,1,0],r)} );
         SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.3,20,0], perlin:true} );
         SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.6,21,0], perlin:true} );
-        SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.9,22,0], perlin:true} );        
+        SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.9,22,0], perlin:true} );
     }
 
     makeBot(x, z, index) {
