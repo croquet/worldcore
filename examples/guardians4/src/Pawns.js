@@ -22,7 +22,7 @@ import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
 import tank_body from "../assets/tank_body.glb";
 import paper from "../assets/paper.jpg";
-import sky from "../assets/quarry_02.png";
+import sky from "../assets/quarry_03.png";
 
 import fireballTexture from "../assets/explosion.png";
 import smokeTexture from "../assets/Smoke-Element.png";
@@ -493,7 +493,7 @@ export class MyViewRoot extends ViewRoot {
         const  green = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.25,1,0.25), metalness:1, roughness:0.1} );
         const  magenta = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
         const  cyan = new THREE.MeshStandardMaterial( {color: new THREE.Color(0,1,1)} );
-        const  gray = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.3,0.3,0.3), metalness:1, roughness:0.1} );
+        const  gray = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.75,0.75,0.75), metalness:1, roughness:0.1} );
         const  fenceMat = new THREE.MeshStandardMaterial( { color: new THREE.Color(0.3,0.3,0.3), metalness:1, roughness:0.1, transparent:true, opacity:0.25, side:THREE.DoubleSide} );
 
         im.addMaterial("green", green);
@@ -531,17 +531,13 @@ export class MyViewRoot extends ViewRoot {
         im.addGeometry("fenceGeo", fenceGeo);
 
         //const mesh0 = im.addMesh("yellowBox", "box", "yellow");
-        const mesh1 = im.addMesh("magentaBox", "box", "magenta");
-        const mesh2 = im.addMesh("cyanBox", "box", "cyan");
+
         const mesh3 = im.addMesh("pole", "cylinder", "gray");
         const mesh4 = im.addMesh("pole2", "cylinder2", "gray",3000);
         const mesh5 = im.addMesh("pole3", "cylinder3", "gray");
         const mesh6 = im.addMesh("pole4", "cylinder4", "green");
         //const fence = im.addMesh("fence", "fenceGeo", "fenceMat");
 
-       //mesh0.castShadow = true;
-        mesh1.castShadow = true;
-        mesh2.castShadow = true;
         mesh3.castShadow = true;
         mesh4.castShadow = true;
         mesh5.castShadow = true;
