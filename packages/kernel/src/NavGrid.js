@@ -149,10 +149,10 @@ export const AM_Grid = superclass => class extends superclass {
         }
 
         for (let n = 1; n<=r; n++) {
-            const x0 = cx-n;
+            const x0 = Math.max(0,cx-n);
+            const y0 = Math.max(0,cy-n);
             const x1 = cx+n;
-            const y0 = cy-n;
-            const y1 = cy+n;
+            const y1 = cx+n;
 
             for (let x = x0; x<=x1; x++) {
                 bin = this.getBin(x,y0);
