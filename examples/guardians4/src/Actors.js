@@ -34,7 +34,7 @@ BaseActor.register('BaseActor');
 // FireballActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class FireballActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
+export class FireballActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
     init(...args) {
         super.init(...args);
         this.fireUpdate();
@@ -140,6 +140,15 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
         if (this.now()>=this.bounceWait) {
             let aim;
 
+            const bot = this.parent.pingAny("bot", this.translation, 4, this);
+
+            if (bot) {
+                bot.killMe();
+                this.destroy();
+                return;
+                //bot.killMe();
+                }
+
             const bollard = this.parent.pingAny("block", this.translation, 4, this);
 
             if (bollard) {
@@ -177,8 +186,10 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
     }
 
     step() {
-        this.translateTo(v3_add(this.translation, this._velocity));
-        this.future(100).step();
+        if (!this.doomed) {
+            this.translateTo(v3_add(this.translation, this._velocity));
+            this.future(100).step();
+        }
     }
 
     get color() { return this._color || [0.5,0.5,0.5]}
@@ -384,7 +395,7 @@ export class MyModelRoot extends ModelRoot {
 
     makeBot(x, z, index) {
         const bot = BotActor.create({parent: this.base, tags:["block", "bot"], pawn:"BotPawn", index, radius: 2, translation:[x, 0.5, z]});
-        //const eye = BotEyeActor.create({parent: bot});
+        const eye = BotEyeActor.create({parent: bot});
         return bot;
     }
 }

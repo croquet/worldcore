@@ -1,5 +1,5 @@
 import { Actor, mix, AM_Spatial, AM_Behavioral, AM_OnGrid } from "@croquet/worldcore";
-
+import FireballActor from "./Actors";
 //------------------------------------------------------------------------------------------
 //-- BotActor ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -39,6 +39,12 @@ export class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavior
         const z = -ss/2 + ss * Math.random();
         const translation = [3*x, 0, 3*z];
         this.set({translation});
+    }
+
+    killMe() {
+        console.log("Kill Me")
+        //FireballActor.create({translation:this.translation});
+        this.destroy();
     }
 
     ping() {

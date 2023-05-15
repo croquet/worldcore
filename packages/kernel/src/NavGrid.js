@@ -216,7 +216,7 @@ export const AM_OnGrid = superclass => class extends superclass {
     }
 
     destroy() {
-        if (this.parent) this.parent.removeFromBin(this.binKey, this);
+        if (this.parent) this.parent.removeFromBin(this.gridKey, this);
         super.destroy();
     }
 

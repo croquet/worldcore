@@ -181,13 +181,9 @@ export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Thr
         super.update(time,delta);
         const p = perlin2D(this.translation[0], this.translation[2])+2;
         this._translation[1] = p;
-        if (this.children) this.children.forEach(c => {
-            //c._translation[1]=p;
-            c.localChanged();
-            c.refreshDrawTransform();
-        });
         this.localChanged();
         this.refreshDrawTransform();
+        this.refreshChildDrawTransform();
     }
 
     killMe() {
@@ -234,7 +230,7 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
         this.fireball = new THREE.Mesh(this.geometry, this.material);
         this.pointLight = new THREE.PointLight(0xff8844, 1, 4, 2);
         this.fireball.add(this.pointLight);
-
+/*
         this.smokeGeo = new THREE.PlaneGeometry(10,10);
         this.smokeParticles = [];
         this.smokeGroup = new THREE.Group();
@@ -247,6 +243,7 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
             this.smokeParticles.push(particle);
         }
         this.fireball.add(this.smokeGroup);
+*/
         this.setRenderObject(this.fireball);
     }
 
@@ -485,7 +482,7 @@ export class MyViewRoot extends ViewRoot {
 
         const botEye = new THREE.SphereGeometry( 0.80, 32, 16); 
         im.addGeometry("botEye", botEye);
-        const botEyeMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.75,0.15,0.15)} );
+        const botEyeMaterial = new THREE.MeshBasicMaterial( {color: new THREE.Color(1,0.15,0.15)} );
         botEyeMaterial.side = THREE.FrontSide;
         im.addMaterial("botEye", botEyeMaterial);
         im.addMesh("botEye", "botEye", "botEye");
@@ -542,8 +539,8 @@ export class MyViewRoot extends ViewRoot {
         mesh4.castShadow = true;
         mesh5.castShadow = true;
         mesh6.castShadow = true;
-        //fence.castShadow = true;
 
+        //
         const gltfLoader = new GLTFLoader();
 
         let [ tankTracks, tankTurret, tankBody ] = await Promise.all( [

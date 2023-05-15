@@ -194,7 +194,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         const hit = hits[0];
         const xyz = hit.xyz;
         this.publish("hud", "go", xyz);
-        console.log("Let's go")
         /*
         console.log("pointerDown", e);
 
@@ -230,7 +229,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     doPointerUp(e) {
-        console.log("pointerUp", e.id, e.xy);
+        //console.log("pointerUp", e.id, e.xy);
         if (e.id === this.pointerId) {
             this.pointerId = 0;
 
