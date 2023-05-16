@@ -1,7 +1,7 @@
 // Guardian Actors
 // Copyright (c) 2023 CROQUET CORPORATION
 import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, v3_add, v3_sub, v3_scale,
-    UserManager, User, AM_Avatar, q_axisAngle, v3_normalize, v3_rotate, AM_Grid, AM_OnGrid } from "@croquet/worldcore";
+    UserManager, User, AM_Avatar, q_axisAngle, v3_magnitude, v3_normalize, v3_rotate, AM_Grid, AM_OnGrid } from "@croquet/worldcore";
 // The Guardian game is basically a 2D game. Virtually all computations in the model are 2D.
 // The flat world is placed on a Perlin noise generated surface in the view, but all interactions including
 // driving and collisions are computed in 2D.
@@ -66,8 +66,8 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
 
     init(options) {
         super.init(options);
-        this.behavior.start({name: "SpreadBehavior", radius: 1.5});
-        //this.subscribe("hud", "go", this.go);
+        this.radius = 1.5;
+        this.doFlee();
         this.go([0,0,0]);
         this.subscribe("bots", "resetBots", this.reset);
     }
@@ -78,10 +78,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
             this.ggg.destroy();
             this.ggg = null;
         }
-
         const speed = (16 + 4 * Math.random());
-
-        // this.ggg = this.behavior.start({name: "PathToBehavior", xy, speed, noise: 2, radius: 1});
         this.ggg = this.behavior.start( {name: "GotoBehavior", target, speed, noise:2, radius:1} );
     }
 
@@ -96,6 +93,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
         const z = -ss/2 + ss * Math.random();
         const translation = [3*x, 0, 3*z];
         this.set({translation});
+        this.go([0,0,0]);
     }
 
     killMe() {
@@ -104,13 +102,35 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
         this.destroy();
     }
 
-    ping() {
-        console.log("ping "+ this.name);
-        const xxx = this.isBlocked([-1,0,0]);
-        console.log(xxx);
+    doFlee() {
+        if (!this.doomed) {
+            this.future(100).doFlee();
+            const bots = this.pingAll("block", 0);
+            if (bots.length===0) return;
+            bots.forEach(bot => this.flee(bot));
+        }
+    }
+
+    flee(bot) {
+        const from = v3_sub(this.translation, bot.translation);
+        const mag = v3_magnitude(from);
+        if (mag > this.radius) return;
+        if (mag===0) {
+            const a = Math.random() * 2 * Math.PI;
+            from[0] = this.radius * Math.cos(a);
+            from[1] = 0;
+            from[2] = this.radius* Math.sin(a);
+        } else {
+            from[0] = this.radius * from[0] / mag;
+            from[1] = 0;
+            from[2] = this.radius * from[2] / mag;
+        }
+        const translation = v3_add(this.translation, from);
+        this.set({translation});
     }
 
 }
+
 BotActor.register("BotActor");
  
 //------------------------------------------------------------------------------------------
@@ -291,7 +311,7 @@ class MyUser extends User {
             translation: trans,
             rotation: rot,
             instanceName: 'tankTracks',
-            tags: ["avatar"]
+            tags: ["avatar", "block"]
         });
         SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor:this.userColor, color:this.color, instanceName:'tankBody'});
         SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor:this.userColor, color:this.color, instanceName:'tankTurret'});
@@ -362,13 +382,13 @@ export class MyModelRoot extends ModelRoot {
     }
 
     makeWave( wave, numBots ) {
-        numBots = Math.min(this.maxBots, numBots);
-        if ( this.totalBots + numBots > this.maxBots) numBots = this.maxBots-this.totalBots;
-        this.totalBots += numBots;
-        console.log("WAVE#:",wave, "BOTS:", numBots, "TOTAL:", this.totalBots);
+        let actualBots = Math.min(this.maxBots, numBots);
+        if ( this.totalBots + actualBots > this.maxBots) actualBots = this.maxBots-this.totalBots;
+        this.totalBots += actualBots;
+        console.log("WAVE#:",wave, "BOTS:", actualBots, "TOTAL:", this.totalBots);
         const r = this.spawnRadius; // radius of spawn
         const a = Math.PI*2*Math.random(); // come from random direction
-        for (let n = 0; n<numBots; n++) {
+        for (let n = 0; n<actualBots; n++) {
             const aa = a + (0.5-Math.random())*Math.PI/4; // angle +/- Math.PI/4 around r
             const rr = r+100*Math.random();
             const x = Math.sin(aa)*rr;
