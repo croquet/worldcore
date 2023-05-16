@@ -100,6 +100,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
 
     killMe() {
         FireballActor.create({translation:this.translation});
+        this.publish("bots","destroyBot");
         this.destroy();
     }
 
@@ -333,6 +334,9 @@ export class MyModelRoot extends ModelRoot {
         const bollardDistance = bollardScale*3; // distance between bollards
 
         this.base = BaseActor.create({gridScale: bollardScale});
+        this.maxBots = 1000;
+        this.spawnRadius = 400;
+        this.totalBots = 0;
 
         let v = [-10,0,0];
         for (let i=0; i<3;i++) {
@@ -353,26 +357,33 @@ export class MyModelRoot extends ModelRoot {
                 this.makeBollard(bollardDistance*x, bollardDistance*y);
             }
         }
-
+        this.subscribe("bots","destroyBot", this.destroyBot);
         this.makeWave(1, 10);
     }
 
     makeWave( wave, numBots ) {
-        console.log("WAVE#:",wave, "BOTS:", numBots);
-        numBots = Math.min(1000, numBots);
-
-        const r = 400; 
-        const a = Math.PI*2*Math.random();
+        numBots = Math.min(this.maxBots, numBots);
+        if ( this.totalBots + numBots > this.maxBots) numBots = this.maxBots-this.totalBots;
+        this.totalBots += numBots;
+        console.log("WAVE#:",wave, "BOTS:", numBots, "TOTAL:", this.totalBots);
+        const r = this.spawnRadius; // radius of spawn
+        const a = Math.PI*2*Math.random(); // come from random direction
         for (let n = 0; n<numBots; n++) {
             const aa = a + (0.5-Math.random())*Math.PI/4; // angle +/- Math.PI/4 around r
             const rr = r+100*Math.random();
             const x = Math.sin(aa)*rr;
             const y = Math.cos(aa)*rr;
             const index = Math.floor(20*Math.random());
-            const bot = this.makeBot(x, y, index);
+            // stagger when the bots get created
+            const bot = this.future(Math.floor(Math.random()*200)).makeBot(x, y, index);
         }
         this.future(30000).makeWave(wave+1, Math.floor(numBots*1.2));
-    }w
+    }
+
+    destroyBot() {
+        this.totalBots--;
+        console.log("bot's left:", this.totalBots);
+    }
 
     makeBollard(x, z) {
         const bollard = GridActor.create( {pawn: "BollardPawn", tags: ["block"], instanceName:'pole', parent: this.base, obstacle: true,
