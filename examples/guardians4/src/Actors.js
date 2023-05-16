@@ -6,6 +6,15 @@ import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, v3_add,
 // The flat world is placed on a Perlin noise generated surface in the view, but all interactions including
 // driving and collisions are computed in 2D.
 
+const v_dist2Sqr = function (a,b) {
+    const dx = a[0] - b[0];
+    const dy = a[2] - b[2];
+    return dx*dx+dy*dy;
+};
+
+const v_mag2Sqr = function (a) {
+    return a[0]*a[0]+a[2]*a[2];
+}
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
 // This is the ground plane.
@@ -67,6 +76,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
     init(options) {
         super.init(options);
         this.radius = 1.5;
+        this.radiusSqr = this.radius*this.radius;
         this.doFlee();
         this.go([0,0,0]);
         this.subscribe("bots", "resetBots", this.reset);
@@ -112,15 +122,18 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
     }
 
     flee(bot) {
+
         const from = v3_sub(this.translation, bot.translation);
-        const mag = v3_magnitude(from);
-        if (mag > this.radius) return;
-        if (mag===0) {
+        let mag2 = v_mag2Sqr(from);
+        if (mag2 > this.radiusSqr) return;
+        if (mag2===0) {
             const a = Math.random() * 2 * Math.PI;
             from[0] = this.radius * Math.cos(a);
             from[1] = 0;
             from[2] = this.radius* Math.sin(a);
         } else {
+            let mag = Math.sqrt(mag2);
+            if (bot.isAvatar) mag/=2;
             from[0] = this.radius * from[0] / mag;
             from[1] = 0;
             from[2] = this.radius * from[2] / mag;
@@ -182,11 +195,6 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
     }
 
     test() {
-        const v_dist2Sqr = function (a,b) {
-            const dx = a[0] - b[0];
-            const dy = a[2] - b[2];
-            return dx*dx+dy*dy;
-        };
 
         if (this.now()>=this.bounceWait) {
             let aim;
@@ -248,9 +256,10 @@ MissileActor.register('MissileActor');
 //-- AvatarActor ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, AM_OnGrid) {
+class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar, AM_OnGrid) {
     init(options) {
         super.init(options);
+        this.isAvatar = true;
         this.listen("bounce", this.doBounce);
         this.listen("shoot", this.doShoot);
         this.subscribe("all", "godMode", this.doGodMode);
