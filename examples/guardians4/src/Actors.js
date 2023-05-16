@@ -1,32 +1,23 @@
-// Guardian Models
-
+// Guardian Actors
+// Copyright (c) 2023 CROQUET CORPORATION
 import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, v3_add, v3_sub, v3_scale,
     UserManager, User, AM_Avatar, q_axisAngle, v3_normalize, v3_rotate, AM_Grid, AM_OnGrid } from "@croquet/worldcore";
-import { BotActor } from "./Bots";
 // The Guardian game is basically a 2D game. Virtually all computations in the model are 2D.
-// The flat world is placed on a Perlin noise generated surface, but all interactions including
+// The flat world is placed on a Perlin noise generated surface in the view, but all interactions including
 // driving and collisions are computed in 2D.
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
 // This is the ground plane.
 //------------------------------------------------------------------------------------------
-const missileSpeed = 50;
+
 class BaseActor extends mix(Actor).with(AM_Spatial, AM_Grid) {
 
     get pawn() {return "BasePawn"}
 
     init(options) {
         super.init(options);
-        this.listen("spawn", this.doSpawn);
     }
-
-    // unused...
-    doSpawn(xyz) {
-        const translation = [...xyz];
-        SimpleActor.create({pawn:"ClickPawn", parent: this, translation});
-    }
-
 }
 BaseActor.register('BaseActor');
 
@@ -34,18 +25,19 @@ BaseActor.register('BaseActor');
 // FireballActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class FireballActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
+class FireballActor extends mix(Actor).with(AM_Spatial) {
     init(...args) {
         super.init(...args);
-        this.fireUpdate();
+        //this.fireUpdate();
         this.fireballVisible = false;
-        this.subscribe("menu","FireballToggle", this.fireballToggle);
+        //this.subscribe("menu","FireballToggle", this.fireballToggle);
         this.timeOffset = Math.random()*100;
         this.timeScale = 0.00025 + Math.random()*0.00002;
         this.counter = 0;
-        this.maxCounter = 30;
-        this.fireScale = 0.025;
-        this.scale = [0.025,0.025, 0.025];
+        this.maxCounter = 5;
+        this.fireScale = 0.1;
+        this.scale = [0.2,0.2, 0.2];
+        this.future(200).destroy();
     }
 
     fireUpdate() {
@@ -68,11 +60,42 @@ FireballActor.register('FireballActor');
 //------------------------------------------------------------------------------------------
 // BotActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-/*
-class BotActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
-    init(...args) {
-        super.init(...args);
-        this.listen("killMe", this.killMe);
+class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
+
+    get index() {return this._index || 0}
+
+    init(options) {
+        super.init(options);
+        this.behavior.start({name: "SpreadBehavior", radius: 1.5});
+        //this.subscribe("hud", "go", this.go);
+        this.go([0,0,0]);
+        this.subscribe("bots", "resetBots", this.reset);
+    }
+
+    go(target) {
+        // console.log(target);
+        if (this.ggg) {
+            this.ggg.destroy();
+            this.ggg = null;
+        }
+
+        const speed = (16 + 4 * Math.random());
+
+        // this.ggg = this.behavior.start({name: "PathToBehavior", xy, speed, noise: 2, radius: 1});
+        this.ggg = this.behavior.start( {name: "GotoBehavior", target, speed, noise:2, radius:1} );
+    }
+
+    // this is to reset the bots for testing
+    reset() {
+        if (this.ggg) {
+            this.ggg.destroy();
+            this.ggg = null;
+        }
+        const ss = 200;
+        const x = -ss/2 + ss * Math.random();
+        const z = -ss/2 + ss * Math.random();
+        const translation = [3*x, 0, 3*z];
+        this.set({translation});
     }
 
     killMe() {
@@ -80,19 +103,15 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
         this.destroy();
     }
 
-    get pawn() {return "BotPawn"}
-}
-BotActor.register('BotActor');
-*/
-//------------------------------------------------------------------------------------------
-// BotEyeActor -------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
+    ping() {
+        console.log("ping "+ this.name);
+        const xxx = this.isBlocked([-1,0,0]);
+        console.log(xxx);
+    }
 
-class BotEyeActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
-    get pawn() {return "BotEyePawn"}
 }
-BotEyeActor.register('BotEyeActor');
-
+BotActor.register("BotActor");
+ 
 //------------------------------------------------------------------------------------------
 //--SimpleActor ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -103,20 +122,31 @@ class SimpleActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
         super.init(options);
     }
     get userColor() { return this._userColor }
-    get color() { return this._color || [0.5,0.5,0.5]}
+    //get color() { return this._color || [0.5,0.5,0.5]}
 }
 SimpleActor.register('SimpleActor');
 
 //------------------------------------------------------------------------------------------
+//--GridActor ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class GridActor extends mix(Actor).with(AM_Spatial, AM_OnGrid) {
+
+    init(options) {
+        super.init(options);
+    }
+}
+GridActor.register('GridActor');
+
+//------------------------------------------------------------------------------------------
 //--MissileActor ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+const missileSpeed = 75;
 
 class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 
     init(options) {
         super.init(options);
-//      const mcm = this.service("ModelCollisionManager");
-//      mcm.colliders.add(this);
         this.future(8000).destroy(); // destroy after some time
         this.lastTranslation = [0,0,0];
         this.bounceWait = this.now(); // need to bounce otherwise we might instantly bounce again
@@ -143,18 +173,17 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
             const bot = this.parent.pingAny("bot", this.translation, 4, this);
 
             if (bot) {
-                bot.killMe();
-                this.destroy();
-                return;
-                //bot.killMe();
+                const d2 = v_dist2Sqr(this.translation, bot.translation);
+                if (d2 < 3.5) {
+                    bot.killMe();
+                    this.destroy();
+                    return;
                 }
+            }
 
             const bollard = this.parent.pingAny("block", this.translation, 4, this);
 
             if (bollard) {
-
-                //console.log(v_equals(this.lastTranslation,w this.translation), this.translation);
-                //console.log(this.translation);
                 const d2 = v_dist2Sqr(this.translation, bollard.translation);
                 if (d2 < 2.5) {
                     //console.log("bollard bounce");
@@ -191,39 +220,12 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
             this.future(100).step();
         }
     }
-
-    get color() { return this._color || [0.5,0.5,0.5]}
-
-    destroy() {
-        super.destroy();
-        //const mcm = this.service("ModelCollisionManager");
-        //mcm.colliders.delete(this);
-    }
 }
 MissileActor.register('MissileActor');
-//------------------------------------------------------------------------------------------
-//--BollardActor ---------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-class BollardActor extends mix(Actor).with(AM_Spatial, AM_OnGrid) {
-
-    init(options) {
-        super.init(options);
-        //const mcm = this.service("ModelCollisionManager");
-        //mcm.colliders.add(this);
-    }
-    destroy() {
-        super.destroy();
-        //const mcm = this.service("ModelCollisionManager");
-       //mcm.colliders.delete(this);
-    }
-}
-BollardActor.register('BollardActor');
 
 //------------------------------------------------------------------------------------------
 //-- AvatarActor ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
 
 class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar, AM_OnGrid) {
     init(options) {
@@ -352,32 +354,28 @@ export class MyModelRoot extends ModelRoot {
             }
         }
 
-        const ss = 200;
-/*
-        for (let n = 0; n < 1000; n++) {
-            const x = -ss/2 + Math.floor(ss * Math.random()) + 0.5;
-            const y = -ss/2 + Math.floor(ss * Math.random()) + 0.5;
-
-            this.makeBollard(3*x, 3*y);
-            //const translation = [3*x,0,3*y];
-            //TestActor.create({pawn: "BlockPawn", parent: this.base, translation, tags: ["block"]});
-        }
-        */
-        this.bots = [];
-        for (let n = 0; n<200; n++) {
-            const x = -ss/2 + ss * Math.random();
-            const y = -ss/2 + ss * Math.random();
-            //const translation = [x*3,0, y*3];
-            const index = Math.floor(20*Math.random());
-            const bot = this.makeBot(x*3, y*3, index);
-            //const bot = BotActor.create({parent: this.base,  index, pawn: "AvatarPawn", translation, tags: ["bot", "block"]});
-            this.bots.push(bot);
-        }
-
+        this.makeWave(1, 10);
     }
 
+    makeWave( wave, numBots ) {
+        console.log("WAVE#:",wave, "BOTS:", numBots);
+        numBots = Math.min(1000, numBots);
+
+        const r = 400; 
+        const a = Math.PI*2*Math.random();
+        for (let n = 0; n<numBots; n++) {
+            const aa = a + (0.5-Math.random())*Math.PI/4; // angle +/- Math.PI/4 around r
+            const rr = r+100*Math.random();
+            const x = Math.sin(aa)*rr;
+            const y = Math.cos(aa)*rr;
+            const index = Math.floor(20*Math.random());
+            const bot = this.makeBot(x, y, index);
+        }
+        this.future(30000).makeWave(wave+1, Math.floor(numBots*1.2));
+    }w
+
     makeBollard(x, z) {
-        const bollard = BollardActor.create( {pawn: "BollardPawn", tags: ["block"], instanceName:'pole', parent: this.base, obstacle: true,
+        const bollard = GridActor.create( {pawn: "BollardPawn", tags: ["block"], instanceName:'pole', parent: this.base, obstacle: true,
             translation:[x, 0, z]} );
     // the three floating parts of the bollard
         SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3,0], perlin:true} );
@@ -386,7 +384,7 @@ export class MyModelRoot extends ModelRoot {
     }
 
     makePowerPole(x, z, r) {
-        const powerPole2 = BollardActor.create( {pawn: "BollardPawn", tags: ["block"], instanceName:'pole3', parent: this.base, obstacle: true,
+        const powerPole2 = GridActor.create( {pawn: "BollardPawn", tags: ["block"], instanceName:'pole3', parent: this.base, obstacle: true,
             translation:[x, 0, z], rotation:q_axisAngle([0,1,0],r)} );
         SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.3,20,0], perlin:true} );
         SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.6,21,0], perlin:true} );
@@ -395,9 +393,8 @@ export class MyModelRoot extends ModelRoot {
 
     makeBot(x, z, index) {
         const bot = BotActor.create({parent: this.base, tags:["block", "bot"], pawn:"BotPawn", index, radius: 2, translation:[x, 0.5, z]});
-        const eye = BotEyeActor.create({parent: bot});
+        const eye = SimpleActor.create({parent: bot, pawn:"BotEyePawn"});
         return bot;
     }
 }
 MyModelRoot.register("MyModelRoot");
-

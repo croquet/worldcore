@@ -1,4 +1,5 @@
-// Guardian Views
+// Guardian Pawns
+// Copyright (c) 2023 CROQUET CORPORATION
 //
 // The majority of the code specific to this example is in Avatar.js.
 // Demonstrates terrain following, avatar/object and avatar/avatar collisions.
@@ -7,12 +8,16 @@
 
 //
 // To do:
-// - place target towers.
-// - add the bots
+// - track total number of bots - should not be more than 1000
+// - bots attack tanks
+// - attack in waves. Each wave has more bots and waves come closer together in time
+// - random location of start - far away
+// - create bots in valleys
 // - tank damage and explosion (turret jumps up, tank fades out)
-// - collision more naturalw
+// - tank damage displayed with three lights on back of tank - green and red. Three red and you blow up.
+// - tank respawns after some period of time (five seconds?
 // - should tanks lay down track?
-// - don't sort the nav test
+
 
 import { ViewRoot, ViewService,Pawn, mix, InputManager, ThreeInstanceManager,
     PM_ThreeVisible, ThreeRenderManager, ThreeRaycast, PM_Smoothed, PM_Spatial, PM_ThreeInstanced, PM_ThreeCollider,
@@ -164,12 +169,7 @@ export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Thr
         const t = this.translation;
         t[1]=perlin2D(t[0], t[2])+2;
         this.set({translation:t});
-        const bot = this.useInstance("botBody");
-        const botEyeGeometry = new THREE.SphereGeometry( 0.80, 32, 16);
-        const botEyeMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.75,0.15,0.15)} );
-        botEyeMaterial.side = THREE.FrontSide;
-        this.renderObject.add(new THREE.Mesh(botEyeGeometry, botEyeMaterial));
-       // this.addRenderObjectToRaycast("bot");
+        this.useInstance("botBody");
     }
 
     destroy() {
@@ -224,12 +224,13 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
 
     constructor(actor) {
         super(actor);
-        this.listen("updateFire",this.fireUpdate);
+        //this.listen("updateFire",this.fireUpdate);
         this.material = fireMaterial.clone();
         this.geometry = new THREE.IcosahedronGeometry( 10, 20 );
         this.fireball = new THREE.Mesh(this.geometry, this.material);
         this.pointLight = new THREE.PointLight(0xff8844, 1, 4, 2);
         this.fireball.add(this.pointLight);
+        this.startTime = this.now();
 /*
         this.smokeGeo = new THREE.PlaneGeometry(10,10);
         this.smokeParticles = [];
@@ -247,10 +248,15 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
         this.setRenderObject(this.fireball);
     }
 
-    fireUpdate(u) {
+    update(time, delta) {
+        super.update(time,delta);
+        const p = perlin2D(this.translation[0], this.translation[2])+2;
+        this._translation[1] = p;
+        this.localChanged();
+        this.refreshDrawTransform();
         if (this.fireball) {
-            let t=u[0];
-            this.fireball.material.uniforms[ 'time' ].value = t*this.actor.timeScale;
+            let t=time-this.startTime;
+            this.fireball.material.uniforms[ 'time' ].value = time*this.actor.timeScale;
             this.fireball.material.uniforms[ 'tOpacity' ].value = 0.25;
             this.pointLight.intensity = 0.25+ 0.75* Math.sin(t*0.020)*Math.cos(t*0.007);
         }

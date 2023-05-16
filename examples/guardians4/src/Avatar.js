@@ -1,3 +1,6 @@
+// Guardians Avatar
+// Copyright (c) 2023 CROQUET CORPORATION
+
 import { Pawn, mix, PM_ThreeVisible, PM_ThreeInstanced, PM_Avatar, PM_Smoothed, PM_ThreeCamera, THREE, toRad,
     m4_multiply, m4_translation, m4_getTranslation, m4_scaleRotationTranslation, m4_rotationQ,
     v3_scale, v3_add, q_multiply, v3_rotate, v3_magnitude, v2_sqrMag, v3_sub, v3_lerp, v3_transform,
@@ -188,6 +191,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     doPointerDown(e) {
+        // this is temporary to get the bots to move
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(e.xy, "ground");
         if (hits.length<1) return;
@@ -385,8 +389,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const d = v_dist2Sqr(colliderPos, this.translation);
 
             if (d < 6.25) {
-                //console.log("bump!");
-                //console.log("me: " + this.actor.id + " other: "+ collider.actor.id);
                 const from = v_sub2(this.translation, collider.translation);
                 const distance = v3_magnitude(from);
                 let bounce;
