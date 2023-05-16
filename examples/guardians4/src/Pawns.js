@@ -404,7 +404,7 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         super(actor);
     //    this.service("CollisionManager").colliders.add(this);
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...UserColors[actor.userColor]), metalness:0.5, roughness:0.1 } );
-        this.geometry = new THREE.SphereGeometry( 1, 32, 16 );
+        this.geometry = new THREE.SphereGeometry( 0.75, 32, 16 );
         const mesh = new THREE.Mesh( this.geometry, this.material );
         mesh.castShadow = true;
         this.setRenderObject(mesh);
@@ -477,7 +477,7 @@ export class MyViewRoot extends ViewRoot {
     async buildInstances() {
         const im = this.service("ThreeInstanceManager");
 
-        const botBodyGeo = new THREE.SphereGeometry( 1.0, 32, 16, 0, Math.PI * 2, 0, 2.6); 
+        const botBodyGeo = new THREE.SphereGeometry( 2, 32, 16, 0, Math.PI * 2, 0, 2.6); 
         botBodyGeo.rotateX(-Math.PI/2);
         im.addGeometry("botBody", botBodyGeo);
         const botMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.5,0.5,0.5), metalness:1.0, roughness:0.3} );
@@ -486,7 +486,7 @@ export class MyViewRoot extends ViewRoot {
         const botBody = im.addMesh("botBody", "botBody", "botBody");
         botBody.castShadow = true;
 
-        const botEye = new THREE.SphereGeometry( 0.80, 32, 16); 
+        const botEye = new THREE.SphereGeometry( 1.50, 32, 16); 
         im.addGeometry("botEye", botEye);
         const botEyeMaterial = new THREE.MeshBasicMaterial( {color: new THREE.Color(1,0.15,0.15)} );
         botEyeMaterial.side = THREE.FrontSide;

@@ -75,7 +75,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
 
     init(options) {
         super.init(options);
-        this.radius = 1.5;
+        this.radius = 5;
         this.radiusSqr = this.radius*this.radius;
         this.doFlee();
         this.go([0,0,0]);
@@ -115,7 +115,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
     doFlee() {
         if (!this.doomed) {
             this.future(100).doFlee();
-            const bots = this.pingAll("block", 0);
+            const bots = this.pingAll("block");
             if (bots.length===0) return;
             bots.forEach(bot => this.flee(bot));
         }
