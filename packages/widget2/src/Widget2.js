@@ -170,6 +170,10 @@ export class VerticalWidget2 extends Widget2 {
         this.resize();
     }
 
+    repositionChildren() {
+        this.resize();
+    }
+
     resize() {
         if (!this.children) return;
         let sum = Math.max(0, (this.children.size - 1) * this.margin);
@@ -209,6 +213,10 @@ export class HorizontalWidget2 extends Widget2 {
         this.resize();
     }
 
+    repositionChildren() {
+        this.resize();
+    }
+
     resize() {
         if (!this.children) return;
         let sum = Math.max(0, (this.children.size - 1) * this.margin);
@@ -227,7 +235,7 @@ export class HorizontalWidget2 extends Widget2 {
         let offset = 0;
         this.children.forEach(child => {
             let width = auto;
-            if (child.width) width = child.width;
+            if (child.width)  width = child.width;
             child.set({autoSize: [0,1], size:[width, 0], anchor: null, pivot: null, translation: [offset,0]});
             offset += width + this.margin;
         });
