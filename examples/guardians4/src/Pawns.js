@@ -93,6 +93,7 @@ export const sunLight =  function() {
 }();
 
 let fireCount = 0;
+let lastFireTime = 0;
 const fireMaterial =[];
 for (let i=0; i<10; i++) fireMaterial[i] = function makeFireMaterial() {
     const texture = new THREE.TextureLoader().load(fireballTexture)
@@ -188,6 +189,11 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
 
     constructor(actor) {
         super(actor);
+        this.startTime = this.now();
+        if (actor._onTarget) {
+            if (lastFireTime - this.startTime > 100) return;
+            this.lastFireTime = this.startTime;
+        }
         this.material = fireMaterial[fireCount];
         fireCount++;
         if ( fireCount>=10 ) fireCount = 0;
@@ -195,7 +201,6 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
         this.fireball = new THREE.Mesh(this.geometry, this.material);
         this.pointLight = new THREE.PointLight(0xff8844, 1, 4, 2);
         this.fireball.add(this.pointLight);
-        this.startTime = this.now();
         this.setRenderObject(this.fireball);
     }
 
@@ -218,10 +223,10 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
     }
 
     destroy() {
-        super.destroy()
-        this.geometry.dispose();
+        super.destroy();
+        if (this.geometry) this.geometry.dispose();
         //this.material.dispose();
-        this.pointLight.dispose();
+        if (this.pointLight) this.pointLight.dispose();
     }
 
 }

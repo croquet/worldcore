@@ -85,14 +85,14 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
         this.go([0,0,0]);
     }
 
-    killMe(s=0.3) {
-        FireballActor.create({translation:this.translation, scale:[s,s, s]});
+    killMe(s=0.3, onTarget) {
+        FireballActor.create({translation:this.translation, scale:[s,s,s], onTarget});
         this.publish("bots","destroyBot");
         this.destroy();
     }
 
     doFlee() {
-        if ( v_mag2Sqr(this.translation) < 20 ) this.killMe(1);
+        if ( v_mag2Sqr(this.translation) < 20 ) this.killMe(1, true);
         if (!this.doomed) {
             this.future(100).doFlee();
             const bots = this.pingAll("block");
@@ -182,7 +182,7 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
             if (bot) {
                 const d2 = v_dist2Sqr(this.translation, bot.translation);
                 if (d2 < 3.5) {
-                    bot.killMe();
+                    bot.killMe(0.3, false);
                     this.destroy();
                     return;
                 }
@@ -219,13 +219,6 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
             }
         }
         this.lastTranslation = this.translation;
-    }
-
-    step() {
-        if (!this.doomed) {
-            this.translateTo(v3_add(this.translation, this._velocity));
-            this.future(100).step();
-        }
     }
 }
 MissileActor.register('MissileActor');
@@ -365,7 +358,7 @@ export class MyModelRoot extends ModelRoot {
             }
         }
         this.subscribe("bots","destroyBot", this.destroyBot);
-        this.makeWave(1, 10);
+        this.makeWave(1, 100);
     }
 
     makeWave( wave, numBots ) {
