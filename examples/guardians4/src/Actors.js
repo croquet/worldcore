@@ -37,31 +37,10 @@ BaseActor.register('BaseActor');
 class FireballActor extends mix(Actor).with(AM_Spatial) {
     init(...args) {
         super.init(...args);
-        //this.fireUpdate();
-        this.fireballVisible = false;
-        //this.subscribe("menu","FireballToggle", this.fireballToggle);
-        this.timeOffset = Math.random()*100;
         this.timeScale = 0.00025 + Math.random()*0.00002;
-        this.counter = 0;
-        this.maxCounter = 5;
-        this.fireScale = 0.1;
-        this.scale = [0.2,0.2, 0.2];
         this.future(200).destroy();
     }
 
-    fireUpdate() {
-        this.future(50).fireUpdate();
-        let fs = this.fireScale + this.counter * 0.001;
-        let rise = 0.025;
-        this.scale = [fs, fs, fs];
-        this.translation = [this.translation[0], this.translation[1]+rise, this.translation[2]];
-        if(this.counter++ > this.maxCounter) this.destroy();
-        else this.say("updateFire", [this.now()+this.timeOffset,(this.maxCounter-this.counter)/this.maxCounter]);
-    }
-
-    fireballToggle() {
-        this.fireballVisible = !this.fireballVisible;
-    }
     get pawn() {return "FireballPawn"}
 }
 FireballActor.register('FireballActor');
@@ -106,13 +85,14 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
         this.go([0,0,0]);
     }
 
-    killMe() {
-        FireballActor.create({translation:this.translation});
+    killMe(s=0.3) {
+        FireballActor.create({translation:this.translation, scale:[s,s, s]});
         this.publish("bots","destroyBot");
         this.destroy();
     }
 
     doFlee() {
+        if(20 > v_mag2Sqr(this.translation))this.killMe(1);
         if (!this.doomed) {
             this.future(100).doFlee();
             const bots = this.pingAll("block");
@@ -122,7 +102,6 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
     }
 
     flee(bot) {
-
         const from = v3_sub(this.translation, bot.translation);
         let mag2 = v_mag2Sqr(from);
         if (mag2 > this.radiusSqr) return;
@@ -143,7 +122,6 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
     }
 
 }
-
 BotActor.register("BotActor");
  
 //------------------------------------------------------------------------------------------
@@ -411,7 +389,7 @@ export class MyModelRoot extends ModelRoot {
 
     destroyBot() {
         this.totalBots--;
-        console.log("bot's left:", this.totalBots);
+        console.log("bots left:", this.totalBots);
     }
 
     makeBollard(x, z) {

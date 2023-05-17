@@ -77,7 +77,6 @@ export const perlin2D = function(perlinHeight = 27.5, perlinScale = 0.02) {
     };
 }();
 
-
 export const sunBase = [50, 100, 50];
 export const sunLight =  function() {
     const sun = new THREE.DirectionalLight( 0xffffff, 0.3 );
@@ -96,39 +95,6 @@ export const sunLight =  function() {
     sun.shadow.blurSamples = 4;
     return sun;
 }();
-
-// 3D object that you can see through a wall
-const constructShadowObject = function(object3d, renderOrder, c) {
-
-    const shadowMat = new THREE.MeshStandardMaterial( {
-        color: c,
-        opacity: 0.25,
-        transparent: true,
-        depthTest: false,
-        depthWrite: false,
-        // side: THREE.BackSide,
-    });
-
-    const outline3d = object3d.clone(true);
-    outline3d.position.set(0,0,0);
-    outline3d.rotation.set(0,0,0);
-    outline3d.updateMatrix();
-    outline3d.traverse( m => {
-        if (m.material) {
-            m.material = shadowMat;
-            if (!Array.isArray(m.material)) {
-                console.log("single material");
-                m.material = shadowMat;
-            } else {
-                console.log("multiple material", m.material.length);
-                const mArray = m.material.map( _m => shadowMat );
-                m.material = mArray;
-            }
-        }
-    });
-    outline3d.renderOrder = renderOrder;
-    return outline3d;
-};
 
 let fireMaterial = function makeFireMaterial() {
     const texture = new THREE.TextureLoader().load(fireballTexture)
@@ -231,20 +197,6 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
         this.pointLight = new THREE.PointLight(0xff8844, 1, 4, 2);
         this.fireball.add(this.pointLight);
         this.startTime = this.now();
-/*
-        this.smokeGeo = new THREE.PlaneGeometry(10,10);
-        this.smokeParticles = [];
-        this.smokeGroup = new THREE.Group();
-        this.smokeGroup.position.y = 4;
-        for (let p = 0; p < 5; p++) {
-            var particle = new THREE.Mesh(this.smokeGeo, smokeMaterial);
-            particle.position.set(Math.random()*5-2.5,Math.random()*5-2.5,Math.random()*5-2.5);
-            particle.rotation.z = Math.random() * 360;
-            this.smokeGroup.add(particle);
-            this.smokeParticles.push(particle);
-        }
-        this.fireball.add(this.smokeGroup);
-*/
         this.setRenderObject(this.fireball);
     }
 
