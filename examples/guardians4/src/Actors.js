@@ -337,7 +337,7 @@ export class MyModelRoot extends ModelRoot {
         this.maxBots = 1000;
         this.spawnRadius = 400;
         this.totalBots = 0;
-
+        this.health = 100;
         let v = [-10,0,0];
         for (let i=0; i<3;i++) {
             const p3 = Math.PI*2/3;
@@ -357,8 +357,15 @@ export class MyModelRoot extends ModelRoot {
                 this.makeBollard(bollardDistance*x, bollardDistance*y);
             }
         }
+        this.subscribe("stats", "update", this.updateStats);
         this.subscribe("bots","destroyBot", this.destroyBot);
         this.makeWave(1, 10);
+    }
+
+    updateStats() {
+        this.publish("stats", "wave", this.wave);
+        this.publish("stats", "bots", this.totalBots);
+        this.publish("stats", "health", this.health);
     }
 
     makeWave( wave, numBots ) {
@@ -366,6 +373,9 @@ export class MyModelRoot extends ModelRoot {
         if ( this.totalBots + actualBots > this.maxBots) actualBots = this.maxBots-this.totalBots;
         this.totalBots += actualBots;
         console.log("WAVE#:",wave, "BOTS:", actualBots, "TOTAL:", this.totalBots);
+        this.wave = wave;
+        this.publish("stats", "wave", wave);
+        this.publish("stats", "bots", this.totalBots);
         const r = this.spawnRadius; // radius of spawn
         const a = Math.PI*2*Math.random(); // come from random direction
         for (let n = 0; n<actualBots; n++) {
@@ -382,7 +392,7 @@ export class MyModelRoot extends ModelRoot {
 
     destroyBot() {
         this.totalBots--;
-        console.log("bots left:", this.totalBots);
+        this.publish("stats", "bots", this.totalBots);
     }
 
     makeBollard(x, z) {

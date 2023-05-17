@@ -14,10 +14,11 @@
 // - should tanks lay down track?
 
 
-import { ViewRoot, ViewService,Pawn, mix, InputManager, ThreeInstanceManager,
+import { ViewRoot, ViewService, HUD, Pawn, mix, InputManager, ThreeInstanceManager,
     PM_ThreeVisible, ThreeRenderManager, ThreeRaycast, PM_Smoothed, PM_Spatial, PM_ThreeInstanced, PM_ThreeCollider,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation,
     PerlinNoise, GLTFLoader } from "@croquet/worldcore";
+import { HUDWidget } from "./BotHUD";
 
 import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
@@ -191,8 +192,8 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
         super(actor);
         this.startTime = this.now();
         if (actor._onTarget) {
-            if (lastFireTime - this.startTime > 100) return;
-            this.lastFireTime = this.startTime;
+            if (this.startTime - lastFireTime < 50) return;
+            lastFireTime = this.startTime;
         }
         this.material = fireMaterial[fireCount];
         fireCount++;
@@ -406,12 +407,14 @@ class CollisionManager extends ViewService {
 export class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, ThreeInstanceManager, CollisionManager, ThreeRaycast];
+        return [InputManager, ThreeRenderManager, ThreeInstanceManager, CollisionManager, ThreeRaycast, HUD];
     }
 
     onStart() {
         this.buildLights();
         this.buildInstances();
+        const hud = this.service("HUD");
+        new HUDWidget({parent: hud.root, autoSize: [1,1]});
     }
 
     buildLights() {
