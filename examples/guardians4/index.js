@@ -8,6 +8,7 @@ import {  MyViewRoot } from "./src/Pawns";
 import { MyModelRoot } from "./src/Actors";
 import "./src/Avatar";
 
+
 App.makeWidgetDock();
 StartWorldcore({
     appId: 'io.croquet.worldcore.guardians4',

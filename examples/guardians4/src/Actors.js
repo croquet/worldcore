@@ -92,7 +92,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
     }
 
     doFlee() {
-        if(20 > v_mag2Sqr(this.translation))this.killMe(1);
+        if ( v_mag2Sqr(this.translation) < 20 ) this.killMe(1);
         if (!this.doomed) {
             this.future(100).doFlee();
             const bots = this.pingAll("block");

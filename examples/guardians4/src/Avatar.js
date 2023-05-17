@@ -362,7 +362,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     godCamera() {
         if (!this.godMatrix) {
-            const t = [0,150,0];
+            const t = [0,200,0];
             const q = q_axisAngle([1, 0, 0], -Math.PI/2);
             this.godMatrix = m4_scaleRotationTranslation(1, q, t);
         }

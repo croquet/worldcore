@@ -8,14 +8,9 @@
 
 //
 // To do:
-// - track total number of bots - should not be more than 1000
-// - bots attack tanks
-// - attack in waves. Each wave has more bots and waves come closer together in time
-// - random location of start - far away
-// - create bots in valleys
-// - tank damage and explosion (turret jumps up, tank fades out)
-// - tank damage displayed with three lights on back of tank - green and red. Three red and you blow up.
-// - tank respawns after some period of time (five seconds?
+// - add damage to tower
+// - add HUD
+// - add restart game
 // - should tanks lay down track?
 
 
@@ -23,6 +18,7 @@ import { ViewRoot, ViewService,Pawn, mix, InputManager, ThreeInstanceManager,
     PM_ThreeVisible, ThreeRenderManager, ThreeRaycast, PM_Smoothed, PM_Spatial, PM_ThreeInstanced, PM_ThreeCollider,
     THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation,
     PerlinNoise, GLTFLoader } from "@croquet/worldcore";
+
 import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
 import tank_body from "../assets/tank_body.glb";
@@ -96,7 +92,9 @@ export const sunLight =  function() {
     return sun;
 }();
 
-let fireMaterial = function makeFireMaterial() {
+let fireCount = 0;
+const fireMaterial =[];
+for (let i=0; i<10; i++) fireMaterial[i] = function makeFireMaterial() {
     const texture = new THREE.TextureLoader().load(fireballTexture)
     return new THREE.ShaderMaterial( {
         uniforms: {
@@ -190,8 +188,9 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
 
     constructor(actor) {
         super(actor);
-        //this.listen("updateFire",this.fireUpdate);
-        this.material = fireMaterial.clone();
+        this.material = fireMaterial[fireCount];
+        fireCount++;
+        if ( fireCount>=10 ) fireCount = 0;
         this.geometry = new THREE.IcosahedronGeometry( 10, 20 );
         this.fireball = new THREE.Mesh(this.geometry, this.material);
         this.pointLight = new THREE.PointLight(0xff8844, 1, 4, 2);
@@ -221,7 +220,7 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
     destroy() {
         super.destroy()
         this.geometry.dispose();
-        this.material.dispose();
+        //this.material.dispose();
         this.pointLight.dispose();
     }
 
