@@ -20,8 +20,6 @@ export class HUD extends ViewService {
     constructor() {
         super("HUD");
 
-        console.log(canvasColorAlpha(1,1,1,0.5));
-
         const x = window.innerWidth;
         const y = window.innerHeight;
         this.topWindow = 0; // Eventually we should resort them
