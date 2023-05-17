@@ -27,6 +27,8 @@ concurrency:
 
 jobs:
   deploy:
+    # only run on main repo
+    if: github.repository == 'croquet/worldcore'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
