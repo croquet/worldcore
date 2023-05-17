@@ -8,6 +8,10 @@ function canvasColor(r, g, b) {
     return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) +')';
 }
 
+function canvasColorAlpha(r, g, b, a) {
+    return 'rgb(' + Math.floor(255 * r) + ', ' + Math.floor(255 * g) + ', ' + Math.floor(255 * b) + ',' + a + ')';
+}
+
 //------------------------------------------------------------------------------------------
 //-- HUD -----------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -15,6 +19,8 @@ function canvasColor(r, g, b) {
 export class HUD extends ViewService {
     constructor() {
         super("HUD");
+
+        console.log(canvasColorAlpha(1,1,1,0.5));
 
         const x = window.innerWidth;
         const y = window.innerHeight;
@@ -249,6 +255,9 @@ export class HorizontalWidget2 extends Widget2 {
 
 export class CanvasWidget2 extends Widget2 {
 
+    // get alpha() { return this._alpha || 1}
+    get alpha() { return this._alpha === undefined ? 1 : this._alpha}
+
     constructor(options) {
         super(options);
         this.canvas = document.createElement("canvas");
@@ -282,7 +291,8 @@ export class CanvasWidget2 extends Widget2 {
         this.canvas.width = this.trueSize[0];
         this.canvas.height = this.trueSize[1];
         this.cc.globalAlpha = this.opacity;
-        this.cc.fillStyle = canvasColor(...this.color);
+        // this.cc.fillStyle = canvasColor(...this.color);
+        this.cc.fillStyle = canvasColorAlpha(...this.color, this.alpha);
         this.cc.fillRect(0, 0, this.trueSize[0], this.trueSize[1]);
     }
 }
@@ -499,8 +509,8 @@ export class ButtonWidget2 extends ControlWidget2 {
 
     build() {
         this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.7,0.83]});
-        this.label = new TextWidget2({ parent: this.frame, autoSize: [1,1], border: [5, 5, 5, 5], color: [0.8,0.8,0.8], text:  "Button" });
-        this.dim = new CanvasWidget2({parent: this.label, autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.5, visible: this.disabled});
+        this.label = new TextWidget2({ parent: this.frame, autoSize: [1,1], border: [5, 5, 5, 5], color: [1,1,1], text:  "Button" });
+        // this.dim = new CanvasWidget2({parent: this.label, autoSize: [1,1], color: [0.8,0.8,0.8], opacity: 0.5, visible: this.disabled});
     }
 
     pointerUp(e) {

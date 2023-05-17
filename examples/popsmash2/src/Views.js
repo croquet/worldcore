@@ -6,6 +6,7 @@ import { ViewService, ThreeInstanceManager, ViewRoot, Pawn, mix,
 
 import llama from "../assets/llama.jpg";
 import diana from "../assets/diana.jpg";
+import { HUDWidget } from "./BotHUD";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
@@ -151,6 +152,7 @@ class GodView extends ViewService {
 class PickWidget extends ToggleWidget2 {
 
     get text() { return this._text || ""}
+    get pick() { return this._pick}
 
     build() {
         super.build();
@@ -162,6 +164,11 @@ class PickWidget extends ToggleWidget2 {
         this.label.set({
             color: this.isOn ? [1,1,1] : [0.5,0.5,0.5]
         });
+
+        if (this.isOn) {
+            console.log("vote!");
+            this.publish("hud", "vote", {user: this.viewId, pick: this.pick});
+        }
     }
 
 }
@@ -184,13 +191,14 @@ export class MyViewRoot extends ViewRoot {
     }
 
     test() {
-        console.log("test");
-        this.buildUI();
+        // console.log("test");
+        // this.buildUI();
     }
 
     test2() {
         console.log("test2");
-
+        const hud = this.service("HUD");
+        this.bg = new HUDWidget({parent: hud.root, autoSize: [1,1], color:[0,1,1]});
     }
 
     buildLights() {
@@ -272,8 +280,8 @@ export class MyViewRoot extends ViewRoot {
 
         this.answers = new CanvasWidget2({parent: this.bg, color: [0,0.5,0]});
         const toggleSet = new ToggleSet2();
-        this.pickA = new PickWidget({toggleSet, parent: this.answers, text: "A", size: [200,50], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [0,-5]});
-        this.pickB = new PickWidget({toggleSet, parent: this.answers, text: "B", size: [200,50], anchor:[0.5, 0.5], pivot: [0.5,0], translation: [0,5]});
+        this.pickA = new PickWidget({toggleSet, parent: this.answers, pick: "a", text: "A", size: [200,50], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [0,-5]});
+        this.pickB = new PickWidget({toggleSet, parent: this.answers, pick: "b", text: "B", size: [200,50], anchor:[0.5, 0.5], pivot: [0.5,0], translation: [0,5]});
 
         this.tallyA = new TextWidget2({parent: this.answers, text: "10%", color: [1,1,1], size: [50,50], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [150,-5]});
         this.tallyB = new TextWidget2({parent: this.answers, text: "20%", color: [1,1,1], size: [50,50], anchor:[0.5, 0.5], pivot: [0.5,0], translation: [150,5]});

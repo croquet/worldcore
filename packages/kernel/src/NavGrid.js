@@ -9,7 +9,6 @@ import { Behavior } from "./Behavior";
 //------------------------------------------------------------------------------------------
 
 function packKey(x,y) {
-    // if (x < 0 || y< 0 ) return 0;
     const xx = x + 0x4000;
     const yy = y + 0x4000;
     return ((0x8000|xx)<<16)|yy;

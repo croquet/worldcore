@@ -1,6 +1,6 @@
 // Tutorial 3 Models
 
-import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral } from "@croquet/worldcore";
+import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral} from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 // ParentActor -----------------------------------------------------------------------------
