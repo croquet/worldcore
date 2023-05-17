@@ -192,20 +192,16 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     doPointerDown(e) {
         // this is temporary to get the bots to move
+        /*
         const rc = this.service("ThreeRaycast");
         const hits = rc.cameraRaycast(e.xy, "ground");
         if (hits.length<1) return;
         const hit = hits[0];
-        const xyz = hit.xyz;
-        this.publish("hud", "go", xyz);
-        /*
-        console.log("pointerDown", e);
-
+        */
         if (!this.pointerId) {
             this.pointerId = e.id;
             this.pointerHome = e.xy;
         }
-        */
     }
 
     doPointerMove(e) {

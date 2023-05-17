@@ -358,7 +358,7 @@ export class MyModelRoot extends ModelRoot {
             }
         }
         this.subscribe("bots","destroyBot", this.destroyBot);
-        this.makeWave(1, 100);
+        this.makeWave(1, 10);
     }
 
     makeWave( wave, numBots ) {
