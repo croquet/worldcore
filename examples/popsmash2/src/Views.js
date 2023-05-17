@@ -186,8 +186,11 @@ export class MyViewRoot extends ViewRoot {
     onStart() {
         this.buildInstances();
         this.buildLights();
-        this.subscribe("input", "xDown", this.test);
-        this.subscribe("input", "zDown", this.test2);
+        // this.subscribe("input", "xDown", this.test);
+        // this.subscribe("input", "zDown", this.test2);
+
+        const hud = this.service("HUD");
+        new HUDWidget({parent: hud.root, autoSize: [1,1]});
     }
 
     test() {
@@ -198,7 +201,7 @@ export class MyViewRoot extends ViewRoot {
     test2() {
         console.log("test2");
         const hud = this.service("HUD");
-        this.bg = new HUDWidget({parent: hud.root, autoSize: [1,1], color:[0,1,1]});
+        this.bg = new HUDWidget({parent: hud.root, autoSize: [1,1]});
     }
 
     buildLights() {
