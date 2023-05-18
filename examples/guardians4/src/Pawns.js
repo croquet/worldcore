@@ -1,11 +1,9 @@
 // Guardian Pawns
 // Copyright (c) 2023 CROQUET CORPORATION
 //
-// The majority of the code specific to this example is in Avatar.js.
 // Demonstrates terrain following, avatar/object and avatar/avatar collisions.
 // Uses a 2D Perlin noise function to generate terrain and to dynamically compute
 // the height of the terrain as the avatar moves.
-
 //
 // To do:
 // - tanks bounce off bollards too much, should be smoother
@@ -16,6 +14,7 @@
 // - bots go through player and bollards
 // - red missiles vs red eyed bots
 // - add weenies
+// - joystick is not very responsive
 
 
 import { ViewRoot, ViewService, HUD, Pawn, mix, InputManager, ThreeInstanceManager,
@@ -319,7 +318,8 @@ export class HealthCoinPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible)
     setStat( health ) {
         if (health>66) this.material.color = new THREE.Color(0.25,1,0.25);
         else if (health>33) this.material.color = new THREE.Color(1, 1, 0.25);
-        else this.material.color = new THREE.Color(1, 0.15, 0.15);
+        else if (health > 0) this.material.color = new THREE.Color(1, 0.15, 0.15);
+        else this.material.color = new THREE.Color(0.25, 0.25, 0.25);
     }
 
     destroy() {

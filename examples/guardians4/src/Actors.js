@@ -1,7 +1,8 @@
 // Guardian Actors
 // Copyright (c) 2023 CROQUET CORPORATION
-import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, ModelService, v3_add, v3_sub, v3_scale,
-    UserManager, User, AM_Avatar, q_axisAngle, v3_magnitude, v3_normalize, v3_rotate, AM_Grid, AM_OnGrid } from "@croquet/worldcore";
+
+import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, v3_add, v3_sub, v3_scale,
+    UserManager, User, AM_Avatar, q_axisAngle, v3_normalize, v3_rotate, AM_Grid, AM_OnGrid } from "@croquet/worldcore";
 // The Guardian game is basically a 2D game. Virtually all computations in the model are 2D.
 // The flat world is placed on a Perlin noise generated surface in the view, but all interactions including
 // driving and collisions are computed in 2D.
@@ -117,7 +118,6 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
     }
 
     resetGame() {
-        console.log("destroy the bot");
         if (this.ggg) {
             this.ggg.destroy();
             this.ggg = null;
@@ -435,7 +435,6 @@ export class MyModelRoot extends ModelRoot {
         this.wave = wave;
         this.publish("stats", "wave", wave);
         this.publish("stats", "bots", this.totalBots);
-        console.log("stats", wave, this.totalBots)
         const r = this.spawnRadius; // radius of spawn
         const a = Math.PI*2*Math.random(); // come from random direction
         for (let n = 0; n<actualBots; n++) {
