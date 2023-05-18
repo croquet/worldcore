@@ -31,7 +31,8 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_Grid) {
 BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
-// FireballActor -------------------------------------------------------------------------------
+// FireballActor ---------------------------------------------------------------------------
+// Bot explosions - small one when you shoot them, big one when they suicide at the tower
 //------------------------------------------------------------------------------------------
 
 class FireballActor extends mix(Actor).with(AM_Spatial) {
@@ -46,7 +47,8 @@ class FireballActor extends mix(Actor).with(AM_Spatial) {
 FireballActor.register('FireballActor');
 
 //------------------------------------------------------------------------------------------
-// BotActor -------------------------------------------------------------------------------
+// BotActor --------------------------------------------------------------------------------
+// The bad guys - they try to get to the tower to blow it up
 //------------------------------------------------------------------------------------------
 class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
 
@@ -133,7 +135,8 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
 BotActor.register("BotActor");
  
 //------------------------------------------------------------------------------------------
-//--SimpleActor ------------------------------------------------------------------------------
+//--SimpleActor ----------------------------------------------------------------------------
+// All purpose actor for adding bits to other, smarter actors
 //------------------------------------------------------------------------------------------
 
 class SimpleActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
@@ -147,7 +150,8 @@ class SimpleActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 SimpleActor.register('SimpleActor');
 
 //------------------------------------------------------------------------------------------
-//--GridActor ---------------------------------------------------------------------------
+//--GridActor ------------------------------------------------------------------------------
+// Actors that place themselves on the grid so other actors can avoid them
 //------------------------------------------------------------------------------------------
 
 class GridActor extends mix(Actor).with(AM_Spatial, AM_OnGrid) {
@@ -159,7 +163,8 @@ class GridActor extends mix(Actor).with(AM_Spatial, AM_OnGrid) {
 GridActor.register('GridActor');
 
 //------------------------------------------------------------------------------------------
-//--MissileActor ------------------------------------------------------------------------------
+//--MissileActor ---------------------------------------------------------------------------
+// Fired by the tank - they destroy the bots but bounce off of everything else
 //------------------------------------------------------------------------------------------
 const missileSpeed = 75;
 
@@ -237,7 +242,8 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
 MissileActor.register('MissileActor');
 
 //------------------------------------------------------------------------------------------
-//-- AvatarActor ----------------------------------------------------------------------------
+//-- AvatarActor ---------------------------------------------------------------------------
+// This is you. Most of the control code for the avatar is in the pawn in Avatar.js.
 //------------------------------------------------------------------------------------------
 
 class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar, AM_OnGrid) {
@@ -280,6 +286,7 @@ AvatarActor.register('AvatarActor');
 
 //------------------------------------------------------------------------------------------
 //-- Users ---------------------------------------------------------------------------------
+// Create a new avatar when a new user joins.
 //------------------------------------------------------------------------------------------
 
 class MyUserManager extends UserManager {
@@ -321,26 +328,14 @@ class MyUser extends User {
 MyUser.register('MyUser');
 
 //------------------------------------------------------------------------------------------
-//-- ModelCollisionManager -----------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-class ModelCollisionManager extends ModelService {
-
-    init() {
-        super.init("ModelCollisionManager");
-        this.colliders = new Set();
-    }
-}
-ModelCollisionManager.register('ModelCollisionManager');
-
-//------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
+// Construct the world, manage global game state.
 //------------------------------------------------------------------------------------------
 
 export class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [MyUserManager, ModelCollisionManager];
+        return [MyUserManager];
     }
 
     init(options) {
