@@ -40,8 +40,8 @@ class HealthWidget extends TextWidget2 {
     setStat(health) {
         let textColor;
         if (health>66) {textColor = [0.25,1,0.25];}
-        else if (health>33) {textColor = [0.75, 0.75, 0.25];}
-        else {textColor = [0.75, 0.25, 0.25];}
+        else if (health>33) {textColor = [1, 1, 0.25];}
+        else {textColor = [1, 0.35, 0.25];}
         this.set({text:""+health, textColor});
     }
 }

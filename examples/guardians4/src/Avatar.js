@@ -48,6 +48,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.service("CollisionManager").colliders.add(this);
         this.loadInstance(actor._instanceName, [0.35, 0.35, 0.35]);
         this.listen("colorSet", this.onColorSet);
+       // this.listen("goHome", this.goHome);
         this.paperTexture = new THREE.TextureLoader().load( paper );
         this.paperTexture.wrapS = THREE.RepeatWrapping;
         this.paperTexture.wrapT = THREE.RepeatWrapping;
@@ -163,7 +164,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 break;
             case "R":
             case "r":
-                this.publish("bots", "resetBots");
+                this.publish("game", "resetGame");
                 break;
             default:
         }
@@ -323,7 +324,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         const delta = v3_magnitude([d[0], 0, d[2]]);
         return  delta>0 ? Math.atan2(d[1], delta) : 0;
     }
-
 
     updateChaseCam(time, delta) {
         const rm = this.service("ThreeRenderManager");

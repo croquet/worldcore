@@ -58,7 +58,8 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
         this.radiusSqr = this.radius*this.radius;
         this.doFlee();
         this.go([0,0,0]);
-        this.subscribe("bots", "resetBots", this.reset);
+        //this.subscribe("bots", "resetBots", this.reset);
+        this.subscribe("game", "resetGame", this.resetGame);
     }
 
     go(target) {
@@ -87,7 +88,17 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
 
     killMe(s=0.3, onTarget) {
         FireballActor.create({translation:this.translation, scale:[s,s,s], onTarget});
+        this.publish("bots","destroyBot", onTarget);
+        this.destroy();
+    }
+
+    resetGame() {
+        console.log("destroy the bot");
         this.publish("bots","destroyBot");
+        if (this.ggg) {
+            this.ggg.destroy();
+            this.ggg = null;
+        }
         this.destroy();
     }
 
@@ -163,6 +174,12 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
         this.lastTranslation = [0,0,0];
         this.bounceWait = this.now(); // need to bounce otherwise we might instantly bounce again
         this.tick();
+        this.subscribe("game", "resetGame", this.resetGame);
+    }
+
+    resetGame() {
+        console.log("destroy the missile");
+        this.destroy();
     }
 
     get userColor() { return this._userColor }
@@ -234,6 +251,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar, AM_OnGrid) {
         this.listen("bounce", this.doBounce);
         this.listen("shoot", this.doShoot);
         this.subscribe("all", "godMode", this.doGodMode);
+        this.subscribe("game", "resetGame", this.doGoHome );
     }
 
     get userColor() { return this._userColor }
@@ -259,6 +277,9 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar, AM_OnGrid) {
         missile.go = missile.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
     }
 
+    doGoHome() {
+        this.say("goHome")
+    }
 }
 AvatarActor.register('AvatarActor');
 
@@ -359,7 +380,15 @@ export class MyModelRoot extends ModelRoot {
         }
         this.subscribe("stats", "update", this.updateStats);
         this.subscribe("bots","destroyBot", this.destroyBot);
+        this.subscribe("game", "resetGame", this.resetGame);
         this.makeWave(1, 10);
+    }
+
+    resetGame() {
+        this.wave = 1;
+        this.bots = 10;
+        this.health = 100;
+        this.endGame = true;
     }
 
     updateStats() {
@@ -369,10 +398,10 @@ export class MyModelRoot extends ModelRoot {
     }
 
     makeWave( wave, numBots ) {
+        if (this.endGame) return;
         let actualBots = Math.min(this.maxBots, numBots);
         if ( this.totalBots + actualBots > this.maxBots) actualBots = this.maxBots-this.totalBots;
         this.totalBots += actualBots;
-        console.log("WAVE#:",wave, "BOTS:", actualBots, "TOTAL:", this.totalBots);
         this.wave = wave;
         this.publish("stats", "wave", wave);
         this.publish("stats", "bots", this.totalBots);
@@ -390,8 +419,12 @@ export class MyModelRoot extends ModelRoot {
         this.future(30000).makeWave(wave+1, Math.floor(numBots*1.2));
     }
 
-    destroyBot() {
+    destroyBot( onTarget ) {
         this.totalBots--;
+        if (onTarget) {
+            this.health--;
+            this.publish("stats", "health", this.health);
+        }
         this.publish("stats", "bots", this.totalBots);
     }
 
