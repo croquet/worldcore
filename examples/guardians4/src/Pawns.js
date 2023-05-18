@@ -8,10 +8,14 @@
 
 //
 // To do:
-// - add damage to tower
-// - add HUD
-// - add restart game
+// - tanks bounce off bollards too much, should be smoother
+// - muzzle flash
+// - tower health coin
 // - should tanks lay down track?
+// - explosion of bots should be different from when hit by missile
+// - bots go through player and bollards
+// - red missiles vs red eyed bots
+// - add weenies
 
 
 import { ViewRoot, ViewService, HUD, Pawn, mix, InputManager, ThreeInstanceManager,
@@ -27,7 +31,6 @@ import paper from "../assets/paper.jpg";
 import sky from "../assets/quarry_03.png";
 
 import fireballTexture from "../assets/explosion.png";
-import smokeTexture from "../assets/Smoke-Element.png";
 import * as fireballFragmentShader from "../assets/fireball.frag.js";
 import * as fireballVertexShader from "../assets/fireball.vert.js";
 
@@ -116,12 +119,6 @@ for (let i=0; i<10; i++) fireMaterial[i] = function makeFireMaterial() {
         vertexShader: fireballVertexShader.vertexShader(),
         fragmentShader: fireballFragmentShader.fragmentShader()
     } );
-}();
-
-let smokeMaterial = function makeSmokeMaterial() {
-    const texture = new THREE.TextureLoader().load(smokeTexture);
-    const smoke = new THREE.MeshLambertMaterial({color: 0x00dddd, map: texture, transparent: true});
-    return smoke;
 }();
 
 //------------------------------------------------------------------------------------------
@@ -217,10 +214,6 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
             this.fireball.material.uniforms[ 'tOpacity' ].value = 0.25;
             this.pointLight.intensity = 0.25+ 0.75* Math.sin(t*0.020)*Math.cos(t*0.007);
         }
-        const rm = this.service("ThreeRenderManager");
-        if (this.smokeParticles) {
-            this.smokeParticles.forEach( particle => particle.quaternion.copy( rm.camera.quaternion ));
-        }
     }
 
     destroy() {
@@ -229,7 +222,6 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
         //this.material.dispose();
         if (this.pointLight) this.pointLight.dispose();
     }
-
 }
 FireballPawn.register("FireballPawn");
 
@@ -291,7 +283,7 @@ export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
 BollardPawn.register("BollardPawn");
 
 //------------------------------------------------------------------------------------------
-// BollardPawn -----------------------------------------------------------------------------
+// InstancePawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 export class InstancePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
 
@@ -306,6 +298,37 @@ export class InstancePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) 
     }
 }
 InstancePawn.register("InstancePawn");
+
+//------------------------------------------------------------------------------------------
+// HealthCoinPawn ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+export class HealthCoinPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+
+    constructor(actor) {
+        super(actor);
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.25,1,0.25), metalness:1.0, roughness:0.3} );
+        this.geometry = new THREE.CylinderGeometry(2.5, 2.5, 0.5, 32);
+        this.geometry.rotateX(Math.PI/2);
+        this.mesh = new THREE.Mesh(this.geometry, this.material);
+        this.mesh.receiveShadow = true;
+        this.mesh.castShadow = true;
+        this.setRenderObject(this.mesh);
+        this.subscribe("stats", "health", this.setStat);
+    }
+
+    setStat( health ) {
+        if (health>66) this.material.color = new THREE.Color(0.25,1,0.25);
+        else if (health>33) this.material.color = new THREE.Color(1, 1, 0.25);
+        else this.material.color = new THREE.Color(1, 0.15, 0.15);
+    }
+
+    destroy() {
+        super.destroy();
+        this.geometry.dispose();
+        this.material.dispose();
+    }
+}
+HealthCoinPawn.register("HealthCoinPawn");
 
 //------------------------------------------------------------------------------------------
 //-- BasePawn ------------------------------------------------------------------------------
@@ -340,7 +363,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         base.receiveShadow = true;
         base.castShadow = true;
         this.setRenderObject(base);
-        this.addRenderObjectToRaycast("ground");
+       // this.addRenderObjectToRaycast("ground");
     }
 
     destroy() {
@@ -453,16 +476,10 @@ export class MyViewRoot extends ViewRoot {
         im.addMesh("botEye", "botEye", "botEye");
 
         const  green = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.25,1,0.25), metalness:1, roughness:0.1} );
-        const  magenta = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
-        const  cyan = new THREE.MeshStandardMaterial( {color: new THREE.Color(0,1,1)} );
         const  gray = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.75,0.75,0.75), metalness:1, roughness:0.1} );
-        const  fenceMat = new THREE.MeshStandardMaterial( { color: new THREE.Color(0.3,0.3,0.3), metalness:1, roughness:0.1, transparent:true, opacity:0.25, side:THREE.DoubleSide} );
 
         im.addMaterial("green", green);
-        im.addMaterial("magenta", magenta);
-        im.addMaterial("cyan", cyan);
         im.addMaterial("gray", gray);
-        im.addMaterial("fenceMat", fenceMat);
 
         const box = new THREE.BoxGeometry( 1, 1, 1 );
         im.addGeometry("box", box);
@@ -486,19 +503,10 @@ export class MyViewRoot extends ViewRoot {
         cylinder4.translate(0,1.5,0);
         im.addGeometry("cylinder4", cylinder4);
 
-        //const fenceGeo = createBoxWithRoundedEdges(3, 3, 0.25, .05, 3);
-        const fenceGeo = new THREE.PlaneGeometry(2.75,8);
-        fenceGeo.translate(0, 4, 0);
-        fenceGeo.computeVertexNormals();
-        im.addGeometry("fenceGeo", fenceGeo);
-
-        //const mesh0 = im.addMesh("yellowBox", "box", "yellow");
-
         const mesh3 = im.addMesh("pole", "cylinder", "gray");
         const mesh4 = im.addMesh("pole2", "cylinder2", "gray",3000);
         const mesh5 = im.addMesh("pole3", "cylinder3", "gray");
         const mesh6 = im.addMesh("pole4", "cylinder4", "green");
-        //const fence = im.addMesh("fence", "fenceGeo", "fenceMat");
 
         mesh3.castShadow = true;
         mesh4.castShadow = true;

@@ -31,6 +31,30 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_Grid) {
 BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
+// HealthCoinActor ---------------------------------------------------------------------------
+// Displays the current state of health of the tower in a spinning coin
+//------------------------------------------------------------------------------------------
+
+class HealthCoinActor extends mix(Actor).with(AM_Spatial) {
+    init(...args) {
+        super.init(...args);
+        this.angle = 0;
+        this.deltaAngle = 0.1;
+        this.spin();
+    }
+
+    spin() {
+        this.angle+=this.deltaAngle;
+        this.set({rotation: q_axisAngle([0,1,0], this.angle)});
+        this.future(100).spin();
+    }
+
+    get pawn() {return "HealthCoinPawn"}
+}
+
+HealthCoinActor.register('HealthCoinActor');
+
+//------------------------------------------------------------------------------------------
 // FireballActor ---------------------------------------------------------------------------
 // Bot explosions - small one when you shoot them, big one when they suicide at the tower
 //------------------------------------------------------------------------------------------
@@ -354,11 +378,15 @@ export class MyModelRoot extends ModelRoot {
         this.totalBots = 0;
         this.health = 100;
         let v = [-10,0,0];
+
+        // place the tower
         for (let i=0; i<3;i++) {
             const p3 = Math.PI*2/3;
             this.makePowerPole(v[0],v[2],i*p3);
             v = v3_rotate( v, q_axisAngle([0,1,0], p3) );
         }
+
+        HealthCoinActor.create({pawn: "HealthCoinPawn", parent: this.base, instanceName:'healthCoin', translation:[0,20,0]} );
 
         let corner = 12;
         [[-corner,-corner, -Math.PI/4], [-corner, corner, Math.PI/4], [corner, corner, Math.PI-Math.PI/4], [corner,-corner, Math.PI+Math.PI/4]].forEach( xy => {
