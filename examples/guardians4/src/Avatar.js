@@ -48,7 +48,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.service("CollisionManager").colliders.add(this);
         this.loadInstance(actor._instanceName, [0.35, 0.35, 0.35]);
         this.listen("colorSet", this.onColorSet);
-       // this.listen("goHome", this.goHome);
+        this.listen("goHome", this.goHome);
         this.paperTexture = new THREE.TextureLoader().load( paper );
         this.paperTexture.wrapS = THREE.RepeatWrapping;
         this.paperTexture.wrapT = THREE.RepeatWrapping;
