@@ -23,6 +23,17 @@ import { ViewRoot, ViewService, HUD, Pawn, mix, InputManager, ThreeInstanceManag
     PerlinNoise, GLTFLoader } from "@croquet/worldcore";
 import { HUDWidget } from "./BotHUD";
 
+import n_0 from "../assets/0.glb";
+import n_1 from "../assets/1.glb";
+import n_2 from "../assets/2.glb";
+import n_3 from "../assets/3.glb";
+import n_4 from "../assets/4.glb";
+import n_5 from "../assets/5.glb";
+import n_6 from "../assets/6.glb";
+import n_7 from "../assets/7.glb";
+import n_8 from "../assets/8.glb";
+import n_9 from "../assets/9.glb";
+
 import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
 import tank_body from "../assets/tank_body.glb";
@@ -33,6 +44,7 @@ import fireballTexture from "../assets/explosion.png";
 import * as fireballFragmentShader from "../assets/fireball.frag.js";
 import * as fireballVertexShader from "../assets/fireball.vert.js";
 
+const numbers = [];
 
 export const UserColors = [
     rgb(255, 64, 64),        // Red
@@ -305,13 +317,26 @@ export class HealthCoinPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible)
 
     constructor(actor) {
         super(actor);
+        this.group = new THREE.Group();
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.25,1,0.25), metalness:1.0, roughness:0.3} );
         this.geometry = new THREE.CylinderGeometry(2.5, 2.5, 0.5, 32);
-        this.geometry.rotateX(Math.PI/2);
         this.mesh = new THREE.Mesh(this.geometry, this.material);
+        this.mesh.rotateX(Math.PI/2);
         this.mesh.receiveShadow = true;
         this.mesh.castShadow = true;
-        this.setRenderObject(this.mesh);
+        this.group.add(this.mesh);
+        this.front = new THREE.Group();
+        this.front.scale.set(3.2,3.2,3.2);
+        this.front.position.y = 0.45;
+        this.front.position.z = 0.7;
+        this.back = new THREE.Group();
+        this.back.scale.set(3.2,3.2,3.2);
+        this.back.position.y = -0.45;
+        this.back.position.z = 0.7;
+        this.back.setRotationFromEuler( new THREE.Euler(0, 0, Math.PI) );
+        this.mesh.add(this.front);
+        this.mesh.add(this.back);
+        this.setRenderObject(this.group);
         this.subscribe("stats", "health", this.setStat);
     }
 
@@ -320,6 +345,27 @@ export class HealthCoinPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible)
         else if (health>33) this.material.color = new THREE.Color(1, 1, 0.25);
         else if (health > 0) this.material.color = new THREE.Color(1, 0.15, 0.15);
         else this.material.color = new THREE.Color(0.25, 0.25, 0.25);
+        this.addNumbers(health.toString());
+        //this.addNumbers("000");
+    }
+
+    addNumbers(str) {
+        console.log("addNumbers", str);
+        this.front.clear();
+        this.back.clear();
+        const len = str.length;
+        if ( numbers[0] ) {
+            for (let i=0; i<len; i++) {
+                const n = Number(str[i]);
+                const numMesh = numbers[n];
+                const f = new THREE.Mesh(numMesh.geometry, numMesh.material);
+                const b = new THREE.Mesh(numMesh.geometry, numMesh.material);
+                b.position.x = f.position.x = (0.5 + i - len/2)*0.4 + 0.02 + (n===1?0.05:0);
+                this.front.add( f );
+                this.back.add( b );
+            }
+        } else this.future(100).addNumbers(str);
+
     }
 
     destroy() {
@@ -516,11 +562,22 @@ export class MyViewRoot extends ViewRoot {
         //
         const gltfLoader = new GLTFLoader();
 
-        let [ tankTracks, tankTurret, tankBody ] = await Promise.all( [
+        let [ tankTracks, tankTurret, tankBody, n0, n1, n2, n3, n4, n5, n6, n7, n8, n9 ] = await Promise.all( [
             gltfLoader.loadAsync( tank_tracks ),
-            gltfLoader.loadAsync( tank_turret),
-            gltfLoader.loadAsync( tank_body)
+            gltfLoader.loadAsync( tank_turret ),
+            gltfLoader.loadAsync( tank_body ),
+            gltfLoader.loadAsync( n_0 ),
+            gltfLoader.loadAsync( n_1 ),
+            gltfLoader.loadAsync( n_2 ),
+            gltfLoader.loadAsync( n_3 ),
+            gltfLoader.loadAsync( n_4 ),
+            gltfLoader.loadAsync( n_5 ),
+            gltfLoader.loadAsync( n_6 ),
+            gltfLoader.loadAsync( n_7 ),
+            gltfLoader.loadAsync( n_8 ),
+            gltfLoader.loadAsync( n_9 )
         ] );
+
 
         tankBody = tankBody.scene.children[0].geometry;
         tankTracks = tankTracks.scene.children[0].geometry;
@@ -542,5 +599,23 @@ export class MyViewRoot extends ViewRoot {
         tankTurretim.receiveShadow = true;
         tankTracksim.castShadow = true;
         tankTracksim.receiveShadow = true;
+
+        const numberMat = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1), metalness:1.0, roughness:0.3} );
+        this.setNumber(0, n0, numberMat);
+        this.setNumber(1, n1, numberMat);
+        this.setNumber(2, n2, numberMat);
+        this.setNumber(3, n3, numberMat);
+        this.setNumber(4, n4, numberMat);
+        this.setNumber(5, n5, numberMat);
+        this.setNumber(6, n6, numberMat);
+        this.setNumber(7, n7, numberMat);
+        this.setNumber(8, n8, numberMat);
+        this.setNumber(9, n9, numberMat);
+    }
+
+    setNumber(num, number3D, mat) {
+        const num3D = number3D.scene.children[0];
+        num3D.material = mat;
+        numbers[num]=num3D;
     }
 }
