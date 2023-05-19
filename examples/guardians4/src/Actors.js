@@ -157,7 +157,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
 
 }
 BotActor.register("BotActor");
- 
+
 //------------------------------------------------------------------------------------------
 //--SimpleActor ----------------------------------------------------------------------------
 // All purpose actor for adding bits to other, smarter actors
