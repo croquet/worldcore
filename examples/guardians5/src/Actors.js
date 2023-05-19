@@ -325,7 +325,7 @@ class MyUser extends User {
         const base = this.wellKnownModel("ModelRoot").base;
 
         this.color = [0.25+0.75*this.random(), 0.5, 0.25+0.75*this.random()];
-        this.userColor = options.userCount%20;
+        this.userColor = options.userNumber%20;
         const trans = [this.random() * 10-5, 0, this.random()*10-5];
         const rot = q_axisAngle([0,1,0], Math.PI/2);
 

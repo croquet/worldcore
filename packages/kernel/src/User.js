@@ -35,7 +35,7 @@ export class UserManager extends ModelService {
     onJoin(viewId) {
         console.log("onJoin "+ viewId);
         if (this.users.has(viewId)) console.warn("UserManager received duplicate view-join for viewId " + viewId);
-        const user = this.defaultUser.create({userId: viewId, userCount: this.userCount});
+        const user = this.defaultUser.create({userId: viewId, userNumber: this.userNumber});
         this.userNumber++;
         this.users.set(viewId, user);
         this.publish("UserManager", "create", user);
