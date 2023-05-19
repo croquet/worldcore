@@ -492,6 +492,8 @@ export class MyViewRoot extends ViewRoot {
         const ambient = new THREE.AmbientLight( 0xffffff, 0.6 );
         rm.scene.add(ambient);
         rm.scene.add(sunLight); // this is a global object
+        0.4, 0.8, 0.2
+        rm.scene.fog = new THREE.Fog( 0x66aa66, 200, 400 );
         const loader = new THREE.TextureLoader();
         loader.load( sky, skyTexture => {
             const pmremGenerator = new THREE.PMREMGenerator(rm.renderer);

@@ -250,6 +250,7 @@ export class GeometryPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
         this.paperTexture.wrapS = THREE.RepeatWrapping;
         this.paperTexture.wrapT = THREE.RepeatWrapping;
         this.paperTexture.repeat.set( 1, 1 );
+        console.log("COLOR: ", actor.userColor)
         this.loadGeometry(actor._instanceName, UserColors[actor.userColor]);
     }
 
@@ -350,7 +351,6 @@ export class HealthCoinPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible)
     }
 
     addNumbers(str) {
-        console.log("addNumbers", str);
         this.front.clear();
         this.back.clear();
         const len = str.length;
@@ -492,7 +492,6 @@ export class MyViewRoot extends ViewRoot {
         const ambient = new THREE.AmbientLight( 0xffffff, 0.6 );
         rm.scene.add(ambient);
         rm.scene.add(sunLight); // this is a global object
-        0.4, 0.8, 0.2
         rm.scene.fog = new THREE.Fog( 0x66aa66, 200, 400 );
         const loader = new THREE.TextureLoader();
         loader.load( sky, skyTexture => {
