@@ -1,11 +1,7 @@
-import { Constants } from "@croquet/croquet";
+import { Constants } from "@croquet/worldcore";
 
 export function CharacterName(n) {
-    return Constants.Characters[n].name;
-}
-
-export function CharacterFlavor(n) {
-    return Constants.Characters[n].flavor;
+    return Constants.Characters[n];
 }
 
 export function CharacterCount() {
@@ -418,5 +414,6 @@ Constants.Characters = [
     "Zaphod Beeblebrox",
     "Zapp Brannigan",
     "Zorro"
-]
+];
+
 

@@ -6,7 +6,7 @@ import { ViewService, ThreeInstanceManager, ViewRoot, Pawn, mix,
 
 import llama from "../assets/llama.jpg";
 import diana from "../assets/diana.jpg";
-import { HUDWidget } from "./BotHUD";
+import { CharacterName } from "./Characters";
 
 //------------------------------------------------------------------------------------------
 // TestPawn --------------------------------------------------------------------------------
@@ -146,7 +146,7 @@ class GodView extends ViewService {
 }
 
 //------------------------------------------------------------------------------------------
-//-- MyViewRoot ----------------------------------------------------------------------------
+//-- PickWidget ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class PickWidget extends ToggleWidget2 {
@@ -157,7 +157,8 @@ class PickWidget extends ToggleWidget2 {
     build() {
         super.build();
         // this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.7,0.83]});
-        this.label.set({text:this.text});
+        const nn = CharacterName(this.pick);
+        this.label.set({text:this.text, point:18});
     }
 
     onToggle() {
@@ -184,24 +185,23 @@ export class MyViewRoot extends ViewRoot {
     }
 
     onStart() {
+        console.log(CharacterName(4));
         this.buildInstances();
         this.buildLights();
-        // this.subscribe("input", "xDown", this.test);
-        // this.subscribe("input", "zDown", this.test2);
-
-        const hud = this.service("HUD");
-        new HUDWidget({parent: hud.root, autoSize: [1,1]});
+        this.buildUI();
+        this.subscribe("input", "xDown", this.test);
+        this.subscribe("input", "zDown", this.test2);
+        this.subscribe("VoteManager", "update", this.updateTally);
     }
 
     test() {
-        // console.log("test");
-        // this.buildUI();
+        console.log("test");
+
     }
 
     test2() {
         console.log("test2");
-        const hud = this.service("HUD");
-        this.bg = new HUDWidget({parent: hud.root, autoSize: [1,1]});
+
     }
 
     buildLights() {
@@ -274,22 +274,36 @@ export class MyViewRoot extends ViewRoot {
         this.bg = new VerticalWidget2({parent: hud.root, autoSize: [1,1]});
         this.top = new HorizontalWidget2({parent: this.bg, height: 50});
         this.timer = new CanvasWidget2({parent: this.top, width:50, color: [1,0,0]});
-        this.question = new TextWidget2({parent: this.top, color: [1,1,1], style: "italic", text: "Who would win in a fair fight?"});
+        this.round = new TextWidget2({parent: this.top, height: 50, color: [1,1,1], style: "bold", text: "Preliminaries"});
+
         this.players = new CanvasWidget2({parent: this.top, width:50, color: [0,0,1]});
         this.top.resize();
 
-        this.round = new TextWidget2({parent: this.bg, height: 50, color: [1,1,1], style: "bold", text: "Preliminaries"});
+        this.question = new TextWidget2({parent: this.bg, color: [1,1,1], height: 100, style: "italic", text: "Who would win in a fair fight?"});
 
+        const vm = this.modelService("VoteManager");
+
+        const aa = vm.tally[0];
+        const bb = vm.tally[1];
+        const cc = vm.tally[2];
 
         this.answers = new CanvasWidget2({parent: this.bg, color: [0,0.5,0]});
         const toggleSet = new ToggleSet2();
-        this.pickA = new PickWidget({toggleSet, parent: this.answers, pick: "a", text: "A", size: [200,50], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [0,-5]});
-        this.pickB = new PickWidget({toggleSet, parent: this.answers, pick: "b", text: "B", size: [200,50], anchor:[0.5, 0.5], pivot: [0.5,0], translation: [0,5]});
+        this.pickA = new PickWidget({toggleSet, parent: this.answers, pick: 0, text: CharacterName(10), size: [200,70], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [-50,-50]});
+        this.pickB = new PickWidget({toggleSet, parent: this.answers, pick: 1, text: CharacterName(318), size: [200,70], anchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [-50,0]});
+        this.pickC = new PickWidget({toggleSet, parent: this.answers, pick: 2, text: CharacterName(272), size: [200,70], anchor:[0.5, 0.5], pivot: [0.5,0], translation: [-50,50]});
 
-        this.tallyA = new TextWidget2({parent: this.answers, text: "10%", color: [1,1,1], size: [50,50], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [150,-5]});
-        this.tallyB = new TextWidget2({parent: this.answers, text: "20%", color: [1,1,1], size: [50,50], anchor:[0.5, 0.5], pivot: [0.5,0], translation: [150,5]});
+        this.tallyA = new TextWidget2({parent: this.answers, text: aa+'', color: [1,1,1], size: [100,50], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [130,-60]});
+        this.tallyB = new TextWidget2({parent: this.answers, text: bb+'', color: [1,1,1], size: [100,50], anchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [130,0]});
+        this.tallyC = new TextWidget2({parent: this.answers, text: cc+'', color: [1,1,1], size: [100,50], anchor:[0.5, 0.5], pivot: [0.5,0], translation: [130,60]});
 
         this.bg.resize();
+    }
+
+    updateTally(t) {
+        this.tallyA.set({text: ''+ 10000*t[0]});
+        this.tallyB.set({text: ''+ t[1]});
+        this.tallyC.set({text: ''+ t[2]});
     }
 
 }

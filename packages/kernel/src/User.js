@@ -24,7 +24,7 @@ export class UserManager extends ModelService {
 
     init() {
         super.init('UserManager');
-        this.userCount = 0;
+        // this.userCount = 0;
         this.users = new Map();
         this.subscribe(this.sessionId, "view-join", this.onJoin);
         this.subscribe(this.sessionId, "view-exit", this.onExit);
@@ -33,19 +33,21 @@ export class UserManager extends ModelService {
     user(viewId) { return this.users.get(viewId) }
 
     onJoin(viewId) {
-        if (this.users.has(viewId)) console.warn("PlayerManager received duplicate view-join for viewId " + viewId);
+        console.log("onJoin "+ viewId);
+        if (this.users.has(viewId)) console.warn("UserManager received duplicate view-join for viewId " + viewId);
         const user = this.defaultUser.create({userId: viewId, userCount: this.userCount});
-        this.userCount++;
+        // this.userCount++;
         this.users.set(viewId, user);
-        this.publish("userManager", "create", user);
+        this.publish("UserManager", "create", user);
     }
 
     onExit(viewId) {
+        console.log("onExit "+ viewId);
         const user = this.user(viewId);
         if (!user) return;
         user.destroy();
         this.users.delete(viewId);
-        this.publish("userManager", "destroy", user);
+        this.publish("UserManager", "destroy", viewId);
     }
 
 }
