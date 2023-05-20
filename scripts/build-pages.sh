@@ -6,7 +6,7 @@
 # normally executed via .github/workflows/deploy-to-pages.yml
 # but can be run locally, open _site/index.html in a browser to view
 
-npx lerna bootstrap
+npx lerna bootstrap || exit 1
 rm -rf _site
 mkdir _site
 LINKS=()
@@ -56,7 +56,9 @@ cat > _site/index.html <<EOF
 </head>
 <body>
     <h1>Worldcore Builds</h1>
-    <h2>${COMMIT} (<a href="https://github.com/croquet/worldcore/actions/workflows/deploy-to-pages.yml">previous</a>)</h2>
+    <h2>${COMMIT}
+    (<a href="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}">full log</a>,
+        <a href="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/workflows/deploy-to-pages.yml">previous</a>)</h2>
     ${LINKS[@]}
     <script>
         const {search, hash} = window.location;
