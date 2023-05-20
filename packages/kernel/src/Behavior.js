@@ -56,7 +56,8 @@ export class Behavior extends Actor {
         super.init(options);
         this.future(0).onStart();
         if (!this.doomed && this.tickRate && this.do) {
-            const firstDelta = Math.random() * this.tickRate;
+            let firstDelta = Math.random() * this.tickRate;
+            if (this.synched) firstDelta = 0;
             this.future(firstDelta).tick(firstDelta);
         }
     }
@@ -71,6 +72,7 @@ export class Behavior extends Actor {
     get tickRate() { return this._tickRate || 100}
     get isPaused() { return this._pause}
     get neverSucceed() {return this._neverSucceed}
+    get synched() {return this._synched}
 
     pause() { this.set({pause:true})}
     resume() { this.set({pause:false})}
@@ -89,7 +91,7 @@ export class Behavior extends Actor {
     }
 
     kill(name) {
-        const victim = this.get(name)
+        const victim = this.get(name);
         if (victim) victim.destroy();
     }
 
@@ -138,9 +140,9 @@ export class Behavior extends Actor {
 
     onStart() {}
     onDestroy() {}
-    onSucceed(child, data) {};
-    onProgress(child, percent) { this.progress(percent)};
-    onFail(child, data) {};
+    onSucceed(child, data) {}
+    onProgress(child, percent) { this.progress(percent)}
+    onFail(child, data) {}
 
 }
 Behavior.register('Behavior');
@@ -153,7 +155,7 @@ Behavior.register('Behavior');
 
 export class DestroyBehavior extends Behavior {
 
-    onStart() { this.actor.destroy(); }
+    onStart() { this.actor.destroy() }
 
 }
 DestroyBehavior.register('DestroyBehavior');
@@ -240,7 +242,7 @@ export class RandomBehavior extends Behavior {
         }
 
         if (total === 0) {
-            console.warn("RandomBehavior: All weights are 0!")
+            console.warn("RandomBehavior: All weights are 0!");
             this.start(this.behaviors[0]);
             return;
         }
@@ -263,7 +265,7 @@ export class RandomBehavior extends Behavior {
     }
 
     onSucceed() { this.succeed() }
-    onFail() { this.fail(); }
+    onFail() { this.fail() }
 
 }
 RandomBehavior.register('RandomBehavior');
@@ -347,7 +349,7 @@ export class DecoratorBehavior extends Behavior {
 
     get behavior() { return this._behavior }
 
-    onStart() { this.child = this.start(this.behavior); }
+    onStart() { this.child = this.start(this.behavior) }
 
     onSucceed(child, data) {this.succeed(data)}
     onFail(child, data) {this.fail(data)}
@@ -363,8 +365,8 @@ DecoratorBehavior.register('DecoratorBehavior');
 
 export class InvertBehavior extends DecoratorBehavior {
 
-    onSucceed(child, data) {this.fail(data)};
-    onFail(child, data) {this.succeed(data)};
+    onSucceed(child, data) {this.fail(data)}
+    onFail(child, data) {this.succeed(data)}
 
 }
 InvertBehavior.register('InvertBehavior');
@@ -377,8 +379,8 @@ InvertBehavior.register('InvertBehavior');
 
 export class SucceedBehavior extends DecoratorBehavior {
 
-    onSucceed(child, data) { this.succeed(data) };
-    onFail(child, data) { this.succeed(data) };
+    onSucceed(child, data) { this.succeed(data) }
+    onFail(child, data) { this.succeed(data) }
 
 }
 SucceedBehavior.register('SucceedBehavior');
@@ -391,8 +393,8 @@ SucceedBehavior.register('SucceedBehavior');
 
 export class FailBehavior extends DecoratorBehavior {
 
-    onSucceed(child, data) {this.fail(data)};
-    onFail(child, data) {this.fail(data)};
+    onSucceed(child, data) {this.fail(data)}
+    onFail(child, data) {this.fail(data)}
 
 }
 FailBehavior.register('FailBehavior');
@@ -406,9 +408,9 @@ FailBehavior.register('FailBehavior');
 export class DelayBehavior extends Behavior {
 
     get tickRate() { return 0 }
-    get delay() { return this._delay || 1000};
+    get delay() { return this._delay || 1000}
 
-    onStart() { this.future(this.delay).succeed(); }
+    onStart() { this.future(this.delay).succeed() }
 
 }
 DelayBehavior.register("DelayBehavior");
@@ -433,12 +435,12 @@ export class LoopBehavior extends DecoratorBehavior {
     onSucceed() {
         this.progress(this.n);
         if (!this.count || this.n < this.count) {
-            this.n++
-            this.start(this.behavior)
+            this.n++;
+            this.start(this.behavior);
         } else { this.succeed()}
     }
 
-    onFail() { this.fail(); }
+    onFail() { this.fail() }
 
 }
 LoopBehavior.register('LoopBehavior');
@@ -458,7 +460,7 @@ export class TryBehavior extends DecoratorBehavior {
     // }
 
     onSucceed() { this.succeed()}
-    onFail() { this.future(this.delay).onStart(); }
+    onFail() { this.future(this.delay).onStart() }
 }
 TryBehavior.register('TryBehavior');
 
@@ -472,8 +474,8 @@ export class RetryBehavior extends DecoratorBehavior {
 
     get delay() {return this._delay || 1000} //
 
-    onSucceed() { this.future(this.delay).onStart();}
-    onFail() { this.fail(); }
+    onSucceed() { this.future(this.delay).onStart() }
+    onFail() { this.fail() }
 }
 RetryBehavior.register('RetryBehavior');
 
@@ -492,15 +494,15 @@ export class BranchBehavior extends DecoratorBehavior {
 
     onSucceed(child) {
         if (child === this.conditionChild) {
-            if (this.then) this.start(this.then)
+            if (this.then) this.start(this.then);
         } else {
             this.succeed();
         }
     }
 
     onFail(child) {
-        if (child === this.conditionChild){
-            if (this.else) this.start(this.else)
+        if (child === this.conditionChild) {
+            if (this.else) this.start(this.else);
         } else {
             this.fail();
         }
@@ -554,7 +556,7 @@ export class SpinBehavior extends Behavior {
 
 
     do(delta) {
-        const q = q_axisAngle(this.axis, 0.13 * delta * this.speed / 50);
+        const q = q_axisAngle(this.axis, this.speed * delta / 1000);
         const rotation = q_multiply(this.actor.rotation, q);
         this.actor.set({rotation});
     }
@@ -572,12 +574,6 @@ class GoBehavior extends Behavior {
 
     get aim() {return this._aim || [0,0,1]}
     get speed() { return this._speed || 3}
-
-    // aimSet(a) {
-    //     this._aim = v3_normalize(a);
-    //     const rotation = q_lookAt(this.actor.forward, this.actor.up, this.aim);
-    //     this.actor.set({rotation});
-    // }
 
     do(delta) {
         const distance = this.speed * delta / 1000;
