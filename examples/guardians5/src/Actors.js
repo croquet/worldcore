@@ -468,9 +468,9 @@ export class MyModelRoot extends ModelRoot {
     makePowerPole(x, z, r) {
         const powerPole2 = GridActor.create( {pawn: "BollardPawn", tags: ["block"], instanceName:'pole3', parent: this.base, obstacle: true,
             translation:[x, 0, z], rotation:q_axisAngle([0,1,0],r)} );
-        SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.3,20,0], perlin:true} );
-        SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.6,21,0], perlin:true} );
-        SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.9,22,0], perlin:true} );
+        SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.7,20,0], perlin:true} );
+        SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[6.0,21,0], perlin:true} );
+        SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[6.3,22,0], perlin:true} );
     }
 
     makeBot(x, z, index) {

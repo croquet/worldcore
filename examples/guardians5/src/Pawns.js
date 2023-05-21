@@ -92,7 +92,7 @@ export const perlin2D = function(perlinHeight = 27.5, perlinScale = 0.02) {
     };
 }();
 
-export const sunBase = [50, 100, 50];
+export const sunBase = [50, 100, 10];
 export const sunLight =  function() {
     const sun = new THREE.DirectionalLight( 0xffffff, 0.3 );
     sun.position.set(...sunBase);
