@@ -396,19 +396,20 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
         for (const collider of colliders) {
             if (collider === this) continue;
-            const colliderPos = m4_getTranslation(collider.global);
-            const d = v_dist2Sqr(colliderPos, this.translation);
+            //const colliderPos = m4_getTranslation(collider.global);
+            const d = v_dist2Sqr(collider.translation, this.translation);
 
-            if (d < 6.25) {
+            if (d < 9) {
                 const from = v_sub2(this.translation, collider.translation);
                 const distance = v3_magnitude(from);
                 let bounce;
-                if (distance > 0) bounce = v3_scale( from, 2/distance );
-                else bounce = [1,1,1]; // we are on top of each other
-                const translation = v3_add(this.translation, bounce);
+                if (distance > 0) bounce = v3_scale( from, 3.1/distance );
+                else bounce = [2,1,2]; // we are on top of each other
+                console.log(bounce)
+                const translation = v3_add(collider.translation, bounce);
                 this.translateTo(translation);
-                if (collider.actor.tags.has("avatar"))
-                    collider.say("bounce", [-bounce[0], -bounce[1], -bounce[2]]);
+                //if (collider.actor.tags.has("avatar"))
+                    //collider.say("bounce", [-bounce[0], -bounce[1], -bounce[2]]);
                 return true;
             }
         }
