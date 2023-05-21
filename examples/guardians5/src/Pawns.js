@@ -6,16 +6,13 @@
 // the height of the terrain as the avatar moves.
 //
 // To do:
+// - add sound
 // - tanks bounce off bollards too much, should be smoother
 // - muzzle flash
-// - tower health coin
 // - should tanks lay down track?
-// - explosion of bots should be different from when hit by missile
-// - bots go through player and bollards
 // - red missiles vs red eyed bots
 // - add weenies
 // - joystick is not very responsive
-
 
 import { ViewRoot, ViewService, HUD, Pawn, mix, InputManager, ThreeInstanceManager,
     PM_ThreeVisible, ThreeRenderManager, ThreeRaycast, PM_Smoothed, PM_Spatial, PM_ThreeInstanced, PM_ThreeCollider,
@@ -34,11 +31,13 @@ import n_7 from "../assets/7.glb";
 import n_8 from "../assets/8.glb";
 import n_9 from "../assets/9.glb";
 
+import bollard_ from "../assets/bollard.glb";
 import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
 import tank_body from "../assets/tank_body.glb";
 import paper from "../assets/paper.jpg";
-import sky from "../assets/quarry_03.png";
+// Illustration 112505376 / 360 Sky © Planetfelicity | Dreamstime.com
+import sky from "../assets/alienSky1.jpg";
 
 import fireballTexture from "../assets/explosion.png";
 import * as fireballFragmentShader from "../assets/fireball.frag.js";
@@ -300,12 +299,24 @@ export class InstancePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) 
 
     constructor(actor) {
         super(actor);
-        this.useInstance(actor._instanceName);
-       // if (actor._perlin) {
-            const t = m4_getTranslation(this.global);
-            this.localTransform = m4_translation([0,perlin2D(t[0], t[2])-0.25,0]);
-            this.refreshDrawTransform();
-        //}
+        if (actor._viewObstacle) this.service("CollisionManager").colliders.add(this);
+        this.future(100).setup();
+    }
+
+    setup() {
+        this.instance = this.useInstance(this.actor._instanceName);
+        if (this.instance) {
+            if (this.actor._perlin) {
+                const t = m4_getTranslation(this.global);
+                this.localTransform = m4_translation([0,perlin2D(t[0], t[2])-0.25,0]);
+                this.refreshDrawTransform();
+            }
+        } else this.future(100).setup();
+    }
+
+    destroy() {
+        super.destroy();
+        if (this.actor._viewObstacle) this.service("CollisionManager").colliders.delete(this);
     }
 }
 InstancePawn.register("InstancePawn");
@@ -342,19 +353,17 @@ export class HealthCoinPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible)
 
     setStat( health ) {
         if (health>66) this.material.color = new THREE.Color(0.25,1,0.25);
-        else if (health>33) this.material.color = new THREE.Color(1, 1, 0.25);
+        else if (health>33) this.material.color = new THREE.Color(1, 1, 0.4);
         else if (health > 0) this.material.color = new THREE.Color(1, 0.15, 0.15);
         else this.material.color = new THREE.Color(0.25, 0.25, 0.25);
-        this.addNumbers(health.toString());
-        //this.addNumbers("000");
+        this.setNumbers(health.toString());
     }
 
-    addNumbers(str) {
-        console.log("addNumbers", str);
-        this.front.clear();
-        this.back.clear();
-        const len = str.length;
-        if ( numbers[0] ) {
+    setNumbers(str) {
+        if ( numbers[9] ) { // have we loaded it yet?
+            this.front.clear();
+            this.back.clear();
+            const len = str.length;
             for (let i=0; i<len; i++) {
                 const n = Number(str[i]);
                 const numMesh = numbers[n];
@@ -364,8 +373,7 @@ export class HealthCoinPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible)
                 this.front.add( f );
                 this.back.add( b );
             }
-        } else this.future(100).addNumbers(str);
-
+        } else this.future(100).setNumbers(str);
     }
 
     destroy() {
@@ -394,8 +402,8 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
         paperTexture.wrapT = THREE.RepeatWrapping;
         paperTexture.repeat.set( worldX/4, worldZ/4 );
 
-
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2), map:paperTexture} );
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.8, 0.5, 0.2), map:paperTexture} );
+        //this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2), map:paperTexture} );
         this.geometry = new THREE.PlaneGeometry(worldX*cellSize,worldZ*cellSize, worldX, worldZ);
         this.geometry.rotateX(toRad(-90));
 
@@ -492,7 +500,7 @@ export class MyViewRoot extends ViewRoot {
         const ambient = new THREE.AmbientLight( 0xffffff, 0.6 );
         rm.scene.add(ambient);
         rm.scene.add(sunLight); // this is a global object
-        rm.scene.fog = new THREE.Fog( 0x66aa66, 200, 400 );
+        rm.scene.fog = new THREE.Fog( 0xcc8833, 200, 400 );
         const loader = new THREE.TextureLoader();
         loader.load( sky, skyTexture => {
             const pmremGenerator = new THREE.PMREMGenerator(rm.renderer);
@@ -528,17 +536,6 @@ export class MyViewRoot extends ViewRoot {
         im.addMaterial("green", green);
         im.addMaterial("gray", gray);
 
-        const box = new THREE.BoxGeometry( 1, 1, 1 );
-        im.addGeometry("box", box);
-
-        const cylinder = new THREE.CylinderGeometry(1, 1.5, 4.25, 32);
-        cylinder.translate(0,2,0);
-        im.addGeometry("cylinder", cylinder);
-
-        const cylinder2 = new THREE.CylinderGeometry(1, 1, 0.25, 32);
-        cylinder2.translate(0,1.5,0);
-        im.addGeometry("cylinder2", cylinder2);
-
         const cylinder3 = new THREE.CylinderGeometry(0.5, 1.5, 28.25, 32);
         cylinder3.translate(0,14,0);
         const shearMatrix = new THREE.Matrix4().makeShear(0, 0, 0.25, 0, 0, 0, 0);
@@ -550,20 +547,18 @@ export class MyViewRoot extends ViewRoot {
         cylinder4.translate(0,1.5,0);
         im.addGeometry("cylinder4", cylinder4);
 
-        const mesh3 = im.addMesh("pole", "cylinder", "gray");
-        const mesh4 = im.addMesh("pole2", "cylinder2", "gray",3000);
         const mesh5 = im.addMesh("pole3", "cylinder3", "gray");
         const mesh6 = im.addMesh("pole4", "cylinder4", "green");
 
-        mesh3.castShadow = true;
-        mesh4.castShadow = true;
+
         mesh5.castShadow = true;
         mesh6.castShadow = true;
 
         //
         const gltfLoader = new GLTFLoader();
 
-        let [ tankTracks, tankTurret, tankBody, n0, n1, n2, n3, n4, n5, n6, n7, n8, n9 ] = await Promise.all( [
+        let [bollard, tankTracks, tankTurret, tankBody, n0, n1, n2, n3, n4, n5, n6, n7, n8, n9 ] = await Promise.all( [
+            gltfLoader.loadAsync( bollard_ ),
             gltfLoader.loadAsync( tank_tracks ),
             gltfLoader.loadAsync( tank_turret ),
             gltfLoader.loadAsync( tank_body ),
@@ -579,6 +574,11 @@ export class MyViewRoot extends ViewRoot {
             gltfLoader.loadAsync( n_9 )
         ] );
 
+        console.log("bollard", bollard);
+        im.addGeometry("bollard", bollard.scene.children[0].geometry);
+        const bollardim = im.addMesh("bollard", "bollard", "gray");
+        bollardim.castShadow = true;
+        bollardim.receiveShadow = true;
 
         tankBody = tankBody.scene.children[0].geometry;
         tankTracks = tankTracks.scene.children[0].geometry;

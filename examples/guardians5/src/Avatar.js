@@ -8,8 +8,8 @@ import { Pawn, mix, PM_ThreeVisible, PM_ThreeInstanced, PM_Avatar, PM_Smoothed, 
 
 import paper from "../assets/paper.jpg";
 import { sunLight, sunBase, perlin2D } from "./Pawns";
-
-export const cameraOffset = [0,12,20];
+//import shot_sound from "../assets/Cannon Shot.acc";
+const cameraOffset = [0,12,20];
 
 //------------------------------------------------------------------------------------------
 // AvatarPawn
@@ -65,11 +65,26 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             this.mesh.receiveShadow = true;
             if (this.isMyAvatar) sunLight.target = this.mesh; //this.instance; // sunLight is a global
             this.setRenderObject(this.mesh);
-            //this.outline3d=constructShadow(this.mesh, 10001, color);
-            //this.mesh.add(this.outline3d);
         } else this.future(100).loadInstance(name, color);
     }
+/*
+    loadSounds() {
+        const rm = this.service("ThreeRenderManager");
+        this.audioLoader = new THREE.AudioLoader();
+        this.listener = new THREE.AudioListener();
+        rm.camera.add( this.listener );
+        this.sounds = [];
+        this.audioLoader.load( shot_sound, buffer => this.shotSound = buffer);
+    }
 
+    loadSound(sound, index) {
+        this.audioLoader.load( sound, buffer => this.sounds[index] = buffer);
+            const audio = new THREE.PositionalAudio( this.listener );
+            audio.setBuffer( buffer );
+            target.add( audio );
+        });
+    }
+*/
     destroy() {
         super.destroy();
         this.service("CollisionManager").colliders.delete(this);

@@ -463,12 +463,8 @@ export class MyModelRoot extends ModelRoot {
     }
 
     makeBollard(x, z) {
-        const bollard = GridActor.create( {pawn: "BollardPawn", tags: ["block"], instanceName:'pole', parent: this.base, obstacle: true,
-            translation:[x, 0, z]} );
-    // the three floating parts of the bollard
-        SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3,0], perlin:true} );
-        SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,3.5,0], perlin:true} );
-        SimpleActor.create({pawn: "InstancePawn", parent: bollard, instanceName:'pole2', translation:[0,4,0], perlin:true} );
+        GridActor.create( {pawn: "InstancePawn", tags: ["block"], instanceName:'bollard', parent: this.base, 
+            obstacle:true, viewObstacle:true, perlin: true, translation:[x, 0, z]} );
     }
 
     makePowerPole(x, z, r) {
