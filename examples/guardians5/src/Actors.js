@@ -323,9 +323,7 @@ class MyUser extends User {
         super.init(options);
         console.log(options);
         const base = this.wellKnownModel("ModelRoot").base;
-
-        this.color = [0.25+0.75*this.random(), 0.5, 0.25+0.75*this.random()];
-        this.userColor = options.userNumber%20;
+        this.userColor = options.userNumber%24;
         const trans = [this.random() * 10-5, 0, this.random()*10-5];
         const rot = q_axisAngle([0,1,0], Math.PI/2);
 
@@ -333,15 +331,14 @@ class MyUser extends User {
             pawn: "AvatarPawn",
             parent: base,
             driver: this.userId,
-            color: this.color,
             userColor: this.userColor,
             translation: trans,
             rotation: rot,
             instanceName: 'tankTracks',
             tags: ["avatar", "block"]
         });
-        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor:this.userColor, color:this.color, instanceName:'tankBody'});
-        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor:this.userColor, color:this.color, instanceName:'tankTurret'});
+        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor:this.userColor, instanceName:'tankBody'});
+        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor:this.userColor, instanceName:'tankTurret'});
     }
 
     destroy() {
