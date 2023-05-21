@@ -32,9 +32,17 @@ export class UserManager extends ModelService {
 
     user(viewId) { return this.users.get(viewId) }
 
+    createUser(options) {
+        return this.defaultUser.create(options);
+    }
+
+    destroyUser(user) {
+        user.destroy();
+    }
+
     onJoin(viewId) {
         if (this.users.has(viewId)) console.warn("UserManager received duplicate view-join for viewId " + viewId);
-        const user = this.defaultUser.create({userId: viewId, userNumber: this.userNumber});
+        const user = this.createUser({userId: viewId, userNumber: this.userNumber});
         this.userNumber++;
         this.users.set(viewId, user);
         this.publish("UserManager", "create", user);
@@ -43,7 +51,7 @@ export class UserManager extends ModelService {
     onExit(viewId) {
         const user = this.user(viewId);
         if (!user) return;
-        user.destroy();
+        this.destroyUser(user);
         this.users.delete(viewId);
         this.publish("UserManager", "destroy", viewId);
     }
