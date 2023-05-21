@@ -8,7 +8,6 @@
 // To do:
 // - add sound
 // - tanks bounce off bollards too much, should be smoother
-// - add demo mode, where game automatically restarts
 // - muzzle flash
 // - should tanks lay down track?
 // - red missiles vs red eyed bots
