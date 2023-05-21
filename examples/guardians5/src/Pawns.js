@@ -16,7 +16,7 @@
 
 import { ViewRoot, ViewService, HUD, Pawn, mix, InputManager, ThreeInstanceManager,
     PM_ThreeVisible, ThreeRenderManager, ThreeRaycast, PM_Smoothed, PM_Spatial, PM_ThreeInstanced, PM_ThreeCollider,
-    THREE, toRad, m4_translation, m4_getTranslation,
+    THREE, toRad, m4_rotation, m4_multiply, m4_translation, m4_getTranslation,
     PerlinNoise, GLTFLoader } from "@croquet/worldcore";
 import { HUDWidget } from "./BotHUD";
 
@@ -46,28 +46,24 @@ import * as fireballVertexShader from "../assets/fireball.vert.js";
 const numbers = [];
 
 export const UserColors = [
-    rgb(64, 206, 64),          // green
     rgb(255, 64, 64),        // Red
     rgb(64, 64, 255),         // Blue
     rgb(255, 178, 122),        // Orange
     rgb(255, 64, 255),        // Purple
     rgb(255, 240, 111),        // Yellow
 
-    rgb(125, 206, 160),        // Green
     rgb(210, 57, 43),        // Red
     rgb(40, 116, 166),        // Blue
     rgb(175, 96, 26),        // Orange
     rgb(118, 68, 138),        // Purple
     rgb(183, 149, 11),        // Yellow
 
-    rgb(39, 174, 96),        // Green
     rgb(217, 136, 128),        // Red
     rgb(52, 152, 219),        // Blue
     rgb(230, 126, 34),        // Orange
     rgb(155, 89, 182),         // Purple
     rgb(241, 196, 15),        // Yellow
 
-    rgb(30, 132, 73),        // Green
     rgb(242, 215, 213),        // Red
     rgb(133, 193, 233),         // Blue
     rgb(240, 178, 122),        // Orange
