@@ -314,7 +314,39 @@ AvatarActor.register('AvatarActor');
 //------------------------------------------------------------------------------------------
 
 class MyUserManager extends UserManager {
+    init() {
+        super.init();
+        this.props = new Map();
+        this.propsTimeout = 60*60*1000; // 1 hour
+    }
+
     get defaultUser() {return MyUser}
+
+    createUser(options) {
+        const { userId } = options;
+        // restore saved props
+        const saved = this.props.get(userId);
+        if (saved) {
+            options = {...options, savedProps: saved.props};
+            this.props.delete(userId);
+        }
+        // delete old saved props
+        const expired = this.now() - this.propsTimeout;
+        for (const [userId, {lastSeen}] of this.props) {
+            if (lastSeen < expired) {
+                this.props.delete(userId);
+            }
+        }
+        return super.createUser(options);
+   }
+
+    destroyUser(user) {
+        const props = user.saveProps();
+        if (props) {
+            this.props.set(user.userId, {props, lastSeen: this.now()});
+        }
+        super.destroyUser(user);
+    }
 }
 MyUserManager.register('MyUserManager');
 
@@ -324,22 +356,27 @@ class MyUser extends User {
         console.log(options);
         const base = this.wellKnownModel("ModelRoot").base;
 
-        this.userColor = options.userNumber%24;
-        const trans = [this.random() * 10-5, 0, this.random()*10-5];
-        const rot = q_axisAngle([0,1,0], Math.PI/2);
+        const props = options.savedProps || {
+            userColor: options.userNumber%24,
+            translation: [this.random() * 10-5, 0, this.random()*10-5],
+            rotation: q_axisAngle([0,1,0], Math.PI/2),
+        }
 
         this.avatar = AvatarActor.create({
             pawn: "AvatarPawn",
             parent: base,
             driver: this.userId,
-            userColor: this.userColor,
-            translation: trans,
-            rotation: rot,
             instanceName: 'tankTracks',
-            tags: ["avatar", "block"]
+            tags: ["avatar", "block"],
+            ...props
         });
-        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor:this.userColor, instanceName:'tankBody'});
-        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor:this.userColor, instanceName:'tankTurret'});
+        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor: props.userColor, instanceName:'tankBody'});
+        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor: props.userColor, instanceName:'tankTurret'});
+    }
+
+    saveProps() {
+        const { color, userColor, translation, rotation } = this.avatar;
+        return { color, userColor, translation, rotation };
     }
 
     destroy() {
@@ -461,7 +498,7 @@ export class MyModelRoot extends ModelRoot {
     }
 
     makeBollard(x, z) {
-        GridActor.create( {pawn: "InstancePawn", tags: ["block"], instanceName:'bollard', parent: this.base, 
+        GridActor.create( {pawn: "InstancePawn", tags: ["block"], instanceName:'bollard', parent: this.base,
             obstacle:true, viewObstacle:true, perlin: true, translation:[x, 0, z]} );
     }
 
