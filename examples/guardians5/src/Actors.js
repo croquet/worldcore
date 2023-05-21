@@ -302,8 +302,8 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar, AM_OnGrid) {
         missile.go = missile.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
     }
 
-    resetGame() {
-        this.say("goHome");
+    resetGame() { // don't go home at end of game
+        // this.say("goHome");
     }
 }
 AvatarActor.register('AvatarActor');
