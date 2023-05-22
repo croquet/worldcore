@@ -622,7 +622,7 @@ export class MyViewRoot extends ViewRoot {
         tankTracksim.castShadow = true;
         tankTracksim.receiveShadow = true;
 
-        const numberMat = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1), metalness:1.0, roughness:0.3} );
+        const numberMat = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1), metalness:0.5, roughness:0.5} );
         this.setNumber(0, n0, numberMat);
         this.setNumber(1, n1, numberMat);
         this.setNumber(2, n2, numberMat);
