@@ -1,4 +1,4 @@
-export function vertexShader(){return `
+export function vertexShader() {return `
 
 //
 // GLSL textureless classic 3D noise "cnoise",

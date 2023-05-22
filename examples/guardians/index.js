@@ -1,29 +1,20 @@
-// Sheep demo
+// GUARDIANS
 
-import * as BEHAVIORS from "./src/Behaviors";
-import * as VIEWS from "./src/Views";
+// This is the first game created for Croquet for Unity.
+
 import { App, StartWorldcore} from "@croquet/worldcore";
 
-import {  MyViewRoot } from "./src/Views";
-import { MyModelRoot } from "./src/Models";
-
-// webpack will replace process.env.NODE_ENV with the actual value
-const apiKey = process.env.NODE_ENV === 'production'
-    ? '1rN7t58Mo1ani03Djcl4amvdEAnoitB6g3oNxEDrC'
-    : '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9';
+import {  MyViewRoot } from "./src/Pawns";
+import { MyModelRoot } from "./src/Actors";
+import "./src/Avatar";
 
 
-App.makeWidgetDock({debug: true, stats: true});
-
+App.makeWidgetDock();
 StartWorldcore({
-    appId: 'io.croquet.sheep',
-    // apiKey,
-    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
-    model: MyModelRoot,
-    //name: 'sheep',
+    appId: 'io.croquet.worldcore.guardians4',
+    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',    // Replace with your apiKey
     name: App.autoSession(),
     password: App.autoPassword(),
-    //password: "password",
+    model: MyModelRoot,
     view: MyViewRoot,
-    tps:60
 });

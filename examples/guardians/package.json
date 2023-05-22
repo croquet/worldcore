@@ -1,7 +1,7 @@
 {
-  "name": "@croquet/guardians",
+  "name": "@croquet/worldcore-guardians5",
   "version": "2.0.0-alpha.0",
-  "description": "Worldcore Behavior Demo",
+  "description": "Worldcore Guardians",
   "private": true,
   "scripts": {
     "start": "webpack serve --no-live-reload --no-hot --mode development --devtool source-map",
