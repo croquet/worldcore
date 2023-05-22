@@ -7,12 +7,14 @@
 //
 // To do:
 // - add sound
+// - start game button also shoots
 // - add demo mode, where game automatically restarts
 // - muzzle flash
 // - should tanks lay down track?
 // - red missiles vs red eyed bots
 // - add weenies
 // - joystick is not very responsive
+// - add compass to joystick
 
 import { ViewRoot, ViewService, HUD, Pawn, mix, InputManager, ThreeInstanceManager,
     PM_ThreeVisible, ThreeRenderManager, ThreeRaycast, PM_Smoothed, PM_Spatial, PM_ThreeInstanced, PM_ThreeCollider,
@@ -20,21 +22,23 @@ import { ViewRoot, ViewService, HUD, Pawn, mix, InputManager, ThreeInstanceManag
     PerlinNoise, GLTFLoader } from "@croquet/worldcore";
 import { HUDWidget } from "./BotHUD";
 
-import n_0 from "../assets/0.glb";
-import n_1 from "../assets/1.glb";
-import n_2 from "../assets/2.glb";
-import n_3 from "../assets/3.glb";
-import n_4 from "../assets/4.glb";
-import n_5 from "../assets/5.glb";
-import n_6 from "../assets/6.glb";
-import n_7 from "../assets/7.glb";
-import n_8 from "../assets/8.glb";
-import n_9 from "../assets/9.glb";
+import n_0 from "../assets/numbers/0.glb";
+import n_1 from "../assets/numbers/1.glb";
+import n_2 from "../assets/numbers/2.glb";
+import n_3 from "../assets/numbers/3.glb";
+import n_4 from "../assets/numbers/4.glb";
+import n_5 from "../assets/numbers/5.glb";
+import n_6 from "../assets/numbers/6.glb";
+import n_7 from "../assets/numbers/7.glb";
+import n_8 from "../assets/numbers/8.glb";
+import n_9 from "../assets/numbers/9.glb";
 
 import bollard_ from "../assets/bollard.glb";
+import tower_ from "../assets/tower.glb";
 import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
 import tank_body from "../assets/tank_body.glb";
+
 import paper from "../assets/paper.jpg";
 // Illustration 112505376 / 360 Sky © Planetfelicity | Dreamstime.com
 import sky from "../assets/alienSky1.jpg";
@@ -135,25 +139,8 @@ for (let i=0; i<10; i++) fireMaterial[i] = function makeFireMaterial() {
     } );
 }();
 
-/*
-    loadSounds() {
-        const rm = this.service("ThreeRenderManager");
-        this.audioLoader = new THREE.AudioLoader();
-        this.listener = new THREE.AudioListener();
-        rm.camera.add( this.listener );
-        this.sounds = [];
-        this.audioLoader.load( shot_sound, buffer => this.shotSound = buffer);
-    }
+let tower;
 
-    loadSound(sound, index) {
-        this.audioLoader.load( sound, buffer => this.sounds[index] = buffer);
-            const audio = new THREE.PositionalAudio( this.listener );
-            audio.setBuffer( buffer );
-            target.add( audio );
-        });
-    }
-*/
-//import shot_sound from "../assets/Cannon Shot.acc";
 //------------------------------------------------------------------------------------------
 // BotPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -295,16 +282,21 @@ GeometryPawn.register("GeometryPawn");
 // BollardPawn -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
+export class TowerPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
-        //this.useInstance("pole");
-        this.useInstance(actor._instanceName);
-        this.service("CollisionManager").colliders.add(this);
-        const t = this.translation;
-        this.localTransform = m4_translation([0,perlin2D(t[0], t[2])-0.25,0]);
-        this.refreshDrawTransform();
+        this.future(100).setup();
+    }
+
+    setup() {
+        if (tower) {
+            this.setRenderObject( tower.clone(true) );
+            this.service("CollisionManager").colliders.add(this);
+            const t = this.translation;
+            this.localTransform = m4_translation([0,perlin2D(t[0], t[2])-0.25,0]);
+            this.refreshDrawTransform();
+        } else this.future(100).setup();
     }
 
     destroy() {
@@ -313,7 +305,7 @@ export class BollardPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeInstanced) {
     }
 
 }
-BollardPawn.register("BollardPawn");
+TowerPawn.register("TowerPawn");
 
 //------------------------------------------------------------------------------------------
 // InstancePawn ----------------------------------------------------------------------------
@@ -392,7 +384,9 @@ export class HealthCoinPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible)
                 const numMesh = numbers[n];
                 const f = new THREE.Mesh(numMesh.geometry, numMesh.material);
                 const b = new THREE.Mesh(numMesh.geometry, numMesh.material);
-                b.position.x = f.position.x = (0.5 + i - len/2)*0.4 + 0.02 + (n===1?0.05:0);
+                f.rotateX(-Math.PI/2);
+                b.rotateX(-Math.PI/2);
+                b.position.x = f.position.x = (0.5 + i - len/2)*0.4;// + (n===1?0.05:0);
                 this.front.add( f );
                 this.back.add( b );
             }
@@ -523,7 +517,7 @@ export class MyViewRoot extends ViewRoot {
         const ambient = new THREE.AmbientLight( 0xffffff, 0.6 );
         rm.scene.add(ambient);
         rm.scene.add(sunLight); // this is a global object
-        rm.scene.fog = new THREE.Fog( 0xcc8833, 200, 400 );
+        rm.scene.fog = new THREE.Fog( 0x9D5D4D, 200, 400 );
         const loader = new THREE.TextureLoader();
         loader.load( sky, skyTexture => {
             const pmremGenerator = new THREE.PMREMGenerator(rm.renderer);
@@ -580,8 +574,9 @@ export class MyViewRoot extends ViewRoot {
         //
         const gltfLoader = new GLTFLoader();
 
-        let [bollard, tankTracks, tankTurret, tankBody, n0, n1, n2, n3, n4, n5, n6, n7, n8, n9 ] = await Promise.all( [
+        let [bollard, tower_load, tankTracks, tankTurret, tankBody, n0, n1, n2, n3, n4, n5, n6, n7, n8, n9 ] = await Promise.all( [
             gltfLoader.loadAsync( bollard_ ),
+            gltfLoader.loadAsync( tower_ ),
             gltfLoader.loadAsync( tank_tracks ),
             gltfLoader.loadAsync( tank_turret ),
             gltfLoader.loadAsync( tank_body ),
@@ -597,7 +592,8 @@ export class MyViewRoot extends ViewRoot {
             gltfLoader.loadAsync( n_9 )
         ] );
 
-        console.log("bollard", bollard);
+        tower = tower_load.scene.children[0];
+
         im.addGeometry("bollard", bollard.scene.children[0].geometry);
         const bollardim = im.addMesh("bollard", "bollard", "gray");
         bollardim.castShadow = true;

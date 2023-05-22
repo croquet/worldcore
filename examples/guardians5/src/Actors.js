@@ -1,11 +1,11 @@
 // Guardian Actors
 // Copyright (c) 2023 CROQUET CORPORATION
-
-import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, v3_add, v3_sub, v3_scale,
-    UserManager, User, AM_Avatar, q_axisAngle, v3_normalize, v3_rotate, AM_Grid, AM_OnGrid } from "@croquet/worldcore";
 // The Guardian game is basically a 2D game. Virtually all computations in the model are 2D.
 // The flat world is placed on a Perlin noise generated surface in the view, but all interactions including
 // driving and collisions are computed in 2D.
+
+import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, v3_add, v3_sub, v3_scale,
+    UserManager, User, AM_Avatar, q_axisAngle, v3_normalize, v3_rotate, AM_Grid, AM_OnGrid } from "@croquet/worldcore";
 
 const v_dist2Sqr = function (a,b) {
     const dx = a[0] - b[0];
@@ -95,20 +95,6 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
         }
         const speed = (16 + 4 * Math.random());
         this.ggg = this.behavior.start( {name: "GotoBehavior", target, speed, noise:2, radius:1} );
-    }
-
-    // this is to reset the bots for testing
-    reset() {
-        if (this.ggg) {
-            this.ggg.destroy();
-            this.ggg = null;
-        }
-        const ss = 200;
-        const x = -ss/2 + ss * Math.random();
-        const z = -ss/2 + ss * Math.random();
-        const translation = [3*x, 0, 3*z];
-        this.set({translation});
-        this.go([0,0,0]);
     }
 
     killMe(s=0.3, onTarget) {
@@ -274,22 +260,12 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar, AM_OnGrid) {
     init(options) {
         super.init(options);
         this.isAvatar = true;
-        this.listen("bounce", this.doBounce);
         this.listen("shoot", this.doShoot);
         this.subscribe("all", "godMode", this.doGodMode);
     }
 
     get userColor() { return this._userColor }
     get color() { return this._color || [0.5,0.5,0.5]}
-
-    // Since the view side control is happening so often, it is possible to miss a
-    // collision with another avatar because the view will be updated before the
-    // bounce gets integrated into the avatar position. By sending it to the view
-    // here, it gets fully integrated. This does increase latency somewhat for you
-    // seeing the other user's bounce.
-    doBounce(bounce) {
-        this.say("doBounce", bounce);
-    }
 
     doGodMode(gm) {
         this.say("doGodMode", gm);
@@ -403,6 +379,7 @@ export class MyModelRoot extends ModelRoot {
         this.subscribe("bots","destroyedBot", this.destroyedBot);
         this.subscribe("game", "endGame", this.endGame);
         this.subscribe("game", "startGame", this.startGame);
+        this.demoMode = false;
 
         const bollardScale = 3; // size of the bollard
         const bollardDistance = bollardScale*3; // distance between bollards
@@ -417,14 +394,14 @@ export class MyModelRoot extends ModelRoot {
         // place the tower
         for (let i=0; i<3;i++) {
             const p3 = Math.PI*2/3;
-            this.makePowerPole(v[0],v[2],i*p3);
+            this.makePowerPole(v[0],v[2],i*p3-Math.PI/2);
             v = v3_rotate( v, q_axisAngle([0,1,0], p3) );
         }
 
         HealthCoinActor.create({pawn: "HealthCoinPawn", parent: this.base, instanceName:'healthCoin', translation:[0,20,0]} );
 
         let corner = 12;
-        [[-corner,-corner, -Math.PI/4], [-corner, corner, Math.PI/4], [corner, corner, Math.PI-Math.PI/4], [corner,-corner, Math.PI+Math.PI/4]].forEach( xy => {
+        [[-corner,-corner, Math.PI/2-Math.PI/4], [-corner, corner, Math.PI/2+Math.PI/4], [corner, corner, Math.PI/2+Math.PI-Math.PI/4], [corner,-corner, Math.PI/2+Math.PI+Math.PI/4]].forEach( xy => {
             this.makePowerPole(bollardDistance*xy[0]+1.5,bollardDistance*xy[1]+1.5,xy[2]);
         });
 
@@ -503,11 +480,8 @@ export class MyModelRoot extends ModelRoot {
     }
 
     makePowerPole(x, z, r) {
-        const powerPole2 = GridActor.create( {pawn: "BollardPawn", tags: ["block"], instanceName:'pole3', parent: this.base, obstacle: true,
+        GridActor.create( {pawn: "TowerPawn", tags: ["block"], parent: this.base, obstacle: true,
             translation:[x, 0, z], rotation:q_axisAngle([0,1,0],r)} );
-        SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[5.7,20,0], perlin:true} );
-        SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[6.0,21,0], perlin:true} );
-        SimpleActor.create({pawn: "InstancePawn", parent: powerPole2, instanceName:'pole4', translation:[6.3,22,0], perlin:true} );
     }
 
     makeBot(x, z, index) {
