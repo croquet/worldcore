@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-widget2",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-alpha.1",
   "description": "Canvas-based Widget Component for Croquet Worldcore",
   "keywords": [
     "croquet",
@@ -23,7 +23,7 @@
     "directory": "packages/widget2"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^2.0.0-alpha.0"
+    "@croquet/worldcore-kernel": "^2.0.0-alpha.1"
   },
   "publishConfig": {
     "access": "public"
