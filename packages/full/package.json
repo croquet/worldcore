@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore",
-  "version": "2.0.0-alpha.0",
+  "version": "2.0.0-alpha.1",
   "description": "3D World Engine for Croquet (full install)",
   "keywords": [
     "croquet",
@@ -27,10 +27,10 @@
     "directory": "packages/full"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^2.0.0-alpha.0",
-    "@croquet/worldcore-rapier": "^2.0.0-alpha.0",
-    "@croquet/worldcore-three": "^2.0.0-alpha.0",
-    "@croquet/worldcore-widget": "^2.0.0-alpha.0",
-    "@croquet/worldcore-widget2": "^2.0.0-alpha.0"
+    "@croquet/worldcore-kernel": "^2.0.0-alpha.1",
+    "@croquet/worldcore-rapier": "^2.0.0-alpha.1",
+    "@croquet/worldcore-three": "^2.0.0-alpha.1",
+    "@croquet/worldcore-widget": "^2.0.0-alpha.1",
+    "@croquet/worldcore-widget2": "^2.0.0-alpha.1"
   }
 }
