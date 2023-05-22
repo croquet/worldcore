@@ -38,7 +38,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.chaseTranslation = [0,10,20];
         this.chaseRotation = q_axisAngle([1,0,0], toRad(-5));
         this.wheelHeight = 0.0;
-        this.velocity = [0,0,0];
         this.speed = 0;
         this.pointerMoved = false;
         this.lastShootTime = -10000;
@@ -280,52 +279,35 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 this.steer = this.turn;
             }
 
-            // copy our current position to compute pitch
-            const start = [...this.translation];
             const angularVelocity = this.steer*0.025;
             const yaw = this.yaw+angularVelocity;
             const yawQ = q_axisAngle([0,1,0], yaw);
+            const forward = v3_rotate([0,0,-1], yawQ);
+            const right = v3_rotate([1,0,0], yawQ);
+            const velocity = v3_scale(forward, this.speed);
 
-            // velocity and follow terrain
-            // -1 is a fake velocity used to compute the pitch when not moving
-            this.velocity = [0, 0, -this.speed || -0.4];
-            this.deltat = v3_rotate(this.velocity, yawQ);
-            const translation = v3_add(this.translation, this.deltat);
-            // can't use last position to determine pitch if not moving
-            if (this.speed === 0 ) start[1]=perlin2D(start[0], start[2])+this.wheelHeight;
-            translation[1]=perlin2D(translation[0], translation[2])+this.wheelHeight;
-            // compute pitch - both backward and forward
+            // set translation to limit after any collision
+            const translation = this.collide( v3_add(this.translation, velocity) );
+            translation[1] = perlin2D(translation[0], translation[2])+this.wheelHeight;
+            // the forward part of the tank to compute pitch
+            const fTrans = v3_add(forward, translation);
+            fTrans[1] = perlin2D(fTrans[0], fTrans[2])+this.wheelHeight;
+            // the right part of the tank - to compute roll
+            const rTrans = v3_add(right, translation);
+            rTrans[1] = perlin2D(rTrans[0], rTrans[2])+this.wheelHeight;
 
-            let deltaPitch, deltaRoll;
-            let roll, pitch;
-            if (this.speed>=0) {
-                deltaPitch = v3_sub(translation, start);
-                pitch = this.computeAngle(deltaPitch);
+            const deltaPitch = v3_sub(fTrans, translation);
+            const pitch = this.computeAngle(deltaPitch);
 
-                deltaRoll = [translation[0]+deltaPitch[2],0,translation[2]-deltaPitch[0]];
-                deltaRoll[1] = perlin2D(deltaRoll[0], deltaRoll[2])+this.wheelHeight;
-                deltaRoll = v3_sub(translation, deltaRoll);
-                roll = this.computeAngle(deltaRoll);
-            } else {
-                deltaPitch = v3_sub(start, translation);
-                pitch = this.computeAngle(deltaPitch);
+            const deltaRoll = v3_sub(rTrans, translation);
+            const roll = this.computeAngle(deltaRoll);
 
-                deltaRoll = [deltaPitch[2]+translation[0],0,-deltaPitch[0]+translation[2]];
-                deltaRoll[1] = perlin2D(deltaRoll[0], deltaRoll[2])+this.wheelHeight;
-                deltaRoll = v3_sub(translation, deltaRoll);
-                roll = this.computeAngle(deltaRoll);
-            }
-
-            if (!this.collide()) {
+            if (this.speed || (pitch !== this.pitch) || (yaw!==this.yaw) || (roll!==this.roll)) {
                 const q = q_eulerYXZ( pitch, yaw, roll);
-                if (this.speed) {
-                    this.positionTo(translation, q);
-                    sunLight.position.set(...v3_add(translation, sunBase));
-                } else { // if we haven't moved, then don't change anything
-                    if ( (pitch !== this.pitch) || (yaw!==this.yaw) || (roll!==this.roll) )
-                        this.positionTo(start, q);
-                }
+                this.positionTo(translation, q);
+                sunLight.position.set(...v3_add(translation, sunBase));
             }
+            // save these to see if anything moved
             this.pitch = pitch;
             this.roll = roll;
             this.yaw = yaw;
@@ -382,7 +364,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         rm.camera.matrixWorldNeedsUpdate = true;
     }
 
-    collide() {
+    collide(translation) {
         const v_dist2Sqr = function (a,b) {
             const dx = a[0] - b[0];
             const dy = a[2] - b[2];
@@ -397,23 +379,18 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         for (const collider of colliders) {
             if (collider === this) continue;
             //const colliderPos = m4_getTranslation(collider.global);
-            const d = v_dist2Sqr(collider.translation, this.translation);
+            const d = v_dist2Sqr(collider.translation, translation);
 
             if (d < 9) {
-                const from = v_sub2(this.translation, collider.translation);
+                const from = v_sub2(translation, collider.translation);
                 const distance = v3_magnitude(from);
                 let bounce;
                 if (distance > 0) bounce = v3_scale( from, 3.1/distance );
                 else bounce = [2,1,2]; // we are on top of each other
-                console.log(bounce)
-                const translation = v3_add(collider.translation, bounce);
-                this.translateTo(translation);
-                //if (collider.actor.tags.has("avatar"))
-                    //collider.say("bounce", [-bounce[0], -bounce[1], -bounce[2]]);
-                return true;
+                return ( v3_add(collider.translation, bounce));
             }
         }
-        return false;
+        return translation;
     }
 
     // when I hit another avatar, the other needs to bounce too.
