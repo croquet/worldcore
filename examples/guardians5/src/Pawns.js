@@ -8,7 +8,6 @@
 // To do:
 // - add sound
 // - add demo mode, where game automatically restarts
-// - tanks bounce off bollards too much, should be smoother
 // - muzzle flash
 // - should tanks lay down track?
 // - red missiles vs red eyed bots
@@ -136,6 +135,25 @@ for (let i=0; i<10; i++) fireMaterial[i] = function makeFireMaterial() {
     } );
 }();
 
+/*
+    loadSounds() {
+        const rm = this.service("ThreeRenderManager");
+        this.audioLoader = new THREE.AudioLoader();
+        this.listener = new THREE.AudioListener();
+        rm.camera.add( this.listener );
+        this.sounds = [];
+        this.audioLoader.load( shot_sound, buffer => this.shotSound = buffer);
+    }
+
+    loadSound(sound, index) {
+        this.audioLoader.load( sound, buffer => this.sounds[index] = buffer);
+            const audio = new THREE.PositionalAudio( this.listener );
+            audio.setBuffer( buffer );
+            target.add( audio );
+        });
+    }
+*/
+//import shot_sound from "../assets/Cannon Shot.acc";
 //------------------------------------------------------------------------------------------
 // BotPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------

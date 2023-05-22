@@ -2,13 +2,12 @@
 // Copyright (c) 2023 CROQUET CORPORATION
 
 import { Pawn, mix, PM_ThreeVisible, PM_ThreeInstanced, PM_Avatar, PM_Smoothed, PM_ThreeCamera, THREE, toRad,
-    m4_multiply, m4_translation, m4_getTranslation, m4_scaleRotationTranslation, m4_rotationQ,
+    m4_multiply, m4_translation, m4_scaleRotationTranslation, m4_rotationQ,
     v3_scale, v3_add, q_multiply, v3_rotate, v3_magnitude, v2_sqrMag, v3_sub, v3_lerp, v3_transform,
     q_yaw, q_axisAngle, q_eulerYXZ, q_slerp} from "@croquet/worldcore";
 
 import paper from "../assets/paper.jpg";
 import { sunLight, sunBase, perlin2D } from "./Pawns";
-//import shot_sound from "../assets/Cannon Shot.acc";
 const cameraOffset = [0,12,20];
 
 //------------------------------------------------------------------------------------------
@@ -17,14 +16,8 @@ const cameraOffset = [0,12,20];
 // so other users are able to see and interact with this avatar. Though there will be some latency
 // between when you see your actions and the other users do, this should have a minimal
 // impact on gameplay.
-// Besides user input, avatars respond to three things:
-// - avatar collisions - if an avatar collides with you, you bounce in the opposite direction
-// - bollard collisions - if you hit a bollard, you will bounce
-// - bots - your avatar recieves damage if a bot explodes nearby
+// - bollard collisions - if you hit a bollard or another tank, you will bounce
 // - avatars are NOT effected by missiles - they just bounce off
-// When an avatar collides with another avatar, a bounce event is sent to the collided
-// avatar with a negative value for the bounce vector. The other avatar bounces away from
-// the collision in the opposite direction of your avatar.
 //------------------------------------------------------------------------------------------
 
 export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar, PM_ThreeCamera, PM_ThreeInstanced) {
@@ -37,16 +30,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.roll = 0;
         this.chaseTranslation = [0,10,20];
         this.chaseRotation = q_axisAngle([1,0,0], toRad(-5));
-        this.wheelHeight = 0.0;
         this.speed = 0;
         this.pointerMoved = false;
         this.lastShootTime = -10000;
         this.waitShootTime = 100;
         this.godMode = false;
-
         this.service("CollisionManager").colliders.add(this);
         this.loadInstance(actor._instanceName, [0.35, 0.35, 0.35]);
-        this.listen("colorSet", this.onColorSet);
         this.listen("goHome", this.goHome);
         this.paperTexture = new THREE.TextureLoader().load( paper );
         this.paperTexture.wrapS = THREE.RepeatWrapping;
@@ -66,31 +56,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             this.setRenderObject(this.mesh);
         } else this.future(100).loadInstance(name, color);
     }
-/*
-    loadSounds() {
-        const rm = this.service("ThreeRenderManager");
-        this.audioLoader = new THREE.AudioLoader();
-        this.listener = new THREE.AudioListener();
-        rm.camera.add( this.listener );
-        this.sounds = [];
-        this.audioLoader.load( shot_sound, buffer => this.shotSound = buffer);
-    }
 
-    loadSound(sound, index) {
-        this.audioLoader.load( sound, buffer => this.sounds[index] = buffer);
-            const audio = new THREE.PositionalAudio( this.listener );
-            audio.setBuffer( buffer );
-            target.add( audio );
-        });
-    }
-*/
     destroy() {
         super.destroy();
         this.service("CollisionManager").colliders.delete(this);
-    }
-
-    onColorSet() {
-       // this.material.color = new THREE.Color(...this.actor.color);
     }
 
     // If this is YOUR avatar, the AvatarPawn automatically calls this.drive() in the constructor.
@@ -111,7 +80,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerMove", this.doPointerMove);
         this.subscribe("input", "tap", this.doPointerTap);
-        this.listen("doBounce", this.doBounce);
         this.listen("doGodMode", this.doGodMode);
     }
 
@@ -244,7 +212,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     doPointerUp(e) {
-        //console.log("pointerUp", e.id, e.xy);
         if (e.id === this.pointerId) {
             this.pointerId = 0;
 
@@ -256,7 +223,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 knob.style.top = `20px`;
                 this.pointerMoved = false;
             }
-
         }
     }
 
@@ -288,13 +254,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
             // set translation to limit after any collision
             const translation = this.collide( v3_add(this.translation, velocity) );
-            translation[1] = perlin2D(translation[0], translation[2])+this.wheelHeight;
+            translation[1] = perlin2D(translation[0], translation[2]);
             // the forward part of the tank to compute pitch
             const fTrans = v3_add(forward, translation);
-            fTrans[1] = perlin2D(fTrans[0], fTrans[2])+this.wheelHeight;
+            fTrans[1] = perlin2D(fTrans[0], fTrans[2]);
             // the right part of the tank - to compute roll
             const rTrans = v3_add(right, translation);
-            rTrans[1] = perlin2D(rTrans[0], rTrans[2])+this.wheelHeight;
+            rTrans[1] = perlin2D(rTrans[0], rTrans[2]);
 
             const deltaPitch = v3_sub(fTrans, translation);
             const pitch = this.computeAngle(deltaPitch);
@@ -391,15 +357,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             }
         }
         return translation;
-    }
-
-    // when I hit another avatar, the other needs to bounce too.
-    // This is a bit tricky, because the other avatar is updating itself so fast,
-    // it is possible to miss this if it occurs in the model. The drawback is it
-    // increases latency.
-    doBounce(bounce) {
-        const translation = v3_add(bounce, this.translation);
-        this.translateTo(translation);
     }
 
     doGodMode(gm) {
