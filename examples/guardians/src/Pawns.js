@@ -291,10 +291,12 @@ export class TowerPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
     setup() {
         if (tower) {
-            this.setRenderObject( tower.clone(true) );
+            const t = tower.clone(true);
+            t.traverseVisible( m => { m.castShadow=true; m.receiveShadow=true;} );
+            this.setRenderObject( t );
             this.service("CollisionManager").colliders.add(this);
-            const t = this.translation;
-            this.localTransform = m4_translation([0,perlin2D(t[0], t[2])-0.25,0]);
+            const translation = this.translation;
+            this.localTransform = m4_translation([0,perlin2D(translation[0], translation[2])-0.25,0]);
             this.refreshDrawTransform();
         } else this.future(100).setup();
     }
