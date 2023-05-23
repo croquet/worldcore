@@ -106,7 +106,7 @@ export class PerlinNoise  {
         const v = this.fade(yf);
         const xi = xInt & 0xff;
         const yi = yInt & 0xff;
-        
+
         const aa = table[table[xi   ] + yi];
         const ab = table[table[xi+1 ] + yi];
         const ba = table[table[xi   ] + yi+1];
@@ -194,7 +194,7 @@ export function Shuffle(length) {
     const out = new Array(length);
     for (let n = 0; n < length; n++) out[n] = n;
     let n = length;
-    while(n) {
+    while (n) {
         const pick = Math.floor(Math.random() * n--);
         const swap = out[n];
         out[n] = out[pick];

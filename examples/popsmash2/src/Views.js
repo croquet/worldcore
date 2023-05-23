@@ -1,6 +1,7 @@
-import { ViewRoot, InputManager, Widget2,  TextWidget2, HUD, ButtonWidget2, ToggleWidget2, VerticalWidget2, ToggleSet2,  HorizontalWidget2} from "@croquet/worldcore";
+import { ViewRoot, InputManager, Widget2,  TextWidget2, HUD, ButtonWidget2, ToggleWidget2, VerticalWidget2, ToggleSet2,  HorizontalWidget2, viewRoot} from "@croquet/worldcore";
 
 import { CharacterName } from "./Characters";
+import { Question } from "./Questions";
 
 //------------------------------------------------------------------------------------------
 //-- PickWidget ----------------------------------------------------------------------------
@@ -69,19 +70,23 @@ class GameWidget extends Widget2 {
 
     build() {
         const um = this.modelService("UserManager");
+        const game = viewRoot.model.game;
         this.bg = new VerticalWidget2({parent: this, autoSize: [1,1]});
         this.top = new HorizontalWidget2({parent: this.bg, height: 50});
         this.timer = new TextWidget2({parent: this.top, width:50, color: [1,1,1], text: "-"});
         this.round = new TextWidget2({parent: this.top, height: 50, color: [1,1,1], style: "bold", text: "Preliminaries"});
         this.players = new TextWidget2({parent: this.top, width:50, color: [1,1,1], text: "" + um.userCount});
         this.top.resize();
-        this.question = new TextWidget2({parent: this.bg, color: [1,1,1], height: 100, style: "italic", text: "Who would win in a fair fight?"});
-        this.vote = new VoteWidget({parent: this.bg});
+        this.question = new TextWidget2({parent: this.bg, color: [1,1,1], height: 100, style: "italic", text: Question(game.question)});
+        // this.vote = new VoteWidget({parent: this.bg});
+        this.start = new StartWidget({parent: this.bg});
 
         this.subscribe("timer", "tick", this.refreshTimer);
         this.subscribe("UserManager", "create", this.refreshPlayers);
         this.subscribe("UserManager", "destroy", this.refreshPlayers);
+        this.subscribe("game", "start", this.refreshQuestion);
     }
+
 
     refreshTimer(n) {
         const text = n+"";
@@ -94,6 +99,26 @@ class GameWidget extends Widget2 {
         const um = this.modelService("UserManager");
         const text = um.userCount+"";
         this.players.set({text});
+    }
+
+    refreshQuestion() {
+        const game = viewRoot.model.game;
+        const text = Question(game.question)
+        this.question.set({text});
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- StartWidget ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class StartWidget extends Widget2 {
+
+    build() {
+        const startButton = new ButtonWidget2({parent: this, anchor: [0.5, 0.5], pivot: [0.5, 0.5], size: [200,50]});
+        startButton.label.set({text: "New Game"});
+        startButton.onClick = () => this.publish("hud", "start");
     }
 
 }
@@ -110,7 +135,6 @@ export class MyViewRoot extends ViewRoot {
 
     onStart() {
         const hud = this.service("HUD");
-
         this.game = new GameWidget({parent: hud.root, autoSize: [1,1]});
         this.subscribe("input", "xDown", this.test);
         this.subscribe("input", "zDown", this.test2);

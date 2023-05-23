@@ -1,4 +1,6 @@
-import { AM_Behavioral,  UserManager, ModelRoot,  Actor, mix, ModelService, Behavior} from "@croquet/worldcore";
+import { AM_Behavioral,  UserManager, ModelRoot,  Actor, mix, ModelService, Behavior, Shuffle} from "@croquet/worldcore";
+import { QuestionCount } from "./Questions";
+import { CharacterCount } from "./Characters";
 
 
 //------------------------------------------------------------------------------------------
@@ -6,8 +8,22 @@ import { AM_Behavioral,  UserManager, ModelRoot,  Actor, mix, ModelService, Beha
 //------------------------------------------------------------------------------------------
 
 class Game extends mix(Actor).with(AM_Behavioral) {
+    init(options) {
+        super.init(options);
+        this.question = Math.floor(QuestionCount()*Math.random());
+        const shuffle = Shuffle(CharacterCount());
+        this.slate = [];
+        for (let n = 0; n<81; n++) this.slate.push(shuffle.pop());
+        console.log(this.slate);
+
+        this.publish("game", "start");
+    }
 }
 Game.register('Game');
+
+//------------------------------------------------------------------------------------------
+// -- Timer --------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
 class Timer extends Behavior {
 
@@ -73,9 +89,14 @@ export class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
         console.log("Start root model!");
-
         this.game = Game.create();
-        this.game.behavior.start({name: "Timer", tickRate: 1000, count: 60});
+        this.subscribe("hud", "start", this.startGame);
+    }
+
+    startGame() {
+        if (this.game) this.game.destroy();
+        this.game = Game.create();
+        this.game.behavior.start({name: "Timer", tickRate: 1000, count: 61});
     }
 
 }
