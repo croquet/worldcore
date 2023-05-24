@@ -501,14 +501,14 @@ export class MyViewRoot extends ViewRoot {
     }
 
     buildLights() {
-        const rm = this.service("ThreeRenderManager");
-        rm.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
-        const ambient = new THREE.AmbientLight( 0xffffff, 0.6 );
-        rm.scene.add(ambient);
-        rm.scene.add(sunLight); // this is a global object
-        rm.scene.fog = new THREE.Fog( 0x9D5D4D, 200, 400 );
         const loader = new THREE.TextureLoader();
         loader.load( sky, skyTexture => {
+            const rm = this.service("ThreeRenderManager");
+            rm.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
+            const ambient = new THREE.AmbientLight( 0xffffff, 0.6 );
+            rm.scene.add(ambient);
+            rm.scene.add(sunLight); // this is a global object
+            rm.scene.fog = new THREE.Fog( 0x9D5D4D, 200, 400 );
             const pmremGenerator = new THREE.PMREMGenerator(rm.renderer);
             pmremGenerator.compileEquirectangularShader();
             const skyEnvironment = pmremGenerator.fromEquirectangular(skyTexture);
