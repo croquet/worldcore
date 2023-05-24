@@ -104,13 +104,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     keyDown(e) {
         switch (e.key) {
-            case "W": case "w":
+            case "ArrowUp": case "W": case "w":
                 this.gas = 1; break;
-            case "S": case "s":
+            case "ArrowDown": case "S": case "s":
                 this.gas = -1; break;
-            case "A": case "a":
+            case "ArrowLeft": case "A": case "a":
                 this.turn = 1; break;
-            case "D": case "d":
+            case "ArrowRight": case "D": case "d":
                 this.turn = -1; break;
             case "M": case "m":
                 this.auto = !this.auto; break;
@@ -128,11 +128,11 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                     "pitch:", this.pitch,
                     "yaw:", this.yaw);
                 break;
-            case "c":
+            case "g":
                 // switch to god mode camera
                 this.godMode = !this.godMode;
                 break;
-            case "C":
+            case "G":
                 // everyone switch to go mode camera
                 this.publish("all", "godMode", !this.godMode);
                 break;
@@ -151,13 +151,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     keyUp(e) {
         switch (e.key) {
-            case "W": case "w":
+            case "ArrowUp": case "W": case "w":
                 this.gas = 0; break;
-            case "S": case "s":
+                case "ArrowDown": case "S": case "s":
                 this.gas = 0; break;
-            case "A": case "a":
+                case "ArrowLeft": case "A": case "a":
                 this.turn = 0; break;
-            case "D": case "d":
+                case "ArrowRight": case "D": case "d":
                 this.turn = 0; break;
             case "Shift":
                 console.log("shiftKey Up");
