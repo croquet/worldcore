@@ -15,12 +15,23 @@
 // - add weenies
 // - joystick is not very responsive
 // - add compass to joystick
+// - power up or roles - time gated, new one replaces old one
+// -- force field - freeze bots
+// -- triple shot
+// -- armor piercing
+// -- add power to tower
+// -- mine layer
+// -- Artillery cannon
 
 import { ViewRoot, ViewService, HUD, Pawn, mix, InputManager, ThreeInstanceManager,
-    PM_ThreeVisible, ThreeRenderManager, ThreeRaycast, PM_Smoothed, PM_Spatial, PM_ThreeInstanced, PM_ThreeCollider,
+    PM_ThreeVisible, ThreeRenderManager, ThreeRaycast, PM_Smoothed, PM_Spatial, PM_ThreeInstanced,
     THREE, toRad, m4_translation, m4_getTranslation,
     PerlinNoise, GLTFLoader } from "@croquet/worldcore";
 import { HUDWidget } from "./BotHUD";
+
+import paper from "../assets/paper.jpg";
+// Illustration 112505376 / 360 Sky © Planetfelicity | Dreamstime.com
+import sky from "../assets/alienSky1.jpg";
 
 import n_0 from "../assets/numbers/0.glb";
 import n_1 from "../assets/numbers/1.glb";
@@ -38,10 +49,6 @@ import tower_ from "../assets/tower.glb";
 import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
 import tank_body from "../assets/tank_body.glb";
-
-import paper from "../assets/paper.jpg";
-// Illustration 112505376 / 360 Sky © Planetfelicity | Dreamstime.com
-import sky from "../assets/alienSky1.jpg";
 
 import fireballTexture from "../assets/explosion.png";
 import * as fireballFragmentShader from "../assets/fireball.frag.js";
@@ -139,13 +146,13 @@ for (let i=0; i<10; i++) fireMaterial[i] = function makeFireMaterial() {
     } );
 }();
 
+// global to share the tower 3D model
 let tower;
 
 //------------------------------------------------------------------------------------------
 // BotPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeCollider, PM_ThreeInstanced) {
+export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
@@ -168,10 +175,6 @@ export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Thr
         this.refreshDrawTransform();
         this.refreshChildDrawTransform();
     }
-
-    killMe() {
-        this.say("killMe");
-    }
 }
 
 BotPawn.register("BotPawn");
@@ -179,17 +182,11 @@ BotPawn.register("BotPawn");
 //------------------------------------------------------------------------------------------
 // BotEyePawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-export class BotEyePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeCollider, PM_ThreeInstanced) {
+export class BotEyePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
         this.useInstance("botEye");
-    //    this.addRenderObjectToRaycast();
-    }
-
-    killMe() {
-        this.say("killMe");
     }
 
     destroy() {
@@ -199,11 +196,11 @@ export class BotEyePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 }
 
 BotEyePawn.register("BotEyePawn");
+
 //------------------------------------------------------------------------------------------
 // FireballPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-
-export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeCollider) {
+export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
@@ -250,7 +247,6 @@ FireballPawn.register("FireballPawn");
 // 3D models are loaded async, so may not yet exist when your avatar is being constructed.
 // We check to see if there is an instance for this yet, and try again later if not.
 //------------------------------------------------------------------------------------------
-
 export class GeometryPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
 
     constructor(actor) {
@@ -271,17 +267,15 @@ export class GeometryPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
             this.mesh.castShadow = true;
             this.mesh.receiveShadow = true;
             this.setRenderObject(this.mesh);
-            //this.outline3d=constructShadow(this.mesh, 10002);
-            //this.mesh.add(this.outline3d, color);
         } else this.future(100).loadGeometry(name, color);
     }
 }
 
 GeometryPawn.register("GeometryPawn");
-//------------------------------------------------------------------------------------------
-// BollardPawn -----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
 
+//------------------------------------------------------------------------------------------
+// TowerPawn -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 export class TowerPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
     constructor(actor) {
@@ -410,7 +404,7 @@ HealthCoinPawn.register("HealthCoinPawn");
 // We then renormalize the mesh vectors.
 //------------------------------------------------------------------------------------------
 
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeCollider) {
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(actor) {
         super(actor);
         const worldX = 512, worldZ=512;
@@ -455,24 +449,17 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
-    //    this.service("CollisionManager").colliders.add(this);
         this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...UserColors[actor.userColor]), metalness:0.5, roughness:0.1 } );
         this.geometry = new THREE.SphereGeometry( 0.75, 32, 16 );
         const mesh = new THREE.Mesh( this.geometry, this.material );
         mesh.castShadow = true;
         this.setRenderObject(mesh);
-        this.listen("colorSet", this.onColorSet);
     }
 
     destroy() {
         super.destroy();
-    //    this.service("CollisionManager").colliders.delete(this);
         this.geometry.dispose();
         this.material.dispose();
-    }
-
-    onColorSet() {
-        this.material.color = new THREE.Color(...this.actor.color);
     }
 
     update(time, delta) {

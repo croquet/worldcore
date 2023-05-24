@@ -104,24 +104,17 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     keyDown(e) {
         switch (e.key) {
-            case "W":
-            case "w":
-
+            case "W": case "w":
                 this.gas = 1; break;
-            case "S":
-            case "s":
+            case "S": case "s":
                 this.gas = -1; break;
-            case "A":
-            case "a":
+            case "A": case "a":
                 this.turn = 1; break;
-            case "D":
-            case "d":
+            case "D": case "d":
                 this.turn = -1; break;
-            case "M":
-            case "m":
+            case "M": case "m":
                 this.auto = !this.auto; break;
-            case "H":
-            case "h":
+            case "H": case "h":
                 this.goHome(); break;
             case "Shift":
                 console.log("shiftKey Down");
@@ -129,8 +122,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             case " ":
                 this.shoot();
                 break;
-            case "I":
-            case "i":
+            case "I": case "i":
                 console.log("translation:", this.translation,
                     "roll:", this.roll,
                     "pitch:", this.pitch,
@@ -144,9 +136,14 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 // everyone switch to go mode camera
                 this.publish("all", "godMode", !this.godMode);
                 break;
-            case "R":
-            case "r":
+            case "R": case "r":
                 this.publish("game", "resetGame");
+                break;
+            case "B": case "b":
+                this.publish("game", "bots");
+                break;
+            case "U": case "u":
+                this.publish("game", "undying");
                 break;
             default:
         }
@@ -154,17 +151,13 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     keyUp(e) {
         switch (e.key) {
-            case "W":
-            case "w":
+            case "W": case "w":
                 this.gas = 0; break;
-            case "S":
-            case "s":
+            case "S": case "s":
                 this.gas = 0; break;
-            case "A":
-            case "a":
+            case "A": case "a":
                 this.turn = 0; break;
-            case "D":
-            case "d":
+            case "D": case "d":
                 this.turn = 0; break;
             case "Shift":
                 console.log("shiftKey Up");

@@ -104,7 +104,7 @@ export class ThreeInstanceManager extends ViewService {
 
     material(name) {
         if (!this.materials.has(name)) {
-            console.error("No material named " + name);
+            // console.error("No material named " + name);
             return null;
         }
         return this.materials.get(name);
@@ -112,7 +112,7 @@ export class ThreeInstanceManager extends ViewService {
 
     geometry(name) {
         if (!this.geometries.has(name)) {
-            console.error("No geometry named " + name);
+            // console.error("No geometry named " + name);
             return null;
         }
         return this.geometries.get(name);
@@ -120,7 +120,7 @@ export class ThreeInstanceManager extends ViewService {
 
     mesh(name) {
         if (!this.meshes.has(name)) {
-            console.error("No mesh named " + name);
+            // console.error("No mesh named " + name);
             return null;
         }
         return this.meshes.get(name);

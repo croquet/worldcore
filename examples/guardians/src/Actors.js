@@ -123,7 +123,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
 
     flee(bot) {
         const from = v3_sub(this.translation, bot.translation);
-        let mag2 = v_mag2Sqr(from);
+        const mag2 = v_mag2Sqr(from);
         if (mag2 > this.radiusSqr) return;
         if (mag2===0) {
             const a = Math.random() * 2 * Math.PI;
@@ -149,13 +149,13 @@ BotActor.register("BotActor");
 // All purpose actor for adding bits to other, smarter actors
 //------------------------------------------------------------------------------------------
 
-class SimpleActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
+class SimpleActor extends mix(Actor).with(AM_Spatial) {
 
     init(options) {
         super.init(options);
     }
     get userColor() { return this._userColor }
-    //get color() { return this._color || [0.5,0.5,0.5]}
+
 }
 SimpleActor.register('SimpleActor');
 
@@ -379,6 +379,8 @@ export class MyModelRoot extends ModelRoot {
         this.subscribe("bots","destroyedBot", this.destroyedBot);
         this.subscribe("game", "endGame", this.endGame);
         this.subscribe("game", "startGame", this.startGame);
+        this.subscribe("game", "bots", this.demoBots);
+        this.subscribe("game", "undying", this.undying);
         this.demoMode = false;
 
         const bollardScale = 3; // size of the bollard
@@ -415,6 +417,11 @@ export class MyModelRoot extends ModelRoot {
         this.startGame();
     }
 
+    undying() {
+        this.demoMode = !this.demoMode;
+        console.log("demo mode is:", this.demoMode?"on":"off");
+    }
+
     startGame() {
         console.log("Start Game");
         this.wave = 0;
@@ -430,6 +437,10 @@ export class MyModelRoot extends ModelRoot {
         console.log("End Game");
         this.gameEnded = true;
         this.service('ActorManager').actors.forEach( value => {if (value.resetGame) value.future(0).resetGame();});
+    }
+
+    demoBots() {a
+        this.makeWave(0, 500);
     }
 
     updateStats() {
@@ -458,12 +469,12 @@ export class MyModelRoot extends ModelRoot {
             // stagger when the bots get created
             this.future(Math.floor(Math.random()*200)).makeBot(x, y, index);
         }
-        this.future(30000).makeWave(wave+1, Math.floor(numBots*1.2));
+        if (wave>0) this.future(30000).makeWave(wave+1, Math.floor(numBots*1.2));
     }
 
     destroyedBot( onTarget ) {
         this.totalBots--;
-        if (onTarget) {
+        if (onTarget && !this.demoMode) {
             this.health--;
             this.publish("stats", "health", this.health);
             if (this.health === 0 ) {
