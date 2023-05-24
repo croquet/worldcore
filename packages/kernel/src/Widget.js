@@ -41,6 +41,9 @@ export class Widget extends WorldcoreView {
         return this.visible;
     }
 
+    show() { this.set({visible: true})}
+    hide() { this.set({visible: false})}
+
     get trueDepth() {
         if (this.parent) return this.parent.trueDepth + this.depth;
         return this.depth;

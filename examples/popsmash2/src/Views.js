@@ -1,4 +1,4 @@
-import { ViewRoot, InputManager, Widget2,  TextWidget2, HUD, ButtonWidget2, ToggleWidget2, VerticalWidget2, ToggleSet2,  HorizontalWidget2, viewRoot} from "@croquet/worldcore";
+import { ViewRoot, InputManager, Widget2,  TextWidget2, HUD, ButtonWidget2, ToggleWidget2, VerticalWidget2, ToggleSet2,  HorizontalWidget2, viewRoot, CanvasWidget2} from "@croquet/worldcore";
 
 import { CharacterName } from "./Characters";
 import { Question } from "./Questions";
@@ -14,8 +14,6 @@ class PickWidget extends ToggleWidget2 {
 
     build() {
         super.build();
-        // this.frame = new CanvasWidget2({parent: this, autoSize: [1,1], color: [0.5,0.7,0.83]});
-        const nn = CharacterName(this.pick);
         this.label.set({text:this.text, point:18});
     }
 
@@ -25,7 +23,6 @@ class PickWidget extends ToggleWidget2 {
         });
 
         if (this.isOn) {
-            console.log("vote!");
             this.publish("hud", "vote", {user: this.viewId, pick: this.pick});
         }
     }
@@ -42,16 +39,25 @@ class VoteWidget extends Widget2 {
 
     build() {
         const vm = this.modelService("VoteManager");
+        const game = viewRoot.model.game;
         const toggleSet = new ToggleSet2();
-        this.pickA = new PickWidget({toggleSet, parent: this, pick: 0, text: CharacterName(10), size: [200,70], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [-50,-50]});
-        this.pickB = new PickWidget({toggleSet, parent: this, pick: 1, text: CharacterName(318), size: [200,70], anchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [-50,0]});
-        this.pickC = new PickWidget({toggleSet, parent: this, pick: 2, text: CharacterName(272), size: [200,70], anchor:[0.5, 0.5], pivot: [0.5,0], translation: [-50,50]});
+        this.pickA = new PickWidget({toggleSet, parent: this, pick: 0, text: game.slate[0], size: [200,70], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [-50,-50]});
+        this.pickB = new PickWidget({toggleSet, parent: this, pick: 1, text: game.slate[1], size: [200,70], anchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [-50,0]});
+        this.pickC = new PickWidget({toggleSet, parent: this, pick: 2, text: game.slate[2], size: [200,70], anchor:[0.5, 0.5], pivot: [0.5,0], translation: [-50,50]});
 
-        this.tallyA = new TextWidget2({parent: this, text: vm.tally[0]+'', color: [1,1,1], size: [100,50], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [130,-60]});
-        this.tallyB = new TextWidget2({parent: this, text: vm.tally[1]+'', color: [1,1,1], size: [100,50], anchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [130,0]});
-        this.tallyC = new TextWidget2({parent: this, text: vm.tally[2]+'', color: [1,1,1], size: [100,50], anchor:[0.5, 0.5], pivot: [0.5,0], translation: [130,60]});
+        this.tallyA = new TextWidget2({parent: this, text: vm.tally[0]+'', color: [1,1,1], alpha: 0, size: [100,50], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [130,-60]});
+        this.tallyB = new TextWidget2({parent: this, text: vm.tally[1]+'', color: [1,1,1], alpha: 0, size: [100,50], anchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [130,0]});
+        this.tallyC = new TextWidget2({parent: this, text: vm.tally[2]+'', color: [1,1,1], alpha: 0, size: [100,50], anchor:[0.5, 0.5], pivot: [0.5,0], translation: [130,60]});
 
         this.subscribe("VoteManager", "update", this.updateTally);
+        this.subscribe("game", "start", this.updatePicks);
+    }
+
+    updatePicks() {
+        const game = viewRoot.model.game;
+        this.pickA.label.set({text: game.slate[0]});
+        this.pickB.label.set({text: game.slate[1]});
+        this.pickC.label.set({text: game.slate[2]});
     }
 
     updateTally(t) {
@@ -59,6 +65,41 @@ class VoteWidget extends Widget2 {
         this.tallyB.set({text: ''+ t[1]});
         this.tallyC.set({text: ''+ t[2]});
     }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- RankWidget ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class RankWidget extends Widget2 {
+
+    get color() { return [0,1,1]}
+
+    build() {
+        const vm = this.modelService("VoteManager");
+        let rank1;
+        let rank2;
+        let rank3;
+        const winner = vm.winner();
+        switch (winner) {
+            default:
+            case 0: rank1 = 0; rank2 = 1; rank3 = 2; break;
+            case 1: rank1 = 1; rank2 = 0; rank3 = 2; break;
+            case 2: rank1 = 2; rank2 = 0; rank3 = 1; break;
+        }
+
+        const game = viewRoot.model.game;
+        const name1 = new TextWidget2({parent: this, text: game.slate[rank1], alpha: 0, size: [300,100], point: 32,  style: "bold", anchor:[0.5, 0.5], pivot: [0.5,1], translation: [0,-50]});
+        const name2 = new TextWidget2({parent: this, text: game.slate[rank2], alpha: 0, size: [200,50], point: 18,  sanchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [0,0]});
+        const name3 = new TextWidget2({parent: this, text: game.slate[rank3], alpha: 0, size: [200,50], point: 18,  anchor:[0.5, 0.5], pivot: [0.5,0], translation: [0,20]});
+    }
+
+    // updateTally(t) {
+    //     this.tallyA.set({text: ''+ t[0]});
+    //     this.tallyB.set({text: ''+ t[1]});
+    //     this.tallyC.set({text: ''+ t[2]});
+    // }
 
 }
 
@@ -71,20 +112,32 @@ class GameWidget extends Widget2 {
     build() {
         const um = this.modelService("UserManager");
         const game = viewRoot.model.game;
-        this.bg = new VerticalWidget2({parent: this, autoSize: [1,1]});
-        this.top = new HorizontalWidget2({parent: this.bg, height: 50});
+        this.bg = new CanvasWidget2({parent: this, color: [0,1,1], autoSize: [1,1]});
+        this.layout = new VerticalWidget2({parent: this.bg, autoSize: [1,1]});
+        this.top = new HorizontalWidget2({parent: this.layout, height: 50});
         this.timer = new TextWidget2({parent: this.top, width:50, color: [1,1,1], text: "-"});
-        this.round = new TextWidget2({parent: this.top, height: 50, color: [1,1,1], style: "bold", text: "Preliminaries"});
+        this.round = new TextWidget2({parent: this.top, height: 50, color: [1,1,1], style: "bold", text: game.round});
         this.players = new TextWidget2({parent: this.top, width:50, color: [1,1,1], text: "" + um.userCount});
         this.top.resize();
-        this.question = new TextWidget2({parent: this.bg, color: [1,1,1], height: 100, style: "italic", text: Question(game.question)});
-        // this.vote = new VoteWidget({parent: this.bg});
-        this.start = new StartWidget({parent: this.bg});
+        this.question = new TextWidget2({parent: this.layout, color: [1,1,1], height: 100, style: "italic", text: Question(game.question)});
+        this.content = new Widget2({parent: this.layout});
+        this.start = new StartWidget({parent: this.layout, height: 100, });
 
         this.subscribe("timer", "tick", this.refreshTimer);
         this.subscribe("UserManager", "create", this.refreshPlayers);
         this.subscribe("UserManager", "destroy", this.refreshPlayers);
         this.subscribe("game", "start", this.refreshQuestion);
+        this.subscribe("game", "mode", this.mode);
+    }
+
+    mode(m) {
+        this.content.destroyChildren();
+        console.log(m);
+        switch(m) {
+            default:
+            case "match": new VoteWidget({parent: this.content, anchor: [0.5,0.5], pivot: [0.5,0.5]}); break;
+            case "result": new RankWidget({parent: this.content, anchor: [0.5,0.5], pivot: [0.5,0.5]}); break;
+        }
     }
 
 
@@ -103,7 +156,7 @@ class GameWidget extends Widget2 {
 
     refreshQuestion() {
         const game = viewRoot.model.game;
-        const text = Question(game.question)
+        const text = Question(game.question);
         this.question.set({text});
     }
 
