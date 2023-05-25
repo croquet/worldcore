@@ -139,11 +139,32 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             case "R": case "r":
                 this.publish("game", "resetGame");
                 break;
-            case "B": case "b":
-                this.publish("game", "bots");
+            case "B": case "b": //
+                this.publish("game", "bots", 500);
                 break;
-            case "U": case "u":
+            case "U": case "u": // make the tower immortal/undying
                 this.publish("game", "undying");
+                break;
+            case 'F': case 'f': // pause bots and missiles
+                this.publish("game", "freeze");
+                break;
+            case '1':
+                this.publish("game", "bots", 10);
+                break;
+            case '2':
+                this.publish("game", "bots", 25);
+                break;
+            case '3':
+                this.publish("game", "bots", 50);
+                break;
+            case '4':
+                this.publish("game", "bots", 100);
+                break;
+            case '5':
+                this.publish("game", "bots", 250);
+                break;
+            case '6':
+                this.publish("game", "bots", 500);
                 break;
             default:
         }

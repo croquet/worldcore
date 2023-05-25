@@ -439,8 +439,8 @@ export class MyModelRoot extends ModelRoot {
         this.service('ActorManager').actors.forEach( value => {if (value.resetGame) value.future(0).resetGame();});
     }
 
-    demoBots() {
-        this.makeWave(0, 500);
+    demoBots( numBots ) {
+        this.makeWave(0, numBots);
     }
 
     updateStats() {
