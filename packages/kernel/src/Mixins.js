@@ -213,6 +213,10 @@ export const PM_Spatial = superclass => class extends superclass {
         this.listenOnce("globalChanged", this.refreshDrawTransform);
     }
 
+    globalChanged() {
+        console.error("PM_Spatial pawns can't have PM_Smoothed parents");
+    }
+
     refreshDrawTransform() {}
 
     get scale() { return this.actor.scale }

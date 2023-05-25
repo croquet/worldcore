@@ -1,5 +1,5 @@
 import { AM_Behavioral,  UserManager, ModelRoot,  Actor, mix, ModelService, Behavior, Shuffle} from "@croquet/worldcore";
-import { QuestionCount } from "./Questions";
+import { Question, QuestionCount } from "./Questions";
 import { CharacterName, CharacterCount } from "./Characters";
 
 
@@ -7,19 +7,25 @@ import { CharacterName, CharacterCount } from "./Characters";
 // -- Game ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+
 class Game extends mix(Actor).with(AM_Behavioral) {
-    init(options) {
-        super.init(options);
-        this.question = Math.floor(QuestionCount()*Math.random());
-        this.round = "xxx";
+
+    get mode() {return this._mode || "match"}
+    get timer() {return this._timer || 0}
+    get question() {return this._question || "???"}
+    get round() {return this._round || "Preliminaries"}
+    get slate() { return this._slate || ["A","B","C"]}
+    get tally() { return this._tally|| [0,0,0]}
+
+    reset() {
+        console.log("reset");
+        this.behavior.destroyChildren();
+        const question = Question(Math.floor(QuestionCount()*Math.random()));
         const shuffle = Shuffle(CharacterCount());
-        this.slate = [0,0,0];
         this.deck = [];
-        for (let n = 0; n<9; n++) this.deck.push(CharacterName(shuffle.pop()));
-
-        this.behavior.start({name: "Round", title: "Preliminaries", slate: this.deck});
-
-        this.publish("game", "start");
+        for (let n = 0; n<3; n++) this.deck.push(CharacterName(shuffle.pop()));
+        this.set({question, slate:this.deck});
+        this.behavior.start({name: "Match", slate: this.deck});
     }
 }
 Game.register('Game');
@@ -30,10 +36,11 @@ Game.register('Game');
 
 class Round extends Behavior {
     get slate() {return this._slate}
-    get title() {return this._title}
+    get title() {return this._title || "bing"}
 
     onStart() {
-        this.actor.round = this.title;
+        const round = this.title;
+        this.actor.set({round});
         this.result = [];
         const slate = [];
         for (let i = 0; i <3; i++) {
@@ -68,29 +75,29 @@ class Match extends Behavior {
 
     get slate() {return this._slate || [0,0,0]}
     get synched() {return true}
-    get count() {return this._count ||21}
     get tickRate() { return 1000 }
 
     onStart() {
-        const vm = this.service("VoteManager");
-        vm.reset(3);
-        this.actor.slate = this.slate;
-        this.publish("game", "mode", "match");
+        this.count = 10;
+        this.actor.set({mode: "vote"});
+        // const vm = this.service("VoteManager");
+        // vm.reset(3);
+        this.actor.set({slate: this.slate});
     }
 
     do() {
-        const count = this.count-1;
-        this.publish("timer", "tick", count);
-        this.set({count});
-        if (count <= 0) this.end();
+        const timer = this.count--;
+        this.actor.set({timer});
+        if (timer <= 0) this.end();
     }
 
     end() {
-        const vm = this.service("VoteManager");
-        const n = vm.winner();
-        this.result = this.slate[n];
-        this.publish("game", "mode", "result");
-        this.future(3000).succeed(this.result);
+        this.actor.set({mode: "rank"});
+        // const vm = this.service("VoteManager");
+        // const n = vm.winner();
+        // this.result = this.slate[n];
+        // this.publish("game", "mode", "result");
+        this.succeed(this.result);
     }
 
 }
@@ -101,19 +108,19 @@ Match.register('Match');
 // -- Timer --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class Timer extends Behavior {
+// class Timer extends Behavior {
 
-    get synched() {return true}
-    get count() {return this._count || 30}
+//     get synched() {return true}
+//     get count() {return this._count || 30}
 
-    do() {
-        const count = this.count-1;
-        this.publish("timer", "tick", count);
-        this.set({count});
-        if (count <= 0) this.succeed();
-    }
-}
-Timer.register('Timer');
+//     do() {
+//         const count = this.count-1;
+//         this.publish("timer", "tick", count);
+//         this.set({count});
+//         if (count <= 0) this.succeed();
+//     }
+// }
+// Timer.register('Timer');
 
 //------------------------------------------------------------------------------------------
 // -- VoteManager --------------------------------------------------------------------------
@@ -179,13 +186,12 @@ export class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
         console.log("Start root model!");
-        this.game = Game.create();
+        this.game = Game.create({pawn: "GamePawn"});
         this.subscribe("hud", "start", this.startGame);
     }
 
     startGame() {
-        if (this.game) this.game.destroy();
-        this.game = Game.create();
+        this.game.reset();
     }
 
 }
