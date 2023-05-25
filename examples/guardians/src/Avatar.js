@@ -195,6 +195,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         if (hits.length<1) return;
         const hit = hits[0];
         */
+       console.log(e)
         if (!this.pointerId) {
             this.pointerId = e.id;
             this.pointerHome = e.xy;
@@ -202,7 +203,8 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     doPointerMove(e) {
-        if (e.id === this.pointerId) {
+        console.log(e)
+        if (e.id!==0 && e.id === this.pointerId) {
             const dx = e.xy[0] - this.pointerHome[0];
             const dy = e.xy[1] - this.pointerHome[1];
             const x = -dx/20;
@@ -226,7 +228,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     doPointerUp(e) {
-        if (e.id === this.pointerId) {
+        if (e.id!==0 && e.id === this.pointerId) {
             this.pointerId = 0;
 
             if (this.pointerMoved) {
