@@ -203,7 +203,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     doPointerMove(e) {
-        console.log(e)
         if (e.id!==0 && e.id === this.pointerId) {
             const dx = e.xy[0] - this.pointerHome[0];
             const dy = e.xy[1] - this.pointerHome[1];
