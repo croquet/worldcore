@@ -52,7 +52,7 @@ class PickWidget extends ToggleWidget2 {
         });
 
         if (this.isOn) {
-            this.publish("hud", "vote", {user: this.viewId, pick: this.pick});
+            this.publish("election", "vote", {user: this.viewId, pick: this.pick});
         }
     }
 
@@ -67,9 +67,6 @@ class VoteWidget extends Widget2 {
     build() {
         const vm = this.modelService("VoteManager");
         const game = viewRoot.model.game;
-        console.log(game.slate[0]);
-        console.log(game.slate[1]);
-        console.log(game.slate[2]);
         const toggleSet = new ToggleSet2();
         this.pickA = new PickWidget({toggleSet, parent: this, pick: 0, size: [200,70], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [-50,-50]});
         this.pickB = new PickWidget({toggleSet, parent: this, pick: 1, size: [200,70], anchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [-50,0]});
@@ -110,11 +107,11 @@ class RankWidget extends Widget2 {
     get color() { return [0,1,1]}
 
     build() {
-        const vm = this.modelService("VoteManager");
+        const game = viewRoot.model.game;
         let rank1;
         let rank2;
         let rank3;
-        const winner = vm.winner();
+        const winner = game.winner;
         switch (winner) {
             default:
             case 0: rank1 = 0; rank2 = 1; rank3 = 2; break;
@@ -122,10 +119,9 @@ class RankWidget extends Widget2 {
             case 2: rank1 = 2; rank2 = 0; rank3 = 1; break;
         }
 
-        const game = viewRoot.model.game;
-        const name1 = new TextWidget2({parent: this, text: game.slate[rank1], alpha: 0, size: [300,100], point: 32,  style: "bold", anchor:[0.5, 0.5], pivot: [0.5,1], translation: [0,-50]});
-        const name2 = new TextWidget2({parent: this, text: game.slate[rank2], alpha: 0, size: [200,50], point: 18,  sanchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [0,0]});
-        const name3 = new TextWidget2({parent: this, text: game.slate[rank3], alpha: 0, size: [200,50], point: 18,  anchor:[0.5, 0.5], pivot: [0.5,0], translation: [0,20]});
+        new TextWidget2({parent: this, text: game.slate[rank1], alpha: 0, size: [300,100], point: 32,  style: "bold", anchor:[0.5, 0.5], pivot: [0.5,1], translation: [0,-50]});
+        new TextWidget2({parent: this, text: game.slate[rank2], alpha: 0, size: [200,50], point: 18,  sanchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [0,0]});
+         new TextWidget2({parent: this, text: game.slate[rank3], alpha: 0, size: [200,50], point: 18,  anchor:[0.5, 0.5], pivot: [0.5,0], translation: [0,20]});
     }
 
 
@@ -163,16 +159,17 @@ class GameWidget extends Widget2 {
     }
 
     refreshMode() {
+        console.log("refresh mode");
         this.content.destroyChildren();
         const game = viewRoot.model.game;
         const mode = game.mode;
+        console.log(mode);
         switch (mode) {
             default:
             case "vote": new VoteWidget({parent: this.content, anchor: [0.5,0.5], pivot: [0.5,0.5]}); break;
             case "rank": new RankWidget({parent: this.content, anchor: [0.5,0.5], pivot: [0.5,0.5]}); break;
         }
     }
-
 
     refreshTimer() {
         const game = viewRoot.model.game;

@@ -1,4 +1,4 @@
-import { AM_Behavioral,  UserManager, ModelRoot,  Actor, mix, ModelService, Behavior, Shuffle} from "@croquet/worldcore";
+import { AM_Behavioral,  UserManager, ModelRoot,  Actor, mix, ModelService, Behavior, Shuffle, WorldcoreModel} from "@croquet/worldcore";
 import { Question, QuestionCount } from "./Questions";
 import { CharacterName, CharacterCount } from "./Characters";
 
@@ -15,6 +15,7 @@ class Game extends mix(Actor).with(AM_Behavioral) {
     get question() {return this._question || "???"}
     get round() {return this._round || "Preliminaries"}
     get slate() { return this._slate || ["A","B","C"]}
+    get winner() { return this._winner || 0}
     get tally() { return this._tally|| [0,0,0]}
 
     reset() {
@@ -23,9 +24,11 @@ class Game extends mix(Actor).with(AM_Behavioral) {
         const question = Question(Math.floor(QuestionCount()*Math.random()));
         const shuffle = Shuffle(CharacterCount());
         this.deck = [];
-        for (let n = 0; n<3; n++) this.deck.push(CharacterName(shuffle.pop()));
-        this.set({question, slate:this.deck});
-        this.behavior.start({name: "Match", slate: this.deck});
+        for (let n = 0; n<81; n++) this.deck.push(CharacterName(shuffle.pop()));
+        this.set({question});
+
+        const behaviors = ["Preliminaries","Quarterfinals","Semifinals","Finals"];
+        this.behavior.start({name: "SequenceBehavior", behaviors});
     }
 }
 Game.register('Game');
@@ -35,13 +38,18 @@ Game.register('Game');
 //------------------------------------------------------------------------------------------
 
 class Round extends Behavior {
-    get slate() {return this._slate}
-    get title() {return this._title || "bing"}
+    get slate() {return this.actor.deck}
+    get title() {return this._title || "???"}
 
     onStart() {
         const round = this.title;
         this.actor.set({round});
         this.result = [];
+        this.nextMatch();
+    }
+
+    nextMatch() {
+        this.destroyChildren();
         const slate = [];
         for (let i = 0; i <3; i++) {
             slate.push(this.slate.pop());
@@ -53,19 +61,20 @@ class Round extends Behavior {
         this.result.push(n);
         console.log(this.result);
         if (this.slate.length === 0) {
-            console.log(this.title);
-            console.log(this.result);
-            this.succeed(this.result);
+            this.actor.deck = this.result.reverse();
+            this.succeed();
             return;
         }
-        const slate = [];
-        for (let i = 0; i <3; i++) {
-            slate.push(this.slate.pop());
-        }
-        this.start({name: "Match", slate});
+        this.future(3000).nextMatch();
     }
+
 }
 Round.register('Round');
+
+class Preliminaries extends Round { get title() {return "Preliminaries"} } Preliminaries.register('Preliminaries');
+class Quarterfinals extends Round { get title() {return "Quarterfinals"} } Quarterfinals.register('Quarterfinals');
+class Semifinals extends Round { get title() {return "Semifinals"} } Semifinals.register('Semifinals');
+class Finals extends Round { get title() {return "Finals"} } Finals.register('Finals');
 
 //------------------------------------------------------------------------------------------
 // -- Match --------------------------------------------------------------------------------
@@ -78,11 +87,9 @@ class Match extends Behavior {
     get tickRate() { return 1000 }
 
     onStart() {
-        this.count = 10;
-        this.actor.set({mode: "vote"});
-        // const vm = this.service("VoteManager");
-        // vm.reset(3);
-        this.actor.set({slate: this.slate});
+        this.count = 20;
+        this.election = this.start({name: "Election", size: 3});
+        this.actor.set({mode: "vote", winner: 0, slate: this.slate});
     }
 
     do() {
@@ -92,86 +99,60 @@ class Match extends Behavior {
     }
 
     end() {
-        this.actor.set({mode: "rank"});
-        // const vm = this.service("VoteManager");
-        // const n = vm.winner();
-        // this.result = this.slate[n];
-        // this.publish("game", "mode", "result");
-        this.succeed(this.result);
+        const winner = this.election.winner();
+        this.actor.set({winner, mode: "rank"});
+        console.log(this.slate[winner]);
+        this.succeed(this.slate[winner]);
     }
 
 }
 Match.register('Match');
 
-
 //------------------------------------------------------------------------------------------
-// -- Timer --------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-// class Timer extends Behavior {
-
-//     get synched() {return true}
-//     get count() {return this._count || 30}
-
-//     do() {
-//         const count = this.count-1;
-//         this.publish("timer", "tick", count);
-//         this.set({count});
-//         if (count <= 0) this.succeed();
-//     }
-// }
-// Timer.register('Timer');
-
-//------------------------------------------------------------------------------------------
-// -- VoteManager --------------------------------------------------------------------------
+// -- Election -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class VoteManager extends ModelService {
-    init() {
-        super.init('VoteManager');
+class Election extends Behavior {
+
+    get size() {return this._size || 3}
+
+    onStart() {
         this.votes = new Map();
-        this.tally = [0,0,0];
-        this.subscribe("hud", "vote", this.onVote);
+        this.subscribe("election", "vote", this.onVote);
         this.subscribe("UserManager", "destroy", this.removeUser);
-    }
-
-    reset(count) {
-        this.tally = new Array(count).fill(0);
-        this.publish("VoteManager", "update", this.tally);
-    }
-
-    removeUser(user) {
-        this.votes.delete(user);
         this.count();
-        this.publish("VoteManager", "update", this.tally);
     }
 
     onVote(data) {
         this.votes.set(data.user, data.pick);
         this.count();
-        this.publish("VoteManager", "update", this.tally);
+    }
+
+    removeUser(user) {
+        this.votes.delete(user);
+        this.count();
     }
 
     count() {
-        this.tally.fill(0);
-        this.votes.forEach(n => this.tally[n]++);
+        const tally = new Array(this.size).fill(0);
+        this.votes.forEach(n => tally[n]++);
+        this.actor.set({tally});
     }
 
     winner() {
         this.count();
         let victor = 0;
-        let highest = this.tally[victor];
-        this.tally.forEach((v,n) => {
-            if (v>highest) {
-                highest = v;
+        let max = this.actor.tally[victor];
+        this.actor.tally.forEach((v,n) => {
+            if (v>max) {
+                max = v;
                 victor = n;
             }
         });
         return victor;
     }
-
 }
-VoteManager.register('VoteManager');
+Election.register('Election');
 
 //------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
@@ -180,7 +161,7 @@ VoteManager.register('VoteManager');
 export class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [UserManager, VoteManager];
+        return [UserManager];
     }
 
     init(...args) {

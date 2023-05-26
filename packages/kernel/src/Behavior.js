@@ -455,10 +455,6 @@ export class TryBehavior extends DecoratorBehavior {
 
     get delay() {return this._delay || fromS(1)} // one second
 
-    // onStart() {
-    //     this.start(this.behavior);
-    // }
-
     onSucceed() { this.succeed()}
     onFail() { this.future(this.delay).onStart() }
 }
