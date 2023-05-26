@@ -195,7 +195,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         if (hits.length<1) return;
         const hit = hits[0];
         */
-       console.log(e)
         if (!this.pointerId) {
             this.pointerId = e.id;
             this.pointerHome = e.xy;
