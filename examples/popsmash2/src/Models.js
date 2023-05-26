@@ -14,6 +14,8 @@ class Game extends mix(Actor).with(AM_Behavioral) {
     get timer() {return this._timer || 0}
     get question() {return this._question || "???"}
     get round() {return this._round || "Preliminaries"}
+    get match() {return this._match || 0}
+    get matchCount() {return this._matchCount || 0}
     get slate() { return this._slate || ["A","B","C"]}
     get winner() { return this._winner || 0}
     get tally() { return this._tally|| [0,0,0]}
@@ -27,7 +29,10 @@ class Game extends mix(Actor).with(AM_Behavioral) {
         for (let n = 0; n<81; n++) this.deck.push(CharacterName(shuffle.pop()));
         this.set({question});
 
-        const behaviors = ["Preliminaries","Quarterfinals","Semifinals","Finals"];
+        const Start = {name: "PublishBehavior", scope: "game", event: "start"};
+        const End = {name: "PublishBehavior", scope: "game", event: "end"};
+
+        const behaviors = [Start, "Preliminaries", End, "Quarterfinals","Semifinals","Finals", End];
         this.behavior.start({name: "SequenceBehavior", behaviors});
     }
 }
@@ -43,7 +48,9 @@ class Round extends Behavior {
 
     onStart() {
         const round = this.title;
-        this.actor.set({round});
+        const match = 0;
+        const matchCount = this.slate.length/3;
+        this.actor.set({round, match, matchCount});
         this.result = [];
         this.nextMatch();
     }
@@ -54,12 +61,14 @@ class Round extends Behavior {
         for (let i = 0; i <3; i++) {
             slate.push(this.slate.pop());
         }
+        const match = this.actor.match+1;
+        this.actor.set({match});
         this.start({name: "Match", slate});
     }
 
     onSucceed(child,n) {
         this.result.push(n);
-        console.log(this.result);
+        // console.log(this.result);
         if (this.slate.length === 0) {
             this.actor.deck = this.result.reverse();
             this.succeed();
@@ -101,7 +110,7 @@ class Match extends Behavior {
     end() {
         const winner = this.election.winner();
         this.actor.set({winner, mode: "rank"});
-        console.log(this.slate[winner]);
+        // console.log(this.slate[winner]);
         this.succeed(this.slate[winner]);
     }
 

@@ -37,7 +37,7 @@ export class Widget extends WorldcoreView {
     get visible() { return this._visible === undefined || this._visible }
     get depth() {return this._depth || 0}
     get isVisible() { // includes parent visibility
-        if (this.parent) return this.parent.visible && this.visible;
+        if (this.parent) return this.parent.isVisible && this.visible;
         return this.visible;
     }
 

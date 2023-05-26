@@ -65,7 +65,6 @@ class PickWidget extends ToggleWidget2 {
 class VoteWidget extends Widget2 {
 
     build() {
-        const vm = this.modelService("VoteManager");
         const game = viewRoot.model.game;
         const toggleSet = new ToggleSet2();
         this.pickA = new PickWidget({toggleSet, parent: this, pick: 0, size: [200,70], anchor:[0.5, 0.5], pivot: [0.5,1], translation: [-50,-50]});
@@ -104,8 +103,6 @@ class VoteWidget extends Widget2 {
 
 class RankWidget extends Widget2 {
 
-    get color() { return [0,1,1]}
-
     build() {
         const game = viewRoot.model.game;
         let rank1;
@@ -121,9 +118,23 @@ class RankWidget extends Widget2 {
 
         new TextWidget2({parent: this, text: game.slate[rank1], alpha: 0, size: [300,100], point: 32,  style: "bold", anchor:[0.5, 0.5], pivot: [0.5,1], translation: [0,-50]});
         new TextWidget2({parent: this, text: game.slate[rank2], alpha: 0, size: [200,50], point: 18,  sanchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [0,0]});
-         new TextWidget2({parent: this, text: game.slate[rank3], alpha: 0, size: [200,50], point: 18,  anchor:[0.5, 0.5], pivot: [0.5,0], translation: [0,20]});
+        new TextWidget2({parent: this, text: game.slate[rank3], alpha: 0, size: [200,50], point: 18,  anchor:[0.5, 0.5], pivot: [0.5,0], translation: [0,20]});
     }
 
+}
+
+//------------------------------------------------------------------------------------------
+//-- FinaleWidget --------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class FinaleWidget extends Widget2 {
+
+    build() {
+        const game = viewRoot.model.game;
+        const winner = game.winner;
+
+        new TextWidget2({parent: this, text: game.slate[winner], alpha: 0, size: [200,50], point: 32, anchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [0,0]});
+    }
 
 }
 
@@ -135,17 +146,21 @@ class GameWidget extends Widget2 {
 
     build() {
         const um = this.modelService("UserManager");
+        const userCount = um.userCount;
+        const pp = (userCount>1) ? " players": " player";
         const game = viewRoot.model.game;
         this.bg = new CanvasWidget2({parent: this, color: [0,1,1], autoSize: [1,1]});
         this.layout = new VerticalWidget2({parent: this.bg, autoSize: [1,1]});
         this.top = new HorizontalWidget2({parent: this.layout, height: 50});
         this.timer = new TextWidget2({parent: this.top, width:50, color: [1,1,1], text: "-"});
         this.round = new TextWidget2({parent: this.top, height: 50, color: [1,1,1], style: "bold", text: game.round});
-        this.players = new TextWidget2({parent: this.top, width:50, color: [1,1,1], text: "" + um.userCount});
+        this.match = new TextWidget2({parent: this.top, width:70, color: [1,1,1], text: "-"});
         this.top.resize();
         this.question = new TextWidget2({parent: this.layout, color: [1,1,1], height: 100, style: "italic", text: game.question});
         this.content = new Widget2({parent: this.layout});
-        this.start = new StartWidget({parent: this.layout, height: 100, });
+        this.bottom = new CanvasWidget2({parent: this.layout, color:[1,1,1], height:100});
+        this.start = new StartWidget({parent: this.bottom, anchor: [0.5,0.5], pivot: [0.5,0.5]});
+        this.players = new TextWidget2({parent: this.bottom, anchor: [1,0.5], pivot: [1,0.5], size:[100,20], color: [1,1,1], point: 16, text: userCount + pp});
         this.refreshMode();
 
         this.subscribe(game.id, "modeSet", this.refreshMode);
@@ -154,16 +169,28 @@ class GameWidget extends Widget2 {
         this.subscribe("UserManager", "destroy", this.refreshPlayers);
         this.subscribe(game.id, "questionSet", this.refreshQuestion);
         this.subscribe(game.id, "roundSet", this.refreshRound);
+        this.subscribe(game.id, "matchSet", this.refreshMatch);
+
+        this.subscribe("game", "start", this.gameStart);
+        this.subscribe("game", "end", this.gameEnd);
 
 
     }
 
+    gameStart() {
+        console.log("Game start");
+        this.start.hide();
+    }
+
+    gameEnd() {
+        console.log("Game end");
+        this.start.show();
+    }
+
     refreshMode() {
-        console.log("refresh mode");
         this.content.destroyChildren();
         const game = viewRoot.model.game;
         const mode = game.mode;
-        console.log(mode);
         switch (mode) {
             default:
             case "vote": new VoteWidget({parent: this.content, anchor: [0.5,0.5], pivot: [0.5,0.5]}); break;
@@ -179,9 +206,17 @@ class GameWidget extends Widget2 {
         this.timer.set({textColor, text});
     }
 
+    refreshMatch() {
+        const game = viewRoot.model.game;
+        const text = game.match+"/" + game.matchCount;
+        this.match.set({text});
+    }
+
     refreshPlayers() {
         const um = this.modelService("UserManager");
-        const text = um.userCount+"";
+        const count = um.userCount;
+        const pp = (count>1) ? " players": " player";
+        const text = count + pp;
         this.players.set({text});
     }
 

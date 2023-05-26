@@ -9,6 +9,7 @@ import { ModelService} from "./Root";
 
 export class User extends Actor {
     get userId() { return this._userId }
+    get userNumber() { return this._userNumber }
 }
 User.register('User');
 

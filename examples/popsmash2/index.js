@@ -1,4 +1,4 @@
-// Simple Testbed
+// Popsmash
 
 import { App, StartWorldcore} from "@croquet/worldcore";
 
@@ -15,13 +15,13 @@ App.makeWidgetDock({debug: true, stats: true});
 
 StartWorldcore({
     appId: 'io.croquet.popsmash2',
-    // apiKey,
-    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
+    apiKey,
+    // apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
     model: MyModelRoot,
     name: 'test',
     // name: App.autoSession(),
     // password: App.autoPassword(),
     password: "password",
     view: MyViewRoot,
-    tps:60
+    tps:1
 });
