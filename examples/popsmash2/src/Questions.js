@@ -71,7 +71,7 @@ Constants.Questions = [
     "Who secretly suffers from massive self-loathing?",
     "Who had the worst childhood?",
     "Who would you go to Disneyland with?",
-    "Who would you have a romantic dinner with?",
+    "Who would you rather have a romantic dinner with?",
     "Who is the absolute worst?",
     "Who really needs a makeover?",
     "Who do you want to switch places with for a day?",

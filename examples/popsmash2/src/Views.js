@@ -18,7 +18,7 @@ export class GamePawn extends Pawn {
 
     destroy() {
         super.destroy();
-        this.game.destroy();
+        if (this.game) this.game.destroy();
     }
 
 }
@@ -145,6 +145,7 @@ class FinaleWidget extends Widget2 {
 class GameWidget extends Widget2 {
 
     build() {
+        console.log("Game Widget");
         const um = this.modelService("UserManager");
         const userCount = um.userCount;
         const pp = (userCount>1) ? " players": " player";
@@ -152,14 +153,14 @@ class GameWidget extends Widget2 {
         this.bg = new CanvasWidget2({parent: this, color: [0,1,1], autoSize: [1,1]});
         this.layout = new VerticalWidget2({parent: this.bg, autoSize: [1,1]});
         this.top = new HorizontalWidget2({parent: this.layout, height: 50});
-        this.timer = new TextWidget2({parent: this.top, width:50, color: [1,1,1], text: "-"});
+        this.timer = new TextWidget2({parent: this.top, width:50, color: [1,1,1], text: game.timer+""});
         this.round = new TextWidget2({parent: this.top, height: 50, color: [1,1,1], style: "bold", text: game.round});
-        this.match = new TextWidget2({parent: this.top, width:70, color: [1,1,1], text: "-"});
+        this.match = new TextWidget2({parent: this.top, width:70, color: [1,1,1], text: game.match+"/" + game.matchCount});
         this.top.resize();
         this.question = new TextWidget2({parent: this.layout, color: [1,1,1], height: 100, style: "italic", text: game.question});
         this.content = new Widget2({parent: this.layout});
         this.bottom = new CanvasWidget2({parent: this.layout, color:[1,1,1], height:100});
-        this.start = new StartWidget({parent: this.bottom, anchor: [0.5,0.5], pivot: [0.5,0.5]});
+        this.start = new StartWidget({parent: this.bottom, anchor: [0.5,0.5], pivot: [0.5,0.5], visible: true});
         this.players = new TextWidget2({parent: this.bottom, anchor: [1,0.5], pivot: [1,0.5], size:[100,20], color: [1,1,1], point: 16, text: userCount + pp});
         this.refreshMode();
 
@@ -170,21 +171,13 @@ class GameWidget extends Widget2 {
         this.subscribe(game.id, "questionSet", this.refreshQuestion);
         this.subscribe(game.id, "roundSet", this.refreshRound);
         this.subscribe(game.id, "matchSet", this.refreshMatch);
-
-        this.subscribe("game", "start", this.gameStart);
-        this.subscribe("game", "end", this.gameEnd);
-
+        this.subscribe(game.id, "runningSet", this.refreshRunning);
 
     }
 
-    gameStart() {
-        console.log("Game start");
-        this.start.hide();
-    }
-
-    gameEnd() {
-        console.log("Game end");
-        this.start.show();
+    refreshRunning() {
+        const game = viewRoot.model.game;
+        this.start.set({visible: !game.running});
     }
 
     refreshMode() {
@@ -258,20 +251,18 @@ export class MyViewRoot extends ViewRoot {
         return [InputManager, HUD];
     }
 
-    onStart() {
-        const hud = this.service("HUD");
-        // this.game = new GameWidget({parent: hud.root, autoSize: [1,1]});
-        this.subscribe("input", "xDown", this.test);
-        this.subscribe("input", "zDown", this.test2);
-    }
+    // onStart() {
+    //     this.subscribe("input", "xDown", this.test);
+    //     this.subscribe("input", "zDown", this.test2);
+    // }
 
-    test() {
-        console.log("test");
-    }
+    // test() {
+    //     console.log("test");
+    // }
 
-    test2() {
-        console.log("test2");
-    }
+    // test2() {
+    //     console.log("test2");
+    // }
 
 
 }

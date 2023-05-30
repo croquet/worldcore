@@ -161,6 +161,25 @@ export class DestroyBehavior extends Behavior {
 DestroyBehavior.register('DestroyBehavior');
 
 //------------------------------------------------------------------------------------------
+//-- SetBehavior -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Sets a property on the actor
+
+export class SetBehavior extends Behavior {
+
+
+    init(options) {
+        super.init(options);
+        delete options.name;
+        delete options.actor;
+        this.actor.set(options);
+    }
+
+}
+SetBehavior.register('SetBehavior');
+
+//------------------------------------------------------------------------------------------
 //-- PrintBehavior -----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 

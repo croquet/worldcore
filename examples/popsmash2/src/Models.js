@@ -12,13 +12,14 @@ class Game extends mix(Actor).with(AM_Behavioral) {
 
     get mode() {return this._mode || "match"}
     get timer() {return this._timer || 0}
-    get question() {return this._question || "???"}
-    get round() {return this._round || "Preliminaries"}
+    get question() {return this._question || "81 pop-culture characters face off in a single-elimination tournament. There can be only one!"}
+    get round() {return this._round || "PopSmash!"}
     get match() {return this._match || 0}
     get matchCount() {return this._matchCount || 0}
-    get slate() { return this._slate || ["A","B","C"]}
+    get slate() { return this._slate || ["Pick A"," Pick B"," Pick C"]}
     get winner() { return this._winner || 0}
     get tally() { return this._tally|| [0,0,0]}
+    get running() { return this._running }
 
     reset() {
         console.log("reset");
@@ -27,16 +28,16 @@ class Game extends mix(Actor).with(AM_Behavioral) {
         const shuffle = Shuffle(CharacterCount());
         this.deck = [];
         for (let n = 0; n<81; n++) this.deck.push(CharacterName(shuffle.pop()));
-        this.set({question});
+        this.set({question, running: true});
 
-        const Start = {name: "PublishBehavior", scope: "game", event: "start"};
-        const End = {name: "PublishBehavior", scope: "game", event: "end"};
+        const End = {name: "SetBehavior", running: false, round: "The Winner!"};
 
-        const behaviors = [Start, "Preliminaries", End, "Quarterfinals","Semifinals","Finals", End];
+        const behaviors = ["Preliminaries", "Quarterfinals","Semifinals","Finals", End];
         this.behavior.start({name: "SequenceBehavior", behaviors});
     }
 }
 Game.register('Game');
+
 
 //------------------------------------------------------------------------------------------
 // -- Round --------------------------------------------------------------------------------
@@ -68,13 +69,17 @@ class Round extends Behavior {
 
     onSucceed(child,n) {
         this.result.push(n);
-        // console.log(this.result);
         if (this.slate.length === 0) {
             this.actor.deck = this.result.reverse();
-            this.succeed();
+            this.future(3000).end();
             return;
         }
         this.future(3000).nextMatch();
+    }
+
+    end() {
+        console.log("round end!");
+        this.succeed();
     }
 
 }
@@ -110,7 +115,6 @@ class Match extends Behavior {
     end() {
         const winner = this.election.winner();
         this.actor.set({winner, mode: "rank"});
-        // console.log(this.slate[winner]);
         this.succeed(this.slate[winner]);
     }
 
@@ -175,7 +179,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
+        console.log("Start root model!!!");
         this.game = Game.create({pawn: "GamePawn"});
         this.subscribe("hud", "start", this.startGame);
     }

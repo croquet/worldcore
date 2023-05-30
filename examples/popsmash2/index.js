@@ -18,7 +18,7 @@ StartWorldcore({
     apiKey,
     // apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
     model: MyModelRoot,
-    name: 'test',
+    name: 'everyone',
     // name: App.autoSession(),
     // password: App.autoPassword(),
     password: "password",
