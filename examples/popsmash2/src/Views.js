@@ -1,29 +1,7 @@
 import { ViewRoot, InputManager, Widget2,  TextWidget2, HUD, ButtonWidget2, ToggleWidget2, VerticalWidget2, ToggleSet2,  HorizontalWidget2, viewRoot, CanvasWidget2, Pawn} from "@croquet/worldcore";
 
-import { CharacterName } from "./Characters";
-import { Question } from "./Questions";
-
-//------------------------------------------------------------------------------------------
-// GamePawn --------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-export class GamePawn extends Pawn {
-
-    constructor(actor) {
-        super(actor);
-        const hud = this.service("HUD");
-        console.log("game pawn");
-        this.game = new GameWidget({parent: hud.root, autoSize: [1,1]});
-    }
-
-    destroy() {
-        super.destroy();
-        if (this.game) this.game.destroy();
-    }
-
-}
-GamePawn.register("GamePawn");
-
+// import { CharacterName } from "./Characters";
+// import { Question } from "./Questions";
 
 //------------------------------------------------------------------------------------------
 //-- PickWidget ----------------------------------------------------------------------------
@@ -105,20 +83,20 @@ class RankWidget extends Widget2 {
 
     build() {
         const game = viewRoot.model.game;
-        let rank1;
-        let rank2;
-        let rank3;
-        const winner = game.winner;
-        switch (winner) {
-            default:
-            case 0: rank1 = 0; rank2 = 1; rank3 = 2; break;
-            case 1: rank1 = 1; rank2 = 0; rank3 = 2; break;
-            case 2: rank1 = 2; rank2 = 0; rank3 = 1; break;
-        }
+        // let rank1;
+        // let rank2;
+        // let rank3;
+        // const winner = game.winner;
+        // switch (winner) {
+        //     default:
+        //     case 0: rank1 = 0; rank2 = 1; rank3 = 2; break;
+        //     case 1: rank1 = 1; rank2 = 0; rank3 = 2; break;
+        //     case 2: rank1 = 2; rank2 = 0; rank3 = 1; break;
+        // }
 
-        new TextWidget2({parent: this, text: game.slate[rank1], alpha: 0, size: [300,100], point: 32,  style: "bold", anchor:[0.5, 0.5], pivot: [0.5,1], translation: [0,-50]});
-        new TextWidget2({parent: this, text: game.slate[rank2], alpha: 0, size: [200,50], point: 18,  sanchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [0,0]});
-        new TextWidget2({parent: this, text: game.slate[rank3], alpha: 0, size: [200,50], point: 18,  anchor:[0.5, 0.5], pivot: [0.5,0], translation: [0,20]});
+        new TextWidget2({parent: this, text: game.rank[0], alpha: 0, size: [300,100], point: 32,  style: "bold", anchor:[0.5, 0.5], pivot: [0.5,1], translation: [0,-50]});
+        new TextWidget2({parent: this, text: game.rank[1], alpha: 0, size: [200,50], point: 18,  sanchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [0,0]});
+        new TextWidget2({parent: this, text: game.rank[2], alpha: 0, size: [200,50], point: 18,  anchor:[0.5, 0.5], pivot: [0.5,0], translation: [0,20]});
     }
 
 }
@@ -160,7 +138,7 @@ class GameWidget extends Widget2 {
         this.question = new TextWidget2({parent: this.layout, color: [1,1,1], height: 100, style: "italic", text: game.question});
         this.content = new Widget2({parent: this.layout});
         this.bottom = new CanvasWidget2({parent: this.layout, color:[1,1,1], height:100});
-        this.start = new StartWidget({parent: this.bottom, anchor: [0.5,0.5], pivot: [0.5,0.5], visible: true});
+        this.start = new StartWidget({parent: this.bottom, anchor: [0.5,0.5], pivot: [0.5,0.5], visible: !game.running});
         this.players = new TextWidget2({parent: this.bottom, anchor: [1,0.5], pivot: [1,0.5], size:[100,20], color: [1,1,1], point: 16, text: userCount + pp});
         this.refreshMode();
 
@@ -251,18 +229,21 @@ export class MyViewRoot extends ViewRoot {
         return [InputManager, HUD];
     }
 
-    // onStart() {
-    //     this.subscribe("input", "xDown", this.test);
-    //     this.subscribe("input", "zDown", this.test2);
-    // }
+    onStart() {
+        const hud = this.service("HUD");
+        this.game = new GameWidget({parent: hud.root, autoSize: [1,1]});
 
-    // test() {
-    //     console.log("test");
-    // }
+        this.subscribe("input", "xDown", this.test);
+        this.subscribe("input", "zDown", this.test2);
+    }
 
-    // test2() {
-    //     console.log("test2");
-    // }
+    test() {
+        console.log("test");
+    }
+
+    test2() {
+        console.log("test2");
+    }
 
 
 }
