@@ -1,4 +1,4 @@
-import { Constants } from "@croquet/croquet";
+import { Constants } from "@croquet/worldcore";
 
 export function Question(n) {
     return Constants.Questions[n];
