@@ -83,17 +83,6 @@ class RankWidget extends Widget2 {
 
     build() {
         const game = viewRoot.model.game;
-        // let rank1;
-        // let rank2;
-        // let rank3;
-        // const winner = game.winner;
-        // switch (winner) {
-        //     default:
-        //     case 0: rank1 = 0; rank2 = 1; rank3 = 2; break;
-        //     case 1: rank1 = 1; rank2 = 0; rank3 = 2; break;
-        //     case 2: rank1 = 2; rank2 = 0; rank3 = 1; break;
-        // }
-
         new TextWidget2({parent: this, text: game.rank[0], alpha: 0, size: [300,100], point: 32,  style: "bold", anchor:[0.5, 0.5], pivot: [0.5,1], translation: [0,-50]});
         new TextWidget2({parent: this, text: game.rank[1], alpha: 0, size: [200,50], point: 18,  sanchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [0,0]});
         new TextWidget2({parent: this, text: game.rank[2], alpha: 0, size: [200,50], point: 18,  anchor:[0.5, 0.5], pivot: [0.5,0], translation: [0,20]});
@@ -105,16 +94,16 @@ class RankWidget extends Widget2 {
 //-- FinaleWidget --------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class FinaleWidget extends Widget2 {
+// class FinaleWidget extends Widget2 {
 
-    build() {
-        const game = viewRoot.model.game;
-        const winner = game.winner;
+//     build() {
+//         const game = viewRoot.model.game;
+//         const winner = game.winner;
 
-        new TextWidget2({parent: this, text: game.slate[winner], alpha: 0, size: [200,50], point: 32, anchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [0,0]});
-    }
+//         new TextWidget2({parent: this, text: game.slate[winner], alpha: 0, size: [200,50], point: 32, anchor:[0.5, 0.5], pivot: [0.5,0.5], translation: [0,0]});
+//     }
 
-}
+// }
 
 //------------------------------------------------------------------------------------------
 //-- GameWidget ----------------------------------------------------------------------------
@@ -139,7 +128,7 @@ class GameWidget extends Widget2 {
         this.content = new Widget2({parent: this.layout});
         this.bottom = new CanvasWidget2({parent: this.layout, color:[1,1,1], height:100});
         this.start = new StartWidget({parent: this.bottom, anchor: [0.5,0.5], pivot: [0.5,0.5], visible: !game.running});
-        this.players = new TextWidget2({parent: this.bottom, anchor: [1,0.5], pivot: [1,0.5], size:[100,20], color: [1,1,1], point: 16, text: userCount + pp});
+        this.players = new TextWidget2({parent: this.bottom, anchor: [1,0.5], pivot: [1,0.5], size:[50,40], color: [1,1,1], translation:[-10,0],point: 12, text: userCount + pp});
         this.refreshMode();
 
         this.subscribe(game.id, "modeSet", this.refreshMode);
