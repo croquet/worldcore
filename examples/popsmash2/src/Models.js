@@ -52,7 +52,7 @@ class Game extends mix(Actor).with(AM_Behavioral) {
             case "Preliminaries": this.matchTime = 15; break;
             case "Quarterfinals": this.matchTime = 20; break;
             case "Semifinals": this.matchTime = 30; break;
-            case "Finals": this.matchTime = 60; break;
+            case "Finals": this.matchTime = 45; break;
         }
         this.results = [];
         const match = 0;
