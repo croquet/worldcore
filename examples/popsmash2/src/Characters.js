@@ -29,7 +29,7 @@ Constants.Characters = [
     "Augustus Gloop",
     "Goldfinger",
     "Austin Powers",
-    "Babar",
+    "Babar the Elephant",
     "Baby Yoda",
     "Bambi",
     "Barbie",
