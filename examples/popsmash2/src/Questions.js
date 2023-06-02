@@ -57,7 +57,7 @@ Constants.Questions = [
     "Who needs hug?",
     "Who looks best in a swimsuit?",
     "Who would you go dumpster diving with?",
-    "Who would be first be voted off the island?",
+    "Who would be first to be voted off the island?",
     "Who would make the worst ex?",
     "Who would ghost you?",
     "Who parties the hardest?",

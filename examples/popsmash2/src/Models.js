@@ -37,7 +37,7 @@ class Game extends mix(Actor).with(AM_Behavioral) {
         for (let n = 0; n<81; n++) this.deck.push(CharacterName(shuffle.pop()));
         this.set({question, running});
 
-        this.startRound("Preliminaries");
+        this.startRound("Quarterfinals");
     }
 
     done() {
@@ -49,10 +49,10 @@ class Game extends mix(Actor).with(AM_Behavioral) {
     startRound(round) {
         switch (round) {
             default:
-            case "Preliminaries": this.matchTime = 15; break;
-            case "Quarterfinals": this.matchTime = 20; break;
-            case "Semifinals": this.matchTime = 30; break;
-            case "Finals": this.matchTime = 45; break;
+            case "Quarterfinals": this.matchTime = 15; break;
+            case "Semifinals": this.matchTime = 20; break;
+            case "Finals": this.matchTime = 30; break;
+            case "Championship": this.matchTime = 30; break;
         }
         this.results = [];
         const match = 0;
@@ -66,10 +66,10 @@ class Game extends mix(Actor).with(AM_Behavioral) {
 
         switch (this.round) {
             default:
-            case "Preliminaries": this.startRound("Quarterfinals"); break;
             case "Quarterfinals": this.startRound("Semifinals"); break;
             case "Semifinals": this.startRound("Finals"); break;
-            case "Finals": this.done(); break;
+            case "Finals": this.startRound("Championship"); break;
+            case "Championship": this.done(); break;
         }
     }
 
