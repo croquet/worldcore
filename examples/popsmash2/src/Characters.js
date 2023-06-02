@@ -133,7 +133,7 @@ Constants.Characters = [
     "Gimli",
     "Gir",
     "GLaDOS",
-    "Glenda the Good Witch",
+    "Glinda the Good Witch",
     "Godzilla",
     "Goku",
     "Gollum",
