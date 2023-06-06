@@ -1,3 +1,4 @@
+import { Constants } from "@croquet/croquet";
 import { Pawn } from "./Pawn";
 import { ModelService, WorldcoreModel } from "./Root";
 
@@ -34,6 +35,8 @@ ActorManager.register("ActorManager");
 //-- Actor ---------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+Constants.WC_SAVE = new Map();
+
 export class Actor extends WorldcoreModel {
 
     static okayToIgnore() {return ["$local", "$global"] }
@@ -46,7 +49,7 @@ export class Actor extends WorldcoreModel {
 
     get tags() {  return this.__tags || new Set() }
     set _tags(tags) {
-        if(!this.__tags) this.__tags = new Set();
+        if (!this.__tags) this.__tags = new Set();
         for (const tag of tags) this.__tags.add(tag);
     }
 

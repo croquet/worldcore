@@ -1,5 +1,5 @@
-import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, q_axisAngle, RegisterMixin, v3_add} from "@croquet/worldcore";
-import { AM_Grid, AM_OnGrid } from "./Grid";
+import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, q_axisAngle, RegisterMixin, v3_add, AM_Save, Constants } from "@croquet/worldcore";
+// import { AM_Grid, AM_OnGrid} from "./Grid";
 // import { AM_Grid, AM_OnGrid } from "./Grid";
 
 //------------------------------------------------------------------------------------------
@@ -13,7 +13,11 @@ BaseActor.register('BaseActor');
 // TestActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {}
+class TestActor extends mix(Actor).with(AM_Save, AM_Spatial, AM_Behavioral) {
+    get manifest() {
+        return ["translation", "rotation"];
+    }
+}
 TestActor.register('TestActor');
 
 //------------------------------------------------------------------------------------------
@@ -24,7 +28,8 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
+        console.log("Start root model!!");
+        console.log(Constants);
 
         this.base = BaseActor.create({pawn: "GroundPawn"});
         this.sun = TestActor.create({parent: this.base, name: "sun", pawn: "TestPawn", translation:[0,2,0]});
@@ -49,6 +54,7 @@ export class MyModelRoot extends ModelRoot {
 
     test() {
         console.log("test");
+        this.sun.save();
     }
 
 

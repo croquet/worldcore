@@ -5,6 +5,7 @@ export * from "./src/Mixins";
 export * from "./src/Pawn";
 export * from "./src/Root";
 export * from "./src/User";
+export * from "./src/Save";
 export * from "./src/Utilities";
 export * from "./src/Vector";
 export * from "./src/Widget";
