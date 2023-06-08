@@ -1,4 +1,4 @@
-import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, q_axisAngle, RegisterMixin, v3_add, AM_Save, Constants } from "@croquet/worldcore";
+import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, q_axisAngle, RegisterMixin, v3_add, AM_Save, Constants, SaveManager } from "@croquet/worldcore";
 // import { AM_Grid, AM_OnGrid} from "./Grid";
 // import { AM_Grid, AM_OnGrid } from "./Grid";
 
@@ -6,7 +6,7 @@ import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, A
 // BaseActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BaseActor extends mix(Actor).with(AM_Spatial) {}
+class BaseActor extends mix(Actor).with(AM_Spatial, AM_Save) {}
 BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
@@ -14,6 +14,9 @@ BaseActor.register('BaseActor');
 //------------------------------------------------------------------------------------------
 
 class TestActor extends mix(Actor).with(AM_Save, AM_Spatial, AM_Behavioral) {
+
+    get name() { return "TestPawn"}
+
     get manifest() {
         return ["translation", "rotation"];
     }
@@ -25,6 +28,8 @@ TestActor.register('TestActor');
 //------------------------------------------------------------------------------------------
 
 export class MyModelRoot extends ModelRoot {
+
+    static modelServices() { return [SaveManager] }
 
     init(...args) {
         super.init(...args);
@@ -53,8 +58,13 @@ export class MyModelRoot extends ModelRoot {
     }
 
     test() {
+        const sm = this.service("SaveManager");
         console.log("test");
-        this.sun.save();
+        const sss = this.sun.save();
+        sss.translation = [0,4,0];
+
+        sm.load(sss);
+        sm.load({actor: "WrongActor", pawn: "TestPawn"});
     }
 
 

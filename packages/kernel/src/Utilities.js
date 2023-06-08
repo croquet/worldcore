@@ -16,11 +16,11 @@ export class PriorityQueue {
         this.comparator = comparator;
     }
 
-    get isEmpty() { return (this.items.length === 0); }
-    get count() { return this.items.length; }
-    get top() { return this.items[0]; }
+    get isEmpty() { return (this.items.length === 0) }
+    get count() { return this.items.length }
+    get top() { return this.items[0] }
 
-    clear() { this.items.length = 0; }
+    clear() { this.items.length = 0 }
 
     push(item) {
         let n = this.items.length;
@@ -74,7 +74,7 @@ export class PerlinNoise  {
 
     // deterministic pseudo-random number generator
     mulberry32(a) {
-        var t = a += 0x6D2B79F5;
+        let t = a += 0x6D2B79F5;
         t = Math.imul(t ^ t >>> 15, t | 1);
         t ^= t + Math.imul(t ^ t >>> 7, t | 61);
         return ((t ^ t >>> 14) >>> 0) / 4294967296;
@@ -154,7 +154,7 @@ export class TwoWayMap {
     constructor(map = new Map()) {
         this.map = map;
         this.rev = new Map();
-        this.map.forEach((value, key) => { this.rev.set(value, key)})
+        this.map.forEach((value, key) => { this.rev.set(value, key)});
     }
 
     clear() {
