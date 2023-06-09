@@ -2,7 +2,7 @@
 // Copyright (c) 2023 CROQUET CORPORATION
 
 import { Pawn, mix, PM_ThreeVisible, PM_ThreeInstanced, PM_Avatar, PM_Smoothed, PM_ThreeCamera, THREE, toRad,
-    m4_multiply, m4_translation, m4_scaleRotationTranslation, m4_rotationQ,
+    m4_multiply, m4_translation, m4_scaleRotationTranslation, m4_rotationQ, v2_normalize,
     v3_scale, v3_add, q_multiply, v3_rotate, v3_magnitude, v2_sqrMag, v3_sub, v3_lerp, v3_transform,
     q_yaw, q_axisAngle, q_eulerYXZ, q_slerp} from "@croquet/worldcore";
 
@@ -10,6 +10,17 @@ import paper from "../assets/paper.jpg";
 import { sunLight, sunBase, perlin2D } from "./Pawns";
 const cameraOffset = [0,12,20];
 
+const v_dist2Sqr = function (a,b) {
+    const dx = a[0] - b[0];
+    const dy = a[2] - b[2];
+    return dx*dx+dy*dy;
+};
+const maxDist = 250;
+const maxDistSqr = maxDist*maxDist;
+
+const v_sub2 = function (a,b) {
+    return [a[0]-b[0], 0, a[2]-b[2]];
+};
 //------------------------------------------------------------------------------------------
 // AvatarPawn
 // The avatar is designed to instantly react to user input and the publish those changes
@@ -267,8 +278,14 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             const velocity = v3_scale(forward, this.speed);
 
             // set translation to limit after any collision
-            const translation = this.collide( v3_add(this.translation, velocity) );
+            let translation = this.collide( v3_add(this.translation, velocity) );
+            const radSqr = v_dist2Sqr(translation, [0,0,0]);
+            if (radSqr>maxDistSqr) {
+                const norm = v2_normalize([translation[0], translation[2]]);
+                translation = [maxDist * norm[0], 0, maxDist * norm[1]];
+            }
             translation[1] = perlin2D(translation[0], translation[2]);
+
             // the forward part of the tank to compute pitch
             const fTrans = v3_add(forward, translation);
             fTrans[1] = perlin2D(fTrans[0], fTrans[2]);
@@ -345,15 +362,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     collide(translation) {
-        const v_dist2Sqr = function (a,b) {
-            const dx = a[0] - b[0];
-            const dy = a[2] - b[2];
-            return dx*dx+dy*dy;
-        };
-        const v_sub2 = function (a,b) {
-            return [a[0]-b[0], 0, a[2]-b[2]];
-        };
-
         const colliders = this.service("CollisionManager").colliders;
 
         for (const collider of colliders) {

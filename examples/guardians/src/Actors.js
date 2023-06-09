@@ -112,12 +112,14 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
     }
 
     doFlee() {
+        // blow up at the tower
         if ( v_mag2Sqr(this.translation) < 20 ) this.killMe(1, true);
+        // otherwise, check if we need to move around an object
         if (!this.doomed) {
             this.future(100).doFlee();
-            const bots = this.pingAll("block");
-            if (bots.length===0) return;
-            bots.forEach(bot => this.flee(bot));
+            const blockers = this.pingAll("block");
+            if (blockers.length===0) return;
+            blockers.forEach(blocker => this.flee(blocker));
         }
     }
 
@@ -393,18 +395,18 @@ export class MyModelRoot extends ModelRoot {
         this.health = 100;
         let v = [-10,0,0];
 
-        // place the tower
-        for (let i=0; i<3;i++) {
+        // place the fins for collisions
+        for (let i=0; i<3; i++) {
             const p3 = Math.PI*2/3;
-            this.makePowerPole(v[0],v[2],i*p3-Math.PI/2);
+            this.makeSkyscraper(v[0], 0, v[2],i*p3-Math.PI/2, -1, 1.5);
             v = v3_rotate( v, q_axisAngle([0,1,0], p3) );
         }
 
-        HealthCoinActor.create({pawn: "HealthCoinPawn", parent: this.base, instanceName:'healthCoin', translation:[0,20,0]} );
+        HealthCoinActor.create({pawn: "HealthCoinPawn", parent: this.base, instanceName:'healthCoin', translation:[0,18.5,0]} );
 
         let corner = 12;
         [[-corner,-corner, Math.PI/2-Math.PI/4], [-corner, corner, Math.PI/2+Math.PI/4], [corner, corner, Math.PI/2+Math.PI-Math.PI/4], [corner,-corner, Math.PI/2+Math.PI+Math.PI/4]].forEach( xy => {
-            this.makePowerPole(bollardDistance*xy[0]+1.5,bollardDistance*xy[1]+1.5,xy[2]);
+            this.makeSkyscraper(bollardDistance*xy[0]+1.5, 0, bollardDistance*xy[1]+1.5,xy[2], 5, 1.5);
         });
 
         //place the bollards
@@ -414,6 +416,13 @@ export class MyModelRoot extends ModelRoot {
                 this.makeBollard(bollardDistance*x, bollardDistance*y);
             }
         }
+        const d = 290;
+        // the main tower
+        this.makeSkyscraper( 0, -1.2, 0, -0.533, 0);
+        this.makeSkyscraper( 0, 0,  d, Math.PI/2, 1, 0);
+        this.makeSkyscraper( 0, 0, -d, 0, 2, 0);
+        this.makeSkyscraper( d, 0,  0, 0, 3, 0);
+        this.makeSkyscraper(-d, -1,  -8, Math.PI/2.5, 4, 0);
         this.startGame();
     }
 
@@ -487,12 +496,13 @@ export class MyModelRoot extends ModelRoot {
 
     makeBollard(x, z) {
         GridActor.create( {pawn: "InstancePawn", tags: ["block"], instanceName:'bollard', parent: this.base,
-            obstacle:true, viewObstacle:true, perlin: true, translation:[x, 0, z]} );
+            obstacle:true, viewObstacle:true, perlin: true, radius:1.5, translation:[x, 0, z]} );
     }
 
-    makePowerPole(x, z, r) {
-        GridActor.create( {pawn: "TowerPawn", tags: ["block"], parent: this.base, obstacle: true,
-            translation:[x, 0, z], rotation:q_axisAngle([0,1,0],r)} );
+    makeSkyscraper(x, y, z, r, index, radius) {
+        console.log("makeSkyscraper", r, q_axisAngle([0,1,0],r));
+        GridActor.create( {pawn: "TowerPawn", tags: ["block"], parent: this.base, index, obstacle: true,
+            radius, translation:[x, y, z], height:y, rotation:q_axisAngle([0,1,0],r)} );
     }
 
     makeBot(x, z, index) {

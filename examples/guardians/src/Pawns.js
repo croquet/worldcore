@@ -44,8 +44,15 @@ import n_7 from "../assets/numbers/7.glb";
 import n_8 from "../assets/numbers/8.glb";
 import n_9 from "../assets/numbers/9.glb";
 
+import center_tower from "../assets/centertower.glb";
+import skyscraper_1 from "../assets/Skyscraper1.glb";
+import skyscraper_2 from "../assets/Skyscraper2.glb";
+import skyscraper_3 from "../assets/Skyscraper3.glb";
+import skyscraper_4 from "../assets/Skyscraper5.glb";
+import power_tower from "../assets/tower.glb";
+
 import bollard_ from "../assets/bollard.glb";
-import tower_ from "../assets/tower.glb";
+
 import tank_tracks from "../assets/tank_tracks.glb";
 import tank_turret from "../assets/tank_turret.glb";
 import tank_body from "../assets/tank_body.glb";
@@ -55,6 +62,7 @@ import * as fireballFragmentShader from "../assets/fireball.frag.js";
 import * as fireballVertexShader from "../assets/fireball.vert.js";
 
 const numbers = [];
+const skyscrapers = [];
 
 export const UserColors = [
     rgb(64, 206, 64),          // green
@@ -145,9 +153,6 @@ for (let i=0; i<10; i++) fireMaterial[i] = function makeFireMaterial() {
         fragmentShader: fireballFragmentShader.fragmentShader()
     } );
 }();
-
-// global to share the tower 3D model
-let tower;
 
 //------------------------------------------------------------------------------------------
 // BotPawn --------------------------------------------------------------------------------
@@ -280,17 +285,23 @@ export class TowerPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
-        this.future(100).setup();
+        this.radius = actor._radius;
+        this.index = actor._index;
+        this.height = actor.translation[1];
+        console.log("XXXXX", this.height, actor.rotation, actor.translation)
+        if (this.radius) this.service("CollisionManager").colliders.add(this);
+        //if (this.index<0) this.index=6;
+        if (this.index>=0) this.future(100).setup();
     }
 
     setup() {
+        const tower = skyscrapers[this.index];
         if (tower) {
             const t = tower.clone(true);
-            t.traverseVisible( m => { m.castShadow=true; m.receiveShadow=true;} );
+            t.traverseVisible( m => { m.castShadow=true; m.receiveShadow=true; } );
             this.setRenderObject( t );
-            this.service("CollisionManager").colliders.add(this);
             const translation = this.translation;
-            this.localTransform = m4_translation([0,perlin2D(translation[0], translation[2])-0.25,0]);
+            this.localTransform = m4_translation([0,this.height+perlin2D(translation[0], translation[2])-0.25,0]);
             this.refreshDrawTransform();
         } else this.future(100).setup();
     }
@@ -563,9 +574,9 @@ export class MyViewRoot extends ViewRoot {
         //
         const gltfLoader = new GLTFLoader();
 
-        let [bollard, tower_load, tankTracks, tankTurret, tankBody, n0, n1, n2, n3, n4, n5, n6, n7, n8, n9 ] = await Promise.all( [
+        let [bollard, powerTower, tankTracks, tankTurret, tankBody, n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, centerTower, s1, s2, s3, s4] = await Promise.all( [
             gltfLoader.loadAsync( bollard_ ),
-            gltfLoader.loadAsync( tower_ ),
+            gltfLoader.loadAsync( power_tower ),
             gltfLoader.loadAsync( tank_tracks ),
             gltfLoader.loadAsync( tank_turret ),
             gltfLoader.loadAsync( tank_body ),
@@ -578,10 +589,13 @@ export class MyViewRoot extends ViewRoot {
             gltfLoader.loadAsync( n_6 ),
             gltfLoader.loadAsync( n_7 ),
             gltfLoader.loadAsync( n_8 ),
-            gltfLoader.loadAsync( n_9 )
+            gltfLoader.loadAsync( n_9 ),
+            gltfLoader.loadAsync( center_tower ),
+            gltfLoader.loadAsync( skyscraper_1 ),
+            gltfLoader.loadAsync( skyscraper_2 ),
+            gltfLoader.loadAsync( skyscraper_3 ),
+            gltfLoader.loadAsync( skyscraper_4 ),
         ] );
-
-        tower = tower_load.scene.children[0];
 
         im.addGeometry("bollard", bollard.scene.children[0].geometry);
         const bollardim = im.addMesh("bollard", "bollard", "gray");
@@ -620,6 +634,14 @@ export class MyViewRoot extends ViewRoot {
         this.setNumber(7, n7, numberMat);
         this.setNumber(8, n8, numberMat);
         this.setNumber(9, n9, numberMat);
+
+        skyscrapers[0] = centerTower.scene;
+        skyscrapers[1] = s1.scene; //.children[0];
+        skyscrapers[2] = s2.scene; //.children[0];
+        skyscrapers[3] = s3.scene; //.children[0];
+        skyscrapers[4] = s4.scene; //.children[0];
+        skyscrapers[5] = powerTower.scene.children[0];
+        skyscrapers[6] = bollard.scene;
     }
 
     setNumber(num, number3D, mat) {
