@@ -402,7 +402,7 @@ export class MyModelRoot extends ModelRoot {
             v = v3_rotate( v, q_axisAngle([0,1,0], p3) );
         }
 
-        HealthCoinActor.create({pawn: "HealthCoinPawn", parent: this.base, instanceName:'healthCoin', translation:[0,18.5,0]} );
+        HealthCoinActor.create({pawn: "HealthCoinPawn", parent: this.base, instanceName:'healthCoin', translation:[0,20,0]} );
 
         let corner = 12;
         [[-corner,-corner, Math.PI/2-Math.PI/4], [-corner, corner, Math.PI/2+Math.PI/4], [corner, corner, Math.PI/2+Math.PI-Math.PI/4], [corner,-corner, Math.PI/2+Math.PI+Math.PI/4]].forEach( xy => {
