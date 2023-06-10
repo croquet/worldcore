@@ -48,7 +48,7 @@ import center_tower from "../assets/centertower.glb";
 import skyscraper_1 from "../assets/Skyscraper1.glb";
 import skyscraper_2 from "../assets/Skyscraper2.glb";
 import skyscraper_3 from "../assets/Skyscraper3.glb";
-import skyscraper_4 from "../assets/Skyscraper5.glb";
+import skyscraper_4 from "../assets/Skyscraper6.glb";
 import power_tower from "../assets/tower.glb";
 
 import bollard_ from "../assets/bollard.glb";

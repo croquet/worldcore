@@ -422,7 +422,7 @@ export class MyModelRoot extends ModelRoot {
         this.makeSkyscraper( 0, 0,  d, Math.PI/2, 1, 0);
         this.makeSkyscraper( 0, 0, -d, 0, 2, 0);
         this.makeSkyscraper( d, 0,  0, 0, 3, 0);
-        this.makeSkyscraper(-d, -1,  -8, Math.PI/2.5, 4, 0);
+        this.makeSkyscraper(-d-10, -2,  -8, Math.PI+2.5, 4, 0);
         this.startGame();
     }
 
