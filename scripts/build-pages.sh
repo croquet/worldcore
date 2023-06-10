@@ -6,6 +6,7 @@
 # normally executed via .github/workflows/deploy-to-pages.yml
 # but can be run locally, open _site/index.html in a browser to view
 
+npm ci || exit 1
 npx lerna bootstrap || exit 1
 rm -rf _site
 mkdir _site
