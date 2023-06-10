@@ -116,11 +116,11 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
 
     keyDown(e) {
         switch (e.key) {
-            case 'x': case 'X': 
+            case 'x': case 'X':
                 if (this.developerMode === 0) this.developerMode++;
                 break;
             case 'y': case 'Y':
-                if (this.developerMode === 1 || this.developerMode ===4 ) this.developerMode++;
+                if (this.developerMode === 1 || this.developerMode === 4 ) this.developerMode++;
                 break;
             case 'z': case 'Z':
                 if (this.developerMode === 2 || this.developerMode === 3 ) this.developerMode++;
@@ -136,7 +136,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
             case "M": case "m":
                 this.auto = !this.auto; break;
             case "H": case "h":
-                if (this.developerMode===6) this.goHome(); break;
+                if (this.developerMode === 5) this.goHome(); break;
             case "Shift":
                 console.log("shiftKey Down");
                 this.highGear = 1.5; break;
@@ -151,41 +151,41 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 break;
             case "g":
                 // switch to god mode camera
-                if (this.developerMode===6) this.godMode = !this.godMode;
+                if (this.developerMode === 5) this.godMode = !this.godMode;
                 break;
             case "G":
                 // everyone switch to go mode camera
-                if (this.developerMode===6) this.publish("all", "godMode", !this.godMode);
+                if (this.developerMode === 5) this.publish("all", "godMode", !this.godMode);
                 break;
             case "R": case "r":
-                this.publish("game", "resetGame");
+                if (this.developerMode === 5) this.publish("game", "resetGame");
                 break;
             case "B": case "b": //
-            if (this.developerMode===5) this.publish("game", "bots", 500);
+                if (this.developerMode === 5) this.publish("game", "bots", 500);
                 break;
             case "U": case "u": // make the tower immortal/undying
-            if (this.developerMode===5) this.publish("game", "undying");
+                if (this.developerMode === 5) this.publish("game", "undying");
                 break;
             case 'F': case 'f': // pause bots and missiles
-            if (this.developerMode===5) this.publish("game", "freeze");
+                if (this.developerMode === 5) this.publish("game", "freeze");
                 break;
             case '1':
-                if (this.developerMode===5) this.publish("game", "bots", 10);
+                if (this.developerMode === 5) this.publish("game", "bots", 10);
                 break;
             case '2':
-                if (this.developerMode===5) this.publish("game", "bots", 25);
+                if (this.developerMode === 5) this.publish("game", "bots", 25);
                 break;
             case '3':
-                if (this.developerMode===5) this.publish("game", "bots", 50);
+                if (this.developerMode === 5) this.publish("game", "bots", 50);
                 break;
             case '4':
-                if (this.developerMode===5) this.publish("game", "bots", 100);
+                if (this.developerMode === 5) this.publish("game", "bots", 100);
                 break;
             case '5':
-                if (this.developerMode===5) this.publish("game", "bots", 250);
+                if (this.developerMode === 5) this.publish("game", "bots", 250);
                 break;
             case '6':
-                if (this.developerMode===5) this.publish("game", "bots", 500);
+                if (this.developerMode === 5) this.publish("game", "bots", 500);
                 break;
             default:
         }
