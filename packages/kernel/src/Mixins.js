@@ -180,7 +180,7 @@ export const AM_Spatial = superclass => class extends superclass {
 
     get global() {
         if (this.$global) return [...this.$global];
-        if (this.parent) {
+        if (this.parent && this.parent.global) {
             this.$global = m4_multiply(this.local, this.parent.global);
         } else {
             this.$global = this.local;
