@@ -1,4 +1,4 @@
-import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, q_axisAngle, RegisterMixin, v3_add, AM_Save, Constants } from "@croquet/worldcore";
+import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, q_axisAngle, RegisterMixin, v3_add, AM_Save, Constants, q_identity } from "@croquet/worldcore";
 // import { AM_Grid, AM_OnGrid} from "./Grid";
 // import { AM_Grid, AM_OnGrid } from "./Grid";
 
@@ -15,10 +15,8 @@ BaseActor.register('BaseActor');
 
 class TestActor extends mix(Actor).with(AM_Save, AM_Spatial, AM_Behavioral) {
 
-    get name() { return "TestPawn"}
-
     get manifest() {
-        return ["translation", "rotation"];
+        return ["name", "translation", "rotation"];
     }
 }
 TestActor.register('TestActor');
@@ -31,18 +29,19 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!");
+        console.log("Start root model!!!");
         console.log(Constants);
 
         this.base = BaseActor.create({pawn: "GroundPawn"});
-        this.sun = TestActor.create({parent: this.base, name: "sun", pawn: "TestPawn", translation:[0,2,0], tags: ["foo", "bar", "baz"]});
-        this.planet = TestActor.create({name: "planet", pawn: "PlanetPawn", parent: this.sun, translation:[5,0,0]});
+        this.sun = TestActor.create({parent: this.base, name: "sun", pawn: "TestPawn", translation:[0,2,0], tags: ["save"]});
+        this.planet = TestActor.create({name: "planet", pawn: "PlanetPawn", parent: this.sun, translation:[5,0,0], tags: ["save"]});
 
         this.sun.behavior.start({name: "SpinBehavior", axis:[0,1,0], tickRate: 1000, speed: 2});
         this.planet.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5});
 
         this.subscribe("input", "pointerDown", this.click);
         this.subscribe("input", "xDown", this.test);
+        this.subscribe("input", "zDown", this.test2);
     }
 
     click() {
@@ -57,13 +56,21 @@ export class MyModelRoot extends ModelRoot {
 
     test() {
         console.log("test");
-        const sss = this.sun.save();
+        const sss = this.sun.save("save");
+        // this.sun.destroy();
+        sss.rotation = q_identity();
         console.log(sss);
-        this.sun.destroy();
-        sss.translation = [0,4,0];
+        console.log(sss.children);
 
-        this.sun = this.base.load(sss);
-        this.sun.behavior.start({name: "SpinBehavior", axis:[0,1,0], speed: 2});
+
+        this.sun = this.sun.load(sss);
+    }
+
+    test2() {
+        console.log("test2");
+        const xxx = this.sun.tags.has(undefined);
+        console.log(xxx.children);
+
     }
 
 
