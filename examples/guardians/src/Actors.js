@@ -418,10 +418,10 @@ export class MyModelRoot extends ModelRoot {
         const d = 290;
         // the main tower
         this.makeSkyscraper( 0, -1.2, 0, -0.533, 0);
-        this.makeSkyscraper( 0, 0,  d, Math.PI/2, 1, 0);
-        this.makeSkyscraper( 0, 0, -d, 0, 2, 0);
-        this.makeSkyscraper( d, 0,  0, 0, 3, 0);
-        this.makeSkyscraper(-d-10, -2,  -8, Math.PI+2.5, 4, 0);
+        this.makeSkyscraper( 0, -1,  d, Math.PI/2, 1, 0);
+        this.makeSkyscraper( 0, -1, -d, 0, 2, 0);
+        this.makeSkyscraper( d, -1,  0, 0, 3, 0);
+        this.makeSkyscraper(-d-10, -3,  -8, Math.PI+2.5, 4, 0);
         this.startGame();
     }
 
