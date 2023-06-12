@@ -288,7 +288,6 @@ export class TowerPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         this.radius = actor._radius;
         this.index = actor._index;
         this.height = actor.translation[1];
-        console.log("XXXXX", this.height, actor.rotation, actor.translation)
         if (this.radius) this.service("CollisionManager").colliders.add(this);
         //if (this.index<0) this.index=6;
         if (this.index>=0) this.future(100).setup();

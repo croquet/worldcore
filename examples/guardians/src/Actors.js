@@ -500,7 +500,6 @@ export class MyModelRoot extends ModelRoot {
     }
 
     makeSkyscraper(x, y, z, r, index, radius) {
-        console.log("makeSkyscraper", r, q_axisAngle([0,1,0],r));
         GridActor.create( {pawn: "TowerPawn", tags: ["block"], parent: this.base, index, obstacle: true,
             radius, translation:[x, y, z], height:y, rotation:q_axisAngle([0,1,0],r)} );
     }

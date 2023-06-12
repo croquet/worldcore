@@ -121,6 +121,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
                 break;
             case 'y': case 'Y':
                 if (this.developerMode === 1 || this.developerMode === 4 ) this.developerMode++;
+                if (this.developerMode === 5) console.log( "Entered developer mode.");
                 break;
             case 'z': case 'Z':
                 if (this.developerMode === 2 || this.developerMode === 3 ) this.developerMode++;
