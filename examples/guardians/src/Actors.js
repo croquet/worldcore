@@ -344,12 +344,12 @@ class MyUser extends User {
             pawn: "AvatarPawn",
             parent: base,
             driver: this.userId,
-            instanceName: 'tankTracks',
+            //instanceName: 'tankTracks',
             tags: ["avatar", "block"],
             ...props
         });
-        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor: props.userColor, instanceName:'tankBody'});
-        SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor: props.userColor, instanceName:'tankTurret'});
+    //    SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor: props.userColor, instanceName:'tankBody'});
+    //    SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, userColor: props.userColor, instanceName:'tankTurret'});
     }
 
     saveProps() {
