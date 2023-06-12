@@ -67,28 +67,24 @@ export const AM_Save = superclass => class extends superclass {
     get manifest() { return [] }
 
     save(layer) {
-        const out = {};
-        out.actor = Constants.WC_SAVE.revGet(this.constructor);
-        out.pawn = this.pawn;
-        if (this.tags.size) out.tags = Array.from(this.tags);
-        for (const x of this.manifest) {out[x] = this[x]}
-        if (this.children.size > 0) out.children = this.saveChildren();
-        return out;
+        const file = {};
+        if (!layer || this.tags.has(layer)) {
+            file.actor = Constants.WC_SAVE.revGet(this.constructor);
+            file.pawn = this.pawn;
+            if (this.tags.size) file.tags = Array.from(this.tags);
+            for (const x of this.manifest) {file[x] = this[x]}
+        }
+
+        if (this.children.size > 0) file.children = [];
+        for (const child of this.children) { if (child.save) file.children.push(child.save(layer)); }
+        return file;
     }
 
-    saveChildren(layer) {
-        const out = [];
-
-        for (const child of this.children) { if (child.save) out.push(child.save()); }
-
-        return out;
-    }
-
-    load(o) {
-        let out = null;
-        const actor = o.actor;
-        const children = o.children || [];
-        const options = {...o};
+    load(file) {
+        let out = this;
+        const actor = file.actor;
+        const children = file.children || [];
+        const options = {...file};
         options.parent = this;
         delete options.actor;
         delete options.children;
@@ -96,16 +92,13 @@ export const AM_Save = superclass => class extends superclass {
         const a = Constants.WC_SAVE.get(actor);
         if (a) {
             out = a.create(options);
-            for (const child of children) {
-                child.parent = out;
-                out.load(child);
-            }
         } else {
-            console.error(actor + " not found during load from save!");
+            if (actor) console.error(actor + " not found during load from save!");
         }
 
-        return out;
+        for (const child of children) out.load(child);
 
+        return out;
     }
 
 };

@@ -239,14 +239,6 @@ export const PM_Spatial = superclass => class extends superclass {
 //-- Smoothed ------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Smoothed actors generate interpolation information when they get movement commands. Their
-// pawns use this to reposition themselves on every frame update.
-//
-// Setting translation/rotation/scale will pop the pawn to the new value. If you want the transition
-// to be interpolated, use moveTo, rotateTo, or scaleTo instead.
-
-//-- Actor ---------------------------------------------------------------------------------
-
 export const AM_Smoothed = superclass => class extends AM_Spatial(superclass) {
 
     init(...args) {
@@ -405,7 +397,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         if (!this._global) {
             this.refreshDrawTransform();
             this.refreshChildDrawTransform();
-            // if (this.children) this.children.forEach(child => child.globalChanged()); // If our global changes, so do the globals of our children
+            if (this.children) this.children.forEach(child => child.globalChanged()); // If our global changes, so do the globals of our children
         }
 
     }
