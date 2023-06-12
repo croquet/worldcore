@@ -191,7 +191,6 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
     }
 
     resetGame() {
-        console.log("destroy the missile");
         this.destroy();
     }
 
