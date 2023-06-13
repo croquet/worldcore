@@ -91,11 +91,10 @@ export let viewRoot;
 let time0 = 0;
 let time1 = 0;
 let viewServices = new Map();
-let pawnManager;
 
 export class ViewRoot extends WorldcoreView {
 
-    static viewServices() { return []; }
+    static viewServices() { return [] }
 
     constructor(model) {
         super(model);
@@ -108,7 +107,13 @@ export class ViewRoot extends WorldcoreView {
             new service();
         });
         this.onStart();
-        pawnManager = new PawnManager();
+
+        let pm = this.service("PawnManager");
+        if (!pm) {
+            console.log("Using Default PawnManager");
+            pm = new PawnManager();
+        }
+        pm.start();
     }
 
     onStart() {} // A final set-up that runs before the pawns are created
@@ -124,10 +129,12 @@ export class ViewRoot extends WorldcoreView {
         const delta = time1 - time0;
         let done = new Set();
 
-        pawnManager.update(time, delta); // Pawns update before other services
+        const pm = this.service("PawnManager");
+
+        pm.update(time, delta); // Pawns update before other services
         viewServices.forEach(s => {
-            if (done.has(s)) {return;}
-            if (s === pawnManager) return;
+            if (done.has(s)) {return}
+            if (s === pm) return;
             done.add(s);
             if (s.update) s.update(time, delta);
         });

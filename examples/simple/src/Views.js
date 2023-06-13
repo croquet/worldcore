@@ -2,7 +2,7 @@ import { PM_ThreeCamera, ViewService, PM_Avatar, WidgetManager2,  v3_rotate, Thr
     InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE, PM_ThreeInstanced,
     PM_Smoothed, toRad, m4_rotation, m4_multiply, TAU, m4_translation, q_multiply, q_axisAngle, v3_scale, v3_add, PM_ThreeCollider, ThreeRaycast, viewRoot,
     PM_NavGridGizmo, Widget2, CanvasWidget2, ImageWidget2, TextWidget2, ControlWidget2, HUD, ButtonWidget2, ToggleWidget2, VerticalWidget2, ToggleSet2, ImageToggleWidget2,
-     SliderWidget2, JoyStickWidget2, WindowWidget2, MenuWidget2, ListWidget2} from "@croquet/worldcore";
+     SliderWidget2, JoyStickWidget2, WindowWidget2, MenuWidget2, ListWidget2, PawnManager} from "@croquet/worldcore";
 
 import llama from "../assets/llama.jpg";
 import diana from "../assets/diana.jpg";

@@ -9,18 +9,27 @@ let pm; // Local pointer for pawns
 const PAWN_REGISTRY = new Map();
 
 export class PawnManager extends ViewService {
-    constructor(name) {
-        super(name || "PawnManager");
+    constructor() {
+        super("PawnManager");
         pm = this;
         this.pawns = new Map();
 
+        // const actorManager = this.modelService("ActorManager");
+        // actorManager.actors.forEach(actor => this.newPawn(actor));
+
+        // for (const pawn of this.pawns.values()) { pawn.link() } // recreate child links
+
+        // this.start();
+
+        this.subscribe("actor", "createActor", this.spawnPawn);
+        this.subscribe("actor", "destroyActor", this.destroyPawn);
+    }
+
+    start() {
         const actorManager = this.modelService("ActorManager");
         actorManager.actors.forEach(actor => this.newPawn(actor));
 
         for (const pawn of this.pawns.values()) { pawn.link() } // recreate child links
-
-        this.subscribe("actor", "createActor", this.spawnPawn);
-        this.subscribe("actor", "destroyActor", this.destroyPawn);
     }
 
     destroy() {
