@@ -1,19 +1,17 @@
-import { AM_Behavioral,  UserManager, User, AM_Avatar, ModelRoot,  Actor, mix, AM_Spatial, q_axisAngle, RegisterMixin, v3_add, AM_Save, Constants, q_identity } from "@croquet/worldcore";
-// import { AM_Grid, AM_OnGrid} from "./Grid";
-// import { AM_Grid, AM_OnGrid } from "./Grid";
+import { AM_Behavioral, ModelRoot,  Actor, mix, AM_Spatial, Constants, AM_Spec } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 // BaseActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BaseActor extends mix(Actor).with(AM_Spatial, AM_Save) {}
+class BaseActor extends mix(Actor).with(AM_Spatial, AM_Spec) {}
 BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
 // TestActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Save, AM_Spatial, AM_Behavioral) {
+class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Spec) {
 
     get manifest() {
         return ["name", "translation", "rotation"];
@@ -33,8 +31,8 @@ export class MyModelRoot extends ModelRoot {
         console.log(Constants);
 
         this.base = BaseActor.create({pawn: "GroundPawn"});
-        this.sun = TestActor.create({parent: this.base, name: "sun", pawn: "TestPawn", translation:[0,2,0], tags: ["save"]});
-        this.planet = TestActor.create({name: "planet", pawn: "PlanetPawn", parent: this.sun, translation:[5,0,0], tags: ["save"]});
+        this.sun = TestActor.create({parent: this.base, name: "sun", pawn: "TestPawn", translation:[0,2,0]});
+        this.planet = TestActor.create({name: "planet", pawn: "PlanetPawn", parent: this.sun, translation:[5,0,0]});
 
         this.sun.behavior.start({name: "SpinBehavior", axis:[0,1,0], tickRate: 1000, speed: 2});
         this.planet.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5});
@@ -56,21 +54,15 @@ export class MyModelRoot extends ModelRoot {
 
     test() {
         console.log("test");
-        const sss = this.sun.save("save");
-        // this.sun.destroy();
-        sss.rotation = q_identity();
-        console.log(sss);
-        console.log(sss.children);
-
-
-        this.sun = this.sun.load(sss);
+        this.spec = this.sun.toSpec();
+        console.log(this.spec );
     }
 
     test2() {
         console.log("test2");
-        const xxx = this.sun.tags.has(undefined);
-        console.log(xxx.children);
-
+        this.sun.destroy();
+        this.sun = this.base.createFromSpec(this.spec);
+        this.sun.behavior.start({name: "SpinBehavior", axis:[0,1,0], speed: 2});
     }
 
 
