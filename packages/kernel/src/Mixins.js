@@ -164,7 +164,7 @@ export const AM_Spatial = superclass => class extends superclass {
 
     globalChanged() {
         this.$global = null;
-        this.sayProp("globalChanged");
+        this._say("globalChanged");
         if (this.children) this.children.forEach(child => child.globalChanged());
     }
 
@@ -295,7 +295,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     scaleTo(v) {
         this._scale = v;
         this.localChanged();
-        this.sayProp("setScale", v, this.throttle);
+        this.say("setScale", v, this.throttle);
         this.refreshDrawTransform();
         this.refreshChildDrawTransform();
     }
@@ -303,7 +303,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     rotateTo(q) {
         this._rotation = q;
         this.localChanged();
-        this.sayProp("setRotation", q, this.throttle);
+        this.say("setRotation", q, this.throttle);
         this.refreshDrawTransform();
         this.refreshChildDrawTransform();
     }
@@ -311,7 +311,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
     translateTo(v) {
         this._translation = v;
         this.localChanged();
-        this.sayProp("setTranslation", v, this.throttle);
+        this.say("setTranslation", v, this.throttle);
         this.refreshDrawTransform();
         this.refreshChildDrawTransform();
     }
@@ -320,7 +320,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         this._translation = v;
         this._rotation = q;
         this.localChanged();
-        this.sayProp("setPosition", [v,q], this.throttle);
+        this.say("setPosition", [v,q], this.throttle);
         this.refreshDrawTransform();
         this.refreshChildDrawTransform();
     }

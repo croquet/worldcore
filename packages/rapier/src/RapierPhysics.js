@@ -79,7 +79,7 @@ export class RapierPhysicsManager extends ModelService {
                 const q = [r.x, r.y, r.z, r.w];
 
                 rb.moveTo(v);
-                rb.sayProp("translating", v);
+                rb._say("translating", v);
                 rb.rotateTo(q);
             });
             if (this.queue) {
