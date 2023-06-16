@@ -86,7 +86,7 @@ export class Actor extends WorldcoreModel {
             this[ul] = value;
             if (this[nameSet]) this[nameSet](value,old);
             const data = {old, value, o: old, v: value};
-            this.sayProp(nameSet, data);
+            this._say(nameSet, data);
         }
         return sorted;
     }
@@ -98,7 +98,7 @@ export class Actor extends WorldcoreModel {
             const value = option[1];
             const nameSnap = name+'Snap';
             if (this[nameSnap]) this[nameSnap](value);
-            this.sayProp(nameSnap, value);
+            this._say(nameSnap, value);
         }
     }
 
@@ -121,7 +121,7 @@ export class Actor extends WorldcoreModel {
     }
 
     say(event, data) {
-        // an explicit say(), as opposed to the automatically generated sayProp().
+        // an explicit say(), as opposed to the automatically generated _say().
         // we publish in the normal way, but also as arguments to a generic event
         // type that a client such as a bridge can subscribe to in order to capture
         // and forward all the explicit say() occurrences.
@@ -129,7 +129,7 @@ export class Actor extends WorldcoreModel {
         this.publish("__wc", "say", [ this.id, event, data ]);
     }
 
-    sayProp(event, data) {
+    _say(event, data) {
         this.publish(this.id, event, data);
     }
 
