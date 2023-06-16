@@ -1,4 +1,4 @@
-import { AM_Behavioral, ModelRoot,  Actor, mix, AM_Spatial, Constants, AM_Spec } from "@croquet/worldcore";
+import { AM_Behavioral, ModelRoot,  Actor, mix, AM_Spatial, Constants, AM_Spec, AccountManager } from "@croquet/worldcore";
 
 //------------------------------------------------------------------------------------------
 // BaseActor -------------------------------------------------------------------------------
@@ -25,10 +25,11 @@ TestActor.register('TestActor');
 
 export class MyModelRoot extends ModelRoot {
 
+    static modelServices() { return [AccountManager] }
+
     init(...args) {
         super.init(...args);
         console.log("Start root model!");
-        console.log(Constants);
 
         this.base = BaseActor.create({pawn: "GroundPawn"});
         this.sun = TestActor.create({parent: this.base, name: "sun", pawn: "TestPawn", translation:[0,2,0]});
@@ -38,8 +39,8 @@ export class MyModelRoot extends ModelRoot {
         this.planet.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5});
 
         this.subscribe("input", "pointerDown", this.click);
-        this.subscribe("input", "xDown", this.test);
-        this.subscribe("input", "zDown", this.test2);
+        // this.subscribe("input", "xDown", this.test);
+        // this.subscribe("input", "zDown", this.test2);
     }
 
     click() {

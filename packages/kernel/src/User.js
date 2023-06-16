@@ -110,5 +110,54 @@ export const PM_Avatar = superclass => class extends superclass {
 
 };
 
+// ------------------------------------------------------------------------------------------
+// -- Account -------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------
 
+export class Account extends Actor {
+    get accountId() { return this._accountId }
+    get online() { return this._online }
+}
+Account.register('Account');
 
+//------------------------------------------------------------------------------------------
+//-- AccountManager ------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// Maintains a list of accounts in the session
+
+export class AccountManager extends ModelService {
+
+    get defaultAccount() {return Account}
+
+    init() {
+        super.init('AccountManager');
+        this.accounts = new Map();
+        this.subscribe("account", "login", this.onLogin);
+        this.subscribe("account", "logout", this.onLogout);
+    }
+
+    deleteAccount(id) {
+        const account = this.accounts.get(id);
+        if (account) account.destroy();
+        this.accounts.delete(id);
+    }
+
+    onLogin(id) {
+        console.log("account: " + id);
+        let account = this.accounts.get(id);
+        if (!account) {
+            console.log("new account: " + id);
+            account = this.defaultAccount.create({accountId: id});
+            this.accounts.set(id, account);
+        }
+        account.set({online: true});
+    }
+
+    onLogout(id) {
+        const account = this.accounts.get(id);
+        if (account) account.set({online: false});
+    }
+
+}
+AccountManager.register("AccountManager");

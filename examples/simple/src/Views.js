@@ -162,20 +162,29 @@ export class MyViewRoot extends ViewRoot {
     onStart() {
         this.buildInstances();
         this.buildLights();
-        // this.subscribe("input", "xDown", this.test);
-        // this.subscribe("input", "cDown", this.test2);
+        this.subscribe("input", "xDown", this.test);
+        this.subscribe("input", "cDown", this.test2);
     }
 
     test() {
         console.log("test");
-        const xxx = randomString();
-        console.log(xxx);
-        localStorage.setItem("bing", xxx);
+
+        const id = "bbb";
+        this.publish("account", "login", id);
+
+
+        // const key = randomString();
+        // const xxx = {key, count: 666};
+        // console.log(xxx);
+        // const sss = JSON.stringify(xxx);
+        // console.log(sss);
+        // localStorage.setItem("sticks.data", sss);
     }
 
     test2() {
         console.log("test2");
-        const xxx = localStorage.getItem("bing");
+        const sss = localStorage.getItem("sticks.data");
+        const xxx = JSON.parse(sss);
         console.log(xxx);
     }
 
