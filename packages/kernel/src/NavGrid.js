@@ -260,7 +260,7 @@ export const AM_NavGrid = superclass => class extends AM_Grid(superclass) {
             }
         }
 
-        this.say("navGridChanged");
+        this._say("navGridChanged");
     }
 
     addBlock(x,y) {

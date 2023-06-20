@@ -164,7 +164,7 @@ export const AM_Spatial = superclass => class extends superclass {
 
     globalChanged() {
         this.$global = null;
-        this.say("globalChanged");
+        this._say("globalChanged");
         if (this.children) this.children.forEach(child => child.globalChanged());
     }
 
