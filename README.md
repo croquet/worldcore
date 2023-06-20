@@ -119,21 +119,17 @@ We use `lerna` with "fixed" versioning, meaning each package will have the same 
 
 5. publish to npm
 
-       npx lerna publish from-package
+        npx lerna publish from-package
 
 ### Prereleases
 
 For prerelases we don't update the `CHANGELOG.md` files, but otherwise use the same steps as above, with prerelease ids `"alpha"` or `"beta"`:
 
-    npx lerna version --preid alpha
-    npx lerna version --preid beta
+    npx lerna version --no-push --preid alpha
+    npx lerna version --no-push --preid beta
 
 and selecting one of the `pre*` options from the list.
 
-For publishing, we use `"pre"` as the prerelease channel (as opposed to the default `"latest"`):
-
-    npx lerna publish from-package --pre-dist-tag pre
-
+When publishing a prerelease, it will be tagged `"pre"` (as opposed to the default `"latest"`) as specified in `lerna.json`.
 This will cause the prereleases to not be installed automatically, because the regular `npm i` command will only use the `latest` tag.
-
-(Note to self: I just added a `preDistTag` option to `lerna.json` so in theory we do not need to specify it on the command line next time)
+To install the latest pre-release, people would use e.g. `npm i @croquet/worldcore@pre`
