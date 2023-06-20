@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-fountain-multiplatform",
-  "version": "2.0.0-alpha.2",
+  "version": "2.0.0-alpha.3",
   "description": "Worldcore Fountain Demo",
   "private": true,
   "scripts": {
@@ -11,7 +11,7 @@
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@croquet/worldcore": "^2.0.0-alpha.2",
+    "@croquet/worldcore": "^2.0.0-alpha.3",
     "@dimforge/rapier3d": "^0.11.0"
   },
   "devDependencies": {
