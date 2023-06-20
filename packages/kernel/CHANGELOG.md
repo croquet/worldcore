@@ -17,10 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - onStart() to ViewRoot
 - dynamic pawn binding
 - Actor tags
-- AM_Spatial & PM Spatial hav up and forward properties
+- AM_Spatial & PM Spatial have up and forward properties
 - Spatial can have a non-spatial parent
 - NavGrid & PathToBehavior
 - AM_Spec
+- user-level say() does an additional `publish("__wc", "say")`, internal `_say()` does not
 
 ### Changed
 - Pawn destruction handled by PawnManager, not Pawn itself
