@@ -20,7 +20,7 @@ class MyAccount extends Account {
         this.resources.set("Wood", {count: 0});
         this.resources.set("Iron", {count: 0});
         this.resources.set("Stone",{count: 0});
-        this.resources.set("Food", {count: 7});
+        this.resources.set("Food", {count: 0});
         this.listen("clickResource", this.onClick);
     }
 
@@ -28,7 +28,7 @@ class MyAccount extends Account {
         // console.log("onClick");
         const resource = this.resources.get(rrr);
         resource.count++;
-        this.say("update");
+        this.say("changed");
     }
 
 }
@@ -53,7 +53,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!!!");
+        console.log("Start root model!");
     }
 
 }

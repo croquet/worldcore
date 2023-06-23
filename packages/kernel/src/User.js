@@ -117,7 +117,7 @@ export const PM_Avatar = superclass => class extends superclass {
 export class Account extends Actor {
     get accountId() { return this._accountId }
     // get online() { return this._online }
-    get owner() { return this._owner }
+    // get owner() { return this._owner }
 }
 Account.register('Account');
 
@@ -134,8 +134,7 @@ export class AccountManager extends ModelService {
     init() {
         super.init('AccountManager');
         this.accounts = new Map();
-        this.subscribe("account", "login", this.onLogin);
-        this.subscribe("account", "logout", this.onLogout);
+        this.subscribe("account", "create", this.onCreate);
     }
 
     deleteAccount(id) {
@@ -144,24 +143,24 @@ export class AccountManager extends ModelService {
         this.accounts.delete(id);
     }
 
-    onLogin(data) {
-        console.log("am onLogin");
-        console.log(data);
-        const accountId = data.accountId;
-        const owner = data.viewId;
-        let account = this.accounts.get(accountId);
-        if (!account) {
-            console.log("new account: " + accountId);
-            account = this.defaultAccount.create({accountId, owner});
-            this.accounts.set(accountId, account);
+    onCreate(accountId) {
+        console.log("am onCreate");
+        console.log(accountId);
+        if (this.accounts.has(accountId)) {
+            console.error("Duplicate account: "+ accountId);
+            return;
         }
-        account.set({owner});
+
+        console.log("new account: " + accountId);
+        const account = this.defaultAccount.create({accountId});
+        this.accounts.set(accountId, account);
+        this.publish("AccountManager", "create", accountId);
     }
 
-    onLogout(id) {
-        const account = this.accounts.get(id);
-        if (account) account.set({owner: null});
-    }
+    // onLogout(id) {
+    //     const account = this.accounts.get(id);
+    //     if (account) account.set({owner: null});
+    // }
 
 }
 AccountManager.register("AccountManager");
