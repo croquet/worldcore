@@ -1,20 +1,6 @@
-import { AM_Behavioral,  AccountManager, ModelRoot,  Actor, mix, ModelService, Behavior, Shuffle, WorldcoreModel, Account} from "@croquet/worldcore";
+import {  AccountManager, ModelRoot,  Actor, mix, ModelService, Behavior, Shuffle, WorldcoreModel, Account} from "@croquet/worldcore";
 import { Nickname } from "./Names";
-// import { Question, QuestionCount } from "./Questions";
-// import { CharacterName, CharacterCount } from "./Characters";
 
-//------------------------------------------------------------------------------------------
-// -- Game ---------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-class Game extends mix(Actor).with(AM_Behavioral) {
-
-    init(options) {
-        super.init(options);
-    }
-
-}
-Game.register('Game');
 
 //------------------------------------------------------------------------------------------
 // -- Account ------------------------------------------------------------------------------
@@ -22,13 +8,27 @@ Game.register('Game');
 
 class MyAccount extends Account {
 
-    get pawn() {return "MyPawn"}
+    // get pawn() {return "MyPawn"}
 
     init(options) {
         super.init(options);
-        console.log("custom account");
+        console.log("new account");
         this.nickname = Nickname();
-        console.log(this.nickname);
+        this.mood = "Happy";
+        this.population = 0;
+        this.resources = new Map();
+        this.resources.set("Wood", {count: 0});
+        this.resources.set("Iron", {count: 0});
+        this.resources.set("Stone",{count: 0});
+        this.resources.set("Food", {count: 7});
+        this.listen("clickResource", this.onClick);
+    }
+
+    onClick(rrr) {
+        // console.log("onClick");
+        const resource = this.resources.get(rrr);
+        resource.count++;
+        this.say("update");
     }
 
 }
@@ -53,8 +53,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!");
-        this.game = Game.create();
+        console.log("Start root model!!!!!");
     }
 
 }

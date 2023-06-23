@@ -9,8 +9,8 @@ export function Nickname() {
 }
 
 const adjectives = [
-    "#1",
-    "0g Trans-fat",
+    // "#1",
+    // "0g Trans-fat",
     "100% Organic",
     "30-Watt",
     "Admiral",
@@ -78,7 +78,7 @@ const adjectives = [
     "Fearless",
     "Feral",
     "Flying",
-    "Frankenstein's",
+    "Frankenstein",
     "Freaky",
     "Free-range",
     "Frisky",
@@ -112,7 +112,7 @@ const adjectives = [
     "Killer",
     "Kung Fu",
     "Kung Pao",
-    "Lengendary",
+    "The Lengendary",
     "Liquid",
     "Little Miss",
     "Lord",
@@ -200,6 +200,7 @@ const adjectives = [
     "The Last",
     "The Late, Great",
     "The Naked",
+    "The World-Famous",
     "Thicc",
     "Thrift-store",
     "Timid",

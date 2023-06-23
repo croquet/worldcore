@@ -116,7 +116,8 @@ export const PM_Avatar = superclass => class extends superclass {
 
 export class Account extends Actor {
     get accountId() { return this._accountId }
-    get online() { return this._online }
+    // get online() { return this._online }
+    get owner() { return this._owner }
 }
 Account.register('Account');
 
@@ -143,20 +144,23 @@ export class AccountManager extends ModelService {
         this.accounts.delete(id);
     }
 
-    onLogin(id) {
-        console.log("account: " + id);
-        let account = this.accounts.get(id);
+    onLogin(data) {
+        console.log("am onLogin");
+        console.log(data);
+        const accountId = data.accountId;
+        const owner = data.viewId;
+        let account = this.accounts.get(accountId);
         if (!account) {
-            console.log("new account: " + id);
-            account = this.defaultAccount.create({accountId: id});
-            this.accounts.set(id, account);
+            console.log("new account: " + accountId);
+            account = this.defaultAccount.create({accountId, owner});
+            this.accounts.set(accountId, account);
         }
-        account.set({online: true});
+        account.set({owner});
     }
 
     onLogout(id) {
         const account = this.accounts.get(id);
-        if (account) account.set({online: false});
+        if (account) account.set({owner: null});
     }
 
 }
