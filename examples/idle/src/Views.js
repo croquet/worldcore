@@ -20,7 +20,7 @@ class GameWidget extends Widget2 {
 
         this.pop = new DomainWidget({account, parent: this.bg, translation:[0,0], size: [200, 100]});
 
-        this.subscribe(this.account.id, "update", this.tally);
+        this.subscribe(this.account.id, {event: "changed", handling: "oncePerFrame"}, this.tally);
     }
 
     tally() {
@@ -114,10 +114,9 @@ export class MyViewRoot extends ViewRoot {
     onStart() {
         this.subscribe("input", "xDown", this.test);
         this.subscribe("input", "zDown", this.test2);
-    }
 
-    test() {
-        console.log("test");
+        this.subscribe("AccountManager", "create", this.spawnUI);
+
         this.accountId = localStorage.getItem("wc.idle.accountId");
         // this.accountId = null;
 
@@ -126,21 +125,32 @@ export class MyViewRoot extends ViewRoot {
             localStorage.setItem("wc.idle.accountId", this.accountId);
         }
 
-        this.publish("account", "login", {accountId: this.accountId, viewId: this.viewId});
+        const am = this.modelService("AccountManager");
+        if (!am.accounts.has(this.accountId)) this.publish("account", "create", this.accountId);
 
+        this.spawnUI();
     }
 
-    // Handle the case where a new UI should only appear after the account is made -- was done with pawns, but they were created before you knew the
-
-    test2() {
+    spawnUI() {
         console.log("test2");
         const am = this.modelService("AccountManager");
 
         const account = am.accounts.get(this.accountId);
 
+        if (!account) return;
+
         const hud = this.service("HUD");
         this.game = new GameWidget({account, parent: hud.root, autoSize: [1,1]});
     }
+
+    test() {
+        console.log("test");
+    }
+
+    test2() {
+        console.log("test2");
+    }
+
 
 
 }
