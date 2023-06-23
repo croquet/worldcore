@@ -1,14 +1,18 @@
 // Guardians Avatar
 // Copyright (c) 2023 CROQUET CORPORATION
 
-import { Pawn, mix, PM_ThreeVisible, PM_ThreeInstanced, PM_Avatar, PM_Smoothed, PM_ThreeCamera, THREE, toRad,
-    m4_multiply, m4_translation, m4_scaleRotationTranslation, m4_rotationQ, v2_normalize,
-    v3_scale, v3_add, q_multiply, v3_rotate, v3_magnitude, v2_sqrMag, v3_sub, v3_lerp, v3_transform,
-    q_yaw, q_axisAngle, q_eulerYXZ, q_slerp} from "@croquet/worldcore";
+import { Pawn, mix, PM_Avatar, PM_Smoothed, toRad, 
+    m4_multiply, m4_translation, m4_scaleRotationTranslation, m4_rotationQ, 
+    v2_normalize, v3_scale, v3_add, q_multiply, v3_rotate, v3_magnitude, v2_sqrMag, v3_sub, v3_lerp, v3_transform,
+    q_yaw, q_axisAngle, q_eulerYXZ, q_slerp} from "@croquet/worldcore-kernel";
+
+import { PM_ThreeVisible, PM_ThreeInstanced, PM_ThreeCamera, THREE } from "@croquet/worldcore-three";
 
 import paper from "../assets/paper.jpg";
 import { sunLight, sunBase, perlin2D, tank, UserColors } from "./Pawns";
 const cameraOffset = [0,12,20];
+const fixedPitch = toRad(-10);
+const pitchQ = q_axisAngle([1,0,0], fixedPitch);
 
 const v_dist2Sqr = function (a,b) {
     const dx = a[0] - b[0];
@@ -365,7 +369,6 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     updateChaseCam(time, delta) {
         const rm = this.service("ThreeRenderManager");
 
-        const fixedPitch = toRad(-10);
         let tTug = 0.2;
         let rTug = 0.2;
 
@@ -375,7 +378,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         }
 
         const targetTranslation = v3_transform(cameraOffset, this.cameraTarget);
-        const pitchQ = q_axisAngle([1,0,0], fixedPitch);
+
         const yawQ = q_axisAngle([0,1,0], this.yaw);
         const targetRotation = q_multiply(pitchQ, yawQ);
 

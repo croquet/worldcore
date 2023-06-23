@@ -2,7 +2,7 @@
 
 // This is the first game created for Croquet for Unity.
 
-import { App, StartWorldcore} from "@croquet/worldcore";
+import { App, StartWorldcore} from "@croquet/worldcore-kernel";
 
 import {  MyViewRoot } from "./src/Pawns";
 import { MyModelRoot } from "./src/Actors";

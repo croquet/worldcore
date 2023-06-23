@@ -4,9 +4,10 @@
 // The flat world is placed on a Perlin noise generated surface in the view, but all interactions including
 // driving and collisions are computed in 2D.
 
-import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, v3_add, v3_sub, v3_scale,
-    UserManager, User, AM_Avatar, q_axisAngle, v3_normalize, v3_rotate, AM_Grid, AM_OnGrid } from "@croquet/worldcore";
+import { ModelRoot, Actor, mix, AM_Spatial, v3_add, v3_sub, v3_scale,
+    UserManager, User, AM_Avatar, q_axisAngle, v3_normalize, v3_rotate, AM_Grid, AM_OnGrid, AM_Behavioral } from "@croquet/worldcore-kernel";
 
+// these functions are used to compute the 2D interactions - y is ignored
 const v_dist2Sqr = function (a,b) {
     const dx = a[0] - b[0];
     const dy = a[2] - b[2];
@@ -24,10 +25,7 @@ const v_mag2Sqr = function (a) {
 class BaseActor extends mix(Actor).with(AM_Spatial, AM_Grid) {
 
     get pawn() {return "BasePawn"}
-
-    init(options) {
-        super.init(options);
-    }
+    get gamePawnType() { return "" } // don't build a connected pawn for Unity
 }
 BaseActor.register('BaseActor');
 

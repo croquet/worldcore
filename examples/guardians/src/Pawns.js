@@ -23,10 +23,10 @@
 // -- mine layer
 // -- Artillery cannon
 
-import { ViewRoot, ViewService, HUD, Pawn, mix, InputManager, ThreeInstanceManager,
-    PM_ThreeVisible, ThreeRenderManager, ThreeRaycast, PM_Smoothed, PM_Spatial, PM_ThreeInstanced,
-    THREE, toRad, m4_translation, m4_getTranslation,
-    PerlinNoise, GLTFLoader } from "@croquet/worldcore";
+import { ViewRoot, ViewService, Pawn, mix, InputManager, PM_Smoothed, PM_Spatial, 
+    toRad, m4_translation, m4_getTranslation, PerlinNoise } from "@croquet/worldcore-kernel";
+import { ThreeInstanceManager, PM_ThreeInstanced, PM_ThreeVisible, THREE, GLTFLoader, ThreeRenderManager, ThreeRaycast } from "@croquet/worldcore-three";
+import { HUD } from "@croquet/worldcore-widget2";
 import { HUDWidget } from "./BotHUD";
 
 import paper from "../assets/paper.jpg";
