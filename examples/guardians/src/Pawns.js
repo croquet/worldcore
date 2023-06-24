@@ -161,19 +161,13 @@ for (let i=0; i<10; i++) fireMaterial[i] = function makeFireMaterial() {
 //------------------------------------------------------------------------------------------
 // BotPawn --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
-export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
+export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
         const t = this.translation;
         t[1]=perlin2D(t[0], t[2])+2;
-        this.set({translation:t});
-        this.useInstance("botBody");
-    }
-
-    destroy() {
-        this.releaseInstance();
-        super.destroy();
+        this.makeBot();
     }
 
     update(time, delta) {
@@ -183,6 +177,33 @@ export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
         this.localChanged();
         this.refreshDrawTransform();
         this.refreshChildDrawTransform();
+    }
+
+    makeBot() {
+        const botBodyGeo = new THREE.SphereGeometry( 2, 32, 16, 0, Math.PI * 2, 0, 2.6); 
+        botBodyGeo.rotateX(-Math.PI/2);
+        const botMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.5,0.5,0.5), metalness:1.0, roughness:0.3} );
+        botMaterial.side = THREE.DoubleSide;
+        this.botBody = new THREE.Mesh(botBodyGeo, botMaterial);
+        this.botBody.castShadow = true;
+
+        const botEyeGeo = new THREE.SphereGeometry( 1.50, 32, 16); 
+        const botEyeMaterial = new THREE.MeshBasicMaterial( {color: new THREE.Color(1,0.15,0.15)} );
+        botEyeMaterial.side = THREE.FrontSide;
+        this.botEye = new THREE.Mesh( botEyeGeo, botEyeMaterial );
+        this.botBody.add(this.botEye);
+        this.setRenderObject(this.botBody);
+    }
+
+    destroy() {
+        super.destroy();
+        if (this.botBody) {
+            this.botBody.geometry.dispose();
+            this.botBody.material.dispose();
+            this.botEye.geometry.dispose();
+            this.botEye.material.dispose();
+            this.botBody = null;
+        }
     }
 }
 
@@ -264,7 +285,7 @@ export class GeometryPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, P
         this.paperTexture.wrapS = THREE.RepeatWrapping;
         this.paperTexture.wrapT = THREE.RepeatWrapping;
         this.paperTexture.repeat.set( 1, 1 );
-        this.loadGeometry(actor._instanceName, UserColors[actor.userColor]);
+        this.loadGeometry(actor._instanceName, UserColors[actor.colorIndex]);
     }
 
     loadGeometry(name, color) {
@@ -463,7 +484,7 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...UserColors[actor.userColor]), metalness:0.5, roughness:0.1 } );
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...UserColors[actor.colorIndex]), metalness:0.5, roughness:0.1 } );
         this.geometry = new THREE.SphereGeometry( 0.75, 32, 16 );
         const mesh = new THREE.Mesh( this.geometry, this.material );
         mesh.castShadow = true;

@@ -51,7 +51,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         this.lastShootTime = -10000;
         this.waitShootTime = 100;
         this.godMode = false;
-        this.color = UserColors[actor.userColor];
+        this.color = UserColors[actor.colorIndex];
         this.service("CollisionManager").colliders.add(this);
         this.listen("goHome", this.goHome);
         this.loadTank();
@@ -144,7 +144,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     shoot() {
         if (this.now()-this.lastShootTime > this.waitShootTime) {
             this.lastShootTime = this.now();
-            this.say("shoot", [this.translation, this.yaw]);
+            this.say("shoot", this.yaw+Math.PI);
             //console.log("Shoot");
         }
     }
