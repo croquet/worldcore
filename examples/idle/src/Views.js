@@ -12,18 +12,17 @@ class GameWidget extends Widget2 {
         console.log("Game Widget");
         const account = this.account;
 
-        console.log(account);
         this.bg = new CanvasWidget2({account, parent: this, color: [0,1,1], autoSize: [1,1]});
-        this.wood = new ResourceWidget({account, parent: this.bg, translation:[300,0], size: [200, 150], type: "Wood"});
+        this.domain = new DomainWidget({account, parent: this.bg, translation:[0,0], size: [200, 100]});
+        this.wood = new ResourceWidget({account, parent: this.bg, translation:[300,0], size: [200, 150], type: "Wood", singular: "stick", plural: "sticks"});
+        this.food = new ResourceWidget({account, parent: this.bg, translation:[500,0], size: [200, 150], type: "Food", singular: "berry", plural: "berries"});
 
-        this.food = new ResourceWidget({account, parent: this.bg, translation:[500,0], size: [200, 150], type: "Food"});
-
-        this.pop = new DomainWidget({account, parent: this.bg, translation:[0,0], size: [200, 100]});
 
         this.subscribe(this.account.id, {event: "changed", handling: "oncePerFrame"}, this.tally);
     }
 
     tally() {
+        this.domain.tally();
         this.wood.tally();
         this.food.tally();
     }
@@ -38,6 +37,8 @@ class ResourceWidget extends VerticalWidget2 {
 
     get type() { return this._type}
     get account() {return this._account}
+    get singular() { return this._singular}
+    get plural() { return this._plural}
 
     build() {
         this.button = new ButtonWidget2({parent: this, height:50});
@@ -49,13 +50,12 @@ class ResourceWidget extends VerticalWidget2 {
         this.amount = new TextWidget2({parent: this, text: 0, color: [1,1,1], textColor: [0,0,0]});
         this.tally();
 
-
     }
 
     tally() {
         const resource = this.account.resources.get(this.type);
         let count = resource.count;
-        const text = count +  " sticks";
+        const text = count +  " " + (count===1?this.singular:this.plural);
         this.amount.set({text});
 
     }
@@ -71,29 +71,51 @@ class DomainWidget extends VerticalWidget2 {
     get account() {return this._account}
 
     build() {
+        const account = this.account;
         const title = this.account.nickname + "'s\ndomain";
-        const population = "Population:\n" + (this.account.population ?  this.account.population +" "+ this.account.mode +" citizens" : this.account.nickname);
         this.title = new TextWidget2({parent: this, color: [1,1,1], textColor: [0,0,0], point: 12, height:50, noWrap: true, text: title});
-        this.population = new TextWidget2({parent: this, color: [1,1,1], textColor: [0,0,0], point: 12, height:50, noWrap: true, text: population});
-        this.workers = new PopulationWidget({key: "Workers", parent: this, height:50});
-        this.huts = new PopulationWidget({key: "Huts", parent: this, height:50});
-        this.villages = new PopulationWidget({key: "Villages", parent: this, height:50});
+        this.population = new TextWidget2({parent: this, color: [1,1,1], textColor: [0,0,0], point: 12, height:50, noWrap: true});
+        this.lackeys = new PopulationWidget({account, type: "Lackeys", parent: this, height:50});
+        // this.huts = new PopulationWidget({account,type: "Huts", parent: this, height:50});
+        // this.villages = new PopulationWidget({account, type: "Villages", parent: this, height:50});
+
+        this.tally();
+    }
+
+    tally() {
+        const account = this.account;
+        const pop = this.account.population;
+        const citizens = pop +" "+ this.account.mood + ((pop>1)? " citizens":" citizen");
+        const text = "Population:\n" + ((pop>0) ? citizens : this.account.nickname);
+        this.population.set({text});
+
+        this.lackeys.tally();
+        // this.huts.tally();
+        // this.villages.tally();
     }
 
 }
 
 //------------------------------------------------------------------------------------------
-//-- PopulationWidget -----------------------------------------------------------------------
+//-- PopulationWidget ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class PopulationWidget extends ButtonWidget2 {
 
     get account() {return this._account}
-    get key() {return this._key}
+    get type() {return this._type}
 
     build() {
         super.build();
-        const text = this.key +": 0";
+        this.tally();
+        this.onClick = () => {
+            this.publish(this.account.id, "buyPopulation", this.type);
+        };
+    }
+
+    tally() {
+        const pop = this.account.domain.get(this.type);
+        const text = this.type +": " + pop.count;
         this.label.set({text});
     }
 
