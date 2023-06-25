@@ -120,7 +120,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
         // blow up at the tower
         if ( v_mag2Sqr(this.translation) < 20 ) this.killMe(1, true);
         // otherwise, check if we need to move around an object
-        if (!this.doomed) {
+        else if (!this.doomed) {
             this.future(100).doFlee();
             const blockers = this.pingAll("block");
             if (blockers.length===0) return;
@@ -131,7 +131,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
     flee(bot) {
         const from = v3_sub(this.translation, bot.translation);
         const mag2 = v_mag2Sqr(from);
-        if (mag2 > this.radiusSqr) return;
+        if (mag2 > bot.radiusSqr) return;
         if (mag2===0) {
             const a = Math.random() * 2 * Math.PI;
             from[0] = this.radius * Math.cos(a);
@@ -161,6 +161,7 @@ class BollardActor extends mix(Actor).with(AM_Spatial, AM_OnGrid) {
     get gamePawnType() { return "bollard" }
 
     get radius() { return this._radius }
+    get radiusSqr() { return 25 }
 }
 BollardActor.register('BollardActor');
 
@@ -169,6 +170,7 @@ class TowerActor extends mix(Actor).with(AM_Spatial, AM_OnGrid) {
     get gamePawnType() { return this._index >= 0 ? `tower${this._index}` : "" } // tower "-1" has no pawn; actor collisions only
 
     get radius() { return this._radius || 0 } // central tower isn't even assigned a radius
+    get radiusSqr() { return 25 }
 }
 TowerActor.register('TowerActor');
 
@@ -231,18 +233,16 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
                     this.go = this.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
                 }
             }
-            const avatar = this.parent.pingAny("avatar", this.translation, 9, this);
+            const avatar = this.parent.pingAny("avatar", this.translation, 4, this);
             if (avatar) {
                 const d = v_dist2Sqr(this.translation, avatar.translation);
-                if (d < 20) {
+                if (d < 2.5) {
                     this.bounceWait = this.now()+20;
                     aim = v3_sub(this.translation, avatar.translation);
                     aim[1]=0;
                     aim = v3_normalize(aim);
                     if (this.go) this.go.destroy();
                     this.go = this.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
-                    //avatar.doBounce( v3_scale(aim, -0.5) )
-                    //console.log("avatar hit!");
                 }
             }
         }
@@ -263,6 +263,8 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar, AM_OnGrid) {
     init(options) {
         super.init(options);
         this.isAvatar = true;
+        this.radius = 10;
+        this.radiusSqr = this.radius*this.radius;
         this.listen("shoot", this.doShoot);
         this.subscribe("all", "godMode", this.doGodMode);
     }
@@ -345,7 +347,6 @@ class MyUser extends User {
         this.avatar = AvatarActor.create({
             parent: base,
             driver: this.userId,
-            //instanceName: 'tankTracks',
             tags: ["avatar", "block"],
             ...props
         });
@@ -379,7 +380,6 @@ class GameStateActor extends Actor {
 
     init(options) {
         super.init(options);
-
         this.subscribe("game", "gameStarted", this.gameStarted); // from ModelRoot.startGame
         this.subscribe("bots", "madeWave", this.madeBotWave); // from ModelRoot.makeWave
         this.subscribe("bots", "destroyedBot", this.destroyedBot); // from BotActor.killMe
