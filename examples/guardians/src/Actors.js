@@ -31,7 +31,7 @@ BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
 // HealthCoinActor ---------------------------------------------------------------------------
-// Displays the current state of health of the tower in a spinning coin under the rocket.
+// Displays the current state of health of the tower in a spinning coin
 //------------------------------------------------------------------------------------------
 
 class HealthCoinActor extends mix(Actor).with(AM_Spatial) {
@@ -252,7 +252,7 @@ MissileActor.register('MissileActor');
 
 //------------------------------------------------------------------------------------------
 //-- AvatarActor ---------------------------------------------------------------------------
-// This is you. Most of the control code for the avatar is in the pawn in Avatar.js or in Unity.
+// This is you. Most of the control code for the avatar is in the pawn in Avatar.js.
 //------------------------------------------------------------------------------------------
 
 class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar, AM_OnGrid) {
@@ -275,7 +275,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar, AM_OnGrid) {
     }
 
     doShoot(yaw) {
-        const aim = v3_rotate([0,0,1], q_axisAngle([0,1,0], yaw));
+        const aim = v3_rotate([0,0,1], q_axisAngle([0,1,0], yaw)); //
         const translation = v3_add(this.translation, v3_scale(aim, 5));
         const missile = MissileActor.create({parent: this.parent, translation, colorIndex: this.colorIndex});
         missile.go = missile.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
@@ -489,7 +489,7 @@ export class MyModelRoot extends ModelRoot {
     startGame() {
         console.log("Start Game");
         this.publish("game", "gameStarted"); // alert the users to remove the start button
-        this.makeWave(1,10);
+        this.makeWave(1, 10);
     }
 
     endGame() {
@@ -501,7 +501,7 @@ export class MyModelRoot extends ModelRoot {
         this.makeWave(0, numBots);
     }
 
-    makeWave( wave, numBots, key = this.gameState.runKey ) {
+    makeWave(wave, numBots, key = this.gameState.runKey) {
         // filter out scheduled waves from games that already finished
         if (this.gameState.gameEnded || key !== this.gameState.runKey) return;
 
@@ -520,7 +520,7 @@ export class MyModelRoot extends ModelRoot {
             // stagger when the bots get created
             this.future(Math.floor(Math.random()*200)).makeBot(x, y, index);
         }
-        if (wave>0) this.future(30000).makeWave(wave+1, Math.floor(numBots*1.2));
+        if (wave>0) this.future(30000).makeWave(wave+1, Math.floor(numBots*1.2), key);
 
         this.publish("bots", "madeWave", { wave, addedBots: actualBots });
    }
