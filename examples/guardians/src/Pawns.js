@@ -11,9 +11,7 @@
 // - add demo mode, where game automatically restarts
 // - muzzle flash
 // - should tanks lay down track?
-// - red missiles vs red eyed bots
-// - add weenies
-// - joystick is not very responsive
+// - joystick is not sufficiently responsive
 // - add compass to joystick
 // - power up or roles - time gated, new one replaces old one
 // -- force field - freeze bots
@@ -52,10 +50,6 @@ import skyscraper_4 from "../assets/Skyscraper6.glb";
 import power_tower from "../assets/tower.glb";
 
 import bollard_ from "../assets/bollard.glb";
-
-//import tank_tracks from "../assets/tank_tracks.glb";
-//import tank_turret from "../assets/tank_turret.glb";
-//import tank_body from "../assets/tank_body.glb";
 
 import tank_tracks from "../assets/newtank_treads.glb";
 import tank_body from "../assets/newtank.glb";
@@ -187,7 +181,7 @@ export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.botBody = new THREE.Mesh(botBodyGeo, botMaterial);
         this.botBody.castShadow = true;
 
-        const botEyeGeo = new THREE.SphereGeometry( 1.50, 32, 16); 
+        const botEyeGeo = new THREE.SphereGeometry( 1.50, 32, 16);
         const botEyeMaterial = new THREE.MeshBasicMaterial( {color: new THREE.Color(1,0.15,0.15)} );
         botEyeMaterial.side = THREE.FrontSide;
         this.botEye = new THREE.Mesh( botEyeGeo, botEyeMaterial );
@@ -210,25 +204,7 @@ export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 BotPawn.register("BotPawn");
 
 //------------------------------------------------------------------------------------------
-// BotEyePawn --------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-export class BotEyePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
-
-    constructor(actor) {
-        super(actor);
-        this.useInstance("botEye");
-    }
-
-    destroy() {
-        this.releaseInstance();
-        super.destroy();
-    }
-}
-
-BotEyePawn.register("BotEyePawn");
-
-//------------------------------------------------------------------------------------------
-// FireballPawn --------------------------------------------------------------------------------
+// FireballPawn ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
@@ -457,8 +433,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 
         const vertices = this.geometry.attributes.position.array;
 
-        for ( let index=0; index < vertices.length; index+=3)
-            vertices[index+1] = perlin2D(vertices[index], vertices[index+2]);
+        for ( let index=0; index < vertices.length; index+=3) vertices[index+1] = perlin2D(vertices[index], vertices[index+2]);
 
         this.geometry.computeVertexNormals();
         const base = new THREE.Mesh( this.geometry, this.material );
@@ -555,47 +530,6 @@ export class MyViewRoot extends ViewRoot {
     async buildInstances() {
         const im = this.service("ThreeInstanceManager");
 
-        const botBodyGeo = new THREE.SphereGeometry( 2, 32, 16, 0, Math.PI * 2, 0, 2.6); 
-        botBodyGeo.rotateX(-Math.PI/2);
-        im.addGeometry("botBody", botBodyGeo);
-        const botMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.5,0.5,0.5), metalness:1.0, roughness:0.3} );
-        botMaterial.side = THREE.DoubleSide;
-        im.addMaterial("botBody", botMaterial);
-        const botBody = im.addMesh("botBody", "botBody", "botBody");
-        botBody.castShadow = true;
-
-        const botEye = new THREE.SphereGeometry( 1.50, 32, 16); 
-        im.addGeometry("botEye", botEye);
-        const botEyeMaterial = new THREE.MeshBasicMaterial( {color: new THREE.Color(1,0.15,0.15)} );
-        botEyeMaterial.side = THREE.FrontSide;
-        im.addMaterial("botEye", botEyeMaterial);
-        im.addMesh("botEye", "botEye", "botEye");
-
-        const  green = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.25,1,0.25), metalness:1, roughness:0.1} );
-        const  gray = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.75,0.75,0.75), metalness:1, roughness:0.1} );
-
-        im.addMaterial("green", green);
-        im.addMaterial("gray", gray);
-
-        const cylinder3 = new THREE.CylinderGeometry(0.5, 1.5, 28.25, 32);
-        cylinder3.translate(0,14,0);
-        const shearMatrix = new THREE.Matrix4().makeShear(0, 0, 0.25, 0, 0, 0, 0);
-        cylinder3.applyMatrix4(shearMatrix);
-        cylinder3.computeVertexNormals();
-        im.addGeometry("cylinder3", cylinder3);
-
-        const cylinder4 = new THREE.CylinderGeometry(1.5, 1.5, 0.35, 32);
-        cylinder4.translate(0,1.5,0);
-        im.addGeometry("cylinder4", cylinder4);
-
-        const mesh5 = im.addMesh("pole3", "cylinder3", "gray");
-        const mesh6 = im.addMesh("pole4", "cylinder4", "green");
-
-
-        mesh5.castShadow = true;
-        mesh6.castShadow = true;
-
-        //
         const gltfLoader = new GLTFLoader();
 
         let [bollard, powerTower, tankTracks, tankBody, n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, centerTower, s1, s2, s3, s4] = await Promise.all( [
@@ -621,6 +555,8 @@ export class MyViewRoot extends ViewRoot {
             gltfLoader.loadAsync( skyscraper_4 ),
         ] );
 
+        const  gray = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.75,0.75,0.75), metalness:1, roughness:0.1} );
+        im.addMaterial("gray", gray);
         im.addGeometry("bollard", bollard.scene.children[0].geometry);
         const bollardim = im.addMesh("bollard", "bollard", "gray");
         bollardim.castShadow = true;
@@ -628,25 +564,6 @@ export class MyViewRoot extends ViewRoot {
 
         tank[0] = tankTracks.scene;
         tank[1] = tankBody.scene;
-
-        //tankTurret = tankTurret.scene.children[0].geometry;
-        //tankBody.rotateY(toRad(-90));
-        //tankTracks.rotateY(toRad(-90));
-        //tankTurret.rotateY(toRad(-90));
-        //im.addGeometry("tankBody", tankBody);
-        //im.addGeometry("tankTurret", tankTurret);
-        //im.addGeometry("tankTracks", tankTracks);
-
-        //const tankBodyim = im.addMesh("tankBody","tankBody", "gray");
-        //const tankTurretim = im.addMesh("tankTurret", "tankTurret","gray");
-        //const tankTracksim = im.addMesh("tankTracks", "tankTracks", "gray");
-
-        //tankBodyim.castShadow = true;
-        //tankBodyim.receiveShadow = true;
-        //tankTurretim.castShadow = true;
-        //tankTurretim.receiveShadow = true;
-        //tankTracksim.castShadow = true;
-        //tankTracksim.receiveShadow = true;
 
         const numberMat = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,1,1), metalness:0.5, roughness:0.5} );
         this.setNumber(0, n0, numberMat);
@@ -666,7 +583,6 @@ export class MyViewRoot extends ViewRoot {
         skyscrapers[3] = s3.scene; //.children[0];
         skyscrapers[4] = s4.scene; //.children[0];
         skyscrapers[5] = powerTower.scene.children[0];
-        skyscrapers[6] = bollard.scene;
     }
 
     setNumber(num, number3D, mat) {

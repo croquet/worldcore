@@ -6,6 +6,7 @@
 
 import { ModelRoot, Actor, mix, AM_Spatial, AM_Behavioral, v3_add, v3_sub, v3_scale, UserManager, User, AM_Avatar, q_axisAngle, v3_normalize, v3_rotate, AM_Grid, AM_OnGrid } from "@croquet/worldcore-kernel"; // eslint-disable-line import/no-extraneous-dependencies
 
+// ignore the y-values
 const v_dist2Sqr = function (a,b) {
     const dx = a[0] - b[0];
     const dy = a[2] - b[2];
@@ -25,16 +26,12 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_Grid) {
 
     get pawn() {return "BasePawn"}
     get gamePawnType() { return "" } // don't build a connected pawn for Unity
-
-    // init(options) {
-    //     super.init(options);
-    // }
 }
 BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
 // HealthCoinActor ---------------------------------------------------------------------------
-// Displays the current state of health of the tower in a spinning coin
+// Displays the current state of health of the tower in a spinning coin under the rocket.
 //------------------------------------------------------------------------------------------
 
 class HealthCoinActor extends mix(Actor).with(AM_Spatial) {
@@ -155,21 +152,6 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
 BotActor.register("BotActor");
 
 //------------------------------------------------------------------------------------------
-//--SimpleActor ----------------------------------------------------------------------------
-// All purpose actor for adding bits to other, smarter actors
-//------------------------------------------------------------------------------------------
-
-// class SimpleActor extends mix(Actor).with(AM_Spatial) {
-
-//     init(options) {
-//         super.init(options);
-//     }
-//     get colorIndex() { return this._colorIndex }
-
-// }
-// SimpleActor.register('SimpleActor');
-
-//------------------------------------------------------------------------------------------
 //--BollardActor, TowerActor ---------------------------------------------------------------
 // Actors that place themselves on the grid so other actors can avoid them
 //------------------------------------------------------------------------------------------
@@ -179,10 +161,6 @@ class BollardActor extends mix(Actor).with(AM_Spatial, AM_OnGrid) {
     get gamePawnType() { return "bollard" }
 
     get radius() { return this._radius }
-
-    // init(options) {
-    //     super.init(options);
-    // }
 }
 BollardActor.register('BollardActor');
 
@@ -191,10 +169,6 @@ class TowerActor extends mix(Actor).with(AM_Spatial, AM_OnGrid) {
     get gamePawnType() { return this._index >= 0 ? `tower${this._index}` : "" } // tower "-1" has no pawn; actor collisions only
 
     get radius() { return this._radius || 0 } // central tower isn't even assigned a radius
-
-    // init(options) {
-    //     super.init(options);
-    // }
 }
 TowerActor.register('TowerActor');
 
@@ -279,7 +253,7 @@ MissileActor.register('MissileActor');
 
 //------------------------------------------------------------------------------------------
 //-- AvatarActor ---------------------------------------------------------------------------
-// This is you. Most of the control code for the avatar is in the pawn in Avatar.js.
+// This is you. Most of the control code for the avatar is in the pawn in Avatar.js or in Unity.
 //------------------------------------------------------------------------------------------
 
 class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar, AM_OnGrid) {
@@ -375,8 +349,6 @@ class MyUser extends User {
             tags: ["avatar", "block"],
             ...props
         });
-    //    SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, colorIndex: props.colorIndex, instanceName:'tankBody'});
-    //    SimpleActor.create({pawn: "GeometryPawn", parent: this.avatar, colorIndex: props.colorIndex, instanceName:'tankTurret'});
     }
 
     saveProps() {
@@ -576,7 +548,6 @@ export class MyModelRoot extends ModelRoot {
 
     makeBot(x, z, index) {
         const bot = BotActor.create({parent: this.base, tags:["block", "bot"], index, radius: 2, translation:[x, 0.5, z]});
-        // const eye = SimpleActor.create({parent: bot, pawn:"BotEyePawn"});
         return bot;
     }
 }
