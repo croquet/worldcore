@@ -105,7 +105,7 @@ class BotActor extends mix(Actor).with(AM_Spatial, AM_OnGrid, AM_Behavioral) {
     killMe(s=0.3, onTarget) {
         FireballActor.create({translation:this.translation, scale:[s,s,s], onTarget});
         this.publish("bots", "destroyedBot", onTarget);
-        this.destroy();
+        this.future(200).destroy();
     }
 
     resetGame() {
