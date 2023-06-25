@@ -231,10 +231,10 @@ class MissileActor extends mix(Actor).with(AM_Spatial, AM_Behavioral) {
                     this.go = this.behavior.start({name: "GoBehavior", aim, speed: missileSpeed, tickRate: 20});
                 }
             }
-            const avatar = this.parent.pingAny("avatar", this.translation, 4, this);
+            const avatar = this.parent.pingAny("avatar", this.translation, 9, this);
             if (avatar) {
                 const d = v_dist2Sqr(this.translation, avatar.translation);
-                if (d < 2.5) {
+                if (d < 20) {
                     this.bounceWait = this.now()+20;
                     aim = v3_sub(this.translation, avatar.translation);
                     aim[1]=0;
@@ -383,8 +383,9 @@ class GameStateActor extends Actor {
         this.subscribe("game", "gameStarted", this.gameStarted); // from ModelRoot.startGame
         this.subscribe("bots", "madeWave", this.madeBotWave); // from ModelRoot.makeWave
         this.subscribe("bots", "destroyedBot", this.destroyedBot); // from BotActor.killMe
-
         this.subscribe("stats", "update", this.updateStats); // from BotHUD (forcing stats to be published, as an alternative to just reading them)
+        this.subscribe("game", "undying", this.undying); // from user input
+        this.demoMode = false;
     }
 
     gameStarted() {
@@ -395,6 +396,12 @@ class GameStateActor extends Actor {
             gameEnded: false,
         });
         this.updateStats();
+    }
+
+
+    undying() {
+        this.demoMode = !this.demoMode;
+        console.log("demo mode is:", this.demoMode?"on":"off");
     }
 
     madeBotWave({ wave, addedBots }) {
@@ -450,8 +457,6 @@ export class MyModelRoot extends ModelRoot {
         this.subscribe("game", "endGame", this.endGame); // from GameState.destroyedBot
         this.subscribe("game", "startGame", this.startGame); // from BotHUD button
         this.subscribe("game", "bots", this.demoBots); // from user input
-        this.subscribe("game", "undying", this.undying); // from user input
-        this.demoMode = false;
 
         const bollardScale = 3; // size of the bollard
         const bollardDistance = bollardScale*3; // distance between bollards
@@ -491,11 +496,6 @@ export class MyModelRoot extends ModelRoot {
         this.makeSkyscraper(-d-10, -3,  -8, Math.PI+2.5, 4, 0);
 
         this.startGame();
-    }
-
-    undying() {
-        this.demoMode = !this.demoMode;
-        console.log("demo mode is:", this.demoMode?"on":"off");
     }
 
     startGame() {
