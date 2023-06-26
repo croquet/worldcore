@@ -71,6 +71,7 @@ class DomainWidget extends VerticalWidget2 {
     get account() {return this._account}
 
     build() {
+        this.set({margin: 5});
         const account = this.account;
         const title = this.account.nickname + "'s\ndomain";
         this.title = new TextWidget2({parent: this, color: [1,1,1], textColor: [0,0,0], point: 12, height:50, noWrap: true, text: title});
@@ -78,6 +79,8 @@ class DomainWidget extends VerticalWidget2 {
         this.lackeys = new PopulationWidget({account, type: "Lackeys", parent: this, height:50});
         // this.huts = new PopulationWidget({account,type: "Huts", parent: this, height:50});
         // this.villages = new PopulationWidget({account, type: "Villages", parent: this, height:50});
+
+        this.pop = new PopWidget({account, parent: this});
 
         this.tally();
     }
@@ -117,6 +120,23 @@ class PopulationWidget extends ButtonWidget2 {
         const pop = this.account.domain.get(this.type);
         const text = this.type +": " + pop.count;
         this.label.set({text});
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- PopWidget ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class PopWidget extends VerticalWidget2 {
+
+    get account() {return this._account}
+    get type() {return this._type}
+
+    build() {
+        const account = this.account;
+        this.button = new PopulationWidget({account, type: "Lackeys", parent: this, height:50});
+        this.cost = new TextWidget2({account, parent: this, height:20, color: [1,1,1], textColor: [30/256,132/256,73/256], point: 12, style: "italic", alignX: "left", text: "Food: 12"});
     }
 
 }
