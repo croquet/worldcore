@@ -1,0 +1,63 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+        <title>Guardians Lobby</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                margin: 0;
+                padding: 0;
+            }
+            h1 {
+                background: #333;
+                color: #fff;
+                margin: 0;
+                padding: 1em;
+            }
+            #lobby {
+                display: none;
+            }
+            .in-lobby > #lobby {
+                display: block;
+            }
+            #sessions {
+                list-style: decimal inside;
+                margin: 0;
+                padding: 0;
+            }
+            #sessions > li {
+                background: #eee;
+                border-bottom: 1px solid #ccc;
+                cursor: pointer;
+                padding: 1em;
+            }
+            #sessions > li:hover {
+                background: #ddd;
+            }
+            p {
+                padding: 0 1em;
+            }
+            #app {
+                position: fixed;
+                top: 0;
+                left: 0;
+                border: none;
+                height: 100vh;
+                width: 100vw;
+                display: block;
+            }
+            .in-lobby > #app {
+                display: none;
+            }
+        </style>
+    </head>
+    <body class="in-lobby">
+        <div id="lobby">
+            <h1>Guardians Lobby</h1>
+            <ul id="sessions"></ul>
+            <p id="users"></p>
+        </div>
+        <iframe id="app" src="about:blank"></iframe>
+    </body>
+</html>

@@ -1,9 +1,11 @@
 const HtmlWebPackPlugin = require('html-webpack-plugin');
-
-var path = require('path');
+const path = require('path');
 
 module.exports = {
-    entry : './index.js',
+    entry: {
+        main: './index.js',
+        lobby: './lobby.js',
+    },
     output: {
         path: path.join(__dirname, 'dist'),
         filename: '[name]-[contenthash:8].js',
@@ -38,7 +40,13 @@ module.exports = {
     plugins: [
         new HtmlWebPackPlugin({
             template: 'index.html',   // input
-            filename: 'index.html',   // output filename in dist/
+            filename: 'game.html',   // output filename in dist/
+            chunks: ['main'],
+        }),
+        new HtmlWebPackPlugin({
+            template: 'lobby.html',   // input
+            filename: 'lobby.html',   // output filename in dist/
+            chunks: ['lobby'],
         }),
     ]
 };

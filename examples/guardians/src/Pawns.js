@@ -21,7 +21,7 @@
 // -- mine layer
 // -- Artillery cannon
 
-import { ViewRoot, ViewService, Pawn, mix, InputManager, PM_Smoothed, PM_Spatial, 
+import { ViewRoot, ViewService, Pawn, mix, InputManager, PM_Smoothed, PM_Spatial,
     toRad, m4_translation, m4_getTranslation, PerlinNoise } from "@croquet/worldcore-kernel";
 import { ThreeInstanceManager, PM_ThreeInstanced, PM_ThreeVisible, THREE, GLTFLoader, ThreeRenderManager, ThreeRaycast } from "@croquet/worldcore-three";
 import { HUD } from "@croquet/worldcore-widget2";
@@ -174,7 +174,7 @@ export class BotPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     }
 
     makeBot() {
-        const botBodyGeo = new THREE.SphereGeometry( 2, 32, 16, 0, Math.PI * 2, 0, 2.6); 
+        const botBodyGeo = new THREE.SphereGeometry( 2, 32, 16, 0, Math.PI * 2, 0, 2.6);
         botBodyGeo.rotateX(-Math.PI/2);
         const botMaterial = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.5,0.5,0.5), metalness:1.0, roughness:0.3} );
         botMaterial.side = THREE.DoubleSide;
@@ -480,6 +480,68 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     }
 }
 MissilePawn.register("MissilePawn");
+
+//------------------------------------------------------------------------------------------
+//-- LobbyRelayPawn ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class LobbyRelayPawn extends Pawn {
+    constructor(model) {
+        super(model);
+        this.model = model;
+        this.listen("relay-changed", this.relayChanged);
+        // this.listen("relay-views", this.reportToLobby); using interval instead
+        console.log("relay", this.viewId, "created");
+        this.relayChanged(this.model.electedViewId);
+    }
+
+    relayChanged(viewId) {
+        console.log("relay", this.viewId, "relay changed to", viewId, this.viewId === viewId ? "(me)" : "(not me)");
+        clearInterval(this.lobbyInterval);
+        if (viewId === this.viewId) {
+            this.reportToLobby();
+            this.lobbyInterval = setInterval(() => this.reportToLobby(), 1000);
+        }
+    }
+
+    destroy() {
+        clearInterval(this.lobbyInterval);
+        window.removeEventListener("message", this);
+        super.destroy();
+        console.log("relay", this.viewId, "destroyed");
+    }
+
+    reportToLobby() {
+        let users = `${this.model.viewIds.size} player${this.model.viewIds.size === 1 ? "" : "s"}`;
+        const locations = new Map();
+        let unknown = false;
+        for (const viewId of this.model.viewIds) {
+            const loc = CROQUETVM.views[viewId]?.loc;  // FIXME: CROQUETVM is for debugging only
+            if (loc?.country) {
+                let location = loc.country;
+                if (loc.region) location = loc.region + ", " + location;
+                if (loc.city) location = loc.city.name + " (" + location + ")";
+                locations.set(location, (locations.get(location) || 0) + 1);
+            } else {
+                unknown = true;
+            }
+        }
+        if (locations.size > 0) {
+            let sorted = [...locations].sort((a, b) => b[1] - a[1]);
+            if (sorted.length > 3) {
+                sorted = sorted.slice(0, 3);
+                unknown = true;
+            }
+            users += ` from ${sorted.map(([location]) => location).join(", ")}`;
+            if (unknown) users += " and elsewhere";
+        }
+
+        window.parent.postMessage({type: "croquet-lobby", name: this.session.name, users}, "*");
+        // console.log("relay", this.viewId, "sending croquet-lobby", this.session.name, users);
+    }
+
+}
+LobbyRelayPawn.register("LobbyRelayPawn");
 
 //------------------------------------------------------------------------------------------
 //-- CollisionManager ----------------------------------------------------------------------
