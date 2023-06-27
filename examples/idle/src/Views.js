@@ -14,8 +14,9 @@ class GameWidget extends Widget2 {
 
         this.bg = new CanvasWidget2({account, parent: this, color: [0,1,1], autoSize: [1,1]});
         this.domain = new DomainWidget({account, parent: this.bg, translation:[0,0], size: [200, 100]});
-        this.wood = new ResourceWidget({account, parent: this.bg, translation:[300,0], size: [200, 150], type: "Wood", singular: "stick", plural: "sticks"});
-        this.food = new ResourceWidget({account, parent: this.bg, translation:[500,0], size: [200, 150], type: "Food", singular: "berry", plural: "berries"});
+        this.food = new ResourceWidget({account, parent: this.bg, translation:[250,0], size: [200, 150], index:0, type: "Food"});
+        this.wood = new ResourceWidget({account, parent: this.bg, translation:[500,0], size: [200, 150], index:1, type: "Wood"});
+        this.iron = new ResourceWidget({account, parent: this.bg, translation:[750,0], size: [200, 150], index:2, type: "Iron"});
 
 
         this.subscribe(this.account.id, {event: "changed", handling: "oncePerFrame"}, this.tally);
@@ -23,8 +24,9 @@ class GameWidget extends Widget2 {
 
     tally() {
         this.domain.tally();
-        this.wood.tally();
         this.food.tally();
+        this.wood.tally();
+        this.iron.tally();
     }
 
 }
@@ -36,6 +38,7 @@ class GameWidget extends Widget2 {
 class ResourceWidget extends VerticalWidget2 {
 
     get type() { return this._type}
+    get index() { return this._index}
     get account() {return this._account}
     get singular() { return this._singular}
     get plural() { return this._plural}
@@ -44,7 +47,7 @@ class ResourceWidget extends VerticalWidget2 {
         this.button = new ButtonWidget2({parent: this, height:50});
         this.button.label.set({text: this.type});
         this.button.onClick = () => {
-            this.publish(this.account.id, "clickResource", this.type);
+            this.publish(this.account.id, "clickResource", this.index);
         };
 
         this.amount = new TextWidget2({parent: this, text: 0, color: [1,1,1], textColor: [0,0,0]});
@@ -53,11 +56,8 @@ class ResourceWidget extends VerticalWidget2 {
     }
 
     tally() {
-        const resource = this.account.resources.get(this.type);
-        let count = resource.count;
-        const text = count +  " " + (count===1?this.singular:this.plural);
-        this.amount.set({text});
-
+        const count = this.account.resources[this.index];
+        this.amount.set({text: count.text});
     }
 
 }
@@ -77,10 +77,6 @@ class DomainWidget extends VerticalWidget2 {
         this.title = new TextWidget2({parent: this, color: [1,1,1], textColor: [0,0,0], point: 12, height:50, noWrap: true, text: title});
         this.population = new TextWidget2({parent: this, color: [1,1,1], textColor: [0,0,0], point: 12, height:50, noWrap: true});
         this.lackeys = new PopulationWidget({account, type: "Lackeys", parent: this, height:50});
-        // this.huts = new PopulationWidget({account,type: "Huts", parent: this, height:50});
-        // this.villages = new PopulationWidget({account, type: "Villages", parent: this, height:50});
-
-        this.pop = new PopWidget({account, parent: this});
 
         this.tally();
     }
@@ -88,22 +84,21 @@ class DomainWidget extends VerticalWidget2 {
     tally() {
         const account = this.account;
         const pop = this.account.population;
-        const citizens = pop +" "+ this.account.mood + ((pop>1)? " citizens":" citizen");
+        const citizens = pop +" "+ this.account.mood + ((pop>1)? " disciples":" disciple");
         const text = "Population:\n" + ((pop>0) ? citizens : this.account.nickname);
         this.population.set({text});
 
         this.lackeys.tally();
-        // this.huts.tally();
-        // this.villages.tally();
+
     }
 
 }
 
 //------------------------------------------------------------------------------------------
-//-- PopulationWidget ----------------------------------------------------------------------
+//-- PopulationButton ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class PopulationWidget extends ButtonWidget2 {
+class PopulationButton extends ButtonWidget2 {
 
     get account() {return this._account}
     get type() {return this._type}
@@ -125,18 +120,22 @@ class PopulationWidget extends ButtonWidget2 {
 }
 
 //------------------------------------------------------------------------------------------
-//-- PopWidget ----------------------------------------------------------------------------
+//-- PopulationWidget ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class PopWidget extends VerticalWidget2 {
+class PopulationWidget extends VerticalWidget2 {
 
     get account() {return this._account}
     get type() {return this._type}
 
     build() {
         const account = this.account;
-        this.button = new PopulationWidget({account, type: "Lackeys", parent: this, height:50});
+        this.button = new PopulationButton({account, type: this.type, parent: this, height:50});
         this.cost = new TextWidget2({account, parent: this, height:20, color: [1,1,1], textColor: [30/256,132/256,73/256], point: 12, style: "italic", alignX: "left", text: "Food: 12"});
+    }
+
+    tally() {
+            this.button.tally();
     }
 
 }
