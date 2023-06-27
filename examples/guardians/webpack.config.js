@@ -3,7 +3,7 @@ const path = require('path');
 
 module.exports = {
     entry: {
-        main: './index.js',
+        game: './index.js',
         lobby: './lobby.js',
     },
     output: {
@@ -41,7 +41,7 @@ module.exports = {
         new HtmlWebPackPlugin({
             template: 'index.html',   // input
             filename: 'game.html',   // output filename in dist/
-            chunks: ['main'],
+            chunks: ['game'],
         }),
         new HtmlWebPackPlugin({
             template: 'lobby.html',   // input
