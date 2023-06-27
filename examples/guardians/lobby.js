@@ -165,12 +165,11 @@ class LobbyView extends Croquet.View {
         sessions.sort((a, b) => b.since - a.since);
         const list = document.getElementById("sessions");
         list.innerHTML = "";
-        sessions.push({ name: "New Session" });
+        sessions.push({ name: "Host New Game" });
         for (const session of sessions) {
             const item = document.createElement("li");
             item.textContent = session.name;
-            if (session.name === "New Session") {
-                item.style.fontStyle = "italic";
+            if (session.name === "Host New Game") {
             } else {
                 const users = session.users; // string or { count, description, color }
                 const description = users.description || users;
@@ -203,7 +202,7 @@ class LobbyView extends Croquet.View {
                 unknown = true;
             }
         }
-        let users = "Waiting: You";
+        let users = "In Lobby: You";
         if (count) {
             users += ` and ${count} user${count === 1 ? "" : "s"}`;
             if (locations.size > 0) {
@@ -216,7 +215,7 @@ class LobbyView extends Croquet.View {
                 if (unknown) users += " and elsewhere";
             }
         }
-        document.getElementById("users").innerHTML = users + '<br><br><em>Click a session to join.</em>';
+        document.getElementById("users").innerHTML = users;
     }
 
     sessionClicked(name) {
@@ -244,7 +243,7 @@ class LobbyView extends Croquet.View {
 
 function enterApp(name) {
     // fixme: use a better UI
-    if (name === "New Session") {
+    if (name === "Host New Game") {
         name = prompt("Session Name");
         if (!name) return "";
     }
