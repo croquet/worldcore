@@ -512,7 +512,7 @@ class LobbyRelayPawn extends Pawn {
     }
 
     reportToLobby() {
-        let users = `${this.model.viewIds.size} player${this.model.viewIds.size === 1 ? "" : "s"}`;
+        let description = `${this.model.viewIds.size} player${this.model.viewIds.size === 1 ? "" : "s"}`;
         const locations = new Map();
         let unknown = false;
         for (const viewId of this.model.viewIds) {
@@ -532,10 +532,16 @@ class LobbyRelayPawn extends Pawn {
                 sorted = sorted.slice(0, 3);
                 unknown = true;
             }
-            users += ` from ${sorted.map(([location]) => location).join(", ")}`;
-            if (unknown) users += " and elsewhere";
+            description += ` from ${sorted.map(([location]) => location).join(", ")}`;
+            if (unknown) description += " and elsewhere";
         }
-
+        const { health } = this.wellKnownModel("modelRoot").gameState;
+        description += health ? ` [health: ${health}]` : " [game over]";
+        const users = {
+            count: this.model.viewIds.size,
+            description,
+            color: health>66 ? `rgb(64,255,64)` : health>33 ? `rgb(255,255,102)` : health>0 ? `rgb(255,38,38)` : "",
+        };
         window.parent.postMessage({type: "croquet-lobby", name: this.session.name, users}, "*");
         // console.log("relay", this.viewId, "sending croquet-lobby", this.session.name, users);
     }

@@ -73,8 +73,8 @@ class Lobby extends Croquet.Model {
         const session = view.session;
         if (session) {
             session.views.delete(view);
-            const users = parseInt(session.users, 10);
-            if (users === 1) {
+            const count = "count" in session.users ? session.users.count : parseInt(session.users, 10);
+            if (count === 1) {
                 // last user in session, expire it right away
                 this.sessionExpired(session);
             } else if (session.relay === view) {
@@ -172,9 +172,14 @@ class LobbyView extends Croquet.View {
             if (session.name === "New Session") {
                 item.style.fontStyle = "italic";
             } else {
-                item.textContent += `: ${session.users || "starting ..."}`;
+                const users = session.users; // string or { count, description, color }
+                const description = users.description || users;
+                item.textContent += `: ${description || "starting ..."}`;
                 // item.textContent += ` [${Math.ceil((Date.now() - session.since) / 1000)}s,`;
                 // item.textContent += ` timeout in ${(SESSION_TIMEOUT - Math.ceil((this.extrapolatedNow() - session.lastActive) / 1000))}s]`;
+                if (users.color) {
+                    item.style.backgroundColor = users.color;
+                }
             }
             item.addEventListener("click", () => this.sessionClicked(session.name));
             list.appendChild(item);
