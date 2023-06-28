@@ -1,14 +1,13 @@
 // Guardians Avatar
 // Copyright (c) 2023 CROQUET CORPORATION
 
-import { Pawn, mix, PM_Avatar, PM_Smoothed, toRad, 
-    m4_multiply, m4_translation, m4_scaleRotationTranslation, m4_rotationQ, 
+import { Pawn, mix, PM_Avatar, PM_Smoothed, toRad,
+    m4_multiply, m4_translation, m4_scaleRotationTranslation, m4_rotationQ,
     v2_normalize, v3_scale, v3_add, q_multiply, v3_rotate, v3_magnitude, v2_sqrMag, v3_sub, v3_lerp, v3_transform,
     q_yaw, q_axisAngle, q_eulerYXZ, q_slerp} from "@croquet/worldcore-kernel";
 
 import { PM_ThreeVisible, PM_ThreeInstanced, PM_ThreeCamera, THREE } from "@croquet/worldcore-three";
 
-import paper from "../assets/paper.jpg";
 import { sunLight, sunBase, perlin2D, tank, UserColors } from "./Pawns";
 const cameraOffset = [0,12,20];
 const fixedPitch = toRad(-10);
@@ -64,6 +63,7 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     loadTank() {
+        if (this.doomed) return;
 
         if (tank[0]) {
             this.tank = new THREE.Group();
@@ -94,8 +94,10 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     }
 
     destroy() {
-        this.destroy3D( this.tankTreads );
-        this.destroy3D( this.tankBody );
+        if (this.tank) {
+            this.destroy3D( this.tankTreads );
+            this.destroy3D( this.tankBody );
+        }
         super.destroy();
         this.service("CollisionManager").colliders.delete(this);
     }
