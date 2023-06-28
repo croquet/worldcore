@@ -535,12 +535,12 @@ class LobbyRelayPawn extends Pawn {
             description += ` from ${sorted.map(([location]) => location).join(", ")}`;
             if (unknown) description += " and elsewhere";
         }
-        const { health } = this.wellKnownModel("modelRoot").gameState;
-        description += health ? ` [health: ${health}]` : " [game over]";
+        const { health, demoMode } = this.wellKnownModel("modelRoot").gameState;
+        description += demoMode ? " [demo]" : health ? ` [health: ${health}]` : " [game over]";
         const users = {
             count: this.model.viewIds.size,
             description,
-            color: health>66 ? `rgb(64,255,64)` : health>33 ? `rgb(255,255,102)` : health>0 ? `rgb(255,38,38)` : "",
+            color: demoMode ? `rgb(191,191,255)` : health>66 ? `rgb(64,255,64)` : health>33 ? `rgb(255,255,102)` : health>0 ? `rgb(255,38,38)` : "",
         };
         window.parent.postMessage({type: "croquet-lobby", name: this.session.name, users}, "*");
         // console.log("relay", this.viewId, "sending croquet-lobby", this.session.name, users);

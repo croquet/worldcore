@@ -11,6 +11,7 @@ import * as Croquet from "@croquet/worldcore-kernel";
 // [x] list sessions
 // [x] new session button
 // [x] single view as relay
+// [ ] show debug badge of game not lobby
 // [ ] hierarchical lobby sessions
 // [ ] unlisted sessions (join directly by name)
 // [ ] lobby/session password (?)
