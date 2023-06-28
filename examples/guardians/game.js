@@ -13,7 +13,7 @@ import "./src/Avatar";
 const inIframe = window.parent !== window;
 const url = new URL(window.location.href);
 const sessionName = url.searchParams.get("session");
-url.pathname = url.pathname.replace(/[^/]*$/, "lobby.html");
+url.pathname = url.pathname.replace(/[^/]*$/, "index.html");
 App.sessionURL = url.href;
 if (!inIframe || !sessionName) window.location.href = App.sessionURL;
 
