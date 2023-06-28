@@ -138,6 +138,11 @@ class LobbyView extends Croquet.View {
         this.subscribe(this.sessionId, "session-changed", this.showSessions);
         this.interval = setInterval(() => this.showSessions(), 1000);
         this.showSessions();
+
+        // Bind the "Host New Game" button
+        const newGameButton = document.getElementById('host-new');
+        newGameButton.addEventListener("click", () => this.sessionClicked(null));
+
         window.onmessage = e => {
             if (e.data && e.data.type === "croquet-lobby") {
                 const { name, users } = e.data;
@@ -161,25 +166,22 @@ class LobbyView extends Croquet.View {
 
     showSessions() {
         if (appSessionName) return;
+
         // sessions
         const sessions = Array.from(this.model.sessions.values());
         sessions.sort((a, b) => b.since - a.since);
         const list = document.getElementById("sessions");
         list.innerHTML = "";
-        sessions.push({ name: "Host New Game" });
         for (const session of sessions) {
             const item = document.createElement("li");
             item.textContent = session.name;
-            if (session.name === "Host New Game") {
-            } else {
-                const users = session.users; // string or { count, description, color }
-                const description = users.description || users;
-                item.textContent += `: ${description || "starting ..."}`;
-                // item.textContent += ` [${Math.ceil((Date.now() - session.since) / 1000)}s,`;
-                // item.textContent += ` timeout in ${(SESSION_TIMEOUT - Math.ceil((this.extrapolatedNow() - session.lastActive) / 1000))}s]`;
-                if (users.color) {
-                    item.style.backgroundColor = users.color;
-                }
+            const users = session.users; // string or { count, description, color }
+            const description = users.description || users;
+            item.textContent += `: ${description || "starting ..."}`;
+            // item.textContent += ` [${Math.ceil((Date.now() - session.since) / 1000)}s,`;
+            // item.textContent += ` timeout in ${(SESSION_TIMEOUT - Math.ceil((this.extrapolatedNow() - session.lastActive) / 1000))}s]`;
+            if (users.color) {
+                item.style.backgroundColor = users.color;
             }
             item.addEventListener("click", () => this.sessionClicked(session.name));
             list.appendChild(item);
@@ -203,7 +205,7 @@ class LobbyView extends Croquet.View {
                 unknown = true;
             }
         }
-        let users = "In Lobby: You";
+        let users = "Players in Lobby: You";
         if (count) {
             users += ` and ${count} user${count === 1 ? "" : "s"}`;
             if (locations.size > 0) {
@@ -244,7 +246,7 @@ class LobbyView extends Croquet.View {
 
 function enterApp(name) {
     // fixme: use a better UI
-    if (name === "Host New Game") {
+    if (!name) {
         name = prompt("Session Name");
         if (!name) return "";
     }
