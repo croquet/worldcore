@@ -16,7 +16,7 @@ import * as Croquet from "@croquet/worldcore-kernel";
 // [ ] unlisted sessions (join directly by name)
 // [ ] lobby/session password (?)
 
-const BaseUrl = window.location.href.replace(/[^/?#]+([?#].*)?$/, "");
+const BaseUrl = window.location.href.replace(/[^/?#]?([?#].*)?$/, "");
 Croquet.Constants.AppUrl = BaseUrl + "game.html";
 
 let appname = window.location.pathname.match(/([^/]+)\/$/, "$1");
@@ -237,7 +237,7 @@ class LobbyView extends Croquet.View {
 
     detach() {
         clearInterval(this.interval);
-        window.onmessage = enterLobbyOnMessage; // in case we become the relay
+        window.onmessage = joinLobbyOnMessage; // in case we become the relay
         super.detach();
     }
 }
@@ -277,9 +277,9 @@ function exitApp() {
     document.title = `${appname} Lobby`;
 }
 
-function enterLobbyOnMessage(e) {
+function joinLobbyOnMessage(e) {
     if (e.data && e.data.type === "croquet-lobby") {
-        enterLobby();
+        joinLobby();
     }
 }
 
@@ -289,13 +289,13 @@ function toggleLobbyOnHashChange(e) {
         enterApp(decodeURIComponent(appSessionName));
     } else {
         exitApp();
-        enterLobby();
+        joinLobby();
     }
 }
 
 let lobbySession = null;
 
-async function enterLobby() {
+async function joinLobby() {
     if (lobbySession) {
         console.warn("lobby", "already in lobby session");
         return;
@@ -319,8 +319,11 @@ Croquet.App.makeWidgetDock(); // shows QR code
 window.onhashchange = toggleLobbyOnHashChange; // e.g. back button
 
 if (appSessionName) {
+    // pretend we were in the lobby for backbutton purposes (not working?!)
+    window.history.replaceState({ entered: "lobby" }, "Lobby", window.location.href.split("#")[0]);
     enterApp(appSessionName);
-    window.onmessage = enterLobbyOnMessage; // in case we become the relay
+    window.onmessage = joinLobbyOnMessage; // in case we become the relay
 } else {
-    enterLobby();
+    exitApp();
+    joinLobby();
 }
