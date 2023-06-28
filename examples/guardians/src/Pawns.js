@@ -27,7 +27,6 @@ import { ThreeInstanceManager, PM_ThreeInstanced, PM_ThreeVisible, THREE, GLTFLo
 import { HUD } from "@croquet/worldcore-widget2";
 import { HUDWidget } from "./BotHUD";
 
-import paper from "../assets/paper.jpg";
 // Illustration 112505376 / 360 Sky © Planetfelicity | Dreamstime.com
 import sky from "../assets/alienSky1.jpg";
 
@@ -249,37 +248,6 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 FireballPawn.register("FireballPawn");
 
 //------------------------------------------------------------------------------------------
-// GeometryPawn
-// 3D models are loaded async, so may not yet exist when your avatar is being constructed.
-// We check to see if there is an instance for this yet, and try again later if not.
-//------------------------------------------------------------------------------------------
-export class GeometryPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
-
-    constructor(actor) {
-        super(actor);
-        this.paperTexture = new THREE.TextureLoader().load( paper );
-        this.paperTexture.wrapS = THREE.RepeatWrapping;
-        this.paperTexture.wrapT = THREE.RepeatWrapping;
-        this.paperTexture.repeat.set( 1, 1 );
-        this.loadGeometry(actor._instanceName, UserColors[actor.colorIndex]);
-    }
-
-    loadGeometry(name, color) {
-        const im = this.service("ThreeInstanceManager");
-        const geometry = im.geometry(name);
-        if (geometry) {
-            this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(...color), metalness:0.25, roughness:0.5, map:this.paperTexture} );
-            this.mesh = new THREE.Mesh( geometry, this.material );
-            this.mesh.castShadow = true;
-            this.mesh.receiveShadow = true;
-            this.setRenderObject(this.mesh);
-        } else this.future(100).loadGeometry(name, color);
-    }
-}
-
-GeometryPawn.register("GeometryPawn");
-
-//------------------------------------------------------------------------------------------
 // TowerPawn -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 export class TowerPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
@@ -421,13 +389,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         const worldX = 512, worldZ=512;
         const cellSize = 2.5;
 
-        const paperTexture = new THREE.TextureLoader().load( paper );
-        paperTexture.wrapS = THREE.RepeatWrapping;
-        paperTexture.wrapT = THREE.RepeatWrapping;
-        paperTexture.repeat.set( worldX/4, worldZ/4 );
-
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.8, 0.5, 0.2), map:paperTexture} );
-        //this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2), map:paperTexture} );
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.8, 0.5, 0.2)} );
         this.geometry = new THREE.PlaneGeometry(worldX*cellSize,worldZ*cellSize, worldX, worldZ);
         this.geometry.rotateX(toRad(-90));
 
