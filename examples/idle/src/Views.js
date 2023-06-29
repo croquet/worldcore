@@ -1,5 +1,7 @@
 import { ViewRoot, InputManager, Widget2,  TextWidget2, HUD, ButtonWidget2, ToggleWidget2, VerticalWidget2, ToggleSet2,  HorizontalWidget2, viewRoot, CanvasWidget2, Pawn} from "@croquet/worldcore";
 
+import { BigNum } from "./BigNum";
+
 //------------------------------------------------------------------------------------------
 //-- GameWidget ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -14,9 +16,9 @@ class GameWidget extends Widget2 {
 
         this.bg = new CanvasWidget2({account, parent: this, color: [0,1,1], autoSize: [1,1]});
         this.domain = new DomainWidget({account, parent: this.bg, translation:[0,0], size: [200, 100]});
-        this.food = new ResourceWidget({account, parent: this.bg, translation:[250,0], size: [200, 150], index:0, type: "Food"});
-        this.wood = new ResourceWidget({account, parent: this.bg, translation:[500,0], size: [200, 150], index:1, type: "Wood"});
-        this.iron = new ResourceWidget({account, parent: this.bg, translation:[750,0], size: [200, 150], index:2, type: "Iron"});
+        this.food = new ResourceWidget({account, parent: this.bg, translation:[250,0], size: [200, 150], key: "Food"});
+        this.wood = new ResourceWidget({account, parent: this.bg, translation:[500,0], size: [200, 150], key: "Wood"});
+        this.iron = new ResourceWidget({account, parent: this.bg, translation:[750,0], size: [200, 150], key: "Iron"});
 
 
         this.subscribe(this.account.id, {event: "changed", handling: "oncePerFrame"}, this.tally);
@@ -37,17 +39,14 @@ class GameWidget extends Widget2 {
 
 class ResourceWidget extends VerticalWidget2 {
 
-    get type() { return this._type}
-    get index() { return this._index}
+    get key() { return this._key}
     get account() {return this._account}
-    get singular() { return this._singular}
-    get plural() { return this._plural}
 
     build() {
         this.button = new ButtonWidget2({parent: this, height:50});
-        this.button.label.set({text: this.type});
+        this.button.label.set({text: this.key});
         this.button.onClick = () => {
-            this.publish(this.account.id, "clickResource", this.index);
+            this.publish(this.account.id, "clickResource", this.key);
         };
 
         this.amount = new TextWidget2({parent: this, text: 0, color: [1,1,1], textColor: [0,0,0]});
@@ -56,7 +55,7 @@ class ResourceWidget extends VerticalWidget2 {
     }
 
     tally() {
-        const count = this.account.resources[this.index];
+        const count = this.account.resources.get(this.key);
         this.amount.set({text: count.text});
     }
 
@@ -76,7 +75,7 @@ class DomainWidget extends VerticalWidget2 {
         const title = this.account.nickname + "'s\ndomain";
         this.title = new TextWidget2({parent: this, color: [1,1,1], textColor: [0,0,0], point: 12, height:50, noWrap: true, text: title});
         this.population = new TextWidget2({parent: this, color: [1,1,1], textColor: [0,0,0], point: 12, height:50, noWrap: true});
-        this.lackeys = new PopulationWidget({account, type: "Lackeys", parent: this, height:50});
+        this.lackeys = new PopulationWidget({account, key: "Lackeys", parent: this, height:50});
 
         this.tally();
     }
@@ -84,7 +83,7 @@ class DomainWidget extends VerticalWidget2 {
     tally() {
         const account = this.account;
         const pop = this.account.population;
-        const citizens = pop +" "+ this.account.mood + ((pop>1)? " disciples":" disciple");
+        const citizens = pop +" "+ this.account.mood + ((pop>1)? " followers":" follower");
         const text = "Population:\n" + ((pop>0) ? citizens : this.account.nickname);
         this.population.set({text});
 
@@ -95,25 +94,70 @@ class DomainWidget extends VerticalWidget2 {
 }
 
 //------------------------------------------------------------------------------------------
+//-- PriceWidget ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// function Resource(n) {
+//     switch (n) {
+//         default: return "None: ";
+//         case 0: return "Food: ";
+//         case 1: return "Wood: ";
+//         case 2: return "Iron: ";
+//         case 3: return "Stone: ";
+//         case 4: return "Gold: ";
+//     }
+// }
+
+class PriceWidget extends VerticalWidget2 {
+
+    get account() {return this._account}
+    get affordable() {return this._affordable}
+    get price() {return this._price || [new BigNum(1), new BigNum(4000000), null, new BigNum(4), new BigNum(5)]}
+
+    build() {
+        console.log("build price");
+        this.destroyChildren();
+        for (let n = 0; n< this.price.length; n++) {
+            const p = this.price[n];
+            if (p) new TextWidget2({parent: this, height:20, color: [1,1,1], textColor: [30/256,132/256,73/256], point: 12, style: "italic", alignX: "left", text: Resource(n) + p.text});
+        }
+
+
+    }
+
+    // tally() {
+    //     const account = this.account;
+    //     const pop = this.account.population;
+    //     const citizens = pop +" "+ this.account.mood + ((pop>1)? " disciples":" disciple");
+    //     const text = "Population:\n" + ((pop>0) ? citizens : this.account.nickname);
+    //     this.population.set({text});
+
+    //     this.lackeys.tally();
+
+    // }
+
+}
+
+//------------------------------------------------------------------------------------------
 //-- PopulationButton ----------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 class PopulationButton extends ButtonWidget2 {
 
     get account() {return this._account}
-    get type() {return this._type}
+    get key() {return this._key}
 
     build() {
         super.build();
         this.tally();
         this.onClick = () => {
-            this.publish(this.account.id, "buyPopulation", this.type);
+            this.publish(this.account.id, "buyPopulation", this.key);
         };
     }
 
     tally() {
-        const pop = this.account.domain.get(this.type);
-        const text = this.type +": " + pop.count;
+        const pop = this.account.domain.get(this.key);
+        const text = this.key +": " + pop.count;
         this.label.set({text});
     }
 
@@ -126,12 +170,14 @@ class PopulationButton extends ButtonWidget2 {
 class PopulationWidget extends VerticalWidget2 {
 
     get account() {return this._account}
-    get type() {return this._type}
+    get key() {return this._key}
 
     build() {
+        console.log("Build population widget");
         const account = this.account;
-        this.button = new PopulationButton({account, type: this.type, parent: this, height:50});
-        this.cost = new TextWidget2({account, parent: this, height:20, color: [1,1,1], textColor: [30/256,132/256,73/256], point: 12, style: "italic", alignX: "left", text: "Food: 12"});
+        this.button = new PopulationButton({account, key: this.key, parent: this, height:50});
+        // this.price = new PriceWidget({parent:this});
+        // this.cost = new TextWidget2({account, parent: this, height:20, color: [1,1,1], textColor: [30/256,132/256,73/256], point: 12, style: "italic", alignX: "left", text: "Food: 12"});
     }
 
     tally() {
@@ -159,7 +205,7 @@ export class MyViewRoot extends ViewRoot {
         this.subscribe("AccountManager", "create", this.spawnUI);
 
         this.accountId = localStorage.getItem("wc.idle.accountId");
-        // this.accountId = null;
+        this.accountId = null;
 
         if (!this.accountId) {
             this.accountId = randomString();

@@ -1,118 +1,31 @@
 import {  AccountManager, ModelRoot, Actor, mix, ModelService, Behavior, Shuffle, WorldcoreModel, Account} from "@croquet/worldcore";
 import { Nickname } from "./Names";
+import { BigNum } from "./BigNum";
 
 //------------------------------------------------------------------------------------------
-// -- BigNum -------------------------------------------------------------------------------
+// -- Price --------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class BigNum {
+export class Price {
+     constructor() {
+        this.map = new Map();
+     }
 
-    constructor(n = 0) {
-        this.a = [];
-        do {
-            this.a.push(n%1000);
-            n = Math.floor(n/1000);
-        } while (n>0);
-    }
+     add(key, bn) {
+        this.map.add(key, bn);
+     }
 
-    increment(bn) {
-        const result = [];
-        const max = Math.max(this.a.length, bn.a.length);
-        let carry = 0;
-        for (let n = 0; n < max; n++) {
-            const sum = carry + (this.a[n] || 0) + (bn.a[n] || 0);
-            result.push(sum%1000);
-            carry = Math.floor(sum/1000);
-        }
-        if (carry>0) {
-            do {
-                result.push(carry%1000);
-                carry = Math.floor(carry/1000);
-            } while (carry>0);
-        }
-        this.a = result;
-    }
+    afford(account) {
+        const out = new Map();
+        this.map.forEach((value,key) => {
+            const resource = account.resources.get(key);
+            out.set(key, resource.greaterThan(value));
+        });
 
-    decrement(bn) {
-        let result = [];
-        const amax = this.a.length-1;
-        const bmax = bn.a.length-1;
-        if (bmax > amax) {
-            this.a = [0];
-            return;
-        }
-
-        if (amax === 0) {
-            this.a = [Math.max(0, this.a[0]-bn.a[0])];
-            return;
-        }
-
-        let borrow = 0;
-        for (let n = 0; n < amax; n++) {
-            let diff = this.a[n] - borrow - (bn.a[n] || 0);
-            if (diff<0) {
-                diff += 1000;
-                borrow = 1;
-            }
-            result.push(diff%1000);
-        }
-
-        const diff = this.a[amax] - borrow - (bn.a[amax] || 0);
-        if (diff>0) result.push(diff%1000);
-        if (diff<0) result = [0];
-
-        this.a = result;
-
-    }
-
-    scale(s) {
-        const result = [];
-        const max = this.a.length;
-        let carry = 0;
-        for (let n = 0; n < max; n++) {
-            const sum = carry + this.a[n] * s;
-            result.push(Math.floor(sum%1000));
-            carry = Math.floor(sum/1000);
-        }
-        if (carry>0) {
-            do {
-                result.push(carry%1000);
-                carry = Math.floor(carry/1000);
-            } while (carry>0);
-        }
-        this.a = result;
-    }
-
-    // compress() {
-    //     do {
-    //         const test = this.a.pop();
-    //         if (test>0) {
-    //             this.a.push(test);
-    //             break;
-    //         }
-    //     } while (this.a.length>1);
-    // }
-
-    get text() {
-        switch (this.a.length) {
-            default: return "infinity";
-            case 1: return this.a[0].toString();
-            case 2: return this.a[1] + ',' + String(this.a[0]).padStart(3,'0');
-            case 3: return (this.a[2] + this.a[1]/1000).toFixed(3) + " million";
-            case 4: return (this.a[3] + this.a[2]/1000).toFixed(3) + " billion";
-            case 5: return (this.a[4] + this.a[3]/1000).toFixed(3) + " trillion";
-            case 6: return (this.a[5] + this.a[4]/1000).toFixed(3) + " quadrillion";
-            case 7: return (this.a[6] + this.a[5]/1000).toFixed(3) + " quintillion";
-            case 8: return (this.a[7] + this.a[6]/1000).toFixed(3) + " sextillion";
-            case 9: return (this.a[8] + this.a[7]/1000).toFixed(3) + " septillion";
-            case 10: return (this.a[9] + this.a[8]/1000).toFixed(3) + " octillion";
-            case 11: return (this.a[10] + this.a[9]/1000).toFixed(3) + " nonillion";
-            case 12: return (this.a[11] + this.a[10]/1000).toFixed(3) + " decillion";
-        }
-    }
+        return out;
+     }
 
 }
-
 
 //------------------------------------------------------------------------------------------
 // -- Population ---------------------------------------------------------------------------
@@ -120,35 +33,73 @@ class BigNum {
 
 class Population extends Actor {
 
-    get cost() {return this._cost || [5]}
+    get cost() {return this._cost || { Food: 5, Wood: 1}}
     get account() {return this._account}
-    get type() {return this._type}
-    get size() {return this._size || 1}
-    get harvest() { return this._harvest || [0]}
 
     init(options) {
         super.init(options);
         this.count = 0;
+        this.size = 1;
     }
 
     get population() {return this.count * this.size}
 
-    // buy() {
-    //     this.count += 1;
-    //     for (let n = 0; n < this.cost.length; n++) {
-    //     }
+    buy() {
+        this.count += 1;
+    }
+
+    // get price() {
+    //     const markup = 1.15**this.count;
+    //     const out = [];
+    //     this.cost.forEach(c => {
+    //         const p = new BigNum(c);
+    //         p.scale(markup);
+    //         out.push(p);
+    //     });
+    //     return out;
     // }
 
+    // get affordable() {
+    //     const price = this.price;
+    //     for (let n = 0; n < price.length; n++) {
+    //         if (price[n].greaterThan(this.account.resources[n])) return false;
+    //     }
+    //     return true;
+    // }
 
-    tick() {
-        for (const n of this.harvest) {
-            const amount = new BigNum(this.population);
-            this.account.counts[n].increment(amount);
-        }
-    }
+    // afford(n) {
+    //     if (this.price[n].greaterThan(this.account.resources[n])) return false;
+    //     return true;
+    // }
+
+    tick() {}
 
 }
 Population.register('Population');
+
+//------------------------------------------------------------------------------------------
+// -- Lackeys ------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class Lackeys extends Population {
+
+    init(options) {
+        super.init(options);
+    }
+
+    get cost() {
+        const markup = 1.15**this.count;
+        return { Food: 5};
+    }
+
+    tick() {
+        console.log("Lackeys tick");
+        const amount = new BigNum(this.population);
+        this.account.resources.get("Food").increment(amount);
+    }
+
+}
+Lackeys.register('Lackeys');
 
 //------------------------------------------------------------------------------------------
 // -- Account ------------------------------------------------------------------------------
@@ -174,18 +125,17 @@ class MyAccount extends Account {
         this.mood = "happy";
         this.domain = new Map();
 
-        this.resources = [
-            new BigNum(0),
-            new BigNum(0),
-            new BigNum(0),
-        ];
+        this.resources = new Map();
+        this.resources.set("Food", new BigNum(0));
+        this.resources.set("Wood", new BigNum(0));
+        this.resources.set("Iron", new BigNum(0));
 
-        this.domain.set("Lackeys", Population.create({account: this, type: "Lackeys"}));
+        this.domain.set("Lackeys", Lackeys.create({account: this}));
 
         this.listen("clickResource", this.onClick);
         this.listen("buyPopulation", this.onBuyPopulation);
 
-        // this.future(1000).tick(1000);
+        this.future(1000).tick(1000);
     }
 
     tick() {
@@ -196,13 +146,13 @@ class MyAccount extends Account {
     }
 
     onClick(n) {
-        this.resources[n].increment(new BigNum(5));
+        this.resources.get(n).increment(new BigNum(5));
         this.say("changed");
     }
 
-    onBuyPopulation(type) {
-        console.log(type);
-        const pop = this.domain.get(type);
+    onBuyPopulation(key) {
+        console.log("buy " + key);
+        const pop = this.domain.get(key);
         if (pop) pop.buy(1);
         this.say("changed");
     }
@@ -229,7 +179,8 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
+        console.log("Start root model!!!");
+
     }
 
 }
