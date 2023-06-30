@@ -16,6 +16,7 @@ class GameWidget extends Widget2 {
 
         this.bg = new CanvasWidget2({account, parent: this, color: [0,1,1], autoSize: [1,1]});
         this.domain = new DomainWidget({account, parent: this.bg, translation:[0,0], size: [200, 100]});
+        this.tech = new TechPanel({account, parent: this.bg, translation:[0,-100], anchor: [0,1], pivot: [0,1], size: [200, 100]});
         this.food = new ResourceWidget({account, parent: this.bg, translation:[250,0], size: [200, 150], key: "Food"});
         this.wood = new ResourceWidget({account, parent: this.bg, translation:[500,0], size: [200, 150], key: "Wood"});
         this.iron = new ResourceWidget({account, parent: this.bg, translation:[750,0], size: [200, 150], key: "Iron"});
@@ -43,6 +44,7 @@ class ResourceWidget extends VerticalWidget2 {
     get account() {return this._account}
 
     build() {
+        const account = this.account;
         this.set({margin: 5});
         this.button = new ButtonWidget2({parent: this, height:50});
         this.button.label.set({text: this.key});
@@ -50,8 +52,10 @@ class ResourceWidget extends VerticalWidget2 {
             this.publish(this.account.id, "clickResource", this.key);
         };
 
-        this.amount = new TextWidget2({parent: this, point:12, text: 0, color: [1,1,1], textColor: [0,0,0]});
-        this.tech = new TechWidget({parent: this, height:20});
+        this.stats = new TextWidget2({account, parent: this, height: 20, point: 12, color: [1,1,1], textColor: [0,0,0], text:"1.234 million per second (+34%)" });
+
+        this.amount = new TextWidget2({account, parent: this, point:12, text: 0, color: [1,1,1], textColor: [0,0,0]});
+        // this.tech = new TechWidget({account, parent: this, height:20});
         this.tally();
 
     }
@@ -59,6 +63,26 @@ class ResourceWidget extends VerticalWidget2 {
     tally() {
         const count = this.account.resources.get(this.key);
         this.amount.set({text: count.text});
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- TechPanel ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class TechPanel extends VerticalWidget2 {
+
+    get account() {return this._account}
+
+    build() {
+        const account = this.account;
+        this.a = new TechWidget({account, parent: this, height: 20, point: 12, color: [1,1,1], textColor: [0,0,0], text:"Wicker Baskets" });
+
+    }
+
+    tally() {
+
     }
 
 }
@@ -73,7 +97,15 @@ class TechWidget extends VerticalWidget2 {
     get account() {return this._account}
 
     build() {
-        this.descripton = new TextWidget2({parent: this, point:12, color: [1,1,1], textColor: [0,0,0], alignX: "left", text: "Baskets: +1%"});
+        const account = this.account;
+        this.button = new ButtonWidget2({parent: this, height: 50, point: 12, color: [1,1,1], textColor: [0,0,0], text:"Basketweaving" });
+        // this.button.label.set({text:"Basketweaving"});
+        this.button.label.destroy();
+        this.button.label = new VerticalWidget2({parent: this.button.frame, autoSize: [1,1], border: [5, 5, 5, 5],});
+
+        this.title = new TextWidget2({ parent: this.button.label, style: "bold", color: [1,1,1], point: 16, text:  "Stone Axe" });
+        this.effect = new TextWidget2({parent: this.button.label, height: 20, point: 10, color: [1,1,1], textColor: [0,0,0], text:"+1% food production" });
+        this.price = new PriceWidget({parent: this, account});
     }
 
     tally() {
@@ -122,7 +154,7 @@ class DomainWidget extends VerticalWidget2 {
 class PriceWidget extends VerticalWidget2 {
 
     get account() {return this._account}
-    get price() {return this._price|| {Food: new BigNum(1), Wood:new BigNum(1)}}
+    get price() {return this._price|| {Stone: new BigNum(1), Wood:new BigNum(1)}}
 
 
     build() {

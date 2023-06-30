@@ -13,6 +13,11 @@ export class BigNum {
         } while (n>0);
     }
 
+    clone() {
+        const out = new BigNum();
+        out.a = [...this.a];
+    }
+
     increment(bn) {
         const result = [];
         const max = Math.max(this.a.length, bn.a.length);

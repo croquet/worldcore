@@ -51,7 +51,7 @@ class Lackeys extends Population {
     }
 
     get production() {
-        const base = {Food: new BigNum(5), Wood: new BigNum(1)};
+        const base = {Food: new BigNum(1), Wood: new BigNum(1)};
         const production = this.population/20;
         base.Food.scale(production);
         base.Wood.scale(production);
@@ -59,13 +59,62 @@ class Lackeys extends Population {
     }
 
     tick() {
-        // console.log("Lackeys tick");
-        this.account.earn(this.production);
+        this.account.produce(this.production);
     }
 
 
 }
 Lackeys.register('Lackeys');
+
+//------------------------------------------------------------------------------------------
+// -- Resource -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+// xxx consolidate production
+
+class Resource extends Actor {
+
+
+    get account() {return this._account}
+    get key() {return this._key}
+
+    init(options) {
+        super.init(options);
+        this.count = new BigNum(0);
+        this.production = new BigNum(0);
+        this.multiplier = 1;
+
+    }
+
+}
+Resource.register('Resource');
+
+//------------------------------------------------------------------------------------------
+// -- Tech ---------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class Tech extends Actor {
+
+    get account() {return this._account}
+    get price() {return { Wood: 20}}
+    get name() { return "Basketweaving" }
+    get hint() { return "+1% food production" }
+
+    buy() {
+        const price = this.price;
+        if (!this.account.canAfford(price)) {
+            console.log("Too much!"); return;
+        }
+
+        const m = this.account.multipliers.get("Wood") +2;
+        this.account.multipliers.set("Wood",m);
+
+    }
+
+    tick() {}
+
+}
+Tech.register('Tech');
 
 //------------------------------------------------------------------------------------------
 // -- Account ------------------------------------------------------------------------------
@@ -94,7 +143,14 @@ class MyAccount extends Account {
         this.resources = new Map();
         this.resources.set("Food", new BigNum(0));
         this.resources.set("Wood", new BigNum(0));
+        this.resources.set("Stone", new BigNum(0));
         this.resources.set("Iron", new BigNum(0));
+
+        this.multipliers = new Map();
+        this.multipliers.set("Food", 1.1);
+        this.multipliers.set("Wood", 1);
+        this.multipliers.set("Stone", 1);
+        this.multipliers.set("Iron", 1);
 
         this.tech = new Map();
         const bbb = {
@@ -113,7 +169,6 @@ class MyAccount extends Account {
     }
 
     tick() {
-        // console.log(this.accountId + " tick");
         this.domain.forEach( p => p.tick());
         this.say("changed");
         this.future(50).tick();
@@ -131,10 +186,12 @@ class MyAccount extends Account {
         }
     }
 
-    earn(amount) {
+    produce(amount) {
         for (const key in amount) {
-            // console.log(key + ": " + amount[key].text);
-            this.resources.get(key).increment(amount[key]);
+            const m = this.multipliers.get(key);
+            const a = amount[key];
+            a.scale(m);
+            this.resources.get(key).increment(a);
         }
     }
 
@@ -174,7 +231,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
+        console.log("Start root model!!!!!");
 
     }
 
