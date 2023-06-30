@@ -3,31 +3,6 @@ import { Nickname } from "./Names";
 import { BigNum } from "./BigNum";
 
 //------------------------------------------------------------------------------------------
-// -- Price --------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-
-export class Price {
-     constructor() {
-        this.map = new Map();
-     }
-
-     add(key, bn) {
-        this.map.add(key, bn);
-     }
-
-    afford(account) {
-        const out = new Map();
-        this.map.forEach((value,key) => {
-            const resource = account.resources.get(key);
-            out.set(key, resource.greaterThan(value));
-        });
-
-        return out;
-     }
-
-}
-
-//------------------------------------------------------------------------------------------
 // -- Population ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
@@ -45,32 +20,13 @@ class Population extends Actor {
     get population() {return this.count * this.size}
 
     buy() {
+        const price = this.price;
+        if (!this.account.canAfford(price)) {
+            console.log("Too much!"); return;
+        }
+        this.account.spend(price);
         this.count += 1;
     }
-
-    // get price() {
-    //     const markup = 1.15**this.count;
-    //     const out = [];
-    //     this.cost.forEach(c => {
-    //         const p = new BigNum(c);
-    //         p.scale(markup);
-    //         out.push(p);
-    //     });
-    //     return out;
-    // }
-
-    // get affordable() {
-    //     const price = this.price;
-    //     for (let n = 0; n < price.length; n++) {
-    //         if (price[n].greaterThan(this.account.resources[n])) return false;
-    //     }
-    //     return true;
-    // }
-
-    // afford(n) {
-    //     if (this.price[n].greaterThan(this.account.resources[n])) return false;
-    //     return true;
-    // }
 
     tick() {}
 
@@ -87,16 +43,26 @@ class Lackeys extends Population {
         super.init(options);
     }
 
-    get cost() {
+    get price() {
+        const base = { Food: new BigNum(15)};
         const markup = 1.15**this.count;
-        return { Food: 5};
+        base.Food.scale(markup);
+        return base;
+    }
+
+    get production() {
+        const base = {Food: new BigNum(5), Wood: new BigNum(1)};
+        const production = this.population/20;
+        base.Food.scale(production);
+        base.Wood.scale(production);
+        return base;
     }
 
     tick() {
-        console.log("Lackeys tick");
-        const amount = new BigNum(this.population);
-        this.account.resources.get("Food").increment(amount);
+        // console.log("Lackeys tick");
+        this.account.earn(this.production);
     }
+
 
 }
 Lackeys.register('Lackeys');
@@ -130,24 +96,53 @@ class MyAccount extends Account {
         this.resources.set("Wood", new BigNum(0));
         this.resources.set("Iron", new BigNum(0));
 
+        this.tech = new Map();
+        const bbb = {
+            name: "Baskets",
+            resource: "Food",
+            multiplier: 2,
+            price: {Wood: new BigNum(5)}
+        };
+
         this.domain.set("Lackeys", Lackeys.create({account: this}));
 
         this.listen("clickResource", this.onClick);
         this.listen("buyPopulation", this.onBuyPopulation);
 
-        this.future(1000).tick(1000);
+        this.future(50).tick();
     }
 
     tick() {
         // console.log(this.accountId + " tick");
         this.domain.forEach( p => p.tick());
         this.say("changed");
-        this.future(1000).tick(1000);
+        this.future(50).tick();
     }
 
     onClick(n) {
-        this.resources.get(n).increment(new BigNum(5));
+        this.resources.get(n).increment(new BigNum(1));
         this.say("changed");
+    }
+
+    spend(amount) {
+        for (const key in amount) {
+            // console.log(key + ": " + amount[key].text);
+            this.resources.get(key).decrement(amount[key]);
+        }
+    }
+
+    earn(amount) {
+        for (const key in amount) {
+            // console.log(key + ": " + amount[key].text);
+            this.resources.get(key).increment(amount[key]);
+        }
+    }
+
+    canAfford(amount) {
+        for (const key in amount) {
+            if (amount[key].greaterThan(this.resources.get(key))) return false;
+        }
+        return true;
     }
 
     onBuyPopulation(key) {
@@ -179,7 +174,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!");
+        console.log("Start root model!");
 
     }
 

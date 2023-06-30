@@ -64,7 +64,7 @@ export class BigNum {
         let carry = 0;
         for (let n = 0; n < max; n++) {
             const sum = carry + this.a[n] * s;
-            result.push(Math.floor(sum%1000));
+            result.push(sum%1000);
             carry = Math.floor(sum/1000);
         }
         if (carry>0) {
@@ -84,21 +84,12 @@ export class BigNum {
         return this.a[bmax] > bn.a[bmax];
     }
 
-    // compress() {
-    //     do {
-    //         const test = this.a.pop();
-    //         if (test>0) {
-    //             this.a.push(test);
-    //             break;
-    //         }
-    //     } while (this.a.length>1);
-    // }
-
     get text() {
         switch (this.a.length) {
             default: return "infinity";
-            case 1: return this.a[0].toString();
-            case 2: return this.a[1] + ',' + String(this.a[0]).padStart(3,'0');
+            case 1: return this.a[0].toFixed(0);
+            case 2: return this.a[1].toFixed(0) + ',' + this.a[0].toFixed(0).padStart(3,'0');
+            // case 2: return this.a[1].toFixed(0) + ',' + String(this.a[0]).padStart(3,'0');
             case 3: return (this.a[2] + this.a[1]/1000).toFixed(3) + " million";
             case 4: return (this.a[3] + this.a[2]/1000).toFixed(3) + " billion";
             case 5: return (this.a[4] + this.a[3]/1000).toFixed(3) + " trillion";

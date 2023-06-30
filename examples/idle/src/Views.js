@@ -43,13 +43,15 @@ class ResourceWidget extends VerticalWidget2 {
     get account() {return this._account}
 
     build() {
+        this.set({margin: 5});
         this.button = new ButtonWidget2({parent: this, height:50});
         this.button.label.set({text: this.key});
         this.button.onClick = () => {
             this.publish(this.account.id, "clickResource", this.key);
         };
 
-        this.amount = new TextWidget2({parent: this, text: 0, color: [1,1,1], textColor: [0,0,0]});
+        this.amount = new TextWidget2({parent: this, point:12, text: 0, color: [1,1,1], textColor: [0,0,0]});
+        this.tech = new TechWidget({parent: this, height:20});
         this.tally();
 
     }
@@ -57,6 +59,25 @@ class ResourceWidget extends VerticalWidget2 {
     tally() {
         const count = this.account.resources.get(this.key);
         this.amount.set({text: count.text});
+    }
+
+}
+
+//------------------------------------------------------------------------------------------
+//-- TechWidget ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class TechWidget extends VerticalWidget2 {
+
+    get key() { return this._key}
+    get account() {return this._account}
+
+    build() {
+        this.descripton = new TextWidget2({parent: this, point:12, color: [1,1,1], textColor: [0,0,0], alignX: "left", text: "Baskets: +1%"});
+    }
+
+    tally() {
+
     }
 
 }
@@ -97,44 +118,23 @@ class DomainWidget extends VerticalWidget2 {
 //-- PriceWidget ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// function Resource(n) {
-//     switch (n) {
-//         default: return "None: ";
-//         case 0: return "Food: ";
-//         case 1: return "Wood: ";
-//         case 2: return "Iron: ";
-//         case 3: return "Stone: ";
-//         case 4: return "Gold: ";
-//     }
-// }
 
 class PriceWidget extends VerticalWidget2 {
 
     get account() {return this._account}
-    get affordable() {return this._affordable}
-    get price() {return this._price || [new BigNum(1), new BigNum(4000000), null, new BigNum(4), new BigNum(5)]}
+    get price() {return this._price|| {Food: new BigNum(1), Wood:new BigNum(1)}}
+
 
     build() {
-        console.log("build price");
         this.destroyChildren();
-        for (let n = 0; n< this.price.length; n++) {
-            const p = this.price[n];
-            if (p) new TextWidget2({parent: this, height:20, color: [1,1,1], textColor: [30/256,132/256,73/256], point: 12, style: "italic", alignX: "left", text: Resource(n) + p.text});
+        for (const key in this.price) {
+            const amount = this.price[key];
+            const resource = this.account.resources.get(key);
+            const text = key + ": " + amount.text;
+            const textColor = amount.greaterThan(resource) ? [1,0,0] : [30/256,132/256,73/256];
+            new TextWidget2({parent: this, height:20, color: [1,1,1], textColor, point: 12, style: "italic", alignX: "left", text});
         }
-
-
     }
-
-    // tally() {
-    //     const account = this.account;
-    //     const pop = this.account.population;
-    //     const citizens = pop +" "+ this.account.mood + ((pop>1)? " disciples":" disciple");
-    //     const text = "Population:\n" + ((pop>0) ? citizens : this.account.nickname);
-    //     this.population.set({text});
-
-    //     this.lackeys.tally();
-
-    // }
 
 }
 
@@ -173,15 +173,17 @@ class PopulationWidget extends VerticalWidget2 {
     get key() {return this._key}
 
     build() {
-        console.log("Build population widget");
         const account = this.account;
+        const pop = this.account.domain.get(this.key);
         this.button = new PopulationButton({account, key: this.key, parent: this, height:50});
-        // this.price = new PriceWidget({parent:this});
-        // this.cost = new TextWidget2({account, parent: this, height:20, color: [1,1,1], textColor: [30/256,132/256,73/256], point: 12, style: "italic", alignX: "left", text: "Food: 12"});
+        this.price = new PriceWidget({account, parent:this, price: pop.price});
     }
 
     tally() {
-            this.button.tally();
+        const pop = this.account.domain.get(this.key);
+        this.price.set({price: pop.price});
+        this.button.tally();
+        this.price.build();
     }
 
 }
@@ -205,7 +207,7 @@ export class MyViewRoot extends ViewRoot {
         this.subscribe("AccountManager", "create", this.spawnUI);
 
         this.accountId = localStorage.getItem("wc.idle.accountId");
-        this.accountId = null;
+        // this.accountId = null;
 
         if (!this.accountId) {
             this.accountId = randomString();
