@@ -55,14 +55,19 @@ class ResourceWidget extends VerticalWidget2 {
         this.stats = new TextWidget2({account, parent: this, height: 20, point: 12, color: [1,1,1], textColor: [0,0,0], text:"1.234 million per second (+34%)" });
 
         this.amount = new TextWidget2({account, parent: this, point:12, text: 0, color: [1,1,1], textColor: [0,0,0]});
-        // this.tech = new TechWidget({account, parent: this, height:20});
-        this.tally();
 
+        this.tally();
     }
 
     tally() {
-        const count = this.account.resources.get(this.key);
-        this.amount.set({text: count.text});
+        const resource = this.account.resources.get(this.key);
+        const count = resource.count.text;
+        const percent = ((resource.multiplier-1) * 100).toFixed(0);
+        const production = resource.production.clone();
+        production.scale(20);
+        const stats = production.text + " per second" + (resource.multiplier > 1 ? " (+" + percent + "%)" : "");
+        this.stats.set({text: stats});
+        this.amount.set({text: count});
     }
 
 }
@@ -83,6 +88,7 @@ class TechPanel extends VerticalWidget2 {
 
     tally() {
 
+
     }
 
 }
@@ -99,7 +105,6 @@ class TechWidget extends VerticalWidget2 {
     build() {
         const account = this.account;
         this.button = new ButtonWidget2({parent: this, height: 50, point: 12, color: [1,1,1], textColor: [0,0,0], text:"Basketweaving" });
-        // this.button.label.set({text:"Basketweaving"});
         this.button.label.destroy();
         this.button.label = new VerticalWidget2({parent: this.button.frame, autoSize: [1,1], border: [5, 5, 5, 5],});
 
@@ -163,7 +168,7 @@ class PriceWidget extends VerticalWidget2 {
             const amount = this.price[key];
             const resource = this.account.resources.get(key);
             const text = key + ": " + amount.text;
-            const textColor = amount.greaterThan(resource) ? [1,0,0] : [30/256,132/256,73/256];
+            const textColor = amount.greaterThan(resource.count) ? [1,0,0] : [30/256,132/256,73/256];
             new TextWidget2({parent: this, height:20, color: [1,1,1], textColor, point: 12, style: "italic", alignX: "left", text});
         }
     }
@@ -233,8 +238,8 @@ export class MyViewRoot extends ViewRoot {
     }
 
     onStart() {
-        this.subscribe("input", "xDown", this.test);
-        this.subscribe("input", "zDown", this.test2);
+        // this.subscribe("input", "xDown", this.test);
+        // this.subscribe("input", "zDown", this.test2);
 
         this.subscribe("AccountManager", "create", this.spawnUI);
 

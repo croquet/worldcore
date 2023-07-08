@@ -23,5 +23,6 @@ StartWorldcore({
     // password: App.autoPassword(),
     password: "password",
     view: MyViewRoot,
+    autoSleep: 0,
     tps:"10x5"
 });

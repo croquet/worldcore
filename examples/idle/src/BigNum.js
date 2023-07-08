@@ -7,6 +7,7 @@ export class BigNum {
 
     constructor(n = 0) {
         this.a = [];
+        n = Math.floor(n*1000);
         do {
             this.a.push(n%1000);
             n = Math.floor(n/1000);
@@ -16,6 +17,7 @@ export class BigNum {
     clone() {
         const out = new BigNum();
         out.a = [...this.a];
+        return out;
     }
 
     increment(bn) {
@@ -68,7 +70,7 @@ export class BigNum {
         const max = this.a.length;
         let carry = 0;
         for (let n = 0; n < max; n++) {
-            const sum = carry + this.a[n] * s;
+            const sum = Math.floor(carry + this.a[n] * s);
             result.push(sum%1000);
             carry = Math.floor(sum/1000);
         }
@@ -81,6 +83,10 @@ export class BigNum {
         this.a = result;
     }
 
+    get isZero() {
+        return (this.a.length === 1 && this.a[0] === 0);
+    }
+
     greaterThan(bn) {
         const amax = this.a.length-1;
         const bmax = bn.a.length-1;
@@ -90,22 +96,30 @@ export class BigNum {
     }
 
     get text() {
+        if (this.isZero) return "0";
         switch (this.a.length) {
             default: return "infinity";
-            case 1: return this.a[0].toFixed(0);
-            case 2: return this.a[1].toFixed(0) + ',' + this.a[0].toFixed(0).padStart(3,'0');
-            // case 2: return this.a[1].toFixed(0) + ',' + String(this.a[0]).padStart(3,'0');
-            case 3: return (this.a[2] + this.a[1]/1000).toFixed(3) + " million";
-            case 4: return (this.a[3] + this.a[2]/1000).toFixed(3) + " billion";
-            case 5: return (this.a[4] + this.a[3]/1000).toFixed(3) + " trillion";
-            case 6: return (this.a[5] + this.a[4]/1000).toFixed(3) + " quadrillion";
-            case 7: return (this.a[6] + this.a[5]/1000).toFixed(3) + " quintillion";
-            case 8: return (this.a[7] + this.a[6]/1000).toFixed(3) + " sextillion";
-            case 9: return (this.a[8] + this.a[7]/1000).toFixed(3) + " septillion";
-            case 10: return (this.a[9] + this.a[8]/1000).toFixed(3) + " octillion";
-            case 11: return (this.a[10] + this.a[9]/1000).toFixed(3) + " nonillion";
-            case 12: return (this.a[11] + this.a[10]/1000).toFixed(3) + " decillion";
+            case 1: return (this.a[0]/1000).toFixed(3);
+            case 2:
+                if (this.a[0] === 0) return (this.a[1]).toFixed(0);
+                return (this.a[1] + this.a[0]/1000).toFixed(1);
+            case 3: return (this.a[2].toFixed(0) + ',' + this.a[1].toFixed(0).padStart(3,'0'));
+            case 4: return (this.a[3] + this.a[2]/1000).toFixed(3) + " million";
+            case 5: return (this.a[4] + this.a[3]/1000).toFixed(3) + " billion";
+            case 6: return (this.a[5] + this.a[4]/1000).toFixed(3) + " trillion";
+            case 7: return (this.a[6] + this.a[5]/1000).toFixed(3) + " quadrillion";
+            case 8: return (this.a[7] + this.a[6]/1000).toFixed(3) + " quintillion";
+            case 9: return (this.a[8] + this.a[7]/1000).toFixed(3) + " quintillion";
+            case 10: return (this.a[9] + this.a[8]/1000).toFixed(3) + " sextillion";
+            case 11: return (this.a[10] + this.a[9]/1000).toFixed(3) + " septillion";
+            case 12: return (this.a[11] + this.a[10]/1000).toFixed(3) + " octillion";
+            case 13: return (this.a[12] + this.a[11]/1000).toFixed(3) + " nonillion";
+            case 14: return (this.a[13] + this.a[12]/1000).toFixed(3) + " decillion";
         }
     }
+
+                // case 1: return this.a[0].toFixed(0);
+            // case 2: return this.a[1].toFixed(0) + ',' + this.a[0].toFixed(0).padStart(3,'0');
+            // case 2: return this.a[1].toFixed(0) + ',' + String(this.a[0]).padStart(3,'0');
 
 }
