@@ -87,9 +87,15 @@ export const AM_Grid = superclass => class extends superclass {
         const cy = Math.floor(xy[1]);
         const r = Math.floor(radius/this.gridScale);
 
-        for (const actor of this.getBin(cx, cy)) {
-            if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
+        const bbb = this.getBin(cx, cy);
+        if (bbb) {
+            for (const actor of bbb) {
+                if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
+            }
         }
+        // for (const actor of this.getBin(cx, cy)) {
+        //     if (actor !== exclude && actor.tags.has(tag)) out.push(actor);
+        // }
 
         for (let n = 1; n<=r; n++) {
             const x0 = cx-n;
