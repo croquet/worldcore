@@ -27,6 +27,7 @@ class GameWidget extends Widget2 {
 
         this.bg = new CanvasWidget2({account, parent: this, color: [0,1,1], autoSize: [1,1]});
         this.domain = new DomainPanel({account, parent: this.bg, translation:[0,0], size: [200, 100]});
+        this.population = new PopulationPanel({account, parent: this.bg, translation: [0,105], size:[200, 100]});
 
         this.food = new ResourceWidget({account, parent: this.bg, translation:[240,0], size: [150, 150], key: "food"});
         this.wood = new ResourceWidget({account, parent: this.bg, translation:[440,0], size: [150, 150], key: "wood"});
@@ -34,17 +35,16 @@ class GameWidget extends Widget2 {
         this.iron = new ResourceWidget({account, parent: this.bg, translation:[840,0], size: [150, 150], key: "iron"});
 
 
-        // this.wood = new ResourceWidget({account, parent: this.bg, translation:[500,0], size: [220, 150], key: "wood"});
-        // this.iron = new ResourceWidget({account, parent: this.bg, translation:[750,0], size: [200, 150], key: "iron"});
-        // this.domain = new DomainWidget({account, parent: this.bg, translation:[0,0], size: [200, 100]});
-        // this.tech = new TechPanel({account, parent: this.bg, translation:[0,-100], anchor: [0,1], pivot: [0,1], size: [200, 100]});
-
+        this.tech = new TechPanel({account, parent: this.bg, translation:[300,-500], anchor: [0,1], pivot: [0,1], size: [200, 100]});
 
         this.subscribe(this.account.id, {event: "changed", handling: "oncePerFrame"}, this.tally);
     }
 
     tally() {
         this.domain.tally();
+        this.population.tally();
+        this.tech.tally();
+
         this.food.tally();
         this.wood.tally();
         this.stone.tally();
@@ -84,25 +84,44 @@ class DomainPanel extends VerticalWidget2 {
     get account() {return this._account}
 
     build() {
-        this.set({margin: 5});
         const account = this.account;
-        const title = this.account.nickname + "'s\ndomain";
+        const title = account.nickname + "'s\ndomain";
         this.title = new TextWidget2({parent: this, color: [1,1,1], textColor: [0,0,0], point: 12, height:50, noWrap: true, text: title});
         this.population = new TextWidget2({parent: this, color: [1,1,1], textColor: [0,0,0], point: 12, height:50, noWrap: true});
-        this.lackeys = new PopulationWidget({account, key: "lackeys", parent: this, height:50});
 
         this.tally();
     }
 
     tally() {
         const account = this.account;
-        const pop = this.account.population;
-        const citizens = pop +" "+ this.account.mood + ((pop>1)? " followers":" follower");
-        const text = "Population:\n" + ((pop>0) ? citizens : this.account.nickname);
+        const pop = account.population;
+        const citizens = pop +" "+ account.mood + ((pop>1)? " followers":" follower");
+        const text = "Population:\n" + ((pop>0) ? citizens : account.nickname);
         this.population.set({text});
+    }
 
-        this.lackeys.tally();
+}
 
+//------------------------------------------------------------------------------------------
+//-- PopulationPanel -----------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class PopulationPanel extends VerticalWidget2 {
+
+    get account() {return this._account}
+
+    build() {
+        const account = this.account;
+        this.destroyChildren();
+        this.set({margin: 5});
+        this.lackey = new PopulationWidget({account, key: "lackey", parent: this, height:90});
+        this.hut = new PopulationWidget({account, key: "hut", parent: this, height:90});
+        this.tally();
+    }
+
+    tally() {
+        this.lackey.tally();
+        this.hut.tally();
     }
 
 }
@@ -126,7 +145,7 @@ class PopulationButton extends ButtonWidget2 {
 
     tally() {
         const pop = this.account.domain.get(this.key);
-        const text = this.key +": " + pop.count;
+        const text = pop.name +": " + pop.count;
         this.label.set({text});
     }
 
@@ -192,26 +211,28 @@ class ResourceWidget extends VerticalWidget2 {
 
 }
 
-// //------------------------------------------------------------------------------------------
-// //-- TechPanel ----------------------------------------------------------------------------
-// //------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+//-- TechPanel -----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
 
-// class TechPanel extends VerticalWidget2 {
+class TechPanel extends VerticalWidget2 {
 
-//     get account() {return this._account}
+    get account() {return this._account}
 
-//     build() {
-//         const account = this.account;
-//         this.a = new TechWidget({account, parent: this, height: 20, point: 12, color: [1,1,1], textColor: [0,0,0], text:"Wicker Baskets" });
+    build() {
+        this.set({margin: 5});
+        this.destroyChildren();
+        new TextWidget2({parent: this, height: 50, color: [1,1,1], testColor: [0,0,0], text: "Technology"});
+        const account = this.account;
+        account.upgrades.forEach(key => {
+            new TechWidget({account, key, parent: this, height: 90});
+        });
+    }
 
-//     }
+    tally() {
+    }
 
-//     tally() {
-
-
-//     }
-
-// }
+}
 
 //------------------------------------------------------------------------------------------
 //-- TechWidget ----------------------------------------------------------------------------
@@ -224,13 +245,12 @@ class TechWidget extends VerticalWidget2 {
 
     build() {
         const account = this.account;
-        this.button = new ButtonWidget2({parent: this, height: 50, point: 12, color: [1,1,1], textColor: [0,0,0], text:"Basketweaving" });
+        this.button = new ButtonWidget2({parent: this, height: 50, point: 12, color: [1,1,1], textColor: [0,0,0]});
         this.button.label.destroy();
         this.button.label = new VerticalWidget2({parent: this.button.frame, autoSize: [1,1], border: [5, 5, 5, 5],});
-
-        this.title = new TextWidget2({ parent: this.button.label, style: "bold", color: [1,1,1], point: 16, text:  "Stone Axe" });
-        this.effect = new TextWidget2({parent: this.button.label, height: 20, point: 10, color: [1,1,1], textColor: [0,0,0], text:"+1% food production" });
-        this.price = new PriceWidget({parent: this, account});
+        this.title = new TextWidget2({ parent: this.button.label, style: "bold", color: [1,1,1], point: 16, text:  this.key });
+        this.effect = new TextWidget2({parent: this.button.label, height: 20, point: 10, color: [1,1,1], textColor: [0,0,0], text:"Double food production" });
+        this.price = new PriceWidget({parent: this, account, height:20, price: {wood: new BigNum(100), stone: new BigNum(1)}});
     }
 
     tally() {
@@ -239,13 +259,7 @@ class TechWidget extends VerticalWidget2 {
 
 }
 
-
-
-
-
-
-
-//------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------
 //-- MyViewRoot ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
