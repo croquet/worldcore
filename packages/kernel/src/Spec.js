@@ -9,9 +9,6 @@ Constants.WC_SPEC = new TwoWayMap();
 //-- AM_Save -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Maybe change syntax to this.toSpec() & this.fromSpec()
-
-
 export const AM_Spec = superclass => class extends superclass {
 
     static register(name) {

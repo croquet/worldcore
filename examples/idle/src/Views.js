@@ -38,17 +38,22 @@ class GameWidget extends Widget2 {
         this.tech = new TechPanel({account, parent: this.bg, translation:[300,-500], anchor: [0,1], pivot: [0,1], size: [200, 100]});
 
         this.subscribe(this.account.id, {event: "changed", handling: "oncePerFrame"}, this.tally);
+        this.subscribe(this.account.id, {event: "techChanged", handling: "oncePerFrame"}, this.techChanged);
     }
 
     tally() {
-        this.domain.tally();
-        this.population.tally();
-        this.tech.tally();
+        // this.domain.tally();
+        // this.population.tally();
+        // this.tech.tally();
 
-        this.food.tally();
-        this.wood.tally();
-        this.stone.tally();
-        this.iron.tally();
+        // this.food.tally();
+        // this.wood.tally();
+        // this.stone.tally();
+        // this.iron.tally();
+    }
+
+    techChanged() {
+        this.tech.build();
     }
 
 }
@@ -64,13 +69,29 @@ class PriceWidget extends VerticalWidget2 {
 
     build() {
         this.destroyChildren();
+        this.lines = {};
         for (const key in this.price) {
             const amount = this.price[key];
             const resource = this.account.resources.get(key);
             const text = Name(key) + ": " + amount.text;
-            const textColor = amount.greaterThan(resource.count) ? [1,0,0] : [30/256,132/256,73/256];
-            new TextWidget2({parent: this, height:20, color: [1,1,1], textColor, point: 12, style: "italic", alignX: "left", text});
+            this.lines[key] = new TextWidget2({parent: this, height:20, color: [1,1,1], point: 12, style: "italic", alignX: "left", text});
         }
+        this.tally();
+        this.subscribe(this.account.id, {event: "changed", handling: "oncePerFrame"}, this.tally);
+    }
+
+    priceSet() {
+        this.build();
+    }
+
+    tally() {
+        for (const key in this.price) {
+            const amount = this.price[key];
+            const resource = this.account.resources.get(key);
+            const textColor = amount.greaterThan(resource.count) ? [1,0,0] : [30/256,132/256,73/256];
+            this.lines[key].set({textColor});
+        }
+
     }
 
 }
@@ -100,6 +121,11 @@ class DomainPanel extends VerticalWidget2 {
         this.population.set({text});
     }
 
+    update(time,delta) {
+        super.update(time,delta);
+        this.tally();
+    }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -116,13 +142,13 @@ class PopulationPanel extends VerticalWidget2 {
         this.set({margin: 5});
         this.lackey = new PopulationWidget({account, key: "lackey", parent: this, height:90});
         this.hut = new PopulationWidget({account, key: "hut", parent: this, height:90});
-        this.tally();
+        // this.tally();
     }
 
-    tally() {
-        this.lackey.tally();
-        this.hut.tally();
-    }
+    // tally() {
+    //     this.lackey.tally();
+    //     this.hut.tally();
+    // }
 
 }
 
@@ -149,6 +175,11 @@ class PopulationButton extends ButtonWidget2 {
         this.label.set({text});
     }
 
+    update(time,delta) {
+        super.update(time,delta);
+        this.tally();
+    }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -171,7 +202,7 @@ class PopulationWidget extends VerticalWidget2 {
         const pop = this.account.domain.get(this.key);
         this.price.set({price: pop.price});
         this.button.tally();
-        this.price.build();
+        // this.price.build();
     }
 
 }
@@ -209,6 +240,11 @@ class ResourceWidget extends VerticalWidget2 {
         this.amount.set({text: count});
     }
 
+    update(time,delta) {
+        super.update(time,delta);
+        this.tally();
+    }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -220,16 +256,19 @@ class TechPanel extends VerticalWidget2 {
     get account() {return this._account}
 
     build() {
+        console.log("Tech panel build");
         this.set({margin: 5});
         this.destroyChildren();
+        this.upgrades = [];
         new TextWidget2({parent: this, height: 50, color: [1,1,1], testColor: [0,0,0], text: "Technology"});
         const account = this.account;
         account.upgrades.forEach(key => {
-            new TechWidget({account, key, parent: this, height: 90});
+            this.upgrades.push(new TechWidget({account, key, parent: this, height: 90}));
         });
     }
 
     tally() {
+        this.upgrades.forEach(w => w.tally());
     }
 
 }
@@ -245,16 +284,20 @@ class TechWidget extends VerticalWidget2 {
 
     build() {
         const account = this.account;
+        const price = account.techPrice(this.key);
+        const hint = account.techHint(this.key);
         this.button = new ButtonWidget2({parent: this, height: 50, point: 12, color: [1,1,1], textColor: [0,0,0]});
         this.button.label.destroy();
         this.button.label = new VerticalWidget2({parent: this.button.frame, autoSize: [1,1], border: [5, 5, 5, 5],});
+        this.button.onClick = () => this.publish(account.id, "buyTech", this.key);
+
         this.title = new TextWidget2({ parent: this.button.label, style: "bold", color: [1,1,1], point: 16, text:  this.key });
-        this.effect = new TextWidget2({parent: this.button.label, height: 20, point: 10, color: [1,1,1], textColor: [0,0,0], text:"Double food production" });
-        this.price = new PriceWidget({parent: this, account, height:20, price: {wood: new BigNum(100), stone: new BigNum(1)}});
+        this.hint = new TextWidget2({parent: this.button.label, height: 20, point: 10, color: [1,1,1], textColor: [0,0,0], text: hint });
+        this.price = new PriceWidget({parent: this, account, height:20, price});
     }
 
     tally() {
-
+        this.price.build();
     }
 
 }

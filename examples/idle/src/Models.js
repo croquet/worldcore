@@ -43,10 +43,12 @@ class MyAccount extends Account {
         this.upgrades = new Set();
         this.upgrades.add("Baskets");
         this.upgrades.add("Axes");
+        this.upgrades.add("Mining");
 
 
         this.listen("clickResource", this.onClick);
         this.listen("buyPopulation", this.onBuyPopulation);
+        this.listen("buyTech", this.onBuyTech);
         // this.subscribe("input", "tDown", this.tech);
 
         this.future(100).tick();
@@ -111,18 +113,30 @@ class MyAccount extends Account {
             default: return {};
             case "Baskets": return {wood: new  BigNum(100)};
             case "Axes": return {wood: new  BigNum(10), stone: new  BigNum(10)};
+            case "Mining": return {stone: new  BigNum(100)};
         }
     }
 
     techHint(tech) {
         switch (tech) {
             default: return "None";
-            case "Baskets": return {wood: "Double food production"};
-            case "Axes": return {wood: "Double food production"};
+            case "Baskets": return "2x food production";
+            case "Axes": return "2x wood production";
+            case "Mining": return "Unlock Iron";
         }
     }
 
-    buyTech(tech) {
+    onBuyTech(tech) {
+        console.log("buy " + tech);
+        if (!this.upgrades.has(tech)) return;
+
+        const price = this.techPrice(tech);
+            if (!this.canAfford(price)) {
+                console.log("Too much!"); return;
+            }
+
+        this.spend(price);
+
         switch (tech) {
             default: break;
             case "Baskets":
@@ -131,8 +145,14 @@ class MyAccount extends Account {
             case "Axes":
                 this.resources.get("wood").multiplier *= 2;
                 break;
+            case "Mining":
+                console.log("Iron unlocked");
+                break;
         }
+        this.calculateProduction();
+        this.upgrades.delete(tech);
         this.say("changed");
+        this.say("techChanged");
     }
 
 
@@ -158,7 +178,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!aaa");
+        console.log("Start root model!!!!");
     }
 
 }

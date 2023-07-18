@@ -73,7 +73,7 @@ export class MyModelRoot extends ModelRoot {
     init(...args) {
         super.init(...args);
         this.seedColors();
-        console.log("Start root model!");
+        console.log("Start root model!!");
         this.bots = [];
 
         this.base = BaseActor.create({gridSize: 50, gridScale: 3, noise: 5});
@@ -121,7 +121,7 @@ export class MyModelRoot extends ModelRoot {
 
         // this.base.navClear();
 
-        // this.bots.forEach(b => b.destroy());
+        this.bots.forEach(b => b.destroy());
 
         // const bot = BotActor.create({pawn: "AvatarPawn", parent: this.base, index: 2, name: "bot 0", translation:[0,0,0], tags: ["bot"]});
         // this.bots.push(bot);
@@ -135,7 +135,7 @@ export class MyModelRoot extends ModelRoot {
             TestActor.create({pawn: "BlockPawn", parent: this.base, translation, tags: ["block"]});
         }
 
-        for (let n = 0; n<1000; n++) {
+        for (let n = 0; n<500; n++) {
             const x = -ss/2 + ss * Math.random();
             const y = -ss/2 + ss * Math.random();
             const translation = [x*3,0, y*3];
