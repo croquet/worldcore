@@ -126,7 +126,8 @@ export class Pawn extends WorldcoreView {
     onParent(d) {
         if (d.o) {
             this._parent = null;
-            GetPawn(d.o.id).removeChild(this);
+            const p = GetPawn(d.o.id);
+            if (p) p.removeChild(this);
         }
         if (this.parent) this.parent.addChild(this);
     }

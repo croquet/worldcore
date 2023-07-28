@@ -3,7 +3,8 @@
 import { App, StartWorldcore} from "@croquet/worldcore";
 
 import {  MyViewRoot } from "./src/Views";
-import { MyModelRoot } from "./src/Models";
+import { MyModelRoot, ggg } from "./src/Models";
+import { level, setLevel }  from "./src/Level";
 
 // webpack will replace process.env.NODE_ENV with the actual value
 const apiKey = process.env.NODE_ENV === 'production'

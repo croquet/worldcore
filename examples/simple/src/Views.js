@@ -152,6 +152,8 @@ function randomString() { return Math.floor(Math.random() * 36**10).toString(36)
 //------------------------------------------------------------------------------------------
 //-- MyViewRoot ----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+// console.log(fs);
+
 
 export class MyViewRoot extends ViewRoot {
 
@@ -168,24 +170,10 @@ export class MyViewRoot extends ViewRoot {
 
     test() {
         console.log("test");
-
-        const id = "bbb";
-        this.publish("account", "login", id);
-
-
-        // const key = randomString();
-        // const xxx = {key, count: 666};
-        // console.log(xxx);
-        // const sss = JSON.stringify(xxx);
-        // console.log(sss);
-        // localStorage.setItem("sticks.data", sss);
     }
 
     test2() {
         console.log("test2");
-        const sss = localStorage.getItem("sticks.data");
-        const xxx = JSON.parse(sss);
-        console.log(xxx);
     }
 
     buildLights() {

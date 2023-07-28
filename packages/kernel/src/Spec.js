@@ -6,7 +6,7 @@ import { TwoWayMap } from "./Utilities";
 Constants.WC_SPEC = new TwoWayMap();
 
 //------------------------------------------------------------------------------------------
-//-- AM_Save -------------------------------------------------------------------------------
+//-- AM_Spec -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 export const AM_Spec = superclass => class extends superclass {
@@ -32,27 +32,44 @@ export const AM_Spec = superclass => class extends superclass {
         return spec;
     }
 
-    createFromSpec(spec) {
-        let out = this;
-        const actor = spec.actor;
-        const children = spec.children || [];
-        const options = {...spec};
-        options.parent = this;
-        delete options.actor;
-        delete options.children;
+    // createFromSpec(spec) {
+    //     let out = this;
+    //     const actor = spec.actor;
+    //     const children = spec.children || [];
+    //     const options = {...spec};
+    //     options.parent = this;
+    //     delete options.actor;
+    //     delete options.children;
 
-        const a = Constants.WC_SPEC.get(actor);
-        if (a) {
-            out = a.create(options);
-        } else {
-            if (actor) console.error(actor + " not found during createFromSpec!");
-        }
+    //     const a = Constants.WC_SPEC.get(actor);
+    //     if (a) {
+    //         out = a.create(options);
+    //     } else {
+    //         if (actor) console.error(actor + " not found during createFromSpec!");
+    //     }
 
-        for (const child of children) out.createFromSpec(child);
+    //     for (const child of children) out.createFromSpec(child);
 
-        return out;
-    }
+    //     return out;
+    // }
 
 };
 RegisterMixin(AM_Spec);
+
+export function CreateFromSpec(parent, spec) {
+    const actor = spec.actor;
+    const children = spec.children || [];
+    const options = {...spec};
+    options.parent = parent;
+    delete options.actor;
+    delete options.children;
+
+    const a = Constants.WC_SPEC.get(actor);
+
+    if (actor && !a) console.error(actor + " not found during createFromSpec!");
+
+    let out = parent;
+    if (a) out = a.create(options);
+    for (const child of children) CreateFromSpec(out, child);
+}
 

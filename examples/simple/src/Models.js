@@ -1,4 +1,5 @@
-import { AM_Behavioral, ModelRoot,  Actor, mix, AM_Spatial, Constants, AM_Spec, AccountManager } from "@croquet/worldcore";
+import { AM_Behavioral, ModelRoot,  Actor, mix, AM_Spatial, Constants, AM_Spec, AccountManager, LevelManager } from "@croquet/worldcore";
+// import { level } from "./Level";
 
 //------------------------------------------------------------------------------------------
 // BaseActor -------------------------------------------------------------------------------
@@ -8,16 +9,50 @@ class BaseActor extends mix(Actor).with(AM_Spatial, AM_Spec) {}
 BaseActor.register('BaseActor');
 
 //------------------------------------------------------------------------------------------
-// TestActor -------------------------------------------------------------------------------
+// SunActor -------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-class TestActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Spec) {
+class SunActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Spec) {
+
+    init(options) {
+        super.init(options);
+        this.behavior.start({name: "SpinBehavior", axis:[0,1,0], tickRate: 1000, speed: 2});
+        this.subscribe("input", "pointerDown", this.click);
+    }
+
+    get manifest() {
+        return ["name", "translation", "rotation"];
+    }
+
+    click() {
+        console.log("click");
+
+        if (this.pawn === "TestPawn") {
+            this.set({pawn: "BallPawn"});
+        } else {
+            this.set({pawn: "TestPawn"});
+        }
+    }
+}
+SunActor.register('SunActor');
+
+//------------------------------------------------------------------------------------------
+// PlanetActor -------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class PlanetActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Spec) {
+
+    init(options) {
+        super.init(options);
+        this.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5});
+    }
 
     get manifest() {
         return ["name", "translation", "rotation"];
     }
 }
-TestActor.register('TestActor');
+PlanetActor.register('PlanetActor');
+
 
 //------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
@@ -25,22 +60,25 @@ TestActor.register('TestActor');
 
 export class MyModelRoot extends ModelRoot {
 
-    static modelServices() { return [AccountManager] }
+    static modelServices() { return [LevelManager, AccountManager] }
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
+        console.log("Start root model!!!zx");
 
-        this.base = BaseActor.create({pawn: "GroundPawn"});
-        this.sun = TestActor.create({parent: this.base, name: "sun", pawn: "TestPawn", translation:[0,2,0]});
-        this.planet = TestActor.create({name: "planet", pawn: "PlanetPawn", parent: this.sun, translation:[5,0,0]});
+        const level = this.service("LevelManager").current;
+        console.log(level);
 
-        this.sun.behavior.start({name: "SpinBehavior", axis:[0,1,0], tickRate: 1000, speed: 2});
-        this.planet.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5});
+        this.base = BaseActor.create({parent: level, pawn: "GroundPawn"});
+        this.sun = SunActor.create({parent: this.base, name: "sun", pawn: "TestPawn", translation:[0,2,0]});
+        this.planet = PlanetActor.create({name: "planet", pawn: "PlanetPawn", parent: this.sun, translation:[5,0,0]});
 
-        this.subscribe("input", "pointerDown", this.click);
-        // this.subscribe("input", "xDown", this.test);
-        // this.subscribe("input", "zDown", this.test2);
+        // this.sun.behavior.start({name: "SpinBehavior", axis:[0,1,0], tickRate: 1000, speed: 2});
+        // this.planet.behavior.start({name: "SpinBehavior", axis:[0,0,1], speed: -0.5});
+
+        // this.subscribe("input", "pointerDown", this.click);
+        this.subscribe("input", "xDown", this.test);
+        this.subscribe("input", "zDown", this.test2);
     }
 
     click() {
@@ -55,15 +93,15 @@ export class MyModelRoot extends ModelRoot {
 
     test() {
         console.log("test");
-        this.spec = this.sun.toSpec();
-        console.log(this.spec );
+        const level = this.service("LevelManager").current;
+        this.save  = level.save();
+        console.log(this.save);
     }
 
     test2() {
         console.log("test2");
-        this.sun.destroy();
-        this.sun = this.base.createFromSpec(this.spec);
-        this.sun.behavior.start({name: "SpinBehavior", axis:[0,1,0], speed: 2});
+        const level = this.service("LevelManager").current;
+        level.load(this.save);
     }
 
 
