@@ -64,7 +64,7 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!!!zx");
+        console.log("Start root model!");
 
         const level = this.service("LevelManager").current;
         console.log(level);
@@ -79,6 +79,7 @@ export class MyModelRoot extends ModelRoot {
         // this.subscribe("input", "pointerDown", this.click);
         this.subscribe("input", "xDown", this.test);
         this.subscribe("input", "zDown", this.test2);
+        this.subscribe("input", "cDown", this.test3);
     }
 
     click() {
@@ -100,8 +101,14 @@ export class MyModelRoot extends ModelRoot {
 
     test2() {
         console.log("test2");
-        const level = this.service("LevelManager").current;
-        level.load(this.save);
+        const lm = this.service("LevelManager");
+        lm.load("bing");
+    }
+
+    test3() {
+        console.log("test2");
+        const lm = this.service("LevelManager");
+        lm.load("bong");
     }
 
 
