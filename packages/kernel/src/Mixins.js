@@ -101,7 +101,7 @@ class MixinFactory  {
 
     with(...mixins) {
         if (IsModel(this.superclass))Constants.WC_MIXIN_USAGE.push(mixins);
-        return mixins.reduce((c, mixin) => mixin(c), this.superclass);
+        return mixins.reduce((c, mixin) => { if (mixin) return mixin(c); return c }, this.superclass);
     }
 }
 

@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - m4_getRotation() correctly ignores scale
 - Only actor mixins trigger a model change
 - Reparenting bug when child pawns didn't have parents
+- Null mixins handled
 
 ### Removed
 - PlayerManager (replaced by UserManager)
