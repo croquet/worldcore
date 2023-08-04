@@ -1,6 +1,7 @@
 // Microverse Base
 
-import { ModelRoot, Actor, mix, AM_Spatial, sphericalRandom, v3_scale, v3_add, v3_sub, v3_normalize, RapierManager, RAPIER, AM_RapierWorld, AM_RapierRigidBody } from "@croquet/worldcore";
+import { ModelRoot, Actor, mix, AM_Spatial, sphericalRandom, v3_scale, v3_add, v3_sub, v3_normalize} from "@croquet/worldcore";
+import { RAPIER, RapierManager, AM_RapierWorld, AM_RapierRigidBody} from "@croquet/worldcore-rapier";
 
 import { SprayPawn, FountainPawn } from "./Views";
 
@@ -47,9 +48,9 @@ class SprayActor extends mix(Actor).with(AM_Spatial, AM_RapierRigidBody) {
                 cd.setDensity(1)
             break;
         }
-        
+
         this.createCollider(cd);
-  
+
     }
 
 }
@@ -58,6 +59,8 @@ SprayActor.register('SprayActor');
 //------------------------------------------------------------------------------------------
 //-- FountainActor ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
+
+// class TestActor extends mix(Actor).with(AM_Spatial) {}
 
 class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierRigidBody) {
     get pawn() {return FountainPawn}
@@ -145,8 +148,10 @@ export class MyModelRoot extends ModelRoot {
 
     init(...args) {
         super.init(...args);
-        console.log("Start root model!");
+        console.log("Start root model!!");
         this.seedColors();
+
+        console.log(RapierManager);
 
         this.fountain = FountainActor.create({gravity: [0,-9.8,0], timestep:15, translation: [0,0,0], max: 200, rigidBodyType: "static"});
     }
@@ -156,23 +161,23 @@ export class MyModelRoot extends ModelRoot {
             rgb(242, 215, 213),        // Red
             rgb(217, 136, 128),        // Red
             rgb(192, 57, 43),        // Red
-        
+
             rgb(240, 178, 122),        // Orange
             rgb(230, 126, 34),        // Orange
             rgb(175, 96, 26),        // Orange
-        
+
             rgb(247, 220, 111),        // Yellow
             rgb(241, 196, 15),        // Yellow
             rgb(183, 149, 11),        // Yellow
-        
+
             rgb(125, 206, 160),        // Green
             rgb(39, 174, 96),        // Green
             rgb(30, 132, 73),        // Green
-        
+
             rgb(133, 193, 233),         // Blue
             rgb(52, 152, 219),        // Blue
             rgb(40, 116, 166),        // Blue
-        
+
             rgb(195, 155, 211),        // Purple
             rgb(155, 89, 182),         // Purple
             rgb(118, 68, 138),        // Purple

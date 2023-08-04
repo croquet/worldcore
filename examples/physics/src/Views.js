@@ -34,7 +34,7 @@ export class FountainPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         super(...args);
 
         const group = new THREE.Group();
-       
+
         this.nozzleGeometry = new THREE.CylinderGeometry( 1, 0.5, 5, 10 );
         this.nozzlematerial = new THREE.MeshStandardMaterial( {color: new THREE.Color(1,0,1)} );
         this.nozzlematerial.side = THREE.DoubleSide;
@@ -139,7 +139,8 @@ let gun = [0,1,50];
 export class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager, ThreeInstanceManager, WidgetManager2, GodView];
+        return [InputManager, ThreeRenderManager, ThreeInstanceManager, GodView ];
+        // return [InputManager, ThreeRenderManager, ThreeInstanceManager, WidgetManager2, GodView];
     }
 
     constructor(model) {
@@ -148,9 +149,9 @@ export class MyViewRoot extends ViewRoot {
     }
 
     onStart() {
-        this.buildHUD();
+        // this.buildHUD();
         this.buildLights();
-        this.buildInstances();  
+        this.buildInstances();
     }
 
     buildLights() {
@@ -267,7 +268,7 @@ export class MyViewRoot extends ViewRoot {
         fov = 60;
         pitch = toRad(-20);
         yaw = toRad(-30);
-        this.service("GodView").updateCamera();  
+        this.service("GodView").updateCamera();
     }
 
     doShoot() {
