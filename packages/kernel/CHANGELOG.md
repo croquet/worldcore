@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Spatial can have a non-spatial parent
 - NavGrid & PathToBehavior
 - AM_Spec
+- AccountManager
+- LevelManager
 - user-level say() does an additional `publish("__wc", "say")`, internal `_say()` does not
 
 ### Changed

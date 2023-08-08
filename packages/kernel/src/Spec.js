@@ -32,27 +32,6 @@ export const AM_Spec = superclass => class extends superclass {
         return spec;
     }
 
-    // createFromSpec(spec) {
-    //     let out = this;
-    //     const actor = spec.actor;
-    //     const children = spec.children || [];
-    //     const options = {...spec};
-    //     options.parent = this;
-    //     delete options.actor;
-    //     delete options.children;
-
-    //     const a = Constants.WC_SPEC.get(actor);
-    //     if (a) {
-    //         out = a.create(options);
-    //     } else {
-    //         if (actor) console.error(actor + " not found during createFromSpec!");
-    //     }
-
-    //     for (const child of children) out.createFromSpec(child);
-
-    //     return out;
-    // }
-
 };
 RegisterMixin(AM_Spec);
 

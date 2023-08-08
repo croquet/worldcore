@@ -9,6 +9,7 @@ import { ModelService} from "./Root";
 
 export class User extends Actor {
     get userId() { return this._userId }
+    get driver() { return this._userId }
     get userNumber() { return this._userNumber }
 }
 User.register('User');
@@ -116,8 +117,6 @@ export const PM_Avatar = superclass => class extends superclass {
 
 export class Account extends Actor {
     get accountId() { return this._accountId }
-    // get online() { return this._online }
-    // get owner() { return this._owner }
 }
 Account.register('Account');
 
