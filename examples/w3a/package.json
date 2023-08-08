@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-w3",
-  "version": "2.0.0-alpha.4",
+  "version": "2.0.0-alpha.5",
   "description": "Widw Wide World",
   "private": true,
   "scripts": {
@@ -10,7 +10,7 @@
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@croquet/worldcore": "^2.0.0-alpha.4"
+    "@croquet/worldcore": "^2.0.0-alpha.5"
   },
   "devDependencies": {
     "file-loader": "^6.2.0",
