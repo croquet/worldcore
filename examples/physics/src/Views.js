@@ -24,6 +24,7 @@ export class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
         this.useInstance(this.actor.shape + this.actor.index);
     }
 }
+SprayPawn.register("SprayPawn");
 
 //------------------------------------------------------------------------------------------
 //-- FountainPawn -------------------------------------------------------------------------
@@ -58,6 +59,7 @@ export class FountainPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
         this.setRenderObject(group);
     }
 }
+FountainPawn.register("FountainPawn");
 
 //------------------------------------------------------------------------------------------
 //-- GodView -------------------------------------------------------------------------------
@@ -80,13 +82,12 @@ class GodView extends ViewService {
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
     }
 
-
     updateCamera() {
         if (this.paused) return;
         const rm = this.service("ThreeRenderManager");
 
-        const pitchMatrix = m4_rotation([1,0,0], pitch)
-        const yawMatrix = m4_rotation([0,1,0], yaw)
+        const pitchMatrix = m4_rotation([1,0,0], pitch);
+        const yawMatrix = m4_rotation([0,1,0], yaw);
 
         let cameraMatrix = m4_translation([0,0,50]);
         cameraMatrix = m4_multiply(cameraMatrix,pitchMatrix);
@@ -122,7 +123,7 @@ class GodView extends ViewService {
         if (this.paused) return;
         if (!this.dragging) return;
         yaw += -0.01 * e.xy[0];
-        yaw = yaw % TAU;
+        yaw %= TAU;
         pitch += -0.01 * e.xy[1];
         pitch = Math.min(pitch, toRad(-15));
         pitch = Math.max(pitch, toRad(-90));

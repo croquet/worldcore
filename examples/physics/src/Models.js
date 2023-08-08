@@ -3,7 +3,7 @@
 import { ModelRoot, Actor, mix, AM_Spatial, sphericalRandom, v3_scale, v3_add, v3_sub, v3_normalize} from "@croquet/worldcore";
 import { RAPIER, RapierManager, AM_RapierWorld, AM_RapierRigidBody} from "@croquet/worldcore-rapier";
 
-import { SprayPawn, FountainPawn } from "./Views";
+// import { SprayPawn, FountainPawn } from "./Views";
 
 function rgb(r, g, b) {
     return [r/255, g/255, b/255];
@@ -14,7 +14,7 @@ function rgb(r, g, b) {
 //------------------------------------------------------------------------------------------
 
 class SprayActor extends mix(Actor).with(AM_Spatial, AM_RapierRigidBody) {
-    get pawn() {return SprayPawn}
+    get pawn() {return "SprayPawn"}
 
     get shape() {return this._shape || "cube"}
     get index() { return this._index || 0 }
@@ -29,23 +29,23 @@ class SprayActor extends mix(Actor).with(AM_Spatial, AM_RapierRigidBody) {
 
     buildCollider() {
         let cd;
-        switch(this.shape) {
+        switch (this.shape) {
             case "cone":
                 cd = RAPIER.ColliderDesc.cone(0.5, 0.5);
-                cd.setDensity(4)
+                cd.setDensity(4);
                 break;
             case "ball":
                 cd = RAPIER.ColliderDesc.ball(0.5);
-                cd.setDensity(2)
+                cd.setDensity(2);
                 break;
             case "cylinder":
                 cd = RAPIER.ColliderDesc.cylinder(0.5, 0.5);
-                cd.setDensity(1.5)
+                cd.setDensity(1.5);
                 break;
-            case"cube":
+            case "cube":
             default:
                 cd = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
-                cd.setDensity(1)
+                cd.setDensity(1);
             break;
         }
 
@@ -57,13 +57,87 @@ class SprayActor extends mix(Actor).with(AM_Spatial, AM_RapierRigidBody) {
 SprayActor.register('SprayActor');
 
 //------------------------------------------------------------------------------------------
+//-- BlockActor ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+class BlockActor extends mix(Actor).with(AM_Spatial, AM_RapierRigidBody) {
+
+    get pawn() {return "SprayPawn"}
+
+    get shape() {return this._shape || "cube"}
+    get index() { return this._index || 0 }
+
+    init(options) {
+        super.init(options);
+
+        this.buildCollider();
+
+        this.subscribe("input", "zDown", this.goLeft);
+        this.subscribe("input", "xDown", this.goRight);
+    }
+
+    buildCollider() {
+        let cd;
+        switch (this.shape) {
+            case "cone":
+                cd = RAPIER.ColliderDesc.cone(0.5, 0.5);
+                cd.setDensity(4);
+                break;
+            case "ball":
+                cd = RAPIER.ColliderDesc.ball(0.5);
+                cd.setDensity(2);
+                break;
+            case "cylinder":
+                cd = RAPIER.ColliderDesc.cylinder(0.5, 0.5);
+                cd.setDensity(1.5);
+                break;
+            case "cube":
+            default:
+                cd = RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5);
+                cd.setDensity(1);
+            break;
+        }
+
+        this.createCollider(cd);
+
+    }
+
+    // init(options) {
+    //     super.init(options);
+
+    //     console.log("new block");
+
+    //     this.subscribe("input", "zDown", this.goLeft);
+    //     this.subscribe("input", "xDown", this.goRight);
+    // }
+
+    goLeft() {
+        console.log("left");
+        const translation = [...this.translation];
+        translation[0] -= 0.1;
+        this.set({translation});
+    }
+
+    goRight() {
+        console.log("right");
+        const translation = [...this.translation];
+        translation[0] += 0.1;
+        this.set({translation});
+    }
+
+}
+BlockActor.register('BlockActor');
+
+
+
+//------------------------------------------------------------------------------------------
 //-- FountainActor ------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
 // class TestActor extends mix(Actor).with(AM_Spatial) {}
 
 class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_RapierRigidBody) {
-    get pawn() {return FountainPawn}
+    get pawn() {return "FountainPawn"}
 
     init(options) {
         super.init(options);
@@ -90,12 +164,12 @@ class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_Rapie
         cd.translation = new RAPIER.Vector3(0,0,-24);
         this.createCollider(cd);
 
-        this.subscribe("ui", "shoot", this.doShoot)
+        this.subscribe("ui", "shoot", this.doShoot);
 
         this.future(1000).spray();
     }
 
-    get max() { return this._max || 50};
+    get max() { return this._max || 50}
 
     spray() {
         this.spawn();
@@ -103,7 +177,7 @@ class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_Rapie
     }
 
     spawn() {
-        const type = this.random()
+        const type = this.random();
         let shape = "cube";
 
         if (type > 0.4) shape = "cylinder";
@@ -121,10 +195,10 @@ class FountainActor extends mix(Actor).with(AM_Spatial, AM_RapierWorld, AM_Rapie
     }
 
     doShoot(gun) {
-        const aim = v3_normalize(v3_sub([0,15,0], gun))
+        const aim = v3_normalize(v3_sub([0,15,0], gun));
         const shape = "cube";
         const index = Math.floor(this.random()*20);
-        const translation = v3_add(gun, [0,0,0])
+        const translation = v3_add(gun, [0,0,0]);
         const bullet = SprayActor.create({parent: this, shape, index, translation, rigidBodyType: "dynamic"});
         const force = v3_scale(aim, 40);
         const spin = v3_scale(sphericalRandom(),Math.random() * 0.5);
@@ -151,9 +225,9 @@ export class MyModelRoot extends ModelRoot {
         console.log("Start root model!!");
         this.seedColors();
 
-        console.log(RapierManager);
+        this.fountain = FountainActor.create({gravity: [0,-9.8,0], timestep:50, translation: [0,0,0], max: 200, rigidBodyType: "static"});
 
-        this.fountain = FountainActor.create({gravity: [0,-9.8,0], timestep:15, translation: [0,0,0], max: 200, rigidBodyType: "static"});
+        this.block = BlockActor.create({parent: this.fountain, translation: [0,1,5], rigidBodyType: "kinematic", index: 2});
     }
 
     seedColors() {

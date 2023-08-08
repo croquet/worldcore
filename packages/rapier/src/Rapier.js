@@ -73,8 +73,8 @@ export const AM_RapierWorld = superclass => class extends superclass {
         this.world.free();
     }
 
-    get timeStep() {return this._timeStep || 50;}
-    get gravity() {return this._gravity || [0,-9.8,0];}
+    get timeStep() {return this._timeStep || 50}
+    get gravity() {return this._gravity || [0,-9.8,0]}
 
     createRigidBody(actor, rbd) {
         const rb = this.world.createRigidBody(rbd);
@@ -131,9 +131,10 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
 
         let rbd;
         switch (this.rigidBodyType) {
+            default:
+            case "dynamic": rbd = RAPIER.RigidBodyDesc.newDynamic(); break;
             case "static": rbd = RAPIER.RigidBodyDesc.newStatic(); break;
-            case "dynamic":
-            default: rbd = RAPIER.RigidBodyDesc.newDynamic();
+            case "kinematic": rbd = RAPIER.RigidBodyDesc.newKinematicPositionBased(); break;
         }
         rbd.setCcdEnabled(this.ccdEnabled);
         rbd.translation = new RAPIER.Vector3(...this.translation);
@@ -147,15 +148,25 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
         this.worldActor.destroyRigidBody(this.rigidBodyHandle);
     }
 
-    get rigidBodyType() { return this._rigidBodyType || "dynamic";}
-    get ccdEnabled() { return this._ccdEnabled === undefined ? true : this._ccdEnabled; }
-    get velocity() { return this._velocity || [0,0,0];}
-    get acceleration() { return this._acceleration || [0,0,0];}
-    get hasAccelerometer() { return this._hasAccelerometer;}
+    get rigidBodyType() { return this._rigidBodyType || "dynamic"}
+    get ccdEnabled() { return this._ccdEnabled === undefined ? true : this._ccdEnabled }
+    get velocity() { return this._velocity || [0,0,0]}
+    get acceleration() { return this._acceleration || [0,0,0]}
+    get hasAccelerometer() { return this._hasAccelerometer}
 
     get rigidBody() {
+        if (!this.worldActor) return null;
         if (!this.$rigidBody) this.$rigidBody = this.worldActor.getRigidBody(this.rigidBodyHandle);
         return this.$rigidBody;
+    }
+
+    translationSet() {
+        if (this.rigidBodyType !== "kinematic") return;
+        if (this.rigidBody) this.rigidBody.setNextKinematicTranslation(new RAPIER.Vector3(...this.translation));
+    }
+    rotationSet() {
+        if (this.rigidBodyType !== "kinematic") return;
+        if (this.rigidBody) this.rigidBody.setNextKinematicRotation(new RAPIER.Vector3(...this.rotation));
     }
 
     getWorldActor() {
