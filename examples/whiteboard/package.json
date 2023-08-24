@@ -1,6 +1,6 @@
 {
   "name": "@croquet/whiteboard",
-  "version": "2.0.0-alpha.5",
+  "version": "2.0.0-alpha.7",
   "description": "White Board",
   "private": true,
   "scripts": {
@@ -12,7 +12,7 @@
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@croquet/worldcore": "^2.0.0-alpha.5"
+    "@croquet/worldcore": "^2.0.0-alpha.7"
   },
   "devDependencies": {
     "file-loader": "^6.0.0",

@@ -1,6 +1,6 @@
 {
   "name": "@croquet/w3",
-  "version": "2.0.0-alpha.5",
+  "version": "2.0.0-alpha.7",
   "description": "Wide Wide World",
   "private": true,
   "scripts": {
@@ -12,9 +12,9 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@croquet/worldcore-behavior": "^1.4.0",
-    "@croquet/worldcore-kernel": "^2.0.0-alpha.5",
+    "@croquet/worldcore-kernel": "^2.0.0-alpha.7",
     "@croquet/worldcore-webgl": "^1.4.0",
-    "@croquet/worldcore-widget": "^2.0.0-alpha.5"
+    "@croquet/worldcore-widget": "^2.0.0-alpha.7"
   },
   "devDependencies": {
     "file-loader": "^6.0.0",
