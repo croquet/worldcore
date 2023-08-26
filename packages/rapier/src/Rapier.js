@@ -50,12 +50,12 @@ export class RapierManager extends ModelService {
                     throw Error("Failed to take Rapier snapshot");
                 },
                 read: ([snapshot, snapshotUserData]) => {
-                    // Unfortunately, the contents of snapshotUserData is only available
-                    // after this read function returns (that's a Croquet bug). So instead of
-                    // restoring the userData to the RigidBodies here, we save it in
-                    // world.snapshotUserData and override the getRigidBody() function below
                     const world = RAPIER.World.restoreSnapshot(snapshot);
                     if (world) {
+                        // Unfortunately, the contents of snapshotUserData is only available
+                        // after this read function returns (that's a Croquet bug). So instead of
+                        // restoring the userData to the RigidBodies here, we save it in
+                        // world.snapshotUserData and override getRigidBody()
                         const superGetRigidBody = world.getRigidBody.bind(world);
                         world.snapshotUserData = snapshotUserData;
                         world.getRigidBody = function(handle) {
@@ -63,7 +63,17 @@ export class RapierManager extends ModelService {
                             const userData = this.snapshotUserData[handle];
                             if (userData !== undefined) rb.userData = userData;
                             return rb;
-                        }
+                        };
+                        // We also override the step function to restore all userData
+                        // and remove the overrides before the next frame.
+                        // This should catch virtually all cases where userData is used
+                        world.step = function(queue) {
+                            this.forEachRigidBody(rb => this.getRigidBody(rb.handle));
+                            delete this.snapshotUserData;
+                            delete this.getRigidBody;
+                            delete this.step;
+                            this.step(queue); // call the original step function
+                        };
                         return world;
                     }
 
