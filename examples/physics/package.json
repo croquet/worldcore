@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-physics",
-  "version": "2.0.0-alpha.8",
+  "version": "2.0.0-alpha.9",
   "description": "Worldcore Physics Demo",
   "private": true,
   "scripts": {
@@ -10,8 +10,8 @@
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "@croquet/worldcore": "^2.0.0-alpha.8",
-    "@croquet/worldcore-rapier": "^2.0.0-alpha.8"
+    "@croquet/worldcore": "^2.0.0-alpha.9",
+    "@croquet/worldcore-rapier": "^2.0.0-alpha.9"
   },
   "devDependencies": {
     "file-loader": "^6.2.0",
