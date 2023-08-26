@@ -16,32 +16,66 @@ export class RapierManager extends ModelService {
         RAPIER = await import("@dimforge/rapier3d");
     }
 
+    static okayToIgnore() {
+        return [ "$rigidBody" ]; // we don't snapshot the rigidBody, only its handle and userData
+    }
+
     static types() {
         if (!RAPIER) return {}; // RapierManager isn't being used in this app
         return {
             "RAPIER.World": {
                 cls: RAPIER.World,
                 write: world => {
-                    const result = world.takeSnapshot();
-                    if (result) return result;
+                    const snapshot = world.takeSnapshot();
+                    if (snapshot) {
+                        // Preserving userData is tricky because RigidBodies are not
+                        // snapshotted, but created lazily in the rigidBody getter.
+                        // The getter uses getRigidBody() which we override below
+                        // to restore userData from the snapshot.
+                        // We also need to preserve userData for any RigidBodies that
+                        // did not call getRigidBody() before the next snapshot is taken.
+                        // In that case, we use the userData from the previous snapshot
+                        // (which is still stored in world.snapshotUserData).
+                        const oldSnapshotUserData = world.snapshotUserData || {};
+                        const snapshotUserData = {};
+                        world.forEachRigidBody(rb => {
+                            const userData = "userData" in rb ? rb.userData : oldSnapshotUserData[rb.handle];
+                            if (userData !== undefined) snapshotUserData[rb.handle] = userData;
+                        });
+                        return [snapshot, snapshotUserData];
+                    }
 
                     // if an empty Rapier snapshot is returned, crash the session rather than write a Croquet snapshot that will be unloadable
-                    console.error("empty RAPIER.World snapshot: ", JSON.stringify(result));
+                    console.error("empty RAPIER.World snapshot: ", JSON.stringify(snapshot));
                     throw Error("Failed to take Rapier snapshot");
                 },
-                read: snapshot => {
-                    const result = RAPIER.World.restoreSnapshot(snapshot);
-                    if (result) return result;
+                read: ([snapshot, snapshotUserData]) => {
+                    // Unfortunately, the contents of snapshotUserData is only available
+                    // after this read function returns (that's a Croquet bug). So instead of
+                    // restoring the userData to the RigidBodies here, we save it in
+                    // world.snapshotUserData and override the getRigidBody() function below
+                    const world = RAPIER.World.restoreSnapshot(snapshot);
+                    if (world) {
+                        const superGetRigidBody = world.getRigidBody.bind(world);
+                        world.snapshotUserData = snapshotUserData;
+                        world.getRigidBody = function(handle) {
+                            const rb = superGetRigidBody(handle);
+                            const userData = this.snapshotUserData[handle];
+                            if (userData !== undefined) rb.userData = userData;
+                            return rb;
+                        }
+                        return world;
+                    }
 
                     // if our decode fails, crash the session to ensure that we don't later write a Croquet snapshot that has no RAPIER.World
                     console.error(`Rapier ${RapierVersion()} failed to decode snapshot.`, snapshot);
                     throw Error("Failed to decode Rapier snapshot");
-                }
+                },
             },
             "RAPIER.EventQueue": {
                 cls: RAPIER.EventQueue,
-                write: q => {},
-                read:  q => new RAPIER.EventQueue(true)
+                write: () => 0, // we assume the queue always gets drained fully
+                read:  () => new RAPIER.EventQueue(true),
             },
         };
     }
