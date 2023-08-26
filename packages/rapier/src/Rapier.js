@@ -95,7 +95,7 @@ export const AM_RapierWorld = superclass => class extends superclass {
     tick() {
         if (this.doomed) return;
         this.world.step(this.queue);
-        this.world.forEachActiveRigidBody(rb => {
+        this.world.forEachActiveRigidBody(rb => { try {
             const actor = this.rigidBodyActors.get(rb.handle);
             if (!actor) return; // ael: not sure this is possible, but just in case
 
@@ -112,7 +112,7 @@ export const AM_RapierWorld = superclass => class extends superclass {
             }
 
             actor.set({translation, rotation});
-        });
+        } catch (e) { console.error(e) } }); // https://github.com/dimforge/rapier/issues/516
         if (!this.doomed) this.future(this.timeStep).tick();
     }
 
