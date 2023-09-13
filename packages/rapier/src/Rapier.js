@@ -157,8 +157,10 @@ export const AM_RapierWorld = superclass => class extends superclass {
 
             actor.set({translation, rotation});
         } catch (e) { console.error(e) } }); // https://github.com/dimforge/rapier/issues/516
+        this.publish("rapier", "worldStep"); // bbu: for Unity bridge
         if (!this.doomed) this.future(this.timeStep).tick();
     }
+
 
 };
 RegisterMixin(AM_RapierWorld);
