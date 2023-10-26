@@ -212,7 +212,7 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
     }
     rotationSet() {
         if (this.rigidBodyType !== "kinematic") return;
-        if (this.rigidBody) this.rigidBody.setNextKinematicRotation(new RAPIER.Vector3(...this.rotation));
+        if (this.rigidBody) this.rigidBody.setNextKinematicRotation(new RAPIER.Quaternion(...this.rotation));
     }
 
     getWorldActor() {
