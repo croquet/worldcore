@@ -123,10 +123,10 @@ We use `lerna` with "fixed" versioning, meaning each package will have the same 
 
 ### Prereleases
 
-For prerelases we don't update the `CHANGELOG.md` files, but otherwise use the same steps as above, with prerelease ids `"alpha"` or `"beta"`:
+For prerelases we don't update the `CHANGELOG.md` files, but otherwise use the same steps as above, without updating private packages and with prerelease ids `"alpha"` or `"beta"`:
 
-    npx lerna version --no-push --preid alpha
-    npx lerna version --no-push --preid beta
+    npx lerna version --no-push --no-private --preid alpha
+    npx lerna version --no-push --no-private --preid beta
 
 and selecting one of the `pre*` options from the list.
 
