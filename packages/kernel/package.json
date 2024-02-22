@@ -28,7 +28,7 @@
     "directory": "packages/kernel"
   },
   "dependencies": {
-    "@croquet/croquet": "^1.1.0-38"
+    "@croquet/croquet": "^1.1.0-42"
   },
   "publishConfig": {
     "access": "public"
