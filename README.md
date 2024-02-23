@@ -96,13 +96,13 @@ Now when you modify something in e.g. `packages/three` and rebuild `tutorial01`,
 
 We use `lerna` with "fixed" versioning, meaning each package will have the same version.
 
-1. For each modified package:
+1. (NB: skip this step for a prerelease) For each modified package:
 
    * update `CHANGELOG.md` with the next release version
 
-2. commit everything (the next step needs a clean repo)
+2. Commit everything (the next step needs a clean repo)
 
-3. bump the version
+3. Bump the version (NB: for a prerelease, use an alternative command as explained below)
 
         npx lerna version --no-push
 
@@ -117,15 +117,20 @@ We use `lerna` with "fixed" versioning, meaning each package will have the same 
 
         git push
 
-5. publish to npm
+5. Log into npm (only needed once for each computer; requires that you have npm credentials for the Croquet organization)
+
+        npm login
+
+6. Publish to npm
 
         npx lerna publish from-package
 
 ### Prereleases
 
-For prerelases we don't update the `CHANGELOG.md` files, but otherwise use the same steps as above, without updating private packages and with prerelease ids `"alpha"` or `"beta"`:
+For prereleases we don't update the `CHANGELOG.md` files, and step 3 is adjusted to specify that private packages are not to be updated, and setting a prerelease id of `"alpha"` or `"beta"`:
 
     npx lerna version --no-push --no-private --preid alpha
+    or
     npx lerna version --no-push --no-private --preid beta
 
 and selecting one of the `pre*` options from the list.
