@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-rapier",
-  "version": "2.0.0-alpha.12",
+  "version": "2.0.0-alpha.13",
   "description": "Rapier Physics Component for Croquet Worldcore",
   "keywords": [
     "croquet",
@@ -23,7 +23,7 @@
     "directory": "packages/rapier"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^2.0.0-alpha.8",
+    "@croquet/worldcore-kernel": "^2.0.0-alpha.13",
     "@dimforge/rapier3d": "0.11.2"
   },
   "publishConfig": {
