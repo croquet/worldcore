@@ -1,5 +1,5 @@
 import { Actor } from "./Actor";
-import { RegisterMixin } from "./Mixins";
+import { RegisterMixin, AM_Drivable, PM_Drivable } from "./Mixins";
 import { ModelService} from "./Root";
 
 
@@ -70,45 +70,20 @@ UserManager.register("UserManager");
 //-- AM_Avatar -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-
-export const AM_Avatar = superclass => class extends superclass {
-
-    get driver() { return this._driver} // The viewId of the user controlling this avatar.
-
+export const AM_Avatar = superclass => class extends AM_Drivable(superclass) {
+    // currently no extensions
 };
 RegisterMixin(AM_Avatar);
+
 
 //------------------------------------------------------------------------------------------
 //-- PM_Avatar -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
-// Way to turn on view smoothing temporarily.
-
-export const PM_Avatar = superclass => class extends superclass {
-
-    constructor(actor) {
-        super(actor);
-        this.onDriverSet();
-        this.listenOnce("driverSet", this.onDriverSet);
-    }
-
+export const PM_Avatar = superclass => class extends PM_Drivable(superclass) {
     get isMyAvatar() {
-        return this.actor.driver === this.viewId;
+        return this.isDrivenHere;
     }
-
-    onDriverSet() {
-        if (this.isMyAvatar) {
-            this.driving = true;
-            this.drive();
-        } else {
-            this.driving = false;
-            this.park();
-        }
-    }
-
-    park() {}
-    drive() {}
-
 };
 
 // ------------------------------------------------------------------------------------------

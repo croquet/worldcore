@@ -334,7 +334,7 @@ export function v3_max(a,b) {
     return [Math.max(a[0], b[0]), Math.max(a[1], b[1]), Math.max(a[2], b[2])];
 }
 
-// Returns manhattan disances between a and b
+// Returns manhattan distances between a and b
 export function v3_manhattan(a, b) {
     return Math.abs(a[0]-b[0]) + Math.abs(a[1]-b[1]) + Math.abs(a[2]-b[2]);
 }

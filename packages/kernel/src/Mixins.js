@@ -1,6 +1,5 @@
 import { Constants, Model } from "@croquet/croquet";
-import { v3_zero, q_identity, m4_scaleRotationTranslation, m4_getScaleRotationTranslation, m4_multiply, v3_lerp, v3_equals,
-    q_slerp, q_equals } from  "./Vector";
+import { v3_zero, v3_add, q_identity, m4_scaleRotationTranslation, m4_getScaleRotationTranslation, m4_multiply, v3_lerp, v3_equals, q_slerp, q_equals } from  "./Vector";
 
 // Mixin
 //
@@ -17,7 +16,7 @@ import { v3_zero, q_identity, m4_scaleRotationTranslation, m4_getScaleRotationTr
 // -- View Mixins --
 //
 // Mixins are defined as functions that transform a class into an extended version
-// of itself. The "mix" and "with" operators are semantic suger to make the construction
+// of itself. The "mix" and "with" operators are semantic sugar to make the construction
 // of the composite class look nice.
 //
 // Since you don't know what class a mixin will be added to, you should generally set them
@@ -111,8 +110,8 @@ class MixinFactory  {
 
 // Spatial actors have a translation, rotation and scale in 3D space.
 //
-// They don't have any view-side smoothing, so the pawn will change its transform to exactly
-// match the transform of the actor.
+// Whether the actor's movements appear in the view as smoothed or not depends on the
+// mixins blended into the corresponding pawn.
 
 //-- Actor ---------------------------------------------------------------------------------
 
@@ -199,6 +198,29 @@ export const AM_Spatial = superclass => class extends superclass {
 
     get forward() {return this._forward || [0,0,1]}
     get up() { return this._up || [0,1,0]}
+
+    moveWithWrap(positionDelta) {
+        const newTrans = v3_add(this.translation, positionDelta);
+        const wrapExtents = this.wrappedWorldExtent;
+        let doSnap = false;
+        for (let dim = 0; dim < 3; dim++) {
+            const dimExtent = wrapExtents[dim];
+            // extent of zero means don't wrap on this dimension
+            if (dimExtent) {
+                if (newTrans[dim] < -dimExtent / 2) {
+                    newTrans[dim] += dimExtent;
+                    doSnap = true;
+                } else if (newTrans[dim] > dimExtent / 2) {
+                    newTrans[dim] -= dimExtent;
+                    doSnap = true;
+                }
+            }
+        }
+        if (doSnap) {
+            this._say('snapWhileMoving'); // signal for pawn mixins that need it
+            this.snap({ translation: newTrans });
+        } else this.set({ translation: newTrans });
+    }
 
 };
 RegisterMixin(AM_Spatial);
@@ -370,7 +392,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
 
-        if (!this.driving) {
+        if (!this.driving || this._driverOverride) {
             if (v3_equals(this._scale, this.actor.scale, .0001)) {
                 this._scale = this.actor.scale;
             } else {
@@ -391,8 +413,9 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
                 this._translation = v3_lerp(this._translation, this.actor.translation, tug);
                 this.localChanged();
             }
-
         }
+
+        this._driverOverride = false; // even if set, it only covers one update
 
         if (!this._global) {
             this.refreshDrawTransform();
@@ -404,3 +427,54 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 
 };
 
+
+//------------------------------------------------------------------------------------------
+//-- Drivable (also basis of Avatar) -------------------------------------------------------
+//------------------------------------------------------------------------------------------
+
+export const AM_Drivable = superclass => class extends superclass {
+    get driver() { return this._driver } // The viewId of the user controlling this actor.
+
+    snapIncludingDriver(options = {}) {
+        // force update of the pawn of even a locally driven object (which normally ignores all actor updates after initial placement)
+        if (Object.keys(options).length === 0) return;
+
+        this._say('driverOverride'); // signal to the pawn to respect the next update
+        this.snap(options); // and here's the update
+    }
+};
+RegisterMixin(AM_Drivable);
+
+//-- Pawn ----------------------------------------------------------------------------------
+
+export const PM_Drivable = superclass => class extends superclass {
+
+    constructor(actor) {
+        super(actor);
+        this.onDriverSet();
+        this.listenOnce("driverSet", this.onDriverSet);
+        this.listenImmediate("driverOverride", this.onDriverOverride);
+    }
+
+    get isDrivenHere() {
+        return this.actor.driver === this.viewId;
+    }
+
+    onDriverSet() {
+        if (this.isDrivenHere) {
+            this.driving = true;
+            this.drive();
+        } else {
+            this.driving = false;
+            this.park();
+        }
+    }
+
+    onDriverOverride() {
+        this._driverOverride = true; // see PM_Smoothed.update
+    }
+
+    park() { }
+    drive() { }
+
+};
