@@ -245,13 +245,15 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     update(time, delta) {
         super.update(time,delta);
         if (this.driving) {
-            this.yaw += this.yawDelta;
-            this.yawDelta = 0;
-            const yawQ = q_axisAngle([0,1,0], this.yaw);
-            const t = v3_scale([this.left + this.right, 0, (this.fore + this.back)], 5 * delta/1000);
-            const tt = v3_rotate(t, yawQ);
-            const translation = v3_add(this.translation, tt);
-            this.positionTo(translation, yawQ);
+            if (this.yawDelta || (this.left + this.right) || (this.fore + this.back)) {
+                this.yaw += this.yawDelta;
+                this.yawDelta = 0;
+                const yawQ = q_axisAngle([0,1,0], this.yaw);
+                const t = v3_scale([this.left + this.right, 0, (this.fore + this.back)], 5 * delta/1000);
+                const tt = v3_rotate(t, yawQ);
+                const translation = v3_add(this.translation, tt);
+                this.positionTo(translation, yawQ);
+            }
             this.refreshCameraTransform(); // Required by PM_ThreeCamera to trigger a camera refresh when you're driving.
         }
     }
