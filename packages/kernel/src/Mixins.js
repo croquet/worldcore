@@ -392,7 +392,7 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
         let tug = this.tug;
         if (delta) tug = Math.min(1, tug * delta / 15);
 
-        if (!this.driving || this._driverOverride) {
+        if (!this.driving) {
             if (v3_equals(this._scale, this.actor.scale, .0001)) {
                 this._scale = this.actor.scale;
             } else {
@@ -415,8 +415,6 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
             }
         }
 
-        this._driverOverride = false; // even if set, it only covers one update
-
         if (!this._global) {
             this.refreshDrawTransform();
             this.refreshChildDrawTransform();
@@ -435,8 +433,11 @@ export const PM_Smoothed = superclass => class extends PM_Spatial(superclass) {
 export const AM_Drivable = superclass => class extends superclass {
     get driver() { return this._driver } // The viewId of the user controlling this actor.
 
-    snapIncludingDriver(options = {}) {
-        // force update of the pawn of even a locally driven object (which normally ignores all actor updates after initial placement)
+    snapOverridingDriver(options = {}) {
+        // in a setup like the Unity bridge, where the pawn of a view-driven object
+        // generally assumes that all its actor's geometry updates originated from that pawn
+        // and can thus be ignored, this method allows a snapped update to be forwarded
+        // explicitly to the pawn regardless.
         if (Object.keys(options).length === 0) return;
 
         this._say('driverOverride'); // signal to the pawn to respect the next update
@@ -470,11 +471,9 @@ export const PM_Drivable = superclass => class extends superclass {
         }
     }
 
-    onDriverOverride() {
-        this._driverOverride = true; // see PM_Smoothed.update
-    }
-
     park() { }
     drive() { }
+
+    onDriverOverride() { }
 
 };
