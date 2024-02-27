@@ -55,8 +55,9 @@ TestActor.register('TestActor');
 
 // We add the AM_Avatar mixin to the ColorActor. This lets us use a ColorActor as an
 // avatar. Avatars have a driver property that holds the viewId of the user controlling
-// them. We also create avent so users can shove each other.  If the avatar has a driver we
-// snap it to its new position, so as not to interfere with its user's control inputs.
+// them. We also create an event so users can shove each other.  If the shoved avatar
+// has a driver we snap it to its new position, so as not to interfere with its user's
+// control inputs.
 
 class ColorActor extends mix(Actor).with(AM_Spatial, AM_Behavioral, AM_Avatar) {
 
