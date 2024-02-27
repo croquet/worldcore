@@ -208,13 +208,15 @@ export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
     update(time, delta) {
         super.update(time,delta);
         if (this.driving) {
-            const yaw = (this.right+this.left) * -3 * delta/1000;
-            const yawQ = q_axisAngle([0,1,0], yaw);
-            const rotation = q_multiply(this.rotation, yawQ);
-            const t = v3_scale([0, 0, (this.fore + this.back)], 5 * delta/1000);
-            const tt = v3_rotate(t, rotation);
-            const translation = v3_add(this.translation, tt);
-            this.positionTo(translation, rotation);
+            if ((this.right + this.left) || (this.fore + this.back)) {
+                const yaw = (this.right+this.left) * -3 * delta/1000;
+                const yawQ = q_axisAngle([0,1,0], yaw);
+                const rotation = q_multiply(this.rotation, yawQ);
+                const t = v3_scale([0, 0, (this.fore + this.back)], 5 * delta/1000);
+                const tt = v3_rotate(t, rotation);
+                const translation = v3_add(this.translation, tt);
+                this.positionTo(translation, rotation);
+            }
         }
     }
 
