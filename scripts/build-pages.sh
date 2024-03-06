@@ -12,6 +12,7 @@ rm -rf _site
 mkdir _site
 LINKS=()
 FAILED=()
+SUCCESS=()
 TOP=$(git rev-parse --show-toplevel)
 for DIR in tutorials examples ; do
     cd $TOP
@@ -31,6 +32,7 @@ for DIR in tutorials examples ; do
         if [ $BUILD_ERROR -eq 0 ] ; then
             mv -v dist ../../_site/$APP
             LINKS+=("<p>${DATE} <a href=\"${APP}/\"><b>${APP}</b></a> (<a href=\"${APP}/build.log\">log</a>)</p>")
+            SUCCESS+=($APP)
         else
             mkdir ../../_site/$APP
             echo "<H1>Build failed</h1><pre>" > ../../_site/$APP/index.html
@@ -78,17 +80,20 @@ cat > _site/index.html <<EOF
 </html>
 EOF
 
-NUM_FAILED=${#FAILED[@]}
-if [ $NUM_FAILED -gt 0 ] ; then
-    if [ -n "$SLACK_HOOK_URL" ] ; then
-        echo
-        echo "=== Sending slack message ==="
-        URL="https://croquet.github.io/worldcore/"
-        APPS=$(printf -- "- %s\\\\n" "${FAILED[@]}")
-        JSON="{\"text\": \"🤖 *Worldcore build failed for ${NUM_FAILED} apps* 🤖\n${URL}\n${APPS}\""
-        curl -X POST -H 'Content-type: application/json' --data "${JSON}\"}" $SLACK_HOOK_URL
+if [ -n "$SLACK_HOOK_URL" ] ; then
+    echo
+    echo "=== Sending slack message ==="
+    URL="https://croquet.github.io/worldcore/"
+    NUM_FAILED=${#FAILED[@]}
+    NUM_TOTAL=$((${#SUCCESS[@]} + ${#FAILED[@]}))
+    if [ $NUM_FAILED -eq 0 ] ; then
+        JSON="{\"text\": \"😍 *Worldcore build succeeded for all apps* 😍\n${URL}\"}"
     else
-        echo
-        echo "=== No SLACK_HOOK_URL set, not sending slack message ==="
+        APPS=$(printf "• %s\\\\n" "${FAILED[@]}")
+        JSON="{\"text\": \"💩 *Worldcore builds failed for ${NUM_FAILED}/${NUM_TOTAL} apps* 💩\n${URL}\n${APPS}\"}"
     fi
+    curl -sSX POST -H 'Content-type: application/json' --data "${JSON}" $SLACK_HOOK_URL
+else
+    echo
+    echo "=== No SLACK_HOOK_URL set, not sending slack message ==="
 fi
