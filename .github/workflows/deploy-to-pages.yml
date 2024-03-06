@@ -49,6 +49,8 @@ jobs:
           node-version: 18
 
       - name: Build tutorials and examples
+        env:
+            SLACK_HOOK_URL: ${{ secrets.SLACK_HOOK_URL }}
         run: scripts/build-pages.sh
 
       - name: Upload _site
