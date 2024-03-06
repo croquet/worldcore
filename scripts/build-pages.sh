@@ -11,6 +11,7 @@ npx lerna bootstrap || exit 1
 rm -rf _site
 mkdir _site
 LINKS=()
+FAILED=()
 TOP=$(git rev-parse --show-toplevel)
 for DIR in tutorials examples ; do
     cd $TOP
@@ -36,6 +37,7 @@ for DIR in tutorials examples ; do
             cat build.log >> ../../_site/$APP/index.html
             echo "</pre>" >> ../../_site/$APP/index.html
             LINKS+=("<p>${DATE} <b>${APP} BUILD FAILED</b> (<a href=\"${APP}/build.log\">log</a>)</p>")
+            FAILED+=($APP)
         fi
         mv -v build.log ../../_site/$APP/
     done
@@ -75,3 +77,18 @@ cat > _site/index.html <<EOF
 </body>
 </html>
 EOF
+
+NUM_FAILED=${#FAILED[@]}
+if [ $NUM_FAILED -gt 0 ] ; then
+    if [ -n "$SLACK_HOOK_URL" ] ; then
+        echo
+        echo "=== Sending slack message ==="
+        URL="https://croquet.github.io/worldcore/"
+        APPS=$(printf -- "- %s\\\\n" "${FAILED[@]}")
+        JSON="{\"text\": \"🤖 *Worldcore build failed for ${NUM_FAILED} apps* 🤖\n${URL}\n${APPS}\""
+        echo curl -X POST -H 'Content-type: application/json' --data "${JSON}\"}" $SLACK_HOOK_URL
+    else
+        echo
+        echo "=== No SLACK_HOOK_URL set, not sending slack message ==="
+    fi
+fi

@@ -1,7 +1,7 @@
-# Workflow to build a GitHub Pages site for multiple branches simultaneously
+# Workflow to build a GitHub Pages site for all examples and tutorials
+# and deploy it to https://croquet.github.io/worldcore/
 
-# NOTE: to make this work, in GitHub Settings under Pages – Build and Deployment
-# change Source from "Deploy from a branch" to "GitHub Actions"!
+# The actual work is done in scripts/build-pages.sh
 
 # NOTE: to make this work, in GitHub Settings under Pages – Build and Deployment
 # change Source from "Deploy from a branch" to "GitHub Actions"!
@@ -27,7 +27,8 @@ concurrency:
 
 jobs:
   deploy:
-    # only run on main repo
+    # only run on main repo and not forks
+    # (change this in your fork if you want it there)
     if: github.repository == 'croquet/worldcore'
     environment:
       name: github-pages
@@ -39,7 +40,7 @@ jobs:
         with:
           fetch-depth: 0          # fetch full history
 
-      - name: Setup Pages
+      - name: Configure pages
         uses: actions/configure-pages@v4
 
       - name: Use Node.js 18
