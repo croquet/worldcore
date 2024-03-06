@@ -86,7 +86,7 @@ if [ $NUM_FAILED -gt 0 ] ; then
         URL="https://croquet.github.io/worldcore/"
         APPS=$(printf -- "- %s\\\\n" "${FAILED[@]}")
         JSON="{\"text\": \"🤖 *Worldcore build failed for ${NUM_FAILED} apps* 🤖\n${URL}\n${APPS}\""
-        echo curl -X POST -H 'Content-type: application/json' --data "${JSON}\"}" $SLACK_HOOK_URL
+        curl -X POST -H 'Content-type: application/json' --data "${JSON}\"}" $SLACK_HOOK_URL
     else
         echo
         echo "=== No SLACK_HOOK_URL set, not sending slack message ==="
