@@ -14,7 +14,8 @@ Fix applying kinematic rotations
 Kinematic rigid bodies
 
 ### Changed
-Upgraded to Rapier 0.11.0
+Use static import for rapier
+Upgraded to Rapier 0.12.0
 RapierManager doesn't hold world
 
 ### Added

@@ -1,6 +1,8 @@
 import { RegisterMixin, ModelService, v3_sub, v3_scale } from "@croquet/worldcore-kernel";
 
-export let RAPIER; // eslint-disable-line import/no-mutable-exports
+import RAPIER from "@dimforge/rapier3d-compat";
+export { RAPIER };
+
 export function RapierVersion() {
     return RAPIER.version();
 }
@@ -12,8 +14,8 @@ export function RapierVersion() {
 export class RapierManager extends ModelService {
 
     static async asyncStart() {
-        console.log("Starting Rapier physics!");
-        RAPIER = await import("@dimforge/rapier3d");
+        await RAPIER.init();
+        console.log("Rapier", RapierVersion());
     }
 
     static okayToIgnore() {
@@ -21,7 +23,6 @@ export class RapierManager extends ModelService {
     }
 
     static types() {
-        if (!RAPIER) return {}; // RapierManager isn't being used in this app
         return {
             "RAPIER.World": {
                 cls: RAPIER.World,
