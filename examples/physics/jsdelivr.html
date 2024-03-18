@@ -23,14 +23,29 @@
     <body>
         <!--
             THIS HTML FILE IS A DEMO FOR USING WORLDCORE WITHOUT A BUNDLER
-            It uses jsDelivr's ESM CDN to import the Worldcore modules via an
-            import map.
+
+            It uses jsDelivr's CDN in ESM mode to import the Worldcore modules
+            via an import map.
 
             The application source code is used directly without any bundling.
 
             The only change in source code was to use import statements
             with .js extension so the browser can resolve these local references
             without having to declare them in the import map.
+
+            NOTE THAT THE ESM.RUN URLS AND SYMBOLIC @PRE VERSION TAG SHOULD NOT
+            BE USED IN PRODUCTION.
+
+            Instead, use the main jsdelivr CDN and specific version numbers like this:
+
+            <script type="importmap">
+            {
+                "imports": {
+                    "@croquet/worldcore": "https://cdn.jsdelivr.net/npm/@croquet/worldcore@x.y.z/+esm",
+                    "@croquet/worldcore-rapier": "https://cdn.jsdelivr.net/npm/@croquet/worldcore-rapier@x.y.z/+esm"
+                }
+            }
+            </script>
         -->
     </body>
 </html>
