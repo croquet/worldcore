@@ -1,7 +1,7 @@
 // Views
 
 import { ViewRoot, Pawn, mix, InputManager, PM_ThreeVisible, ThreeRenderManager, PM_Spatial, THREE, PM_Smoothed, toRad, m4_rotation, m4_multiply,
-    WidgetManager2, Widget2, ButtonWidget2, TAU, m4_translation, v3_transform, ThreeInstanceManager,
+    Widget2, ButtonWidget2, TAU, m4_translation, v3_transform, ThreeInstanceManager,
     PM_ThreeInstanced, ViewService } from "@croquet/worldcore";
 
 

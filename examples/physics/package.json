@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "start": "webpack serve --no-live-reload --no-hot --mode development --devtool source-map",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "post-build": "cp -v jsdelivr.html dist/"
   },
   "author": "Croquet Corporation",
   "license": "Apache-2.0",

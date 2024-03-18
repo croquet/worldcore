@@ -27,6 +27,7 @@ for DIR in tutorials examples ; do
         echo "Commit: $COMMIT" > build.log
         npm run build >> build.log 2>&1
         BUILD_ERROR=$?
+        npm run post-build --if-present >> build.log 2>&1
         cat build.log
         DATE=$(git ls-tree -r --name-only HEAD -- . | grep -v 'package.*json' | xargs -n 1 git log -1 --format='%ad' --date=format:'%Y-%m-%d' | sort | tail -1)
         if [ $BUILD_ERROR -eq 0 ] ; then
