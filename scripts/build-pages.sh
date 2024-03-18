@@ -89,7 +89,11 @@ if [ -n "$SLACK_HOOK_URL" ] ; then
     if [ $NUM_FAILED -eq 0 ] ; then
         JSON="{\"text\": \"😍 *Worldcore build succeeded for all apps* 😍\n${URL}\"}"
     else
-        APPS=$(printf "• %s\\\\n" "${FAILED[@]}")
+        APPS=""
+        for APP in ${FAILED[@]} ; do
+            LOG="https://croquet.github.io/worldcore/${APP}/build.log"
+            APPS="${APPS}\n• <${LOG}|${APP}>"
+        done
         JSON="{\"text\": \"💩 *Worldcore builds failed for ${NUM_FAILED}/${NUM_TOTAL} apps* 💩\n${URL}\n${APPS}\"}"
     fi
     curl -sSX POST -H 'Content-type: application/json' --data "${JSON}" $SLACK_HOOK_URL
