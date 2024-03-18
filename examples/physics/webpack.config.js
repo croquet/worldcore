@@ -37,9 +37,10 @@ module.exports = {
         // for non-bundling demo, copy unprocessed sources to jsdelivr directory
         new CopyPlugin({
             patterns: [
-              { from: "jsdelivr.html", to: "jsdelivr/index.html" },
-              { from: "index.js", to: "jsdelivr" },
-              { from: "src/*js", to: "jsdelivr" },
+                // disable minification by pretending to be already minimized
+                { info: { minimized: true }, from: "jsdelivr.html", to: "jsdelivr/index.html" },
+                { info: { minimized: true }, from: "index.js", to: "jsdelivr" },
+                { info: { minimized: true }, from: "src/*js", to: "jsdelivr" },
             ],
           }),
     ]
