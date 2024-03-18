@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
     <head>
         <title>Worldcore Physics</title>
@@ -9,12 +10,9 @@
                 background: rgb(30, 30, 30);
             }
         </style>
-        <!-- THIS HTML FILE WORKS WITHOUT A BUNDLER -->
         <script type="importmap">
             {
                 "imports": {
-                    "./src/Views": "./src/Views.js",
-                    "./src/Models": "./src/Models.js",
                     "@croquet/worldcore": "https://esm.run/@croquet/worldcore@pre",
                     "@croquet/worldcore-rapier": "https://esm.run/@croquet/worldcore-rapier@pre"
                 }
@@ -23,5 +21,16 @@
         <script type="module" src="index.js"></script>
     </head>
     <body>
+        <!--
+            THIS HTML FILE IS A DEMO FOR USING WORLDCORE WITHOUT A BUNDLER
+            It uses jsDelivr's ESM CDN to import the Worldcore modules via an
+            import map.
+
+            The application source code is used directly without any bundling.
+
+            The only change in source code was to use import statements
+            with .js extension so the browser can resolve these local references
+            without having to declare them in the import map.
+        -->
     </body>
 </html>

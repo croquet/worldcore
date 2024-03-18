@@ -5,8 +5,7 @@
   "private": true,
   "scripts": {
     "start": "webpack serve --no-live-reload --no-hot --mode development --devtool source-map",
-    "build": "webpack --mode production",
-    "post-build": "mkdir -p dist/jsdelivr ; cp -v jsdelivr.html dist/jsdelivr/index.html ; cp -av index.js src dist/jsdelivr/"
+    "build": "webpack --mode production"
   },
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
@@ -15,6 +14,7 @@
     "@croquet/worldcore-rapier": "^2.0.0-alpha.9"
   },
   "devDependencies": {
+    "copy-webpack-plugin": "^12.0.2",
     "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.5.0",
     "inspectpack": "^4.7.1",

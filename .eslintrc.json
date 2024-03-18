@@ -11,7 +11,7 @@
         "globalThis": false
     },
     "rules": {
-        "import/extensions": ["warn", "never"],
+        "import/extensions": "off",
         "import/prefer-default-export": "off",
         "import/no-cycle": "off",
         "import/newline-after-import": "off",
