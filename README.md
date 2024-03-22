@@ -100,9 +100,14 @@ We use `lerna` with "fixed" versioning, meaning each package will have the same 
 
    * update `CHANGELOG.md` with the next release version
 
-2. Commit everything (the next step needs a clean repo)
+2. Make sure all packages have the latest dependencies
 
-3. Bump the version (NB: for a prerelease, use an alternative command as explained below)
+        lerna clean
+        lerna bootstrap
+
+3. Commit everything (the next step needs a clean repo)
+
+4. Bump the version (NB: for a prerelease, use an alternative command as explained below)
 
         npx lerna version --no-push
 
@@ -113,21 +118,21 @@ We use `lerna` with "fixed" versioning, meaning each package will have the same 
    We use `--no-push` to get a chance to roll back if needed
    (undo the version commit and delete the tag).
 
-4. Push to git
+5. Push to git
 
         git push
 
-5. Log into npm (only needed once for each computer; requires that you have npm credentials for the Croquet organization)
+6. Log into npm (only needed once for each computer; requires that you have npm credentials for the Croquet organization)
 
         npm login
 
-6. Publish to npm
+7. Publish to npm
 
         npx lerna publish from-package
 
 ### Prereleases
 
-For prereleases we don't update the `CHANGELOG.md` files, and step 3 is adjusted to specify that private packages are not to be updated, and setting a prerelease id of `"alpha"` or `"beta"`:
+For prereleases we don't update the `CHANGELOG.md` files, and step 4 is adjusted to specify that private packages are not to be updated, and setting a prerelease id of `"alpha"` or `"beta"`:
 
     npx lerna version --no-push --no-private --preid alpha
     or
