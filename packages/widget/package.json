@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-widget",
-  "version": "2.0.0-alpha.17",
+  "version": "2.0.0-alpha.18",
   "description": "Widget Component for Croquet Worldcore",
   "keywords": [
     "croquet",
@@ -23,7 +23,7 @@
     "directory": "packages/widget"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^2.0.0-alpha.17"
+    "@croquet/worldcore-kernel": "^2.0.0-alpha.18"
   },
   "publishConfig": {
     "access": "public"

@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-widget3",
-  "version": "2.0.0-alpha.17",
+  "version": "2.0.0-alpha.18",
   "description": "Three.js Widget Component for Croquet Worldcore",
   "keywords": [
     "croquet",
@@ -23,8 +23,8 @@
     "directory": "packages/widget3"
   },
   "dependencies": {
-    "@croquet/worldcore-kernel": "^2.0.0-alpha.17",
-    "@croquet/worldcore-three": "^2.0.0-alpha.17"
+    "@croquet/worldcore-kernel": "^2.0.0-alpha.18",
+    "@croquet/worldcore-three": "^2.0.0-alpha.18"
   },
   "publishConfig": {
     "access": "public"
