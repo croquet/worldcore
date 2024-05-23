@@ -100,7 +100,7 @@ We use `lerna` with "fixed" versioning, meaning each package will have the same 
 
    * update `CHANGELOG.md` with the next release version
 
-2. Make sure all packages have the latest dependencies
+2. If you have updated any dependencies (e.g., of the kernel on the Croquet library), make sure all packages have the latest dependencies
 
         lerna clean
         lerna bootstrap
