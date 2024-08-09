@@ -27,7 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Pawn destruction handled by PawnManager, not Pawn itself
-- Services no longer have start-up options
 - Pawns don't update their draw tranform if they don't move
 - PawnManager can be subclassed
 

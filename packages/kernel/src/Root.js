@@ -1,4 +1,4 @@
-import { Model, View, Session } from "@croquet/croquet";
+import { Model, View, Session, Constants } from "@croquet/croquet";
 import { ActorManager} from "./Actor";
 import { PawnManager} from "./Pawn";
 
@@ -19,6 +19,18 @@ WorldcoreModel.register("WorldcoreModel");
 //-- ModelRoot -----------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
 
+function withOptionsDo(service, fn) {
+    let options;
+    if (service.service) {
+        options = service.options;
+        service = service.service;
+    }
+    return fn(service, options);
+}
+
+// anything the model uses should be put in Constants
+Constants.withOptionsDo = withOptionsDo;
+
 export class ModelRoot extends WorldcoreModel {
 
     static modelServices() { return [] }
@@ -28,9 +40,10 @@ export class ModelRoot extends WorldcoreModel {
         this.beWellKnownAs("ModelRoot");
         this.services = new Set();
         this.services.add(ActorManager.create());
-        this.constructor.modelServices().forEach( service => {
-            this.services.add(service.create());
-        });
+        for (const service of this.constructor.modelServices()) {
+            withOptionsDo(service,
+                (Service, opts) => this.services.add(Service.create(opts)));
+        }
 
     }
 
@@ -46,7 +59,7 @@ ModelRoot.register("ModelRoot");
 
 export class ModelService extends WorldcoreModel {
 
-    static async asyncStart() {}
+    static async asyncStart(_options) { /* Override in subclass */ }
 
     init(name) {
         super.init();
@@ -103,9 +116,10 @@ export class ViewRoot extends WorldcoreView {
         time0 = 0;
         time1 = 0;
         viewServices = new Map();
-        this.constructor.viewServices().forEach( service => {
-            new service();
-        });
+        for (const service of this.constructor.viewServices()) {
+            // view services register themselves in their constructor
+            withOptionsDo(service, (Service, opts) => new Service(opts));
+        }
         this.onStart();
 
         let pm = this.service("PawnManager");
@@ -127,7 +141,7 @@ export class ViewRoot extends WorldcoreView {
         time0 = time1;
         time1 = time;
         const delta = time1 - time0;
-        let done = new Set();
+        const done = new Set();
 
         const pm = this.service("PawnManager");
 
@@ -148,7 +162,7 @@ export class ViewRoot extends WorldcoreView {
 
 export class ViewService extends WorldcoreView {
 
-    static async asyncStart() {}
+    static async asyncStart(_options) { /* Override in subclass */ }
 
     constructor(name) {
         super(viewRoot.model);
@@ -179,15 +193,13 @@ export function GetViewService(name) { return viewServices.get(name) }
 
 export async function StartWorldcore(options) {
 
-    await Promise.all(options.model.modelServices().map(service => {
-        if (service.service) service = service.service;
-        return service.asyncStart();
-    }));
+    await Promise.all(options.model.modelServices().map(
+        service => withOptionsDo(service,
+            (Service, opts) => Service.asyncStart(opts))));
 
-    await Promise.all(options.view.viewServices().map(service => {
-        if (service.service) service = service.service;
-        return service.asyncStart();
-    }));
+    await Promise.all(options.view.viewServices().map(
+        service => withOptionsDo(service,
+            (Service, opts) => Service.asyncStart(opts))));
 
     if (!Array.isArray(options.flags)) options = { ...options, flags: [] };
     if (!options.flags.includes("worldcore")) options.flags.push("worldcore");
