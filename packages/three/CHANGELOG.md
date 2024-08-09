@@ -10,10 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -- PM_ThreeInstanced
 -- Raycast (with instancing)
 -- PM_NavGridGizmo
+-- ThreeRenderManager options: renderer, shadowMap, composer
 
 ### Removed
 -- Layers and Raycasting
--- Post-processing
+-- Post-processing (replaced by render manager options?)
 -- BVH
 
 

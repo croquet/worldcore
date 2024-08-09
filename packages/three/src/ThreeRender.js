@@ -1,14 +1,19 @@
 
-import { m4_multiply, m4_scaleRotationTranslation, m4_translation, q_axisAngle, ViewService, toRad, m4_rotation, q_identity, m4_rotationQ  } from "@croquet/worldcore-kernel";
+import { m4_multiply, m4_translation, ViewService, q_identity, m4_rotationQ } from "@croquet/worldcore-kernel";
 import * as THREE from "three";
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { Pass } from 'three/examples/jsm/postprocessing/Pass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 import { GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
-export { THREE };
-export { Reflector };
-export { GLTFLoader };
+
+export {
+    THREE,
+    OutlinePass,
+    Reflector,
+    GLTFLoader
+};
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------
@@ -79,25 +84,59 @@ export const PM_ThreeCamera = superclass => class extends superclass {
 //------------------------------------------------------------------------------------------
 
 export class ThreeRenderManager extends ViewService {
-    constructor() {
+    constructor(options) {
         super("ThreeRenderManager");
 
-        this.canvas = document.createElement("canvas");
-        this.canvas.id = "ThreeCanvas";
-        this.canvas.style.cssText = "position: absolute; left: 0; top: 0; z-index: 0";
-        document.body.insertBefore(this.canvas, null);
+        const rendererOptions = {
+            antialias: true,
+            ...options?.renderer,
+        };
 
-        this.renderer = new THREE.WebGLRenderer({canvas:this.canvas, antialias:true});
-        this.renderer.shadowMap.enabled = true;
+        if (rendererOptions.canvas) {
+            this.canvas = rendererOptions.canvas;
+        } else {
+            this.canvas = document.createElement("canvas");
+            this.canvas.id = "ThreeCanvas";
+            this.canvas.style.cssText = "position: absolute; left: 0; top: 0; z-index: 0";
+            document.body.insertBefore(this.canvas, null);
+            rendererOptions.canvas = this.canvas;
+        }
+
+        this.renderer = new THREE.WebGLRenderer(rendererOptions);
+
+        const shadowMapOptions = {
+            enabled: true,
+            ...options?.shadowMap,
+        };
+        Object.assign(this.renderer.shadowMap, shadowMapOptions);
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000);
         this.camera.matrixAutoUpdate = false;
 
-        this.composer = new EffectComposer( this.renderer );
+        const composerOptions = {
+            enabled: false,
+            passes: [
+                // either Pass instances or known strings (only 'RenderPass' is known)
+                'RenderPass',
+            ],
+            ...options?.composer,
+        };
 
-        this.renderPass = new RenderPass( this.scene, this.camera );
-        this.composer.addPass( this.renderPass );
+        if (composerOptions.enabled) {
+            this.composer = new EffectComposer( this.renderer );
+            for (const pass of composerOptions.passes) {
+                if (pass === 'RenderPass') {
+                    this.composer.addPass(new RenderPass(this.scene, this.camera));
+                } else {
+                    if (!(pass instanceof Pass)) {
+                        console.warn("Composer pass should be an instance of Pass or the string 'RenderPass', but got", pass);
+                    }
+                    this.composer.addPass(pass);
+                }
+
+            }
+        }
 
         this.resize();
         this.subscribe("input", "resize", () => this.resize());
@@ -116,8 +155,8 @@ export class ThreeRenderManager extends ViewService {
     }
 
     update() {
-        this.composer.render();
-        // this.renderer.render(this.scene, this.camera);
+        if (this.composer) this.composer.render();
+        else this.renderer.render(this.scene, this.camera);
     }
 
 }
