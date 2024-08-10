@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Physics Fountain</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+        <meta charset="utf-8">
+        <style>
+            body {
+                overflow: hidden;
+                background: rgb(30, 30, 30);
+            }
+            #codelink {
+                position: fixed; bottom: 10px; right: 10px; padding: .5em; border-radius: 30px;
+                opacity: 50%; background: lightgray; box-shadow: 1px 1px 5px black;
+                text-decoration: none; font-family: monospace; font-size: 1.5em; z-index: 1000;
+            }
+            #codelink:hover {
+                opacity: 100%;
+            }
+        </style>
+        <script type="importmap">
+            {
+                "imports": {
+                    "@croquet/worldcore": "https://esm.run/@croquet/worldcore@pre",
+                    "@croquet/worldcore-rapier": "https://esm.run/@croquet/worldcore-rapier@pre"
+                }
+            }
+        </script>
+        <script type="module" src="physics-fountain.js"></script>
+    </head>
+    <body>
+        <a id="codelink" href="https://github.com/multisynq/physics-fountain/blob/main/index.html"
+        title="View source code on GitHub" target="_blank">{...}</a>
+    </body>
+</html>

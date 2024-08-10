@@ -1,0 +1,22 @@
+{
+  "name": "physics-fountain",
+  "version": "1.0.0",
+  "description": "Physics Example",
+  "private": true,
+  "scripts": {
+    "start": "webpack serve --no-live-reload --no-hot --mode development --devtool source-map",
+    "build": "webpack --mode production"
+  },
+  "author": "Croquet Labs",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "html-webpack-plugin": "^5.6.0",
+    "webpack": "^5.93.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.0.4"
+  },
+  "dependencies": {
+    "@croquet/worldcore": "^2.0.0-alpha.24",
+    "@croquet/worldcore-rapier": "^2.0.0-alpha.24"
+  }
+}
