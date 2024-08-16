@@ -349,7 +349,24 @@ class HelpPanel extends PanelWidget {
             point: 14,
             alignX: "left",
             alignY: "top",
-            text: "Wide Wide World is a multiplayer village-building simulation written in Croquet using the Worldcore engine.\n\nIf you want other people to join your world, share the unique URL, or scan the QR code in the lower left.\n\nSelect a tool in the upper left, then click on the terrain to dig, fill, plant trees, or add people or water.\n\nEverything you do is instantly shared with the other players. The game stays perfectly in synch, even with hundreds of AIs and a real-time water simulation.\n\nAnd the world is persistent. If you leave and come back later to the same URL, everything will be as you left it.\n\nUse the slider on the right to view an underground cutaway of the terrain. The simulation is a fully 3D voxel world!\n\nYou can also toggle first-person mode by clicking the walk icon at the upper right. This will switch the camera to follow a random AI.\n\nThe AIs wander randomly now, but in the future you'll be able to order them to cut down trees, plant crops, mine stone, build buildings, and fight off wild animals.\n\nCheck back to see what improvements we've made!"
+            text:
+`Wide Wide World is a multiplayer village-building simulation written in Croquet using the Worldcore engine.
+
+If you want other people to join your world, share the unique URL, or scan the QR code in the lower left.
+
+Select a tool in the upper left, then click on the terrain to dig, fill, plant trees, or add people or water.
+
+Everything you do is instantly shared with the other players. The game stays perfectly in synch, even with hundreds of AIs and a real-time water simulation.
+
+And the world is persistent. If you leave and come back later to the same URL, everything will be as you left it.
+
+Use the slider on the right to view an underground cutaway of the terrain. The simulation is a fully 3D voxel world!
+
+You can also toggle first-person mode by clicking the walk icon at the upper right. This will switch the camera to follow a random AI.
+
+The AIs wander randomly now, but in the future you'll be able to order them to cut down trees, plant crops, mine stone, build buildings, and fight off wild animals.
+
+Check back to see what improvements we've made!`
         })
 
         const slider = new SliderWidget({
