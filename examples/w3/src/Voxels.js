@@ -61,6 +61,15 @@ export class VoxelColumn {
         this.c[n] = count;
         this.t[n] = previous;
     }
+
+    store() {
+        return [[...this.c], [...this.t]];
+    }
+
+    restore([c, t]) {
+        this.c = new Uint8Array(c);
+        this.t = new Uint8Array(t);
+    }
 }
 
 //------------------------------------------------------------------------------------------
@@ -286,6 +295,19 @@ export class Voxels extends ModelService {
         for (let x = 0; x < Voxels.sizeX; x++) {
             for (let y = 0; y < Voxels.sizeY; y++) {
                 this.voxels[x][y].compress(matrix[x][y]);
+            }
+        }
+        this.publish("voxels", "newLevel");
+    }
+
+    store() {
+        return this.voxels.map(x => x.map(y => y.store()));
+    }
+
+    restore(data) {
+        for (let x = 0; x < Voxels.sizeX; x++) {
+            for (let y = 0; y < Voxels.sizeY; y++) {
+                this.voxels[x][y].restore(data[x][y]);
             }
         }
         this.publish("voxels", "newLevel");

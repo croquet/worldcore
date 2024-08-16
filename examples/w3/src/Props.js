@@ -1,5 +1,5 @@
 import { mix, Actor, Pawn, PM_Spatial, v3_add, m4_translation, CachedObject, q_axisAngle, TAU,  m4_rotationX, toRad, v3_scale,
-    ModelService,
+    ModelService, App,
     m4_scaleRotationTranslation,
     q_identity} from "@croquet/worldcore-kernel";
 import { Material, Cylinder, Cone, InstancedDrawCall, UnitCube, PM_Visible, DrawCall } from "@croquet/worldcore-webgl";
@@ -30,6 +30,21 @@ export class Props extends ModelService {
     destroy() {
         super.destroy();
         this.destroyAll();
+    }
+
+    store() {
+        const roads = [];
+        const trees = [];
+        for (const prop of this.props.values()) {
+            if (prop instanceof RoadActor) roads.push(Voxels.packKey(...prop.xyz));
+            if (prop instanceof TreeActor) trees.push(Voxels.packKey(...prop.xyz));
+        }
+        return {roads, trees};
+    }
+
+    restore({roads, trees}) {
+        for (const xyz of roads) RoadActor.create({xyz: Voxels.unpackKey(xyz)});
+        for (const xyz of trees) TreeActor.create({xyz: Voxels.unpackKey(xyz)});
     }
 
     onNewLevel() {

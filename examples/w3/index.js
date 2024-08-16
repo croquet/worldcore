@@ -20,6 +20,7 @@ import { RubbleMananger } from "./src/Rubble";
 import { Stress } from "./src/Stress";
 import { Water } from "./src/Water";
 import { WorldBuilder } from "./src/WorldBuilder";
+import { WorldKeeper } from "./src/WorldKeeper";
 import { RoadRender } from "./src/RoadRender";
 
 //------------------------------------------------------------------------------------------
@@ -29,15 +30,13 @@ import { RoadRender } from "./src/RoadRender";
 class MyModelRoot extends ModelRoot {
 
     static modelServices() {
-        return [Voxels, Water, Surfaces, Stress, Paths, Props, Animals, RubbleMananger, WorldBuilder];
+        return [Voxels, Water, Surfaces, Stress, Paths, Props, Animals, RubbleMananger, WorldBuilder, WorldKeeper];
     }
 
-    init(...args) {
-        super.init(...args);
-        console.log("Start Model!");
-
-        this.service("WorldBuilder").build();
-
+    init(options, persisted) {
+        super.init(options);
+        if (!persisted) this.service("WorldBuilder").build();
+        else this.service("WorldKeeper").restore(persisted);
     }
 
 }

@@ -53,6 +53,16 @@ export class Water extends ModelService {
         }
     }
 
+    store() {
+        return this.layers.map(layer => layer.store());
+    }
+
+    restore(data) {
+        for (let z = 0; z < Voxels.sizeZ; z++) {
+            this.layers[z].restore(data[z]);
+        }
+    }
+
     activate(x, y, z) {
         if (z > this.layers.length-1) return;
         const layer = this.layers[z];
@@ -170,6 +180,24 @@ class WaterLayer extends Actor {
         this.outFlow.clear();
         this.inFall.clear();
         this.outFall.clear();
+    }
+
+    store() {
+        const data = [];
+        for (let [key, volume] of this.volume) {
+            data.push(key, volume);
+        }
+        return data;
+    }
+
+    restore(data) {
+        this.clear();
+        for (let n = 0; n < data.length; n+=2) {
+            const key = data[n];
+            const volume = data[n+1];
+            this.volume.set(key, volume);
+            this.active.add(key);
+        }
     }
 
     setVolume(key, volume) {
