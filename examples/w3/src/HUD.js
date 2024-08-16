@@ -366,8 +366,7 @@ You can also toggle first-person mode by clicking the walk icon at the upper rig
 
 The AIs wander randomly now, but in the future you'll be able to order them to cut down trees, plant crops, mine stone, build buildings, and fight off wild animals.
 
-Check back to see what improvements we've made!`
-        })
+Press F for Full Screen`})
 
         const slider = new SliderWidget({
             parent: horizontal,
