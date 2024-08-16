@@ -8,8 +8,15 @@ const path = require("path");
 const fsx = require("fs-extra");
 const simpleGit = require("simple-git");
 
+const REPO = "worldcore";
 const APP = argv[2];
 if (!APP) { console.error("Usage: node deploy.js <APP>"); exit(1); }
+
+async function getMeta(baseDir, format=`${REPO}: %D@%H Date: %ad\n`) {
+    const git = simpleGit({ baseDir });
+    const { latest: { meta } } = await git.log({ n: 1, format: { meta: format }});
+    return meta;
+}
 
 async function deploy() {
     const SRC = __dirname;
@@ -32,6 +39,10 @@ async function deploy() {
     await fsx.emptyDir(TARGET);
     console.log(`Building ${APP}...`);
     console.log(execSync(`npm run build -- --output-path ${TARGET}`, {cwd: SRC}).toString());
+
+    // add meta/version.txt
+    const meta = await getMeta(SRC);
+    await fsx.writeFile(path.join(TARGET, 'meta.txt'), meta);
 
     // commit to git
     const git = simpleGit({ baseDir: TARGET });

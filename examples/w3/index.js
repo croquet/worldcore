@@ -94,13 +94,9 @@ class MyViewRoot extends ViewRoot {
 
 App.makeWidgetDock();
 StartWorldcore({
-    appId: 'io.croquet.w3',
-    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
-    password: 'password',
-    // name: 'test',
-    name: App.autoSession(),
+    tps: 15,
+    ...window.CROQUET_SESSION, // in index.html for easy editing
     model: MyModelRoot,
     view: MyViewRoot,
-    tps: 15,
     // debug: "session"
 })
