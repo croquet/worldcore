@@ -179,7 +179,8 @@ export class HUD extends Widget {
             text: animals.animals.size.toString()
         })
 
-        const helpToggle = new ToggleWidget({
+        const inIFrame = window !== window.top;
+        if (!inIFrame) new ToggleWidget({
             parent: this,
             normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
             normalOff: new BoxWidget({color: [0.5, 0.5, 0.5]}),
@@ -197,6 +198,7 @@ export class HUD extends Widget {
             onToggleOff: () => this.helpOff()
         });
 
+        const walkPosition = inIFrame ? [-20,20] : [-70,20];
         this.walkToggle = new ToggleWidget({
             parent: this,
             normalOn: new BoxWidget({color: [0.4, 0.4, 0.4]}),
@@ -209,7 +211,7 @@ export class HUD extends Widget {
             labelOff: new ImageWidget({border: [5,5,5,5], url: walkOffIcon}),
             anchor: [1,0],
             pivot: [1,0],
-            local: [-70,20],
+            local: walkPosition,
             size:[40,40],
             visible: animals.animals.size>0,
             onToggleOn: () => this.publish("hud", "firstPerson", true),
