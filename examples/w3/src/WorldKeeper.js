@@ -16,8 +16,13 @@ export class WorldKeeper extends ModelService {
         this.future(60000).keep();
     }
 
-    keep() {
+    persist() {
+        // no-op if the world was not modified since the last persist
         this.wellKnownModel("modelRoot").persistSession(() => this.store());
+    }
+
+    keep() {
+        this.persist();
         this.future(60000).keep();
     }
 

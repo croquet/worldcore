@@ -39,6 +39,40 @@ class MyModelRoot extends ModelRoot {
         else this.service("WorldKeeper").restore(persisted);
     }
 
+    // IGNORE THE BELOW, IT"S ONLY A HACK TO REVIVE WORLDS FROM AN OLD SNAPSHOT
+    // BEFORE WE HAD THE WORLDKEEPER
+
+    // Add "hashOverride=..." in the URL to resume an old snapshot.
+
+    // old snapshots don't have the WorldKeeper, so we need to add it
+    get keeper() {
+        if (!this.service("WorldKeeper")) this.services.add(WorldKeeper.create());
+        return this.service("WorldKeeper");
+    }
+
+    // to be called from a debugger
+    // set a breakpoint in VM.executeOn's last call to get into the model context
+    // type CROQUETVM.modelsByName.modelRoot.store()
+    // the resulting JSON can be used later once we add file loading
+    // to get worlds from Croquet to Multisynq (although, we would
+    // implement saving too)
+    store() {
+        return this.keeper.store();
+    }
+
+    // The store() call above should create the keeper which will persist the world
+    // after a minute. In case the fast-forward doesn't succeed, so the keeper's
+    // future doesn't get called regularly, you can force the persistence
+    // by calling this method.
+
+    // Add ?forcePersist to the URL to force persistence without voting.
+    // set a breakpoint in VM.executeOn's last call to get into the model context
+    // then type CROQUETVM.modelsByName.modelRoot.forcePersist()
+    // which will execute this method
+    forcePersist() {
+        // do the persist after proceeding in debugger
+        this.keeper.future(0).persist();
+    }
 }
 MyModelRoot.register("MyModelRoot");
 
