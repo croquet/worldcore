@@ -1,4 +1,4 @@
-import { ViewService, m4_multiply } from "@croquet/worldcore-kernel";
+import { ViewService } from "@croquet/worldcore-kernel";
 import * as THREE from "three";
 
 function m4_THREE(m) { return m?(new THREE.Matrix4()).fromArray(m):new THREE.Matrix4() }
@@ -81,9 +81,7 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
 
     updateMatrix() {
         if (this.meshIndex === undefined) return;
-        let matrix = this.global;
-        // if (this.localTransform) matrix = m4_multiply(this.localTransform, this.global);
-        this.instance.updateMatrix(this.meshIndex, matrix);
+        this.instance.updateMatrix(this.meshIndex, this.global);
     }
 
     setColor(color) {
