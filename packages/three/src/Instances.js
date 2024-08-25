@@ -9,7 +9,9 @@ function m4_THREE(m) { return m?(new THREE.Matrix4()).fromArray(m):new THREE.Mat
 
 export class InstancedMesh {
     constructor(geometry, material, count = 1000) {
+        this.maxCount = count;
         this.mesh = new THREE.InstancedMesh( geometry, material, count);
+        this.mesh.count = 0; // number of instances in use
         this.mesh.instance = this;
         this.pawns = [];
         this.free = [];
@@ -20,9 +22,11 @@ export class InstancedMesh {
     }
 
     use(pawn) {
-        let index = this.free.pop();
+        const index = this.free.pop();
         if (index === undefined) console.error("InstancedMesh exceeded max instance count!");
         this.pawns[index] = pawn;
+        // only use as many instances as needed - this only grows though
+        if (index+1 >= this.mesh.count) this.mesh.count = index+1;
         return index;
     }
 
