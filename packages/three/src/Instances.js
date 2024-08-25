@@ -39,6 +39,11 @@ export class InstancedMesh {
         this.mesh.instanceMatrix.needsUpdate = true;
     }
 
+    updateColor(index, color) {
+        this.mesh.setColorAt(index, color);
+        this.mesh.instanceColor.needsUpdate = true;
+    }
+
 }
 
 //------------------------------------------------------------------------------------------
@@ -81,6 +86,10 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
         this.instance.updateMatrix(this.meshIndex, matrix);
     }
 
+    setColor(color) {
+        if (this.meshIndex === undefined) return;
+        this.instance.updateColor(this.meshIndex, color);
+    }
 };
 
 //------------------------------------------------------------------------------------------
