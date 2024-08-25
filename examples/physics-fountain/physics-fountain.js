@@ -180,16 +180,6 @@ export class MyModelRoot extends ModelRoot {
 }
 MyModelRoot.register("MyModelRoot");
 
-// Views/Pawns - the visible representation of the actors
-function setGeometryColor(geometry, color) {
-    const count = geometry.getAttribute("position").count;
-    const colors = [];
-    for (let i = 0; i < count; i++) {
-        colors.push(...color);
-    }
-    geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3) );
-}
-
 // AvatarPawn provides both the visual representation of the avatar and the controls for the user.
 export class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar) {
 
@@ -300,9 +290,7 @@ export class SprayPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeInstanced) {
     constructor(...args) {
         super(...args);
         this.useInstance(this.actor.shape);
-        //console.log(this.actor.index, this.parent.colors[this.actor.index]);
         this.setColor(new THREE.Color(...this.parent.colors[this.actor.index]));
-        //this.useInstance(this.actor.shape + this.actor.index);
     }
 }
 SprayPawn.register("SprayPawn");
