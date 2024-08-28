@@ -179,9 +179,9 @@ export const AM_RapierRigidBody = superclass => class extends superclass {
         let rbd;
         switch (this.rigidBodyType) {
             default:
-            case "dynamic": rbd = RAPIER.RigidBodyDesc.newDynamic(); break;
-            case "static": rbd = RAPIER.RigidBodyDesc.newStatic(); break;
-            case "kinematic": rbd = RAPIER.RigidBodyDesc.newKinematicPositionBased(); break;
+            case "dynamic": rbd = RAPIER.RigidBodyDesc.dynamic(); break;
+            case "static": rbd = RAPIER.RigidBodyDesc.fixed(); break;
+            case "kinematic": rbd = RAPIER.RigidBodyDesc.kinematicPositionBased(); break;
         }
         rbd.setCcdEnabled(this.ccdEnabled);
         rbd.translation = new RAPIER.Vector3(...this.translation);
