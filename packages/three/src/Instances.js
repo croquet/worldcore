@@ -44,8 +44,8 @@ export class InstancedMesh {
     }
 
     updateColor(index, color) {
-        this.mesh.setColorAt(index, color);
-        this.mesh.instanceColor.needsUpdate = true;
+       this.mesh.setColorAt(index, color);
+       this.mesh.instanceColor.needsUpdate = true;
     }
 
 }
@@ -67,6 +67,8 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
         if (this.instance) {
             this.renderObject = this.instance.mesh;
             this.meshIndex = this.instance.use(this);
+            // updating instance colors fails if the material has been used to render unless you set this
+            if (this.meshIndex === 0) this.instance.mesh.material.needsUpdate = true;
             this.updateMatrix();
         }
         return this.instance;

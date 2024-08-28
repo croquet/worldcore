@@ -359,8 +359,8 @@ export class MyViewRoot extends ViewRoot {
     // no need for a constructor, use default... constructor(model) { super(model); }
 
     onStart() {
-        this.buildLights();
         this.buildInstances();
+        this.buildLights();
     }
 
     buildLights() {
@@ -412,8 +412,8 @@ export class MyViewRoot extends ViewRoot {
     buildCubes() {
         const im = this.service("ThreeInstanceManager");
         const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        im.addGeometry("box", geometry);
-        const mesh = im.addMesh("cube", "box", "default", 200);
+        im.addGeometry("cube", geometry);
+        const mesh = im.addMesh("cube", "cube", "default", 200);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
     }
