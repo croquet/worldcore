@@ -1,0 +1,29 @@
+{
+  "name": "@croquet/mazewars",
+  "version": "1.5.0",
+  "description": "Maze Wars",
+  "private": true,
+  "scripts": {
+    "start": "webpack serve --no-live-reload --no-hot --mode development --devtool source-map",
+    "build": "webpack --mode production"
+  },
+  "author": "Croquet Corporation",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@croquet/worldcore-kernel": "^2.0.0-alpha.20",
+    "@croquet/worldcore-three": "^2.0.0-alpha.20",
+    "@croquet/worldcore-widget2": "^2.0.0-alpha.20"
+  },
+  "devDependencies": {
+    "eslint": "^8.43.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "file-loader": "^6.2.0",
+    "html-minimizer-webpack-plugin": "^4.4.0",
+    "html-webpack-plugin": "^5.5.3",
+    "inspectpack": "^4.7.1",
+    "source-map-loader": "^4.0.1",
+    "webpack": "^5.88.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  }
+}

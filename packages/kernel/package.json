@@ -1,6 +1,6 @@
 {
   "name": "@croquet/worldcore-kernel",
-  "version": "2.0.0-alpha.25",
+  "version": "2.0.0-alpha.27",
   "description": "3D World Engine for Croquet (minimal install)",
   "keywords": [
     "croquet",
@@ -28,7 +28,7 @@
     "directory": "packages/kernel"
   },
   "dependencies": {
-    "@croquet/croquet": "^2.0.0-12"
+    "@croquet/croquet": "^2.0.0-27"
   },
   "publishConfig": {
     "access": "public"

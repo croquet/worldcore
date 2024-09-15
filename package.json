@@ -7,6 +7,10 @@
   "bugs": "https://github.com/croquet/worldcore/issues",
   "comment": "This mono repo has various sub-repositories, each of which is a separate package.  See the README.md file for more information.",
   "private": true,
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
   "devDependencies": {
     "eslint": "^7.23.0",
     "eslint-config-airbnb-base": "^14.2.1",
@@ -15,8 +19,8 @@
     "lerna": "^4.0.0"
   },
   "dependencies": {
-    "@croquet/croquet": "^2.0.0-20",
+    "@croquet/croquet": "^2.0.0-27",
     "@dimforge/rapier3d-compat": "^0.14.0",
-    "three": "^0.167.1"
+    "three": "^0.158.0"
   }
 }

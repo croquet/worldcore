@@ -368,7 +368,9 @@ export class MyViewRoot extends ViewRoot {
         rm.renderer.shadowMap.enabled = true;
         rm.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         rm.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
-
+        rm.renderer.outputEncoding = THREE.sRGBEncoding;
+        rm.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        rm.renderer.toneMappingExposure = 1.5; // Increase exposure
         const group = new THREE.Group();
 
         const ambient = new THREE.AmbientLight( 0xffffff, 0.5 );
