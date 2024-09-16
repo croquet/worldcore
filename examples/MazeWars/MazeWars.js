@@ -2,6 +2,18 @@
 
 import { App, Constants, View, StartWorldcore, mix, ViewRoot, ModelRoot, WebInputManager, Actor, Pawn, AM_MouselookAvatar, PM_MouselookAvatar, GetNamedView, AM_Avatar, PM_Avatar} from "@croquet/worldcore-kernel";
 import { THREE, GLTFLoader } from "@croquet/worldcore-three";
+
+import photonSoundSrc from "./assets/sounds/Photon.mp3";
+import bounceSoundSrc from "./assets/sounds/MetalBang.mp3";
+import rechargeSoundSrc from "./assets/sounds/Recharge.wav";
+import explosionSoundSrc from "./assets/sounds/Explosion.wav";
+import implosionSoundSrc from "./assets/sounds/Implosion.mp3";
+import hitSoundSrc from "./assets/sounds/Hit.wav";
+import launchSoundSrc from "./assets/sounds/Launch.mp3";
+import shootFailSoundSrc from "./assets/sounds/ShootFail.wav";
+import pointSoundSrc from "./assets/sounds/Point.wav";
+
+
 //const three = THREE;
 //console.log(FontLoader)
 //import { BufferGeometryUtils } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -17,15 +29,6 @@ import eyeball_glb from "./assets/eyeball.glb";
 import explosion from"./assets/textures/explosion.png";
 let helvetiker = "./fonts/helvetiker_regular.typeface.json";
 
-import photonSoundSrc from "./assets/sounds/Photon.mp3";
-import bounceSoundSrc from "./assets/sounds/MetalBang.mp3";
-import rechargeSoundSrc from "./assets/sounds/Recharge.wav";
-import explosionSoundSrc from "./assets/sounds/Explosion.wav";
-import implosionSoundSrc from "./assets/sounds/Implosion.mp3";
-import hitSoundSrc from "./assets/sounds/Hit.wav";
-import launchSoundSrc from "./assets/sounds/Launch.mp3";
-import shootFailSoundSrc from "./assets/sounds/ShootFail.wav";
-import pointSoundSrc from "./assets/sounds/Point.wav";
 
 /*
 ------------------MazeWars-----------------------
@@ -315,14 +318,14 @@ class Avatar3DGenerator {
 let avatarGenerator;
 
 //------------------ 1.4. Font Generator -----------------------
-class Font3DGenerator{
-  constructor(){
+class Font3DGenerator {
+  constructor() {
     // XYZZY - OK, npm actually loads the font itself when we use require(). Nuts...
     var fontLoader = new FontLoader();
     this.font = fontLoader.parse(helvetiker);
   }
 
-  generate(message, color){
+  generate(message, color) {
     let material = new THREE.MeshBasicMaterial( {
       color: color,
       transparent: true,
