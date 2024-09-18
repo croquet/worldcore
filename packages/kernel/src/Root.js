@@ -193,6 +193,7 @@ export function GetViewService(name) { return viewServices.get(name) }
 
 export async function StartWorldcore(options) {
 
+    console.log(options);
     await Promise.all(options.model.modelServices().map(
         service => withOptionsDo(service,
             (Service, opts) => Service.asyncStart(opts))));

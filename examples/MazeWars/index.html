@@ -1,26 +1,27 @@
 <!DOCTYPE html>
-<html lang="en" >
-<head>
-  <meta charset="UTF-8">
-  <title>Maze Wars</title>
-  <link href="/assets/style.css">
+<html>
+    <head>
+        <title>Maze Wars</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+        <meta charset="utf-8">
+        <style>
+            body {
+                overflow: hidden;
+                background: rgb(30, 30, 30);
+            }
+            #codelink {
+                position: fixed; bottom: 10px; right: 10px; padding: .5em; border-radius: 30px;
+                opacity: 50%; background: lightgray; box-shadow: 1px 1px 5px black;
+                text-decoration: none; font-family: monospace; font-size: 1.5em; z-index: 1000;
+            }
+            #codelink:hover {
+                opacity: 100%;
+            }
+        </style>
 
-</head>
-  <body>
-    <div id="blocker">
-
-			<div id="instructions">
-				<span style="font-size:36px">Click to play</span>
-				<br /><br />
-				Move: WASD<br/>
-        Look: MOUSE<br/>
-        ESC to Exit
-			</div>
-
-		</div>
-    <canvas id="three" touch-action="none"></canvas>
-    <script src='https://code.jquery.com/pep/0.4.3/pep.js'></script>
-    <script src="https://cdn.jsdelivr.net/npm/resonance-audio/build/resonance-audio.min.js"></script>
-    <script src="https://cdn.agora.io/sdk/release/AgoraRTCSDK-3.1.0.js"></script>
-  </body>
+    </head>
+    <body>
+        <a id="codelink" href="https://github.com/multisynq/physics-fountain/blob/main/index.html"
+        title="View source code on GitHub" target="_blank">{...}</a>
+    </body>
 </html>

@@ -1,18 +1,19 @@
 
 import { m4_multiply, m4_translation, ViewService, q_identity, m4_rotationQ } from "@croquet/worldcore-kernel";
-import * as THREE from "three";
+import * as THREE from 'three';
+// you must remove rapier from the three Addons to avoid a conflict with the three package in the examples/MazeWars example
+import * as ADDONS from 'three/examples/jsm/Addons.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
-import { GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export {
     THREE,
+    ADDONS,
     OutlinePass,
-    Reflector,
-    GLTFLoader
+    Reflector
 };
 
 //------------------------------------------------------------------------------------------
