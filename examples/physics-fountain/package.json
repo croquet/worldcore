@@ -1,6 +1,6 @@
 {
   "name": "physics-fountain",
-  "version": "1.0.0",
+  "version": "2.0.0-alpha.27",
   "description": "Physics Example",
   "private": true,
   "scripts": {
@@ -16,7 +16,7 @@
     "webpack-dev-server": "^5.0.4"
   },
   "dependencies": {
-    "@croquet/worldcore": "^2.0.0-alpha.25",
-    "@croquet/worldcore-rapier": "^2.0.0-alpha.25"
+    "@croquet/worldcore": "^2.0.0-alpha.27",
+    "@croquet/worldcore-rapier": "^2.0.0-alpha.27"
   }
 }
