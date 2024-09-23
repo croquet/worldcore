@@ -1,6 +1,6 @@
 {
   "name": "mazewars",
-  "version": "2.0.0",
+  "version": "2.0.0-alpha.27",
   "description": "Maze Wars",
   "private": true,
   "scripts": {

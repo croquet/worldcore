@@ -1,9 +1,9 @@
 const HtmlWebPackPlugin = require('html-webpack-plugin');
 //const HtmlMinimizerPlugin = require('html-minimizer-webpack-plugin');
-var path = require('path');
+const path = require('path');
 
 module.exports = {
-    entry : './MazeWars.js',
+    entry : './mazewars02.js',
     output: {
         path: path.join(__dirname, 'dist'),
         filename: '[name]-[contenthash:8].js',
