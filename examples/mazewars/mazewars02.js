@@ -17,6 +17,7 @@ import apiKey from "./assets/apiKey";
 import eyeball_glb from "./assets/eyeball.glb";
 
 // Global Variables
+const PI_2 = Math.PI/2;
 const PI_4 = Math.PI/4;
 const MISSILE_LIFE = 4000;
 
@@ -260,8 +261,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         console.log("DRIVE");
         this.gas = 0;
         this.turn = 0;
-        this.steer = 0;
-        this.speed = 0;
+        this.strafe = 0;
         this.highGear = 1;
         this.pointerId = 0;
 
@@ -277,8 +277,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     park() {
         this.gas = 0;
         this.turn = 0;
-        this.steer = 0;
-        this.speed = 0;
+        this.strafe = 0;
         this.highGear = 1;
     }
 
@@ -305,14 +304,9 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
             case "ArrowDown": case "S": case "s":
                 this.gas = -1; break;
             case "ArrowLeft": case "A": case "a":
-                this.turn = 1; break;
+                this.strafe = 1; break;
             case "ArrowRight": case "D": case "d":
-                this.turn = -1; break;
-            case "O": case "o":
-                if (this.developerMode === 5) {
-                    this.shootNow = this.auto = !this.auto;
-                }
-                break;
+                this.strafe = -1; break;
             case "Shift":
                 console.log("shiftKey Down");
                 this.highGear = 1.5; break;
@@ -320,22 +314,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
                 this.shootMissile();
                 break;
             case "I": case "i":
-                if (this.developerMode === 5) console.log(
-                    "translation:", this.translation,
-                    "roll:", this.roll,
-                    "pitch:", this.pitch,
-                    "yaw:", this.yaw);
-                break;
-            case "g":
-                // switch to god mode camera
-                this.godMode = !this.godMode;
-                break;
-            case "G":
-                // everyone switch to go mode camera
-                this.publish("all", "godMode", !this.godMode);
-                break;
-            case "R": case "r":
-                if (this.developerMode === 5) this.publish("game", "resetGame");
+                if (this.developerMode === 5) console.log( "AvatarPawn", this );
                 break;
             case '-': case '_':
                 volume = Math.max(0, volume - 0.1);
@@ -365,9 +344,9 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
                 case "ArrowDown": case "S": case "s":
                 this.gas = 0; break;
                 case "ArrowLeft": case "A": case "a":
-                this.turn = 0; break;
+                this.strafe = 0; break;
                 case "ArrowRight": case "D": case "d":
-                this.turn = 0; break;
+                this.strafe = 0; break;
             case "Shift":
                 console.log("shiftKey Up");
                 this.highGear = 1; break;
@@ -393,10 +372,15 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         // console.log("mouse0Up");
       }
 
+    normalizeRotation(rotation) {
+        return ((rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    }
+
     doPointerDelta(e) {
         //console.log("AvatarPawn.onPointerDelta()", e.xy);
         // update the avatar's yaw
         this.yaw -= e.xy[0] * 0.002;
+        this.yaw = this.normalizeRotation(this.yaw);
         this.yawQ = q_axisAngle([0,1,0], this.yaw);
         this.positionTo(this.translation, this.yawQ);
 
@@ -423,25 +407,19 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     update(time, delta) {
         super.update(time,delta);
         if (this.driving) {
-
-            const factor = delta/1000;
-
-            if (this.auto) {
-                this.speed = 5 * factor;
-                this.steer = -1;
-                this.shoot();
-            } else {
-                this.speed = this.gas * 20 * factor * this.highGear;
-                this.steer = this.turn;
-            }
-
-            if (this.speed || this.steer) {
-                const angularVelocity = this.steer*0.025;
-                this.yaw += angularVelocity;
-                this.yawQ = q_axisAngle([0,1,0], this.yaw);
+            if (this.gas || this.strafe) {
+                const factor = delta/1000;
+                const speed = this.gas * 20 * factor * this.highGear;
+                const strafeSpeed = this.strafe * 20 * factor * this.highGear;
                 const forward = v3_rotate([0,0,-1], this.yawQ);
-                const velocity = v3_scale(forward, this.speed);
-
+                let velocity = v3_scale(forward, speed);
+                if (strafeSpeed !== 0) {
+                    console.log(this.yaw, this.strafe*PI_2, this.yaw+PI_2);
+                    const leftQ = q_axisAngle([0,1,0], this.yaw+PI_2);
+                    const left = v3_rotate([0,0,-1], leftQ);
+                    const leftVelocity = v3_scale(left, strafeSpeed);
+                    velocity = v3_add(velocity, leftVelocity);
+                }
                 // set translation to limit after any collision
                 const translation = v3_add(this.translation, velocity);
                 this.positionTo(translation, this.yawQ);
