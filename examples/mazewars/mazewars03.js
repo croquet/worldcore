@@ -5,6 +5,7 @@
 //------------------------------------------------------------------------------------------
 // mazewars01.js - minimal world - showing we exist. We get an alert when a new user joins.
 // mazewars02.js - add simple avatars w/ mouselook interface
+// mazewars03.js - add missiles and collision detection
 
 import { App, Constants, StartWorldcore, ModelRoot, ViewRoot,Actor, mix,
     InputManager, AM_Spatial, PM_Spatial, PM_Smoothed, Pawn, AM_Avatar, PM_Avatar, UserManager, User,
@@ -15,6 +16,10 @@ import paper from "./assets/textures/paper.jpg";
 import sky from "./assets/textures/alienSky1.jpg";
 import apiKey from "./assets/apiKey";
 import eyeball_glb from "./assets/eyeball.glb";
+
+import fireballTexture from "./assets/textures/explosion.png";
+import * as fireballFragmentShader from "./fireball.frag.js";
+import * as fireballVertexShader from "./fireball.vert.js";
 
 // Global Variables
 const PI_2 = Math.PI/2;
@@ -51,6 +56,21 @@ async function eyeConstruct() {
 }
 
 eyeConstruct();
+
+let fireCount = 0;
+let lastFireTime = 0;
+let fireMaterial;
+new THREE.TextureLoader().load(fireballTexture, texture => {
+    fireMaterial = new THREE.ShaderMaterial( {
+            uniforms: {
+                tExplosion: { value: texture },
+                time: { value: 0.0 },
+                //tOpacity: { value: 1.0 }
+            },
+            vertexShader: fireballVertexShader.vertexShader(),
+            fragmentShader: fireballFragmentShader.fragmentShader()
+        } );
+    });
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
@@ -175,6 +195,10 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
         console.log("AvatarActor shootMissile");
         this.canShoot = false;
         this.future(MISSILE_LIFE).reloadMissile();
+        //const [ x, y, z, yaw ] = argFloats;
+        const aim = v3_rotate([0,0,1], q_axisAngle([0,1,0], this.yaw));
+        const translation = [...this.translation]; // v3_add([x, y, z], v3_scale(aim, 5));
+        MissileActor.create({parent: this.parent, avatar: this, translation, aim});
     }
 
     reloadMissile() {
@@ -379,18 +403,21 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     doPointerDelta(e) {
         //console.log("AvatarPawn.onPointerDelta()", e.xy);
         // update the avatar's yaw
-        this.yaw -= e.xy[0] * 0.002;
-        this.yaw = this.normalizeRotation(this.yaw);
-        this.yawQ = q_axisAngle([0,1,0], this.yaw);
-        this.positionTo(this.translation, this.yawQ);
+        const im = this.service("InputManager");
+        if ( im.inPointerLock ) {
+            this.yaw -= e.xy[0] * 0.002;
+            this.yaw = this.normalizeRotation(this.yaw);
+            this.yawQ = q_axisAngle([0,1,0], this.yaw);
+            this.positionTo(this.translation, this.yawQ);
 
-        // update the eyeball's pitch
-        let p = this.eyeball.pitch;
-        p -= e.xy[1] * 0.002;
-        p = Math.max(-PI_4, Math.min(PI_4, p));
-        this.eyeball.pitch = p;
-        this.eyeball.pitchQ = q_axisAngle([1,0,0], this.eyeball.pitch);
-        this.eyeball.set({rotation: this.eyeball.pitchQ});
+            // update the eyeball's pitch
+            let p = this.eyeball.pitch;
+            p -= e.xy[1] * 0.002;
+            p = Math.max(-PI_4, Math.min(PI_4, p));
+            this.eyeball.pitch = p;
+            this.eyeball.pitchQ = q_axisAngle([1,0,0], this.eyeball.pitch);
+            this.eyeball.set({rotation: this.eyeball.pitchQ});
+        }
     }
 
     doPointerMove(e) {
@@ -480,6 +507,80 @@ class MyUser extends User {
     }
 }
 MyUser.register('MyUser');
+
+
+//------------------------------------------------------------------------------------------
+//--MissileActor ---------------------------------------------------------------------------
+// Fired by the tank - they destroy the bots but bounce off of everything else
+//------------------------------------------------------------------------------------------
+const missileSpeed = 75;
+
+class MissileActor extends mix(Actor).with(AM_Spatial) {
+    get pawn() { return "MissilePawn" }
+
+    init(options) {
+        super.init(options);
+        this.future(8000).destroy(); // destroy after some time
+        this.lastTranslation = [0,0,0];
+        this.timeScale = 0.00025 + Math.random()*0.00002;
+        this.tick();
+    }
+
+    resetGame() {
+        this.destroy();
+    }
+
+    get colorIndex() { return this._colorIndex }
+
+    tick() {
+        this.testCollision();
+        if (!this.doomed) this.future(10).tick();
+    }
+
+    testCollision() {
+    }
+}
+MissileActor.register('MissileActor');
+
+//------------------------------------------------------------------------------------------
+// MissilePawn ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+
+    constructor(actor) {
+        super(actor);
+        console.log("MissilePawn constructor", this);
+        this.startTime = this.now();
+        this.material = fireMaterial;
+        this.geometry = new THREE.IcosahedronGeometry( 10, 20 );
+        this.fireball = new THREE.Mesh(this.geometry, this.material);
+        this.pointLight = new THREE.PointLight(0xff8844, 1, 4, 2);
+        this.fireball.add(this.pointLight);
+        this.setRenderObject(this.fireball);
+        console.log(this);
+        //playSound(explosion, this.fireball, false);
+    }
+
+    update(time, delta) {
+        super.update(time,delta);
+        //this.refreshDrawTransform();
+        if (this.fireball) {
+            const now = this.now(); // NB: time argument is not now()
+            const age = now-this.startTime;
+            this.fireball.material.uniforms[ 'time' ].value = time*this.actor.timeScale;
+            //this.fireball.material.uniforms[ 'tOpacity' ].value = 0.25;
+            this.pointLight.intensity = 0.25+ 0.75* Math.sin(age*0.020)*Math.cos(age*0.007);
+        }
+    }
+
+    destroy() {
+        super.destroy();
+        if (this.geometry) this.geometry.dispose();
+        //this.material.dispose();
+        if (this.pointLight) this.pointLight.dispose();
+    }
+}
+MissilePawn.register("MissilePawn");
 //------------------------------------------------------------------------------------------
 //-- StartWorldcore ------------------------------------------------------------------------------
 // We either start or join a Croquet session here.

@@ -3,7 +3,7 @@ const HtmlWebPackPlugin = require('html-webpack-plugin');
 const path = require('path');
 
 module.exports = {
-    entry : './mazewars02.js',
+    entry : './mazewars03.js',
     output: {
         path: path.join(__dirname, 'dist'),
         filename: '[name]-[contenthash:8].js',
