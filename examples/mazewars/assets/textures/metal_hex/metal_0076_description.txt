@@ -1,0 +1,10 @@
+Name:
+Hexagonal Black Perforated Metal Grille Mesh (Metal 0076)
+
+Description:
+It is a double layered perforated metallic mesh. Both layers have hexagonal patterns and are casted in black.
+
+This texture can be used as a grille mesh for cars or sci-fi building structures.
+
+Author:
+https://www.texturecan.com

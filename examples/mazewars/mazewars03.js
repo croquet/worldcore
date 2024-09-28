@@ -7,16 +7,21 @@
 // mazewars02.js - add simple avatars w/ mouselook interface
 // mazewars03.js - add missiles and collision detection
 
-import { App, Constants, StartWorldcore, ModelRoot, ViewRoot,Actor, mix,
+import { App, Constants, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
     InputManager, AM_Spatial, PM_Spatial, PM_Smoothed, Pawn, AM_Avatar, PM_Avatar, UserManager, User,
-    toRad, q_yaw, q_pitch, q_axisAngle, v3_add, v3_rotate, v3_scale } from "@croquet/worldcore-kernel";
+    toRad, q_yaw, q_pitch, q_axisAngle, v3_add, v3_sub, v3_normalize, v3_rotate, v3_scale, v3_distanceSqr } from "@croquet/worldcore-kernel";
 import { THREE, ADDONS, PM_ThreeVisible, ThreeRenderManager, PM_ThreeCamera } from "@croquet/worldcore-three";
-import paper from "./assets/textures/paper.jpg";
+//import paper from "./assets/textures/paper.jpg";
 // Illustration 112505376 / 360 Sky © Planetfelicity | Dreamstime.com
 import sky from "./assets/textures/alienSky1.jpg";
 import apiKey from "./assets/apiKey";
 import eyeball_glb from "./assets/eyeball.glb";
-
+import missile_glb from "./assets/missile.glb";
+import wall01_glb from "./assets/Wall01.glb";
+import wall02_glb from "./assets/Wall02.glb";
+import wall03_glb from "./assets/Wall03.glb";
+import wall04_glb from "./assets/Wall04.glb";
+import floor_tile from "./assets/textures/floor02.jpg";
 import fireballTexture from "./assets/textures/explosion.png";
 import * as fireballFragmentShader from "./fireball.frag.js";
 import * as fireballVertexShader from "./fireball.vert.js";
@@ -25,6 +30,9 @@ import * as fireballVertexShader from "./fireball.vert.js";
 const PI_2 = Math.PI/2;
 const PI_4 = Math.PI/4;
 const MISSILE_LIFE = 4000;
+const COLLIDE_DIST = 8; // 2x eyeball and missile radius
+const COLLIDE_SQ = COLLIDE_DIST * COLLIDE_DIST;
+const MISSILE_SPEED = 1.25;
 
 export const sunBase = [25, 50, 5];
 export const sunLight =  function() {
@@ -45,30 +53,38 @@ export const sunLight =  function() {
     return sun;
 }();
 
-let eyeball;
-async function eyeConstruct() {
+let readyToLoad = false;
+let eyeball, missile, wall1, wall2, wall3, wall4;
+
+async function modelConstruct() {
     const gltfLoader = new ADDONS.GLTFLoader();
     const dracoLoader = new ADDONS.DRACOLoader();
     const baseUrl = window.location.origin;
     dracoLoader.setDecoderPath(`${baseUrl}/assets/draco/`);
     gltfLoader.setDRACOLoader(dracoLoader);
-    gltfLoader.load( eyeball_glb, gltf => eyeball = gltf.scene );
+    return [eyeball, missile, wall1, wall2, wall3, wall4] = await Promise.all( [
+        gltfLoader.loadAsync( eyeball_glb ),
+        gltfLoader.loadAsync( missile_glb ),
+        gltfLoader.loadAsync( wall01_glb ),
+        gltfLoader.loadAsync( wall02_glb ),
+        gltfLoader.loadAsync( wall03_glb ),
+        gltfLoader.loadAsync( wall04_glb ),
+    ]);
 }
 
-eyeConstruct();
+modelConstruct().then( readyToLoad = true );
 
-let fireCount = 0;
-let lastFireTime = 0;
 let fireMaterial;
 new THREE.TextureLoader().load(fireballTexture, texture => {
     fireMaterial = new THREE.ShaderMaterial( {
             uniforms: {
                 tExplosion: { value: texture },
                 time: { value: 0.0 },
-                //tOpacity: { value: 1.0 }
+                tOpacity: { value: 1.0 }
             },
             vertexShader: fireballVertexShader.vertexShader(),
-            fragmentShader: fireballFragmentShader.fragmentShader()
+            fragmentShader: fireballFragmentShader.fragmentShader(),
+            side: THREE.DoubleSide
         } );
     });
 
@@ -76,7 +92,6 @@ new THREE.TextureLoader().load(fireballTexture, texture => {
 //-- BaseActor -----------------------------------------------------------------------------
 // This is the ground plane.
 //------------------------------------------------------------------------------------------
-
 class BaseActor extends mix(Actor).with(AM_Spatial) {
 
     get pawn() {return "BasePawn"}
@@ -94,22 +109,34 @@ BaseActor.register('BaseActor');
 // and compute the Perlin noise value at each x/z position to determine the height.
 // We then renormalize the mesh vectors.
 //------------------------------------------------------------------------------------------
-
 export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
-    constructor(actor) {
-        console.log("BasePawn constructor");
-        super(actor);
-        const worldX = 256, worldZ=256;
-        const cellSize = 2.5;
+    constructor(...args) {
+        super(...args);
 
-        this.paperTexture = new THREE.TextureLoader().load( paper );
-        this.paperTexture.wrapS = THREE.RepeatWrapping;
-        this.paperTexture.wrapT = THREE.RepeatWrapping;
-        this.paperTexture.repeat.set( 10, 10 );
-        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.8, 0.5, 0.2), map: this.paperTexture} );
-        this.geometry = new THREE.PlaneGeometry(worldX*cellSize,worldZ*cellSize, worldX, worldZ);
+        const floorMat = new THREE.MeshStandardMaterial( {
+            roughness: 0.8,
+            color: 0xffffff,
+            metalness: 0.2,
+            bumpScale: 0.0005,
+            side: THREE.FrontSide,
+            transparent: true,
+            opacity: 0.99
+        } );
+
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load( floor_tile, map => {
+            map.wrapS = THREE.RepeatWrapping;
+            map.wrapT = THREE.RepeatWrapping;
+            map.anisotropy = 4;
+            map.repeat.set( 20, 20 );
+            map.encoding = THREE.sRGBEncoding;
+            floorMat.map = map;
+            floorMat.needsUpdate = true;
+        } );
+
+        this.material = floorMat;
+        this.geometry = new THREE.PlaneGeometry(200,200);
         this.geometry.rotateX(toRad(-90));
-
         const base = new THREE.Mesh( this.geometry, this.material );
         base.receiveShadow = true;
         this.setRenderObject(base);
@@ -147,7 +174,7 @@ MyModelRoot.register("MyModelRoot");
 export class MyViewRoot extends ViewRoot {
 
     static viewServices() {
-        return [InputManager, ThreeRenderManager];
+        return [InputManager, ThreeRenderManager, AvatarManager];
     }
 
     onStart() {
@@ -158,13 +185,14 @@ export class MyViewRoot extends ViewRoot {
         const loader = new THREE.TextureLoader();
         loader.load( sky, skyTexture => {
             const rm = this.service("ThreeRenderManager");
+            //rm.doRender = false;
             //rm.renderer.shadowMap.enabled = true;
             //rm.renderer.shadowMap.type = THREE.PCFShadowMap;
             rm.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
             const ambient = new THREE.AmbientLight( 0xffffff, 0.2 );
             rm.scene.add(ambient);
             rm.scene.add(sunLight); // this is a global object
-            rm.scene.fog = new THREE.Fog( 0x9D5D4D, 200, 400 );
+            rm.scene.fog = new THREE.Fog( 0x9D5D4D, 800, 1500 );
             const pmremGenerator = new THREE.PMREMGenerator(rm.renderer);
             pmremGenerator.compileEquirectangularShader();
             const skyEnvironment = pmremGenerator.fromEquirectangular(skyTexture);
@@ -178,7 +206,6 @@ export class MyViewRoot extends ViewRoot {
 //-- AvatarActor ---------------------------------------------------------------------------
 // This is you. Most of the control code for the avatar is in the pawn in Avatar.js.
 //------------------------------------------------------------------------------------------
-
 class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
     get pawn() { return "AvatarPawn" }
 
@@ -195,15 +222,17 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
         console.log("AvatarActor shootMissile");
         this.canShoot = false;
         this.future(MISSILE_LIFE).reloadMissile();
-        //const [ x, y, z, yaw ] = argFloats;
-        const aim = v3_rotate([0,0,1], q_axisAngle([0,1,0], this.yaw));
-        const translation = [...this.translation]; // v3_add([x, y, z], v3_scale(aim, 5));
-        MissileActor.create({parent: this.parent, avatar: this, translation, aim});
+        MissileActor.create({parent: this.parent, avatar: this});
     }
 
     reloadMissile() {
         console.log("AvatarActor reloadMissile");
         this.canShoot = true;
+    }
+
+    kill() {
+        console.log("testCollision", this.id, "KILLED");
+        FireballActor.create({parent: this});
     }
 }
 AvatarActor.register('AvatarActor');
@@ -212,14 +241,6 @@ class EyeballActor extends mix(Actor).with(AM_Spatial,) {
     get pawn() { return "EyeballPawn" }
 }
 EyeballActor.register('EyeballActor');
-
-//------------------------------------------------------------------------------------------
-// AvatarPawn
-// The avatar is designed to instantly react to user input and the publish those changes
-// so other users are able to see and interact with this avatar. Though there will be some latency
-// between when you see your actions and the other users do, this should have a minimal
-// impact on gameplay.
-//------------------------------------------------------------------------------------------
 
 class EyeballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeCamera) {
 
@@ -236,8 +257,8 @@ class EyeballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeC
 
     load3D() {
         if (this.doomed) return;
-        if (eyeball) {
-            this.eye = eyeball.clone();
+        if (readyToLoad) {
+            this.eye = eyeball.scene.clone();
             this.eye.scale.set(50,50,50);
             this.eye.rotation.set(0,Math.PI,0);
             this.eye.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
@@ -270,12 +291,26 @@ class EyeballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeC
 }
 EyeballPawn.register("EyeballPawn");
 
+//------------------------------------------------------------------------------------------
+// AvatarPawn
+// The avatar is designed to instantly react to user input and the publish those changes
+// so other users are able to see and interact with this avatar. Though there will be some latency
+// between when you see your actions and the other users do, this should have a minimal
+// impact on gameplay.
+//------------------------------------------------------------------------------------------
 class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar) {
 
     constructor(actor) {
         super(actor);
+        this.isAvatar = true;
         this.yaw = q_yaw(this.rotation);
         this.yawQ = q_axisAngle([0,1,0], this.yaw);
+        this.service("AvatarManager").avatars.add(this);
+    }
+
+    destroy() {
+        super.destroy();
+        this.service("AvatarManager").avatars.delete(this);
     }
 
     // If this is YOUR avatar, the AvatarPawn automatically calls this.drive() in the constructor.
@@ -425,12 +460,6 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     console.log("AvatarPawn.onPointerMove()", e);
     }
 
-//    doPointerTap() {
-//        this.shootNow = true;
-//        this.shootMissile();
-//        this.shootNow = false;
-//    }
-
     update(time, delta) {
         super.update(time,delta);
         if (this.driving) {
@@ -441,18 +470,34 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
                 const forward = v3_rotate([0,0,-1], this.yawQ);
                 let velocity = v3_scale(forward, speed);
                 if (strafeSpeed !== 0) {
-                    console.log(this.yaw, this.strafe*PI_2, this.yaw+PI_2);
                     const leftQ = q_axisAngle([0,1,0], this.yaw+PI_2);
                     const left = v3_rotate([0,0,-1], leftQ);
                     const leftVelocity = v3_scale(left, strafeSpeed);
                     velocity = v3_add(velocity, leftVelocity);
                 }
-                // set translation to limit after any collision
-                const translation = v3_add(this.translation, velocity);
-                this.positionTo(translation, this.yawQ);
-                sunLight.position.set(...v3_add(translation, sunBase));
+                this.collide(velocity);
             }
         }
+    }
+
+    collide(velocity) {
+        // set translation to limit after any collision
+        let translation = v3_add(this.translation, velocity);
+        const avatars = this.service("AvatarManager").avatars;
+        for (const avatar of avatars) {
+            if (avatar === this) continue; // don't collide with yourself
+            const distanceSqr = v3_distanceSqr(translation, avatar.translation);
+            if (distanceSqr < COLLIDE_SQ) {
+                if (distanceSqr === 0) translation = this.translation;
+                translation = v3_add(avatar.translation,
+                    v3_scale(
+                        v3_normalize(
+                            v3_sub(translation, avatar.translation)), COLLIDE_DIST));
+
+            }
+        }
+        this.positionTo(translation, this.yawQ);
+        sunLight.position.set(...v3_add(translation, sunBase));
     }
 
     goHome() {
@@ -476,6 +521,7 @@ class MyUserManager extends UserManager {
     }
     get defaultUser() {return MyUser}
 }
+
 MyUserManager.register('MyUserManager');
 
 class MyUser extends User {
@@ -483,21 +529,10 @@ class MyUser extends User {
         super.init(options);
         const base = this.wellKnownModel("ModelRoot").base;
 
-        const placementAngle = Math.random() * Math.PI * 2;
-        const placementDist = 15 + Math.random() * 30; // 15 to 45 (closest bollard is around 50 from centre)
-        // choose an orientation that isn't out along the placement spoke, in case
-        // we're near the tower and the camera behind us gets blocked
-        const yaw = placementAngle + Math.PI + (1 - Math.random() * 2) * Math.PI/2;
-        const props = options.savedProps || {
-            translation: [placementDist * Math.sin(placementAngle), 0, placementDist * Math.cos(placementAngle)],
-            rotation: q_axisAngle([0,1,0], yaw),
-        };
-
         this.avatar = AvatarActor.create({
             parent: base,
             driver: this.userId,
-            tags: ["avatar", "block"],
-            ...props
+            tags: ["avatar", "block"]
         });
     }
 
@@ -508,36 +543,59 @@ class MyUser extends User {
 }
 MyUser.register('MyUser');
 
+//------------------------------------------------------------------------------------------
+//-- AvatarManager ----------------------------------------------------------------------
+// Easy to find all of the avatars in the world
+//------------------------------------------------------------------------------------------
+class AvatarManager extends ViewService {
+
+    constructor() {
+        super("AvatarManager");
+        this.avatars = new Set();
+    }
+}
 
 //------------------------------------------------------------------------------------------
 //--MissileActor ---------------------------------------------------------------------------
-// Fired by the tank - they destroy the bots but bounce off of everything else
+// Fired by the avatar - they destroy the other players but bounce off of everything else
 //------------------------------------------------------------------------------------------
-const missileSpeed = 75;
-
 class MissileActor extends mix(Actor).with(AM_Spatial) {
     get pawn() { return "MissilePawn" }
 
     init(options) {
         super.init(options);
         this.future(8000).destroy(); // destroy after some time
-        this.lastTranslation = [0,0,0];
+        this.translation = [...this._avatar.translation];
+        this.rotation = [...this._avatar.rotation];
+        this.yaw = q_yaw(this.rotation);
+        this.yawQ = q_axisAngle([0,1,0], this.yaw);
+        this.direction = v3_scale(v3_rotate(this.forward, this.yawQ), -1);
         this.timeScale = 0.00025 + Math.random()*0.00002;
+        this.hasNotBounced = true;
         this.tick();
+        //console.log("MissileActor init", this);
     }
 
     resetGame() {
         this.destroy();
     }
 
-    get colorIndex() { return this._colorIndex }
-
     tick() {
-        this.testCollision();
+        // test for collisions
+        const actors = this.wellKnownModel('ActorManager').actors;
+        this.translation = v3_add(this.translation, v3_scale(this.direction, MISSILE_SPEED));
+        actors.forEach(actor => { if (actor.isAvatar) this.testCollision(actor); });
         if (!this.doomed) this.future(10).tick();
     }
 
-    testCollision() {
+    testCollision( actor ) {
+        //console.log("testCollision", actor.translation);
+        if (actor.id === this._avatar.id && this.hasNotBounced) return; // don't kill yourself
+        const distanceSqr = v3_distanceSqr(this.translation, actor.translation);
+        if (distanceSqr < COLLIDE_SQ) {
+            actor.kill();
+            this.destroy();
+        }
     }
 }
 MissileActor.register('MissileActor');
@@ -549,28 +607,19 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
-        console.log("MissilePawn constructor", this);
-        this.startTime = this.now();
-        this.material = fireMaterial;
-        this.geometry = new THREE.IcosahedronGeometry( 10, 20 );
-        this.fireball = new THREE.Mesh(this.geometry, this.material);
-        this.pointLight = new THREE.PointLight(0xff8844, 1, 4, 2);
-        this.fireball.add(this.pointLight);
-        this.setRenderObject(this.fireball);
-        console.log(this);
-        //playSound(explosion, this.fireball, false);
+        this.load3D();
     }
-
-    update(time, delta) {
-        super.update(time,delta);
-        //this.refreshDrawTransform();
-        if (this.fireball) {
-            const now = this.now(); // NB: time argument is not now()
-            const age = now-this.startTime;
-            this.fireball.material.uniforms[ 'time' ].value = time*this.actor.timeScale;
-            //this.fireball.material.uniforms[ 'tOpacity' ].value = 0.25;
-            this.pointLight.intensity = 0.25+ 0.75* Math.sin(age*0.020)*Math.cos(age*0.007);
-        }
+    load3D() {
+        if (this.doomed) return;
+        if (readyToLoad) {
+            this.missile = missile.scene.clone();
+            this.missile.scale.set(5,5,5);
+            this.missile.rotation.set(0,Math.PI,0);
+            this.missile.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
+            this.group = new THREE.Group();
+            this.group.add(this.missile);
+            this.setRenderObject(this.group);
+        } else this.future(100).load3D();
     }
 
     destroy() {
@@ -581,6 +630,64 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     }
 }
 MissilePawn.register("MissilePawn");
+
+//------------------------------------------------------------------------------------------
+//--FireActor ---------------------------------------------------------------------------
+// When a missile hits an avatar a fireball is generated. It is attached to the avatar.
+//------------------------------------------------------------------------------------------
+
+
+class FireballActor extends mix(Actor).with(AM_Spatial) {
+    get pawn() { return "FireballPawn" }
+
+    init(options) {
+        super.init(options);
+        this.timeScale = 0.00025 + Math.random()*0.00002;
+        this.future(3000).destroy(); // destroy after some time
+        console.log("FireballActor init", this, this.parent);
+    }
+
+    resetGame() {
+        this.destroy();
+    }
+}
+FireballActor.register('FireballActor');
+
+//------------------------------------------------------------------------------------------
+// FireballPawn ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+
+    constructor(actor) {
+        super(actor);
+        console.log("FireballPawn constructor", this);
+        this.startTime = this.now();
+        this.material = fireMaterial;
+        this.geometry = new THREE.IcosahedronGeometry( 8, 20 );
+        this.fireball = new THREE.Mesh(this.geometry, this.material);
+        this.pointLight = new THREE.PointLight(0xff8844, 1, 4, 2);
+        this.fireball.add(this.pointLight);
+        this.setRenderObject(this.fireball);
+    }
+
+    update(time, delta) {
+        super.update(time,delta);
+        //this.refreshDrawTransform();
+        const now = this.now(); // NB: time argument is not now()
+        const age = now-this.startTime;
+        this.fireball.material.uniforms[ 'time' ].value = time*this.actor.timeScale;
+        this.fireball.material.uniforms[ 'tOpacity' ].value = 0.25;
+        this.pointLight.intensity = 0.25+ 0.75* Math.sin(age*0.020)*Math.cos(age*0.007);
+    }
+
+    destroy() {
+        super.destroy();
+        if (this.geometry) this.geometry.dispose();
+        //this.material.dispose();
+        if (this.pointLight) this.pointLight.dispose();
+    }
+}
+FireballPawn.register("FireballPawn");
 //------------------------------------------------------------------------------------------
 //-- StartWorldcore ------------------------------------------------------------------------------
 // We either start or join a Croquet session here.

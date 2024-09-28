@@ -3,16 +3,19 @@
 // We start with a minimal working example and add features and improvements in each step
 // You can switch between the versions by changing the entry point in the webpack.config.js file.
 //------------------------------------------------------------------------------------------
-// mazewars01.js - minimal world - showing we exist
+// mazewars01.js - minimal world - showing we exist. We get an alert when a new user joins.
 
 import { App, Constants, StartWorldcore, ModelRoot, ViewRoot,Actor, mix,
-    InputManager, HUD,AM_Spatial, PM_Spatial, Pawn,
+    InputManager, AM_Spatial, PM_Spatial, Pawn,
     toRad } from "@croquet/worldcore-kernel";
-import { THREE, PM_ThreeVisible, ThreeRenderManager } from "@croquet/worldcore-three";
+import { THREE, ADDONS, PM_ThreeVisible, ThreeRenderManager } from "@croquet/worldcore-three";
 import paper from "./assets/textures/paper.jpg";
 // Illustration 112505376 / 360 Sky © Planetfelicity | Dreamstime.com
 import sky from "./assets/textures/alienSky1.jpg";
 import apiKey from "./assets/apiKey";
+import darktile from "./assets/textures/Gray_rough_tiles_2k/Gray_rough_tiles_2k_BaseColor.png";
+import darktilenorm from "./assets/textures/Gray_rough_tiles_2k/Gray_rough_tiles_2k_Normal.png";
+import darktilerough from "./assets/textures/Gray_rough_tiles_2k/Gray_rough_tiles_2k_Roughness.png";
 
 // Global Variables
 export const sunBase = [50, 100, 10];
@@ -55,7 +58,110 @@ BaseActor.register('BaseActor');
 // and compute the Perlin noise value at each x/z position to determine the height.
 // We then renormalize the mesh vectors.
 //------------------------------------------------------------------------------------------
+export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+    constructor(...args) {
+        super(...args);
 
+        let floorMat = new THREE.MeshStandardMaterial( {
+            roughness: 0.8,
+            color: 0xffffff,
+            metalness: 0.2,
+            bumpScale: 0.0005,
+            side: THREE.FrontSide,
+            transparent: true,
+            opacity: 0.4
+        } );
+
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load( darktile, map => {
+
+            map.wrapS = THREE.RepeatWrapping;
+            map.wrapT = THREE.RepeatWrapping;
+            map.anisotropy = 4;
+            map.repeat.set( 25, 25 );
+            map.encoding = THREE.sRGBEncoding;
+            floorMat.map = map;
+            floorMat.needsUpdate = true;
+
+        } );
+        textureLoader.load( darktilenorm, map => {
+
+            map.wrapS = THREE.RepeatWrapping;
+            map.wrapT = THREE.RepeatWrapping;
+            map.anisotropy = 4;
+            map.repeat.set( 20, 20 );
+            floorMat.normalMap = map;
+            floorMat.needsUpdate = true;
+
+        } );
+
+        textureLoader.load( darktilerough, map => {
+
+            map.wrapS = THREE.RepeatWrapping;
+            map.wrapT = THREE.RepeatWrapping;
+            map.anisotropy = 4;
+            map.repeat.set( 20, 20 );
+            floorMat.roughnessMap = map;
+            floorMat.needsUpdate = true;
+
+        } );
+
+        this.material = floorMat;
+        /*
+        this.material = new THREE.MeshStandardMaterial( {color: new THREE.Color(0.4, 0.8, 0.2)} );
+        this.material.side = THREE.DoubleSide;
+        this.material.shadowSide = THREE.DoubleSide;
+*/
+        this.geometry = new THREE.PlaneGeometry(100,100);
+        //this.geometry.rotateX(toRad(90));
+
+        const mirrorGeometry = new THREE.PlaneGeometry(100, 100);
+        //mirrorGeometry.rotateX(toRad(-90));
+        const mirror = new ADDONS.Reflector(
+            mirrorGeometry,
+            {
+                clipBias: 0.003,
+                color: 0x5588aa,
+                //side:THREE.DoubleSide,
+                //fog: scene.fog !== undefined
+            }
+        );
+
+        mirror.position.z=-0.04;
+        const base = new THREE.Mesh( this.geometry, this.material );
+        base.add(mirror);
+        base.receiveShadow = true;
+        base.rotation.x = Math.PI / 2;
+
+/*
+        const bulbGeometry = new THREE.SphereGeometry( 0.02, 16, 8 );
+
+        let bulbLight = new THREE.PointLight( 0xffee88, 1, 100, 2 );
+
+        let bulbMat = new THREE.MeshStandardMaterial( {
+            emissive: 0xffffee,
+            emissiveIntensity: 1,
+            color: 0x000000,
+            side: THREE.FrontSide
+        } );
+        bulbLight.add( new THREE.Mesh( bulbGeometry, bulbMat ) );
+        bulbLight.position.set( 0, 1, 0 );
+        bulbLight.castShadow = true;
+        base.add( bulbLight );
+        */
+
+        this.setRenderObject(base);
+        //this.addRenderObjectToRaycast("ground");
+    }
+
+    destroy() {
+        super.destroy()
+        this.geometry.dispose();
+        this.material.dispose();
+    }
+}
+BasePawn.register("BasePawn");
+/*
 export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(actor) {
         console.log("BasePawn constructor");
@@ -83,7 +189,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     }
 }
 BasePawn.register("BasePawn");
-
+*/
 //------------------------------------------------------------------------------------------
 //-- MyModelRoot ---------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------
@@ -96,25 +202,7 @@ export class MyModelRoot extends ModelRoot {
 */
     init(options) {
         super.init(options);
-
-    //   this.gameState = GameStateActor.create({});
-
-    //    this.subscribe("game", "endGame", this.endGame); // from GameState.destroyedBot
-    //    this.subscribe("game", "startGame", this.startGame); // from BotHUD button
-
         this.base = BaseActor.create();
-
-    //    this.startGame();
-    }
-
-    startGame() {
-        console.log("Start Game");
-        this.publish("game", "gameStarted"); // alert the users to remove the start button
-    }
-
-    endGame() {
-        console.log("End Game");
-        this.service('ActorManager').actors.forEach( value => {if (value.resetGame) value.future(0).resetGame();});
     }
 }
 MyModelRoot.register("MyModelRoot");

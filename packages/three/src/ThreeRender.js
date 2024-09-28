@@ -3,17 +3,11 @@ import { m4_multiply, m4_translation, ViewService, q_identity, m4_rotationQ } fr
 import * as THREE from 'three';
 // you must remove rapier from the three Addons to avoid a conflict with the three package in the examples/MazeWars example
 import * as ADDONS from 'three/examples/jsm/Addons.js';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { Pass } from 'three/examples/jsm/postprocessing/Pass.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
-import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
+
 
 export {
     THREE,
-    ADDONS,
-    OutlinePass,
-    Reflector
+    ADDONS
 };
 
 //------------------------------------------------------------------------------------------
@@ -103,6 +97,7 @@ export class ThreeRenderManager extends ViewService {
             rendererOptions.canvas = this.canvas;
         }
 
+        this.doRender = true; // set to false to disable rendering
         this.renderer = new THREE.WebGLRenderer(rendererOptions);
 
         const shadowMapOptions = {
@@ -125,12 +120,12 @@ export class ThreeRenderManager extends ViewService {
         };
 
         if (composerOptions.enabled) {
-            this.composer = new EffectComposer( this.renderer );
+            this.composer = new ADDONS.EffectComposer( this.renderer );
             for (const pass of composerOptions.passes) {
                 if (pass === 'RenderPass') {
-                    this.composer.addPass(new RenderPass(this.scene, this.camera));
+                    this.composer.addPass(new ADDONS.RenderPass(this.scene, this.camera));
                 } else {
-                    if (!(pass instanceof Pass)) {
+                    if (!(pass instanceof ADDONS.Pass)) {
                         console.warn("Composer pass should be an instance of Pass or the string 'RenderPass', but got", pass);
                     }
                     this.composer.addPass(pass);
@@ -156,8 +151,10 @@ export class ThreeRenderManager extends ViewService {
     }
 
     update() {
-        if (this.composer) this.composer.render();
-        else this.renderer.render(this.scene, this.camera);
+        if (this.doRender) {
+            if (this.composer) this.composer.render();
+            else this.renderer.render(this.scene, this.camera);
+        }
     }
 
 }

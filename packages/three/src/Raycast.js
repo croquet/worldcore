@@ -24,7 +24,7 @@ export class ThreeRaycast extends ViewService {
 
     cameraRaycast(xy, layer = "default") {
         const x = ( xy[0] / window.innerWidth ) * 2 - 1;
-        const y = - ( xy[1] / window.innerHeight ) * 2 + 1;
+        const y = -( xy[1] / window.innerHeight ) * 2 + 1;
 
         const rm = this.service("ThreeRenderManager");
         const raycaster = new THREE.Raycaster();
