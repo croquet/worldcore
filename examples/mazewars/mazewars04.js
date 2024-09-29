@@ -8,35 +8,49 @@
 // mazewars03.js - add missiles and collision detection
 // mazewars04.js - add walls of the maze
 
-import { App, Constants, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
+import { App, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
     InputManager, AM_Spatial, PM_Spatial, PM_Smoothed, Pawn, AM_Avatar, PM_Avatar, UserManager, User,
     toRad, q_yaw, q_pitch, q_axisAngle, v3_add, v3_sub, v3_normalize, v3_rotate, v3_scale, v3_distanceSqr } from "@croquet/worldcore-kernel";
 import { THREE, ADDONS, PM_ThreeVisible, ThreeRenderManager, PM_ThreeCamera } from "@croquet/worldcore-three";
+
+import CustomShaderMaterial from "three-custom-shader-material/vanilla";
+
 //import paper from "./assets/textures/paper.jpg";
 // Illustration 112505376 / 360 Sky © Planetfelicity | Dreamstime.com
 import sky from "./assets/textures/alienSky1.jpg";
 // https://www.texturecan.com/details/616/
-/*
+/**/
 import wall_color from "./assets/textures/others/others_0035_color_2k.jpg";
 import wall_normal from "./assets/textures/others/others_0035_normal_opengl_2k.png";
 import wall_roughness from "./assets/textures/others/others_0035_roughness_2k.jpg";
 import wall_displacement from "./assets/textures/others/others_0035_height_2k.png";
 import wall_metalness from "./assets/textures/others/others_0035_metallic_2k.jpg";
-*/
+/*
 import wall_color from "./assets/textures/metal_hex/metal_0076_color_2k.jpg";
 import wall_normal from "./assets/textures/metal_hex/metal_0076_normal_opengl_2k.png";
 import wall_roughness from "./assets/textures/metal_hex/metal_0076_roughness_2k.jpg";
 import wall_displacement from "./assets/textures/metal_hex/metal_0076_height_2k.png";
 import wall_metalness from "./assets/textures/metal_hex/metal_0076_metallic_2k.jpg";
+/**/
+import floor_color from "./assets/textures/metal_gold_vein/metal_0080_color_2k.jpg";
+import floor_normal from "./assets/textures/metal_gold_vein/metal_0080_normal_opengl_2k.png";
+import floor_roughness from "./assets/textures/metal_gold_vein/metal_0080_roughness_2k.jpg";
+import floor_displacement from "./assets/textures/metal_gold_vein/metal_0080_height_2k.png";
+import floor_metalness from "./assets/textures/metal_gold_vein/metal_0080_metallic_2k.jpg";
 
-import apiKey from "./assets/apiKey";
+// import floor_color from "./assets/textures/floor02.jpg";
+
+import apiKey from "./src/apiKey.js";
 import eyeball_glb from "./assets/eyeball.glb";
 import missile_glb from "./assets/missile.glb";
-import floor_tile from "./assets/textures/floor02.jpg";
 import fireballTexture from "./assets/textures/explosion.png";
-import * as fireballFragmentShader from "./fireball.frag.js";
-import * as fireballVertexShader from "./fireball.vert.js";
-
+import * as fireballFragmentShader from "./src/shaders/fireball.frag.js";
+import * as fireballVertexShader from "./src/shaders/fireball.vert.js";
+import wobbleFragmentShader from "#glsl/wobble.frag.glsl";
+import wobbleVertexShader from "#glsl/wobble.vert.glsl";
+import fragmentShader from "#glsl/fragment.glsl";
+import vertexShader from "#glsl/vertex.glsl";
+console.log(vertexShader);
 // Global Variables
 const PI_2 = Math.PI/2;
 const PI_4 = Math.PI/4;
@@ -65,15 +79,15 @@ export const sunLight =  function() {
 }();
 
 let readyToLoad = false;
-let eyeball, missile, wall1, wall2, wall3, wall4;
+let eyeball, missile;
 
 async function modelConstruct() {
     const gltfLoader = new ADDONS.GLTFLoader();
     const dracoLoader = new ADDONS.DRACOLoader();
     const baseUrl = window.location.origin;
-    dracoLoader.setDecoderPath(`${baseUrl}/assets/draco/`);
+    dracoLoader.setDecoderPath('./src/draco/');
     gltfLoader.setDRACOLoader(dracoLoader);
-    return [eyeball, missile, wall1, wall2, wall3, wall4] = await Promise.all( [
+    return [eyeball, missile] = await Promise.all( [
         gltfLoader.loadAsync( eyeball_glb ),
         gltfLoader.loadAsync( missile_glb ),
     ]);
@@ -94,6 +108,43 @@ new THREE.TextureLoader().load(fireballTexture, texture => {
             side: THREE.DoubleSide
         } );
     });
+const uniforms = {
+    uTime: new THREE.Uniform(0),
+    uPositionFrequency: new THREE.Uniform(0.5),
+    uTimeFrequency: new THREE.Uniform(0.4),
+    uStrength: new THREE.Uniform(0.3),
+    uWarpPositionFrequency: new THREE.Uniform(0.38),
+    uWarpTimeFrequency: new THREE.Uniform(0.12),
+    uWarpStrength: new THREE.Uniform(1.7),
+    uColorA: new THREE.Uniform(new THREE.Color(0x00ff00)),
+    uColorB: new THREE.Uniform(new THREE.Color(0xff0000))
+};
+
+const wobbleMaterial = new CustomShaderMaterial({
+    // CSM
+    baseMaterial: THREE.MeshPhysicalMaterial,
+    //uniforms,
+    vertexShader: vertexShader,
+    fragmentShader: fragmentShader,
+    metalness: 0,
+    roughness: 0.5,
+    color: '#ffffff',
+    transmission: 0,
+    ior: 1.5,
+    thickness: 1.5,
+    transparent: true,
+    wireframe: false
+});
+
+const depthMaterial = new CustomShaderMaterial({
+    // CSM
+    baseMaterial: THREE.MeshDepthMaterial,
+    vertexShader: vertexShader,
+    //silent: true,
+
+    // MeshDepthMaterial
+    depthPacking: THREE.RGBADepthPacking
+});
 
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
@@ -119,43 +170,32 @@ BaseActor.register('BaseActor');
 export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
-
-        const floorMat = new THREE.MeshStandardMaterial( {
-            roughness: 0.8,
-            color: 0xffffff,
-            metalness: 0.2,
-            bumpScale: 0.0005,
-            side: THREE.FrontSide,
-            transparent: true,
-            opacity: 0.99
-        } );
-
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load( floor_tile, map => {
-            map.wrapS = THREE.RepeatWrapping;
-            map.wrapT = THREE.RepeatWrapping;
-            map.anisotropy = 4;
-            map.repeat.set( 20, 20 );
-            map.encoding = THREE.sRGBEncoding;
-            floorMat.map = map;
-            floorMat.needsUpdate = true;
-        } );
+        const floorMat = complexMaterial({
+            colorMap: floor_color,
+            normalMap: floor_normal,
+            roughnessMap: floor_roughness,
+            metalnessMap: floor_metalness,
+            displacementMap: floor_displacement,
+            repeat: [20, 20],
+            anisotropy: 4,
+            name: "floor"
+        });
 
         this.material = floorMat;
         this.geometry = new THREE.PlaneGeometry(200,200);
         this.geometry.rotateX(toRad(-90));
         const base = new THREE.Mesh( this.geometry, this.material );
         base.receiveShadow = true;
-        const wall00 = createMetallicWall();
+        const wall00 = createWall();
         wall00.position.set(0,5,0);
         base.add(wall00);
-        const wall01 = createMetallicWall();
+        const wall01 = createWall();
         wall01.position.set(0,5,20);
         base.add(wall01);
-        const wall02 = createMetallicWall();
+        const wall02 = createWall();
         wall02.position.set(20,5,0);
         base.add(wall02);
-        const wall03 = createMetallicWall();
+        const wall03 = createWall();
         wall03.position.set(20,5,20);
         base.add(wall03);
         this.setRenderObject(base);
@@ -618,7 +658,17 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
-        this.load3D();
+        // Geometry
+        let geometry = new THREE.IcosahedronGeometry(4, 50);
+        geometry = ADDONS.BufferGeometryUtils.mergeVertices(geometry);
+        geometry.computeTangents();
+
+        // Mesh
+        this.wobble = new THREE.Mesh(geometry, wobbleMaterial);
+        this.wobble.customDepthMaterial = depthMaterial;
+        this.wobble.castShadow = true;
+        this.setRenderObject(this.wobble);
+    // this.load3D();
     }
     load3D() {
         if (this.doomed) return;
@@ -700,7 +750,61 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 }
 FireballPawn.register("FireballPawn");
 
-function createMetallicWall() {
+function complexMaterial(options) {
+    const material = new THREE.MeshStandardMaterial();
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load( options.colorMap, map => {
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.anisotropy = options.anisotropy || 4;
+        map.repeat.set( ...options.repeat );
+        map.encoding = THREE.sRGBEncoding;
+        material.map = map;
+        material.needsUpdate = true;
+        //console.log(options.name,"colorMap", map);
+    } );
+    if (options.normalMap) textureLoader.load( options.normalMap, map => {
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.repeat.set( ...options.repeat );
+        material.normalMap = map;
+        material.needsUpdate = true;
+        //console.log(options.name,"normalMap", map);
+    } );
+    if (options.roughnessMap) textureLoader.load( options.roughnessMap, map => {
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.repeat.set( ...options.repeat );
+        material.roughnessMap = map;
+        material.needsUpdate = true;
+        //console.log(options.name,"roughnessMap", map);
+    } );
+    if (options.metalnessMap) textureLoader.load( options.metalnessMap, map => {
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.repeat.set( ...options.repeat );
+        material.metalnessMap = map;
+        material.needsUpdate = true;
+        //console.log(options.name,"metalnessMap", map);
+    } );
+    if (options.displacementMap) textureLoader.load( options.displacementMap, map => {
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.repeat.set( ...options.repeat );
+        material.displacementMap = map;
+        material.needsUpdate = true;
+        //console.log(options.name,"displacementMap", map);
+    } );
+   // material.normalScale.set(1, 1);
+    if (options.metalness) material.metalness = options.metalness;
+    if (options.displacementScale) material.displacementScale = options.displacementScale;
+    if (options.displacementBias) material.displacementBias = options.displacementBias;
+    if (options.roughness) material.roughness = options.roughness;
+    material.needsUpdate = true;
+    return material;
+}
+
+function createWall() {
     // Wall dimensions
     const width = 20; // 16 feet
     const height = 10; // 10 feet
@@ -708,47 +812,20 @@ function createMetallicWall() {
 
     // Create geometry
     const geometry = new THREE.BoxGeometry(width, height, depth);
-
-    // Create base material
-    const material = new THREE.MeshStandardMaterial();
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.load( wall_color, map => {
-        map.wrapS = THREE.RepeatWrapping;
-        map.wrapT = THREE.RepeatWrapping;
-        map.anisotropy = 4;
-        map.repeat.set( 2, 1 );
-        map.encoding = THREE.sRGBEncoding;
-        material.map = map;
-    } );
-    textureLoader.load( wall_normal, map => {
-        map.wrapS = THREE.RepeatWrapping;
-        map.wrapT = THREE.RepeatWrapping;
-        map.repeat.set( 2, 1 );
-        material.normalMap = map;
-    } );
-    textureLoader.load( wall_roughness, map => {
-        map.wrapS = THREE.RepeatWrapping;
-        map.wrapT = THREE.RepeatWrapping;
-        map.repeat.set( 2, 1 );
-        material.roughnessMap = map;
-    } );
-    textureLoader.load( wall_metalness, map => {
-        map.wrapS = THREE.RepeatWrapping;
-        map.wrapT = THREE.RepeatWrapping;
-        map.repeat.set( 2, 1 );
-        material.metalnessMap = map;
-    } );
-    textureLoader.load( wall_displacement, map => {
-        map.wrapS = THREE.RepeatWrapping;
-        map.wrapT = THREE.RepeatWrapping;
-        map.repeat.set( 2, 1 );
-        material.displacementMap = map;
-    } );
-   // material.normalScale.set(1, 1);
-    material.metalness = 1;
-    material.displacementScale = 1.5;
-    material.displacementBias = -0.8;
-    material.roughness = 0.20
+    const material = complexMaterial({
+        colorMap: wall_color,
+        normalMap: wall_normal,
+        roughnessMap: wall_roughness,
+        //metalnessMap: wall_metalness,
+        displacementMap: wall_displacement,
+        anisotropy: 4,
+        metalness: 1,
+        displacementScale: 1.5,
+        displacementBias: -0.8,
+        roughness: 0.20,
+        repeat: [2, 1],
+        name: "wall"
+    });
     // Create mesh
     const wall = new THREE.Mesh(geometry, material);
     wall.castShadow=true; wall.receiveShadow=true;
@@ -762,20 +839,20 @@ function createMetallicWall() {
 //------------------------------------------------------------------------------------------
 
 // redirect to lobby if not in iframe or session
-const inIframe = window.parent !== window;
+/*const inIframe = window.parent !== window;
 const url = new URL(window.location.href);
 const sessionName = url.searchParams.get("session");
 url.pathname = url.pathname.replace(/[^/]*$/, "index.html");
 if (!inIframe || !sessionName) window.location.href = url.href;
-
+*/
 // ensure unique session per lobby URL
-const BaseUrl = url.href.replace(/[^/?#]*([?#].*)?$/, "");
-Constants.LobbyUrl = BaseUrl + "index.html";    // hashed into sessionId without params
+//const BaseUrl = url.href.replace(/[^/?#]*([?#].*)?$/, "");
+//Constants.LobbyUrl = BaseUrl + "index.html";    // hashed into sessionId without params
 
 // QR code points to lobby, with session name in hash
-url.searchParams.delete("session");
-url.hash = encodeURIComponent(sessionName);
-App.sessionURL = url.href;
+//url.searchParams.delete("session");
+//url.hash = encodeURIComponent(sessionName);
+//App.sessionURL = url.href;
 
 App.makeWidgetDock({ iframe: true });
 App.messages = true;

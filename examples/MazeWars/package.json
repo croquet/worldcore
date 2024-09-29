@@ -10,15 +10,20 @@
   "files": [
     "assets"
   ],
+  "type": "module",
+  "imports": {
+    "#glsl/*.glsl": "./shaders/*.glsl"
+  },
   "author": "Croquet Corporation",
   "license": "Apache-2.0",
-
   "dependencies": {
     "@croquet/worldcore-kernel": "^2.0.0-alpha.27",
     "@croquet/worldcore-three": "^2.0.0-alpha.27",
-    "@croquet/worldcore-widget2": "^2.0.0-alpha.27"
+    "@croquet/worldcore-widget2": "^2.0.0-alpha.27",
+    "three-custom-shader-material": "^6.0.3"
   },
   "devDependencies": {
+    "copy-webpack-plugin": "^12.0.2",
     "eslint": "^8.43.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "file-loader": "^6.2.0",
