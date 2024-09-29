@@ -7,6 +7,11 @@
   "bugs": "https://github.com/croquet/worldcore/issues",
   "comment": "This mono repo has various sub-repositories, each of which is a separate package.  See the README.md file for more information.",
   "private": true,
+  "scripts": {
+    "bootstrap": "lerna bootstrap",
+    "clean": "lerna clean",
+    "postinstall": "lerna bootstrap"
+  },
   "devDependencies": {
     "lerna": "^4.0.0",
     "eslint-plugin-import": "^2.22.1",
