@@ -11,10 +11,7 @@
 import { App, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
     InputManager, AM_Spatial, PM_Spatial, PM_Smoothed, Pawn, AM_Avatar, PM_Avatar, UserManager, User,
     toRad, q_yaw, q_pitch, q_axisAngle, v3_add, v3_sub, v3_normalize, v3_rotate, v3_scale, v3_distanceSqr } from "@croquet/worldcore-kernel";
-import { THREE, ADDONS, PM_ThreeVisible, ThreeRenderManager, PM_ThreeCamera } from "@croquet/worldcore-three";
-
-import CustomShaderMaterial from "three-custom-shader-material/vanilla";
-
+import { THREE, ADDONS, CustomShaderMaterial, PM_ThreeVisible, ThreeRenderManager, PM_ThreeCamera } from "@croquet/worldcore-three";
 //import paper from "./assets/textures/paper.jpg";
 // Illustration 112505376 / 360 Sky © Planetfelicity | Dreamstime.com
 import sky from "./assets/textures/alienSky1.jpg";
@@ -51,13 +48,14 @@ import wobbleVertexShader from "#glsl/wobble.vert.glsl";
 import fragmentShader from "#glsl/fragment.glsl";
 import vertexShader from "#glsl/vertex.glsl";
 console.log(vertexShader);
+console.log(CustomShaderMaterial)
 // Global Variables
 const PI_2 = Math.PI/2;
 const PI_4 = Math.PI/4;
 const MISSILE_LIFE = 4000;
 const COLLIDE_DIST = 8; // 2x eyeball and missile radius
 const COLLIDE_SQ = COLLIDE_DIST * COLLIDE_DIST;
-const MISSILE_SPEED = 1.25;
+const MISSILE_SPEED = 0.75;
 
 export const sunBase = [25, 50, 5];
 export const sunLight =  function() {
@@ -79,7 +77,7 @@ export const sunLight =  function() {
 }();
 
 let readyToLoad = false;
-let eyeball, missile;
+let eyeball;
 
 async function modelConstruct() {
     const gltfLoader = new ADDONS.GLTFLoader();
@@ -87,9 +85,8 @@ async function modelConstruct() {
     const baseUrl = window.location.origin;
     dracoLoader.setDecoderPath('./src/draco/');
     gltfLoader.setDRACOLoader(dracoLoader);
-    return [eyeball, missile] = await Promise.all( [
+    return [eyeball] = await Promise.all( [
         gltfLoader.loadAsync( eyeball_glb ),
-        gltfLoader.loadAsync( missile_glb ),
     ]);
 }
 
@@ -108,6 +105,8 @@ new THREE.TextureLoader().load(fireballTexture, texture => {
             side: THREE.DoubleSide
         } );
     });
+
+
 const uniforms = {
     uTime: new THREE.Uniform(0),
     uPositionFrequency: new THREE.Uniform(0.5),
@@ -116,16 +115,16 @@ const uniforms = {
     uWarpPositionFrequency: new THREE.Uniform(0.38),
     uWarpTimeFrequency: new THREE.Uniform(0.12),
     uWarpStrength: new THREE.Uniform(1.7),
-    uColorA: new THREE.Uniform(new THREE.Color(0x00ff00)),
-    uColorB: new THREE.Uniform(new THREE.Color(0xff0000))
+    uColorA: new THREE.Uniform(new THREE.Color(0xffff88)),
+    uColorB: new THREE.Uniform(new THREE.Color(0xee0000))
 };
 
 const wobbleMaterial = new CustomShaderMaterial({
     // CSM
     baseMaterial: THREE.MeshPhysicalMaterial,
-    //uniforms,
-    vertexShader: vertexShader,
-    fragmentShader: fragmentShader,
+    uniforms,
+    vertexShader: wobbleVertexShader,
+    fragmentShader: wobbleFragmentShader,
     metalness: 0,
     roughness: 0.5,
     color: '#ffffff',
@@ -139,7 +138,7 @@ const wobbleMaterial = new CustomShaderMaterial({
 const depthMaterial = new CustomShaderMaterial({
     // CSM
     baseMaterial: THREE.MeshDepthMaterial,
-    vertexShader: vertexShader,
+    vertexShader: wobbleVertexShader,
     //silent: true,
 
     // MeshDepthMaterial
@@ -668,19 +667,6 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.wobble.customDepthMaterial = depthMaterial;
         this.wobble.castShadow = true;
         this.setRenderObject(this.wobble);
-    // this.load3D();
-    }
-    load3D() {
-        if (this.doomed) return;
-        if (readyToLoad && missile) {
-            this.missile = missile.scene.clone();
-            this.missile.scale.set(5,5,5);
-            this.missile.rotation.set(0,Math.PI,0);
-            this.missile.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
-            this.group = new THREE.Group();
-            this.group.add(this.missile);
-            this.setRenderObject(this.group);
-        } else this.future(100).load3D();
     }
 
     destroy() {
@@ -688,6 +674,11 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         if (this.geometry) this.geometry.dispose();
         //this.material.dispose();
         if (this.pointLight) this.pointLight.dispose();
+    }
+
+    update(time, delta) {
+        super.update(time, delta);
+        this.wobble.material.uniforms[ 'uTime' ].value = time/100;
     }
 }
 MissilePawn.register("MissilePawn");
@@ -705,7 +696,7 @@ class FireballActor extends mix(Actor).with(AM_Spatial) {
         super.init(options);
         this.timeScale = 0.00025 + Math.random()*0.00002;
         this.future(3000).destroy(); // destroy after some time
-        console.log("FireballActor init", this, this.parent);
+        // console.log("FireballActor init", this, this.parent);
     }
 
     resetGame() {
@@ -721,7 +712,7 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
-        console.log("FireballPawn constructor", this);
+        // console.log("FireballPawn constructor", this);
         this.startTime = this.now();
         this.material = fireMaterial;
         this.geometry = new THREE.IcosahedronGeometry( 8, 20 );
@@ -758,7 +749,7 @@ function complexMaterial(options) {
         map.wrapT = THREE.RepeatWrapping;
         map.anisotropy = options.anisotropy || 4;
         map.repeat.set( ...options.repeat );
-        map.encoding = THREE.sRGBEncoding;
+        map.encoding = THREE.SRGBColorSpace;
         material.map = map;
         material.needsUpdate = true;
         //console.log(options.name,"colorMap", map);

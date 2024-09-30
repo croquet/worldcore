@@ -13,9 +13,6 @@ export default {
     path: path.resolve(__dirname, 'dist'),
     publicPath: '/',
   },
-  externals: {
-    three: 'THREE'
-  },
   module: {
     rules: [
       {
@@ -30,6 +27,8 @@ export default {
   },
   resolve: {
     alias: {
+      'three': path.resolve(__dirname, '../../node_modules/three'),
+      '@croquet/worldcore-three': path.resolve(__dirname, '../../packages/three'),
       '#glsl': path.resolve(__dirname, 'src/shaders'),  // Adjust this path to match your project structure
     },
     fallback: {

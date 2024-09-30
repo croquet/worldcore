@@ -24,7 +24,8 @@
   },
   "dependencies": {
     "@croquet/worldcore-kernel": "^2.0.0-alpha.27",
-    "three": "^0.158.0"
+    "three": "^0.169.0",
+    "three-custom-shader-material": "^5.4.0"
   },
   "publishConfig": {
     "access": "public"

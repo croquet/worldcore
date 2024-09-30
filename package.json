@@ -11,16 +11,25 @@
     "packages/*",
     "examples/*"
   ],
+  "scripts": {
+    "build": "lerna run build --stream",
+    "test": "lerna run test",
+    "lint": "lerna run lint"
+  },
   "devDependencies": {
     "eslint": "^7.23.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-import-resolver-parcel": "^1.10.6",
     "eslint-plugin-import": "^2.22.1",
-    "lerna": "^4.0.0"
+    "lerna": "^5.0.0"
   },
   "dependencies": {
     "@croquet/croquet": "^2.0.0-27",
     "@dimforge/rapier3d-compat": "^0.14.0",
+    "three": "^0.169.0",
+    "three-custom-shader-material": "^5.4.0"
+  },
+  "resolutions": {
     "three": "^0.169.0"
   }
 }

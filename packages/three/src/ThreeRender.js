@@ -3,12 +3,9 @@ import { m4_multiply, m4_translation, ViewService, q_identity, m4_rotationQ } fr
 import * as THREE from 'three';
 // you must remove rapier from the three Addons to avoid a conflict with the three package in the examples/MazeWars example
 import * as ADDONS from 'three/examples/jsm/Addons.js';
+import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 
-
-export {
-    THREE,
-    ADDONS
-};
+export { THREE, ADDONS, CustomShaderMaterial };
 
 //------------------------------------------------------------------------------------------
 //-- ThreeVisible  -------------------------------------------------------------------------
