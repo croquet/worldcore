@@ -33,7 +33,7 @@ export class InstancedMesh {
     release(index) {
         const limbo = new THREE.Matrix4();
         limbo.makeTranslation(...this.limbo);
-        this.pawns[index] = null;
+        delete this.pawns[index];
         this.updateMatrix(index, limbo);
         this.free.push(index);
     }
@@ -41,6 +41,7 @@ export class InstancedMesh {
     updateMatrix(index, m) {
         this.mesh.setMatrixAt(index, m4_THREE(m));
         this.mesh.instanceMatrix.needsUpdate = true;
+        this.mesh.computeBoundingSphere();
     }
 
     updateColor(index, color) {
@@ -69,8 +70,8 @@ export const PM_ThreeInstanced = superclass => class extends superclass {
             this.meshIndex = this.instance.use(this);
             // updating instance colors fails if the material has been used to render unless you set this
             if (this.meshIndex === 0) this.instance.mesh.material.needsUpdate = true;
-            this.updateMatrix();
         }
+        this.updateMatrix();
         return this.instance;
     }
 
