@@ -6,12 +6,13 @@
 // mazewars01.js - minimal world - showing we exist. We get an alert when a new user joins.
 // mazewars02.js - add simple avatars w/ mouselook interface
 // mazewars03.js - add missiles and collision detection
-// mazewars04.js - add walls of the maze
+// mazewars04.js - fix textures, add powerup with fake glow, add wobble shader
 
 import { App, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
     InputManager, AM_Spatial, PM_Spatial, PM_Smoothed, Pawn, AM_Avatar, PM_Avatar, UserManager, User,
     toRad, q_yaw, q_pitch, q_axisAngle, v3_add, v3_sub, v3_normalize, v3_rotate, v3_scale, v3_distanceSqr } from "@croquet/worldcore-kernel";
 import { THREE, ADDONS, CustomShaderMaterial, PM_ThreeVisible, ThreeRenderManager, PM_ThreeCamera } from "@croquet/worldcore-three";
+import FakeGlowMaterial from './src/FakeGlowMaterial.js'
 //import paper from "./assets/textures/paper.jpg";
 // Illustration 112505376 / 360 Sky © Planetfelicity | Dreamstime.com
 import sky from "./assets/textures/alienSky1.jpg";
@@ -23,32 +24,33 @@ import wall_roughness from "./assets/textures/others/others_0035_roughness_2k.jp
 import wall_displacement from "./assets/textures/others/others_0035_height_2k.png";
 import wall_metalness from "./assets/textures/others/others_0035_metallic_2k.jpg";
 /*
-import wall_color from "./assets/textures/metal_hex/metal_0076_color_2k.jpg";
-import wall_normal from "./assets/textures/metal_hex/metal_0076_normal_opengl_2k.png";
-import wall_roughness from "./assets/textures/metal_hex/metal_0076_roughness_2k.jpg";
-import wall_displacement from "./assets/textures/metal_hex/metal_0076_height_2k.png";
-import wall_metalness from "./assets/textures/metal_hex/metal_0076_metallic_2k.jpg";
-/**/
-import floor_color from "./assets/textures/metal_gold_vein/metal_0080_color_2k.jpg";
-import floor_normal from "./assets/textures/metal_gold_vein/metal_0080_normal_opengl_2k.png";
-import floor_roughness from "./assets/textures/metal_gold_vein/metal_0080_roughness_2k.jpg";
-import floor_displacement from "./assets/textures/metal_gold_vein/metal_0080_height_2k.png";
-import floor_metalness from "./assets/textures/metal_gold_vein/metal_0080_metallic_2k.jpg";
+import power_color from "./assets/textures/metal_gold_vein/metal_0080_color_2k.jpg";
+import power_normal from "./assets/textures/metal_gold_vein/metal_0080_normal_opengl_2k.png";
+import power_roughness from "./assets/textures/metal_gold_vein/metal_0080_roughness_2k.jpg";
+import power_displacement from "./assets/textures/metal_gold_vein/metal_0080_height_2k.png";
+import power_metalness from "./assets/textures/metal_gold_vein/metal_0080_metallic_2k.jpg";
+*/
+import power_color from "./assets/textures/metal_hex/metal_0076_color_2k.jpg";
+import power_normal from "./assets/textures/metal_hex/metal_0076_normal_opengl_2k.png";
+import power_roughness from "./assets/textures/metal_hex/metal_0076_roughness_2k.jpg";
+import power_displacement from "./assets/textures/metal_hex/metal_0076_height_2k.png";
+import power_metalness from "./assets/textures/metal_hex/metal_0076_metallic_2k.jpg";
 
-// import floor_color from "./assets/textures/floor02.jpg";
+import lava_color from "./assets/textures/lava/ground_0027_color_2k.jpg";
+import lava_normal from "./assets/textures/lava/ground_0027_normal_opengl_2k.png";
+import lava_roughness from "./assets/textures/lava/ground_0027_roughness_2k.jpg";
+import lava_displacement from "./assets/textures/lava/ground_0027_height_2k.png";
+import lava_emissive from "./assets/textures/lava/ground_0027_emissive_2k.jpg";
 
 import apiKey from "./src/apiKey.js";
 import eyeball_glb from "./assets/eyeball.glb";
-import missile_glb from "./assets/missile.glb";
+
 import fireballTexture from "./assets/textures/explosion.png";
 import * as fireballFragmentShader from "./src/shaders/fireball.frag.js";
 import * as fireballVertexShader from "./src/shaders/fireball.vert.js";
 import wobbleFragmentShader from "#glsl/wobble.frag.glsl";
 import wobbleVertexShader from "#glsl/wobble.vert.glsl";
-import fragmentShader from "#glsl/fragment.glsl";
-import vertexShader from "#glsl/vertex.glsl";
-console.log(vertexShader);
-console.log(CustomShaderMaterial)
+
 // Global Variables
 const PI_2 = Math.PI/2;
 const PI_4 = Math.PI/4;
@@ -139,12 +141,144 @@ const depthMaterial = new CustomShaderMaterial({
     // CSM
     baseMaterial: THREE.MeshDepthMaterial,
     vertexShader: wobbleVertexShader,
-    //silent: true,
+    silent: true,
 
     // MeshDepthMaterial
     depthPacking: THREE.RGBADepthPacking
 });
 
+
+function complexMaterial(options) {
+    const material = new THREE.MeshStandardMaterial();
+    const textureLoader = new THREE.TextureLoader();
+    const repeat = options.repeat || [1,1];
+    textureLoader.load( options.colorMap, map => {
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.anisotropy = options.anisotropy || 4;
+        map.repeat.set( ...repeat );
+        map.encoding = THREE.SRGBColorSpace;
+        material.map = map;
+        material.needsUpdate = true;
+        //console.log(options.name,"colorMap", map);
+    } );
+    if (options.normalMap) textureLoader.load( options.normalMap, map => {
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.repeat.set( ...repeat );
+        material.normalMap = map;
+        material.needsUpdate = true;
+        if (options.normalScale) material.normalScale.set(options.normalScale);
+        //console.log(options.name,"normalMap", map);
+    } );
+    if (options.roughnessMap) textureLoader.load( options.roughnessMap, map => {
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.repeat.set( ...repeat );
+        material.roughnessMap = map;
+        if (options.roughness) material.roughness = options.roughness;
+        material.needsUpdate = true;
+        //console.log(options.name,"roughnessMap", map);
+    } );
+    if (options.metalnessMap) textureLoader.load( options.metalnessMap, map => {
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.repeat.set( ...repeat );
+        material.metalnessMap = map;
+        if (options.metalness) material.metalness = options.metalness;
+        material.needsUpdate = true;
+        //console.log(options.name,"metalnessMap", map);
+    } );
+    if (options.displacementMap) textureLoader.load( options.displacementMap, map => {
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.repeat.set( ...repeat );
+        material.displacementMap = map;
+        if (options.displacementScale) material.displacementScale = options.displacementScale;
+        if (options.displacementBias) material.displacementBias = options.displacementBias;
+        material.needsUpdate = true;
+        //console.log(options.name,"displacementMap", map);
+    } );
+    if (options.emissiveMap) textureLoader.load( options.emissiveMap, map => {
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.RepeatWrapping;
+        map.repeat.set( ...repeat );
+        map.encoding = THREE.SRGBColorSpace;
+        material.emissiveMap = map;
+        if (options.emissiveIntensity) material.emissiveIntensity = options.emissiveIntensity;
+        material.needsUpdate = true;
+        //console.log(options.name,"emissiveMap", map);
+    } );
+
+
+
+    if (options.emissive) material.emissive = options.emissive; // this is the color of the emissive object
+
+
+    material.needsUpdate = true;
+    return material;
+}
+
+function createWall() {
+    // Wall dimensions
+    const width = 20; // 16 feet
+    const height = 10; // 10 feet
+    const depth = 0.5; // Thin wall
+
+    // Create geometry
+    const geometry = new THREE.BoxGeometry(width, height, depth);
+    const material = complexMaterial({
+        colorMap: wall_color,
+        normalMap: wall_normal,
+        //normalScale: new THREE.Vector2(1, 1),
+        roughnessMap: wall_roughness,
+        roughness: 0.20,
+        metalnessMap: wall_metalness,
+        metalness: 0.1,
+        displacementMap: wall_displacement,
+        displacementScale: 1.5,
+        displacementBias: -0.8,
+        anisotropy: 4,
+        repeat: [2, 1],
+        name: "wall"
+    });
+    // Create mesh
+    const wall = new THREE.Mesh(geometry, material);
+    wall.castShadow=true; wall.receiveShadow=true;
+    return wall;
+}
+
+function createPower() {
+    const geometry = new THREE.IcosahedronGeometry( 1, 20 );
+    const material = complexMaterial({
+        colorMap: power_color,
+        normalMap: power_normal,
+        roughnessMap: power_roughness,
+        metalnessMap: power_metalness,
+        displacementMap: power_displacement,
+        repeat: [1.5,1],
+        displacementScale: 0.1,
+        displacementBias: -0.05,
+        name: "power"
+    });
+
+    let glowMaterial = new FakeGlowMaterial({
+        color: 0xff8844,
+        intensity: 1,
+        glowIntensity: 1,
+        glowColor: 0xff8844,
+        glowRadius: 5,
+        innerGlow: true,
+        transparent: true,
+        depthTest: true
+    });
+    let sphere = new THREE.SphereGeometry(2, 32, 32);
+    let glow = new THREE.Mesh(sphere, glowMaterial);
+    const power = new THREE.Mesh(geometry, material);
+    power.add(glow);
+    power.receiveShadow = true;
+    return power;
+}
 //------------------------------------------------------------------------------------------
 //-- BaseActor -----------------------------------------------------------------------------
 // This is the ground plane.
@@ -156,6 +290,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial) {
     init(options) {
          super.init(options);
          this.set({translation: [0,-5,0]});
+         this.power = PowerActor.create({parent: this, translation: [5,3,5]});
     }
 }
 BaseActor.register('BaseActor');
@@ -170,6 +305,21 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
         const floorMat = complexMaterial({
+            colorMap: lava_emissive,
+            normalMap: lava_normal,
+            roughnessMap: lava_roughness,
+            //metalnessMap: lava_metalness,
+            displacementMap: lava_displacement,
+            emissiveMap: lava_emissive,
+            //emissiveIntensity: 10,
+            emissive: new THREE.Color(0xffffff),
+            repeat: [10, 10],
+            displacementScale: 1.5,
+            displacementBias: -0.8,
+            roughness: 0.30,
+            name: "floor"
+        });/*
+        const floorMat = complexMaterial({
             colorMap: floor_color,
             normalMap: floor_normal,
             roughnessMap: floor_roughness,
@@ -178,8 +328,8 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
             repeat: [20, 20],
             anisotropy: 4,
             name: "floor"
-        });
-
+        });*/
+        floorMat.envMap = null;
         this.material = floorMat;
         this.geometry = new THREE.PlaneGeometry(200,200);
         this.geometry.rotateX(toRad(-90));
@@ -244,8 +394,8 @@ export class MyViewRoot extends ViewRoot {
         loader.load( sky, skyTexture => {
             const rm = this.service("ThreeRenderManager");
             //rm.doRender = false;
-            //rm.renderer.shadowMap.enabled = true;
-            //rm.renderer.shadowMap.type = THREE.PCFShadowMap;
+            rm.renderer.shadowMap.enabled = true;
+            rm.renderer.shadowMap.type = THREE.PCFShadowMap;
             rm.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
             const ambient = new THREE.AmbientLight( 0xffffff, 0.2 );
             rm.scene.add(ambient);
@@ -740,88 +890,60 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     }
 }
 FireballPawn.register("FireballPawn");
+//------------------------------------------------------------------------------------------
+//--FPowerActor ---------------------------------------------------------------------------
+// When a missile hits an avatar a fireball is generated. It is attached to the avatar.
+//------------------------------------------------------------------------------------------
 
-function complexMaterial(options) {
-    const material = new THREE.MeshStandardMaterial();
-    const textureLoader = new THREE.TextureLoader();
-    textureLoader.load( options.colorMap, map => {
-        map.wrapS = THREE.RepeatWrapping;
-        map.wrapT = THREE.RepeatWrapping;
-        map.anisotropy = options.anisotropy || 4;
-        map.repeat.set( ...options.repeat );
-        map.encoding = THREE.SRGBColorSpace;
-        material.map = map;
-        material.needsUpdate = true;
-        //console.log(options.name,"colorMap", map);
-    } );
-    if (options.normalMap) textureLoader.load( options.normalMap, map => {
-        map.wrapS = THREE.RepeatWrapping;
-        map.wrapT = THREE.RepeatWrapping;
-        map.repeat.set( ...options.repeat );
-        material.normalMap = map;
-        material.needsUpdate = true;
-        //console.log(options.name,"normalMap", map);
-    } );
-    if (options.roughnessMap) textureLoader.load( options.roughnessMap, map => {
-        map.wrapS = THREE.RepeatWrapping;
-        map.wrapT = THREE.RepeatWrapping;
-        map.repeat.set( ...options.repeat );
-        material.roughnessMap = map;
-        material.needsUpdate = true;
-        //console.log(options.name,"roughnessMap", map);
-    } );
-    if (options.metalnessMap) textureLoader.load( options.metalnessMap, map => {
-        map.wrapS = THREE.RepeatWrapping;
-        map.wrapT = THREE.RepeatWrapping;
-        map.repeat.set( ...options.repeat );
-        material.metalnessMap = map;
-        material.needsUpdate = true;
-        //console.log(options.name,"metalnessMap", map);
-    } );
-    if (options.displacementMap) textureLoader.load( options.displacementMap, map => {
-        map.wrapS = THREE.RepeatWrapping;
-        map.wrapT = THREE.RepeatWrapping;
-        map.repeat.set( ...options.repeat );
-        material.displacementMap = map;
-        material.needsUpdate = true;
-        //console.log(options.name,"displacementMap", map);
-    } );
-   // material.normalScale.set(1, 1);
-    if (options.metalness) material.metalness = options.metalness;
-    if (options.displacementScale) material.displacementScale = options.displacementScale;
-    if (options.displacementBias) material.displacementBias = options.displacementBias;
-    if (options.roughness) material.roughness = options.roughness;
-    material.needsUpdate = true;
-    return material;
+
+class PowerActor extends mix(Actor).with(AM_Spatial) {
+    get pawn() { return "PowerPawn" }
+
+    init(options) {
+        super.init(options);
+        this.center = this.translation[1];
+        this.timeScale = 0.00025 + Math.random()*0.00002;
+        this.offset = Math.random()*Math.PI;
+        console.log("PowerActor init", this, this.parent);
+        this.future(100).tick();
+    }
+
+    tick() {
+        const t = this.translation;
+        t[1] = this.center + 0.5*Math.sin(this.now()*0.001 + this.offset);
+        this.set({translation: t});
+        this.future(100).tick();
+    }
+
+    resetGame() {
+        this.destroy();
+    }
 }
+PowerActor.register('PowerActor');
 
-function createWall() {
-    // Wall dimensions
-    const width = 20; // 16 feet
-    const height = 10; // 10 feet
-    const depth = 0.5; // Thin wall
+//------------------------------------------------------------------------------------------
+// FireballPawn ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+export class PowerPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
-    // Create geometry
-    const geometry = new THREE.BoxGeometry(width, height, depth);
-    const material = complexMaterial({
-        colorMap: wall_color,
-        normalMap: wall_normal,
-        roughnessMap: wall_roughness,
-        //metalnessMap: wall_metalness,
-        displacementMap: wall_displacement,
-        anisotropy: 4,
-        metalness: 1,
-        displacementScale: 1.5,
-        displacementBias: -0.8,
-        roughness: 0.20,
-        repeat: [2, 1],
-        name: "wall"
-    });
-    // Create mesh
-    const wall = new THREE.Mesh(geometry, material);
-    wall.castShadow=true; wall.receiveShadow=true;
-    return wall;
+    constructor(actor) {
+        super(actor);
+        console.log("PowerPawn constructor", this);
+        this.startTime = this.now();
+        this.power = createPower();
+        this.setRenderObject(this.power);
+    }
+
+    destroy() {
+        super.destroy();
+        //if (this.geometry) this.geometry.dispose();
+        //this.material.dispose();
+        //if (this.pointLight) this.pointLight.dispose();
+    }
 }
+PowerPawn.register("PowerPawn");
+
+
 //------------------------------------------------------------------------------------------
 //-- StartWorldcore ------------------------------------------------------------------------------
 // We either start or join a Croquet session here.

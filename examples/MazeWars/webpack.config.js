@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default {
-  entry: './mazewars04.js',  // Adjust this to your entry point
+  entry: './mazewars06.js',  // Adjust this to your entry point
   output: {
     filename: '[name].bundle.js',
     path: path.resolve(__dirname, 'dist'),
