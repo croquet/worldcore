@@ -18,6 +18,14 @@
 // mazewars04.js - fix textures, add powerup with fake glow, add wobble shader
 // mazewars05.js - better missiles. Maze walls are instanced. Generate the maze.
 // mazewars06.js - collision detection with walls for avatars and missiles.
+// mazewars07.j - columns
+// add CSM lighting
+// add floor reflections
+// use the powerup as the missile
+// create three powerups:
+// 1. red - 10 second invincibility
+// 2. blue - 10 second speed boost
+// 3. green - 10 second missile boost
 //------------------------------------------------------------------------------------------
 // issues:
 // the missile is not visible when it is created sometimes - though the glow is visible
@@ -29,6 +37,8 @@ import { App, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
     toRad, q_yaw, q_pitch, q_axisAngle, v3_add, v3_sub, v3_normalize, v3_rotate, v3_scale, v3_distanceSqr } from "@croquet/worldcore-kernel";
 import { THREE, ADDONS, CustomShaderMaterial, PM_ThreeVisible, ThreeRenderManager, PM_ThreeCamera, PM_ThreeInstanced, ThreeInstanceManager } from "@croquet/worldcore-three";
 import FakeGlowMaterial from './src/FakeGlowMaterial.js';
+import { GUI } from './src/lil-gui.module.min.js';
+
 //import { generateSnow, tickSnow } from './src/snow.js';
 
 // Illustration 112505376 / 360 Sky © Planetfelicity | Dreamstime.com
@@ -36,11 +46,6 @@ import sky from "./assets/textures/alienSky1.jpg";
 // import sky from "./assets/textures/hell.png";
 // https://www.texturecan.com/details/616/
 /**/
-import wall_color from "./assets/textures/others/others_0035_color_2k.jpg";
-import wall_normal from "./assets/textures/others/others_0035_normal_opengl_2k.png";
-import wall_roughness from "./assets/textures/others/others_0035_roughness_2k.jpg";
-import wall_displacement from "./assets/textures/others/others_0035_height_2k.png";
-import wall_metalness from "./assets/textures/others/others_0035_metallic_2k.jpg";
 
 import missile_color from "./assets/textures/metal_gold_vein/metal_0080_color_2k.jpg";
 import missile_normal from "./assets/textures/metal_gold_vein/metal_0080_normal_opengl_2k.png";
@@ -54,14 +59,19 @@ import power_roughness from "./assets/textures/metal_hex/metal_0076_roughness_2k
 import power_displacement from "./assets/textures/metal_hex/metal_0076_height_2k.png";
 import power_metalness from "./assets/textures/metal_hex/metal_0076_metallic_2k.jpg";
 
-import lava_color from "./assets/textures/lava/ground_0027_color_2k.jpg";
-import lava_normal from "./assets/textures/lava/ground_0027_normal_opengl_2k.png";
-import lava_roughness from "./assets/textures/lava/ground_0027_roughness_2k.jpg";
-import lava_displacement from "./assets/textures/lava/ground_0027_height_2k.png";
-import lava_emissive from "./assets/textures/lava/ground_0027_emissive_2k.jpg";
+import marble_color from "./assets/textures/marble_checker/marble_0013_color_2k.jpg";
+import marble_normal from "./assets/textures/marble_checker/marble_0013_normal_opengl_2k.png";
+import marble_roughness from "./assets/textures/marble_checker/marble_0013_roughness_2k.jpg";
+import marble_displacement from "./assets/textures/marble_checker/marble_0013_height_2k.png";
+
+import corinthian_color from "./assets/textures/corinthian/concrete_0014_color_2k.jpg";
+import corinthian_normal from "./assets/textures/corinthian/concrete_0014_normal_opengl_2k.png";
+import corinthian_roughness from "./assets/textures/corinthian/concrete_0014_roughness_2k.jpg";
+import corinthian_displacement from "./assets/textures/corinthian/concrete_0014_height_2k.png";
 
 import apiKey from "./src/apiKey.js";
 import eyeball_glb from "./assets/eyeball.glb";
+import column_glb from "./assets/column2.glb";
 
 import fireballTexture from "./assets/textures/explosion.png";
 import * as fireballFragmentShader from "./src/shaders/fireball.frag.js";
@@ -80,41 +90,61 @@ const WALL_EPSILON = 0.01;
 const MAZE_ROWS = 20;
 const MAZE_COLUMNS = 20;
 const MISSILE_SPEED = 0.75;
-
-export const sunBase = [25, 50, 5];
+/*
+export const sunBase = [-100, 400, 100];
 export const sunLight =  function() {
-    const sun = new THREE.DirectionalLight( 0xffffff, 0.3 );
+    const sun = new THREE.DirectionalLight( 0xffffff, 3 );
     sun.position.set(...sunBase);
+    sun.color.setHSL(0.1, 1, 0.95);
     sun.castShadow = true;
     sun.shadow.mapSize.width = 2048;
     sun.shadow.mapSize.height = 2048;
     sun.shadow.camera.near = 50;
-    sun.shadow.camera.far =200;
-    sun.shadow.camera.left = -400;
-    sun.shadow.camera.right = 400;
-    sun.shadow.camera.top = 400;
-    sun.shadow.camera.bottom = -200;
-    sun.shadow.bias = -0.0002;
+    sun.shadow.camera.far =500;
+    sun.shadow.camera.left = -100;
+    sun.shadow.camera.right = 100;
+    sun.shadow.camera.top = 100;
+    sun.shadow.camera.bottom = -100;
+    sun.shadow.bias = -0.0001;
     sun.shadow.radius = 1.5;
     sun.shadow.blurSamples = 4;
     return sun;
 }();
+*/
+const csmParams = {
+    //orthographic: false,
+    fade: false,
+    shadows: true,
+    far: 1000,
+    mode: 'practical',
+    lightX: -1,
+    lightY: -1,
+    lightZ: -1,
+    margin: 100,
+    lightFar: 5000,
+    lightNear: 1,
+    autoUpdateHelper: true,
+    updateHelper: () => { csmHelper.update() }
+};
+let csm;
+let csmHelper;
 
 let readyToLoad = false;
 let eyeball;
-
+let column;
 async function modelConstruct() {
     const gltfLoader = new ADDONS.GLTFLoader();
     const dracoLoader = new ADDONS.DRACOLoader();
     dracoLoader.setDecoderPath('./src/draco/');
     gltfLoader.setDRACOLoader(dracoLoader);
-    return [eyeball] = await Promise.all( [
+    return [eyeball, column] = await Promise.all( [
         // add additional GLB files to load here
         gltfLoader.loadAsync( eyeball_glb ),
+        gltfLoader.loadAsync( column_glb ),
     ]);
 }
 
-modelConstruct().then( readyToLoad = true );
+modelConstruct().then( () => { console.log(column); readyToLoad = true; column = column.scene.children[0] } );
 
 let fireMaterial;
 new THREE.TextureLoader().load(fireballTexture, texture => {
@@ -129,45 +159,6 @@ new THREE.TextureLoader().load(fireballTexture, texture => {
             side: THREE.DoubleSide
         } );
     });
-
-
-const uniforms = {
-    uTime: new THREE.Uniform(0),
-    uPositionFrequency: new THREE.Uniform(0.5),
-    uTimeFrequency: new THREE.Uniform(0.4),
-    uStrength: new THREE.Uniform(0.3),
-    uWarpPositionFrequency: new THREE.Uniform(0.38),
-    uWarpTimeFrequency: new THREE.Uniform(0.12),
-    uWarpStrength: new THREE.Uniform(1.7),
-    uColorA: new THREE.Uniform(new THREE.Color(0xffff88)),
-    uColorB: new THREE.Uniform(new THREE.Color(0xee0000))
-};
-
-const wobbleMaterial = new CustomShaderMaterial({
-    // CSM
-    baseMaterial: THREE.MeshPhysicalMaterial,
-    uniforms,
-    vertexShader: wobbleVertexShader,
-    fragmentShader: wobbleFragmentShader,
-    metalness: 0,
-    roughness: 0.5,
-    color: '#ffffff',
-    transmission: 0,
-    ior: 1.5,
-    thickness: 1.5,
-    transparent: true,
-    wireframe: false
-});
-
-const depthMaterial = new CustomShaderMaterial({
-    // CSM
-    baseMaterial: THREE.MeshDepthMaterial,
-    vertexShader: wobbleVertexShader,
-    silent: true,
-
-    // MeshDepthMaterial
-    depthPacking: THREE.RGBADepthPacking
-});
 
 function complexMaterial(options) {
     const material = new THREE.MeshStandardMaterial();
@@ -235,47 +226,14 @@ function complexMaterial(options) {
     if (options.name) material.name = options.name;
     material.needsUpdate = true;
     //console.log(options.name, material);
+    csm.setupMaterial(material);
     return material;
 }
 
-const missileMaterial = complexMaterial({
-    colorMap: missile_color,
-    normalMap: missile_normal,
-    roughnessMap: missile_roughness,
-    metalnessMap: missile_metalness,
-    displacementMap: missile_displacement,
-    repeat: [1.5,1],
-    displacementScale: 0.1,
-    displacementBias: -0.05,
-    name: "missile"
-});
-
-const powerMaterial = complexMaterial({
-    colorMap: power_color,
-    normalMap: power_normal,
-    roughnessMap: power_roughness,
-    metalnessMap: power_metalness,
-    displacementMap: power_displacement,
-    repeat: [1.5,1],
-    displacementScale: 0.1,
-    displacementBias: -0.05,
-    name: "power"
-});
-
-const wallMaterial = complexMaterial({
-    colorMap: wall_color,
-    normalMap: wall_normal,
-    roughnessMap: wall_roughness,
-    metalnessMap: wall_metalness,
-    displacementMap: wall_displacement,
-    displacementScale: 1.5,
-    displacementBias: -0.8,
-    anisotropy: 4,
-    metalness: 0.1,
-    roughness: 0.20,
-    repeat: [2, 1],
-    name: "wall"
-});
+let missileMaterial;
+let powerMaterial;
+let wallMaterial;
+let floorMaterial;
 
 //------------------ 1.1. MAZE GENERATOR -----------------------
 // This generates a (mostly) braided maze. That is a kind of maze that has no dead ends. This actually does have dead ends
@@ -433,7 +391,9 @@ class BaseActor extends mix(Actor).with(AM_Spatial) {
          super.init(options);
 
          this.power = PowerActor.create({parent: this, translation: [5,3,5]});
+         //this.column = ColumnActor.create({parent: this, translation: [0,0,0]});
          //this.maze = MazeActor.create({rows: this.rows, columns: this.columns, cellSize: this.cellSize});
+         
     }
 }
 BaseActor.register('BaseActor');
@@ -447,33 +407,7 @@ BaseActor.register('BaseActor');
 export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
-        const floorMat = complexMaterial({
-            colorMap: lava_emissive,
-            normalMap: lava_normal,
-            roughnessMap: lava_roughness,
-            //metalnessMap: lava_metalness,
-            displacementMap: lava_displacement,
-            emissiveMap: lava_emissive,
-            //emissiveIntensity: 10,
-            emissive: new THREE.Color(0xffffff),
-            repeat: [MAZE_ROWS, MAZE_COLUMNS],
-            displacementScale: 1.5,
-            displacementBias: -0.8,
-            roughness: 0.30,
-            name: "floor"
-        });/*
-        const floorMat = complexMaterial({
-            colorMap: floor_color,
-            normalMap: floor_normal,
-            roughnessMap: floor_roughness,
-            metalnessMap: floor_metalness,
-            displacementMap: floor_displacement,
-            repeat: [20, 20],
-            anisotropy: 4,
-            name: "floor"
-        });*/
-        floorMat.envMap = null;
-        this.material = floorMat;
+        this.material = floorMaterial;
         this.geometry = new THREE.PlaneGeometry(MAZE_ROWS*CELL_SIZE, MAZE_COLUMNS* CELL_SIZE);
         this.geometry.rotateX(toRad(-90));
         const base = new THREE.Mesh( this.geometry, this.material );
@@ -506,6 +440,12 @@ export class MyModelRoot extends ModelRoot {
         //this.set({translation: [xOffset,0,zOffset]});
         this.base = BaseActor.create({ translation:[xOffset,0,zOffset]});
         this.maze = MazeActor.create({translation: [0,5,0], rows: MAZE_ROWS, columns: MAZE_COLUMNS, cellSize: CELL_SIZE});
+        for (let y = 0; y < MAZE_ROWS; y++) {
+            for (let x = 0; x < MAZE_COLUMNS; x++) {
+                const t = [x*CELL_SIZE, 0, y*CELL_SIZE];
+                ColumnActor.create({translation: t});
+            }
+        }
     }
 }
 MyModelRoot.register("MyModelRoot");
@@ -525,25 +465,93 @@ export class MyViewRoot extends ViewRoot {
     }
 
     buildLights() {
+        const rm = this.service("ThreeRenderManager");
+        rm.renderer.shadowMap.enabled = true;
+        rm.renderer.shadowMap.type = THREE.PCFShadowMap;
+        rm.renderer.toneMapping = THREE.ReinhardToneMapping;
+        const ambientLight = new THREE.AmbientLight( 0xffffff, 1.5 );
+        rm.scene.add( ambientLight );
+        //const additionalDirectionalLight = new THREE.DirectionalLight( 0x000020, 1.5 );
+        //additionalDirectionalLight.position.set( csmParams.lightX, csmParams.lightY, csmParams.lightZ ).normalize().multiplyScalar( - 200 );
+        //rm.scene.add( additionalDirectionalLight );
+        csm = new ADDONS.CSM( {
+            maxFar: rm.camera.far,
+            cascades: 4,
+            //mode: csmParams.mode,
+            shadowMapSize: 1024,
+            lightDirection: new THREE.Vector3( csmParams.lightX, csmParams.lightY, csmParams.lightZ ).normalize(),
+            camera: rm.camera,
+            parent: rm.scene,
+        } );
+
+        //csmHelper = new ADDONS.CSMHelper( csm );
+        //csmHelper.visible = false;
+
+        //rm.scene.add( csmHelper );
+        rm.scene.add( csm );
+        // guiHelper(rm.scene, rm.renderer);
+
         const loader = new THREE.TextureLoader();
         loader.load( sky, skyTexture => {
-            const rm = this.service("ThreeRenderManager");
-            //rm.doRender = false;
-            rm.renderer.shadowMap.enabled = true;
-            rm.renderer.shadowMap.type = THREE.PCFShadowMap;
-            rm.renderer.setClearColor(new THREE.Color(0.45, 0.8, 0.8));
-            rm.renderer.toneMapping = THREE.NeutralToneMapping;
-            const ambient = new THREE.AmbientLight( 0xffffff, 0.2 );
-            rm.scene.add(ambient);
-            rm.scene.add(sunLight); // this is a global object
-            rm.scene.fog = new THREE.Fog( 0x9D5D4D, 800, 1500 );
             const pmremGenerator = new THREE.PMREMGenerator(rm.renderer);
             pmremGenerator.compileEquirectangularShader();
             const skyEnvironment = pmremGenerator.fromEquirectangular(skyTexture);
             skyEnvironment.encoding = THREE.LinearSRGBColorSpace;
             rm.scene.background = skyEnvironment.texture;
-            rm.scene.environment = skyEnvironment.texture;
+            //rm.scene.environment = skyEnvironment.texture;
         } );
+        missileMaterial = complexMaterial({
+            colorMap: missile_color,
+            normalMap: missile_normal,
+            roughnessMap: missile_roughness,
+            metalnessMap: missile_metalness,
+            displacementMap: missile_displacement,
+            repeat: [1.5,1],
+            displacementScale: 0.1,
+            displacementBias: -0.05,
+            name: "missile"
+        });
+
+        powerMaterial = complexMaterial({
+            colorMap: power_color,
+            normalMap: power_normal,
+            roughnessMap: power_roughness,
+            metalnessMap: power_metalness,
+            displacementMap: power_displacement,
+            repeat: [1.5,1],
+            displacementScale: 0.1,
+            displacementBias: -0.05,
+            name: "power"
+        });
+
+        wallMaterial = complexMaterial({
+            colorMap: corinthian_color,
+            normalMap: corinthian_normal,
+            roughnessMap: corinthian_roughness,
+            displacementMap: corinthian_displacement,
+            displacementScale: 1.5,
+            displacementBias: -0.8,
+            anisotropy: 4,
+            repeat: [2, 1],
+            name: "wall"
+        });
+
+        floorMaterial = complexMaterial({
+            colorMap: marble_color,
+            normalMap: marble_normal,
+            roughnessMap: marble_roughness,
+            displacementMap: marble_displacement,
+            anisotropy: 4,
+            metalness: 0.1,
+            repeat: [20, 20],
+            name: "wall"
+        });
+    }
+
+    update(time, delta) {
+        super.update(time, delta);
+        //if (this.csmHelper) this.csmHelper.update();
+        if ( csm ) csm.update();
     }
 }
 
@@ -812,7 +820,6 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
 
     update(time, delta) {
         super.update(time,delta);
-        //tickSnow();
         if (this.driving) {
             if (this.gas || this.strafe) {
                 const factor = delta/1000;
@@ -853,7 +860,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         }
         translation = this.verifyMap(translation);
         this.positionTo(translation, this.yawQ);
-        sunLight.position.set(...v3_add(translation, sunBase));
+        //sunLight.position.set(...v3_add(translation, sunBase));
     }
 
     verifyMap(loc) {
@@ -926,7 +933,6 @@ class AvatarManager extends ViewService {
         this.avatars = new Set();
     }
 }
-
 //------------------------------------------------------------------------------------------
 //--MissileActor ---------------------------------------------------------------------------
 // Fired by the avatar - they destroy the other players but bounce off of everything else
@@ -1045,18 +1051,6 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM
         super(actor);
         this.radius = actor.radius;
         this.missile = this.createInstance();
-        /*
-        // Geometry
-        let geometry = new THREE.IcosahedronGeometry(4, 50);
-        geometry = ADDONS.BufferGeometryUtils.mergeVertices(geometry);
-        geometry.computeTangents();
-
-        // Mesh
-        this.wobble = new THREE.Mesh(geometry, wobbleMaterial);
-        this.wobble.customDepthMaterial = depthMaterial;
-        this.wobble.castShadow = true;
-        this.setRenderObject(this.wobble);
-        */
     }
 
     createInstance() {
@@ -1268,7 +1262,7 @@ WallActor.register('WallActor');
 //-- WallPawn ------------------------------------------------------------------------------
 // This is used to generate the walls of the maze.
 //------------------------------------------------------------------------------------------
-export class WallPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeInstanced) {
+class WallPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeInstanced) {
     constructor(...args) {
         super(...args);
         this.wall = this.createInstance();
@@ -1284,17 +1278,60 @@ export class WallPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_Thr
             const backWall = new THREE.PlaneGeometry(width, height);
             backWall.rotateY(Math.PI);
             const geometry = ADDONS.BufferGeometryUtils.mergeGeometries([frontWall, backWall], false);
+            //const myFloorMaterial = floorMaterial.clone();
             im.addMaterial("wall", wallMaterial);
             im.addGeometry("wall", geometry);
             im.addMesh("wall", "wall", "wall");
             wall = this.useInstance("wall");
         }
         wall.mesh.material.needsUpdate = true;
-        wall.receiveShadow = true;
+        wall.mesh.receiveShadow = true;
+        wall.mesh.castShadow = true;
         return wall;
     }
 }
 WallPawn.register("WallPawn");
+//------------------------------------------------------------------------------------------
+//-- ColumnActor -----------------------------------------------------------------------------
+// Columns .
+//------------------------------------------------------------------------------------------
+class ColumnActor extends mix(Actor).with(AM_Spatial) {
+
+    get pawn() {return "ColumnPawn"}
+
+}
+ColumnActor.register('ColumnActor');
+//------------------------------------------------------------------------------------------
+//-- ColumnPawn ------------------------------------------------------------------------------
+// Display the columns at every intersection of the maze.
+//------------------------------------------------------------------------------------------
+class ColumnPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeInstanced) {
+    constructor(...args) {
+        super(...args);
+        this.loadInstance();
+    }
+    loadInstance() {
+        if (this.doomed) return;
+        if (!this.useInstance("column")) { // does the instance not exist?
+            if (readyToLoad && column) { // is it ready to load?
+                const geometry = column.geometry;
+                const material = column.material;
+                geometry.scale(0.028,0.028,0.028);
+                geometry.rotateX(-PI_2);
+                const im = this.service("ThreeInstanceManager");
+                im.addMaterial("column", material);
+                im.addGeometry("column", geometry);
+                im.addMesh("column", "column", "column");
+                const columnInstance =this.useInstance("column");
+                columnInstance.mesh.material.needsUpdate = true;
+                csm.setupMaterial(columnInstance.mesh.material);
+                columnInstance.mesh.receiveShadow = true;
+                columnInstance.mesh.castShadow = true;
+            } else this.future(100).loadInstance(); // not ready to load - try again later
+        }
+    }
+}
+ColumnPawn.register("ColumnPawn");
 //------------------------------------------------------------------------------------------
 //-- StartWorldcore ------------------------------------------------------------------------------
 // We either start or join a Croquet session here.
@@ -1330,3 +1367,124 @@ StartWorldcore({
     model: MyModelRoot,
     view: MyViewRoot,
 });
+
+function guiHelper(scene, renderer) {
+
+    const gui = new GUI();
+/*
+    gui.add( csmParams, 'orthographic' ).onChange( value => {
+
+        csm.camera = value ? orthoCamera : camera;
+        csm.updateFrustums();
+
+    } );
+*/
+    gui.add( csmParams, 'fade' ).onChange( value => {
+
+        csm.fade = value;
+        csm.updateFrustums();
+
+    } );
+
+    gui.add( csmParams, 'shadows' ).onChange( value => {
+
+        renderer.shadowMap.enabled = value;
+console.log("csmParams.shadows", value);
+        scene.traverse( function ( child ) {
+    
+            if ( child.material ) {
+                csm.setupMaterial(child.material);
+                child.material.needsUpdate = true;
+
+            }
+
+        } );
+
+    } );
+
+    gui.add( csmParams, 'far', 1, 5000 ).step( 1 ).name( 'shadow far' ).onChange( value => {
+
+        csm.maxFar = value;
+        csm.updateFrustums();
+
+    } );
+
+    gui.add( csmParams, 'mode', [ 'uniform', 'logarithmic', 'practical' ] ).name( 'frustum split mode' ).onChange( value => {
+
+        csm.mode = value;
+        csm.updateFrustums();
+
+    } );
+
+    gui.add( csmParams, 'lightX', -1, 1 ).name( 'light direction x' ).onChange( value => {
+
+        csm.lightDirection.x = value;
+
+    } );
+
+    gui.add( csmParams, 'lightY', -1, 1 ).name( 'light direction y' ).onChange( value => {
+
+        csm.lightDirection.y = value;
+
+    } );
+
+    gui.add( csmParams, 'lightZ', -1, 1 ).name( 'light direction z' ).onChange( value => {
+
+        csm.lightDirection.z = value;
+
+    } );
+
+    gui.add( csmParams, 'margin', 0, 200 ).name( 'light margin' ).onChange( value => {
+
+        csm.lightMargin = value;
+
+    } );
+
+    gui.add( csmParams, 'lightNear', 1, 10000 ).name( 'light near' ).onChange( value => {
+
+        for ( let i = 0; i < csm.lights.length; i++ ) {
+            csm.lights[ i ].shadow.camera.near = value;
+            csm.lights[ i ].shadow.camera.updateProjectionMatrix();
+        }
+
+    } );
+
+    gui.add( csmParams, 'lightFar', 1, 10000 ).name( 'light far' ).onChange( value => {
+
+        for ( let i = 0; i < csm.lights.length; i++ ) {
+
+            csm.lights[ i ].shadow.camera.far = value;
+            csm.lights[ i ].shadow.camera.updateProjectionMatrix();
+
+        }
+
+    } );
+
+    const helperFolder = gui.addFolder( 'helper' );
+
+    helperFolder.add( csmHelper, 'visible' );
+
+    helperFolder.add( csmHelper, 'displayFrustum' ).onChange( () => {
+
+        csmHelper.updateVisibility();
+
+    } );
+
+    helperFolder.add( csmHelper, 'displayPlanes' ).onChange( () =>{
+
+        csmHelper.updateVisibility();
+
+    } );
+
+    helperFolder.add( csmHelper, 'displayShadowBounds' ).onChange( () => {
+
+        csmHelper.updateVisibility();
+
+    } );
+
+    helperFolder.add( csmParams, 'autoUpdateHelper' ).name( 'auto update' );
+
+    helperFolder.add( csmParams, 'updateHelper' ).name( 'update' );
+
+    helperFolder.open();
+}
