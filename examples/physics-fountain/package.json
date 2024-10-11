@@ -4,16 +4,17 @@
   "description": "Physics Example",
   "private": true,
   "scripts": {
-    "start": "webpack serve --no-live-reload --no-hot --mode development --devtool source-map",
+    "start": "webpack serve --mode development",
     "build": "webpack --mode production"
   },
   "author": "Croquet Labs",
   "license": "Apache-2.0",
   "devDependencies": {
     "html-webpack-plugin": "^5.6.0",
-    "webpack": "^5.93.0",
+    "latest-version": "^5.1.0",
+    "webpack": "^5.95.0",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^5.0.4"
+    "webpack-dev-server": "^5.1.0"
   },
   "dependencies": {
     "@croquet/worldcore": "^2.0.0-alpha.27",
