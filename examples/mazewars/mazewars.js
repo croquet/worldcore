@@ -18,7 +18,8 @@
 // - better missiles. Maze walls are instanced. Generate the maze.
 // - collision detection with walls for avatars and missiles.
 // - columns, CSM lighting
-// - add floor reflections, enhance lighting, fixed disappearing columns
+// - added floor reflections, enhance lighting, fixed disappearing columns
+// - added the horse weenie
 //------------------------------------------------------------------------------------------
 // To do:
 // create three+ powerups:
@@ -38,13 +39,7 @@
 // throttle to 20 Hz avatar update rate
 // burn marks on walls when hit by missiles - these fade away
 // leaderboard - steal from Multiblaster
-//------------------------------------------------------------------------------------------
-// Issues:
-// Need to pre-render textures on dynamic objects like missiles.
-//------------------------------------------------------------------------------------------
-// issues:
-// the missile is not visible when it is created sometimes - though the glow is visible
-// missiles need to bounce off walls
+// add mobile controls
 //------------------------------------------------------------------------------------------
 
 import { App, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
@@ -127,6 +122,7 @@ async function modelConstruct() {
 
 modelConstruct().then( () => { console.log(column); readyToLoad = true; column = column.scene.children[0] } );
 
+// Create fireball material
 let fireMaterial;
 new THREE.TextureLoader().load(fireballTexture, texture => {
     fireMaterial = new THREE.ShaderMaterial( {
@@ -323,6 +319,17 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
           delete this.map[x][y].seen;
         }
       }
+
+      // the horse is in the center of the maze so add walls around it and remove walls nearby
+      // a value of false means there is a wall
+      const cell = this.map[11][11];
+      cell.N = cell.S = cell.E = cell.W = false;
+      this.map[11][10].S = this.map[11][12].N = false;
+      this.map[10][11].E = this.map[12][11].W = false;
+      this.map[10][10].S = this.map[10][11].N = this.map[10][11].S = this.map[10][12].N = true;
+      this.map[12][10].S = this.map[12][11].N = this.map[12][11].S = this.map[12][12].N = true;
+      this.map[10][10].E = this.map[11][10].W = this.map[11][10].E = this.map[12][10].W = true;
+      this.map[10][12].E = this.map[11][12].W = this.map[11][12].E = this.map[12][12].W = true;
     }
 
     // this lets me see the maze in the console
@@ -452,6 +459,7 @@ export class MyModelRoot extends ModelRoot {
                 ColumnActor.create({translation: t});
             }
         }
+        this.horse = HorseActor.create({translation:[210.9,10,209.70], scale:[8.75,8.75,8.75]});
     }
 }
 MyModelRoot.register("MyModelRoot");
@@ -630,10 +638,10 @@ class EyeballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeC
     }
 
     destroy() {
+        super.destroy();
         if (this.avatar3D) {
             this.destroy3D( this.avatar3D );
         }
-        super.destroy();
     }
 
     destroy3D( obj3D ) {
@@ -1335,6 +1343,49 @@ class ColumnPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeIns
     }
 }
 ColumnPawn.register("ColumnPawn");
+
+//------------------------------------------------------------------------------------------
+//-- HorseActor ---------------------------------------------------------------------------
+// Hero statue at the center of the maze.
+//------------------------------------------------------------------------------------------
+class HorseActor extends mix(Actor).with(AM_Spatial,) {
+    get pawn() { return "HorsePawn" }
+}
+HorseActor.register('HorseActor');
+
+class HorsePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+
+    constructor(actor) {
+        super(actor);
+        //this.radius = AVATAR_RADIUS;
+        //this.pitch = q_pitch(this.rotation);
+        //this.pitchQ = q_axisAngle([1,0,0], this.pitch);
+        this.load3D();
+    }
+
+    load3D() {
+        if (this.doomed) return;
+        if (readyToLoad && horse) {
+            this.horse = horse.scene.clone();
+            console.log("horse", this.horse);
+            //this.horse.scale.set(100,100,100);
+            //this.horse.rotation.set(0,Math.PI,0);
+            this.horse.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
+            this.setRenderObject(this.horse);
+        } else this.future(100).load3D();
+    }
+
+    destroy() {
+        super.destroy();
+        this.horse.traverse( obj => {
+            if (obj.geometry) {
+                obj.geometry.dispose();
+                obj.material.dispose();
+            }
+        });
+    }
+}
+HorsePawn.register("HorsePawn");
 //------------------------------------------------------------------------------------------
 //-- StartWorldcore ------------------------------------------------------------------------------
 // We either start or join a Croquet session here.
