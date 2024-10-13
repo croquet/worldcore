@@ -22,6 +22,7 @@
 // - added the horse weenie
 // - changed sky,added uv coordinates to hexasphere
 // - avatar & missile tests collision with columns
+// - seasonal trees
 //------------------------------------------------------------------------------------------
 // To do:
 // The missile will be a sphere containing a glowing light and a pulsing point light.
@@ -81,6 +82,7 @@ import eyeball_glb from "./assets/eyeball.glb";
 import column_glb from "./assets/column2.glb";
 import hexasphere_glb from "./assets/hexasphere.glb";
 import horse_glb from "./assets/Horse_Copper.glb";
+import fourSeasonsTree_glb from "./assets/fourSeasonsTree.glb";
 
 // Shaders
 //------------------------------------------------------------------------------------------
@@ -107,7 +109,8 @@ let eyeball;
 let column;
 let hexasphere;
 let horse;
-
+let trees;
+let seasons;
 // Load 3D Models
 //------------------------------------------------------------------------------------------
 async function modelConstruct() {
@@ -115,12 +118,13 @@ async function modelConstruct() {
     const dracoLoader = new ADDONS.DRACOLoader();
     dracoLoader.setDecoderPath('./src/draco/');
     gltfLoader.setDRACOLoader(dracoLoader);
-    return [eyeball, column, hexasphere, horse] = await Promise.all( [
+    return [eyeball, column, hexasphere, horse, trees] = await Promise.all( [
         // add additional GLB files to load here
         gltfLoader.loadAsync( eyeball_glb ),
         gltfLoader.loadAsync( column_glb ),
         gltfLoader.loadAsync( hexasphere_glb ),
         gltfLoader.loadAsync( horse_glb ),
+        gltfLoader.loadAsync( fourSeasonsTree_glb )
     ]);
 }
 
@@ -129,7 +133,23 @@ modelConstruct().then( () => {
     column = column.scene.children[0];
     console.log("hexasphere",hexasphere);
     hexasphere = hexasphere.scene.children[0].children[0];
-} );
+    seasons = {spring: new THREE.Group(), summer: new THREE.Group(), fall: new THREE.Group(), winter: new THREE.Group()};
+    console.log(trees);
+    let counter = 0;
+
+    trees.scene.children.forEach(node => {
+        if (node.name) {
+            if (node.name.includes("spring")) seasons.spring.add(node.clone());
+            else if (node.name.includes("summer")) seasons.summer.add(node.clone());
+            else if (node.name.includes("fall")) seasons.fall.add(node.clone());
+            else if (node.name.includes("winter")) seasons.winter.add(node.clone());
+        }
+    });
+    seasons.spring.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0); } });
+    seasons.summer.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
+    seasons.fall.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
+    seasons.winter.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
+});
 
 // Create fireball material
 //------------------------------------------------------------------------------------------
@@ -327,22 +347,35 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
 
     // dump most of the data - don't need it anymore
     clean() {// remove N and W
-      for (let y = 0; y < this.HEIGHT; y++) {
-        for (let x = 0; x < this.WIDTH; x++) {
-          delete this.map[x][y].seen;
+        for (let y = 0; y < this.HEIGHT; y++) {
+            for (let x = 0; x < this.WIDTH; x++) {
+            delete this.map[x][y].seen;
+            }
         }
-      }
 
-      // the horse is in the center of the maze so add walls around it and remove walls nearby
-      // a value of false means there is a wall
-      const cell = this.map[11][11];
-      cell.N = cell.S = cell.E = cell.W = false;
-      this.map[11][10].S = this.map[11][12].N = false;
-      this.map[10][11].E = this.map[12][11].W = false;
-      this.map[10][10].S = this.map[10][11].N = this.map[10][11].S = this.map[10][12].N = true;
-      this.map[12][10].S = this.map[12][11].N = this.map[12][11].S = this.map[12][12].N = true;
-      this.map[10][10].E = this.map[11][10].W = this.map[11][10].E = this.map[12][10].W = true;
-      this.map[10][12].E = this.map[11][12].W = this.map[11][12].E = this.map[12][12].W = true;
+        // the horse is in the center of the maze so add walls around it and remove walls nearby
+        // a value of false means there is a wall
+        const cell = this.map[11][11];
+        cell.N = cell.S = cell.E = cell.W = false;
+        this.map[11][10].S = this.map[11][12].N = false;
+        this.map[10][11].E = this.map[12][11].W = false;
+
+        this.map[10][10].S = this.map[10][11].N = this.map[10][11].S = this.map[10][12].N = true;
+        this.map[12][10].S = this.map[12][11].N = this.map[12][11].S = this.map[12][12].N = true;
+        this.map[10][10].E = this.map[11][10].W = this.map[11][10].E = this.map[12][10].W = true;
+        this.map[10][12].E = this.map[11][12].W = this.map[11][12].E = this.map[12][12].W = true;
+
+        const clearCorner = (x,y) => {
+            this.map[x+1][y+2].N = this.map[x+1][y+1].S =
+            this.map[x+2][y+2].N = this.map[x+2][y+1].S = true;
+            this.map[x+1][y+1].E = this.map[x+2][y+1].W =
+            this.map[x+1][y+2].E = this.map[x+2][y+2].W = true;
+        };
+
+        clearCorner(0,0);
+        clearCorner(17,0);
+        clearCorner(0,17);
+        clearCorner(17,17);
     }
 
     // this lets me see the maze in the console
@@ -433,7 +466,7 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
             textureHeight: window.innerHeight * window.devicePixelRatio,
             color: 0xb5b5b5
         } );
-        mirror.position.y = -0.5;
+        mirror.position.y = -0.25;
         mirror.rotateX( -Math.PI / 2 );
         group.add( mirror );
 
@@ -471,6 +504,11 @@ export class MyModelRoot extends ModelRoot {
             }
         }
         this.horse = HorseActor.create({translation:[210.9,10,209.70], scale:[8.75,8.75,8.75]});
+        let s = 8.0;
+        this.spring = TreeActor.create({season:"spring",translation: [20, 0.5, 20], scale:[s,s,s]});
+        this.summer = TreeActor.create({season:"summer",translation: [20, 0.5, 360], scale:[s,s,s]});
+        this.fall = TreeActor.create({season:"fall",translation: [360, 0.5, 360], scale:[s,s,s]});
+        this.winter = TreeActor.create({season:"winter",translation: [360, 0.5, 20], scale:[s,s,s]});
     }
 }
 MyModelRoot.register("MyModelRoot");
@@ -904,15 +942,15 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
             const n = offsetZ < -cellInset;
             const e = offsetX > cellInset;
             const w = offsetX < -cellInset;
-            // console.log("cell: ", xCell, zCell, offsetX, offsetZ, n,s,e,w);
+
             // check for corner collisions
             let collided = false;
-            if (!cell.S && s) { z -= WALL_EPSILON + offsetZ - cellInset; collided = true; }
-            else if (!cell.N && n) { z -= offsetZ  + cellInset - WALL_EPSILON; collided = true; }
-            if (!cell.E && e) { x -= WALL_EPSILON + offsetX - cellInset; collided = true; }
-            else if (!cell.W && w) { x -= offsetX + cellInset - WALL_EPSILON; collided = true; }
+            if (!cell.S && s) { z -= WALL_EPSILON + offsetZ - cellInset; collided = 'S'; }
+            else if (!cell.N && n) { z -= offsetZ  + cellInset - WALL_EPSILON; collided = 'N'; }
+            if (!cell.E && e) { x -= WALL_EPSILON + offsetX - cellInset; collided = 'E'; }
+            else if (!cell.W && w) { x -= offsetX + cellInset - WALL_EPSILON; collided = 'W'; }
+            console.log("cell: ", xCell, zCell, collided);
             if (!collided) {
-                console.log("check columns");
                 if (s && e) {
                     if ( offsetX < offsetZ ) x -= offsetX - cellInset;
                     else z -= offsetZ - cellInset;
@@ -1075,7 +1113,6 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
               this.publish(this.id, 'bounce');
             }
             if ( !this.hasBounced ) {
-                // console.log("check columns");
                 if (s && e) {
                     if ( offsetX < offsetZ ) this.velocity[0] = -this.velocity[0];
                     else this.velocity[2]=-this.velocity[2];
@@ -1457,8 +1494,7 @@ class ColumnPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeIns
 }
 ColumnPawn.register("ColumnPawn");
 
-//------------------------------------------------------------------------------------------
-//-- HorseActor ---------------------------------------------------------------------------
+// HorseActor
 // Hero statue at the center of the maze.
 //------------------------------------------------------------------------------------------
 class HorseActor extends mix(Actor).with(AM_Spatial,) {
@@ -1470,9 +1506,6 @@ class HorsePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
-        //this.radius = AVATAR_RADIUS;
-        //this.pitch = q_pitch(this.rotation);
-        //this.pitchQ = q_axisAngle([1,0,0], this.pitch);
         this.load3D();
     }
 
@@ -1480,9 +1513,6 @@ class HorsePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         if (this.doomed) return;
         if (readyToLoad && horse) {
             this.horse = horse.scene.clone();
-            console.log("horse", this.horse);
-            //this.horse.scale.set(100,100,100);
-            //this.horse.rotation.set(0,Math.PI,0);
             this.horse.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
             this.setRenderObject(this.horse);
         } else this.future(100).load3D();
@@ -1499,8 +1529,48 @@ class HorsePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     }
 }
 HorsePawn.register("HorsePawn");
+
+// TreeActor
+// Seasonal trees in each corner of the maze.
 //------------------------------------------------------------------------------------------
-//-- StartWorldcore ------------------------------------------------------------------------------
+class TreeActor extends mix(Actor).with(AM_Spatial,) {
+    get pawn() { return "TreePawn" }
+    get season() { return this._season || "spring"}
+}
+TreeActor.register('TreeActor');
+
+class TreePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+
+    constructor(actor) {
+        super(actor);
+        this.load3D();
+    }
+
+    load3D() {
+        if (this.doomed) return;
+        const tree = seasons[this.actor.season];
+        console.log("tree", tree);
+        if (readyToLoad && tree) {
+            console.log("TreePawn", tree);
+            this.tree = tree.clone(); // clone because we will modify it
+            this.tree.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
+            this.setRenderObject(this.tree);
+        } else this.future(100).load3D();
+    }
+
+    destroy() {
+        super.destroy();
+        this.tree.traverse( obj => {
+            if (obj.geometry) {
+                obj.geometry.dispose();
+                obj.material.dispose();
+            }
+        });
+    }
+}
+TreePawn.register("TreePawn");
+
+// StartWorldcore
 // We either start or join a Croquet session here.
 // If we are using the lobby, we use the session name in the URL to join an existing session.
 // If we are not using the lobby, we create a new session.
