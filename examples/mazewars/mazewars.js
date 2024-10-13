@@ -20,26 +20,27 @@
 // - columns, CSM lighting
 // - added floor reflections, enhance lighting, fixed disappearing columns
 // - added the horse weenie
+// - changed sky,added uv coordinates to hexasphere
+// - avatar & missile tests collision with columns
 //------------------------------------------------------------------------------------------
 // To do:
+// The missile will be a sphere containing a glowing light and a pulsing point light.
+// burn marks on walls when hit by missiles - these fade away.
+// throttle to 20 Hz avatar update rate
 // create three+ powerups:
 // 1. red - 10 second invincibility
 // 2. blue - 10 second speed boost
 // 3. green - 10 second missile boost
-// The missile will be a sphere containing the fireball texture.
 // Need to pre-render textures on dynamic objects like missiles.
-// The single column needs to act as a collider.
 // Sounds effects need to be added.
 // - missile whoosh when it goes by
 // - avatar death groan when hit
 // - powerup collected tone
 // - missile fire sound
 // - ready to shoot sound and click when not ready
-// scoring - use Multiblaster code
-// throttle to 20 Hz avatar update rate
-// burn marks on walls when hit by missiles - these fade away
-// leaderboard - steal from Multiblaster
+// scoring, leaderboard - steal from Multiblaster
 // add mobile controls
+// missile/missile collision
 //------------------------------------------------------------------------------------------
 
 import { App, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
@@ -50,9 +51,8 @@ import FakeGlowMaterial from './src/FakeGlowMaterial.js';
 import apiKey from "./src/apiKey.js";
 
 // Textures
-// Illustration 112505376 / 360 Sky © Planetfelicity | Dreamstime.com
-import sky from "./assets/textures/alienSky1.jpg";
-
+//------------------------------------------------------------------------------------------
+import sky from "./assets/textures/aboveClouds.jpg";
 import missile_color from "./assets/textures/metal_gold_vein/metal_0080_color_2k.jpg";
 import missile_normal from "./assets/textures/metal_gold_vein/metal_0080_normal_opengl_2k.png";
 import missile_roughness from "./assets/textures/metal_gold_vein/metal_0080_roughness_2k.jpg";
@@ -76,17 +76,20 @@ import corinthian_roughness from "./assets/textures/corinthian/concrete_0014_rou
 import corinthian_displacement from "./assets/textures/corinthian/concrete_0014_height_2k.png";
 
 // 3D Models
+//------------------------------------------------------------------------------------------
 import eyeball_glb from "./assets/eyeball.glb";
 import column_glb from "./assets/column2.glb";
 import hexasphere_glb from "./assets/hexasphere.glb";
 import horse_glb from "./assets/Horse_Copper.glb";
 
 // Shaders
+//------------------------------------------------------------------------------------------
 import fireballTexture from "./assets/textures/explosion.png";
 import * as fireballFragmentShader from "./src/shaders/fireball.frag.js";
 import * as fireballVertexShader from "./src/shaders/fireball.vert.js";
 
 // Global Variables
+//------------------------------------------------------------------------------------------
 const PI_2 = Math.PI/2;
 const PI_4 = Math.PI/4;
 const MISSILE_LIFE = 4000;
@@ -106,6 +109,7 @@ let hexasphere;
 let horse;
 
 // Load 3D Models
+//------------------------------------------------------------------------------------------
 async function modelConstruct() {
     const gltfLoader = new ADDONS.GLTFLoader();
     const dracoLoader = new ADDONS.DRACOLoader();
@@ -120,9 +124,15 @@ async function modelConstruct() {
     ]);
 }
 
-modelConstruct().then( () => { console.log(column); readyToLoad = true; column = column.scene.children[0] } );
+modelConstruct().then( () => {
+    readyToLoad = true;
+    column = column.scene.children[0];
+    console.log("hexasphere",hexasphere);
+    hexasphere = hexasphere.scene.children[0].children[0];
+} );
 
 // Create fireball material
+//------------------------------------------------------------------------------------------
 let fireMaterial;
 new THREE.TextureLoader().load(fireballTexture, texture => {
     fireMaterial = new THREE.ShaderMaterial( {
@@ -138,6 +148,7 @@ new THREE.TextureLoader().load(fireballTexture, texture => {
     });
 
 // Create complex materials
+//------------------------------------------------------------------------------------------
 function complexMaterial(options) {
     const material = new THREE.MeshStandardMaterial();
     const textureLoader = new THREE.TextureLoader();
@@ -204,6 +215,7 @@ function complexMaterial(options) {
     if (options.name) material.name = options.name;
     if (options.transparent) material.transparent = options.transparent;
     if (options.opacity) material.opacity = options.opacity;
+    if (options.side) material.side = options.side;
     material.needsUpdate = true;
     //console.log(options.name, material);
     csm.setupMaterial(material);
@@ -215,9 +227,10 @@ let powerMaterial;
 let wallMaterial;
 let floorMaterial;
 
-//------------------ MAZE GENERATOR -----------------------
+// Maze Generator
 // This generates a (mostly) braided maze. That is a kind of maze that has no dead ends. This actually does have dead ends
 // on the edges, but I decided to leave it as is.
+//------------------------------------------------------------------------------------------
 
 class MazeActor extends mix(Actor).with(AM_Spatial) {
     init(options) {
@@ -370,8 +383,8 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
     }
  }
 MazeActor.register("MazeActor");
-//------------------------------------------------------------------------------------------
-//-- BaseActor -----------------------------------------------------------------------------
+
+// BaseActor
 // This is the ground plane.
 //------------------------------------------------------------------------------------------
 class BaseActor extends mix(Actor).with(AM_Spatial) {
@@ -386,8 +399,7 @@ class BaseActor extends mix(Actor).with(AM_Spatial) {
 }
 BaseActor.register('BaseActor');
 
-//------------------------------------------------------------------------------------------
-//-- BasePawn ------------------------------------------------------------------------------
+// BasePawn
 // This is the ground of the world. This uses a simple transparent tile texture with a
 // reflecting mirror just beneath it.
 //------------------------------------------------------------------------------------------
@@ -436,8 +448,8 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
 }
 BasePawn.register("BasePawn");
 
-//------------------------------------------------------------------------------------------
-//-- MyModelRoot ---------------------------------------------------------------------------
+// My Model Root
+// Construct the game world
 //------------------------------------------------------------------------------------------
 
 export class MyModelRoot extends ModelRoot {
@@ -450,7 +462,6 @@ export class MyModelRoot extends ModelRoot {
         super.init(options);
         const xOffset = (MAZE_ROWS*CELL_SIZE)/2;
         const zOffset = (MAZE_COLUMNS*CELL_SIZE)/2;
-        //this.set({translation: [xOffset,0,zOffset]});
         this.base = BaseActor.create({ translation:[xOffset,0,zOffset]});
         this.maze = MazeActor.create({translation: [0,5,0], rows: MAZE_ROWS, columns: MAZE_COLUMNS, cellSize: CELL_SIZE});
         for (let y = 0; y < MAZE_ROWS; y++) {
@@ -464,8 +475,8 @@ export class MyModelRoot extends ModelRoot {
 }
 MyModelRoot.register("MyModelRoot");
 
-//------------------------------------------------------------------------------------------
-//-- MyViewRoot ----------------------------------------------------------------------------
+// MyViewRoot
+// Construct the visual world
 //------------------------------------------------------------------------------------------
 
 export class MyViewRoot extends ViewRoot {
@@ -520,6 +531,7 @@ export class MyViewRoot extends ViewRoot {
             repeat: [1.5,1],
             displacementScale: 0.1,
             displacementBias: -0.05,
+            side: THREE.DoubleSide,
             name: "missile"
         });
 
@@ -554,8 +566,7 @@ export class MyViewRoot extends ViewRoot {
     }
 }
 
-//------------------------------------------------------------------------------------------
-//-- AvatarActor ---------------------------------------------------------------------------
+// AvatarActor
 // This is you. Most of the control code for the avatar is in the pawn.
 // The AvatarActor has minimal need for replicated state except for user events.
 //------------------------------------------------------------------------------------------
@@ -597,9 +608,9 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
     }
 }
 AvatarActor.register('AvatarActor');
-//------------------------------------------------------------------------------------------
-//-- EyeballActor ---------------------------------------------------------------------------
-// Simply tracks the orientation of the camera.
+
+// Eyeball Actor/Pawn
+// Tracks the orientation of the camera so others see where you are looking.
 //------------------------------------------------------------------------------------------
 class EyeballActor extends mix(Actor).with(AM_Spatial,) {
     get pawn() { return "EyeballPawn" }
@@ -655,7 +666,6 @@ class EyeballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeC
 }
 EyeballPawn.register("EyeballPawn");
 
-//------------------------------------------------------------------------------------------
 // AvatarPawn
 // The avatar is designed to instantly react to user input and the publish those changes
 // so other users are able to see and interact with this avatar. Though there will be some latency
@@ -869,12 +879,12 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
 
             }
         }
-        translation = this.verifyMap(translation);
+        translation = this.verifyMaze(translation);
         this.positionTo(translation, this.yawQ);
         //sunLight.position.set(...v3_add(translation, sunBase));
     }
 
-    verifyMap(loc) {
+    verifyMaze(loc) {
         const mazeActor = this.wellKnownModel("ModelRoot").maze;
         const cellInset = CELL_SIZE/2 - this.radius;
         let x = loc[0];
@@ -883,28 +893,53 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         const xCell = 1+Math.floor(x/CELL_SIZE);
         const zCell = 1+Math.floor(z/CELL_SIZE);
 
-        if ( xCell>=0 && xCell < MAZE_COLUMNS && zCell>=0 && zCell < MAZE_ROWS ) { //off the map
-          // what cell are we in?
-          const cell = mazeActor.map[xCell][zCell];
-          // where are we within the cell?
-          const offsetX = x - (xCell-0.5)*CELL_SIZE;
-          const offsetZ = z - (zCell-0.5)*CELL_SIZE;
-          console.log("cell: ", xCell, zCell);
-          if (!cell.S && offsetZ > cellInset)z -= WALL_EPSILON + offsetZ - cellInset;
-          else if (!cell.N && offsetZ < -cellInset) z -= offsetZ  + cellInset - WALL_EPSILON;
-          if (!cell.E && offsetX > cellInset) x -= WALL_EPSILON + offsetX - cellInset;
-          else if (!cell.W && offsetX < -cellInset) x -= offsetX + cellInset - WALL_EPSILON;
+        if ( xCell>=0 && xCell < MAZE_COLUMNS && zCell>=0 && zCell < MAZE_ROWS ) { //on the map
+            // what cell are we in?
+            const cell = mazeActor.map[xCell][zCell];
+            // where are we within the cell?
+            const offsetX = x - (xCell-0.5)*CELL_SIZE;
+            const offsetZ = z - (zCell-0.5)*CELL_SIZE;
+
+            const s = offsetZ > cellInset;
+            const n = offsetZ < -cellInset;
+            const e = offsetX > cellInset;
+            const w = offsetX < -cellInset;
+            // console.log("cell: ", xCell, zCell, offsetX, offsetZ, n,s,e,w);
+            // check for corner collisions
+            let collided = false;
+            if (!cell.S && s) { z -= WALL_EPSILON + offsetZ - cellInset; collided = true; }
+            else if (!cell.N && n) { z -= offsetZ  + cellInset - WALL_EPSILON; collided = true; }
+            if (!cell.E && e) { x -= WALL_EPSILON + offsetX - cellInset; collided = true; }
+            else if (!cell.W && w) { x -= offsetX + cellInset - WALL_EPSILON; collided = true; }
+            if (!collided) {
+                console.log("check columns");
+                if (s && e) {
+                    if ( offsetX < offsetZ ) x -= offsetX - cellInset;
+                    else z -= offsetZ - cellInset;
+                }
+                else if (s && w) {
+                    if ( -offsetX < offsetZ ) x -= offsetX + cellInset;
+                    else z -= offsetZ - cellInset;
+                }
+                else if (n && e) {
+                    if ( -offsetX > offsetZ ) x -= offsetX - cellInset;
+                    else z -= offsetZ  + cellInset;
+                }
+                else if (n && w) {
+                    if ( offsetX > offsetZ ) x -= offsetX + cellInset;
+                    else z -= offsetZ + cellInset;
+                }
+            }
         } // else {}// if we find ourselves off the map, then jump back
         return [x, y, z];
       }
 }
 
 AvatarPawn.register("AvatarPawn");
-//------------------------------------------------------------------------------------------
-//-- Users ---------------------------------------------------------------------------------
+
+// MyUserManager
 // Create a new avatar when a new user joins.
 //------------------------------------------------------------------------------------------
-
 class MyUserManager extends UserManager {
     init() {
         super.init();
@@ -917,10 +952,7 @@ MyUserManager.register('MyUserManager');
 class MyUser extends User {
     init(options) {
         super.init(options);
-        const base = this.wellKnownModel("ModelRoot").base;
-
         this.avatar = AvatarActor.create({
-           // parent: base,
             driver: this.userId,
             tags: ["avatar", "block"]
         });
@@ -933,8 +965,7 @@ class MyUser extends User {
 }
 MyUser.register('MyUser');
 
-//------------------------------------------------------------------------------------------
-//-- AvatarManager ----------------------------------------------------------------------
+// AvatarManager
 // Easy to find all of the avatars in the world
 //------------------------------------------------------------------------------------------
 class AvatarManager extends ViewService {
@@ -944,8 +975,7 @@ class AvatarManager extends ViewService {
         this.avatars = new Set();
     }
 }
-//------------------------------------------------------------------------------------------
-//--MissileActor ---------------------------------------------------------------------------
+// MissileActor
 // Fired by the avatar - they destroy the other players but bounce off of everything else
 //------------------------------------------------------------------------------------------
 class MissileActor extends mix(Actor).with(AM_Spatial) {
@@ -1015,29 +1045,61 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
             const offsetX = x - (xCell-0.5)*CELL_SIZE;
             const offsetZ = z - (zCell-0.5)*CELL_SIZE;
 
-            if (!cell.S && offsetZ > cellInset) {
+            const s = offsetZ > cellInset;
+            const n = offsetZ < -cellInset;
+            const e = offsetX > cellInset;
+            const w = offsetX < -cellInset;
+
+            if (!cell.S && s) {
               z -= WALL_EPSILON + offsetZ - cellInset;
               this.velocity[2]=-this.velocity[2];
               this.hasBounced = true;
               this.publish(this.id, 'bounce');
             }
-            else if (!cell.N && offsetZ < -cellInset) {
+            else if (!cell.N && n) {
               z -= offsetZ  + cellInset - WALL_EPSILON;
               this.velocity[2] = -this.velocity[2];
               this.hasBounced = true;
               this.publish(this.id, 'bounce');
             }
-            if (!cell.E && offsetX > cellInset) {
+            if (!cell.E && e) {
               x -= WALL_EPSILON + offsetX - cellInset;
               this.velocity[0] = -this.velocity[0];
               this.hasBounced = true;
               this.publish(this.id, 'bounce');
             }
-            else if (!cell.W && offsetX < -cellInset) {
+            else if (!cell.W && w) {
               x -= offsetX + cellInset - WALL_EPSILON;
               this.velocity[0] = -this.velocity[0];
               this.hasBounced = true;
               this.publish(this.id, 'bounce');
+            }
+            if ( !this.hasBounced ) {
+                // console.log("check columns");
+                if (s && e) {
+                    if ( offsetX < offsetZ ) this.velocity[0] = -this.velocity[0];
+                    else this.velocity[2]=-this.velocity[2];
+                    this.hasBounced = true;
+                    this.publish(this.id, 'bounce');
+                }
+                else if (s && w) {
+                    if ( -offsetX < offsetZ ) this.velocity[0] = -this.velocity[0];
+                    else this.velocity[2]=-this.velocity[2];
+                    this.hasBounced = true;
+                    this.publish(this.id, 'bounce');
+                }
+                else if (n && e) {
+                    if ( -offsetX > offsetZ ) this.velocity[0] = -this.velocity[0];
+                    else this.velocity[2]=-this.velocity[2];
+                    this.hasBounced = true;
+                    this.publish(this.id, 'bounce');
+                }
+                else if (n && w) {
+                    if ( offsetX > offsetZ ) this.velocity[0] = -this.velocity[0];
+                    else this.velocity[2]=-this.velocity[2];
+                    this.hasBounced = true;
+                    this.publish(this.id, 'bounce');
+                }
             }
             this.translation = [x, y, z];
         } // else { this.missileHit(); }// if we find ourselves off the map, then destroy ourselves
@@ -1053,15 +1115,16 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
 }
 MissileActor.register('MissileActor');
 
-//------------------------------------------------------------------------------------------
-// MissilePawn ----------------------------------------------------------------------------
+// MissilePawn
+// Flashy missile object.
 //------------------------------------------------------------------------------------------
 export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
         this.radius = actor.radius;
-        this.missile = this.createInstance();
+        //this.missile = this.createInstance();
+        this.loadInstance();
     }
 
     createInstance() {
@@ -1078,6 +1141,56 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM
             missile.mesh.castShadow = true;
         }
         return missile;
+    }
+
+    loadInstance() {
+        if (this.doomed) return;
+        let missileInstance = this.useInstance("missile");
+        if (!missileInstance) { // does the instance not exist?
+            if (readyToLoad && hexasphere) { // is it ready to load?
+                const geometry = hexasphere.geometry.clone();
+                this.fixUV(geometry);
+                const material = missileMaterial;
+                geometry.scale(0.05,0.05,0.05);
+                //geometry.rotateX(-PI_2);
+                const im = this.service("ThreeInstanceManager");
+                im.addMaterial("missile", material);
+                im.addGeometry("missile", geometry);
+                im.addMesh("missile", "missile", "missile");
+                missileInstance =this.useInstance("missile");
+                missileInstance.mesh.material.needsUpdate = true;
+                csm.setupMaterial(missileInstance.mesh.material);
+                missileInstance.mesh.receiveShadow = true;
+                missileInstance.mesh.castShadow = true;
+            } else this.future(100).loadInstance(); // not ready to load - try again later
+        }
+    }
+    fixUV(geometry) {
+        // Angle around the Y axis, counter-clockwise when looking from above.
+		function azimuth( vector ) {
+			return Math.atan2( vector.z, -vector.x );
+		}
+
+		// Angle above the XZ plane.
+		function inclination( vector ) {
+			return Math.atan2( -vector.y, Math.sqrt( ( vector.x * vector.x ) + ( vector.z * vector.z ) ) );
+		}
+
+        const uvBuffer = [];
+        const vertex = new THREE.Vector3();
+        const positions = geometry.getAttribute('position').array;
+       // console.log("fixUV", positions);
+        for ( let i = 0; i < positions.length; i += 3 ) {
+
+            vertex.x = positions[ i + 0 ];
+            vertex.y = positions[ i + 1 ];
+            vertex.z = positions[ i + 2 ];
+
+            const u = azimuth( vertex ) / 2 / Math.PI + 0.5;
+            const v = inclination( vertex ) / Math.PI + 0.5;
+            uvBuffer.push( u, 1 - v );
+        }
+        geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvBuffer, 2));
     }
 
     update(time, delta) {
