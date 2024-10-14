@@ -22,10 +22,10 @@
 // - added the horse weenie
 // - changed sky,added uv coordinates to hexasphere
 // - avatar & missile tests collision with columns
-// - seasonal trees
+// - seasonal trees weenies
+// - made the missiles glow, slowed it down
 //------------------------------------------------------------------------------------------
 // To do:
-// The missile will be a sphere containing a glowing light and a pulsing point light.
 // burn marks on walls when hit by missiles - these fade away.
 // throttle to 20 Hz avatar update rate
 // create three+ powerups:
@@ -41,7 +41,7 @@
 // - ready to shoot sound and click when not ready
 // scoring, leaderboard - steal from Multiblaster
 // add mobile controls
-// missile/missile collision
+// missile/missile collision test * I think this is working
 //------------------------------------------------------------------------------------------
 
 import { App, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
@@ -101,7 +101,7 @@ const MISSILE_RADIUS = 2;
 const WALL_EPSILON = 0.01;
 const MAZE_ROWS = 20;
 const MAZE_COLUMNS = 20;
-const MISSILE_SPEED = 0.75;
+const MISSILE_SPEED = 0.50;
 
 let csm; // CSM is Cascaded Shadow Maps
 let readyToLoad = false;
@@ -396,7 +396,7 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
     //    let southWallGeometry = new THREE.BoxGeometry( Q.CELL_SIZE-Q.COLUMN_RADIUS, Q.WALL_HEIGHT, Q.WALL_THICKNESS,4,1,2);
     //    let wallMaterial = new THREE.MeshStandardMaterial( {color: 0xAAAACC, roughness: 0.7, metalness:0.8  } );
     //    let walls = [];
-        const r = q_axisAngle([0,1,0],Math.PI/2);
+        const r = q_axisAngle([0,1,0],PI_2);
         for (let y = 0; y < this.rows; y++) {
           for (let x = 0; x < this.columns; x++) {
 
@@ -426,8 +426,6 @@ class BaseActor extends mix(Actor).with(AM_Spatial) {
 
     init(options) {
          super.init(options);
-
-         this.power = PowerActor.create({parent: this, translation: [5,3,5]});
     }
 }
 BaseActor.register('BaseActor');
@@ -466,8 +464,8 @@ export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
             textureHeight: window.innerHeight * window.devicePixelRatio,
             color: 0xb5b5b5
         } );
-        mirror.position.y = -0.25;
-        mirror.rotateX( -Math.PI / 2 );
+        mirror.position.y = -0.1;
+        mirror.rotateX( -PI_2 );
         group.add( mirror );
 
         this.setRenderObject(group);
@@ -501,6 +499,8 @@ export class MyModelRoot extends ModelRoot {
             for (let x = 0; x < MAZE_COLUMNS; x++) {
                 const t = [x*CELL_SIZE, 0, y*CELL_SIZE];
                 ColumnActor.create({translation: t});
+                //const t2 = [t[0]+10, 3, t[2]+10];
+                //PowerActor.create({translation: t2});
             }
         }
         this.horse = HorseActor.create({translation:[210.9,10,209.70], scale:[8.75,8.75,8.75]});
@@ -509,6 +509,16 @@ export class MyModelRoot extends ModelRoot {
         this.summer = TreeActor.create({season:"summer",translation: [20, 0.5, 360], scale:[s,s,s]});
         this.fall = TreeActor.create({season:"fall",translation: [360, 0.5, 360], scale:[s,s,s]});
         this.winter = TreeActor.create({season:"winter",translation: [360, 0.5, 20], scale:[s,s,s]});
+        this.skyAngle = 0;
+
+        this.rotateSky();
+    }
+
+    rotateSky() {
+        this.skyAngle += 0.001;
+        if (this.skyAngle > 2*Math.PI) this.skyAngle -= 2*Math.PI;
+        this.publish("root","rotateSky", this.skyAngle);
+        this.future(100).rotateSky();
     }
 }
 MyModelRoot.register("MyModelRoot");
@@ -525,6 +535,9 @@ export class MyViewRoot extends ViewRoot {
 
     onStart() {
         this.buildLights();
+        console.log("MyViewRoot onStart", this);
+        this.skyRotation = new THREE.Euler(0, 0, 0);
+        this.subscribe("root", "rotateSky", this.rotateSky);
     }
 
     buildLights() {
@@ -598,6 +611,12 @@ export class MyViewRoot extends ViewRoot {
         });
     }
 
+    rotateSky(angle) {
+        const rm = this.service("ThreeRenderManager");
+        this.skyRotation.y = angle;
+        rm.scene.backgroundRotation = this.skyRotation;
+    }
+
     update(time, delta) {
         super.update(time, delta);
         if ( csm ) csm.update();
@@ -617,7 +636,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
         this.isAvatar = true;
         this.canShoot = true;
         this.radius = AVATAR_RADIUS;
-        this.set({translation: [10+100*Math.random(),5,10+100*Math.random()]});
+        this.set({translation: [10+100*Math.random(),6.5,10+100*Math.random()]});
         this.eyeball = EyeballActor.create({parent: this});
         this.listen("shootMissile", this.shootMissile);
         this.listen("origin", this.origin);
@@ -1024,7 +1043,9 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
         this.isCollider = true;
         this.future(4000).destroy(); // destroy after some time
         this.radius = MISSILE_RADIUS;
-        this.translation = [...this._avatar.translation];
+        const t = [...this._avatar.translation];
+        t[1]=5;
+        this.translation = [...t];
         this.rotation = [...this._avatar.rotation];
         this.yaw = q_yaw(this.rotation);
         this.yawQ = q_axisAngle([0,1,0], this.yaw);
@@ -1032,7 +1053,8 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
         this.velocity = v3_scale(this.direction, MISSILE_SPEED);
         this.timeScale = 0.00025 + Math.random()*0.00002;
         this.hasBounced = false; // I can kill my avatar if I bounce off a wall first
-       //GlowActor.create({parent: this, color: 0x22aa44, depthTest: false, radius: 2*this.radius, falloff: 0.05, opacity: 0.25});
+        GlowActor.create({parent: this, color: 0xff8844, depthTest: true, radius: 1.25, glowRadius: 0.5, falloff: 0.1, opacity: 0.75, sharpness: 0.5});
+        PointFlickerActor.create({parent: this, color: 0xff8844});
         this.tick(0);
         //console.log("MissileActor init", this);
     }
@@ -1139,7 +1161,10 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
                 }
             }
             this.translation = [x, y, z];
-        } // else { this.missileHit(); }// if we find ourselves off the map, then destroy ourselves
+            this.yaw += 0.01;
+            this.yawQ = q_axisAngle([0,1,0], this.yaw);
+            this.rotation = this.yawQ;
+        }
     }
 
     kill() { // missiles can kill missiles
@@ -1164,22 +1189,6 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM
         this.loadInstance();
     }
 
-    createInstance() {
-        const im = this.service("ThreeInstanceManager");
-        let missile = this.useInstance("missile");
-        console.log("missile", missile);
-        if ( !missile ) {
-            const geometry = new THREE.IcosahedronGeometry( this.radius, 20 );
-            im.addMaterial("missile", missileMaterial);
-            im.addGeometry("missile", geometry);
-            im.addMesh("missile", "missile", "missile");
-            missile = this.useInstance("missile");
-            missile.mesh.receiveShadow = true;
-            missile.mesh.castShadow = true;
-        }
-        return missile;
-    }
-
     loadInstance() {
         if (this.doomed) return;
         let missileInstance = this.useInstance("missile");
@@ -1202,16 +1211,13 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM
             } else this.future(100).loadInstance(); // not ready to load - try again later
         }
     }
+
     fixUV(geometry) {
         // Angle around the Y axis, counter-clockwise when looking from above.
-		function azimuth( vector ) {
-			return Math.atan2( vector.z, -vector.x );
-		}
+		function azimuth( vector ) { return Math.atan2( vector.z, -vector.x ); }
 
 		// Angle above the XZ plane.
-		function inclination( vector ) {
-			return Math.atan2( -vector.y, Math.sqrt( ( vector.x * vector.x ) + ( vector.z * vector.z ) ) );
-		}
+		function inclination( vector ) {return Math.atan2( -vector.y, Math.sqrt( ( vector.x * vector.x ) + ( vector.z * vector.z ) ) ); }
 
         const uvBuffer = [];
         const vertex = new THREE.Vector3();
@@ -1232,11 +1238,49 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM
 
     update(time, delta) {
         super.update(time, delta);
-    //    this.wobble.material.uniforms[ 'uTime' ].value = time/100;
     }
 }
 MissilePawn.register("MissilePawn");
 
+// PointFlickerActor
+// The missile emits a flickering light.
+//------------------------------------------------------------------------------------------
+class PointFlickerActor extends mix(Actor).with(AM_Spatial) {
+    get pawn() { return "PointFlickerPawn" }
+    get color() { return this._color || 0xff8844 }
+
+    init(options) {
+        super.init(options);
+        this.future(100).tick();
+    }
+
+    tick() {
+        this.future(100).tick();
+    }
+
+    resetGame() {
+        this.destroy();
+    }
+}
+PointFlickerActor.register('PointFlickerActor');
+
+//------------------------------------------------------------------------------------------
+// PowerPawn ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------
+export class PointFlickerPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+
+    constructor(actor) {
+        super(actor);
+        console.log("PointFlickerPawn constructor", this);
+        this.pointLight = new THREE.PointLight(this.actor.color, 10, 10, 2);
+        this.setRenderObject(this.pointLight);
+    }
+    destroy() {
+        super.destroy();
+        if (this.pointLight) this.pointLight.dispose();
+    }
+}
+PointFlickerPawn.register("PointFlickerPawn");
 //------------------------------------------------------------------------------------------
 //--FireballActor ---------------------------------------------------------------------------
 // When a missile hits an avatar a fireball is generated. It is attached to the avatar.
@@ -1369,7 +1413,8 @@ class GlowActor extends mix(Actor).with(AM_Spatial) {
         this.destroy();
     }
 
-    get radius() { return this._radius || 5 }
+    get radius() { return this._radius || 2 }
+    get glowRadius() { return this._glowRadius || 1 }
     get color() { return this._color || 0xff8844 }
     get transparent() { return this._transparent || true }
     get depthTest() { return this._depthTest || true }
@@ -1385,11 +1430,11 @@ export class GlowPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(actor) {
         super(actor);
         console.log("GlowPawn constructor", this);
-        const sphere = new THREE.SphereGeometry(2, 32, 32);
+        const sphere = new THREE.SphereGeometry(this.actor.radius, 32, 32);
         //console.log(this.color, this.radius);
         const material = new FakeGlowMaterial({
             glowColor: this.actor.color,
-            glowInternalRadius: this.actor.radius,
+            glowInternalRadius: this.actor.glowRadius,
             glowSharpness: this.actor.sharpness,
             transparent: this.actor.transparent,
             depthTest: this.actor.depthTest,
@@ -1549,9 +1594,7 @@ class TreePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     load3D() {
         if (this.doomed) return;
         const tree = seasons[this.actor.season];
-        console.log("tree", tree);
         if (readyToLoad && tree) {
-            console.log("TreePawn", tree);
             this.tree = tree.clone(); // clone because we will modify it
             this.tree.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
             this.setRenderObject(this.tree);
