@@ -33,6 +33,7 @@
 // - powerup collected tone
 // - missile fire sound
 // - ready to shoot sound and click when not ready
+// - player enter/exit game
 // create three+ powerups:
 // 1. red - 10 second invincibility
 // 2. blue - 10 second speed boost
@@ -145,18 +146,6 @@ export const playSound = function() {
     return play;
 }();
 
-class MyAudio extends THREE.PositionalAudio {
-    updateMatrixWorld(force) {
-        if(isNaN(this.parent.matrixWorld.elements[0])) 
-            {   console.log(this);
-                debugger;
-            }
-        // this.parent.updateMatrix();
-        //console.log("Matrix: ", this.matrix, this);
-        super.updateMatrixWorld(force);
-    }
-}
-
 function playSoundOnce(sound, parent3D, force, loop = false) {
     if (!force && sound.count>maxSound) return;
     sound.count++;
@@ -181,7 +170,6 @@ function playSoundOnce(sound, parent3D, force, loop = false) {
         mySound.onEnded = ()=> { sound.count--; mySound.removeFromParent(); };
     }
     mySound.play();
-
 }
 
 // Load 3D Models
@@ -1142,7 +1130,7 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
         this.timeScale = 0.00025 + Math.random()*0.00002;
         this.hasBounced = false; // I can kill my avatar if I bounce off a wall first
         GlowActor.create({parent: this, color: 0xff8844, depthTest: true, radius: 1.25, glowRadius: 0.5, falloff: 0.1, opacity: 0.75, sharpness: 0.5});
-        PointFlickerActor.create({parent: this, color: 0xff8844});
+        this.flicker = PointFlickerActor.create({parent: this, color: 0xff8844});
         this.tick(0);
         //console.log("MissileActor init", this);
     }
@@ -1198,54 +1186,56 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
             const e = offsetX > cellInset;
             const w = offsetX < -cellInset;
 
+            // we have to have the flickering light manage the bounce sound
+            // because the missile is an instance and can't have children in threejs
             if (!cell.S && s) {
               z -= WALL_EPSILON + offsetZ - cellInset;
               this.velocity[2]=-this.velocity[2];
               this.hasBounced = true;
-              this.say('bounce');
+              this.flicker.say('bounce');
             }
             else if (!cell.N && n) {
               z -= offsetZ  + cellInset - WALL_EPSILON;
               this.velocity[2] = -this.velocity[2];
               this.hasBounced = true;
-              this.say('bounce');
+              this.flicker.say('bounce');
             }
             if (!cell.E && e) {
               x -= WALL_EPSILON + offsetX - cellInset;
               this.velocity[0] = -this.velocity[0];
               this.hasBounced = true;
-              this.say('bounce');
+              this.flicker.say('bounce');
             }
             else if (!cell.W && w) {
               x -= offsetX + cellInset - WALL_EPSILON;
               this.velocity[0] = -this.velocity[0];
               this.hasBounced = true;
-              this.say('bounce');
+              this.flicker.say('bounce');
             }
             if ( !this.hasBounced ) {
                 if (s && e) {
                     if ( offsetX < offsetZ ) this.velocity[0] = -this.velocity[0];
                     else this.velocity[2]=-this.velocity[2];
                     this.hasBounced = true;
-                    this.say('bounce');
+                    this.flicker.say('bounce');
                 }
                 else if (s && w) {
                     if ( -offsetX < offsetZ ) this.velocity[0] = -this.velocity[0];
                     else this.velocity[2]=-this.velocity[2];
                     this.hasBounced = true;
-                    this.say('bounce');
+                    this.flicker.say('bounce');
                 }
                 else if (n && e) {
                     if ( -offsetX > offsetZ ) this.velocity[0] = -this.velocity[0];
                     else this.velocity[2]=-this.velocity[2];
                     this.hasBounced = true;
-                    this.say('bounce');
+                    this.flicker.say('bounce');
                 }
                 else if (n && w) {
                     if ( offsetX > offsetZ ) this.velocity[0] = -this.velocity[0];
                     else this.velocity[2]=-this.velocity[2];
                     this.hasBounced = true;
-                    this.say('bounce');
+                    this.flicker.say('bounce');
                 }
             }
             this.translation = [x, y, z];
@@ -1273,8 +1263,6 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM
     constructor(actor) {
         super(actor);
         this.radius = actor.radius;
-        //this.missile = this.createInstance();
-        this.listen("bounce", this.playBounce);
         this.loadInstance();
     }
 
@@ -1328,10 +1316,6 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM
     update(time, delta) {
         super.update(time, delta);
     }
-
-    playBounce() {
-        playSound(bounceSound, this.renderObject, false);
-    }
 }
 MissilePawn.register("MissilePawn");
 
@@ -1367,7 +1351,13 @@ export class PointFlickerPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibl
         console.log("PointFlickerPawn constructor", this);
         this.pointLight = new THREE.PointLight(this.actor.color, 20, 10, 2);
         this.setRenderObject(this.pointLight);
+        this.listen("bounce", this.playBounce);
     }
+
+    playBounce() {
+        playSound(bounceSound, this.renderObject, false);
+    }
+
     destroy() {
         super.destroy();
         if (this.pointLight) this.pointLight.dispose();
