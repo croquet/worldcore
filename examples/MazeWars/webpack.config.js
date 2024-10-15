@@ -20,7 +20,7 @@ export default {
         type: 'asset/source',
       },
       {
-        test: /\.(png|svg|jpg|jpeg|gif|glb|gltf)$/i,
+        test: /\.(png|svg|jpg|jpeg|gif|glb|gltf|mp3|wav|ogg)$/i,
         type: 'asset/resource',
       },
     ]
@@ -53,6 +53,7 @@ export default {
     static: {
       directory: path.join(__dirname, 'public'),  // Adjust this to your static files directory
     },
+    allowedHosts: ['.ngrok.io', '.ngrok.app'],
     compress: true,
     port: 9000,  // Adjust this to your preferred port
   },

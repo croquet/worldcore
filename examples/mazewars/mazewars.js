@@ -1,9 +1,7 @@
-//------------------MazeWars-----------------------
+//------------------Labirynth-----------------------
 // This is a simple example of a multi-player 3D shooter.
 // It is loosely based upon the early Maze War game created at NASA Ames in 1973
-// https://en.wikipedia.org/wiki/Maze_War
-// mazewars - a tutorial reimagining of the original MazeWars game from the ground up.
-// This version uses a true 3D rendered world with mouse-look and smooth motion.
+// https://en.wikipedia.org/wiki/Maze_War and has elements of Pacman, The Colony and Dodgeball.
 //------------------------------------------------------------------------------------------
 // This is intended to be ported to the Multisynq for Unity platform. Most of this application
 // can be easily translated to Unity. The only object that requires replicated computation is 
@@ -24,24 +22,27 @@
 // - avatar & missile tests collision with columns
 // - seasonal trees weenies
 // - made the missiles glow, slowed it down
+// - place player at random location when spawned
+// - Sound effects:
+// -- missile bounce sound
 //------------------------------------------------------------------------------------------
 // To do:
-// burn marks on walls when hit by missiles - these fade away.
-// throttle to 20 Hz avatar update rate
-// create three+ powerups:
-// 1. red - 10 second invincibility
-// 2. blue - 10 second speed boost
-// 3. green - 10 second missile boost
-// Need to pre-render textures on dynamic objects like missiles.
 // Sounds effects need to be added.
 // - missile whoosh when it goes by
 // - avatar death groan when hit
 // - powerup collected tone
 // - missile fire sound
 // - ready to shoot sound and click when not ready
+// create three+ powerups:
+// 1. red - 10 second invincibility
+// 2. blue - 10 second speed boost
+// 3. green - 10 second missile boost
+// Need to pre-render textures on dynamic objects like missiles.
+// burn marks on walls when hit by missiles - these fade away.
 // scoring, leaderboard - steal from Multiblaster
 // add mobile controls
 // missile/missile collision test * I think this is working
+// missile light should flicker
 //------------------------------------------------------------------------------------------
 
 import { App, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
@@ -90,6 +91,11 @@ import fireballTexture from "./assets/textures/explosion.png";
 import * as fireballFragmentShader from "./src/shaders/fireball.frag.js";
 import * as fireballVertexShader from "./src/shaders/fireball.vert.js";
 
+// Sounds
+//------------------------------------------------------------------------------------------
+import bounceSound from "./assets/sounds/bounce.wav";
+import shootSound from "./assets/sounds/shot1.wav";
+
 // Global Variables
 //------------------------------------------------------------------------------------------
 const PI_2 = Math.PI/2;
@@ -111,6 +117,73 @@ let hexasphere;
 let horse;
 let trees;
 let seasons;
+
+// Audio Manager
+//------------------------------------------------------------------------------------------
+let soundSwitch = false; // turn sound on and off
+let volume = 1;
+
+const maxSound = 16;
+const listener = new THREE.AudioListener();
+const soundList = {};
+const soundLoops = [];
+const loopSoundVolume = 0.25;
+
+export const playSound = function() {
+    const audioLoader = new THREE.AudioLoader();
+
+    function play(soundURL, parent3D, force, loop = false) {
+        if (!force && !soundSwitch) return;
+        if (soundList[soundURL]) playSoundOnce(soundList[soundURL], parent3D, force, loop);
+        else {
+            audioLoader.load( soundURL, buffer => {
+                soundList[soundURL] = {buffer, count:0};
+                playSoundOnce(soundList[soundURL], parent3D, force, loop);
+            });
+        }
+    }
+    return play;
+}();
+
+class MyAudio extends THREE.PositionalAudio {
+    updateMatrixWorld(force) {
+        if(isNaN(this.parent.matrixWorld.elements[0])) 
+            {   console.log(this);
+                debugger;
+            }
+        // this.parent.updateMatrix();
+        //console.log("Matrix: ", this.matrix, this);
+        super.updateMatrixWorld(force);
+    }
+}
+
+function playSoundOnce(sound, parent3D, force, loop = false) {
+    if (!force && sound.count>maxSound) return;
+    sound.count++;
+    let mySound;
+    if (parent3D) {
+        mySound = new THREE.PositionalAudio( listener );  // listener is a global
+        //mySound = new MyAudio( listener );  // listener is a global
+        mySound.setRefDistance( 8 );
+        mySound.setVolume( volume );
+    }
+    else {
+        mySound = new THREE.Audio( listener );
+        mySound.setVolume( volume * loopSoundVolume );
+        soundLoops.push(mySound);
+    }
+
+    mySound.setBuffer( sound.buffer );
+    mySound.setLoop(loop);
+    if (parent3D) {
+        parent3D.add(mySound);
+        parent3D.mySound = mySound;
+        mySound.onEnded = ()=> { sound.count--; mySound.removeFromParent(); };
+    }
+    mySound.play();
+
+}
+
 // Load 3D Models
 //------------------------------------------------------------------------------------------
 async function modelConstruct() {
@@ -534,14 +607,16 @@ export class MyViewRoot extends ViewRoot {
     }
 
     onStart() {
-        this.buildLights();
+        this.buildView();
         console.log("MyViewRoot onStart", this);
         this.skyRotation = new THREE.Euler(0, 0, 0);
         this.subscribe("root", "rotateSky", this.rotateSky);
     }
 
-    buildLights() {
+    buildView() {
         const rm = this.service("ThreeRenderManager");
+        rm.camera.add( listener );
+        rm.listener = listener;
         rm.renderer.shadowMap.enabled = true;
         rm.renderer.shadowMap.type = THREE.PCFShadowMap;
         rm.renderer.toneMapping = THREE.ReinhardToneMapping;
@@ -636,7 +711,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
         this.isAvatar = true;
         this.canShoot = true;
         this.radius = AVATAR_RADIUS;
-        this.set({translation: [10+100*Math.random(),6.5,10+100*Math.random()]});
+       // this.set({translation: [10+100*Math.random(),6.5,10+100*Math.random()]});
         this.eyeball = EyeballActor.create({parent: this});
         this.listen("shootMissile", this.shootMissile);
         this.listen("origin", this.origin);
@@ -738,8 +813,13 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.yaw = q_yaw(this.rotation);
         this.yawQ = q_axisAngle([0,1,0], this.yaw);
         this.service("AvatarManager").avatars.add(this);
+        this.subscribe(this.viewId, "synced", this.handleSynced);
     }
 
+    handleSynced() {
+        console.log("session is synced - play sound");
+        soundSwitch = true;
+    }
     destroy() {
         super.destroy();
         this.service("AvatarManager").avatars.delete(this);
@@ -809,7 +889,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
                 this.say("origin");
                 break;
             case "I": case "i":
-                if (this.developerMode === 5) console.log( "AvatarPawn", this );
+                console.log( "AvatarPawn", this );
                 break;
             case '-': case '_':
                 volume = Math.max(0, volume - 0.1);
@@ -938,7 +1018,6 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         }
         translation = this.verifyMaze(translation);
         this.positionTo(translation, this.yawQ);
-        //sunLight.position.set(...v3_add(translation, sunBase));
     }
 
     verifyMaze(loc) {
@@ -1009,7 +1088,16 @@ MyUserManager.register('MyUserManager');
 class MyUser extends User {
     init(options) {
         super.init(options);
+        let cellX = Math.floor(18.9*Math.random());
+        let cellY = Math.floor(18.9*Math.random());
+
+        if ( cellX === 11 && cellY === 11 ) { // don't spawn in the center
+            cellX = 10;
+            cellY = 10;
+        }
+        const t = [20*cellX+10,6.5,20*cellY+10];
         this.avatar = AvatarActor.create({
+            translation: t,
             driver: this.userId,
             tags: ["avatar", "block"]
         });
@@ -1114,50 +1202,50 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
               z -= WALL_EPSILON + offsetZ - cellInset;
               this.velocity[2]=-this.velocity[2];
               this.hasBounced = true;
-              this.publish(this.id, 'bounce');
+              this.say('bounce');
             }
             else if (!cell.N && n) {
               z -= offsetZ  + cellInset - WALL_EPSILON;
               this.velocity[2] = -this.velocity[2];
               this.hasBounced = true;
-              this.publish(this.id, 'bounce');
+              this.say('bounce');
             }
             if (!cell.E && e) {
               x -= WALL_EPSILON + offsetX - cellInset;
               this.velocity[0] = -this.velocity[0];
               this.hasBounced = true;
-              this.publish(this.id, 'bounce');
+              this.say('bounce');
             }
             else if (!cell.W && w) {
               x -= offsetX + cellInset - WALL_EPSILON;
               this.velocity[0] = -this.velocity[0];
               this.hasBounced = true;
-              this.publish(this.id, 'bounce');
+              this.say('bounce');
             }
             if ( !this.hasBounced ) {
                 if (s && e) {
                     if ( offsetX < offsetZ ) this.velocity[0] = -this.velocity[0];
                     else this.velocity[2]=-this.velocity[2];
                     this.hasBounced = true;
-                    this.publish(this.id, 'bounce');
+                    this.say('bounce');
                 }
                 else if (s && w) {
                     if ( -offsetX < offsetZ ) this.velocity[0] = -this.velocity[0];
                     else this.velocity[2]=-this.velocity[2];
                     this.hasBounced = true;
-                    this.publish(this.id, 'bounce');
+                    this.say('bounce');
                 }
                 else if (n && e) {
                     if ( -offsetX > offsetZ ) this.velocity[0] = -this.velocity[0];
                     else this.velocity[2]=-this.velocity[2];
                     this.hasBounced = true;
-                    this.publish(this.id, 'bounce');
+                    this.say('bounce');
                 }
                 else if (n && w) {
                     if ( offsetX > offsetZ ) this.velocity[0] = -this.velocity[0];
                     else this.velocity[2]=-this.velocity[2];
                     this.hasBounced = true;
-                    this.publish(this.id, 'bounce');
+                    this.say('bounce');
                 }
             }
             this.translation = [x, y, z];
@@ -1186,6 +1274,7 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM
         super(actor);
         this.radius = actor.radius;
         //this.missile = this.createInstance();
+        this.listen("bounce", this.playBounce);
         this.loadInstance();
     }
 
@@ -1239,6 +1328,10 @@ export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM
     update(time, delta) {
         super.update(time, delta);
     }
+
+    playBounce() {
+        playSound(bounceSound, this.renderObject, false);
+    }
 }
 MissilePawn.register("MissilePawn");
 
@@ -1251,10 +1344,10 @@ class PointFlickerActor extends mix(Actor).with(AM_Spatial) {
 
     init(options) {
         super.init(options);
-        this.future(100).tick();
+        // this.future(100).tick();
     }
 
-    tick() {
+    tick() { // add flickering light
         this.future(100).tick();
     }
 
@@ -1272,7 +1365,7 @@ export class PointFlickerPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibl
     constructor(actor) {
         super(actor);
         console.log("PointFlickerPawn constructor", this);
-        this.pointLight = new THREE.PointLight(this.actor.color, 10, 10, 2);
+        this.pointLight = new THREE.PointLight(this.actor.color, 20, 10, 2);
         this.setRenderObject(this.pointLight);
     }
     destroy() {
@@ -1593,8 +1686,8 @@ class TreePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     load3D() {
         if (this.doomed) return;
-        const tree = seasons[this.actor.season];
-        if (readyToLoad && tree) {
+        if (readyToLoad && seasons && seasons[this.actor.season]) {
+            const tree = seasons[this.actor.season];
             this.tree = tree.clone(); // clone because we will modify it
             this.tree.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
             this.setRenderObject(this.tree);
