@@ -27,14 +27,15 @@
 // -- missile bounce sound
 // -- missile fire sound
 // -- ready to shoot sound and click when not ready
+// -- player enter/exit game
+// -- missile whoosh when it goes by
+// Fixed sounds not playing after a while
 //------------------------------------------------------------------------------------------
 // To do:
-// Sounds stop playing after a while.
+
 // Sounds effects need to be added.
-// - missile whoosh when it goes by
 // - avatar death groan when hit
 // - powerup collected tone
-// - player enter/exit game
 // create three+ powerups:
 // 1. red - 10 second invincibility
 // 2. blue - 10 second speed boost
@@ -99,6 +100,9 @@ import bounceSound from "./assets/sounds/bounce.wav";
 import shootSound from "./assets/sounds/shot1.wav";
 import shootFailSound from "./assets/sounds/ShootFail.wav";
 import rechargedSound from "./assets/sounds/Recharge.wav";
+import enterSound from "./assets/sounds/avatarEnter.wav";
+import exitSound from "./assets/sounds/avatarLeave.wav";
+import missileSound from "./assets/sounds/Warning.mp3";
 
 // Global Variables
 //------------------------------------------------------------------------------------------
@@ -150,6 +154,7 @@ export const playSound = function() {
 }();
 
 function playSoundOnce(sound, parent3D, force, loop = false) {
+    console.log("playSoundOnce", sound.count, maxSound, parent3D);
     if (!force && sound.count>maxSound) return;
     sound.count++;
     let mySound;
@@ -171,7 +176,7 @@ function playSoundOnce(sound, parent3D, force, loop = false) {
         parent3D.add(mySound);
         parent3D.mySound = mySound;
         mySound.onEnded = ()=> { sound.count--; mySound.removeFromParent(); };
-    }
+    } else mySound.onEnded = ()=> { sound.count--; };
     mySound.play();
 }
 
@@ -722,7 +727,6 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
     }
 
     reloadMissile() {
-        console.log("AvatarActor reloadMissile");
         this.say("recharged");
         this.canShoot = true;
     }
@@ -752,6 +756,7 @@ class EyeballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeC
         if ( !this.parent.isMyAvatar ) {
             this.load3D();
         } else this.parent.eyeball = this;
+        playSound( enterSound, this.renderObject );
         this.shootNow = true;
     }
 
@@ -775,8 +780,9 @@ class EyeballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeC
 
     destroy() {
         super.destroy();
-        if (this.avatar3D) {
-            this.destroy3D( this.avatar3D );
+        if (this.renderObject) {
+            playSound( exitSound );
+            this.destroy3D( this.renderObject );
         }
     }
 
@@ -806,15 +812,16 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.yaw = q_yaw(this.rotation);
         this.yawQ = q_axisAngle([0,1,0], this.yaw);
         this.service("AvatarManager").avatars.add(this);
-        this.subscribe(this.viewId, "synced", this.handleSynced);
         this.listen("shootMissileSound", this.didShoot);
         this.listen("recharged", this.recharged);
+        this.subscribe(this.viewId, "synced", this.handleSynced);
     }
 
     handleSynced() {
         console.log("session is synced - play sound");
         soundSwitch = true;
     }
+
     destroy() {
         super.destroy();
         this.service("AvatarManager").avatars.delete(this);
@@ -857,9 +864,9 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         if (this.actor.canShoot) {
             console.log("shootMissile");
             this.say("shootMissile");
-            playSound(shootSound, this.renderObject, false);
+            playSound(shootSound, null, false);
         } else {
-            playSound(shootFailSound, this.renderObject, false);
+            playSound(shootFailSound, null, false);
             console.log("can't shoot");
         }
     }
@@ -1355,8 +1362,7 @@ class PointFlickerActor extends mix(Actor).with(AM_Spatial) {
 }
 PointFlickerActor.register('PointFlickerActor');
 
-//------------------------------------------------------------------------------------------
-// PowerPawn ----------------------------------------------------------------------------
+// PowerPawn
 //------------------------------------------------------------------------------------------
 export class PointFlickerPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
@@ -1366,6 +1372,7 @@ export class PointFlickerPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibl
         this.pointLight = new THREE.PointLight(this.actor.color, 20, 10, 2);
         this.setRenderObject(this.pointLight);
         this.listen("bounce", this.playBounce);
+        playSound( missileSound, this.renderObject, true);
     }
 
     playBounce() {
@@ -1378,8 +1385,7 @@ export class PointFlickerPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibl
     }
 }
 PointFlickerPawn.register("PointFlickerPawn");
-//------------------------------------------------------------------------------------------
-//--FireballActor ---------------------------------------------------------------------------
+// FireballActor 
 // When a missile hits an avatar a fireball is generated. It is attached to the avatar.
 //------------------------------------------------------------------------------------------
 class FireballActor extends mix(Actor).with(AM_Spatial) {
@@ -1400,8 +1406,8 @@ class FireballActor extends mix(Actor).with(AM_Spatial) {
 }
 FireballActor.register('FireballActor');
 
-//------------------------------------------------------------------------------------------
-// FireballPawn ----------------------------------------------------------------------------
+// FireballPawn
+// Fireball explosion when hit by missile on pawn or other missile.
 //------------------------------------------------------------------------------------------
 export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
@@ -1435,8 +1441,8 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     }
 }
 FireballPawn.register("FireballPawn");
-//------------------------------------------------------------------------------------------
-//--PowerActor ---------------------------------------------------------------------------
+
+// PowerActor
 // Power up that a player can pick up to fuel their missile.
 //------------------------------------------------------------------------------------------
 class PowerActor extends mix(Actor).with(AM_Spatial) {
