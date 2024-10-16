@@ -25,14 +25,15 @@
 // - place player at random location when spawned
 // - Sound effects:
 // -- missile bounce sound
+// -- missile fire sound
+// -- ready to shoot sound and click when not ready
 //------------------------------------------------------------------------------------------
 // To do:
+// Sounds stop playing after a while.
 // Sounds effects need to be added.
 // - missile whoosh when it goes by
 // - avatar death groan when hit
 // - powerup collected tone
-// - missile fire sound
-// - ready to shoot sound and click when not ready
 // - player enter/exit game
 // create three+ powerups:
 // 1. red - 10 second invincibility
@@ -96,6 +97,8 @@ import * as fireballVertexShader from "./src/shaders/fireball.vert.js";
 //------------------------------------------------------------------------------------------
 import bounceSound from "./assets/sounds/bounce.wav";
 import shootSound from "./assets/sounds/shot1.wav";
+import shootFailSound from "./assets/sounds/ShootFail.wav";
+import rechargedSound from "./assets/sounds/Recharge.wav";
 
 // Global Variables
 //------------------------------------------------------------------------------------------
@@ -713,12 +716,14 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
     shootMissile() {
         console.log("AvatarActor shootMissile");
         this.canShoot = false;
+        this.say("shootMissileSound", this.id);
         this.future(MISSILE_LIFE).reloadMissile();
         MissileActor.create({avatar: this});
     }
 
     reloadMissile() {
         console.log("AvatarActor reloadMissile");
+        this.say("recharged");
         this.canShoot = true;
     }
 
@@ -802,6 +807,8 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.yawQ = q_axisAngle([0,1,0], this.yaw);
         this.service("AvatarManager").avatars.add(this);
         this.subscribe(this.viewId, "synced", this.handleSynced);
+        this.listen("shootMissileSound", this.didShoot);
+        this.listen("recharged", this.recharged);
     }
 
     handleSynced() {
@@ -842,17 +849,24 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
 
     didShoot() {
         if (this.isMyAvatar) return; // only play the sound if it is not your avatar
-        //this.shootSound.stop();
-       //playSound(shootSound, this.tank, false);
+        this.shootSound.stop();
+        playSound(shootSound, this.renderObject, false);
     }
 
     shootMissile() {
         if (this.actor.canShoot) {
             console.log("shootMissile");
             this.say("shootMissile");
+            playSound(shootSound, this.renderObject, false);
         } else {
+            playSound(shootFailSound, this.renderObject, false);
             console.log("can't shoot");
         }
+    }
+
+    recharged() {
+        console.log("recharged");
+        playSound(rechargedSound, this.renderObject, false);
     }
 
     keyDown(e) {
