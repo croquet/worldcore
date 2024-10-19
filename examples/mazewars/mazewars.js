@@ -1,10 +1,10 @@
-//------------------Labirynth-----------------------
+//------------------Labirynth---------------------------------------------------------------
 // This is a simple example of a multi-player 3D shooter.
 // It is loosely based upon the early Maze War game created at NASA Ames in 1973
 // https://en.wikipedia.org/wiki/Maze_War and has elements of Pacman, The Colony and Dodgeball.
 //------------------------------------------------------------------------------------------
 // This is intended to be ported to the Multisynq for Unity platform. Most of this application
-// can be easily translated to Unity. The only object that requires replicated computation is 
+// can be easily translated to Unity. The only object that requires replicated computation is
 // the missile which when fired must execute on all clients. It computes collisions with user
 // avatars and the maze walls.
 //------------------------------------------------------------------------------------------
@@ -30,22 +30,20 @@
 // -- player enter/exit game
 // -- missile whoosh when it goes by
 // Fixed sounds not playing after a while
+// Fixed getting stuck under the horse
 //------------------------------------------------------------------------------------------
 // To do:
-
-// Sounds effects need to be added.
+// Sounds effects need to be added:
 // - avatar death groan when hit
 // - powerup collected tone
 // create three+ powerups:
 // 1. red - 10 second invincibility
 // 2. blue - 10 second speed boost
 // 3. green - 10 second missile boost
-// Need to pre-render textures on dynamic objects like missiles.
-// burn marks on walls when hit by missiles - these fade away.
+// need to pre-render textures on dynamic objects like missiles
 // scoring, leaderboard - steal from Multiblaster
 // add mobile controls
 // missile/missile collision test * I think this is working
-// missile light should flicker
 //------------------------------------------------------------------------------------------
 
 import { App, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
@@ -85,8 +83,9 @@ import corinthian_displacement from "./assets/textures/corinthian/concrete_0014_
 import eyeball_glb from "./assets/eyeball.glb";
 import column_glb from "./assets/column2.glb";
 import hexasphere_glb from "./assets/hexasphere.glb";
-import horse_glb from "./assets/Horse_Copper.glb";
+import horse2_glb from "./assets/Horse_Copper2.glb";
 import fourSeasonsTree_glb from "./assets/fourSeasonsTree.glb";
+import minotaur_glb from "./assets/minotaur.glb";
 
 // Shaders
 //------------------------------------------------------------------------------------------
@@ -103,6 +102,7 @@ import rechargedSound from "./assets/sounds/Recharge.wav";
 import enterSound from "./assets/sounds/avatarEnter.wav";
 import exitSound from "./assets/sounds/avatarLeave.wav";
 import missileSound from "./assets/sounds/Warning.mp3";
+import implosionSound from "./assets/sounds/Implosion.mp3";
 
 // Global Variables
 //------------------------------------------------------------------------------------------
@@ -125,6 +125,7 @@ let hexasphere;
 let horse;
 let trees;
 let seasons;
+let minotaur;
 
 // Audio Manager
 //------------------------------------------------------------------------------------------
@@ -154,7 +155,7 @@ export const playSound = function() {
 }();
 
 function playSoundOnce(sound, parent3D, force, loop = false) {
-    console.log("playSoundOnce", sound.count, maxSound, parent3D);
+    // console.log("playSoundOnce", sound.count, maxSound, parent3D);
     if (!force && sound.count>maxSound) return;
     sound.count++;
     let mySound;
@@ -187,24 +188,25 @@ async function modelConstruct() {
     const dracoLoader = new ADDONS.DRACOLoader();
     dracoLoader.setDecoderPath('./src/draco/');
     gltfLoader.setDRACOLoader(dracoLoader);
-    return [eyeball, column, hexasphere, horse, trees] = await Promise.all( [
+    return [eyeball, column, hexasphere, horse, trees, minotaur] = await Promise.all( [
         // add additional GLB files to load here
         gltfLoader.loadAsync( eyeball_glb ),
         gltfLoader.loadAsync( column_glb ),
         gltfLoader.loadAsync( hexasphere_glb ),
-        gltfLoader.loadAsync( horse_glb ),
-        gltfLoader.loadAsync( fourSeasonsTree_glb )
+        gltfLoader.loadAsync( horse2_glb ),
+        gltfLoader.loadAsync( fourSeasonsTree_glb ),
+        gltfLoader.loadAsync( minotaur_glb ),
     ]);
 }
 
 modelConstruct().then( () => {
     readyToLoad = true;
     column = column.scene.children[0];
-    console.log("hexasphere",hexasphere);
+    // console.log("hexasphere",hexasphere);
     hexasphere = hexasphere.scene.children[0].children[0];
     seasons = {spring: new THREE.Group(), summer: new THREE.Group(), fall: new THREE.Group(), winter: new THREE.Group()};
-    console.log(trees);
-    let counter = 0;
+    horse = horse.scene.clone();
+    horse.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
 
     trees.scene.children.forEach(node => {
         if (node.name) {
@@ -218,6 +220,9 @@ modelConstruct().then( () => {
     seasons.summer.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
     seasons.fall.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
     seasons.winter.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
+    minotaur = minotaur.scene.children[1];
+    minotaur.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
+    //console.log("minotaur", minotaur);
 });
 
 // Create fireball material
@@ -1100,11 +1105,12 @@ class MyUser extends User {
         let cellX = Math.floor(18.9*Math.random());
         let cellY = Math.floor(18.9*Math.random());
 
-        if ( cellX === 11 && cellY === 11 ) { // don't spawn in the center
-            cellX = 10;
-            cellY = 10;
+        if ( cellX === 10 && cellY === 10 ) { // don't spawn in the center
+            cellX = 11;
+            cellY = 11;
         }
-        const t = [20*cellX+10,6.5,20*cellY+10];
+
+        const t = [CELL_SIZE*cellX+10,6.5,CELL_SIZE*cellY+10];
         this.avatar = AvatarActor.create({
             translation: t,
             driver: this.userId,
@@ -1362,7 +1368,8 @@ class PointFlickerActor extends mix(Actor).with(AM_Spatial) {
 }
 PointFlickerActor.register('PointFlickerActor');
 
-// PowerPawn
+// PointFlickerPawn
+// The missile emits a flickering light- this also manages the sound.
 //------------------------------------------------------------------------------------------
 export class PointFlickerPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
@@ -1421,6 +1428,7 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.pointLight = new THREE.PointLight(0xff8844, 1, 4, 2);
         this.fireball.add(this.pointLight);
         this.setRenderObject(this.fireball);
+        playSound(implosionSound, this.fireball, false);
     }
 
     update(time, delta) {
@@ -1454,7 +1462,7 @@ class PowerActor extends mix(Actor).with(AM_Spatial) {
         this.timeScale = 0.00025 + Math.random()*0.00002;
         this.offset = Math.random()*Math.PI;
         console.log("PowerActor init", this, this.parent);
-        GlowActor.create({parent: this});
+       // GlowActor.create({parent: this});
         this.future(100).tick();
     }
 
@@ -1660,7 +1668,7 @@ class HorsePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     load3D() {
         if (this.doomed) return;
         if (readyToLoad && horse) {
-            this.horse = horse.scene.clone();
+            this.horse = horse.clone();
             this.horse.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
             this.setRenderObject(this.horse);
         } else this.future(100).load3D();
