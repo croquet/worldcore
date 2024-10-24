@@ -31,10 +31,10 @@
 // -- missile whoosh when it goes by
 // Fixed sounds not playing after a while
 // Fixed getting stuck under the horse
+// Restructured loaded instance management
 //------------------------------------------------------------------------------------------
 // To do:
 // Sounds effects need to be added:
-// - avatar death groan when hit
 // - powerup collected tone
 // create three+ powerups:
 // 1. red - 10 second invincibility
@@ -85,7 +85,7 @@ import column_glb from "./assets/column2.glb";
 import hexasphere_glb from "./assets/hexasphere.glb";
 import horse2_glb from "./assets/Horse_Copper2.glb";
 import fourSeasonsTree_glb from "./assets/fourSeasonsTree.glb";
-import minotaur_glb from "./assets/minotaur.glb";
+import ivy_glb from "./assets/ivy2.glb";
 
 // Shaders
 //------------------------------------------------------------------------------------------
@@ -124,8 +124,8 @@ let column;
 let hexasphere;
 let horse;
 let trees;
-let seasons;
-let minotaur;
+let plants;
+let ivy;
 
 // Audio Manager
 //------------------------------------------------------------------------------------------
@@ -188,43 +188,70 @@ async function modelConstruct() {
     const dracoLoader = new ADDONS.DRACOLoader();
     dracoLoader.setDecoderPath('./src/draco/');
     gltfLoader.setDRACOLoader(dracoLoader);
-    return [eyeball, column, hexasphere, horse, trees, minotaur] = await Promise.all( [
+    return [eyeball, column, ivy, hexasphere, horse, trees] = await Promise.all( [
         // add additional GLB files to load here
         gltfLoader.loadAsync( eyeball_glb ),
         gltfLoader.loadAsync( column_glb ),
+        gltfLoader.loadAsync( ivy_glb ),
         gltfLoader.loadAsync( hexasphere_glb ),
         gltfLoader.loadAsync( horse2_glb ),
         gltfLoader.loadAsync( fourSeasonsTree_glb ),
-        gltfLoader.loadAsync( minotaur_glb ),
     ]);
 }
-
+const instances = {};
 modelConstruct().then( () => {
     readyToLoad = true;
-    column = column.scene.children[0];
-    // console.log("hexasphere",hexasphere);
-    hexasphere = hexasphere.scene.children[0].children[0];
-    seasons = {spring: new THREE.Group(), summer: new THREE.Group(), fall: new THREE.Group(), winter: new THREE.Group()};
+    instances.column = column.scene.children[0];
+    instances.column.geometry.scale(0.028,0.028,0.028);
+    instances.column.geometry.rotateX(-PI_2);
+    instances.ivy0 = ivy.scene.children[0];
+    instances.ivy1 = ivy.scene.children[1];
+    instances.ivy0.geometry.scale(8,5,4);
+    instances.ivy1.geometry.scale(8,5,4);
+    instances.ivy0.geometry.translate(0,3.5,0);
+    instances.hexasphere = hexasphere.scene.children[0].children[0];
+    instances.hexasphere.geometry.scale(0.05,0.05,0.05);
+    fixUV(instances.hexasphere.geometry);
+    plants = {spring: new THREE.Group(), summer: new THREE.Group(), fall: new THREE.Group(), winter: new THREE.Group()};
     horse = horse.scene.clone();
     horse.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
 
     trees.scene.children.forEach(node => {
         if (node.name) {
-            if (node.name.includes("spring")) seasons.spring.add(node.clone());
-            else if (node.name.includes("summer")) seasons.summer.add(node.clone());
-            else if (node.name.includes("fall")) seasons.fall.add(node.clone());
-            else if (node.name.includes("winter")) seasons.winter.add(node.clone());
+            if (node.name.includes("spring")) plants.spring.add(node.clone());
+            else if (node.name.includes("summer")) plants.summer.add(node.clone());
+            else if (node.name.includes("fall")) plants.fall.add(node.clone());
+            else if (node.name.includes("winter")) plants.winter.add(node.clone());
         }
     });
-    seasons.spring.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0); } });
-    seasons.summer.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
-    seasons.fall.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
-    seasons.winter.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
-    minotaur = minotaur.scene.children[1];
-    minotaur.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
-    //console.log("minotaur", minotaur);
+    plants.spring.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0); } });
+    plants.summer.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
+    plants.fall.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
+    plants.winter.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
 });
+function fixUV(geometry) {
+    // Angle around the Y axis, counter-clockwise when looking from above.
+    function azimuth( vector ) { return Math.atan2( vector.z, -vector.x ); }
 
+    // Angle above the XZ plane.
+    function inclination( vector ) {return Math.atan2( -vector.y, Math.sqrt( ( vector.x * vector.x ) + ( vector.z * vector.z ) ) ); }
+
+    const uvBuffer = [];
+    const vertex = new THREE.Vector3();
+    const positions = geometry.getAttribute('position').array;
+    // console.log("fixUV", positions);
+    for ( let i = 0; i < positions.length; i += 3 ) {
+
+        vertex.x = positions[ i + 0 ];
+        vertex.y = positions[ i + 1 ];
+        vertex.z = positions[ i + 2 ];
+
+        const u = azimuth( vertex ) / 2 / Math.PI + 0.5;
+        const v = inclination( vertex ) / Math.PI + 0.5;
+        uvBuffer.push( u, 1 - v );
+    }
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvBuffer, 2));
+}
 // Create fireball material
 //------------------------------------------------------------------------------------------
 let fireMaterial;
@@ -243,8 +270,10 @@ new THREE.TextureLoader().load(fireballTexture, texture => {
 
 // Create complex materials
 //------------------------------------------------------------------------------------------
+const materials = {};
 function complexMaterial(options) {
     const material = new THREE.MeshStandardMaterial();
+    materials[options.name] = material;
     const textureLoader = new THREE.TextureLoader();
     const repeat = options.repeat || [1,1];
     textureLoader.load( options.colorMap, map => {
@@ -471,20 +500,36 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
     //    let wallMaterial = new THREE.MeshStandardMaterial( {color: 0xAAAACC, roughness: 0.7, metalness:0.8  } );
     //    let walls = [];
         const r = q_axisAngle([0,1,0],PI_2);
+        const ivyRotation = q_axisAngle([0,1,0],Math.PI);
         for (let y = 0; y < this.rows; y++) {
           for (let x = 0; x < this.columns; x++) {
 
            // south walls
-              if (!this.map[x][y].S && x>0) {
+            if (!this.map[x][y].S && x>0) {
                 const t = [x*this.cellSize - this.cellSize/2, 0, y*this.cellSize];
-                WallActor.create({parent: this, translation: t});
-              }
+                const wall = WallActor.create({parent: this, translation: t});
+
+                if (Math.random() < 0.25) {
+                    InstanceActor.create({name: "ivy0", parent: wall});
+                    InstanceActor.create({name: "ivy1", parent: wall});
+                    InstanceActor.create({name: "ivy0", parent: wall, rotation:ivyRotation});
+                    InstanceActor.create({name: "ivy1", parent: wall, rotation:ivyRotation});
+                }
+
+            }
 
             // east walls
-              if (!this.map[x][y].E && y>0) {
+            if (!this.map[x][y].E && y>0) {
                 const t = [x*this.cellSize, 0, (y+1)*this.cellSize - 3*this.cellSize/2];
-                WallActor.create({parent: this, translation: t, rotation: r});
-              }
+                const wall = WallActor.create({parent: this, translation: t, rotation: r});
+
+                if (Math.random() < 0.25) {
+                    InstanceActor.create({name: "ivy0", parent: wall});
+                    InstanceActor.create({name: "ivy1", parent: wall});
+                    InstanceActor.create({name: "ivy0", parent: wall, rotation:ivyRotation});
+                    InstanceActor.create({name: "ivy1", parent: wall, rotation:ivyRotation});
+                }
+            }
         }
       }
     }
@@ -572,17 +617,17 @@ export class MyModelRoot extends ModelRoot {
         for (let y = 0; y < MAZE_ROWS; y++) {
             for (let x = 0; x < MAZE_COLUMNS; x++) {
                 const t = [x*CELL_SIZE, 0, y*CELL_SIZE];
-                ColumnActor.create({translation: t});
-                //const t2 = [t[0]+10, 3, t[2]+10];
-                //PowerActor.create({translation: t2});
+                InstanceActor.create({name:"column", translation: t});
+                const t2 = [t[0]+10, 3.5, t[2]+10];
+                //SphereActor.create({translation: t2});
             }
         }
         this.horse = HorseActor.create({translation:[210.9,10,209.70], scale:[8.75,8.75,8.75]});
         let s = 8.0;
-        this.spring = TreeActor.create({season:"spring",translation: [20, 0.5, 20], scale:[s,s,s]});
-        this.summer = TreeActor.create({season:"summer",translation: [20, 0.5, 360], scale:[s,s,s]});
-        this.fall = TreeActor.create({season:"fall",translation: [360, 0.5, 360], scale:[s,s,s]});
-        this.winter = TreeActor.create({season:"winter",translation: [360, 0.5, 20], scale:[s,s,s]});
+        this.spring = PlantActor.create({plant:"spring",translation: [20, 0.5, 20], scale:[s,s,s]});
+        this.summer = PlantActor.create({plant:"summer",translation: [20, 0.5, 360], scale:[s,s,s]});
+        this.fall = PlantActor.create({plant:"fall",translation: [360, 0.5, 360], scale:[s,s,s]});
+        this.winter = PlantActor.create({plant:"winter",translation: [360, 0.5, 20], scale:[s,s,s]});
         this.skyAngle = 0;
 
         this.rotateSky();
@@ -659,7 +704,7 @@ export class MyViewRoot extends ViewRoot {
             displacementScale: 0.1,
             displacementBias: -0.05,
             side: THREE.DoubleSide,
-            name: "missile"
+            name: "hexasphere"
         });
 
         powerMaterial = complexMaterial({
@@ -950,16 +995,16 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     }
 
     doPointerDown(e) {
-        console.log("AvatarPawn.onPointerDown()", e);
+    //    console.log("AvatarPawn.onPointerDown()", e);
         const im = this.service("InputManager");
         if ( im.inPointerLock ) this.shootMissile();
         else im.enterPointerLock();
     }
 
     doPointerUp(e) {
-        console.log("AvatarPawn.onPointerUp()", e);
+        //console.log("AvatarPawn.onPointerUp()", e);
         // console.log("mouse0Up");
-      }
+    }
 
     normalizeRotation(rotation) {
         return ((rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
@@ -986,8 +1031,8 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     }
 
     doPointerMove(e) {
-    const xy = e.xy;
-    console.log("AvatarPawn.onPointerMove()", e);
+    //const xy = e.xy;
+    //console.log("AvatarPawn.onPointerMove()", e);
     }
 
     update(time, delta) {
@@ -1061,7 +1106,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
             else if (!cell.N && n) { z -= offsetZ  + cellInset - WALL_EPSILON; collided = 'N'; }
             if (!cell.E && e) { x -= WALL_EPSILON + offsetX - cellInset; collided = 'E'; }
             else if (!cell.W && w) { x -= offsetX + cellInset - WALL_EPSILON; collided = 'W'; }
-            console.log("cell: ", xCell, zCell, collided);
+            // console.log("cell: ", xCell, zCell, collided);
             if (!collided) {
                 if (s && e) {
                     if ( offsetX < offsetZ ) x -= offsetX - cellInset;
@@ -1156,6 +1201,7 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
         this.velocity = v3_scale(this.direction, MISSILE_SPEED);
         this.timeScale = 0.00025 + Math.random()*0.00002;
         this.hasBounced = false; // I can kill my avatar if I bounce off a wall first
+        InstanceActor.create({name: "hexasphere", parent: this});
         GlowActor.create({parent: this, color: 0xff8844, depthTest: true, radius: 1.25, glowRadius: 0.5, falloff: 0.1, opacity: 0.75, sharpness: 0.5});
         this.flicker = PointFlickerActor.create({parent: this, color: 0xff8844});
         this.tick(0);
@@ -1286,63 +1332,7 @@ MissileActor.register('MissileActor');
 // Flashy missile object.
 //------------------------------------------------------------------------------------------
 export class MissilePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
-
-    constructor(actor) {
-        super(actor);
-        this.radius = actor.radius;
-        this.loadInstance();
-    }
-
-    loadInstance() {
-        if (this.doomed) return;
-        let missileInstance = this.useInstance("missile");
-        if (!missileInstance) { // does the instance not exist?
-            if (readyToLoad && hexasphere) { // is it ready to load?
-                const geometry = hexasphere.geometry.clone();
-                this.fixUV(geometry);
-                const material = missileMaterial;
-                geometry.scale(0.05,0.05,0.05);
-                //geometry.rotateX(-PI_2);
-                const im = this.service("ThreeInstanceManager");
-                im.addMaterial("missile", material);
-                im.addGeometry("missile", geometry);
-                im.addMesh("missile", "missile", "missile");
-                missileInstance =this.useInstance("missile");
-                missileInstance.mesh.material.needsUpdate = true;
-                csm.setupMaterial(missileInstance.mesh.material);
-                missileInstance.mesh.receiveShadow = true;
-                missileInstance.mesh.castShadow = true;
-            } else this.future(100).loadInstance(); // not ready to load - try again later
-        }
-    }
-
-    fixUV(geometry) {
-        // Angle around the Y axis, counter-clockwise when looking from above.
-		function azimuth( vector ) { return Math.atan2( vector.z, -vector.x ); }
-
-		// Angle above the XZ plane.
-		function inclination( vector ) {return Math.atan2( -vector.y, Math.sqrt( ( vector.x * vector.x ) + ( vector.z * vector.z ) ) ); }
-
-        const uvBuffer = [];
-        const vertex = new THREE.Vector3();
-        const positions = geometry.getAttribute('position').array;
-       // console.log("fixUV", positions);
-        for ( let i = 0; i < positions.length; i += 3 ) {
-
-            vertex.x = positions[ i + 0 ];
-            vertex.y = positions[ i + 1 ];
-            vertex.z = positions[ i + 2 ];
-
-            const u = azimuth( vertex ) / 2 / Math.PI + 0.5;
-            const v = inclination( vertex ) / Math.PI + 0.5;
-            uvBuffer.push( u, 1 - v );
-        }
-        geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvBuffer, 2));
-    }
-
-    update(time, delta) {
-        super.update(time, delta);
-    }
+    get radius() { return this.actor.radius }
 }
 MissilePawn.register("MissilePawn");
 
@@ -1450,21 +1440,24 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 }
 FireballPawn.register("FireballPawn");
 
-// PowerActor
+// SphereActor
 // Power up that a player can pick up to fuel their missile.
 //------------------------------------------------------------------------------------------
-class PowerActor extends mix(Actor).with(AM_Spatial) {
-    get pawn() { return "PowerPawn" }
+class SphereActor extends mix(Actor).with(AM_Spatial) {
+    get pawn() { return "SpherePawn" }
 
     init(options) {
         super.init(options);
         this.center = this.translation[1];
         this.timeScale = 0.00025 + Math.random()*0.00002;
         this.offset = Math.random()*Math.PI;
-        console.log("PowerActor init", this, this.parent);
+        //console.log("SphereActor init", this, this.parent);
+        //InstanceActor.create({name:"minotaur", parent: this});
        // GlowActor.create({parent: this});
-        this.future(100).tick();
+       this.future(100).tick();
     }
+
+    get name() { return this._name || "power" }
 
     tick() {
         const t = this.translation;
@@ -1477,39 +1470,34 @@ class PowerActor extends mix(Actor).with(AM_Spatial) {
         this.destroy();
     }
 }
-PowerActor.register('PowerActor');
+SphereActor.register('SphereActor');
 
+// SpherePawn
+// Flashy sphere object.
 //------------------------------------------------------------------------------------------
-// PowerPawn ----------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------
-export class PowerPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
+export class SpherePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
 
     constructor(actor) {
         super(actor);
-        console.log("PowerPawn constructor", this);
-        this.startTime = this.now();
-        this.power = this.createInstance();
-        //this.setRenderObject(this.power);
+        this.radius = actor.radius;
+        this.createInstance();
     }
 
-   createInstance() {
+    createInstance() {
         const im = this.service("ThreeInstanceManager");
-        let power = this.useInstance("power");
-        if ( !power ) {
-            const geometry = new THREE.IcosahedronGeometry( 1, 20 );
-            im.addMaterial("power", powerMaterial);
-            im.addGeometry("power", geometry);
-            im.addMesh("power", "power", "power");
-            power = this.useInstance("power");
+        const name = this.actor.name;
+        let instance = this.useInstance(name);
+        if ( !instance ) {
+            const geometry = new THREE.IcosahedronGeometry( 1, 2 );
+            im.addMaterial(name, powerMaterial);
+            im.addGeometry(name, geometry);
+            im.addMesh(name, name, name);
+            instance = this.useInstance(name);
+            instance.mesh.castShadow = true;
         }
-        //const powerGlow = im.instances.mesh("powerGlow");
-        //power.add(powerGlow);
-        power.mesh.material.needsUpdate = true;
-        power.receiveShadow = true;
-        return power;
     }
 }
-PowerPawn.register("PowerPawn");
+SpherePawn.register("SpherePawn");
 
 //--GlowActor ---------------------------------------------------------------------------
 // Make the power up and missiles glow.
@@ -1607,48 +1595,51 @@ class WallPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeInsta
     }
 }
 WallPawn.register("WallPawn");
-//------------------------------------------------------------------------------------------
-//-- ColumnActor -----------------------------------------------------------------------------
-// Columns .
-//------------------------------------------------------------------------------------------
-class ColumnActor extends mix(Actor).with(AM_Spatial) {
 
-    get pawn() {return "ColumnPawn"}
+// InstanceActor
+// Generate loaded instances.
+//------------------------------------------------------------------------------------------
+class InstanceActor extends mix(Actor).with(AM_Spatial) {
+
+    get pawn() {return "InstancePawn"}
+    get name() { return this._name || "column"}
 
 }
-ColumnActor.register('ColumnActor');
+InstanceActor.register('InstanceActor');
+
+// InstancePawn
+// Load 3D models and convert them into instances. This is used when we have many
+// copies of the same model. Loading these as instances is a bit tricky, hence the
+// separate class.
 //------------------------------------------------------------------------------------------
-//-- ColumnPawn ------------------------------------------------------------------------------
-// Display the columns at every intersection of the maze.
-//------------------------------------------------------------------------------------------
-class ColumnPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeInstanced) {
+class InstancePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeInstanced) {
     constructor(...args) {
         super(...args);
         this.loadInstance();
     }
+
     loadInstance() {
         if (this.doomed) return;
-        let columnInstance = this.useInstance("column");
-        if (!columnInstance) { // does the instance not exist?
-            if (readyToLoad && column) { // is it ready to load?
-                const geometry = column.geometry.clone();
-                const material = column.material;
-                geometry.scale(0.028,0.028,0.028);
-                geometry.rotateX(-PI_2);
+        const name = this.actor.name;
+        let instance = this.useInstance(name);
+        if (!instance) { // does the instance not exist?
+            if (readyToLoad && instances[name]) { // is it ready to load?
+                const geometry = instances[name].geometry.clone();
+                const material = materials[name] ||instances[name].material;
                 const im = this.service("ThreeInstanceManager");
-                im.addMaterial("column", material);
-                im.addGeometry("column", geometry);
-                im.addMesh("column", "column", "column");
-                columnInstance =this.useInstance("column");
-                columnInstance.mesh.material.needsUpdate = true;
-                csm.setupMaterial(columnInstance.mesh.material);
-                columnInstance.mesh.receiveShadow = true;
-                columnInstance.mesh.castShadow = true;
+                im.addMaterial(name, material);
+                im.addGeometry(name, geometry);
+                im.addMesh(name, name, name);
+                instance =this.useInstance(name);
+                instance.mesh.material.needsUpdate = true;
+                csm.setupMaterial(instance.mesh.material);
+                instance.mesh.receiveShadow = true;
+                instance.mesh.castShadow = true;
             } else this.future(100).loadInstance(); // not ready to load - try again later
         }
     }
 }
-ColumnPawn.register("ColumnPawn");
+InstancePawn.register("InstancePawn");
 
 // HorseActor
 // Hero statue at the center of the maze.
@@ -1689,13 +1680,13 @@ HorsePawn.register("HorsePawn");
 // TreeActor
 // Seasonal trees in each corner of the maze.
 //------------------------------------------------------------------------------------------
-class TreeActor extends mix(Actor).with(AM_Spatial,) {
-    get pawn() { return "TreePawn" }
-    get season() { return this._season || "spring"}
+class PlantActor extends mix(Actor).with(AM_Spatial,) {
+    get pawn() { return "PlantPawn" }
+    get plant() { return this._plant || "spring"}
 }
-TreeActor.register('TreeActor');
+PlantActor.register('PlantActor');
 
-class TreePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
+class PlantPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     constructor(actor) {
         super(actor);
@@ -1704,17 +1695,17 @@ class TreePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     load3D() {
         if (this.doomed) return;
-        if (readyToLoad && seasons && seasons[this.actor.season]) {
-            const tree = seasons[this.actor.season];
-            this.tree = tree.clone(); // clone because we will modify it
-            this.tree.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
-            this.setRenderObject(this.tree);
+        if (readyToLoad && plants && plants[this.actor.plant]) {
+            const model3d = plants[this.actor.plant];
+            this.model3d = model3d.clone(); // clone because we will modify it
+//            this.tree.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
+            this.setRenderObject(this.model3d);
         } else this.future(100).load3D();
     }
 
     destroy() {
         super.destroy();
-        this.tree.traverse( obj => {
+        this.model3d.traverse( obj => {
             if (obj.geometry) {
                 obj.geometry.dispose();
                 obj.material.dispose();
@@ -1722,7 +1713,7 @@ class TreePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         });
     }
 }
-TreePawn.register("TreePawn");
+PlantPawn.register("PlantPawn");
 
 // StartWorldcore
 // We either start or join a Croquet session here.
