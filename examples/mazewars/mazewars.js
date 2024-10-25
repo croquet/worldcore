@@ -32,16 +32,20 @@
 // Fixed sounds not playing after a while
 // Fixed getting stuck under the horse
 // Restructured loaded instance management
+// Added ivy to some walls
+// Added color to instances
 //------------------------------------------------------------------------------------------
 // To do:
-// Sounds effects need to be added:
-// - powerup collected tone
+// Sound effects need to be added:
+// - cell collected tone
 // create three+ powerups:
 // 1. red - 10 second invincibility
 // 2. blue - 10 second speed boost
 // 3. green - 10 second missile boost
+// Evil bots that take away your cells
 // need to pre-render textures on dynamic objects like missiles
 // scoring, leaderboard - steal from Multiblaster
+// display your captured cells
 // add mobile controls
 // missile/missile collision test * I think this is working
 //------------------------------------------------------------------------------------------
@@ -199,6 +203,9 @@ async function modelConstruct() {
     ]);
 }
 const instances = {};
+const materials = {};
+const geometries = {};
+
 modelConstruct().then( () => {
     readyToLoad = true;
     instances.column = column.scene.children[0];
@@ -270,7 +277,6 @@ new THREE.TextureLoader().load(fireballTexture, texture => {
 
 // Create complex materials
 //------------------------------------------------------------------------------------------
-const materials = {};
 function complexMaterial(options) {
     const material = new THREE.MeshStandardMaterial();
     materials[options.name] = material;
@@ -344,11 +350,6 @@ function complexMaterial(options) {
     csm.setupMaterial(material);
     return material;
 }
-
-let missileMaterial;
-let powerMaterial;
-let wallMaterial;
-let floorMaterial;
 
 // Maze Generator
 // This generates a (mostly) braided maze. That is a kind of maze that has no dead ends. This actually does have dead ends
@@ -556,20 +557,7 @@ BaseActor.register('BaseActor');
 export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
-
-        floorMaterial = complexMaterial({
-            colorMap: marble_color,
-            normalMap: marble_normal,
-            roughnessMap: marble_roughness,
-            displacementMap: marble_displacement,
-            anisotropy: 4,
-            metalness: 0.1,
-            repeat: [20, 20],
-            transparent: true,
-            opacity: 0.8,
-            name: "floor"
-        });
-        this.material = floorMaterial;
+        this.material = materials.floor;
         this.geometry = new THREE.PlaneGeometry(MAZE_ROWS*CELL_SIZE, MAZE_COLUMNS* CELL_SIZE);
         this.geometry.rotateX(toRad(-90));
         const base = new THREE.Mesh( this.geometry, this.material );
@@ -617,7 +605,7 @@ export class MyModelRoot extends ModelRoot {
         for (let y = 0; y < MAZE_ROWS; y++) {
             for (let x = 0; x < MAZE_COLUMNS; x++) {
                 const t = [x*CELL_SIZE, 0, y*CELL_SIZE];
-                InstanceActor.create({name:"column", translation: t});
+                InstanceActor.create({name:"column", color:0xff0000,translation: t});
                 const t2 = [t[0]+10, 3.5, t[2]+10];
                 //SphereActor.create({translation: t2});
             }
@@ -694,7 +682,8 @@ export class MyViewRoot extends ViewRoot {
             rm.scene.background = skyEnvironment.texture;
             //rm.scene.environment = skyEnvironment.texture;
         } );
-        missileMaterial = complexMaterial({
+
+        complexMaterial({
             colorMap: missile_color,
             normalMap: missile_normal,
             roughnessMap: missile_roughness,
@@ -707,7 +696,7 @@ export class MyViewRoot extends ViewRoot {
             name: "hexasphere"
         });
 
-        powerMaterial = complexMaterial({
+        complexMaterial({
             colorMap: power_color,
             normalMap: power_normal,
             roughnessMap: power_roughness,
@@ -719,7 +708,7 @@ export class MyViewRoot extends ViewRoot {
             name: "power"
         });
 
-        wallMaterial = complexMaterial({
+        complexMaterial({
             colorMap: corinthian_color,
             normalMap: corinthian_normal,
             roughnessMap: corinthian_roughness,
@@ -729,6 +718,19 @@ export class MyViewRoot extends ViewRoot {
             anisotropy: 4,
             repeat: [2, 1],
             name: "wall"
+        });
+
+        complexMaterial({
+            colorMap: marble_color,
+            normalMap: marble_normal,
+            roughnessMap: marble_roughness,
+            displacementMap: marble_displacement,
+            anisotropy: 4,
+            metalness: 0.1,
+            repeat: [20, 20],
+            transparent: true,
+            opacity: 0.8,
+            name: "floor"
         });
     }
 
@@ -927,7 +929,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     }
 
     keyDown(e) {
-        console.log("keyDown", e.key);
+        //console.log("keyDown", e.key);
         switch (e.key) {
             case "ArrowUp": case "W": case "w":
                 this.gas = 1; break;
@@ -1489,7 +1491,7 @@ export class SpherePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         let instance = this.useInstance(name);
         if ( !instance ) {
             const geometry = new THREE.IcosahedronGeometry( 1, 2 );
-            im.addMaterial(name, powerMaterial);
+            im.addMaterial(name, materials.power);
             im.addGeometry(name, geometry);
             im.addMesh(name, name, name);
             instance = this.useInstance(name);
@@ -1558,9 +1560,7 @@ GlowPawn.register("GlowPawn");
 // This provides a simple wall.
 //------------------------------------------------------------------------------------------
 class WallActor extends mix(Actor).with(AM_Spatial) {
-
     get pawn() {return "WallPawn"}
-
 }
 WallActor.register('WallActor');
 //------------------------------------------------------------------------------------------
@@ -1583,7 +1583,7 @@ class WallPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeInsta
             const backWall = new THREE.PlaneGeometry(width, height);
             backWall.rotateY(Math.PI);
             const geometry = ADDONS.BufferGeometryUtils.mergeGeometries([frontWall, backWall], false);
-            im.addMaterial("wall", wallMaterial);
+            im.addMaterial("wall", materials.wall);
             im.addGeometry("wall", geometry);
             im.addMesh("wall", "wall", "wall");
             wall = this.useInstance("wall");
@@ -1600,10 +1600,10 @@ WallPawn.register("WallPawn");
 // Generate loaded instances.
 //------------------------------------------------------------------------------------------
 class InstanceActor extends mix(Actor).with(AM_Spatial) {
-
     get pawn() {return "InstancePawn"}
     get name() { return this._name || "column"}
-
+    get color() { return this._color || 0xffffff }
+    setColor(color) { this._color = color; this.say("color", color); }
 }
 InstanceActor.register('InstanceActor');
 
@@ -1616,6 +1616,11 @@ class InstancePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Three
     constructor(...args) {
         super(...args);
         this.loadInstance();
+        this.listen("color", this.doColor);
+    }
+
+    doColor(color) {
+        this.setColor(new THREE.Color(color));
     }
 
     loadInstance() {
@@ -1624,19 +1629,20 @@ class InstancePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Three
         let instance = this.useInstance(name);
         if (!instance) { // does the instance not exist?
             if (readyToLoad && instances[name]) { // is it ready to load?
-                const geometry = instances[name].geometry.clone();
-                const material = materials[name] ||instances[name].material;
+                const geometry = geometries[name] || instances[name].geometry.clone();
+                const material = materials[name] || instances[name].material;
                 const im = this.service("ThreeInstanceManager");
                 im.addMaterial(name, material);
                 im.addGeometry(name, geometry);
                 im.addMesh(name, name, name);
-                instance =this.useInstance(name);
+                instance = this.useInstance(name);
                 instance.mesh.material.needsUpdate = true;
                 csm.setupMaterial(instance.mesh.material);
                 instance.mesh.receiveShadow = true;
                 instance.mesh.castShadow = true;
             } else this.future(100).loadInstance(); // not ready to load - try again later
         }
+        if (instance && this.actor.color) this.doColor(this.actor.color);
     }
 }
 InstancePawn.register("InstancePawn");
