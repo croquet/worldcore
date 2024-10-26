@@ -29,19 +29,20 @@
 // -- ready to shoot sound and click when not ready
 // -- player enter/exit game
 // -- missile whoosh when it goes by
+// - cell collected tone
 // Fixed sounds not playing after a while
 // Fixed getting stuck under the horse
 // Restructured loaded instance management
 // Added ivy to some walls
 // Added color to instances
+// Break the floor model into a grid of floor tiles
 //------------------------------------------------------------------------------------------
 // To do:
-// Sound effects need to be added:
-// - cell collected tone
-// create three+ powerups:
-// 1. red - 10 second invincibility
-// 2. blue - 10 second speed boost
-// 3. green - 10 second missile boost
+// You can only extend your cells - if you are killed and respawned, you
+// must move to one of your colored cells to continue to extend them.
+// If a user slices off a section of cells so that it is no longer connected to
+// your tree, those cells revert to their original color. Use flood fill:
+// https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
 // Evil bots that take away your cells
 // need to pre-render textures on dynamic objects like missiles
 // scoring, leaderboard - steal from Multiblaster
@@ -107,6 +108,7 @@ import enterSound from "./assets/sounds/avatarEnter.wav";
 import exitSound from "./assets/sounds/avatarLeave.wav";
 import missileSound from "./assets/sounds/Warning.mp3";
 import implosionSound from "./assets/sounds/Implosion.mp3";
+import cellSound from "./assets/sounds/plinktone.wav";
 
 // Global Variables
 //------------------------------------------------------------------------------------------
@@ -182,6 +184,7 @@ function playSoundOnce(sound, parent3D, force, loop = false) {
         parent3D.mySound = mySound;
         mySound.onEnded = ()=> { sound.count--; mySound.removeFromParent(); };
     } else mySound.onEnded = ()=> { sound.count--; };
+
     mySound.play();
 }
 
@@ -205,6 +208,8 @@ async function modelConstruct() {
 const instances = {};
 const materials = {};
 const geometries = {};
+geometries.floor = new THREE.PlaneGeometry(20,20,2,2);
+geometries.floor.rotateX(toRad(-90));
 
 modelConstruct().then( () => {
     readyToLoad = true;
@@ -363,7 +368,7 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
         this.columns = options._columns || 20;
         this.cellSize = options._cellSize || 20;
         this.createMaze(this.rows,this.columns);
-        this.constructWalls();
+        this.constructMaze();
     }
 
     createMaze(width, height) {
@@ -450,7 +455,7 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
     }
 
     // dump most of the data - don't need it anymore
-    clean() {// remove N and W
+    clean() {
         for (let y = 0; y < this.HEIGHT; y++) {
             for (let x = 0; x < this.WIDTH; x++) {
             delete this.map[x][y].seen;
@@ -495,16 +500,20 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
       output = output.replace(/_ /g, '__');
       return output;
     }
-    constructWalls() {
-    //    let eastWallGeometry = new THREE.BoxGeometry( Q.WALL_THICKNESS, Q.WALL_HEIGHT, Q.CELL_SIZE-Q.COLUMN_RADIUS, 1, 2, 4 );
-    //    let southWallGeometry = new THREE.BoxGeometry( Q.CELL_SIZE-Q.COLUMN_RADIUS, Q.WALL_HEIGHT, Q.WALL_THICKNESS,4,1,2);
-    //    let wallMaterial = new THREE.MeshStandardMaterial( {color: 0xAAAACC, roughness: 0.7, metalness:0.8  } );
-    //    let walls = [];
+
+    doColor(data) {
+        console.log("MazeActor doColor", data);
+        const cell = this.map[data.x-1][data.y-1];
+        console.log("cell", cell);
+        cell.floor.setColor(data.color);
+    }
+
+    constructMaze() {
         const r = q_axisAngle([0,1,0],PI_2);
         const ivyRotation = q_axisAngle([0,1,0],Math.PI);
         for (let y = 0; y < this.rows; y++) {
           for (let x = 0; x < this.columns; x++) {
-
+            this.map[x][y].floor = InstanceActor.create({name:"floor", translation: [x*CELL_SIZE+CELL_SIZE/2, 0, y*CELL_SIZE+CELL_SIZE/2]});
            // south walls
             if (!this.map[x][y].S && x>0) {
                 const t = [x*this.cellSize - this.cellSize/2, 0, y*this.cellSize];
@@ -518,7 +527,6 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
                 }
 
             }
-
             // east walls
             if (!this.map[x][y].E && y>0) {
                 const t = [x*this.cellSize, 0, (y+1)*this.cellSize - 3*this.cellSize/2];
@@ -543,10 +551,6 @@ MazeActor.register("MazeActor");
 class BaseActor extends mix(Actor).with(AM_Spatial) {
 
     get pawn() {return "BasePawn"}
-
-    init(options) {
-         super.init(options);
-    }
 }
 BaseActor.register('BaseActor');
 
@@ -557,31 +561,20 @@ BaseActor.register('BaseActor');
 export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
-        this.material = materials.floor;
-        this.geometry = new THREE.PlaneGeometry(MAZE_ROWS*CELL_SIZE, MAZE_COLUMNS* CELL_SIZE);
-        this.geometry.rotateX(toRad(-90));
-        const base = new THREE.Mesh( this.geometry, this.material );
-        base.receiveShadow = true;
-        const group = new THREE.Group();
-        group.add(base);
-        this.mirrorGeometry = new THREE.PlaneGeometry(MAZE_ROWS*CELL_SIZE, MAZE_COLUMNS* CELL_SIZE);
+
+        this.mirrorGeometry = new THREE.PlaneGeometry((MAZE_ROWS-1)*CELL_SIZE, (MAZE_COLUMNS-1)* CELL_SIZE);
         const mirror = new ADDONS.Reflector( this.mirrorGeometry, {
             clipBias: 0.003,
             textureWidth: window.innerWidth * window.devicePixelRatio,
             textureHeight: window.innerHeight * window.devicePixelRatio,
             color: 0xb5b5b5
         } );
-        mirror.position.y = -0.1;
+        mirror.position.set(-CELL_SIZE/2, -0.1, -CELL_SIZE/2);
         mirror.rotateX( -PI_2 );
+        const group = new THREE.Group();
         group.add( mirror );
 
         this.setRenderObject(group);
-    }
-
-    destroy() {
-        super.destroy();
-        this.geometry.dispose();
-        this.material.dispose();
     }
 }
 BasePawn.register("BasePawn");
@@ -605,13 +598,13 @@ export class MyModelRoot extends ModelRoot {
         for (let y = 0; y < MAZE_ROWS; y++) {
             for (let x = 0; x < MAZE_COLUMNS; x++) {
                 const t = [x*CELL_SIZE, 0, y*CELL_SIZE];
-                InstanceActor.create({name:"column", color:0xff0000,translation: t});
+                InstanceActor.create({name:"column", color:0xFFA07A,translation: t});
                 const t2 = [t[0]+10, 3.5, t[2]+10];
                 //SphereActor.create({translation: t2});
             }
         }
         this.horse = HorseActor.create({translation:[210.9,10,209.70], scale:[8.75,8.75,8.75]});
-        let s = 8.0;
+        const s = 8.0;
         this.spring = PlantActor.create({plant:"spring",translation: [20, 0.5, 20], scale:[s,s,s]});
         this.summer = PlantActor.create({plant:"summer",translation: [20, 0.5, 360], scale:[s,s,s]});
         this.fall = PlantActor.create({plant:"fall",translation: [360, 0.5, 360], scale:[s,s,s]});
@@ -714,7 +707,7 @@ export class MyViewRoot extends ViewRoot {
             roughnessMap: corinthian_roughness,
             displacementMap: corinthian_displacement,
             displacementScale: 1.5,
-            displacementBias: -0.8,
+            displacementBias: -0.4,
             anisotropy: 4,
             repeat: [2, 1],
             name: "wall"
@@ -727,7 +720,7 @@ export class MyViewRoot extends ViewRoot {
             displacementMap: marble_displacement,
             anisotropy: 4,
             metalness: 0.1,
-            repeat: [20, 20],
+            repeat: [1, 1],
             transparent: true,
             opacity: 0.8,
             name: "floor"
@@ -763,11 +756,20 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
         this.eyeball = EyeballActor.create({parent: this});
         this.listen("shootMissile", this.shootMissile);
         this.listen("origin", this.origin);
+        this.listen("claimCell", this.claimCell);
+    }
+
+    claimCell(data) {
+        // console.log("AvatarActor claimCell", data);
+        const mazeActor = this.wellKnownModel("ModelRoot").maze;
+        mazeActor.doColor({x:data.x, y:data.y, color:0x90EE90});
+        //this.publish("avatar", "color", {x:data.x, y:data.y, color:0x90EE90});
+        this.say("claimCellSound");
     }
 
     origin() {
         console.log("AvatarActor origin");
-        this.translation = [10,5,10];
+        this.translation = [10,6.5,10];
     }
 
     shootMissile() {
@@ -864,13 +866,14 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.yaw = q_yaw(this.rotation);
         this.yawQ = q_axisAngle([0,1,0], this.yaw);
         this.service("AvatarManager").avatars.add(this);
-        this.listen("shootMissileSound", this.didShoot);
-        this.listen("recharged", this.recharged);
+        this.listen("shootMissileSound", this.didShootSound);
+        this.listen("recharged", this.rechargedSound);
+        this.listen("claimCellSound", this.claimCellSound);
         this.subscribe(this.viewId, "synced", this.handleSynced);
     }
 
     handleSynced() {
-        console.log("session is synced - play sound");
+        console.log("session is synced - enable sound");
         soundSwitch = true;
     }
 
@@ -906,7 +909,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.highGear = 1;
     }
 
-    didShoot() {
+    didShootSound() {
         if (this.isMyAvatar) return; // only play the sound if it is not your avatar
         this.shootSound.stop();
         playSound(shootSound, this.renderObject, false);
@@ -923,9 +926,14 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         }
     }
 
-    recharged() {
+    rechargedSound() {
         console.log("recharged");
         playSound(rechargedSound, this.renderObject, false);
+    }
+
+    claimCellSound() {
+        console.log("claimCellSound");
+        playSound(cellSound, this.renderObject, false);
     }
 
     keyDown(e) {
@@ -1090,7 +1098,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         const xCell = 1+Math.floor(x/CELL_SIZE);
         const zCell = 1+Math.floor(z/CELL_SIZE);
 
-        if ( xCell>=0 && xCell < MAZE_COLUMNS && zCell>=0 && zCell < MAZE_ROWS ) { //on the map
+        if ( xCell>0 && xCell < MAZE_COLUMNS && zCell>0 && zCell < MAZE_ROWS ) { //on the map
             // what cell are we in?
             const cell = mazeActor.map[xCell][zCell];
             // where are we within the cell?
@@ -1108,7 +1116,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
             else if (!cell.N && n) { z -= offsetZ  + cellInset - WALL_EPSILON; collided = 'N'; }
             if (!cell.E && e) { x -= WALL_EPSILON + offsetX - cellInset; collided = 'E'; }
             else if (!cell.W && w) { x -= offsetX + cellInset - WALL_EPSILON; collided = 'W'; }
-            // console.log("cell: ", xCell, zCell, collided);
+
             if (!collided) {
                 if (s && e) {
                     if ( offsetX < offsetZ ) x -= offsetX - cellInset;
@@ -1128,8 +1136,15 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
                 }
             }
         } // else {}// if we find ourselves off the map, then jump back
+        this.claimCell(xCell, zCell);
         return [x, y, z];
-      }
+    }
+
+    claimCell(x, y) {
+        if (x!==this.xCell || y!==this.yCell) this.say("claimCell", {x, y});
+        this.xCell = x;
+        this.yCell = y;
+    }
 }
 
 AvatarPawn.register("AvatarPawn");
@@ -1628,9 +1643,10 @@ class InstancePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Three
         const name = this.actor.name;
         let instance = this.useInstance(name);
         if (!instance) { // does the instance not exist?
-            if (readyToLoad && instances[name]) { // is it ready to load?
+            if (instances[name] || geometries[name]) { // is it ready to load?
                 const geometry = geometries[name] || instances[name].geometry.clone();
                 const material = materials[name] || instances[name].material;
+                //console.log("InstancePawn", name, geometry, material);
                 const im = this.service("ThreeInstanceManager");
                 im.addMaterial(name, material);
                 im.addGeometry(name, geometry);
