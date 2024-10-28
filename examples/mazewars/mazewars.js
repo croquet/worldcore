@@ -40,8 +40,9 @@
 // To do:
 // You can only extend your cells - if you are killed and respawned, you
 // must move to one of your colored cells to continue to extend them.
+// Each of the four corners have four cells that cannot be changed.
 // If a user slices off a section of cells so that it is no longer connected to
-// your tree, those cells revert to their original color. Use flood fill:
+// your tree, those cells revert to their original, null color. Use flood fill:
 // https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
 // Evil bots that take away your cells
 // need to pre-render textures on dynamic objects like missiles
@@ -132,7 +133,6 @@ let horse;
 let trees;
 let plants;
 let ivy;
-
 // Audio Manager
 //------------------------------------------------------------------------------------------
 let soundSwitch = false; // turn sound on and off
@@ -357,16 +357,16 @@ function complexMaterial(options) {
 }
 
 // Maze Generator
-// This generates a (mostly) braided maze. That is a kind of maze that has no dead ends. This actually does have dead ends
-// on the edges, but I decided to leave it as is.
+// This generates a (mostly) braided maze. That is a kind of maze that should have no dead ends.
+// This actually does have dead ends on the edges, but I decided to leave it as is.
 //------------------------------------------------------------------------------------------
-
 class MazeActor extends mix(Actor).with(AM_Spatial) {
     init(options) {
         super.init(options);
         this.rows = options._rows || 20;
         this.columns = options._columns || 20;
         this.cellSize = options._cellSize || 20;
+        this.seasons = {spring:{color:0xFFB6C1}, summer: {color:0x90EE90}, fall: {color:0xFFE5B4}, winter: {color:0xE0FFFF}};
         this.createMaze(this.rows,this.columns);
         this.constructMaze();
     }
@@ -474,17 +474,30 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
         this.map[10][10].E = this.map[11][10].W = this.map[11][10].E = this.map[12][10].W = true;
         this.map[10][12].E = this.map[11][12].W = this.map[11][12].E = this.map[12][12].W = true;
 
-        const clearCorner = (x,y) => {
+        const clearCorner = (x,y, season) => {
             this.map[x+1][y+2].N = this.map[x+1][y+1].S =
             this.map[x+2][y+2].N = this.map[x+2][y+1].S = true;
             this.map[x+1][y+1].E = this.map[x+2][y+1].W =
             this.map[x+1][y+2].E = this.map[x+2][y+2].W = true;
+            this.setColor(x,y,season);
         };
 
-        clearCorner(0,0);
-        clearCorner(17,0);
-        clearCorner(0,17);
-        clearCorner(17,17);
+        clearCorner(0,0, "spring");
+        clearCorner(this.WIDTH-3,0,"winter");
+        clearCorner(0,this.HEIGHT-3,"summer");
+        clearCorner(this.WIDTH-3,this.HEIGHT-3,"autumn");
+    }
+
+    setColor(x,y, season) {
+        const cell = this.map[x][y];
+        if (cell.floor) {
+            console.log("setColor", cell, x,y, season);
+            this.map[x][y].floor.setColor(this.seasons[season].color);
+            this.map[x+1][y].floor.setColor(this.seasons[season].color);
+            this.map[x][y+1].floor.setColor(this.seasons[season].color);
+            this.map[x+1][y+1].floor.setColor(this.seasons[season].color);
+        }
+        else this.future(100).setColor(x,y,season);
     }
 
     // this lets me see the maze in the console
@@ -1141,6 +1154,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     }
 
     claimCell(x, y) {
+        console.log("AvatarPawn claimCell", x, y);
         if (x!==this.xCell || y!==this.yCell) this.say("claimCell", {x, y});
         this.xCell = x;
         this.yCell = y;
