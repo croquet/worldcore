@@ -36,15 +36,18 @@
 // Added ivy to some walls
 // Added color to instances
 // Break the floor model into a grid of floor tiles
+// You can only claim cells from one of your own cells
+// You can't claim a corner
 //------------------------------------------------------------------------------------------
 // To do:
-// You can only extend your cells - if you are killed and respawned, you
-// must move to one of your colored cells to continue to extend them.
-// Each of the four corners have four cells that cannot be changed.
+// When you are killed, you are respawned away from other players, but NOT on your
+// seasonal color. You must move to one of your own claimed cells to continue to extend them.
+// You must move to one of the corners to claim your season.
 // If a user slices off a section of cells so that it is no longer connected to
 // your tree, those cells revert to their original, null color. Use flood fill:
 // https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
-// Evil bots that take away your cells
+// Sometimes, a delay will cause you to jump through a wall - including outside of
+// the maze. This is very bad.
 // need to pre-render textures on dynamic objects like missiles
 // scoring, leaderboard - steal from Multiblaster
 // display your captured cells
@@ -224,7 +227,7 @@ modelConstruct().then( () => {
     instances.hexasphere = hexasphere.scene.children[0].children[0];
     instances.hexasphere.geometry.scale(0.05,0.05,0.05);
     fixUV(instances.hexasphere.geometry);
-    plants = {spring: new THREE.Group(), summer: new THREE.Group(), fall: new THREE.Group(), winter: new THREE.Group()};
+    plants = {spring: new THREE.Group(), summer: new THREE.Group(), autumn: new THREE.Group(), winter: new THREE.Group()};
     horse = horse.scene.clone();
     horse.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
 
@@ -232,13 +235,13 @@ modelConstruct().then( () => {
         if (node.name) {
             if (node.name.includes("spring")) plants.spring.add(node.clone());
             else if (node.name.includes("summer")) plants.summer.add(node.clone());
-            else if (node.name.includes("fall")) plants.fall.add(node.clone());
+            else if (node.name.includes("fall")) plants.autumn.add(node.clone());
             else if (node.name.includes("winter")) plants.winter.add(node.clone());
         }
     });
     plants.spring.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0); } });
     plants.summer.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
-    plants.fall.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
+    plants.autumn.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
     plants.winter.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
 });
 function fixUV(geometry) {
@@ -366,7 +369,7 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
         this.rows = options._rows || 20;
         this.columns = options._columns || 20;
         this.cellSize = options._cellSize || 20;
-        this.seasons = {spring:{color:0xFFB6C1}, summer: {color:0x90EE90}, fall: {color:0xFFE5B4}, winter: {color:0xE0FFFF}};
+        this.seasons = {spring:{color:0xFFB6C1}, summer: {color:0x90EE90}, autumn: {color:0xFFE5B4}, winter: {color:0xA5F2F3}};
         this.createMaze(this.rows,this.columns);
         this.constructMaze();
     }
@@ -479,7 +482,7 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
             this.map[x+2][y+2].N = this.map[x+2][y+1].S = true;
             this.map[x+1][y+1].E = this.map[x+2][y+1].W =
             this.map[x+1][y+2].E = this.map[x+2][y+2].W = true;
-            this.setColor(x,y,season);
+            this.setCornerSeason(x,y,season);
         };
 
         clearCorner(0,0, "spring");
@@ -488,16 +491,31 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
         clearCorner(this.WIDTH-3,this.HEIGHT-3,"autumn");
     }
 
-    setColor(x,y, season) {
+    setCornerSeason(x,y, season) {
+        // set the corners of the cell to the season
+        console.log("setColor", season, this.seasons[season]);
         const cell = this.map[x][y];
-        if (cell.floor) {
+        if (cell.floor) { // only do this if the floor exists
             console.log("setColor", cell, x,y, season);
+            this.map[x][y].season = season;
             this.map[x][y].floor.setColor(this.seasons[season].color);
+            this.map[x+1][y].season = season;
             this.map[x+1][y].floor.setColor(this.seasons[season].color);
+            this.map[x][y+1].season = season;
             this.map[x][y+1].floor.setColor(this.seasons[season].color);
+            this.map[x+1][y+1].season = season;
             this.map[x+1][y+1].floor.setColor(this.seasons[season].color);
         }
-        else this.future(100).setColor(x,y,season);
+        else this.future(100).setCornerSeason(x,y,season);
+    }
+
+    // you can't claim a corner
+    checkCornersSeason(x, y) {
+        if ( x < 3 && y < 3 ) return false;
+        if ( x < 2 && y >= this.HEIGHT-2 ) return false;
+        if ( x >= this.WIDTH-2 && y < 3 ) return false;
+        if ( x >= this.WIDTH-2 && y >= this.HEIGHT-2 ) return false;
+        return true;
     }
 
     // this lets me see the maze in the console
@@ -514,11 +532,14 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
       return output;
     }
 
-    doColor(data) {
-        console.log("MazeActor doColor", data);
-        const cell = this.map[data.x-1][data.y-1];
-        console.log("cell", cell);
-        cell.floor.setColor(data.color);
+    setSeason(x,y, season) {
+        const cell = this.map[x-1][y-1];
+        if ( season !== cell.season && this.checkCornersSeason(x,y)) {
+            cell.season = season;
+            cell.floor.setColor(this.seasons[season].color);
+            return true;
+        }
+        return false;
     }
 
     constructMaze() {
@@ -612,15 +633,15 @@ export class MyModelRoot extends ModelRoot {
             for (let x = 0; x < MAZE_COLUMNS; x++) {
                 const t = [x*CELL_SIZE, 0, y*CELL_SIZE];
                 InstanceActor.create({name:"column", color:0xFFA07A,translation: t});
-                const t2 = [t[0]+10, 3.5, t[2]+10];
+                //const t2 = [t[0]+10, 3.5, t[2]+10];
                 //SphereActor.create({translation: t2});
             }
         }
         this.horse = HorseActor.create({translation:[210.9,10,209.70], scale:[8.75,8.75,8.75]});
-        const s = 8.0;
+        const s = 9.0;
         this.spring = PlantActor.create({plant:"spring",translation: [20, 0.5, 20], scale:[s,s,s]});
         this.summer = PlantActor.create({plant:"summer",translation: [20, 0.5, 360], scale:[s,s,s]});
-        this.fall = PlantActor.create({plant:"fall",translation: [360, 0.5, 360], scale:[s,s,s]});
+        this.autumn = PlantActor.create({plant:"autumn",translation: [360, 0.5, 360], scale:[s,s,s]});
         this.winter = PlantActor.create({plant:"winter",translation: [360, 0.5, 20], scale:[s,s,s]});
         this.skyAngle = 0;
 
@@ -686,7 +707,6 @@ export class MyViewRoot extends ViewRoot {
             const skyEnvironment = pmremGenerator.fromEquirectangular(skyTexture);
             skyEnvironment.encoding = THREE.LinearSRGBColorSpace;
             rm.scene.background = skyEnvironment.texture;
-            //rm.scene.environment = skyEnvironment.texture;
         } );
 
         complexMaterial({
@@ -772,12 +792,21 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
         this.listen("claimCell", this.claimCell);
     }
 
+    get season() {return this._season || "spring"}
+
     claimCell(data) {
         // console.log("AvatarActor claimCell", data);
         const mazeActor = this.wellKnownModel("ModelRoot").maze;
-        mazeActor.doColor({x:data.x, y:data.y, color:0x90EE90});
-        //this.publish("avatar", "color", {x:data.x, y:data.y, color:0x90EE90});
-        this.say("claimCellSound");
+        // only claim the cell if it is not already yours
+        if (mazeActor.map[data.x-1][data.y-1].season !== this.season) {
+            // if the cell you are moving from is yours, then you can claim it
+            if (data.lastX && mazeActor.map[data.lastX-1][data.lastY-1].season === this.season) {
+                // set the season of the cell you are moving to
+                if (mazeActor.setSeason(data.x, data.y, this.season)) {
+                    this.say("claimCellSound");
+                }
+            }
+        }
     }
 
     origin() {
@@ -1109,14 +1138,14 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         let y = loc[1];
         let z = loc[2];
         const xCell = 1+Math.floor(x/CELL_SIZE);
-        const zCell = 1+Math.floor(z/CELL_SIZE);
+        const yCell = 1+Math.floor(z/CELL_SIZE);
 
-        if ( xCell>0 && xCell < MAZE_COLUMNS && zCell>0 && zCell < MAZE_ROWS ) { //on the map
+        if ( xCell>0 && xCell < MAZE_COLUMNS && yCell>0 && yCell < MAZE_ROWS ) { //on the map
             // what cell are we in?
-            const cell = mazeActor.map[xCell][zCell];
+            const cell = mazeActor.map[xCell][yCell];
             // where are we within the cell?
             const offsetX = x - (xCell-0.5)*CELL_SIZE;
-            const offsetZ = z - (zCell-0.5)*CELL_SIZE;
+            const offsetZ = z - (yCell-0.5)*CELL_SIZE;
 
             const s = offsetZ > cellInset;
             const n = offsetZ < -cellInset;
@@ -1149,15 +1178,15 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
                 }
             }
         } // else {}// if we find ourselves off the map, then jump back
-        this.claimCell(xCell, zCell);
+        this.claimCell(xCell, yCell);
         return [x, y, z];
     }
 
     claimCell(x, y) {
         console.log("AvatarPawn claimCell", x, y);
-        if (x!==this.xCell || y!==this.yCell) this.say("claimCell", {x, y});
-        this.xCell = x;
-        this.yCell = y;
+        if (x!==this.lastX || y!==this.lastY) this.say("claimCell", {x, y, lastX:this.lastX, lastY:this.lastY});
+        this.lastX = x;
+        this.lastY = y;
     }
 }
 
@@ -1178,6 +1207,7 @@ MyUserManager.register('MyUserManager');
 class MyUser extends User {
     init(options) {
         super.init(options);
+        console.log("MyUser init", this);
         let cellX = Math.floor(18.9*Math.random());
         let cellY = Math.floor(18.9*Math.random());
 
@@ -1190,7 +1220,7 @@ class MyUser extends User {
         this.avatar = AvatarActor.create({
             translation: t,
             driver: this.userId,
-            tags: ["avatar", "block"]
+            season: ["spring","summer","autumn","winter"][this.userNumber%4]
         });
     }
 
@@ -1276,14 +1306,14 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
         let [x,y,z] = this.translation;
 
         const xCell = 1+Math.floor(x/CELL_SIZE);
-        const zCell = 1+Math.floor(z/CELL_SIZE);
+        const yCell = 1+Math.floor(z/CELL_SIZE);
 
-        if ( xCell>=0 && xCell < MAZE_COLUMNS && zCell>=0 && zCell < MAZE_ROWS ) { //off the map
+        if ( xCell>=0 && xCell < MAZE_COLUMNS && yCell>=0 && yCell < MAZE_ROWS ) { //off the map
             // what cell are we in?
-            const cell = mazeActor.map[xCell][zCell];
+            const cell = mazeActor.map[xCell][yCell];
             // where are we within the cell?
             const offsetX = x - (xCell-0.5)*CELL_SIZE;
-            const offsetZ = z - (zCell-0.5)*CELL_SIZE;
+            const offsetZ = z - (yCell-0.5)*CELL_SIZE;
 
             const s = offsetZ > cellInset;
             const n = offsetZ < -cellInset;
