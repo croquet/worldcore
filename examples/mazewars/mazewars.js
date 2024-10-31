@@ -70,13 +70,13 @@ import missile_normal from "./assets/textures/metal_gold_vein/metal_0080_normal_
 import missile_roughness from "./assets/textures/metal_gold_vein/metal_0080_roughness_2k.jpg";
 import missile_displacement from "./assets/textures/metal_gold_vein/metal_0080_height_2k.png";
 import missile_metalness from "./assets/textures/metal_gold_vein/metal_0080_metallic_2k.jpg";
-
+/*
 import power_color from "./assets/textures/metal_hex/metal_0076_color_2k.jpg";
 import power_normal from "./assets/textures/metal_hex/metal_0076_normal_opengl_2k.png";
 import power_roughness from "./assets/textures/metal_hex/metal_0076_roughness_2k.jpg";
 import power_displacement from "./assets/textures/metal_hex/metal_0076_height_2k.png";
 import power_metalness from "./assets/textures/metal_hex/metal_0076_metallic_2k.jpg";
-
+*/
 import marble_color from "./assets/textures/marble_checker/marble_0013_color_2k.jpg";
 import marble_normal from "./assets/textures/marble_checker/marble_0013_normal_opengl_2k.png";
 import marble_roughness from "./assets/textures/marble_checker/marble_0013_roughness_2k.jpg";
@@ -128,7 +128,9 @@ const MAZE_COLUMNS = 20;
 const MISSILE_SPEED = 0.50;
 
 let csm; // CSM is Cascaded Shadow Maps
-let readyToLoad = false;
+let readyToLoad3D = false;
+let readyToLoadTextures = false;
+let readyToLoadSounds = false;
 let eyeball;
 let column;
 let hexasphere;
@@ -153,12 +155,6 @@ export const playSound = function() {
     function play(soundURL, parent3D, force, loop = false) {
         if (!force && !soundSwitch) return;
         if (soundList[soundURL]) playSoundOnce(soundList[soundURL], parent3D, force, loop);
-        else {
-            audioLoader.load( soundURL, buffer => {
-                soundList[soundURL] = {buffer, count:0};
-                playSoundOnce(soundList[soundURL], parent3D, force, loop);
-            });
-        }
     }
     return play;
 }();
@@ -191,6 +187,34 @@ function playSoundOnce(sound, parent3D, force, loop = false) {
     mySound.play();
 }
 
+async function loadSounds() {
+    const audioLoader = new THREE.AudioLoader();
+    return Promise.all([
+        audioLoader.loadAsync(bounceSound),
+        audioLoader.loadAsync(shootSound),
+        audioLoader.loadAsync(shootFailSound),
+        audioLoader.loadAsync(rechargedSound),
+        audioLoader.loadAsync(enterSound),
+        audioLoader.loadAsync(exitSound),
+        audioLoader.loadAsync(missileSound),
+        audioLoader.loadAsync(implosionSound),
+        audioLoader.loadAsync(cellSound),
+    ]);
+}
+loadSounds().then( sounds => {
+    readyToLoadSounds = true;
+    console.log("sounds loaded-------------------");
+    soundList[bounceSound] = {buffer:sounds[0], count:0};
+    soundList[shootSound] = {buffer:sounds[1], count:0};
+    soundList[shootFailSound] = {buffer:sounds[2], count:0};
+    soundList[rechargedSound] = {buffer:sounds[3], count:0};
+    soundList[enterSound] = {buffer:sounds[4], count:0};
+    soundList[exitSound] = {buffer:sounds[5], count:0};
+    soundList[missileSound] = {buffer:sounds[6], count:0};
+    soundList[implosionSound] = {buffer:sounds[7], count:0};
+    soundList[cellSound] = {buffer:sounds[8], count:0};
+});
+
 // Load 3D Models
 //------------------------------------------------------------------------------------------
 async function modelConstruct() {
@@ -215,7 +239,8 @@ geometries.floor = new THREE.PlaneGeometry(20,20,2,2);
 geometries.floor.rotateX(toRad(-90));
 
 modelConstruct().then( () => {
-    readyToLoad = true;
+    readyToLoad3D = true;
+    console.log("models loaded-------------------");
     instances.column = column.scene.children[0];
     instances.column.geometry.scale(0.028,0.028,0.028);
     instances.column.geometry.rotateX(-PI_2);
@@ -283,24 +308,117 @@ new THREE.TextureLoader().load(fireballTexture, texture => {
         } );
     });
 
+let sky_t, missile_color_t, missile_normal_t, missile_roughness_t, missile_displacement_t, missile_metalness_t,
+//    power_color_t, power_normal_t, power_roughness_t, power_displacement_t, power_metalness_t,
+    marble_color_t, marble_normal_t, marble_roughness_t, marble_displacement_t,
+    corinthian_color_t, corinthian_normal_t, corinthian_roughness_t, corinthian_displacement_t;
+
+async function textureConstruct() {
+    ["hexasphere","power","wall","floor"].forEach( name => {
+        const material = new THREE.MeshStandardMaterial();
+        materials[name] = material;
+    });
+
+    const textureLoader = new THREE.TextureLoader();
+
+    return [sky_t, missile_color_t, missile_normal_t, missile_roughness_t, missile_displacement_t, missile_metalness_t,
+    // power_color_t, power_normal_t, power_roughness_t, power_displacement_t, power_metalness_t,
+     marble_color_t, marble_normal_t, marble_roughness_t, marble_displacement_t,
+     corinthian_color_t, corinthian_normal_t, corinthian_roughness_t, corinthian_displacement_t
+    ] = await Promise.all( [
+        textureLoader.loadAsync(sky),
+        textureLoader.loadAsync(missile_color),
+        textureLoader.loadAsync(missile_normal),
+        textureLoader.loadAsync(missile_roughness),
+        textureLoader.loadAsync(missile_displacement),
+        textureLoader.loadAsync(missile_metalness),
+        // textureLoader.loadAsync(power_color),
+        // textureLoader.loadAsync(power_normal),
+        // textureLoader.loadAsync(power_roughness),
+        // textureLoader.loadAsync(power_displacement),
+        // textureLoader.loadAsync(power_metalness),
+        textureLoader.loadAsync(marble_color),
+        textureLoader.loadAsync(marble_normal),
+        textureLoader.loadAsync(marble_roughness),
+        textureLoader.loadAsync(marble_displacement),
+        textureLoader.loadAsync(corinthian_color),
+        textureLoader.loadAsync(corinthian_normal),
+        textureLoader.loadAsync(corinthian_roughness),
+        textureLoader.loadAsync(corinthian_displacement),
+    ]);
+}
+
+
+textureConstruct().then( () => {
+    readyToLoadTextures = true;
+    console.log("textures loaded-------------------");
+    complexMaterial({
+        colorMap: missile_color_t,
+        normalMap: missile_normal_t,
+        roughnessMap: missile_roughness_t,
+        metalnessMap: missile_metalness_t,
+        displacementMap: missile_displacement_t,
+        repeat: [1.5,1],
+        displacementScale: 0.1,
+        displacementBias: -0.05,
+        side: THREE.DoubleSide,
+        name: "hexasphere"
+    });
+/*
+    complexMaterial({
+        colorMap: power_color_t,
+        normalMap: power_normal_t,
+        roughnessMap: power_roughness_t,
+        metalnessMap: power_metalness_t,
+        displacementMap: power_displacement_t,
+        repeat: [1.5,1],
+        displacementScale: 0.1,
+        displacementBias: -0.05,
+        name: "power"
+    });
+*/
+    complexMaterial({
+        colorMap: corinthian_color_t,
+        normalMap: corinthian_normal_t,
+        roughnessMap: corinthian_roughness_t,
+        displacementMap: corinthian_displacement_t,
+        displacementScale: 1.5,
+        displacementBias: -0.4,
+        anisotropy: 4,
+        repeat: [2, 1],
+        name: "wall"
+    });
+
+    complexMaterial({
+        colorMap: marble_color_t,
+        normalMap: marble_normal_t,
+        roughnessMap: marble_roughness_t,
+        displacementMap: marble_displacement_t,
+        anisotropy: 4,
+        metalness: 0.1,
+        repeat: [1, 1],
+        transparent: true,
+        opacity: 0.8,
+        name: "floor"
+    });
+});
+
 // Create complex materials
 //------------------------------------------------------------------------------------------
 function complexMaterial(options) {
-    const material = new THREE.MeshStandardMaterial();
-    materials[options.name] = material;
-    const textureLoader = new THREE.TextureLoader();
+    const material = materials[options.name];
     const repeat = options.repeat || [1,1];
-    textureLoader.load( options.colorMap, map => {
-        map.wrapS = THREE.RepeatWrapping;
-        map.wrapT = THREE.RepeatWrapping;
-        map.anisotropy = options.anisotropy || 4;
-        map.repeat.set( ...repeat );
-        map.encoding = THREE.SRGBColorSpace;
-        material.map = map;
-        material.needsUpdate = true;
-        //console.log(options.name,"colorMap", map);
-    } );
-    if (options.normalMap) textureLoader.load( options.normalMap, map => {
+    let map = options.colorMap;
+    map.wrapS = THREE.RepeatWrapping;
+    map.wrapT = THREE.RepeatWrapping;
+    map.anisotropy = options.anisotropy || 4;
+    map.repeat.set( ...repeat );
+    map.encoding = THREE.SRGBColorSpace;
+    material.map = options.colorMap;
+    material.needsUpdate = true;
+
+    if (options.normalMap) {
+        map = options.normalMap;
         map.wrapS = THREE.RepeatWrapping;
         map.wrapT = THREE.RepeatWrapping;
         map.repeat.set( ...repeat );
@@ -308,8 +426,9 @@ function complexMaterial(options) {
         material.needsUpdate = true;
         if (options.normalScale) material.normalScale.set(options.normalScale);
         //console.log(options.name,"normalMap", map);
-    } );
-    if (options.roughnessMap) textureLoader.load( options.roughnessMap, map => {
+    }
+    if (options.roughnessMap) {
+        map = options.roughnessMap;
         map.wrapS = THREE.RepeatWrapping;
         map.wrapT = THREE.RepeatWrapping;
         map.repeat.set( ...repeat );
@@ -317,8 +436,9 @@ function complexMaterial(options) {
         if (options.roughness) material.roughness = options.roughness;
         material.needsUpdate = true;
         //console.log(options.name,"roughnessMap", map);
-    } );
-    if (options.metalnessMap) textureLoader.load( options.metalnessMap, map => {
+    }
+    if (options.metalnessMap) {
+        map = options.metalnessMap;
         map.wrapS = THREE.RepeatWrapping;
         map.wrapT = THREE.RepeatWrapping;
         map.repeat.set( ...repeat );
@@ -326,8 +446,9 @@ function complexMaterial(options) {
         if (options.metalness) material.metalness = options.metalness;
         material.needsUpdate = true;
         //console.log(options.name,"metalnessMap", map);
-    } );
-    if (options.displacementMap) textureLoader.load( options.displacementMap, map => {
+    }
+    if (options.displacementMap) {
+        map = options.displacementMap;
         map.wrapS = THREE.RepeatWrapping;
         map.wrapT = THREE.RepeatWrapping;
         map.repeat.set( ...repeat );
@@ -336,8 +457,9 @@ function complexMaterial(options) {
         if (options.displacementBias) material.displacementBias = options.displacementBias;
         material.needsUpdate = true;
         //console.log(options.name,"displacementMap", map);
-    } );
-    if (options.emissiveMap) textureLoader.load( options.emissiveMap, map => {
+    }
+    if (options.emissiveMap) {
+        map = options.emissiveMap;
         map.wrapS = THREE.RepeatWrapping;
         map.wrapT = THREE.RepeatWrapping;
         map.repeat.set( ...repeat );
@@ -346,8 +468,7 @@ function complexMaterial(options) {
         if (options.emissiveIntensity) material.emissiveIntensity = options.emissiveIntensity;
         material.needsUpdate = true;
         //console.log(options.name,"emissiveMap", map);
-    } );
-
+    }
     if (options.emissive) material.emissive = options.emissive; // this is the color of the emissive object
     if (options.name) material.name = options.name;
     if (options.transparent) material.transparent = options.transparent;
@@ -512,7 +633,7 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
     // you can't claim a corner
     checkCornersSeason(x, y) {
         if ( x < 3 && y < 3 ) return false;
-        if ( x < 2 && y >= this.HEIGHT-2 ) return false;
+        if ( x < 3 && y >= this.HEIGHT-2 ) return false;
         if ( x >= this.WIDTH-2 && y < 3 ) return false;
         if ( x >= this.WIDTH-2 && y >= this.HEIGHT-2 ) return false;
         return true;
@@ -592,7 +713,7 @@ BaseActor.register('BaseActor');
 // This is the ground of the world. This uses a simple transparent tile texture with a
 // reflecting mirror just beneath it.
 //------------------------------------------------------------------------------------------
-export class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
+class BasePawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible) {
     constructor(...args) {
         super(...args);
 
@@ -617,7 +738,7 @@ BasePawn.register("BasePawn");
 // Construct the game world
 //------------------------------------------------------------------------------------------
 
-export class MyModelRoot extends ModelRoot {
+class MyModelRoot extends ModelRoot {
 
     static modelServices() {
         return [MyUserManager];
@@ -676,6 +797,7 @@ export class MyViewRoot extends ViewRoot {
 
     buildView() {
         const rm = this.service("ThreeRenderManager");
+        rm.doRender = false;
         rm.camera.add( listener );
         rm.listener = listener;
         rm.renderer.shadowMap.enabled = true;
@@ -699,65 +821,18 @@ export class MyViewRoot extends ViewRoot {
             camera: rm.camera,
             parent: rm.scene,
         } );
+        this.buildSky();
+    }
 
-        const loader = new THREE.TextureLoader();
-        loader.load( sky, skyTexture => {
+    buildSky() {
+        if (readyToLoadTextures) {
+            const rm = this.service("ThreeRenderManager");
             const pmremGenerator = new THREE.PMREMGenerator(rm.renderer);
             pmremGenerator.compileEquirectangularShader();
-            const skyEnvironment = pmremGenerator.fromEquirectangular(skyTexture);
+            const skyEnvironment = pmremGenerator.fromEquirectangular(sky_t);
             skyEnvironment.encoding = THREE.LinearSRGBColorSpace;
             rm.scene.background = skyEnvironment.texture;
-        } );
-
-        complexMaterial({
-            colorMap: missile_color,
-            normalMap: missile_normal,
-            roughnessMap: missile_roughness,
-            metalnessMap: missile_metalness,
-            displacementMap: missile_displacement,
-            repeat: [1.5,1],
-            displacementScale: 0.1,
-            displacementBias: -0.05,
-            side: THREE.DoubleSide,
-            name: "hexasphere"
-        });
-
-        complexMaterial({
-            colorMap: power_color,
-            normalMap: power_normal,
-            roughnessMap: power_roughness,
-            metalnessMap: power_metalness,
-            displacementMap: power_displacement,
-            repeat: [1.5,1],
-            displacementScale: 0.1,
-            displacementBias: -0.05,
-            name: "power"
-        });
-
-        complexMaterial({
-            colorMap: corinthian_color,
-            normalMap: corinthian_normal,
-            roughnessMap: corinthian_roughness,
-            displacementMap: corinthian_displacement,
-            displacementScale: 1.5,
-            displacementBias: -0.4,
-            anisotropy: 4,
-            repeat: [2, 1],
-            name: "wall"
-        });
-
-        complexMaterial({
-            colorMap: marble_color,
-            normalMap: marble_normal,
-            roughnessMap: marble_roughness,
-            displacementMap: marble_displacement,
-            anisotropy: 4,
-            metalness: 0.1,
-            repeat: [1, 1],
-            transparent: true,
-            opacity: 0.8,
-            name: "floor"
-        });
+        } else this.future(100).buildSky();
     }
 
     rotateSky(angle) {
@@ -768,6 +843,10 @@ export class MyViewRoot extends ViewRoot {
 
     update(time, delta) {
         super.update(time, delta);
+        if (readyToLoad3D && readyToLoadTextures && readyToLoadSounds) {
+            const rm = this.service("ThreeRenderManager");
+            rm.doRender = true;
+        }
         if ( csm ) csm.update();
     }
 }
@@ -858,7 +937,7 @@ class EyeballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_ThreeC
 
     load3D() {
         if (this.doomed) return;
-        if (readyToLoad && eyeball) {
+        if (readyToLoad3D && eyeball) {
             this.eye = eyeball.scene.clone();
             this.eye.scale.set(40,40,40);
             this.eye.rotation.set(0,Math.PI,0);
@@ -1724,7 +1803,7 @@ class HorsePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     load3D() {
         if (this.doomed) return;
-        if (readyToLoad && horse) {
+        if (readyToLoad3D && horse) {
             this.horse = horse.clone();
             this.horse.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
             this.setRenderObject(this.horse);
@@ -1761,7 +1840,7 @@ class PlantPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 
     load3D() {
         if (this.doomed) return;
-        if (readyToLoad && plants && plants[this.actor.plant]) {
+        if (readyToLoad3D && plants && plants[this.actor.plant]) {
             const model3d = plants[this.actor.plant];
             this.model3d = model3d.clone(); // clone because we will modify it
 //            this.tree.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; } });
