@@ -8,28 +8,36 @@
 // the missile which when fired must execute on all clients. It computes collisions with user
 // avatars and the maze walls.
 //------------------------------------------------------------------------------------------
-// Previous versions:
-// - minimal world - showing we exist. We get an alert when a new user joins.
-// - add simple avatars w/ mouselook interface
-// - add missiles and collision detection
-// - fix textures, add powerup with fake glow, add wobble shader
-// - better missiles. Maze walls are instanced. Generate the maze.
-// - collision detection with walls for avatars and missiles.
-// - columns, CSM lighting
-// - added floor reflections, enhance lighting, fixed disappearing columns
-// - added the horse weenie
-// - changed sky,added uv coordinates to hexasphere
-// - avatar & missile tests collision with columns
-// - seasonal trees weenies
-// - made the missiles glow, slowed it down
-// - place player at random location when spawned
-// - Sound effects:
-// -- missile bounce sound
-// -- missile fire sound
-// -- ready to shoot sound and click when not ready
-// -- player enter/exit game
-// -- missile whoosh when it goes by
-// - cell collected tone
+// The Rules:
+// - You can only claim cells from one of your own cells.
+// - You must move to one of the corners to claim your season at the start of the game.
+// - You move 1.5 times faster when you are on your own color.
+// - Your cells must be contiguous and connected to the corner of your season.
+// - If you slice off a section of an opponent's cells, those cells revert to their original, null color.
+// - The first player to reach 100 cells wins. (Maybe fewer?)
+//------------------------------------------------------------------------------------------
+// Changes:
+// Minimal world - showing we exist. We get an alert when a new user joins.
+// Add simple avatars w/ mouselook interface
+// Add missiles and collision detection
+// Fix textures, add powerup with fake glow, add wobble shader
+// Better missiles. Maze walls are instanced. Generate the maze.
+// Collision detection with walls for avatars and missiles.
+// Columns, CSM lighting
+// Added floor reflections, enhance lighting, fixed disappearing columns
+// Added the horse weenie
+// Changed sky, added uv coordinates to hexasphere
+// Avatar & missile tests collision with columns
+// Seasonal trees weenies
+// Made the missiles glow, slowed it down
+// Place player at random location when spawned
+// Sound effects:
+// Missile bounce sound
+// - missile fire sound
+// - ready to shoot sound and click when not ready
+// - player enter/exit game
+// - missile whoosh when it goes by
+// Cell collected tone
 // Fixed sounds not playing after a while
 // Fixed getting stuck under the horse
 // Restructured loaded instance management
@@ -37,14 +45,15 @@
 // Added color to instances
 // Break the floor model into a grid of floor tiles
 // You can only claim cells from one of your own cells
-// You can't claim a corner
+// You can't claim a corner - they are fixed to the season color.
 // Preloaded assets (sounds, textures, models). This is done before the main
 // render loop starts. It is still taking too long to complete loading.
 // Display the claimed cells on a 2D minimap.
+// Track your avatar's location on the minimap.
 //------------------------------------------------------------------------------------------
 // To do:
-// The avatar is probably visible to other players before you can see them.
-// Need to hide the new avatar until it is able to play.
+// The avatar is probably visible to other players before you can see them on
+// loading. Need to hide the new avatar until it is able to play.
 // If a user slices off a section of cells so that it is no longer connected to
 // your tree, those cells revert to their original, null color. Use flood fill:
 // https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
@@ -55,10 +64,11 @@
 // Missiles should be color coded by the player's season color.
 // Sometimes, a delay will cause you to jump through a wall - including outside of
 // the maze. This is very bad.
-// scoring, leaderboard - steal from Multiblaster
-// display your captured cells
-// add mobile controls
-// missile/missile collision test * I think this is working
+// Need a simple rules screen.
+// Scoring, leaderboard - steal from Multiblaster
+// Display your captured cells
+// Add mobile controls
+// Missile/missile collision test * I think this is working
 //------------------------------------------------------------------------------------------
 
 import { App, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
@@ -362,7 +372,6 @@ async function textureConstruct() {
     ]);
 }
 
-
 textureConstruct().then( () => {
     readyToLoadTextures = true;
     console.log("textures loaded-------------------");
@@ -489,8 +498,6 @@ function complexMaterial(options) {
     if (options.opacity) material.opacity = options.opacity;
     if (options.side) material.side = options.side;
     material.needsUpdate = true;
-    //console.log(options.name, material);
-    csm.setupMaterial(material);
     return material;
 }
 
@@ -881,7 +888,6 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
         this.isAvatar = true;
         this.canShoot = true;
         this.radius = AVATAR_RADIUS;
-       // this.set({translation: [10+100*Math.random(),6.5,10+100*Math.random()]});
         this.eyeball = EyeballActor.create({parent: this});
         this.listen("shootMissile", this.shootMissile);
         this.listen("origin", this.origin);
@@ -1003,7 +1009,6 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.radius = actor.radius;
         this.yaw = q_yaw(this.rotation);
         this.yawQ = q_axisAngle([0,1,0], this.yaw);
-        this.createMinimap();
         this.service("AvatarManager").avatars.add(this);
         this.listen("shootMissileSound", this.didShootSound);
         this.listen("recharged", this.rechargedSound);
@@ -1039,6 +1044,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
         //this.subscribe("input", "tap", this.doPointerTap);
         this.subscribe("input", 'wheel', this.onWheel);
+        this.createMinimap();
     }
 
     park() {
@@ -1277,6 +1283,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     tryClaimCell(x, y) {
         console.log("AvatarPawn tryClaimCell", x, y);
         if (x!==this.lastX || y!==this.lastY) this.say("claimCell", {x, y, lastX:this.lastX, lastY:this.lastY});
+        this.avatarMinimap(this.lastX, this.lastY, x, y);
         this.lastX = x;
         this.lastY = y;
     }
@@ -1289,8 +1296,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
 
     createMinimap() {
         console.log("createMinimap");
-
-    // Add the canvas to the minimap div
+        // Add the canvas to the minimap div
         const minimapDiv = document.getElementById('minimap');
         minimapDiv.appendChild(minimapCanvas);
         this.redrawMinimap();
@@ -1307,6 +1313,9 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
                 this.drawMinimapCell(x,y,  mazeActor.getCellColor(x,y));
             }
         }
+        const xCell = 1+Math.floor(this.translation[0]/CELL_SIZE);
+        const yCell = 1+Math.floor(this.translation[2]/CELL_SIZE);
+        this.avatarMinimap(null, null, xCell, yCell);
     }
 
     drawMinimapCell(x,y, color) {
@@ -1322,7 +1331,19 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
             minimapCtx.globalAlpha = 0.6;
             minimapCtx.fillStyle = hexNumberToColorString(color);
             minimapCtx.fillRect(x*10-5, y*10-5, 9, 9);
+        } else {
+            minimapCtx.clearRect(x*10-5, y*10-5, 9, 9);
         }
+    }
+
+    avatarMinimap(lastX, lastY, x, y) {
+        if (lastX) {
+            const mazeActor = this.wellKnownModel("ModelRoot").maze;
+            this.drawMinimapCell(lastX, lastY, mazeActor.getCellColor(lastX,lastY));
+        }
+        minimapCtx.globalAlpha = 0.9;
+        minimapCtx.fillStyle = "#FFFFFF";
+        minimapCtx.fillRect(x*10-4, y*10-4, 8, 8);
     }
 }
 
@@ -1686,6 +1707,7 @@ export class SpherePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_
         let instance = this.useInstance(name);
         if ( !instance ) {
             const geometry = new THREE.IcosahedronGeometry( 1, 2 );
+            csm.setupMaterial(materials.power);
             im.addMaterial(name, materials.power);
             im.addGeometry(name, geometry);
             im.addMesh(name, name, name);
@@ -1778,6 +1800,7 @@ class WallPawn extends mix(Pawn).with(PM_Spatial, PM_ThreeVisible, PM_ThreeInsta
             const backWall = new THREE.PlaneGeometry(width, height);
             backWall.rotateY(Math.PI);
             const geometry = ADDONS.BufferGeometryUtils.mergeGeometries([frontWall, backWall], false);
+            csm.setupMaterial(materials.wall);
             im.addMaterial("wall", materials.wall);
             im.addGeometry("wall", geometry);
             im.addMesh("wall", "wall", "wall");
@@ -1826,6 +1849,7 @@ class InstancePawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Three
             if (instances[name] || geometries[name]) { // is it ready to load?
                 const geometry = geometries[name] || instances[name].geometry.clone();
                 const material = materials[name] || instances[name].material;
+                csm.setupMaterial(material);
                 //console.log("InstancePawn", name, geometry, material);
                 const im = this.service("ThreeInstanceManager");
                 im.addMaterial(name, material);
