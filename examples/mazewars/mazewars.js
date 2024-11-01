@@ -50,18 +50,19 @@
 // render loop starts. It is still taking too long to complete loading.
 // Display the claimed cells on a 2D minimap.
 // Track your avatar's location on the minimap.
+// Missiles are color coded by the player's season color.
+// Rotated the minimap so that my season color is at the bottom.
 //------------------------------------------------------------------------------------------
 // To do:
-// The avatar is probably visible to other players before you can see them on
-// loading. Need to hide the new avatar until it is able to play.
 // If a user slices off a section of cells so that it is no longer connected to
 // your tree, those cells revert to their original, null color. Use flood fill:
 // https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
 // You move 1.5 times faster when you are on your own color.
+// The avatar is probably visible to other players before you can see them on
+// loading. Need to hide the new avatar until it is able to play.
 // When you are killed, you are respawned away from other players, but NOT on your
 // seasonal color. You must move to one of your own claimed cells to continue to extend them.
 // You must move to one of the corners to claim your season.
-// Missiles should be color coded by the player's season color.
 // Sometimes, a delay will cause you to jump through a wall - including outside of
 // the maze. This is very bad.
 // Need a simple rules screen.
@@ -144,6 +145,7 @@ const MAZE_COLUMNS = 20;
 const MISSILE_SPEED = 0.50;
 
 let csm; // CSM is Cascaded Shadow Maps
+const seasons = {spring:{angle:180+45, color:0xFFB6C1, color2:0xCC8A94}, summer: {angle:270+45, color:0x90EE90, color2:0x65AA65}, autumn: {angle:0+45, color:0xFFE5B4, color2:0xCCB38B}, winter: {angle:90+45, color:0xA5F2F3, color2:0x73BFBF}};
 // Minimap canvas
 const minimapCanvas = document.createElement('canvas');
 const minimapCtx = minimapCanvas.getContext('2d');
@@ -511,7 +513,6 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
         this.rows = options._rows || 20;
         this.columns = options._columns || 20;
         this.cellSize = options._cellSize || 20;
-        this.seasons = {spring:{color:0xFFB6C1}, summer: {color:0x90EE90}, autumn: {color:0xFFE5B4}, winter: {color:0xA5F2F3}};
         this.createMaze(this.rows,this.columns);
         this.constructMaze();
     }
@@ -635,18 +636,17 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
 
     setCornerSeason(x,y, season) {
         // set the corners of the cell to the season
-        // console.log("setColor", season, this.seasons[season]);
         const cell = this.map[x][y];
         if (cell.floor) { // only do this if the floor exists
             // console.log("setColor", cell, x,y, season);
             this.map[x][y].season = season;
-            this.map[x][y].floor.setColor(this.seasons[season].color);
+            this.map[x][y].floor.setColor(seasons[season].color);
             this.map[x+1][y].season = season;
-            this.map[x+1][y].floor.setColor(this.seasons[season].color);
+            this.map[x+1][y].floor.setColor(seasons[season].color);
             this.map[x][y+1].season = season;
-            this.map[x][y+1].floor.setColor(this.seasons[season].color);
+            this.map[x][y+1].floor.setColor(seasons[season].color);
             this.map[x+1][y+1].season = season;
-            this.map[x+1][y+1].floor.setColor(this.seasons[season].color);
+            this.map[x+1][y+1].floor.setColor(seasons[season].color);
         }
         else this.future(100).setCornerSeason(x,y,season);
     }
@@ -678,7 +678,7 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
         const cell = this.map[x-1][y-1];
         if ( season !== cell.season && this.checkCornersSeason(x,y)) {
             cell.season = season;
-            cell.floor.setColor(this.seasons[season].color);
+            cell.floor.setColor(seasons[season].color);
             return true;
         }
         return false;
@@ -686,7 +686,7 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
 
     getCellColor(x,y) {
         const cell = this.map[x-1][y-1];
-        return cell.season ? this.seasons[cell.season].color : 0xFFFFFF;
+        return cell.season ? seasons[cell.season].color : 0xFFFFFF;
     }
 
     constructMaze() {
@@ -896,6 +896,8 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
 
     get season() {return this._season || "spring"}
 
+    get color() {return seasons[this.season].color}
+
     claimCell(data) {
         console.log("AvatarActor claimCell", data);
         const mazeActor = this.wellKnownModel("ModelRoot").maze;
@@ -905,7 +907,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
             if (data.lastX && mazeActor.map[data.lastX-1][data.lastY-1].season === this.season) {
                 // set the season of the cell you are moving to
                 if (mazeActor.setSeason(data.x, data.y, this.season)) {
-                    this.say("claimCellUpdate", {x:data.x, y:data.y, color:mazeActor.seasons[this.season].color});
+                    this.say("claimCellUpdate", {x:data.x, y:data.y, color:seasons[this.season].color});
                 }
             }
         }
@@ -921,7 +923,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
         this.canShoot = false;
         this.say("shootMissileSound", this.id);
         this.future(MISSILE_LIFE).reloadMissile();
-        MissileActor.create({avatar: this});
+        MissileActor.create({avatar: this, color: seasons[this.season].color2});
     }
 
     reloadMissile() {
@@ -1316,6 +1318,8 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         const xCell = 1+Math.floor(this.translation[0]/CELL_SIZE);
         const yCell = 1+Math.floor(this.translation[2]/CELL_SIZE);
         this.avatarMinimap(null, null, xCell, yCell);
+        const minimapDiv = document.getElementById('minimap');
+        minimapDiv.style.transform = `rotate(${seasons[this.actor.season].angle}deg)`;
     }
 
     drawMinimapCell(x,y, color) {
@@ -1420,8 +1424,8 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
         this.timeScale = 0.00025 + Math.random()*0.00002;
         this.hasBounced = false; // I can kill my avatar if I bounce off a wall first
         InstanceActor.create({name: "hexasphere", parent: this});
-        GlowActor.create({parent: this, color: 0xff8844, depthTest: true, radius: 1.25, glowRadius: 0.5, falloff: 0.1, opacity: 0.75, sharpness: 0.5});
-        this.flicker = PointFlickerActor.create({parent: this, color: 0xff8844});
+        GlowActor.create({parent: this, color: options.color||0xff8844, depthTest: true, radius: 1.25, glowRadius: 0.5, falloff: 0.1, opacity: 0.75, sharpness: 0.5});
+        this.flicker = PointFlickerActor.create({parent: this, color: options.color||0xff8844});
         this.tick(0);
         //console.log("MissileActor init", this);
     }
