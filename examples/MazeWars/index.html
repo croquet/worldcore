@@ -9,6 +9,18 @@
                 overflow: hidden;
                 background: rgb(30, 30, 30);
             }
+            .minimap {
+                position: fixed;
+                top: 50px;          /* Moved from bottom to top, increased from 20px */
+                right: 50px;        /* Increased from 20px */
+                width: 200px;
+                height: 200px;
+                background-color: rgba(0, 0, 0, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+                transform: rotate(45deg);
+                pointer-events: none;
+                z-index: 1000;
+            }
             #codelink {
                 position: fixed; bottom: 10px; right: 10px; padding: .5em; border-radius: 30px;
                 opacity: 50%; background: lightgray; box-shadow: 1px 1px 5px black;
@@ -21,6 +33,7 @@
 
     </head>
     <body>
+        <div id="minimap" class="minimap"></div>
         <a id="codelink" href="https://github.com/multisynq/physics-fountain/blob/main/index.html"
         title="View source code on GitHub" target="_blank">{...}</a>
     </body>

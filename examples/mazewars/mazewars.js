@@ -38,17 +38,23 @@
 // Break the floor model into a grid of floor tiles
 // You can only claim cells from one of your own cells
 // You can't claim a corner
+// Preloaded assets (sounds, textures, models). This is done before the main
+// render loop starts. It is still taking too long to complete loading.
+// Display the claimed cells on a 2D minimap.
 //------------------------------------------------------------------------------------------
 // To do:
-// When you are killed, you are respawned away from other players, but NOT on your
-// seasonal color. You must move to one of your own claimed cells to continue to extend them.
-// You must move to one of the corners to claim your season.
+// The avatar is probably visible to other players before you can see them.
+// Need to hide the new avatar until it is able to play.
 // If a user slices off a section of cells so that it is no longer connected to
 // your tree, those cells revert to their original, null color. Use flood fill:
 // https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
+// You move 1.5 times faster when you are on your own color.
+// When you are killed, you are respawned away from other players, but NOT on your
+// seasonal color. You must move to one of your own claimed cells to continue to extend them.
+// You must move to one of the corners to claim your season.
+// Missiles should be color coded by the player's season color.
 // Sometimes, a delay will cause you to jump through a wall - including outside of
 // the maze. This is very bad.
-// need to pre-render textures on dynamic objects like missiles
 // scoring, leaderboard - steal from Multiblaster
 // display your captured cells
 // add mobile controls
@@ -112,7 +118,7 @@ import enterSound from "./assets/sounds/avatarEnter.wav";
 import exitSound from "./assets/sounds/avatarLeave.wav";
 import missileSound from "./assets/sounds/Warning.mp3";
 import implosionSound from "./assets/sounds/Implosion.mp3";
-import cellSound from "./assets/sounds/plinktone.wav";
+import cellSound from "./assets/sounds/Ping.wav";
 
 // Global Variables
 //------------------------------------------------------------------------------------------
@@ -128,6 +134,13 @@ const MAZE_COLUMNS = 20;
 const MISSILE_SPEED = 0.50;
 
 let csm; // CSM is Cascaded Shadow Maps
+// Minimap canvas
+const minimapCanvas = document.createElement('canvas');
+const minimapCtx = minimapCanvas.getContext('2d');
+minimapCtx.globalAlpha = 0.1;
+// Set canvas size
+minimapCanvas.width = 200;
+minimapCanvas.height = 200;
 let readyToLoad3D = false;
 let readyToLoadTextures = false;
 let readyToLoadSounds = false;
@@ -235,6 +248,7 @@ async function modelConstruct() {
 const instances = {};
 const materials = {};
 const geometries = {};
+// Floor cell instance geometry
 geometries.floor = new THREE.PlaneGeometry(20,20,2,2);
 geometries.floor.rotateX(toRad(-90));
 
@@ -314,7 +328,7 @@ let sky_t, missile_color_t, missile_normal_t, missile_roughness_t, missile_displ
     corinthian_color_t, corinthian_normal_t, corinthian_roughness_t, corinthian_displacement_t;
 
 async function textureConstruct() {
-    ["hexasphere","power","wall","floor"].forEach( name => {
+    ["hexasphere", "wall", "floor"].forEach( name => {
         const material = new THREE.MeshStandardMaterial();
         materials[name] = material;
     });
@@ -614,10 +628,10 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
 
     setCornerSeason(x,y, season) {
         // set the corners of the cell to the season
-        console.log("setColor", season, this.seasons[season]);
+        // console.log("setColor", season, this.seasons[season]);
         const cell = this.map[x][y];
         if (cell.floor) { // only do this if the floor exists
-            console.log("setColor", cell, x,y, season);
+            // console.log("setColor", cell, x,y, season);
             this.map[x][y].season = season;
             this.map[x][y].floor.setColor(this.seasons[season].color);
             this.map[x+1][y].season = season;
@@ -661,6 +675,11 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
             return true;
         }
         return false;
+    }
+
+    getCellColor(x,y) {
+        const cell = this.map[x-1][y-1];
+        return cell.season ? this.seasons[cell.season].color : 0xFFFFFF;
     }
 
     constructMaze() {
@@ -754,8 +773,6 @@ class MyModelRoot extends ModelRoot {
             for (let x = 0; x < MAZE_COLUMNS; x++) {
                 const t = [x*CELL_SIZE, 0, y*CELL_SIZE];
                 InstanceActor.create({name:"column", color:0xFFA07A,translation: t});
-                //const t2 = [t[0]+10, 3.5, t[2]+10];
-                //SphereActor.create({translation: t2});
             }
         }
         this.horse = HorseActor.create({translation:[210.9,10,209.70], scale:[8.75,8.75,8.75]});
@@ -874,7 +891,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
     get season() {return this._season || "spring"}
 
     claimCell(data) {
-        // console.log("AvatarActor claimCell", data);
+        console.log("AvatarActor claimCell", data);
         const mazeActor = this.wellKnownModel("ModelRoot").maze;
         // only claim the cell if it is not already yours
         if (mazeActor.map[data.x-1][data.y-1].season !== this.season) {
@@ -882,7 +899,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
             if (data.lastX && mazeActor.map[data.lastX-1][data.lastY-1].season === this.season) {
                 // set the season of the cell you are moving to
                 if (mazeActor.setSeason(data.x, data.y, this.season)) {
-                    this.say("claimCellSound");
+                    this.say("claimCellUpdate", {x:data.x, y:data.y, color:mazeActor.seasons[this.season].color});
                 }
             }
         }
@@ -986,10 +1003,11 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.radius = actor.radius;
         this.yaw = q_yaw(this.rotation);
         this.yawQ = q_axisAngle([0,1,0], this.yaw);
+        this.createMinimap();
         this.service("AvatarManager").avatars.add(this);
         this.listen("shootMissileSound", this.didShootSound);
         this.listen("recharged", this.rechargedSound);
-        this.listen("claimCellSound", this.claimCellSound);
+        this.listen("claimCellUpdate", this.claimCellUpdate);
         this.subscribe(this.viewId, "synced", this.handleSynced);
     }
 
@@ -1050,11 +1068,6 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     rechargedSound() {
         console.log("recharged");
         playSound(rechargedSound, this.renderObject, false);
-    }
-
-    claimCellSound() {
-        console.log("claimCellSound");
-        playSound(cellSound, this.renderObject, false);
     }
 
     keyDown(e) {
@@ -1257,15 +1270,59 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
                 }
             }
         } // else {}// if we find ourselves off the map, then jump back
-        this.claimCell(xCell, yCell);
+        this.tryClaimCell(xCell, yCell);
         return [x, y, z];
     }
 
-    claimCell(x, y) {
-        console.log("AvatarPawn claimCell", x, y);
+    tryClaimCell(x, y) {
+        console.log("AvatarPawn tryClaimCell", x, y);
         if (x!==this.lastX || y!==this.lastY) this.say("claimCell", {x, y, lastX:this.lastX, lastY:this.lastY});
         this.lastX = x;
         this.lastY = y;
+    }
+
+    claimCellUpdate(data) {
+        console.log("AvatarPawn claimCellUpdate", data);
+        this.drawMinimapCell(data.x,data.y, data.color);
+        playSound(cellSound, this.renderObject, false);
+    }
+
+    createMinimap() {
+        console.log("createMinimap");
+
+    // Add the canvas to the minimap div
+        const minimapDiv = document.getElementById('minimap');
+        minimapDiv.appendChild(minimapCanvas);
+        this.redrawMinimap();
+    }
+
+    redrawMinimap() {
+        console.log("redrawMinimap");
+        const mazeActor = this.wellKnownModel("ModelRoot").maze;
+        //this.ctx = this.minimapCanvas.getContext('2d');
+        minimapCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+
+        for (let y = 1; y < mazeActor.rows; y++) {
+            for (let x = 1; x < mazeActor.columns; x++) {
+                this.drawMinimapCell(x,y,  mazeActor.getCellColor(x,y));
+            }
+        }
+    }
+
+    drawMinimapCell(x,y, color) {
+        function hexNumberToColorString(hexNumber) {
+            let hexString = hexNumber.toString(16);
+            while (hexString.length < 6) {
+                hexString = '0' + hexString;
+            }
+            return '#' + hexString.toUpperCase();
+        }
+        if (color !== 0xFFFFFF) {
+            minimapCtx.clearRect(x*10-5, y*10-5, 9, 9);
+            minimapCtx.globalAlpha = 0.6;
+            minimapCtx.fillStyle = hexNumberToColorString(color);
+            minimapCtx.fillRect(x*10-5, y*10-5, 9, 9);
+        }
     }
 }
 
