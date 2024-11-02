@@ -21,6 +21,21 @@
                 pointer-events: none;
                 z-index: 1000;
             }
+            .countdown {
+                position: fixed;
+                top: 20px;          /* Position at top */
+                left: 40px;         /* Position on left side */
+                font-family: 'Arial', sans-serif;
+                font-size: 36px;    /* Larger font size */
+                font-weight: bold;
+                color: rgba(255, 255, 255, 0.9);
+                background-color: rgba(0, 0, 0, 0.3);
+                padding: 10px 20px;
+                border-radius: 8px;
+                z-index: 1000;
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+                letter-spacing: 2px;
+            }
             #codelink {
                 position: fixed; bottom: 10px; right: 10px; padding: .5em; border-radius: 30px;
                 opacity: 50%; background: lightgray; box-shadow: 1px 1px 5px black;
@@ -34,6 +49,7 @@
     </head>
     <body>
         <div id="minimap" class="minimap"></div>
+        <div id="countdown" class="countdown">60:00</div>
         <a id="codelink" href="https://github.com/multisynq/physics-fountain/blob/main/index.html"
         title="View source code on GitHub" target="_blank">{...}</a>
     </body>

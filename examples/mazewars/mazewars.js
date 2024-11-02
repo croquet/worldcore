@@ -9,12 +9,31 @@
 // avatars and the maze walls.
 //------------------------------------------------------------------------------------------
 // The Rules:
-// - You can only claim cells from one of your own cells.
-// - You must move to one of the corners to claim your season at the start of the game.
+// - There are four seasons within the Labyrinth.
+// - There is no exit from the Labyrinth.
+//You start in your seasons corner.
+// - You can only claim a cell from one of your own cells.
+// - If you are hit by a missile, you respawn in your corner.
+// - You cannot be harmed while on those four tiles, but you can shoot back.
+// - You can only shoot from your own cells.
 // - You move 1.5 times faster when you are on your own color.
 // - Your cells must be contiguous and connected to the corner of your season.
 // - If you slice off a section of an opponent's cells, those cells revert to their original, null color.
 // - The first player to reach 100 cells wins. (Maybe fewer?)
+// - The player with the most cells after 5 minutes also wins.
+// - The clock is the FU clock, because of the classic sniping elements.
+// - The winning map is used to generate an NFT which is then presented to
+//   the winning player. That NFT also includes the full labyrinth map.
+//   It is automatically minted and presented to the player if they have a
+//   wallet connected to the browser.
+//   This is a game where no one can work together.
+//   It is impossible to help anyone without hurting yourself.
+//   There are four of you in the room. One of you literally wins the game room itself.
+//   The NFT.
+//   We can rank players within each region of capability, but within that region,
+//   players are ranked by the number of wins that they have accumulated.
+// We can also rank the four teams based on the total wins.
+//
 //------------------------------------------------------------------------------------------
 // Changes:
 // Minimal world - showing we exist. We get an alert when a new user joins.
@@ -54,6 +73,14 @@
 // Rotated the minimap so that my season color is at the bottom.
 //------------------------------------------------------------------------------------------
 // To do:
+// The players spawn and respin their own corners!
+// They cannot be harmed while on those four tiles, but they can shoot back.
+// Everyone has a standing in the game.
+// Your standing is determined by the standings of who you have beaten in the past.
+// You are then paired against players within a range of yours. In this way, you literally
+// play yourself into higher categories.
+// As the user population grows, the ranges decrease, but time within them decreases as well.
+// The iris of the eyes must match the season color.
 // If a user slices off a section of cells so that it is no longer connected to
 // your tree, those cells revert to their original, null color. Use flood fill:
 // https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
@@ -65,11 +92,15 @@
 // You must move to one of the corners to claim your season.
 // Sometimes, a delay will cause you to jump through a wall - including outside of
 // the maze. This is very bad.
+// When you lose territory, players can actually see and hear it go away. Each cell
+// would make a loss sound. But it would be quite fast - as each cell is lost - which
+// alerts everyone to pay attention to the minimap.
 // Need a simple rules screen.
 // Scoring, leaderboard - steal from Multiblaster
 // Display your captured cells
 // Add mobile controls
 // Missile/missile collision test * I think this is working
+// Chat -broadcast messages to all players, colors are their team color.
 //------------------------------------------------------------------------------------------
 
 import { App, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
@@ -163,7 +194,73 @@ let horse;
 let trees;
 let plants;
 let ivy;
-// Audio Manager
+
+class CountdownTimer {
+    constructor(durationMinutes = 8) {
+        this.element = document.getElementById('countdown');
+        this.timeRemaining = durationMinutes * 60; // Convert to seconds
+        this.isRunning = false;
+    }
+
+    start() {
+        if (!this.isRunning) {
+            this.isRunning = true;
+            this.tick();
+        }
+    }
+
+    pause() {
+        this.isRunning = false;
+    }
+
+    reset(minutes = 9) {
+        this.timeRemaining = minutes * 60;
+        this.updateDisplay();
+        this.element.style.color = 'rgba(255, 255, 255, 0.9)'; // Reset color
+    }
+
+    tick() {
+        if (!this.isRunning) return;
+
+        if (this.timeRemaining > 0) {
+            this.timeRemaining--;
+            this.updateDisplay();
+            setTimeout(() => this.tick(), 1000);
+        } else {
+            this.onComplete();
+        }
+    }
+
+    updateDisplay() {
+        const minutes = Math.floor(this.timeRemaining / 60);
+        const seconds = this.timeRemaining % 60;
+
+        // Remove padStart for minutes, keep it for seconds
+        this.element.textContent = 
+            `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        // Color changes based on time remaining
+        if (this.timeRemaining <= 30) {
+            this.element.style.color = 'rgba(255, 50, 50, 0.9)';
+        } else if (this.timeRemaining <= 60) {
+            this.element.style.color = 'rgba(255, 255, 0, 0.9)';
+        }
+    }
+
+    onComplete() {
+        this.isRunning = false;
+        this.element.style.color = 'rgba(255, 0, 0, 0.9)';
+        // Add any completion logic here
+    }
+}
+
+// Usage
+const timer = new CountdownTimer(2);
+
+// Start the countdown
+timer.start();
+
+// Sound Manager
 //------------------------------------------------------------------------------------------
 let soundSwitch = false; // turn sound on and off
 let volume = 1;
