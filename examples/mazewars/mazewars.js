@@ -8,33 +8,6 @@
 // the missile which when fired must execute on all clients. It computes collisions with user
 // avatars and the maze walls.
 //------------------------------------------------------------------------------------------
-// The Rules:
-// - There are four seasons within the Labyrinth.
-// - There is no exit from the Labyrinth.
-//You start in your seasons corner.
-// - You can only claim a cell from one of your own cells.
-// - If you are hit by a missile, you respawn in your corner.
-// - You cannot be harmed while on those four tiles, but you can shoot back.
-// - You can only shoot from your own cells.
-// - You move 1.5 times faster when you are on your own color.
-// - Your cells must be contiguous and connected to the corner of your season.
-// - If you slice off a section of an opponent's cells, those cells revert to their original, null color.
-// - The first player to reach 100 cells wins. (Maybe fewer?)
-// - The player with the most cells after 5 minutes also wins.
-// - The clock is the FU clock, because of the classic sniping elements.
-// - The winning map is used to generate an NFT which is then presented to
-//   the winning player. That NFT also includes the full labyrinth map.
-//   It is automatically minted and presented to the player if they have a
-//   wallet connected to the browser.
-//   This is a game where no one can work together.
-//   It is impossible to help anyone without hurting yourself.
-//   There are four of you in the room. One of you literally wins the game room itself.
-//   The NFT.
-//   We can rank players within each region of capability, but within that region,
-//   players are ranked by the number of wins that they have accumulated.
-// We can also rank the four teams based on the total wins.
-//
-//------------------------------------------------------------------------------------------
 // Changes:
 // Minimal world - showing we exist. We get an alert when a new user joins.
 // Add simple avatars w/ mouselook interface
@@ -71,9 +44,10 @@
 // Track your avatar's location on the minimap.
 // Missiles are color coded by the player's season color.
 // Rotated the minimap so that my season color is at the bottom.
+// Made the corner cells darker to make them more obvious.
+// The players spawn and respawn in their own corners.
 //------------------------------------------------------------------------------------------
 // To do:
-// The players spawn and respin their own corners!
 // They cannot be harmed while on those four tiles, but they can shoot back.
 // Everyone has a standing in the game.
 // Your standing is determined by the standings of who you have beaten in the past.
@@ -87,9 +61,6 @@
 // You move 1.5 times faster when you are on your own color.
 // The avatar is probably visible to other players before you can see them on
 // loading. Need to hide the new avatar until it is able to play.
-// When you are killed, you are respawned away from other players, but NOT on your
-// seasonal color. You must move to one of your own claimed cells to continue to extend them.
-// You must move to one of the corners to claim your season.
 // Sometimes, a delay will cause you to jump through a wall - including outside of
 // the maze. This is very bad.
 // When you lose territory, players can actually see and hear it go away. Each cell
@@ -139,9 +110,12 @@ import corinthian_displacement from "./assets/textures/corinthian/concrete_0014_
 //------------------------------------------------------------------------------------------
 import eyeball_glb from "./assets/eyeball.glb";
 import column_glb from "./assets/column2.glb";
+//https://www.robscanlon.com/hexasphere/
 import hexasphere_glb from "./assets/hexasphere.glb";
 import horse2_glb from "./assets/Horse_Copper2.glb";
+//https://sketchfab.com/tochechka
 import fourSeasonsTree_glb from "./assets/fourSeasonsTree.glb";
+//https://sketchfab.com/dangry
 import ivy_glb from "./assets/ivy2.glb";
 
 // Shaders
@@ -176,7 +150,10 @@ const MAZE_COLUMNS = 20;
 const MISSILE_SPEED = 0.50;
 
 let csm; // CSM is Cascaded Shadow Maps
-const seasons = {spring:{angle:180+45, color:0xFFB6C1, color2:0xCC8A94}, summer: {angle:270+45, color:0x90EE90, color2:0x65AA65}, autumn: {angle:0+45, color:0xFFE5B4, color2:0xCCB38B}, winter: {angle:90+45, color:0xA5F2F3, color2:0x73BFBF}};
+const seasons = {spring:{cell:{x:0,y:0}, angle:180+45, color:0xFFB6C1, color2:0xCC8A94, color3:0xB37780},
+    summer: {cell: {x:0,y:18}, angle:270+45, color:0x90EE90, color2:0x65AA65, color3:0x508850},
+    autumn: {cell:{x:18, y:18}, angle:0+45, color:0xFFE5B4, color2:0xCCB38B, color3:0xB39977},
+    winter: {cell:{x:18, y:0}, angle:90+45, color:0xA5F2F3, color2:0x73BFBF, color3:0x5AA5A5}};
 // Minimap canvas
 const minimapCanvas = document.createElement('canvas');
 const minimapCtx = minimapCanvas.getContext('2d');
@@ -737,13 +714,13 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
         if (cell.floor) { // only do this if the floor exists
             // console.log("setColor", cell, x,y, season);
             this.map[x][y].season = season;
-            this.map[x][y].floor.setColor(seasons[season].color);
+            this.map[x][y].floor.setColor(seasons[season].color3);
             this.map[x+1][y].season = season;
-            this.map[x+1][y].floor.setColor(seasons[season].color);
+            this.map[x+1][y].floor.setColor(seasons[season].color3);
             this.map[x][y+1].season = season;
-            this.map[x][y+1].floor.setColor(seasons[season].color);
+            this.map[x][y+1].floor.setColor(seasons[season].color3);
             this.map[x+1][y+1].season = season;
-            this.map[x+1][y+1].floor.setColor(seasons[season].color);
+            this.map[x+1][y+1].floor.setColor(seasons[season].color3);
         }
         else this.future(100).setCornerSeason(x,y,season);
     }
@@ -1031,6 +1008,15 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
     kill() {
         console.log("testCollision", this.id, "KILLED");
         FireballActor.create({parent: this, radius:this.radius});
+        this.future(1000).respawn();
+    }
+
+    respawn() {
+        const t = [CELL_SIZE*seasons[this.season].cell.x+10,6.5,CELL_SIZE*seasons[this.season].cell.y+10];
+        const angle = Math.PI*2*seasons[this.season].angle/360;
+        const r = q_axisAngle([0,1,0],angle);
+        this.set({translation: t, rotation: r});
+        this.say("respawn", {t, r, angle});
     }
 }
 AvatarActor.register('AvatarActor');
@@ -1112,6 +1098,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.listen("shootMissileSound", this.didShootSound);
         this.listen("recharged", this.rechargedSound);
         this.listen("claimCellUpdate", this.claimCellUpdate);
+        this.listen("respawn", this.respawn);
         this.subscribe(this.viewId, "synced", this.handleSynced);
     }
 
@@ -1123,6 +1110,14 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     destroy() {
         super.destroy();
         this.service("AvatarManager").avatars.delete(this);
+    }
+
+    respawn(data) {
+        console.log("AvatarPawn respawn", data);
+        this.positionTo(data.t, data.r);
+        //this.set({translation: data.t, rotation: data.r});
+        this.yaw = data.angle;
+        this.yawQ = data.r;
     }
 
     // If this is YOUR avatar, the AvatarPawn automatically calls this.drive() in the constructor.
@@ -1473,12 +1468,14 @@ class MyUser extends User {
             cellX = 11;
             cellY = 11;
         }
-
-        const t = [CELL_SIZE*cellX+10,6.5,CELL_SIZE*cellY+10];
+        const season = ["spring","summer","autumn","winter"][this.userNumber%4];
+        const t = [CELL_SIZE*seasons[season].cell.x+10,6.5,CELL_SIZE*seasons[season].cell.y+10];
+        const r = q_axisAngle([0,1,0],Math.PI*2*seasons[season].angle/360);
         this.avatar = AvatarActor.create({
             translation: t,
+            rotation: r,
             driver: this.userId,
-            season: ["spring","summer","autumn","winter"][this.userNumber%4]
+            season
         });
     }
 
