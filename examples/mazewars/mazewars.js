@@ -895,18 +895,21 @@ export class MyViewRoot extends ViewRoot {
 
     buildView() {
         const rm = this.service("ThreeRenderManager");
+        rm.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+        THREE.ColorManagement.enabled = true; // or false
+        rm.renderer.useLegacyLights = false; // or true
         rm.doRender = false;
         rm.camera.add( listener );
         rm.listener = listener;
         rm.renderer.shadowMap.enabled = true;
         rm.renderer.shadowMap.type = THREE.PCFShadowMap;
         rm.renderer.toneMapping = THREE.ReinhardToneMapping;
-        const ambientLight = new THREE.AmbientLight( 0xffffff, 0.6 );
+        const ambientLight = new THREE.AmbientLight( 0xffffff, 1.5 );
         rm.scene.add( ambientLight );
-        const blueLight = new THREE.DirectionalLight( 0x446699, 1.5 );
+        const blueLight = new THREE.DirectionalLight( 0x446699, 2.5 );
         blueLight.position.set( -1, -1, 1 ).normalize().multiplyScalar( -200 );
         rm.scene.add( blueLight );
-        const redLight = new THREE.DirectionalLight( 0x995533, 1.5 );
+        const redLight = new THREE.DirectionalLight( 0x995533, 2.5 );
         redLight.position.set( -1, -1, -0.5 ).normalize().multiplyScalar( -200 );
         rm.scene.add( redLight );
         csm = new ADDONS.CSM( {
