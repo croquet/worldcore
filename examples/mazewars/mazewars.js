@@ -51,26 +51,35 @@
 // You can only shoot if you are on your own season color.
 // You move 1.5 times faster when you are on your own color.
 // Added a compass rose to the minimap.
+// Missile/missile collision works.
 //------------------------------------------------------------------------------------------
 // To do:
-// Need a compass rose on the minimap.
-// The iris of the eyes must match the season color.
+// Add effects when you capture a cell.
+// Shaders need to be "warmed-up" before they are used.
 // If a user slices off a section of cells so that it is no longer connected to
 // your tree, those cells revert to their original, null color. Use flood fill:
 // https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
+// When you lose territory, players can actually see and hear it go away. Each cell
+// would make a loss sound. But it would be quite fast - as each cell is lost - which
+// alerts everyone to pay attention to the minimap.
+// The iris of the eyes must match the season color.
+// Hook up the clock - start with 5 minutes.
+// Mobile controls:
+// - Joystick on left side for movement
+// - Joystick on right side for looking around and tap to shoot
+// Add end game and effects.
+// Need a rules screen at the start. See:
+// https://docs.google.com/document/d/1qjPm6pxaejuq5KydRh0C6Honory8DLICO3jfQkpJotc/edit?usp=sharing
+// Scoring, leaderboard - steal from Multiblaster
+// Display your captured cells
+// Add mobile controls
+// Chat -broadcast messages to all players, colors are their team color.
+//------------------------------------------------------------------------------------------
+// Bugs:
 // The avatar is probably visible to other players before you can see them on
 // loading. Need to hide the new avatar until it is able to play.
 // Sometimes, a delay will cause you to jump through a wall - including outside of
 // the maze. This is very bad.
-// When you lose territory, players can actually see and hear it go away. Each cell
-// would make a loss sound. But it would be quite fast - as each cell is lost - which
-// alerts everyone to pay attention to the minimap.
-// Need a simple rules screen.
-// Scoring, leaderboard - steal from Multiblaster
-// Display your captured cells
-// Add mobile controls
-// Missile/missile collision test * I think this is working
-// Chat -broadcast messages to all players, colors are their team color.
 //------------------------------------------------------------------------------------------
 
 import { App, StartWorldcore, ViewService, ModelRoot, ViewRoot,Actor, mix,
@@ -107,14 +116,17 @@ import corinthian_displacement from "./assets/textures/corinthian/concrete_0014_
 
 // 3D Models
 //------------------------------------------------------------------------------------------
+// https://free3d.com/3d-model/eyeball-3d-model-181166.html
 import eyeball_glb from "./assets/eyeball.glb";
+// https://free3d.com/3d-model/-doric-column--353773.html
 import column_glb from "./assets/column2.glb";
-//https://www.robscanlon.com/hexasphere/
+// https://www.robscanlon.com/hexasphere/
 import hexasphere_glb from "./assets/hexasphere.glb";
+// https://optimesh.gumroad.com/l/SJpXC
 import horse2_glb from "./assets/Horse_Copper2.glb";
-//https://sketchfab.com/tochechka
+// https://sketchfab.com/tochechka
 import fourSeasonsTree_glb from "./assets/fourSeasonsTree.glb";
-//https://sketchfab.com/dangry
+// https://sketchfab.com/dangry
 import ivy_glb from "./assets/ivy2.glb";
 
 // Shaders
@@ -335,7 +347,7 @@ class CountdownTimer {
 }
 
 // Usage
-const timer = new CountdownTimer(2);
+const timer = new CountdownTimer(8);
 
 // Start the countdown
 timer.start();
@@ -853,10 +865,12 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
     }
 
     setSeason(x,y, season) {
-        console.log("setSeason", x,y, season);
+        // console.log("setSeason", x,y, season);
         const cell = this.map[x-1][y-1];
         if ( season !== cell.season ) {
             cell.season = season;
+            //const  flicker = PointFlickerActor.create({parent: cell.floor, translation: [0,6.5,0], color: seasons[season].color});
+            //flicker.future(500).destroy();
             cell.floor.setColor(seasons[season].color);
             return true;
         }
@@ -1627,12 +1641,12 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
         this.yaw = q_yaw(this.rotation);
         this.yawQ = q_axisAngle([0,1,0], this.yaw);
         this.direction = v3_scale(v3_rotate(this.forward, this.yawQ), -1);
-        this.velocity = v3_scale(this.direction, MISSILE_SPEED);
+        this.velocity = v3_scale(this.direction, MISSILE_SPEED*2);
         this.timeScale = 0.00025 + Math.random()*0.00002;
         this.hasBounced = false; // I can kill my avatar if I bounce off a wall first
         InstanceActor.create({name: "hexasphere", parent: this});
         GlowActor.create({parent: this, color: options.color||0xff8844, depthTest: true, radius: 1.25, glowRadius: 0.5, falloff: 0.1, opacity: 0.75, sharpness: 0.5});
-        this.flicker = PointFlickerActor.create({parent: this, color: options.color||0xff8844});
+        this.flicker = PointFlickerActor.create({parent: this, playSound: true,color: options.color||0xff8844});
         this.tick(0);
         //console.log("MissileActor init", this);
     }
@@ -1783,7 +1797,7 @@ MissilePawn.register("MissilePawn");
 class PointFlickerActor extends mix(Actor).with(AM_Spatial) {
     get pawn() { return "PointFlickerPawn" }
     get color() { return this._color || 0xff8844 }
-
+    get playSound() { return this._playSound || false }
     init(options) {
         super.init(options);
         // this.future(100).tick();
@@ -1807,10 +1821,12 @@ export class PointFlickerPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisibl
     constructor(actor) {
         super(actor);
         console.log("PointFlickerPawn constructor", this);
-        this.pointLight = new THREE.PointLight(this.actor.color, 20, 10, 2);
+        this.pointLight = new THREE.PointLight(this.actor.color, 20, 20, 2);
         this.setRenderObject(this.pointLight);
-        this.listen("bounce", this.playBounce);
-        playSound( missileSound, this.renderObject, true);
+        if (this.actor.playSound) {
+            this.listen("bounce", this.playBounce);
+            playSound( missileSound, this.renderObject, true);
+        }
     }
 
     playBounce() {
