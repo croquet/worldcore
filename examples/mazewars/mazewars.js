@@ -54,15 +54,20 @@
 // Missile/missile collision works.
 // Added credit info to be added to credits screen.
 // Added effects when you capture a cell.
-//------------------------------------------------------------------------------------------
-// To do:
-// Shaders need to be "warmed-up" before they are used.
+// Reusable fireball - hide it when not in use.
 // If a user slices off a section of cells so that it is no longer connected to
 // your tree, those cells revert to their original, null color. Use flood fill:
 // https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
+//------------------------------------------------------------------------------------------
+// To do:
+// Shaders need to be "warmed-up" before they are used.
+// - Missile shaders
+// - Floor shaders
+// - Fireball shader
 // When you lose territory, players can actually see and hear it go away. Each cell
 // would make a loss sound. But it would be quite fast - as each cell is lost - which
 // alerts everyone to pay attention to the minimap.
+// The ivy needs to be cleaned up.
 // The iris of the eyes must match the season color.
 // Hook up the clock - start with 5 minutes.
 // Mobile controls:
@@ -132,6 +137,7 @@ import ivy_glb from "./assets/ivy2.glb";
 
 // Shaders
 //------------------------------------------------------------------------------------------
+// https://www.clicktorelease.com/code/perlin/explosion.html
 import fireballTexture from "./assets/textures/explosion.png";
 import * as fireballFragmentShader from "./src/shaders/fireball.frag.js";
 import * as fireballVertexShader from "./src/shaders/fireball.vert.js";
@@ -147,6 +153,7 @@ import exitSound from "./assets/sounds/avatarLeave.wav";
 import missileSound from "./assets/sounds/Warning.mp3";
 import implosionSound from "./assets/sounds/Implosion.mp3";
 import cellSound from "./assets/sounds/Ping.wav";
+import { mx_bilerp_0 } from "three/src/nodes/materialx/lib/mx_noise.js";
 
 // Global Variables
 //------------------------------------------------------------------------------------------
@@ -464,7 +471,7 @@ modelConstruct().then( () => {
     instances.ivy1 = ivy.scene.children[1];
     instances.ivy0.geometry.scale(8,5,4);
     instances.ivy1.geometry.scale(8,5,4);
-    instances.ivy0.geometry.translate(0,3.5,0);
+    instances.ivy0.geometry.translate(0,3.5,0.22);
     instances.hexasphere = hexasphere.scene.children[0].children[0];
     instances.hexasphere.geometry.scale(0.05,0.05,0.05);
     fixUV(instances.hexasphere.geometry);
@@ -703,6 +710,7 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
         this.rows = options._rows || 20;
         this.columns = options._columns || 20;
         this.cellSize = options._cellSize || 20;
+        this.seasons = {"spring": 4, "summer": 4, "autumn": 4, "winter": 4};
         this.createMaze(this.rows,this.columns);
         this.constructMaze();
     }
@@ -868,11 +876,12 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
     setSeason(x,y, season) {
         // console.log("setSeason", x,y, season);
         const cell = this.map[x-1][y-1];
-        if ( season !== cell.season ) {
+        const oldSeason = cell.season;
+        if ( season !== oldSeason ) {
+            this.seasons[season]++;
             cell.season = season;
-            //const  flicker = PointFlickerActor.create({parent: cell.floor, translation: [0,6.5,0], color: seasons[season].color});
-            //flicker.future(500).destroy();
             cell.floor.setColor(seasons[season].color);
+            if (oldSeason) this.seasons[oldSeason] = this.checkLife(oldSeason);
             return true;
         }
         return false;
@@ -880,6 +889,41 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
 
     getSeason(x,y) {
         return this.map[x-1][y-1].season;
+    }
+
+    checkLife(season) {
+        //uses a fill algorithm to check if the season tree has been cut.
+        const r = Math.random();
+        const oldCount =this.seasons[season];
+        const count = this.floodTest(season,r, seasons[season].cell.x, seasons[season].cell.y);
+        if (oldCount-1 !== count) {
+            const clearCells = [];
+            for (let y = 0; y < this.HEIGHT; y++) {
+                for (let x = 0; x < this.WIDTH; x++) {
+                    if (this.map[x][y].season === season && this.map[x][y].testValue !== r) {
+                        this.map[x][y].season = null;
+                        this.map[x][y].floor.setColor(0xFFFFFF);
+                        clearCells.push([x,y]);
+                    }
+                }
+            }
+            this.publish("maze", "clearCells", clearCells);
+        }
+        return count;
+    }
+
+    floodTest(season, r, x,y) {
+        // console.log("floodTest", season, r, x,y);
+        if (x<0 || x>=this.WIDTH-1 || y<0 || y>=this.HEIGHT-1) return 0;
+        if (this.map[x][y].season !== season) return 0;
+        if (this.map[x][y].testValue === r) return 0;
+        this.map[x][y].testValue = r;
+        let count = 1;
+        count += this.floodTest(season, r, x+1,y);
+        count += this.floodTest(season, r, x-1,y);
+        count += this.floodTest(season, r, x,y+1);
+        count += this.floodTest(season, r, x,y-1);
+        return count;
     }
 
     getCellColor(x,y) {
@@ -1095,6 +1139,8 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
         this.highGear = 1.0;
         this.listen("shootMissile", this.shootMissile);
         this.listen("claimCell", this.claimCell);
+        this.fireball =  FireballActor.create({parent: this, radius:this.radius});
+        this.fireball.future(1000).hide();
     }
 
     get season() {return this._season || "spring"}
@@ -1137,7 +1183,9 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
 
     kill() {
         console.log("testCollision", this.id, "KILLED");
-        FireballActor.create({parent: this, radius:this.radius});
+        // FireballActor.create({parent: this, radius:this.radius});
+        this.fireball.show();
+        this.fireball.future(3000).hide();
         this.future(1000).respawn();
     }
 
@@ -1146,6 +1194,8 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
         const angle = Math.PI*2*seasons[this.season].angle/360;
         const r = q_axisAngle([0,1,0],angle);
         this.set({translation: t, rotation: r});
+        this.canShoot = true;
+        this.inCorner = true;
         this.say("respawn", {t, r, angle});
     }
 }
@@ -1231,6 +1281,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.listen("claimCellUpdate", this.claimCellUpdate);
         this.listen("respawn", this.respawn);
         this.subscribe(this.viewId, "synced", this.handleSynced);
+        this.subscribe("maze", "clearCells", this.clearCells);
     }
 
     handleSynced() {
@@ -1519,6 +1570,13 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         //console.log("AvatarPawn claimCellUpdate", data);
         this.drawMinimapCell(data.x,data.y, data.color);
         playSound(cellSound, this.renderObject, false);
+    }
+
+    clearCells(data) {
+        console.log("AvatarPawn clearCells", data);
+        for (const cell of data) {
+            this.drawMinimapCell(cell[0]+1,cell[1]+1, 0xFFFFFF);
+        }
     }
 
     createMinimap() {
@@ -1853,10 +1911,15 @@ class FireballActor extends mix(Actor).with(AM_Spatial) {
     init(options) {
         super.init(options);
         this.timeScale = 0.00025 + Math.random()*0.00002;
-        this.future(3000).destroy(); // destroy after some time
+        this.future(1000).hide();
+        // this.future(3000).destroy(); // destroy after some time
         // console.log("FireballActor init", this, this.parent);
     }
 
+    hide() { this.visible = false; }
+    show() { this.visible = true; }
+    set visible(value) { this._visible = value; this.say("visible", value); }
+    get visible() { return this._visible || false }
     get radius() { return this._radius || AVATAR_RADIUS}
 
     resetGame() {
@@ -1880,7 +1943,14 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.pointLight = new THREE.PointLight(0xff8844, 1, 4, 2);
         this.fireball.add(this.pointLight);
         this.setRenderObject(this.fireball);
+        this.doVisible(this.actor.visible); 
+        this.listen("visible", this.doVisible);
         playSound(implosionSound, this.fireball, false);
+    }
+
+    doVisible(value) {
+        this.fireball.visible = value;
+        this.pointLight.visible = value;
     }
 
     update(time, delta) {
@@ -1997,7 +2067,7 @@ export class GlowPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
 // can't use instancing because the FakeGlowMaterial doesn't support it
     constructor(actor) {
         super(actor);
-        console.log("GlowPawn constructor", this);
+        // console.log("GlowPawn constructor", this);
         let geometry;
         if (this.actor.shape === "sphere") geometry = new THREE.SphereGeometry(this.actor.radius, 32, 32);
         else if (this.actor.shape === "cube") geometry = new THREE.BoxGeometry(20, 1, 20, 5,1,5);
