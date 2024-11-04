@@ -36,6 +36,16 @@
                 text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
                 letter-spacing: 2px;
             }
+            .compass {
+                position: fixed;
+                top: 15px;          /* Moved up */
+                right: 15px;        /* Moved right */
+                width: 40px;        /* Default size - will be set by JS */
+                height: 40px;
+                background-color: rgba(0, 0, 0, 0.3);
+                border-radius: 50%;
+                z-index: 1000;
+            }
             #codelink {
                 position: fixed; bottom: 10px; right: 10px; padding: .5em; border-radius: 30px;
                 opacity: 50%; background: lightgray; box-shadow: 1px 1px 5px black;
@@ -50,6 +60,7 @@
     <body>
         <div id="minimap" class="minimap"></div>
         <div id="countdown" class="countdown">60:00</div>
+        <div id="compass" class="compass"></div>
         <a id="codelink" href="https://github.com/multisynq/physics-fountain/blob/main/index.html"
         title="View source code on GitHub" target="_blank">{...}</a>
     </body>

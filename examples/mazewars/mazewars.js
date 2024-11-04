@@ -50,8 +50,10 @@
 // Players cannot be harmed while on those four tiles, but they can shoot back. Projectiles bounce.
 // You can only shoot if you are on your own season color.
 // You move 1.5 times faster when you are on your own color.
+// Added a compass rose to the minimap.
 //------------------------------------------------------------------------------------------
 // To do:
+// Need a compass rose on the minimap.
 // The iris of the eyes must match the season color.
 // If a user slices off a section of cells so that it is no longer connected to
 // your tree, those cells revert to their original, null color. Use flood fill:
@@ -147,16 +149,17 @@ const MAZE_COLUMNS = 20;
 const MISSILE_SPEED = 0.50;
 
 let csm; // CSM is Cascaded Shadow Maps
-const seasons = {spring:{cell:{x:0,y:0}, angle:180+45, color:0xFFB6C1, color2:0xCC8A94, color3:0xB37780},
-    summer: {cell: {x:0,y:18}, angle:270+45, color:0x90EE90, color2:0x65AA65, color3:0x508850},
-    autumn: {cell:{x:18, y:18}, angle:0+45, color:0xFFE5B4, color2:0xCCB38B, color3:0xB39977},
-    winter: {cell:{x:18, y:0}, angle:90+45, color:0xA5F2F3, color2:0x73BFBF, color3:0x5AA5A5}};
+const seasons = {spring:{cell:{x:0,y:0}, angle:180+45, radians:Math.PI-PI_4, color:0xFFB6C1, color2:0xCC8A94, color3:0xB37780},
+    summer: {cell: {x:0,y:18}, angle:270+45, radians:Math.PI+Math.PI*3/2-PI_4, color:0x90EE90, color2:0x65AA65, color3:0x508850},
+    autumn: {cell:{x:18, y:18}, angle:0+45, radians:0-PI_4, color:0xFFE5B4, color2:0xCCB38B, color3:0xB39977},
+    winter: {cell:{x:18, y:0}, angle:90+45, radians:Math.PI+PI_2-PI_4, color:0xA5F2F3, color2:0x73BFBF, color3:0x5AA5A5}};
 // Minimap canvas
 const minimapCanvas = document.createElement('canvas');
 const minimapCtx = minimapCanvas.getContext('2d');
 minimapCtx.globalAlpha = 0.1;
 minimapCanvas.width = 200;
 minimapCanvas.height = 200;
+
 
 function scaleMinimap() {
     const minimapDiv = document.getElementById('minimap');
@@ -173,9 +176,8 @@ function scaleMinimap() {
     minimapDiv.style.height = `${sideLength}px`;
     minimapCanvas.style.width = `${sideLength}px`;
     minimapCanvas.style.height = `${sideLength}px`;
+    compass.resize(sideLength/3);
 }
-scaleMinimap();
-// Set canvas size
 
 let readyToLoad3D = false;
 let readyToLoadTextures = false;
@@ -187,6 +189,91 @@ let horse;
 let trees;
 let plants;
 let ivy;
+
+class Compass {
+    constructor(size = 40) {
+        this.element = document.getElementById('compass');
+        this.canvas = document.createElement('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.setSize(size);
+        this.element.appendChild(this.canvas);
+        this.draw(0);
+    }
+
+    setSize(size) {
+        this.element.style.width = `${size}px`;
+        this.element.style.height = `${size}px`;
+        this.canvas.width = size;
+        this.canvas.height = size;
+        this.centerX = size / 2;
+        this.centerY = size / 2;
+        this.radius = (size / 2) - 2;
+    }
+
+    draw(angle) {
+        const ctx = this.ctx;
+        // Clear canvas
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        // Draw outer circle
+        ctx.beginPath();
+        ctx.arc(this.centerX, this.centerY, this.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        // Save context for rotation
+        ctx.save();
+        ctx.translate(this.centerX, this.centerY);
+        ctx.rotate(-angle);
+        // Draw direction indents
+        const indentSize = this.radius * 0.15;
+        const directions = [0, Math.PI/2, Math.PI, Math.PI*3/2];
+        directions.forEach( dir => {
+            ctx.beginPath();
+            ctx.moveTo(0, -this.radius);
+            ctx.lineTo(0, -this.radius + indentSize);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.rotate(Math.PI/2);
+        });
+
+        // Draw north (red) half of needle
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -this.radius + indentSize);
+        ctx.strokeStyle = 'rgba(255, 50, 50, 0.8)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Draw south (white) half of needle
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, this.radius - indentSize);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Restore context
+        ctx.restore();
+    }
+
+    update(angle) {
+        this.draw(angle);
+    }
+
+    resize(size) {
+        this.setSize(size);
+        this.draw(0);
+    }
+}
+// Usage:
+const compass = new Compass(40);
+scaleMinimap();
+// Update with angle in radians
+// compass.update(Math.PI); // Point south
+// compass.update(avatar.rotation.y); // Use avatar's rotation
+// Resize if needed
+// compass.resize(50); // Make it 50px
 
 class CountdownTimer {
     constructor(durationMinutes = 8) {
@@ -1117,6 +1204,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.isAvatar = true;
         this.radius = actor.radius;
         this.yaw = q_yaw(this.rotation);
+        compass.update(this.yaw + seasons[this.actor.season].radians);
         this.yawQ = q_axisAngle([0,1,0], this.yaw);
         this.service("AvatarManager").avatars.add(this);
         this.listen("shootMissileSound", this.didShootSound);
@@ -1141,6 +1229,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.positionTo(data.t, data.r);
         //this.set({translation: data.t, rotation: data.r});
         this.yaw = data.angle;
+        compass.update(this.yaw + seasons[this.actor.season].radians);
         this.yawQ = data.r;
     }
 
@@ -1287,6 +1376,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         if ( im.inPointerLock ) {
             this.yaw -= e.xy[0] * 0.002;
             this.yaw = this.normalizeRotation(this.yaw);
+            compass.update(this.yaw + seasons[this.actor.season].radians);
             this.yawQ = q_axisAngle([0,1,0], this.yaw);
             this.positionTo(this.translation, this.yawQ);
 
