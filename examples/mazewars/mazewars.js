@@ -52,9 +52,10 @@
 // You move 1.5 times faster when you are on your own color.
 // Added a compass rose to the minimap.
 // Missile/missile collision works.
+// Added credit info to be added to credits screen.
+// Added effects when you capture a cell.
 //------------------------------------------------------------------------------------------
 // To do:
-// Add effects when you capture a cell.
 // Shaders need to be "warmed-up" before they are used.
 // If a user slices off a section of cells so that it is no longer connected to
 // your tree, those cells revert to their original, null color. Use flood fill:
@@ -1105,12 +1106,16 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
         // only claim the cell if it is not already yours
         const seasonCorner = mazeActor.checkCornersSeason(data.x-1, data.y-1);
         this.inCorner = seasonCorner === this.season;
-        if (mazeActor.map[data.x-1][data.y-1].season !== this.season) {
+        const cell = mazeActor.map[data.x-1][data.y-1];
+        if (cell.season !== this.season) {
             this.highGear = 1.0;
             // if the cell you are moving from is yours, then you can claim it
             if (data.lastX && mazeActor.map[data.lastX-1][data.lastY-1].season === this.season) {
                 // set the season of the cell you are moving to
                 if (!seasonCorner && mazeActor.setSeason(data.x, data.y, this.season)) {
+                    const glow = GlowActor.create({parent: cell.floor, shape:"cube", translation:[0,1,0], color: seasons[this.season].color, depthTest: true, radius: 1.25, glowRadius: 0.5, falloff: 0.1, opacity: 0.75, sharpness: 0.5});
+                    glow.sink(1000, 1);
+                    glow.future(1000).destroy();
                     this.say("claimCellUpdate", {x:data.x, y:data.y, color:seasons[this.season].color});
                 }
             }
@@ -1979,6 +1984,12 @@ class GlowActor extends mix(Actor).with(AM_Spatial) {
     get side() { return this._side || THREE.FrontSide }
     get sharpness() { return this._sharpness || 0.5 }
     get opacity() { return this._opacity || 1 }
+    get shape() { return this._shape || "sphere" }
+
+    sink(time, distance) {
+        this.set({translation: [0, distance*time/1000, 0]});
+        this.future(100).sink(time-100, distance);
+    }
 }
 GlowActor.register('GlowActor');
 
@@ -1987,7 +1998,9 @@ export class GlowPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
     constructor(actor) {
         super(actor);
         console.log("GlowPawn constructor", this);
-        const sphere = new THREE.SphereGeometry(this.actor.radius, 32, 32);
+        let geometry;
+        if (this.actor.shape === "sphere") geometry = new THREE.SphereGeometry(this.actor.radius, 32, 32);
+        else if (this.actor.shape === "cube") geometry = new THREE.BoxGeometry(20, 1, 20, 5,1,5);
         //console.log(this.color, this.radius);
         const material = new FakeGlowMaterial({
             glowColor: this.actor.color,
@@ -1999,7 +2012,7 @@ export class GlowPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
             opacity: this.actor.opacity,
             side: this.actor.side
         });
-        this.glow = new THREE.Mesh(sphere, material);
+        this.glow = new THREE.Mesh(geometry, material);
         this.glow.renderOrder = 5000; // this must be set to a large number to keep the associated pawn visible
         this.setRenderObject(this.glow);
     }
