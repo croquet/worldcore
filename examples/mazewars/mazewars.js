@@ -46,19 +46,16 @@
 // Rotated the minimap so that my season color is at the bottom.
 // Made the corner cells darker to make them more obvious.
 // The players spawn and respawn in their own corners.
+// Resize the minimap when the window is resized.
+// Players cannot be harmed while on those four tiles, but they can shoot back. Projectiles bounce.
+// You can only shoot if you are on your own season color.
+// You move 1.5 times faster when you are on your own color.
 //------------------------------------------------------------------------------------------
 // To do:
-// They cannot be harmed while on those four tiles, but they can shoot back.
-// Everyone has a standing in the game.
-// Your standing is determined by the standings of who you have beaten in the past.
-// You are then paired against players within a range of yours. In this way, you literally
-// play yourself into higher categories.
-// As the user population grows, the ranges decrease, but time within them decreases as well.
 // The iris of the eyes must match the season color.
 // If a user slices off a section of cells so that it is no longer connected to
 // your tree, those cells revert to their original, null color. Use flood fill:
 // https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
-// You move 1.5 times faster when you are on your own color.
 // The avatar is probably visible to other players before you can see them on
 // loading. Need to hide the new avatar until it is able to play.
 // Sometimes, a delay will cause you to jump through a wall - including outside of
@@ -158,9 +155,28 @@ const seasons = {spring:{cell:{x:0,y:0}, angle:180+45, color:0xFFB6C1, color2:0x
 const minimapCanvas = document.createElement('canvas');
 const minimapCtx = minimapCanvas.getContext('2d');
 minimapCtx.globalAlpha = 0.1;
-// Set canvas size
 minimapCanvas.width = 200;
 minimapCanvas.height = 200;
+
+function scaleMinimap() {
+    const minimapDiv = document.getElementById('minimap');
+    const height = Math.min(window.innerHeight, window.innerWidth);
+
+    // Calculate size where diagonal is 1/3 of page height
+    // For a square, diagonal = side * √2
+    // So, side = diagonal / √2
+    const diagonal = height / 2;
+    const sideLength = diagonal / Math.sqrt(2);
+
+    // Set the size
+    minimapDiv.style.width = `${sideLength}px`;
+    minimapDiv.style.height = `${sideLength}px`;
+    minimapCanvas.style.width = `${sideLength}px`;
+    minimapCanvas.style.height = `${sideLength}px`;
+}
+scaleMinimap();
+// Set canvas size
+
 let readyToLoad3D = false;
 let readyToLoadTextures = false;
 let readyToLoadSounds = false;
@@ -727,11 +743,12 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
 
     // you can't claim a corner
     checkCornersSeason(x, y) {
-        if ( x < 3 && y < 3 ) return false;
-        if ( x < 3 && y >= this.HEIGHT-2 ) return false;
-        if ( x >= this.WIDTH-2 && y < 3 ) return false;
-        if ( x >= this.WIDTH-2 && y >= this.HEIGHT-2 ) return false;
-        return true;
+        //console.log("checkCornersSeason", x, y, this.map[x][y].season, x<2 && y<2);
+        if ( x < 2 && y < 2 ) return this.map[x][y].season;
+        if ( x < 2 && y >= this.HEIGHT-3 ) return this.map[x][y].season;
+        if ( x >= this.WIDTH-3 && y < 2 ) return this.map[x][y].season;
+        if ( x >= this.WIDTH-3 && y >= this.HEIGHT-3 ) return this.map[x][y].season;
+        return false;
     }
 
     // this lets me see the maze in the console
@@ -749,13 +766,18 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
     }
 
     setSeason(x,y, season) {
+        console.log("setSeason", x,y, season);
         const cell = this.map[x-1][y-1];
-        if ( season !== cell.season && this.checkCornersSeason(x,y)) {
+        if ( season !== cell.season ) {
             cell.season = season;
             cell.floor.setColor(seasons[season].color);
             return true;
         }
         return false;
+    }
+
+    getSeason(x,y) {
+        return this.map[x-1][y-1].season;
     }
 
     getCellColor(x,y) {
@@ -891,6 +913,7 @@ export class MyViewRoot extends ViewRoot {
         console.log("MyViewRoot onStart", this);
         this.skyRotation = new THREE.Euler(0, 0, 0);
         this.subscribe("root", "rotateSky", this.rotateSky);
+        this.subscribe("input", "resize", scaleMinimap);
     }
 
     buildView() {
@@ -965,9 +988,10 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
         this.isAvatar = true;
         this.canShoot = true;
         this.radius = AVATAR_RADIUS;
+        this.inCorner = true;
         this.eyeball = EyeballActor.create({parent: this});
+        this.highGear = 1.0;
         this.listen("shootMissile", this.shootMissile);
-        this.listen("origin", this.origin);
         this.listen("claimCell", this.claimCell);
     }
 
@@ -976,23 +1000,20 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
     get color() {return seasons[this.season].color}
 
     claimCell(data) {
-        console.log("AvatarActor claimCell", data);
         const mazeActor = this.wellKnownModel("ModelRoot").maze;
         // only claim the cell if it is not already yours
+        const seasonCorner = mazeActor.checkCornersSeason(data.x-1, data.y-1);
+        this.inCorner = seasonCorner === this.season;
         if (mazeActor.map[data.x-1][data.y-1].season !== this.season) {
+            this.highGear = 1.0;
             // if the cell you are moving from is yours, then you can claim it
             if (data.lastX && mazeActor.map[data.lastX-1][data.lastY-1].season === this.season) {
                 // set the season of the cell you are moving to
-                if (mazeActor.setSeason(data.x, data.y, this.season)) {
+                if (!seasonCorner && mazeActor.setSeason(data.x, data.y, this.season)) {
                     this.say("claimCellUpdate", {x:data.x, y:data.y, color:seasons[this.season].color});
                 }
             }
-        }
-    }
-
-    origin() {
-        console.log("AvatarActor origin");
-        this.translation = [10,6.5,10];
+        } else this.highGear = 1.5;
     }
 
     shootMissile() {
@@ -1131,7 +1152,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.gas = 0;
         this.turn = 0;
         this.strafe = 0;
-        this.highGear = 1;
+        //this.highGear = 1;
         this.pointerId = 0;
 
         this.subscribe("input", "keyDown", this.keyDown);
@@ -1159,13 +1180,15 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
 
     shootMissile() {
         if (this.actor.canShoot) {
-            console.log("shootMissile");
-            this.say("shootMissile");
-            playSound(shootSound, null, false);
-        } else {
-            playSound(shootFailSound, null, false);
-            console.log("can't shoot");
+            const mazeActor = this.wellKnownModel("ModelRoot").maze;
+            if (this.actor.season === mazeActor.getSeason(this.lastX, this.lastY)) {
+                this.say("shootMissile");
+                playSound(shootSound, null, false);
+                return;
+            }
         }
+        playSound(shootFailSound, null, false);
+        console.log("can't shoot");
     }
 
     rechargedSound() {
@@ -1287,8 +1310,8 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         if (this.driving) {
             if (this.gas || this.strafe) {
                 const factor = delta/1000;
-                const speed = this.gas * 20 * factor * this.highGear;
-                const strafeSpeed = this.strafe * 20 * factor * this.highGear;
+                const speed = this.gas * 20 * factor * this.actor.highGear;
+                const strafeSpeed = this.strafe * 20 * factor * this.actor.highGear;
                 const forward = v3_rotate([0,0,-1], this.yawQ);
                 let velocity = v3_scale(forward, speed);
                 if (strafeSpeed !== 0) {
@@ -1306,8 +1329,6 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         // set translation to limit after any collision
         let translation = v3_add(this.translation, velocity);
         const avatars = this.service("AvatarManager").avatars;
-
-
         for (const avatar of avatars) {
             if (avatar === this) continue; // don't collide with yourself
             const collideDist = this.radius+avatar.radius;
@@ -1378,7 +1399,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     }
 
     tryClaimCell(x, y) {
-        console.log("AvatarPawn tryClaimCell", x, y);
+        //console.log("AvatarPawn tryClaimCell", x, y, this.lastX, this.lastY, this.actor.inCorner);
         if (x!==this.lastX || y!==this.lastY) this.say("claimCell", {x, y, lastX:this.lastX, lastY:this.lastY});
         this.avatarMinimap(this.lastX, this.lastY, x, y);
         this.lastX = x;
@@ -1386,13 +1407,13 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     }
 
     claimCellUpdate(data) {
-        console.log("AvatarPawn claimCellUpdate", data);
+        //console.log("AvatarPawn claimCellUpdate", data);
         this.drawMinimapCell(data.x,data.y, data.color);
         playSound(cellSound, this.renderObject, false);
     }
 
     createMinimap() {
-        console.log("createMinimap");
+        //console.log("createMinimap");
         // Add the canvas to the minimap div
         const minimapDiv = document.getElementById('minimap');
         minimapDiv.appendChild(minimapCanvas);
@@ -1400,9 +1421,8 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
     }
 
     redrawMinimap() {
-        console.log("redrawMinimap");
+        //console.log("redrawMinimap");
         const mazeActor = this.wellKnownModel("ModelRoot").maze;
-        //this.ctx = this.minimapCanvas.getContext('2d');
         minimapCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
 
         for (let y = 1; y < mazeActor.rows; y++) {
@@ -1539,21 +1559,33 @@ class MissileActor extends mix(Actor).with(AM_Spatial) {
 
         if (!this.doomed) {
             this.verifyMaze();
-            this.future(10).tick(count+1);
+            this.future(20).tick(count+1);
         }
     }
 
     testCollision( actor ) {
-        //console.log("testCollision", actor.translation);
+        // console.log("testCollision", actor.translation);
         if (actor.id === this.id) return false; // don't kill yourself
         if (actor.id === this._avatar.id && !this.hasBounced) return false; // don't kill yourself
         const distanceSqr = v3_distanceSqr(this.translation, actor.translation);
         const collide = actor.radius + this.radius;
         const collideSqr = collide*collide;
         if (distanceSqr < collideSqr) {
-            actor.kill();
-            this.destroy();
-            return true;
+            if (actor.inCorner && distanceSqr > 0) {
+                // the missile bounces off the avatar when they are in their own corner
+                this.hasBounced = true;
+                const d = 1/Math.sqrt(distanceSqr);
+                const dd = v3_sub(this.translation, actor.translation);
+                dd[1] = 0;
+                const norm = v3_scale(dd, d);
+                const dot = this.velocity[0]*norm[0] + this.velocity[2]*norm[2];
+                const projection = v3_scale(norm, dot);
+                this.velocity = v3_sub(this.velocity, v3_scale(projection, 2));
+            } else {
+                actor.kill();
+                this.destroy();
+                return true;
+            }
         }
         return false;
     }
