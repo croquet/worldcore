@@ -58,15 +58,13 @@
 // If a user slices off a section of cells so that it is no longer connected to
 // your tree, those cells revert to their original, null color. Use flood fill:
 // https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
+// When you lose territory, players can actually see and hear it go away.
 //------------------------------------------------------------------------------------------
 // To do:
 // Shaders need to be "warmed-up" before they are used.
 // - Missile shaders
 // - Floor shaders
-// - Fireball shader
-// When you lose territory, players can actually see and hear it go away. Each cell
-// would make a loss sound. But it would be quite fast - as each cell is lost - which
-// alerts everyone to pay attention to the minimap.
+// - Fireball shader - I think this is done.
 // The ivy needs to be cleaned up.
 // The iris of the eyes must match the season color.
 // Hook up the clock - start with 5 minutes.
@@ -152,8 +150,8 @@ import enterSound from "./assets/sounds/avatarEnter.wav";
 import exitSound from "./assets/sounds/avatarLeave.wav";
 import missileSound from "./assets/sounds/Warning.mp3";
 import implosionSound from "./assets/sounds/Implosion.mp3";
-import cellSound from "./assets/sounds/Ping.wav";
-import { mx_bilerp_0 } from "three/src/nodes/materialx/lib/mx_noise.js";
+import cellSound from "./assets/sounds/Granted.wav";
+import shockSound from "./assets/sounds/Shock.wav";
 
 // Global Variables
 //------------------------------------------------------------------------------------------
@@ -179,7 +177,6 @@ const minimapCtx = minimapCanvas.getContext('2d');
 minimapCtx.globalAlpha = 0.1;
 minimapCanvas.width = 200;
 minimapCanvas.height = 200;
-
 
 function scaleMinimap() {
     const minimapDiv = document.getElementById('minimap');
@@ -421,6 +418,7 @@ async function loadSounds() {
         audioLoader.loadAsync(missileSound),
         audioLoader.loadAsync(implosionSound),
         audioLoader.loadAsync(cellSound),
+        audioLoader.loadAsync(shockSound),
     ]);
 }
 loadSounds().then( sounds => {
@@ -435,6 +433,7 @@ loadSounds().then( sounds => {
     soundList[missileSound] = {buffer:sounds[6], count:0};
     soundList[implosionSound] = {buffer:sounds[7], count:0};
     soundList[cellSound] = {buffer:sounds[8], count:0};
+    soundList[shockSound] = {buffer:sounds[9], count:0};
 });
 
 // Load 3D Models
@@ -1577,6 +1576,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         for (const cell of data) {
             this.drawMinimapCell(cell[0]+1,cell[1]+1, 0xFFFFFF);
         }
+        playSound(shockSound, null, false);
     }
 
     createMinimap() {
@@ -1945,10 +1945,11 @@ export class FireballPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible) {
         this.setRenderObject(this.fireball);
         this.doVisible(this.actor.visible); 
         this.listen("visible", this.doVisible);
-        playSound(implosionSound, this.fireball, false);
+        //playSound(implosionSound, this.fireball, false);
     }
 
     doVisible(value) {
+        if (value) playSound(implosionSound, this.fireball, false);
         this.fireball.visible = value;
         this.pointLight.visible = value;
     }
