@@ -59,15 +59,15 @@
 // your tree, those cells revert to their original, null color. Use flood fill:
 // https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
 // When you lose territory, players can actually see and hear it go away.
+// Hook up the clock - start with 15 minutes.
 //------------------------------------------------------------------------------------------
 // To do:
 // Shaders need to be "warmed-up" before they are used.
 // - Missile shaders
 // - Floor shaders
 // - Fireball shader - I think this is done.
-// The ivy needs to be cleaned up.
+// The ivy needs to be cleaned up at the top.
 // The iris of the eyes must match the season color.
-// Hook up the clock - start with 5 minutes.
 // Mobile controls:
 // - Joystick on left side for movement
 // - Joystick on right side for looking around and tap to shoot
@@ -75,8 +75,6 @@
 // Need a rules screen at the start. See:
 // https://docs.google.com/document/d/1qjPm6pxaejuq5KydRh0C6Honory8DLICO3jfQkpJotc/edit?usp=sharing
 // Scoring, leaderboard - steal from Multiblaster
-// Display your captured cells
-// Add mobile controls
 // Chat -broadcast messages to all players, colors are their team color.
 //------------------------------------------------------------------------------------------
 // Bugs:
@@ -293,39 +291,15 @@ scaleMinimap();
 // compass.resize(50); // Make it 50px
 
 class CountdownTimer {
-    constructor(durationMinutes = 8) {
+    constructor(time) {
         this.element = document.getElementById('countdown');
-        this.timeRemaining = durationMinutes * 60; // Convert to seconds
-        this.isRunning = false;
+        this.timeRemaining = Math.floor(time/1000); // Convert to seconds
     }
 
-    start() {
-        if (!this.isRunning) {
-            this.isRunning = true;
-            this.tick();
-        }
-    }
-
-    pause() {
-        this.isRunning = false;
-    }
-
-    reset(minutes = 9) {
-        this.timeRemaining = minutes * 60;
+    set(time) {
+        if (time<0) time = 0;
+        this.timeRemaining = Math.floor(time/1000); // Convert to seconds
         this.updateDisplay();
-        this.element.style.color = 'rgba(255, 255, 255, 0.9)'; // Reset color
-    }
-
-    tick() {
-        if (!this.isRunning) return;
-
-        if (this.timeRemaining > 0) {
-            this.timeRemaining--;
-            this.updateDisplay();
-            setTimeout(() => this.tick(), 1000);
-        } else {
-            this.onComplete();
-        }
     }
 
     updateDisplay() {
@@ -341,21 +315,11 @@ class CountdownTimer {
             this.element.style.color = 'rgba(255, 50, 50, 0.9)';
         } else if (this.timeRemaining <= 60) {
             this.element.style.color = 'rgba(255, 255, 0, 0.9)';
+        } else {
+            this.element.style.color = 'rgba(255, 255, 255, 0.9)';
         }
     }
-
-    onComplete() {
-        this.isRunning = false;
-        this.element.style.color = 'rgba(255, 0, 0, 0.9)';
-        // Add any completion logic here
-    }
 }
-
-// Usage
-const timer = new CountdownTimer(8);
-
-// Start the countdown
-timer.start();
 
 // Sound Manager
 //------------------------------------------------------------------------------------------
@@ -1013,6 +977,7 @@ class MyModelRoot extends ModelRoot {
 
     init(options) {
         super.init(options);
+        this.minutes = 15;
         const xOffset = (MAZE_ROWS*CELL_SIZE)/2;
         const zOffset = (MAZE_COLUMNS*CELL_SIZE)/2;
         this.base = BaseActor.create({ translation:[xOffset,0,zOffset]});
@@ -1030,8 +995,18 @@ class MyModelRoot extends ModelRoot {
         this.autumn = PlantActor.create({plant:"autumn",translation: [360, 0.5, 360], scale:[s,s,s]});
         this.winter = PlantActor.create({plant:"winter",translation: [360, 0.5, 20], scale:[s,s,s]});
         this.skyAngle = 0;
-
         this.rotateSky();
+        this.future(1000).countDown();
+    }
+
+    get minutes() {return this._minutes || 8}
+    set minutes(value) {this._minutes = value; this.timer = value*60000}
+
+    countDown() {
+        this.timer -= 1000;
+        if (this.timer < 0) this.timer = 0;
+        else this.future(1000).countDown();
+        this.publish("root", "countDown", this.timer);
     }
 
     rotateSky() {
@@ -1055,10 +1030,16 @@ export class MyViewRoot extends ViewRoot {
 
     onStart() {
         this.buildView();
+        this.countdown = new CountdownTimer(this.wellKnownModel("ModelRoot").timer);
         console.log("MyViewRoot onStart", this);
         this.skyRotation = new THREE.Euler(0, 0, 0);
         this.subscribe("root", "rotateSky", this.rotateSky);
         this.subscribe("input", "resize", scaleMinimap);
+        this.subscribe("root", "countDown", this.countDown);
+    }
+
+    countDown(timer) {
+        this.countdown.set(timer);
     }
 
     buildView() {
@@ -1164,7 +1145,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
                     this.say("claimCellUpdate", {x:data.x, y:data.y, color:seasons[this.season].color});
                 }
             }
-        } else this.highGear = 1.5;
+        } else this.highGear = 2;
     }
 
     shootMissile() {
@@ -1181,8 +1162,7 @@ class AvatarActor extends mix(Actor).with(AM_Spatial, AM_Avatar) {
     }
 
     kill() {
-        console.log("testCollision", this.id, "KILLED");
-        // FireballActor.create({parent: this, radius:this.radius});
+        console.log("kill", this.id, "KILLED");
         this.fireball.show();
         this.fireball.future(3000).hide();
         this.future(1000).respawn();
@@ -1319,7 +1299,7 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         this.subscribe("input", "pointerUp", this.doPointerUp);
         this.subscribe("input", "pointerDelta", this.doPointerDelta);
         //this.subscribe("input", "tap", this.doPointerTap);
-        this.subscribe("input", 'wheel', this.onWheel);
+        //this.subscribe("input", 'wheel', this.onWheel);
         this.createMinimap();
     }
 
@@ -1371,10 +1351,6 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
             case " ":
                 this.shootMissile();
                 break;
-            case "o": case "O":
-                console.log("AvatarPawn origin");
-                this.say("origin");
-                break;
             case "I": case "i":
                 console.log( "AvatarPawn", this );
                 break;
@@ -1403,25 +1379,19 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         switch (e.key) {
             case "ArrowUp": case "W": case "w":
                 this.gas = 0; break;
-                case "ArrowDown": case "S": case "s":
+            case "ArrowDown": case "S": case "s":
                 this.gas = 0; break;
-                case "ArrowLeft": case "A": case "a":
+            case "ArrowLeft": case "A": case "a":
                 this.strafe = 0; break;
-                case "ArrowRight": case "D": case "d":
+            case "ArrowRight": case "D": case "d":
                 this.strafe = 0; break;
-            case "Shift":
-                console.log("shiftKey Up");
-                this.highGear = 1; break;
             case " ":
                 this.shootNow = false;
                 break;
             default:
         }
     }
-
-    onWheel(data) { // zoom in and out
-    }
-
+    
     doPointerDown(e) {
     //    console.log("AvatarPawn.onPointerDown()", e);
         const im = this.service("InputManager");
