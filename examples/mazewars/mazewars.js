@@ -60,6 +60,7 @@
 // https://www.geeksforgeeks.org/flood-fill-algorithm-implement-fill-paint/
 // When you lose territory, players can actually see and hear it go away.
 // Hook up the clock - start with 15 minutes.
+// Added a sorted scoring display.
 //------------------------------------------------------------------------------------------
 // To do:
 // Shaders need to be "warmed-up" before they are used.
@@ -74,7 +75,6 @@
 // Add end game and effects.
 // Need a rules screen at the start. See:
 // https://docs.google.com/document/d/1qjPm6pxaejuq5KydRh0C6Honory8DLICO3jfQkpJotc/edit?usp=sharing
-// Scoring, leaderboard - steal from Multiblaster
 // Chat -broadcast messages to all players, colors are their team color.
 //------------------------------------------------------------------------------------------
 // Bugs:
@@ -165,10 +165,10 @@ const MAZE_COLUMNS = 20;
 const MISSILE_SPEED = 0.50;
 
 let csm; // CSM is Cascaded Shadow Maps
-const seasons = {spring:{cell:{x:0,y:0}, angle:180+45, radians:Math.PI-PI_4, color:0xFFB6C1, color2:0xCC8A94, color3:0xB37780},
-    summer: {cell: {x:0,y:18}, angle:270+45, radians:Math.PI+Math.PI*3/2-PI_4, color:0x90EE90, color2:0x65AA65, color3:0x508850},
-    autumn: {cell:{x:18, y:18}, angle:0+45, radians:0-PI_4, color:0xFFE5B4, color2:0xCCB38B, color3:0xB39977},
-    winter: {cell:{x:18, y:0}, angle:90+45, radians:Math.PI+PI_2-PI_4, color:0xA5F2F3, color2:0x73BFBF, color3:0x5AA5A5}};
+const seasons = {Spring:{cell:{x:0,y:0}, angle:180+45, radians:Math.PI-PI_4, color:0xFFB6C1, color2:0xCC8A94, color3:0xB37780},
+    Summer: {cell: {x:0,y:18}, angle:270+45, radians:Math.PI+Math.PI*3/2-PI_4, color:0x90EE90, color2:0x65AA65, color3:0x508850},
+    Autumn: {cell:{x:18, y:18}, angle:0+45, radians:0-PI_4, color:0xFFE5B4, color2:0xCCB38B, color3:0xB39977},
+    Winter: {cell:{x:18, y:0}, angle:90+45, radians:Math.PI+PI_2-PI_4, color:0xA5F2F3, color2:0x73BFBF, color3:0x5AA5A5}};
 // Minimap canvas
 const minimapCanvas = document.createElement('canvas');
 const minimapCtx = minimapCanvas.getContext('2d');
@@ -204,6 +204,62 @@ let horse;
 let trees;
 let plants;
 let ivy;
+
+class BoxScore {
+    constructor() {
+        this.container = document.querySelector('.box-score');
+        this.rowHeight = 34;
+        this.scores = {
+            Spring: { value: 0, element: document.querySelector('[data-season="Spring"]') },
+            Summer: { value: 0, element: document.querySelector('[data-season="Summer"]') },
+            Autumn: { value: 0, element: document.querySelector('[data-season="Autumn"]') },
+            Winter: { value: 0, element: document.querySelector('[data-season="Winter"]') }
+        };
+        // Create wrapper with specific class for styling
+        this.wrapper = document.createElement('div');
+        this.wrapper.className = 'score-wrapper';
+        // Move score rows into wrapper
+        Object.values(this.scores).forEach(score => {
+            this.wrapper.appendChild(score.element);
+        });
+        this.container.appendChild(this.wrapper);
+        this.updatePositions();
+    }
+
+    setScores(scores) {
+        ["Autumn", "Winter", "Summer", "Spring"].forEach( season => {
+            this.scores[season].value = scores[season];
+            this.scores[season].element.querySelector('.score').textContent = scores[season];
+
+            // Use requestAnimationFrame to handle multiple rapid updates
+            if (!this.updatePending) {
+                this.updatePending = true;
+                requestAnimationFrame(() => {
+                    this.updatePositions();
+                    this.updatePending = false;
+                });
+            }
+        });
+    }
+
+    updatePositions() {
+        const sortedScores = Object.entries(this.scores)
+            .sort(([,a], [,b]) => b.value - a.value);
+
+        sortedScores.forEach(([, score], index) => {
+            score.element.style.transform = `translateY(${index * this.rowHeight}px)`;
+        });
+    }
+}
+
+// Usage:
+//const boxScore = new BoxScore();
+
+// Example updates:
+// boxScore.setScore("Spring", 5);
+// boxScore.setScore("Summer", 10);
+// boxScore.setScore("Autumn", 7);
+// boxScore.setScore("Winter", 3);
 
 class Compass {
     constructor(size = 40) {
@@ -438,22 +494,22 @@ modelConstruct().then( () => {
     instances.hexasphere = hexasphere.scene.children[0].children[0];
     instances.hexasphere.geometry.scale(0.05,0.05,0.05);
     fixUV(instances.hexasphere.geometry);
-    plants = {spring: new THREE.Group(), summer: new THREE.Group(), autumn: new THREE.Group(), winter: new THREE.Group()};
+    plants = {Spring: new THREE.Group(), Summer: new THREE.Group(), Autumn: new THREE.Group(), Winter: new THREE.Group()};
     horse = horse.scene.clone();
     horse.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
 
     trees.scene.children.forEach(node => {
         if (node.name) {
-            if (node.name.includes("spring")) plants.spring.add(node.clone());
-            else if (node.name.includes("summer")) plants.summer.add(node.clone());
-            else if (node.name.includes("fall")) plants.autumn.add(node.clone());
-            else if (node.name.includes("winter")) plants.winter.add(node.clone());
+            if (node.name.includes("spring")) plants.Spring.add(node.clone());
+            else if (node.name.includes("summer")) plants.Summer.add(node.clone());
+            else if (node.name.includes("fall")) plants.Autumn.add(node.clone());
+            else if (node.name.includes("winter")) plants.Winter.add(node.clone());
         }
     });
-    plants.spring.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0); } });
-    plants.summer.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
-    plants.autumn.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
-    plants.winter.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
+    plants.Spring.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0); } });
+    plants.Summer.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
+    plants.Autumn.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
+    plants.Winter.traverse( m => {if (m.geometry) { m.castShadow=true; m.receiveShadow=true; m.position.set(0,0,0);} });
 });
 function fixUV(geometry) {
     // Angle around the Y axis, counter-clockwise when looking from above.
@@ -673,7 +729,7 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
         this.rows = options._rows || 20;
         this.columns = options._columns || 20;
         this.cellSize = options._cellSize || 20;
-        this.seasons = {"spring": 4, "summer": 4, "autumn": 4, "winter": 4};
+        this.seasons = {"Spring": 4, "Summer": 4, "Autumn": 4, "Winter": 4};
         this.createMaze(this.rows,this.columns);
         this.constructMaze();
     }
@@ -789,10 +845,10 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
             this.setCornerSeason(x,y,season);
         };
 
-        clearCorner(0,0, "spring");
-        clearCorner(this.WIDTH-3,0,"winter");
-        clearCorner(0,this.HEIGHT-3,"summer");
-        clearCorner(this.WIDTH-3,this.HEIGHT-3,"autumn");
+        clearCorner(0,0, "Spring");
+        clearCorner(this.WIDTH-3,0,"Winter");
+        clearCorner(0,this.HEIGHT-3,"Summer");
+        clearCorner(this.WIDTH-3,this.HEIGHT-3,"Autumn");
     }
 
     setCornerSeason(x,y, season) {
@@ -844,7 +900,9 @@ class MazeActor extends mix(Actor).with(AM_Spatial) {
             this.seasons[season]++;
             cell.season = season;
             cell.floor.setColor(seasons[season].color);
+            // This is literally the attack line. Where you can win or lose in an instant.
             if (oldSeason) this.seasons[oldSeason] = this.checkLife(oldSeason);
+            this.publish("maze", "score", this.seasons);
             return true;
         }
         return false;
@@ -990,10 +1048,10 @@ class MyModelRoot extends ModelRoot {
         }
         this.horse = HorseActor.create({translation:[210.9,10,209.70], scale:[8.75,8.75,8.75]});
         const s = 9.0;
-        this.spring = PlantActor.create({plant:"spring",translation: [20, 0.5, 20], scale:[s,s,s]});
-        this.summer = PlantActor.create({plant:"summer",translation: [20, 0.5, 360], scale:[s,s,s]});
-        this.autumn = PlantActor.create({plant:"autumn",translation: [360, 0.5, 360], scale:[s,s,s]});
-        this.winter = PlantActor.create({plant:"winter",translation: [360, 0.5, 20], scale:[s,s,s]});
+        this.spring = PlantActor.create({plant:"Spring",translation: [20, 0.5, 20], scale:[s,s,s]});
+        this.summer = PlantActor.create({plant:"Summer",translation: [20, 0.5, 360], scale:[s,s,s]});
+        this.autumn = PlantActor.create({plant:"Autumn",translation: [360, 0.5, 360], scale:[s,s,s]});
+        this.winter = PlantActor.create({plant:"Winter",translation: [360, 0.5, 20], scale:[s,s,s]});
         this.skyAngle = 0;
         this.rotateSky();
         this.future(1000).countDown();
@@ -1301,6 +1359,15 @@ class AvatarPawn extends mix(Pawn).with(PM_Smoothed, PM_ThreeVisible, PM_Avatar)
         //this.subscribe("input", "tap", this.doPointerTap);
         //this.subscribe("input", 'wheel', this.onWheel);
         this.createMinimap();
+        const scores = this.wellKnownModel("ModelRoot").maze.seasons;
+        this.boxScore = new BoxScore();
+        this.boxScore.setScores(scores);
+        this.subscribe("maze", "score", this.scoreUpdate);
+    }
+
+    scoreUpdate( data ){
+        this.boxScore.setScores(data);
+   //     console.log("scoreUpdate", data);
     }
 
     park() {
@@ -1628,7 +1695,7 @@ class MyUser extends User {
             cellX = 11;
             cellY = 11;
         }
-        const season = ["spring","summer","autumn","winter"][this.userNumber%4];
+        const season = ["Spring","Summer","Autumn","Winter"][this.userNumber%4];
         const t = [CELL_SIZE*seasons[season].cell.x+10,6.5,CELL_SIZE*seasons[season].cell.y+10];
         const r = q_axisAngle([0,1,0],Math.PI*2*seasons[season].angle/360);
         this.avatar = AvatarActor.create({
