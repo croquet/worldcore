@@ -1,7 +1,7 @@
 {
-  "name": "mazewars",
+  "name": "labyrinth",
   "version": "2.0.0-alpha.27",
-  "description": "Maze Wars",
+  "description": "Labyrinth",
   "private": true,
   "scripts": {
     "start": "webpack serve --no-live-reload --no-hot --mode development --devtool source-map",
