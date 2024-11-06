@@ -61,12 +61,17 @@
 // When you lose territory, players can actually see and hear it go away.
 // Hook up the clock - start with 15 minutes.
 // Added a sorted scoring display.
+// Moved the timer and the score box to make room for mobile controls.
+// Shrank the avatar radius to 3.7 so that they can't block a corridor.
 //------------------------------------------------------------------------------------------
 // To do:
 // Shaders need to be "warmed-up" before they are used.
 // - Missile shaders
 // - Floor shaders
 // - Fireball shader - I think this is done.
+// Resize elements when the window is resized.
+// Other users can block you from getting to your corner.
+//
 // The ivy needs to be cleaned up at the top.
 // The iris of the eyes must match the season color.
 // Mobile controls:
@@ -75,7 +80,8 @@
 // Add end game and effects.
 // Need a rules screen at the start. See:
 // https://docs.google.com/document/d/1qjPm6pxaejuq5KydRh0C6Honory8DLICO3jfQkpJotc/edit?usp=sharing
-// Chat -broadcast messages to all players, colors are their team color.
+// Chat -broadcast messages to all players, colors are their team color. This is difficult, as we
+// are in mouse look mode. Perhaps press "c" to type a message, hit enter and then you are back.
 //------------------------------------------------------------------------------------------
 // Bugs:
 // The avatar is probably visible to other players before you can see them on
@@ -157,7 +163,7 @@ const PI_2 = Math.PI/2;
 const PI_4 = Math.PI/4;
 const MISSILE_LIFE = 4000;
 const CELL_SIZE = 20;
-const AVATAR_RADIUS = 4;
+const AVATAR_RADIUS = 3.7;
 const MISSILE_RADIUS = 2;
 const WALL_EPSILON = 0.01;
 const MAZE_ROWS = 20;

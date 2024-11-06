@@ -23,10 +23,11 @@
             }
             .countdown {
                 position: fixed;
-                top: 20px;          /* Position at top */
-                left: 40px;         /* Position on left side */
+                top: 20px;
+                left: 50%;         /* Center horizontally */
+                transform: translateX(-50%);  /* Offset by half width for true center */
                 font-family: 'Arial', sans-serif;
-                font-size: 36px;    /* Larger font size */
+                font-size: 36px;
                 font-weight: bold;
                 color: rgba(255, 255, 255, 0.9);
                 background-color: rgba(0, 0, 0, 0.3);
@@ -49,8 +50,8 @@
             .box-score {
                 position: fixed;
                 left: 20px;
-                top: 50%;
-                transform: translateY(-50%);
+                top: 20px;
+                transform: none;
                 background: rgba(0, 0, 0, 0.3);
                 padding: 15px;
                 border-radius: 8px;
