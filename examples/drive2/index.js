@@ -10,7 +10,7 @@ import { MyModelRoot } from "./src/Models";
 
 StartWorldcore({
     appId: 'io.croquet.worldcore.drive2',
-    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',    // Replace with your apiKey
+    apiKey: '234567_Paste_Your_Own_API_Key_Here_7654321',    // Replace with your apiKey
     name: App.autoSession(),
     password: App.autoPassword(),
     model: MyModelRoot,

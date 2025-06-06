@@ -10,16 +10,15 @@ import { MyModelRoot } from "./src/Models";
 
 // webpack will replace process.env.NODE_ENV with the actual value
 const apiKey = process.env.NODE_ENV === 'production'
-    ? '1rN7t58Mo1ani03Djcl4amvdEAnoitB6g3oNxEDrC'
-    : '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9';
+    ? '234567_Paste_Your_Own_API_Key_Here_7654321'  // prod key
+    : '234567_Paste_Your_Own_API_Key_Here_7654321'; // dev key
 
 
 App.makeWidgetDock({debug: true, stats: true});
 
 StartWorldcore({
     appId: 'io.croquet.sheep2',
-    // apiKey,
-    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
+    apiKey,
     model: MyModelRoot,
     name: 'sheep',
     // name: App.autoSession(),

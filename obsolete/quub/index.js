@@ -83,7 +83,7 @@ class MyViewRoot extends ViewRoot {
 
 StartWorldcore({
     appId: 'io.croquet.quub',
-    apiKey: '1Mnk3Gf93ls03eu0Barbdzzd3xl1Ibxs7khs8Hon9',
+    apiKey: '234567_Paste_Your_Own_API_Key_Here_7654321',
     name: App.autoSession(),
     password: 'password',
     model: MyModelRoot,

@@ -290,7 +290,7 @@ class MyViewRoot extends ViewRoot {
 App.makeWidgetDock();
 StartWorldcore({
     appId: 'io.croquet.game.fountain',
-    apiKey: '14rqAOsLG15ez7vcuJ9h3zIeoe29d5xf8c5rta9mz',
+    apiKey: '234567_Paste_Your_Own_API_Key_Here_7654321',
     name: 'game-fountain',
     password: 'password',
     model: MyModelRoot,
