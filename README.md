@@ -43,13 +43,14 @@ Install build tools (e.g. `lerna`):
 
     cd worldcore
     npm i
-    npx lerna bootstrap
+
+This step will also execute `lerna bootstrap` which sets up the repo for use.
 
 ## Run and modify an example
 
 * Execute these commands (we do not show the output here, only the commands):
 
-      cd worldcore/tutorials/tutorial01
+      cd tutorials/tutorial01
       npm start
 
   This command will not stop until you press ctrl-c. It will continually rebuild files as you edit them.
@@ -102,8 +103,8 @@ We use `lerna` with "fixed" versioning, meaning each package will have the same 
 
 2. If you have updated any dependencies (e.g., of the kernel on the Croquet library), make sure all packages have the latest dependencies
 
-        lerna clean
-        lerna bootstrap
+        npx lerna clean
+        npx lerna bootstrap
 
 3. Commit everything (the next step needs a clean repo)
 
